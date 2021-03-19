@@ -5,44 +5,41 @@ License     : NCSA
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-module Kore.Syntax.Id
-    (
+module Kore.Syntax.Id (
     -- * Identifiers
-      Id (..)
-    , getIdForError
-    , noLocationId
-    , implicitId
-    , generatedId
+    Id (..),
+    getIdForError,
+    noLocationId,
+    implicitId,
+    generatedId,
+
     -- * Locations
-    , AstLocation (..)
-    , FileLocation (..)
-    , prettyPrintAstLocation
-    ) where
+    AstLocation (..),
+    FileLocation (..),
+    prettyPrintAstLocation,
+) where
 
-import Prelude.Kore
-
-import Data.String
-    ( IsString (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Data.String (
+    IsString (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- | @Id@ is a Kore identifier.
 
 @Id@ corresponds to the @identifier@ syntactic category from the Semantics of K,
 Section 9.1.1 (Lexicon).
-
- -}
+-}
 data Id = Id
-    { getId      :: !Text
+    { getId :: !Text
     , idLocation :: !AstLocation
     }
     deriving (Show)
@@ -69,8 +66,8 @@ instance Hashable Id where
 instance Diff Id where
     diffPrec a b =
         diffPrecGeneric
-            a { idLocation = AstLocationNone }
-            b { idLocation = AstLocationNone }
+            a{idLocation = AstLocationNone}
+            b{idLocation = AstLocationNone}
 
 instance IsString Id where
     fromString = noLocationId . fromString
@@ -83,8 +80,7 @@ instance Unparse Id where
 
 Before doing this, you should consider using an existing case or adding a new
 constructor to 'AstLocation'.
-
- -}
+-}
 noLocationId :: Text -> Id
 noLocationId name = Id name AstLocationNone
 
@@ -95,20 +91,18 @@ implicitId name = Id name AstLocationImplicit
 {- | Create a generated 'Id'.
 
 The location will be 'AstLocationGeneratedVariable'.
-
- -}
+-}
 generatedId :: Text -> Id
 generatedId getId =
-    Id { getId, idLocation }
+    Id{getId, idLocation}
   where
     idLocation = AstLocationGeneratedVariable
 
-{- | Get the identifier name for an error message 'String'.
- -}
+-- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String
 getIdForError = Text.unpack . getId
 
-{-| 'AstLocation' represents the origin of an AST node.
+{- | 'AstLocation' represents the origin of an AST node.
 
 Its representation may change, e.g. the `AstLocationFile` branch could become a
 range instead of a single character position. You should treat the entire
@@ -122,15 +116,15 @@ data AstLocation
     | AstLocationGeneratedVariable
     | AstLocationTest
     | AstLocationFile FileLocation
-    | AstLocationUnknown
-    -- ^ This should not be used and should be eliminated in further releases
+    | -- | This should not be used and should be eliminated in further releases
+      AstLocationUnknown
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-{-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
+{- | 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.
 -}
 prettyPrintAstLocation :: AstLocation -> Text
@@ -140,23 +134,24 @@ prettyPrintAstLocation AstLocationGeneratedVariable =
     "<variable generated internally>"
 prettyPrintAstLocation AstLocationTest = "<test data>"
 prettyPrintAstLocation
-    (AstLocationFile FileLocation
-        { fileName = name
-        , line = line'
-        , column = column'
-        }
-    )
-  = Text.pack name <> " "
-    <> Text.pack (show line') <> ":"
-    <> Text.pack (show column')
+    ( AstLocationFile
+            FileLocation
+                { fileName = name
+                , line = line'
+                , column = column'
+                }
+        ) =
+        Text.pack name <> " "
+            <> Text.pack (show line')
+            <> ":"
+            <> Text.pack (show column')
 prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
-{-| 'FileLocation' represents a position in a source file.
--}
+-- | 'FileLocation' represents a position in a source file.
 data FileLocation = FileLocation
     { fileName :: FilePath
-    , line     :: Int
-    , column   :: Int
+    , line :: Int
+    , column :: Int
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

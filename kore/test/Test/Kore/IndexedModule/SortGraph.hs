@@ -1,37 +1,33 @@
-module Test.Kore.IndexedModule.SortGraph
-    ( test_isSubsortOf
-    , test_subsortsOf
-    , test_fromIndexedModule
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
+module Test.Kore.IndexedModule.SortGraph (
+    test_isSubsortOf,
+    test_subsortsOf,
+    test_fromIndexedModule,
+) where
 
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
-
-import Kore.ASTVerifier.DefinitionVerifier
-    ( verifyAndIndexDefinition
-    )
-import Kore.Attribute.Subsort
-    ( subsortAttribute
-    )
+import Kore.ASTVerifier.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
+import Kore.Attribute.Subsort (
+    subsortAttribute,
+ )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-    ( assertRight
-    )
+import Kore.Error (
+    assertRight,
+ )
 import Kore.IndexedModule.SortGraph
-import Kore.Internal.TermLike
-    ( mkTop
-    )
+import Kore.Internal.TermLike (
+    mkTop,
+ )
 import Kore.Sort
 import Kore.Syntax.Definition
-
+import Prelude.Kore
 import Test.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 sortA, sortB, sortC, sortD :: Sort
@@ -46,8 +42,8 @@ sortVarR = sortVariableSort "R"
 sortGraph :: SortGraph
 sortGraph =
     fromSubsorts
-        [ Subsort { supersort = sortB, subsort = sortA }
-        , Subsort { supersort = sortC, subsort = sortB }
+        [ Subsort{supersort = sortB, subsort = sortA}
+        , Subsort{supersort = sortC, subsort = sortB}
         ]
 
 isSubsortOf' :: Sort -> Sort -> Bool
@@ -76,8 +72,8 @@ test_subsortsOf =
 
 test_fromIndexedModule :: TestTree
 test_fromIndexedModule =
-    testCase "fromIndexedModule = fromSubsorts"
-    $ assertEqual "" sortGraph (fromIndexedModule verifiedModule)
+    testCase "fromIndexedModule = fromSubsorts" $
+        assertEqual "" sortGraph (fromIndexedModule verifiedModule)
   where
     verifiedModules =
         assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers definition
@@ -90,7 +86,7 @@ test_fromIndexedModule =
     definition =
         Definition
             { definitionAttributes = Attributes []
-            , definitionModules = [ subsortsModule ]
+            , definitionModules = [subsortsModule]
             }
 
     subsortsModule =
@@ -111,18 +107,21 @@ test_fromIndexedModule =
 
     subsortAxiom :: Sort -> Sort -> ParsedSentence
     subsortAxiom subSort superSort =
-        SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = [sortVariable "R"]
-            , sentenceAxiomPattern = Builtin.externalize (mkTop sortVarR)
-            , sentenceAxiomAttributes = Attributes
-                [subsortAttribute subSort superSort]
-            }
+        SentenceAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [sortVariable "R"]
+                , sentenceAxiomPattern = Builtin.externalize (mkTop sortVarR)
+                , sentenceAxiomAttributes =
+                    Attributes
+                        [subsortAttribute subSort superSort]
+                }
 
     sortDecl :: Sort -> ParsedSentence
     sortDecl (SortActualSort (SortActual name [])) =
-        SentenceSortSentence SentenceSort
-            { sentenceSortName = name
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
+        SentenceSortSentence
+            SentenceSort
+                { sentenceSortName = name
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes []
+                }
     sortDecl _ = error "Cannot make sort declaration from this Sort expression"

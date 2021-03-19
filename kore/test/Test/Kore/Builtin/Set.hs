@@ -1,97 +1,91 @@
 {-# LANGUAGE Strict #-}
-
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
-module Test.Kore.Builtin.Set
-    ( test_unit
-    , test_getUnit
-    , test_inElement
-    , test_inUnitSymbolic
-    , test_inElementSymbolic
-    , test_inConcat
-    , test_inConcatSymbolic
-    , test_concatUnit
-    , test_concatAssociates
-    , test_concatNormalizes
-    , test_difference
-    , test_difference_symbolic
-    , test_toList
-    , test_size
-    , test_intersection_unit
-    , test_intersection_idem
-    , test_list2set
-    , test_inclusion
-    , test_symbolic
-    , test_unifyConcreteIdem
-    , test_unifyConcreteDistinct
-    , test_unifyFramingVariable
-    , test_unifySelectFromEmpty
-    , test_unifySelectFromSingleton
-    , test_unifySelectFromSingletonWithoutLeftovers
-    , test_unifySelectFromTwoElementSet
-    , test_unifySelectTwoFromTwoElementSet
-    , test_unifyConcatElemVarVsElemSet
-    , test_unifyConcatElemVarVsElemElem
-    , test_unifyConcatElemElemVsElemConcrete
-    , test_unifyConcatElemElemVsElemElem
-    , test_unifyConcatElemConcatVsElemConcrete
-    , test_unifyConcatElemConcreteVsElemConcrete1
-    , test_unifyConcatElemConcreteVsElemConcrete2
-    , test_unifyConcatElemConcreteVsElemConcrete3
-    , test_unifyConcatElemConcreteVsElemConcrete4
-    , test_unifyConcatElemConcreteVsElemConcrete5
-    , test_unifyConcatElemVsElem
-    , test_unifyConcatElemVsElemConcrete1
-    , test_unifyConcatElemVsElemConcrete2
-    , test_unifyConcatElemVsElemElem
-    , test_unifyConcatElemVsElemConcat
-    , test_unifyConcatElemVsElemVar
-    , test_unifyConcatElemElemVsElemConcat
-    , test_unifyConcatElemElemVsElemConcatSet
-    , test_unifyFnSelectFromSingleton
-    , test_unify_concat_xSet_unit_unit_vs_unit
-    , test_unifyMultipleIdenticalOpaqueSets
-    , test_concretizeKeys
-    , test_concretizeKeysAxiom
-    , test_isBuiltin
-    , hprop_unparse
+module Test.Kore.Builtin.Set (
+    test_unit,
+    test_getUnit,
+    test_inElement,
+    test_inUnitSymbolic,
+    test_inElementSymbolic,
+    test_inConcat,
+    test_inConcatSymbolic,
+    test_concatUnit,
+    test_concatAssociates,
+    test_concatNormalizes,
+    test_difference,
+    test_difference_symbolic,
+    test_toList,
+    test_size,
+    test_intersection_unit,
+    test_intersection_idem,
+    test_list2set,
+    test_inclusion,
+    test_symbolic,
+    test_unifyConcreteIdem,
+    test_unifyConcreteDistinct,
+    test_unifyFramingVariable,
+    test_unifySelectFromEmpty,
+    test_unifySelectFromSingleton,
+    test_unifySelectFromSingletonWithoutLeftovers,
+    test_unifySelectFromTwoElementSet,
+    test_unifySelectTwoFromTwoElementSet,
+    test_unifyConcatElemVarVsElemSet,
+    test_unifyConcatElemVarVsElemElem,
+    test_unifyConcatElemElemVsElemConcrete,
+    test_unifyConcatElemElemVsElemElem,
+    test_unifyConcatElemConcatVsElemConcrete,
+    test_unifyConcatElemConcreteVsElemConcrete1,
+    test_unifyConcatElemConcreteVsElemConcrete2,
+    test_unifyConcatElemConcreteVsElemConcrete3,
+    test_unifyConcatElemConcreteVsElemConcrete4,
+    test_unifyConcatElemConcreteVsElemConcrete5,
+    test_unifyConcatElemVsElem,
+    test_unifyConcatElemVsElemConcrete1,
+    test_unifyConcatElemVsElemConcrete2,
+    test_unifyConcatElemVsElemElem,
+    test_unifyConcatElemVsElemConcat,
+    test_unifyConcatElemVsElemVar,
+    test_unifyConcatElemElemVsElemConcat,
+    test_unifyConcatElemElemVsElemConcatSet,
+    test_unifyFnSelectFromSingleton,
+    test_unify_concat_xSet_unit_unit_vs_unit,
+    test_unifyMultipleIdenticalOpaqueSets,
+    test_concretizeKeys,
+    test_concretizeKeysAxiom,
+    test_isBuiltin,
+    hprop_unparse,
     --
-    , genSetPattern
-    , genSetConcreteIntegerPattern
-    , normalizedSet
-    , asInternal
-    ) where
+    genSetPattern,
+    genSetConcreteIntegerPattern,
+    normalizedSet,
+    asInternal,
+) where
 
-import Prelude.Kore
-
-import Hedgehog hiding
-    ( Concrete
-    , opaque
-    , property
-    )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-
-import Control.Error
-    ( runMaybeT
-    )
+import Control.Error (
+    runMaybeT,
+ )
 import qualified Data.Default as Default
-import Data.Functor
-    ( (<&>)
-    )
+import Data.Functor (
+    (<&>),
+ )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
-    ( fromJust
-    )
+import qualified Data.Maybe as Maybe (
+    fromJust,
+ )
 import qualified Data.Sequence as Seq
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-
+import Hedgehog hiding (
+    Concrete,
+    opaque,
+    property,
+ )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
@@ -105,54 +99,54 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    , mkConfigVariable
-    , mkRewritingTerm
-    , mkRuleVariable
-    )
-import Kore.Step.RulePattern
-    ( RewriteRule (RewriteRule)
-    , injectTermIntoRHS
-    )
-import Kore.Step.RulePattern as RulePattern
-    ( RulePattern (..)
-    )
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+    mkConfigVariable,
+    mkRewritingTerm,
+    mkRuleVariable,
+ )
+import Kore.Step.RulePattern (
+    RewriteRule (RewriteRule),
+    injectTermIntoRHS,
+ )
+import Kore.Step.RulePattern as RulePattern (
+    RulePattern (..),
+ )
+import Kore.Step.Simplification.AndTerms (
+    termUnification,
+ )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( runUnifierT
-    )
-
+import Kore.Unification.UnifierT (
+    runUnifierT,
+ )
+import Prelude.Kore
 import Test.Expect
-import Test.Kore
-    ( configElementVariableGen
-    , configElementVariableGen
-    , standaloneGen
-    , testId
-    )
+import Test.Kore (
+    configElementVariableGen,
+    standaloneGen,
+    testId,
+ )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Builtin.Int
-    ( genConcreteIntegerPattern
-    , genInteger
-    , genIntegerKey
-    , genIntegerPattern
-    )
-import qualified Test.Kore.Builtin.Int as Test.Int
+import Test.Kore.Builtin.Int (
+    genConcreteIntegerPattern,
+    genInteger,
+    genIntegerKey,
+    genIntegerPattern,
+ )
 import qualified Test.Kore.Builtin.Int as Int
+import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Kore.With
-import Test.SMT hiding
-    ( runSMT
-    )
+import Test.SMT hiding (
+    runSMT,
+ )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genKeys :: Gen [TermLike RewritingVariableName]
@@ -189,29 +183,29 @@ genConcreteSet = genSetConcreteIntegerPattern
 genSetPattern :: InternalVariable variable => Gen (TermLike variable)
 genSetPattern = fromConcrete . mkSet_ <$> genSetConcreteIntegerPattern
 
-intSetToSetPattern
-    :: Set Integer
-    -> TermLike RewritingVariableName
+intSetToSetPattern ::
+    Set Integer ->
+    TermLike RewritingVariableName
 intSetToSetPattern intSet =
     mkSet_ (Set.map Test.Int.asInternal intSet)
 
 test_unit :: [TestTree]
 test_unit =
-    [ unitSet `becomes` asInternal Set.empty
-        $ "unit() === /* builtin */ unit()"
-    , concatSet (mkElemVar xSet) unitSet `becomes` mkElemVar xSet
-        $ "concat(x:Set, unit()) === x:Set"
+    [ unitSet `becomes` asInternal Set.empty $
+        "unit() === /* builtin */ unit()"
+    , concatSet (mkElemVar xSet) unitSet `becomes` mkElemVar xSet $
+        "concat(x:Set, unit()) === x:Set"
     ]
   where
     xSet =
         mkElementVariable "xSet" setSort
-        & mapElementVariable (pure mkConfigVariable)
-    becomes
-        :: HasCallStack
-        => TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> TestName
-        -> TestTree
+            & mapElementVariable (pure mkConfigVariable)
+    becomes ::
+        HasCallStack =>
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        TestName ->
+        TestTree
     becomes original expect name =
         testCase name $ do
             actual <- runNoSMT $ evaluate original
@@ -221,7 +215,7 @@ test_getUnit :: TestTree
 test_getUnit =
     testPropertyWithSolver
         "in{}(_, unit{}() === \\dv{Bool{}}(\"false\")"
-        (do
+        ( do
             patKey <- forAll genIntegerPattern
             let patIn =
                     mkApplySymbol
@@ -232,28 +226,28 @@ test_getUnit =
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
             (===) (Test.Bool.asPattern False) =<< evaluateT patIn
-            (===) Pattern.top                 =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_inElement :: TestTree
 test_inElement =
     testPropertyWithSolver
         "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
-        (do
+        ( do
             patKey <- forAll genIntegerPattern
-            let patIn = mkApplySymbol inSetSymbol [ patKey, patElement ]
-                patElement = mkApplySymbol elementSetSymbol [ patKey ]
+            let patIn = mkApplySymbol inSetSymbol [patKey, patElement]
+                patElement = mkApplySymbol elementSetSymbol [patKey]
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-            (===) Pattern.top                =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_inUnitSymbolic :: TestTree
 test_inUnitSymbolic =
     testPropertyWithSolver
         "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
-        (do
+        ( do
             patKey <- forAll genFunctionalKey
             let patIn =
                     mkApplySymbol
@@ -264,17 +258,17 @@ test_inUnitSymbolic =
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
             (===) (Test.Bool.asPattern False) =<< evaluateT patIn
-            (===) Pattern.top                 =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_inElementSymbolic :: TestTree
 test_inElementSymbolic =
     testPropertyWithSolver
         "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
-        (do
+        ( do
             patKey <- forAll genKey
-            let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
-                patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
+            let patElement = mkApplySymbol elementSetSymbolTestSort [patKey]
+                patIn = mkApplySymbol inSetSymbolTestSort [patKey, patElement]
                 patTrue = Test.Bool.asInternal True
                 conditionTerm = mkAnd patTrue (mkCeil_ patElement)
             actual <- evaluateT patIn
@@ -287,11 +281,11 @@ test_inConcatSymbolic =
     testPropertyWithSolver
         "in{}(concat{}(_, element{}(e)), e)\
         \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
-        (do
+        ( do
             keys <- forAll genKeys
             patKey <- forAll genKey
             let patSet = mkSet_ $ Set.insert patKey (Set.fromList keys)
-                patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patSet ]
+                patIn = mkApplySymbol inSetSymbolTestSort [patKey, patSet]
                 patTrue = Test.Bool.asPattern True
                 conditionTerm = mkCeil boolSort patSet
             condition <- evaluateT conditionTerm
@@ -307,34 +301,34 @@ test_inConcat :: TestTree
 test_inConcat =
     testPropertyWithSolver
         "in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
-        (do
+        ( do
             elem' <- forAll genConcreteIntegerPattern
             values <- forAll genSetConcreteIntegerPattern
-            let patIn = mkApplySymbol inSetSymbol [ patElem , patSet ]
+            let patIn = mkApplySymbol inSetSymbol [patElem, patSet]
                 patSet = mkSet_ (Set.insert elem' values) & fromConcrete
                 patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-            (===) Pattern.top                =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver
         "concat{}(unit{}(), xs) === concat{}(xs, unit{}()) === xs"
-        (do
+        ( do
             patValues <- forAll genSetPattern <&> mkRewritingTerm
             let patUnit = mkApplySymbol unitSetSymbol []
                 patConcat1 =
-                    mkApplySymbol concatSetSymbol [ patUnit, patValues ]
+                    mkApplySymbol concatSetSymbol [patUnit, patValues]
                 patConcat2 =
-                    mkApplySymbol concatSetSymbol [ patValues, patUnit ]
+                    mkApplySymbol concatSetSymbol [patValues, patUnit]
                 predicate1 = mkEquals_ patValues patConcat1
                 predicate2 = mkEquals_ patValues patConcat2
             expect <- evaluateT patValues
-            (===) expect      =<< evaluateT patConcat1
-            (===) expect      =<< evaluateT patConcat2
+            (===) expect =<< evaluateT patConcat1
+            (===) expect =<< evaluateT patConcat2
             (===) Pattern.top =<< evaluateT predicate1
             (===) Pattern.top =<< evaluateT predicate2
         )
@@ -343,7 +337,7 @@ test_concatAssociates :: TestTree
 test_concatAssociates =
     testPropertyWithSolver
         "concat{}(concat{}(as, bs), cs) === concat{}(as, concat{}(bs, cs))"
-        (do
+        ( do
             set1 <- forAll genSetInteger
             set2 <- forAll genSetInteger
             set3 <- forAll genSetInteger
@@ -353,12 +347,12 @@ test_concatAssociates =
                 patSet2 = intSetToSetPattern set2
                 patSet3 = intSetToSetPattern set3
 
-            let patConcat12 = mkApplySymbol concatSetSymbol [ patSet1, patSet2 ]
-                patConcat23 = mkApplySymbol concatSetSymbol [ patSet2, patSet3 ]
+            let patConcat12 = mkApplySymbol concatSetSymbol [patSet1, patSet2]
+                patConcat23 = mkApplySymbol concatSetSymbol [patSet2, patSet3]
                 patConcat12_3 =
-                    mkApplySymbol concatSetSymbol [ patConcat12, patSet3 ]
+                    mkApplySymbol concatSetSymbol [patConcat12, patSet3]
                 patConcat1_23 =
-                    mkApplySymbol concatSetSymbol [ patSet1, patConcat23 ]
+                    mkApplySymbol concatSetSymbol [patSet1, patConcat23]
                 predicate = mkEquals_ patConcat12_3 patConcat1_23
             concat12_3 <- evaluateT patConcat12_3
             concat1_23 <- evaluateT patConcat1_23
@@ -370,8 +364,8 @@ test_concatNormalizes :: TestTree
 test_concatNormalizes =
     testPropertyWithSolver
         "concat{}(concat{}(1, x:Int), concat(y:set, concat(z:int, 2))) \
-            \=== NormalizedSet([x, y], {1, 2}, [y])"
-        (do
+        \=== NormalizedSet([x, y], {1, 2}, [y])"
+        ( do
             int1 <- forAll genInteger
             int2 <- forAll genInteger
             elemVar1 <-
@@ -393,25 +387,30 @@ test_concatNormalizes =
                 [elementVar1, elementVar2] = map mkElemVar (List.sort elemVars)
 
                 patConcat =
-                    mkApplySymbol concatSetSymbol
-                        [mkApplySymbol concatSetSymbol
+                    mkApplySymbol
+                        concatSetSymbol
+                        [ mkApplySymbol
+                            concatSetSymbol
                             [ mkApplySymbol elementSetSymbol [from intKey1]
                             , mkApplySymbol elementSetSymbol [elementVar1]
                             ]
-                        , mkApplySymbol concatSetSymbol
+                        , mkApplySymbol
+                            concatSetSymbol
                             [ mkElemVar setVar
-                            , mkApplySymbol concatSetSymbol
+                            , mkApplySymbol
+                                concatSetSymbol
                                 [ mkApplySymbol elementSetSymbol [elementVar2]
                                 , mkApplySymbol elementSetSymbol [from intKey2]
                                 ]
                             ]
                         ]
-                normalized = emptyNormalizedSet
-                    `with` intKey1
-                    `with` intKey2
-                    `with` VariableElement elementVar1
-                    `with` VariableElement elementVar2
-                    `with` OpaqueSet (mkElemVar setVar)
+                normalized =
+                    emptyNormalizedSet
+                        `with` intKey1
+                        `with` intKey2
+                        `with` VariableElement elementVar1
+                        `with` VariableElement elementVar2
+                        `with` OpaqueSet (mkElemVar setVar)
                 patNormalized = asInternalNormalized normalized
 
                 predicate = mkEquals_ patConcat patNormalized
@@ -425,7 +424,7 @@ test_difference :: TestTree
 test_difference =
     testPropertyWithSolver
         "SET.difference is difference"
-        (do
+        ( do
             set1 <- forAll genSetConcreteIntegerPattern
             set2 <- forAll genSetConcreteIntegerPattern
             let set3 = Set.difference set1 set2
@@ -436,7 +435,7 @@ test_difference =
                         (mkSet_ set2 & fromConcrete)
                 predicate = mkEquals_ patSet3 patDifference
             expect <- evaluateT patSet3
-            (===) expect      =<< evaluateT patDifference
+            (===) expect =<< evaluateT patDifference
             (===) Pattern.top =<< evaluateT predicate
         )
 
@@ -449,8 +448,8 @@ test_difference_symbolic =
                 ]
             expect =
                 makeMultipleAndPredicate (makeCeilPredicate <$> args)
-                & Condition.fromPredicate
-                & Pattern.withCondition oneSingleton
+                    & Condition.fromPredicate
+                    & Pattern.withCondition oneSingleton
         evalDifference (Just expect) args
     , testCase "[X, 1] -Set [X, Y] = [1] -Set [Y]" $ do
         let args =
@@ -459,8 +458,8 @@ test_difference_symbolic =
                 ]
             expect =
                 makeMultipleAndPredicate (makeCeilPredicate <$> args)
-                & Condition.fromPredicate
-                & Pattern.withCondition (differenceSet oneSingleton ySingleton)
+                    & Condition.fromPredicate
+                    & Pattern.withCondition (differenceSet oneSingleton ySingleton)
         evalDifference (Just expect) args
     , testCase "[X] -Set [X, Y] = []" $ do
         let args =
@@ -470,8 +469,8 @@ test_difference_symbolic =
             expect =
                 makeMultipleAndPredicate
                     (makeCeilPredicate <$> tail args)
-                & Condition.fromPredicate
-                & Pattern.withCondition (mkSet_ [])
+                    & Condition.fromPredicate
+                    & Pattern.withCondition (mkSet_ [])
         evalDifference (Just expect) args
     , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
         let args =
@@ -480,8 +479,8 @@ test_difference_symbolic =
                 ]
             expect =
                 makeCeilPredicate (head args)
-                & Condition.fromPredicate
-                & Pattern.withCondition oneSingleton
+                    & Condition.fromPredicate
+                    & Pattern.withCondition oneSingleton
         evalDifference (Just expect) args
     ]
   where
@@ -496,34 +495,36 @@ test_difference_symbolic =
     ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
     idName `ofSort` sort = configElementVariableFromId (testId idName) sort
 
-    evalDifference
-        :: HasCallStack
-        => Maybe (Pattern RewritingVariableName)  -- ^ expected result
-        -> [TermLike RewritingVariableName]  -- ^ arguments of 'differenceSet'
-        -> Assertion
+    evalDifference ::
+        HasCallStack =>
+        -- | expected result
+        Maybe (Pattern RewritingVariableName) ->
+        -- | arguments of 'differenceSet'
+        [TermLike RewritingVariableName] ->
+        Assertion
     evalDifference expect args = do
         actual <-
             Set.evalDifference
                 SideCondition.top
                 (Application differenceSetSymbol args)
-            & runMaybeT
-            & runSimplifier testEnv
+                & runMaybeT
+                & runSimplifier testEnv
         assertEqual "" expect actual
 
 test_toList :: TestTree
 test_toList =
     testPropertyWithSolver
         "SET.set2list is set2list"
-        (do
+        ( do
             set1 <- forAll genSetConcreteIntegerPattern
             let set2 = fmap fromConcrete . Seq.fromList . Set.toList $ set1
                 patSet2 = Test.List.asTermLike set2
                 patToList =
                     mkApplySymbol toListSetSymbol [mkSet_ set1]
-                    & fromConcrete
+                        & fromConcrete
                 predicate = mkEquals_ patSet2 patToList
             expect <- evaluateT patSet2
-            (===) expect      =<< evaluateT patToList
+            (===) expect =<< evaluateT patToList
             (===) Pattern.top =<< evaluateT predicate
         )
 
@@ -531,17 +532,16 @@ test_size :: TestTree
 test_size =
     testPropertyWithSolver
         "SET.size is size"
-        (do
+        ( do
             set <- forAll genSetConcreteIntegerPattern
-            let
-                size = Set.size set
+            let size = Set.size set
                 patExpected = Test.Int.asInternal $ toInteger size
                 patActual =
                     mkApplySymbol sizeSetSymbol [mkSet_ set]
-                    & fromConcrete
+                        & fromConcrete
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluateT patExpected
-            (===) expect      =<< evaluateT patActual
+            (===) expect =<< evaluateT patActual
             (===) Pattern.top =<< evaluateT predicate
         )
 
@@ -549,35 +549,34 @@ test_intersection_unit :: TestTree
 test_intersection_unit =
     testPropertyWithSolver "intersection(as, unit()) === unit()" $ do
         as <- forAll genSetPattern
-        let
-            original = intersectionSet as unitSet
+        let original = intersectionSet as unitSet
             expect = Pattern.fromTermLike (asInternal Set.empty)
-        (===) expect      =<< evaluateT original
+        (===) expect =<< evaluateT original
         (===) Pattern.top =<< evaluateT (mkEquals_ original unitSet)
 
 test_intersection_idem :: TestTree
 test_intersection_idem =
     testPropertyWithSolver "intersection(as, as) === as" $ do
         as <- forAll genConcreteSet
-        let
-            termLike = mkSet_ as & fromConcrete
+        let termLike = mkSet_ as & fromConcrete
             original = intersectionSet termLike termLike
             expect = Pattern.fromTermLike (asInternal as)
-        (===) expect      =<< evaluateT original
+        (===) expect =<< evaluateT original
         (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
 
 test_list2set :: TestTree
 test_list2set =
     testPropertyWithSolver "List to Set" $ do
         someSeq <- forAll Test.List.genSeqInteger
-        let
-            set = Set.map Test.Int.asInternal $ Set.fromList
-                $ toList someSeq
+        let set =
+                Set.map Test.Int.asInternal $
+                    Set.fromList $
+                        toList someSeq
             termLike = mkSet_ set & fromConcrete
             input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
             original = list2setSet input
             expect = Pattern.fromTermLike (asInternal set)
-        (===) expect      =<< evaluateT original
+        (===) expect =<< evaluateT original
         (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
 
 test_inclusion :: [TestTree]
@@ -596,7 +595,7 @@ test_inclusion =
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
             (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top                =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion success: empty set <= any set"
@@ -605,7 +604,7 @@ test_inclusion =
             let patInclusion = inclusionSet unitSet patSomeSet
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
             (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top                =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: not (some nonempty set <= empty set)"
@@ -615,7 +614,7 @@ test_inclusion =
                 patInclusion = inclusionSet patSomeSet unitSet
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
             (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top                =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: lhs key not included in rhs set"
@@ -631,7 +630,7 @@ test_inclusion =
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
             (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top                 =<< evaluateT predicate
+            (===) Pattern.top =<< evaluateT predicate
         )
     ]
 
@@ -644,26 +643,27 @@ test_symbolic :: TestTree
 test_symbolic =
     testPropertyWithSolver
         "concat and elem are evaluated on symbolic keys"
-        (do
+        ( do
             values <- forAll (setVariableGen intSort)
             let patMap = asSymbolicPattern (Set.map mkElemVar values)
-                expect = Pattern.fromTermLike
-                    (asInternalNormalized
-                        (emptyNormalizedSet `with`
-                            map
-                                (VariableElement . mkElemVar)
-                                (Set.toList values)
+                expect =
+                    Pattern.fromTermLike
+                        ( asInternalNormalized
+                            ( emptyNormalizedSet
+                                `with` map
+                                    (VariableElement . mkElemVar)
+                                    (Set.toList values)
+                            )
                         )
-                    )
             if Set.null values
                 then discard
                 else (===) expect =<< evaluateT patMap
         )
 
 -- | Construct a pattern for a map which may have symbolic keys.
-asSymbolicPattern
-    :: Set (TermLike RewritingVariableName)
-    -> TermLike RewritingVariableName
+asSymbolicPattern ::
+    Set (TermLike RewritingVariableName) ->
+    TermLike RewritingVariableName
 asSymbolicPattern result
     | Set.null result =
         applyUnit
@@ -674,18 +674,17 @@ asSymbolicPattern result
     applyElement key = mkApplySymbol elementSetSymbol [key]
     applyConcat set1 set2 = mkApplySymbol concatSetSymbol [set1, set2]
 
-{- | Check that unifying a concrete set with itself results in the same set
- -}
+-- | Check that unifying a concrete set with itself results in the same set
 test_unifyConcreteIdem :: TestTree
 test_unifyConcreteIdem =
     testPropertyWithSolver
         "unify concrete set with itself"
-        (do
+        ( do
             patSet <- forAll genSetPattern
             let patAnd = mkAnd patSet patSet
                 predicate = mkEquals_ patSet patAnd
             expect <- evaluateT patSet
-            (===) expect      =<< evaluateT patAnd
+            (===) expect =<< evaluateT patAnd
             (===) Pattern.top =<< evaluateT predicate
         )
 
@@ -693,7 +692,7 @@ test_unifyConcreteDistinct :: TestTree
 test_unifyConcreteDistinct =
     testPropertyWithSolver
         "(dis)unify two distinct sets"
-        (do
+        ( do
             set1 <- forAll genSetConcreteIntegerPattern
             patElem <- forAll genConcreteIntegerPattern
             when (Set.member patElem set1) discard
@@ -710,7 +709,7 @@ test_unifyFramingVariable :: TestTree
 test_unifyFramingVariable =
     testPropertyWithoutSolver
         "unify a concrete set and a framed set"
-        (do
+        ( do
             framedElem <- forAll genConcreteIntegerPattern
             concreteSet <-
                 (<$>)
@@ -721,21 +720,23 @@ test_unifyFramingVariable =
             let framedSet = Set.singleton framedElem
                 patConcreteSet = mkSet_ concreteSet & fromConcrete
                 patFramedSet =
-                    mkApplySymbol concatSetSymbol
+                    mkApplySymbol
+                        concatSetSymbol
                         [ mkSet_ framedSet & fromConcrete
                         , mkElemVar frameVar
                         ]
                 remainder = Set.delete framedElem concreteSet
-            let
-                expect = Conditional
-                    { term = asInternal concreteSet
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.unsafeWrap
-                            [(inject frameVar, asInternal remainder)]
-                    }
-            actual <- lift $
-                evaluateToList (mkAnd patConcreteSet patFramedSet)
+            let expect =
+                    Conditional
+                        { term = asInternal concreteSet
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(inject frameVar, asInternal remainder)]
+                        }
+            actual <-
+                lift $
+                    evaluateToList (mkAnd patConcreteSet patFramedSet)
 
             (===) [expect] actual
         )
@@ -744,51 +745,60 @@ test_unifyFramingVariable =
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(absInt(X:Int)) Rest:Set`, or
 -- `Rest:Set SetItem(absInt(X:Int))`, respectively.
-selectFunctionPattern
-    :: InternalVariable variable
-    => ElementVariable variable         -- ^element variable
-    -> ElementVariable variable         -- ^set variable
-    -> (forall a . [a] -> [a])          -- ^scrambling function
-    -> TermLike variable
-selectFunctionPattern elementVar setVar permutation  =
+selectFunctionPattern ::
+    InternalVariable variable =>
+    -- |element variable
+    ElementVariable variable ->
+    -- |set variable
+    ElementVariable variable ->
+    -- |scrambling function
+    (forall a. [a] -> [a]) ->
+    TermLike variable
+selectFunctionPattern elementVar setVar permutation =
     mkApplySymbol concatSetSymbol $ permutation [singleton, mkElemVar setVar]
   where
-    element = mkApplySymbol absIntSymbol  [mkElemVar elementVar]
-    singleton = mkApplySymbol elementSetSymbol [ element ]
+    element = mkApplySymbol absIntSymbol [mkElemVar elementVar]
+    singleton = mkApplySymbol elementSetSymbol [element]
 
-makeElementVariable
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> TermLike variable
+makeElementVariable ::
+    InternalVariable variable =>
+    ElementVariable variable ->
+    TermLike variable
 makeElementVariable var =
     mkApplySymbol elementSetSymbol [mkElemVar var]
 
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
-selectPattern
-    :: InternalVariable variable
-    => ElementVariable variable           -- ^element variable
-    -> ElementVariable variable           -- ^set variable
-    -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike variable
-selectPattern elementVar setVar permutation  =
-    mkApplySymbol concatSetSymbol
-    $ permutation [makeElementVariable elementVar, mkElemVar setVar]
+selectPattern ::
+    InternalVariable variable =>
+    -- |element variable
+    ElementVariable variable ->
+    -- |set variable
+    ElementVariable variable ->
+    -- |scrambling function
+    (forall a. [a] -> [a]) ->
+    TermLike variable
+selectPattern elementVar setVar permutation =
+    mkApplySymbol concatSetSymbol $
+        permutation [makeElementVariable elementVar, mkElemVar setVar]
 
-addSelectElement
-    :: ElementVariable RewritingVariableName   -- ^element variable
-    -> TermLike RewritingVariableName          -- ^existingPattern
-    -> TermLike RewritingVariableName
-addSelectElement elementVar setPattern  =
+addSelectElement ::
+    -- |element variable
+    ElementVariable RewritingVariableName ->
+    -- |existingPattern
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+addSelectElement elementVar setPattern =
     mkApplySymbol concatSetSymbol [makeElementVariable elementVar, setPattern]
 
-distinctVars
-    :: InternalVariable variable
-    => [ElementVariable variable]
-    -> Bool
+distinctVars ::
+    InternalVariable variable =>
+    [ElementVariable variable] ->
+    Bool
 distinctVars vars = varNames == List.nub varNames
-  where varNames = map variableName vars
+  where
+    varNames = map variableName vars
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -800,10 +810,10 @@ test_unifySelectFromEmpty =
         when
             (variableName elementVar == variableName setVar)
             discard
-        let selectPat       = selectPattern elementVar setVar id
-            selectPatRev    = selectPattern elementVar setVar reverse
-            fnSelectPat     = selectFunctionPattern elementVar setVar id
-            fnSelectPatRev  = selectFunctionPattern elementVar setVar reverse
+        let selectPat = selectPattern elementVar setVar id
+            selectPatRev = selectPattern elementVar setVar reverse
+            fnSelectPat = selectFunctionPattern elementVar setVar id
+            fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
         -- Set.empty /\ SetItem(X:Int) Rest:Set
         emptySet `doesNotUnifyWith` selectPat
         selectPat `doesNotUnifyWith` emptySet
@@ -821,13 +831,13 @@ test_unifySelectFromEmpty =
     doesNotUnifyWith pat1 pat2 = do
         annotateShow pat1
         annotateShow pat2
-        (===) Pattern.bottom =<< evaluateT(mkAnd pat1 pat2)
+        (===) Pattern.bottom =<< evaluateT (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
     testPropertyWithoutSolver
         "unify a singleton set with a variable selection pattern"
-        (do
+        ( do
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
@@ -835,12 +845,12 @@ test_unifySelectFromSingleton =
                 forAll (standaloneGen $ configElementVariableGen setSort)
             when
                 ( unElementVariableName (variableName elementVar)
-                == unElementVariableName (variableName setVar)
+                    == unElementVariableName (variableName setVar)
                 )
                 discard
-            let selectPat       = selectPattern elementVar setVar id
-                selectPatRev    = selectPattern elementVar setVar reverse
-                singleton       = asInternal (Set.singleton concreteElem)
+            let selectPat = selectPattern elementVar setVar id
+                selectPatRev = selectPattern elementVar setVar reverse
+                singleton = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcrete concreteElem
                 expect =
                     Conditional
@@ -864,12 +874,12 @@ test_unifySelectFromSingletonWithoutLeftovers :: TestTree
 test_unifySelectFromSingletonWithoutLeftovers =
     testPropertyWithoutSolver
         "unify a singleton set with an element variable"
-        (do
+        ( do
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
-            let selectPat       = makeElementVariable elementVar
-                singleton       = asInternal (Set.singleton concreteElem)
+            let selectPat = makeElementVariable elementVar
+                singleton = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcrete concreteElem
                 expect =
                     Conditional
@@ -877,7 +887,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (inject elementVar, elemStepPattern) ]
+                                [(inject elementVar, elemStepPattern)]
                         }
             -- { 5 } /\ SetItem(X:Int)
             (singleton `unifiesWith` selectPat) expect
@@ -888,7 +898,7 @@ test_unifySelectFromTwoElementSet :: TestTree
 test_unifySelectFromTwoElementSet =
     testPropertyWithoutSolver
         "unify a two element set with a variable selection pattern"
-        (do
+        ( do
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
             when (concreteElem1 == concreteElem2) discard
@@ -899,7 +909,7 @@ test_unifySelectFromTwoElementSet =
                 forAll (standaloneGen $ configElementVariableGen setSort)
             when
                 ( unElementVariableName (variableName elementVar)
-                == unElementVariableName (variableName setVar)
+                    == unElementVariableName (variableName setVar)
                 )
                 discard
 
@@ -914,7 +924,8 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( inject setVar
+                                [
+                                    ( inject setVar
                                     , asInternal (Set.fromList [concreteElem2])
                                     )
                                 , (inject elementVar, elemStepPattern1)
@@ -926,7 +937,8 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( inject setVar
+                                [
+                                    ( inject setVar
                                     , asInternal (Set.fromList [concreteElem1])
                                     )
                                 , (inject elementVar, elemStepPattern2)
@@ -948,7 +960,7 @@ test_unifySelectTwoFromTwoElementSet :: TestTree
 test_unifySelectTwoFromTwoElementSet =
     testPropertyWithoutSolver
         "unify a two element set with a variable selection pattern"
-        (do
+        ( do
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
             when (concreteElem1 == concreteElem2) discard
@@ -962,29 +974,30 @@ test_unifySelectTwoFromTwoElementSet =
             let allVars = [elementVar1, elementVar2, setVar]
             unless (distinctVars allVars) discard
 
-            let
-                selectPat =
-                    addSelectElement elementVar1
-                    $ addSelectElement elementVar2
-                    $ mkElemVar setVar
+            let selectPat =
+                    addSelectElement elementVar1 $
+                        addSelectElement elementVar2 $
+                            mkElemVar setVar
                 set = asInternal (Set.fromList [concreteElem1, concreteElem2])
                 elemStepPattern1 = fromConcrete concreteElem1
                 elemStepPattern2 = fromConcrete concreteElem2
-                expect = do -- list monad
+                expect = do
+                    -- list monad
                     (elementUnifier1, elementUnifier2) <-
                         [ (elemStepPattern1, elemStepPattern2)
-                        , (elemStepPattern2, elemStepPattern1)
-                        ]
-                    return Conditional
-                        { term = set
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject setVar, asInternal Set.empty)
-                                , (inject elementVar1, elementUnifier1)
-                                , (inject elementVar2, elementUnifier2)
-                                ]
-                        }
+                            , (elemStepPattern2, elemStepPattern1)
+                            ]
+                    return
+                        Conditional
+                            { term = set
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject setVar, asInternal Set.empty)
+                                    , (inject elementVar1, elementUnifier1)
+                                    , (inject elementVar2, elementUnifier2)
+                                    ]
+                            }
             -- { 5, 6 } /\ SetItem(X:Int) SetItem(Y:Int) Rest:Set
             (set `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` set) expect
@@ -994,7 +1007,7 @@ test_unifyConcatElemVarVsElemSet :: TestTree
 test_unifyConcatElemVarVsElemSet =
     testPropertyWithoutSolver
         "unify two set concatenations"
-        (do
+        ( do
             setVar <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
@@ -1009,30 +1022,33 @@ test_unifyConcatElemVarVsElemSet =
 
             key <- forAll genIntegerKey
             let set = asInternal (Set.fromList [from key])
-                elementSet' = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
+                elementSet' =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
                 patSet = addSelectElement elementVar2 set
-                expectedPatSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-                    `with` key
+                expectedPatSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+                            `with` key
                 selectPat = addSelectElement elementVar1 (mkElemVar setVar)
-            let
-                expect = do  -- list monad
+            let expect = do
+                    -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkElemVar elementVar2, set)
-                        , (from key, elementSet')
-                        ]
-                    return Conditional
-                        { term = expectedPatSet
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject setVar, setUnifier)
-                                , (inject elementVar1, elemUnifier)
-                                ]
-                        }
+                            , (from key, elementSet')
+                            ]
+                    return
+                        Conditional
+                            { term = expectedPatSet
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject setVar, setUnifier)
+                                    , (inject elementVar1, elemUnifier)
+                                    ]
+                            }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1042,7 +1058,7 @@ test_unifyConcatElemVarVsElemElem :: TestTree
 test_unifyConcatElemVarVsElemElem =
     testPropertyWithoutSolver
         "unify concat(elem(X), S) and concat(elem(Y), elem(Z))"
-        (do
+        ( do
             setVar <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
@@ -1059,31 +1075,34 @@ test_unifyConcatElemVarVsElemElem =
 
             let elementSet2Normalized =
                     emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
+                        `with` VariableElement (mkElemVar elementVar2)
                 elementSet2 = asInternalNormalized elementSet2Normalized
-                elementSet3 = asInternalNormalized $
-                    emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar3)
+                elementSet3 =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar3)
                 patSet = addSelectElement elementVar2 elementSet3
-                expectedPatSet = asInternalNormalized $
-                    elementSet2Normalized
-                    `with` VariableElement (mkElemVar elementVar3)
+                expectedPatSet =
+                    asInternalNormalized $
+                        elementSet2Normalized
+                            `with` VariableElement (mkElemVar elementVar3)
                 selectPat = addSelectElement elementVar1 (mkElemVar setVar)
-            let
-                expect = do  -- list monad
+            let expect = do
+                    -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkElemVar elementVar2, elementSet3)
-                        , (mkElemVar elementVar3, elementSet2)
-                        ]
-                    return Conditional
-                        { term = expectedPatSet
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject setVar, setUnifier)
-                                , (inject elementVar1, elemUnifier)
-                                ]
-                        }
+                            , (mkElemVar elementVar3, elementSet2)
+                            ]
+                    return
+                        Conditional
+                            { term = expectedPatSet
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject setVar, setUnifier)
+                                    , (inject elementVar1, elemUnifier)
+                                    ]
+                            }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1093,7 +1112,7 @@ test_unifyConcatElemElemVsElemConcrete :: TestTree
 test_unifyConcatElemElemVsElemConcrete =
     testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) and concat(elem(Z), 1)"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1110,25 +1129,27 @@ test_unifyConcatElemElemVsElemConcrete =
                 elementSet2 = makeElementVariable elementVar2
                 selectPat = addSelectElement elementVar1 elementSet2
                 patSet = addSelectElement elementVar3 set
-                expectedSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar3)
-                    `with` key
-            let
-                expect = do  -- list monad
+                expectedSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar3)
+                            `with` key
+            let expect = do
+                    -- list monad
                     (elemUnifier1, elemUnifier2) <-
                         [ (mkElemVar elementVar3, from key)
-                        , (from key, mkElemVar elementVar3)
-                        ]
-                    return Conditional
-                        { term = expectedSet
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject elementVar1, elemUnifier1)
-                                , (inject elementVar2, elemUnifier2)
-                                ]
-                        }
+                            , (from key, mkElemVar elementVar3)
+                            ]
+                    return
+                        Conditional
+                            { term = expectedSet
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject elementVar1, elemUnifier1)
+                                    , (inject elementVar2, elemUnifier2)
+                                    ]
+                            }
             -- { X:Int, Y:Int } /\ { Z:Int, 6 }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1138,7 +1159,7 @@ test_unifyConcatElemElemVsElemElem :: TestTree
 test_unifyConcatElemElemVsElemElem =
     testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) and concat(elem(Z), elem(T))"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1156,25 +1177,26 @@ test_unifyConcatElemElemVsElemElem =
             let elementSet2 = makeElementVariable elementVar2
                 selectPat = addSelectElement elementVar1 elementSet2
                 patSet =
-                    asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar4)
-                    `with` VariableElement (mkElemVar elementVar3)
-            let
-                expect = do  -- list monad
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar4)
+                            `with` VariableElement (mkElemVar elementVar3)
+            let expect = do
+                    -- list monad
                     (elemUnifier1, elemUnifier2) <-
                         [ (mkElemVar elementVar3, mkElemVar elementVar4)
-                        , (mkElemVar elementVar4, mkElemVar elementVar3)
-                        ]
-                    return Conditional
-                        { term = patSet
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject elementVar1, elemUnifier1)
-                                , (inject elementVar2, elemUnifier2)
-                                ]
-                        }
+                            , (mkElemVar elementVar4, mkElemVar elementVar3)
+                            ]
+                    return
+                        Conditional
+                            { term = patSet
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject elementVar1, elemUnifier1)
+                                    , (inject elementVar2, elemUnifier2)
+                                    ]
+                            }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1184,7 +1206,7 @@ test_unifyConcatElemConcatVsElemConcrete :: TestTree
 test_unifyConcatElemConcatVsElemConcrete =
     testPropertyWithoutSolver
         "unify concat(elem(X), concat(elem(Y), S)) and concat(elem(Z), {6})"
-        (do
+        ( do
             setVar <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
@@ -1211,30 +1233,31 @@ test_unifyConcatElemConcatVsElemConcrete =
                 elemStepPattern2 = fromConcrete concreteElem2
                 elemStepPattern3 = fromConcrete concreteElem3
                 selectPat =
-                    addSelectElement elementVar1
-                    $ addSelectElement elementVar2 set1
+                    addSelectElement elementVar1 $
+                        addSelectElement elementVar2 set1
                 patSet = addSelectElement elementVar3 set2
                 expectedPat =
                     asInternal
-                        (Set.fromList
+                        ( Set.fromList
                             [concreteElem1, concreteElem2, concreteElem3]
                         )
-            let
-                expect = do  -- list monad
+            let expect = do
+                    -- list monad
                     (elemUnifier1, elemUnifier2) <-
                         [ (elemStepPattern2, elemStepPattern3)
-                        , (elemStepPattern3, elemStepPattern2)
-                        ]
-                    return Conditional
-                        { term = expectedPat
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject elementVar1, elemUnifier1)
-                                , (inject elementVar2, elemUnifier2)
-                                , (inject elementVar3, elemStepPattern1)
-                                ]
-                        }
+                            , (elemStepPattern3, elemStepPattern2)
+                            ]
+                    return
+                        Conditional
+                            { term = expectedPat
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject elementVar1, elemUnifier1)
+                                    , (inject elementVar2, elemUnifier2)
+                                    , (inject elementVar3, elemStepPattern1)
+                                    ]
+                            }
             -- SetItem(X:Int) SetItem(Y:Int) {5} /\ { Z:Int, 6, 7 }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1244,7 +1267,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete1 =
     testPropertyWithoutSolver
         "unify concat(elem(X), {6}) and concat(elem(Y), {6})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1258,18 +1281,18 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
             let set = mkSet_ [from key] & fromConcrete
                 selectPat = addSelectElement elementVar1 set
                 patSet = addSelectElement elementVar2 set
-                expectedSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-                    `with` key
-            let
-                expect =
+                expectedSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+                            `with` key
+            let expect =
                     [ Conditional
                         { term = expectedSet
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (inject elementVar1, mkElemVar elementVar2) ]
+                                [(inject elementVar1, mkElemVar elementVar2)]
                         }
                     ]
             -- { X:Int, 6 } /\ { Y:Int, 6 }
@@ -1281,7 +1304,7 @@ test_unifyConcatElemConcreteVsElemConcrete2 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete2 =
     testPropertyWithoutSolver
         "unify concat(elem(X), {5}) and concat(elem(Y), {6})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1302,8 +1325,7 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
                 patSet = addSelectElement elementVar2 set2
                 expectedSet =
                     asInternal (Set.fromList [concreteElem1, concreteElem2])
-            let
-                expect =
+            let expect =
                     [ Conditional
                         { term = expectedSet
                         , predicate = makeTruePredicate
@@ -1323,7 +1345,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete3 =
     testPropertyWithoutSolver
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {5, 7})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1347,11 +1369,10 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
                 patSet = addSelectElement elementVar2 set2
                 expectedSet =
                     asInternal
-                        (Set.fromList
+                        ( Set.fromList
                             [concreteElem1, concreteElem2, concreteElem3]
                         )
-            let
-                expect =
+            let expect =
                     [ Conditional
                         { term = expectedSet
                         , predicate = makeTruePredicate
@@ -1371,7 +1392,7 @@ test_unifyConcatElemConcreteVsElemConcrete4 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete4 =
     testPropertyWithoutSolver
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {7, 8})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1393,8 +1414,7 @@ test_unifyConcatElemConcreteVsElemConcrete4 =
                 set2 = mkSet_ [concreteElem3, concreteElem4] & fromConcrete
                 selectPat = addSelectElement elementVar1 set1
                 patSet = addSelectElement elementVar2 set2
-            let
-                expect = []
+            let expect = []
             -- { X:Int, 5, 6 } /\ { Y:Int, 7, 8 }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1404,7 +1424,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete5 =
     testPropertyWithoutSolver
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {5, 6})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1422,18 +1442,18 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
             let set = mkSet_ [from key1, from key2] & fromConcrete
                 selectPat = addSelectElement elementVar1 set
                 patSet = addSelectElement elementVar2 set
-                expectedSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-                    `with` [key1, key2]
-            let
-                expect =
+                expectedSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+                            `with` [key1, key2]
+            let expect =
                     [ Conditional
                         { term = expectedSet
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (inject elementVar1, mkElemVar elementVar2) ]
+                                [(inject elementVar1, mkElemVar elementVar2)]
                         }
                     ]
             -- { X:Int, 5, 6 } /\ { Y:Int, 5, 6 }
@@ -1445,7 +1465,7 @@ test_unifyConcatElemVsElem :: TestTree
 test_unifyConcatElemVsElem =
     testPropertyWithoutSolver
         "unify elem(X) and elem(Y)"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1455,17 +1475,17 @@ test_unifyConcatElemVsElem =
             let [elementVar1, elementVar2] = List.sort allVars
 
             let selectPat = makeElementVariable elementVar1
-                patSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-            let
-                expect =
+                patSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+            let expect =
                     [ Conditional
                         { term = patSet
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (inject elementVar1, mkElemVar elementVar2) ]
+                                [(inject elementVar1, mkElemVar elementVar2)]
                         }
                     ]
             -- { X:Int } /\ { Y:Int }
@@ -1477,7 +1497,7 @@ test_unifyConcatElemVsElemConcrete1 :: TestTree
 test_unifyConcatElemVsElemConcrete1 =
     testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), {})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1488,17 +1508,17 @@ test_unifyConcatElemVsElemConcrete1 =
 
             let set = mkSet_ (Set.fromList [])
                 selectPat = addSelectElement elementVar1 set
-                patSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-            let
-                expect =
+                patSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+            let expect =
                     [ Conditional
                         { term = patSet
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (inject elementVar1, mkElemVar elementVar2) ]
+                                [(inject elementVar1, mkElemVar elementVar2)]
                         }
                     ]
             -- { X:Int } /\ { Y:Int, {} }
@@ -1510,7 +1530,7 @@ test_unifyConcatElemVsElemConcrete2 :: TestTree
 test_unifyConcatElemVsElemConcrete2 =
     testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), {5})"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1524,8 +1544,7 @@ test_unifyConcatElemVsElemConcrete2 =
             let set = asInternal (Set.fromList [concreteElem])
                 selectPat = addSelectElement elementVar1 set
                 patSet = makeElementVariable elementVar2
-            let
-                expect = []
+            let expect = []
             -- { X:Int } /\ { Y:Int, 5 }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1535,7 +1554,7 @@ test_unifyConcatElemVsElemElem :: TestTree
 test_unifyConcatElemVsElemElem =
     testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), elem(Z))"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1551,8 +1570,7 @@ test_unifyConcatElemVsElemElem =
                         elementVar1
                         (makeElementVariable elementVar2)
                 patSet = makeElementVariable elementVar3
-            let
-                expect = []
+            let expect = []
             -- { X:Int } /\ { Y:Int, Z:Int }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1562,7 +1580,7 @@ test_unifyConcatElemVsElemConcat :: TestTree
 test_unifyConcatElemVsElemConcat =
     testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), concat(elem(Z), {5}))"
-        (do
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1581,8 +1599,7 @@ test_unifyConcatElemVsElemConcat =
                     addSelectElement
                         elementVar2
                         (addSelectElement elementVar3 set)
-            let
-                expect = []
+            let expect = []
             -- { X:Int } /\ { Y:Int, Z:Int, 5 }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1592,7 +1609,7 @@ test_unifyConcatElemVsElemVar :: TestTree
 test_unifyConcatElemVsElemVar =
     testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), Z)"
-        (do
+        ( do
             setVar <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
@@ -1605,12 +1622,12 @@ test_unifyConcatElemVsElemVar =
             let [elementVar1, elementVar2] = List.sort elemVars
 
             let patSet = makeElementVariable elementVar1
-                expectedSet = asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
+                expectedSet =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
                 selectPat = addSelectElement elementVar2 (mkElemVar setVar)
-            let
-                expect =
+            let expect =
                     [ Conditional
                         { term = expectedSet
                         , predicate = makeTruePredicate
@@ -1630,8 +1647,8 @@ test_unifyConcatElemElemVsElemConcat :: TestTree
 test_unifyConcatElemElemVsElemConcat =
     testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) \
-            \ and concat(elem(Z), concat(elem(T), {5}))"
-        (do
+        \ and concat(elem(Z), concat(elem(T), {5}))"
+        ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
@@ -1656,8 +1673,7 @@ test_unifyConcatElemElemVsElemConcat =
                     addSelectElement
                         elementVar3
                         (addSelectElement elementVar4 set)
-            let
-                expect = []
+            let expect = []
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int, 5 }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1667,8 +1683,8 @@ test_unifyConcatElemElemVsElemConcatSet :: TestTree
 test_unifyConcatElemElemVsElemConcatSet =
     testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) \
-            \ and concat(elem(Z), concat(elem(T), U))"
-        (do
+        \ and concat(elem(Z), concat(elem(T), U))"
+        ( do
             setVar <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
@@ -1686,30 +1702,31 @@ test_unifyConcatElemElemVsElemConcatSet =
                     List.sort elemVars
 
             let patSet =
-                    asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar4)
-                    `with` VariableElement (mkElemVar elementVar3)
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar4)
+                            `with` VariableElement (mkElemVar elementVar3)
 
                 selectPat =
-                    addSelectElement elementVar1
-                    $ addSelectElement elementVar2 (mkElemVar setVar)
-            let
-                expect = do  -- list monad
+                    addSelectElement elementVar1 $
+                        addSelectElement elementVar2 (mkElemVar setVar)
+            let expect = do
+                    -- list monad
                     (firstUnifier, secondUnifier) <-
                         [ (mkElemVar elementVar3, mkElemVar elementVar4)
-                        , (mkElemVar elementVar4, mkElemVar elementVar3)
-                        ]
-                    return Conditional
-                        { term = patSet
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (inject elementVar1, firstUnifier)
-                                , (inject elementVar2, secondUnifier)
-                                , (inject setVar, asInternal Set.empty)
-                                ]
-                        }
+                            , (mkElemVar elementVar4, mkElemVar elementVar3)
+                            ]
+                    return
+                        Conditional
+                            { term = patSet
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                Substitution.unsafeWrap
+                                    [ (inject elementVar1, firstUnifier)
+                                    , (inject elementVar2, secondUnifier)
+                                    , (inject setVar, asInternal Set.empty)
+                                    ]
+                            }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int, U:Set }
             (patSet `unifiesWithMulti` selectPat) expect
             (selectPat `unifiesWithMulti` patSet) expect
@@ -1719,7 +1736,7 @@ test_unifyFnSelectFromSingleton :: TestTree
 test_unifyFnSelectFromSingleton =
     testPropertyWithoutSolver
         "unify a singleton set with a function selection pattern"
-        (do
+        ( do
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
@@ -1728,10 +1745,10 @@ test_unifyFnSelectFromSingleton =
             when
                 (variableName elementVar == variableName setVar)
                 discard
-            let fnSelectPat    = selectFunctionPattern elementVar setVar id
+            let fnSelectPat = selectFunctionPattern elementVar setVar id
                 fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
-                singleton      = asInternal (Set.singleton concreteElem)
-                elemStepPatt   = fromConcrete concreteElem
+                singleton = asInternal (Set.singleton concreteElem)
+                elemStepPatt = fromConcrete concreteElem
                 elementVarPatt = mkApplySymbol absIntSymbol [mkElemVar elementVar]
                 expect =
                     [ Conditional
@@ -1751,28 +1768,26 @@ test_unifyFnSelectFromSingleton =
             -- { 5 } /\ Rest:Set SetItem(absInt(X:Int))
             (singleton `unifiesWithMulti` fnSelectPatRev) expect
             (fnSelectPatRev `unifiesWithMulti` singleton) expect
-         )
+        )
 
 test_unify_concat_xSet_unit_unit_vs_unit :: [TestTree]
 test_unify_concat_xSet_unit_unit_vs_unit =
     [ (concatSet (mkElemVar xSet) unitSet, internalUnit)
-        `unifiedBy`
-        [(inject xSet, internalUnit)]
+        `unifiedBy` [(inject xSet, internalUnit)]
         $ "concat(xSet:Set, unit()) ~ unit()"
     ]
   where
     xSet =
         mkElementVariable "xSet" setSort
-        & mapElementVariable (pure mkConfigVariable)
+            & mapElementVariable (pure mkConfigVariable)
     internalUnit = asInternal Set.empty
-
 
 test_unifyMultipleIdenticalOpaqueSets :: TestTree
 test_unifyMultipleIdenticalOpaqueSets =
     testPropertyWithoutSolver
         "unify concat(elem(X), concat(U, concat(V, V))) \
-            \ and concat(elem(y), concat(U, concat(V, concat(T, U))))"
-        (do
+        \ and concat(elem(y), concat(U, concat(V, concat(T, U))))"
+        ( do
             sVar1 <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
             sVar2 <-
@@ -1791,39 +1806,36 @@ test_unifyMultipleIdenticalOpaqueSets =
                 [setVar1, setVar2, setVar3] = List.sort setVars
 
             let patSet =
-                    asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar1)
-                    `with`
-                        [ OpaqueSet (mkElemVar setVar1)
-                        , OpaqueSet (mkElemVar setVar2)
-                        , OpaqueSet (mkElemVar setVar2)
-                        ]
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar1)
+                            `with` [ OpaqueSet (mkElemVar setVar1)
+                                   , OpaqueSet (mkElemVar setVar2)
+                                   , OpaqueSet (mkElemVar setVar2)
+                                   ]
                 selectPat =
-                    asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-                    `with`
-                        [ OpaqueSet (mkElemVar setVar1)
-                        , OpaqueSet (mkElemVar setVar2)
-                        , OpaqueSet (mkElemVar setVar3)
-                        , OpaqueSet (mkElemVar setVar1)
-                        ]
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+                            `with` [ OpaqueSet (mkElemVar setVar1)
+                                   , OpaqueSet (mkElemVar setVar2)
+                                   , OpaqueSet (mkElemVar setVar3)
+                                   , OpaqueSet (mkElemVar setVar1)
+                                   ]
                 expectedPat =
-                    asInternalNormalized
-                    $ emptyNormalizedSet
-                    `with` VariableElement (mkElemVar elementVar2)
-                    `with`
-                        -- These duplicates must be kept in case any of the sets
-                        -- turns out to be non-empty, in which case the
-                        -- unification result is bottom.
-                        [ OpaqueSet (mkElemVar setVar1)
-                        , OpaqueSet (mkElemVar setVar1)
-                        , OpaqueSet (mkElemVar setVar2)
-                        , OpaqueSet (mkElemVar setVar2)
-                        ]
-            let
-                expect =
+                    asInternalNormalized $
+                        emptyNormalizedSet
+                            `with` VariableElement (mkElemVar elementVar2)
+                            `with`
+                            -- These duplicates must be kept in case any of the sets
+                            -- turns out to be non-empty, in which case the
+                            -- unification result is bottom.
+                            [ OpaqueSet (mkElemVar setVar1)
+                            , OpaqueSet (mkElemVar setVar1)
+                            , OpaqueSet (mkElemVar setVar2)
+                            , OpaqueSet (mkElemVar setVar2)
+                            ]
+            let expect =
                     [ Conditional
                         { term = expectedPat
                         , predicate = makeTruePredicate
@@ -1839,7 +1851,6 @@ test_unifyMultipleIdenticalOpaqueSets =
             (selectPat `unifiesWithMulti` patSet) expect
         )
 
-
 {- | Unify a concrete Set with symbolic-keyed Set.
 
 @
@@ -1849,8 +1860,7 @@ test_unifyMultipleIdenticalOpaqueSets =
 Iterated unification must turn the symbolic key @x@ into a concrete key by
 unifying the first element of the pair. This also requires that Set unification
 return a partial result for unifying the second element of the pair.
-
- -}
+-}
 test_concretizeKeys :: TestTree
 test_concretizeKeys =
     testCaseWithoutSMT "unify Set with symbolic keys" $ do
@@ -1859,7 +1869,7 @@ test_concretizeKeys =
   where
     x =
         mkElementVariable (testId "x") intSort
-        & mapElementVariable (pure mkConfigVariable)
+            & mapElementVariable (pure mkConfigVariable)
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
@@ -1872,12 +1882,15 @@ test_concretizeKeys =
     expected =
         Conditional
             { term =
-                mkPair intSort setSort
+                mkPair
+                    intSort
+                    setSort
                     symbolicKey
                     (mkSet_ [concreteKey])
             , predicate = Predicate.makeTruePredicate
-            , substitution = Substitution.unsafeWrap
-                [ (inject x, symbolicKey) ]
+            , substitution =
+                Substitution.unsafeWrap
+                    [(inject x, symbolicKey)]
             }
 
 {- | Unify a concrete Set with symbolic-keyed Set in an axiom
@@ -1895,8 +1908,7 @@ yielding @1@.
 Iterated unification must turn the symbolic key @x@ into a concrete key by
 unifying the first element of the pair. This also requires that Set unification
 return a partial result for unifying the second element of the pair.
-
- -}
+-}
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
     testCaseWithoutSMT "unify Set with symbolic keys in axiom" $ do
@@ -1911,20 +1923,22 @@ test_concretizeKeysAxiom =
     symbolicSet = asSymbolicPattern $ Set.fromList [x]
     concreteSet = mkSet_ $ Set.fromList [concreteKey]
     axiom =
-        RewriteRule RulePattern
-            { left = mkPair intSort setSort x symbolicSet
-            , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate
-            , rhs = injectTermIntoRHS x
-            , attributes = Default.def
-            }
-    expected = MultiOr.make
-        [ Conditional
-            { term = symbolicKey
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+        RewriteRule
+            RulePattern
+                { left = mkPair intSort setSort x symbolicSet
+                , antiLeft = Nothing
+                , requires = Predicate.makeTruePredicate
+                , rhs = injectTermIntoRHS x
+                , attributes = Default.def
+                }
+    expected =
+        MultiOr.make
+            [ Conditional
+                { term = symbolicKey
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            ]
 
 test_isBuiltin :: [TestTree]
 test_isBuiltin =
@@ -1946,28 +1960,28 @@ hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 
 -- use as (pat1 `unifiesWith` pat2) expect
-unifiesWith
-    :: HasCallStack
-    => TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> PropertyT NoSMT ()
+unifiesWith ::
+    HasCallStack =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    PropertyT NoSMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
 -- use as (pat1 `unifiesWithMulti` pat2) expect
-unifiesWithMulti
-    :: HasCallStack
-    => TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> [Pattern RewritingVariableName]
-    -> PropertyT NoSMT ()
+unifiesWithMulti ::
+    HasCallStack =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    PropertyT NoSMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
   where
     compareElements [] actuals = [] === actuals
-    compareElements expecteds [] =  expecteds === []
+    compareElements expecteds [] = expecteds === []
     compareElements (expected : expecteds) (actual : actuals) = do
         compareElement expected actual
         compareElements expecteds actuals
@@ -1981,64 +1995,64 @@ unifiesWithMulti pat1 pat2 expectedResults = do
             { term = actualTerm
             , predicate = actualPredicate
             , substitution = actualSubstitution
-            }
-      = do
-        Substitution.toMap expectedSubstitution
-            === Substitution.toMap actualSubstitution
-        expectedPredicate === actualPredicate
-        expectedTerm === actualTerm
+            } =
+            do
+                Substitution.toMap expectedSubstitution
+                    === Substitution.toMap actualSubstitution
+                expectedPredicate === actualPredicate
+                expectedTerm === actualTerm
 
-unifiedBy
-    :: HasCallStack
-    => (TermLike RewritingVariableName, TermLike RewritingVariableName)
-    -> [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)]
-    -> TestName
-    -> TestTree
+unifiedBy ::
+    HasCallStack =>
+    (TermLike RewritingVariableName, TermLike RewritingVariableName) ->
+    [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
+    TestName ->
+    TestTree
 unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
     testCase testName $ do
         actuals <-
-            runSimplifier testEnv
-            $ runUnifierT Not.notSimplifier
-            $ termUnification Not.notSimplifier termLike1 termLike2
+            runSimplifier testEnv $
+                runUnifierT Not.notSimplifier $
+                    termUnification Not.notSimplifier termLike1 termLike2
         liftIO $ do
             actual <- expectOne actuals
             assertBool "expected \\top predicate" (isTop $ predicate actual)
             assertEqual "" expect (substitution actual)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal
-    :: InternalVariable variable
-    => Set (TermLike Concrete)
-    -> TermLike variable
+asInternal ::
+    InternalVariable variable =>
+    Set (TermLike Concrete) ->
+    TermLike variable
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
-    . Map.fromSet (const SetValue)
-    . Set.map (retractKey >>> Maybe.fromJust)
+        . Map.fromSet (const SetValue)
+        . Set.map (retractKey >>> Maybe.fromJust)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternalNormalized
-    :: InternalVariable variable
-    => NormalizedAc NormalizedSet Key (TermLike variable)
-    -> TermLike variable
+asInternalNormalized ::
+    InternalVariable variable =>
+    NormalizedAc NormalizedSet Key (TermLike variable) ->
+    TermLike variable
 asInternalNormalized = Ac.asInternal testMetadataTools setSort . wrapAc
 
 {- | Construct a 'NormalizedSet' from a list of elements and opaque terms.
 
 It is an error if the collection cannot be normalized.
-
- -}
-normalizedSet
-    :: [TermLike RewritingVariableName]
-    -- ^ (abstract or concrete) elements
-    -> [TermLike RewritingVariableName]
-    -- ^ opaque terms
-    -> NormalizedSet Key (TermLike RewritingVariableName)
+-}
+normalizedSet ::
+    -- | (abstract or concrete) elements
+    [TermLike RewritingVariableName] ->
+    -- | opaque terms
+    [TermLike RewritingVariableName] ->
+    NormalizedSet Key (TermLike RewritingVariableName)
 normalizedSet elements opaque =
-    Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
-        { elementsWithVariables = SetElement <$> elements
-        , concreteElements = Map.empty
-        , opaque
-        }
+    Maybe.fromJust . Ac.renormalize . wrapAc $
+        NormalizedAc
+            { elementsWithVariables = SetElement <$> elements
+            , concreteElements = Map.empty
+            , opaque
+            }
 
 -- * Constructors
 
@@ -2049,7 +2063,7 @@ setIntersectionsAreEmpty :: Ord a => [Set a] -> Bool
 setIntersectionsAreEmpty [] = True
 setIntersectionsAreEmpty (set : sets) =
     setIntersectionsAreEmpty sets
-    && setIntersectionsHelper sets
+        && setIntersectionsHelper sets
   where
     setIntersectionsHelper =
         List.foldl'

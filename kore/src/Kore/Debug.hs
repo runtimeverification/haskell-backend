@@ -1,3 +1,6 @@
+{-# LANGUAGE Strict #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -39,42 +42,37 @@ It also works for test error messages:
 
 Enjoy.
 -}
-{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
-{-# LANGUAGE Strict #-}
-
-module Kore.Debug
-    (
+module Kore.Debug (
     -- * Tracing
-      traceEither
-    , traceExceptT
-    , traceMaybe
-    , traceMaybeT
-    , traceMaybeTS
-    , traceNonErrorMonad
-    , traceFunction
-    , applyWhen
-    , debugArg
-    , DebugPlace (..)
-    , DebugResult (..)
-    -- * Re-exports
-    , module Debug
-    ) where
+    traceEither,
+    traceExceptT,
+    traceMaybe,
+    traceMaybeT,
+    traceMaybeTS,
+    traceNonErrorMonad,
+    traceFunction,
+    applyWhen,
+    debugArg,
+    DebugPlace (..),
+    DebugResult (..),
 
-import Prelude.Kore
+    -- * Re-exports
+    module Debug,
+) where
 
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
-import Data.List
-    ( intercalate
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.List (
+    intercalate,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-
 import Debug
+import Prelude.Kore
 
-{-| Identifiers for places where we're doing debug.
+{- | Identifiers for places where we're doing debug.
 
 The intent id to use D_Generic for places where we're adding temporary debug
 statements and the others for permanent debug statements
@@ -91,29 +89,28 @@ data DebugPlace
     | D_SMT_referenceCheckSymbol
     | D_SMT_resolveSort
     | D_SMT_resolveSymbol
-  deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
 
-data DebugArg = DebugArg { name :: !String, value :: !String }
+data DebugArg = DebugArg {name :: !String, value :: !String}
 
 instance Show DebugArg where
-    show DebugArg {name, value} = name ++ "=" ++ show value
+    show DebugArg{name, value} = name ++ "=" ++ show value
 
-{-| Whether to dispay the function/action result when the function ends.
--}
+-- | Whether to dispay the function/action result when the function ends.
 data DebugResult = DebugResult | DebugNoResult
-  deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
 
-{-| Wraps a field in order to be displayed when debugging -}
+-- | Wraps a field in order to be displayed when debugging
 debugArg :: Show a => String -> a -> DebugArg
-debugArg n v = DebugArg {name = n, value = show v}
+debugArg n v = DebugArg{name = n, value = show v}
 
-{-|Applies a function only when the condition is met.  Useful for conditional
+{- |Applies a function only when the condition is met.  Useful for conditional
 debugging, among other things.
 -}
 applyWhen :: Bool -> (a -> a) -> (a -> a)
 applyWhen b f = if b then f else id
 
-{-| Maps debug places to their debug settings.
+{- | Maps debug places to their debug settings.
 
 If a place other than `D_Generic` is missing from this map, we will not log
 debugging information for that place.
@@ -121,44 +118,51 @@ debugging information for that place.
 Example:
 
 enabledPlaces = onePathWithFunctionNames
-
 -}
 enabledPlaces :: Map DebugPlace DebugResult
 enabledPlaces = Map.empty
 
 smt :: Map DebugPlace DebugResult
 smt =
-    id
-    $ Map.insert D_SMT_command DebugResult
-    Map.empty
+    id $
+        Map.insert
+            D_SMT_command
+            DebugResult
+            Map.empty
 
 smtStartup :: Map DebugPlace DebugResult
 smtStartup =
-    id
-    $ Map.insert D_SMT_referenceCheckSort DebugResult
-    $ Map.insert D_SMT_referenceCheckSymbol DebugResult
-    $ Map.insert D_SMT_resolveSort DebugResult
-    $ Map.insert D_SMT_resolveSymbol DebugResult
-    Map.empty
+    id $
+        Map.insert D_SMT_referenceCheckSort DebugResult $
+            Map.insert D_SMT_referenceCheckSymbol DebugResult $
+                Map.insert D_SMT_resolveSort DebugResult $
+                    Map.insert
+                        D_SMT_resolveSymbol
+                        DebugResult
+                        Map.empty
 
 onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
-    id
-    $ Map.insert D_Function_evaluatePattern DebugNoResult
-    $ Map.insert D_OnePath_verifyClaim DebugNoResult
-    $ Map.insert D_OnePath_Step_transitionRule DebugResult
-    $ Map.insert D_SMT_refutePredicate DebugResult
-      Map.empty
+    id $
+        Map.insert D_Function_evaluatePattern DebugNoResult $
+            Map.insert D_OnePath_verifyClaim DebugNoResult $
+                Map.insert D_OnePath_Step_transitionRule DebugResult $
+                    Map.insert
+                        D_SMT_refutePredicate
+                        DebugResult
+                        Map.empty
 
 executionWithFunctionNames :: Map DebugPlace DebugResult
 executionWithFunctionNames =
-    id
-    $ Map.insert D_Function_evaluatePattern DebugNoResult
-    $ Map.insert D_Step DebugNoResult
-      Map.empty
+    id $
+        Map.insert D_Function_evaluatePattern DebugNoResult $
+            Map.insert
+                D_Step
+                DebugNoResult
+                Map.empty
 
-traceWhenEnabled
-    :: DebugPlace -> (DebugResult -> a -> a) -> (a -> a)
+traceWhenEnabled ::
+    DebugPlace -> (DebugResult -> a -> a) -> (a -> a)
 traceWhenEnabled place logger =
     case place of
         D_Generic _ debugResult -> logger debugResult
@@ -166,162 +170,162 @@ traceWhenEnabled place logger =
             Nothing -> id
             Just debugResult -> logger debugResult
 
-{-|Wraps an 'ExceptT' action for printing debug messages, similar to 'trace'.
+{- |Wraps an 'ExceptT' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
 -}
-traceExceptT
-    :: (Monad m, Show a, Show b)
-    => DebugPlace
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> ExceptT a m b
-    -- ^ Action to wrap
-    -> ExceptT a m b
+traceExceptT ::
+    (Monad m, Show a, Show b) =>
+    -- | Action name
+    DebugPlace ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    -- | Action to wrap
+    ExceptT a m b ->
+    ExceptT a m b
 traceExceptT name startValues =
     traceWhenEnabled name (traceExceptTS (show name) startValues)
 
-traceExceptTS
-    :: (Monad m, Show a, Show b)
-    => String
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> DebugResult
-    -> ExceptT a m b
-    -- ^ Action to wrap
-    -> ExceptT a m b
+traceExceptTS ::
+    (Monad m, Show a, Show b) =>
+    -- | Action name
+    String ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    DebugResult ->
+    -- | Action to wrap
+    ExceptT a m b ->
+    ExceptT a m b
 traceExceptTS name startValues debugResult action = ExceptT $ do
     result <-
-        startThing name startValues
-        $ runExceptT action
+        startThing name startValues $
+            runExceptT action
     case result of
         Left err ->
-            endThing name ("error: " ++ show err) debugResult
-            $ return (Left err)
+            endThing name ("error: " ++ show err) debugResult $
+                return (Left err)
         Right r ->
-            endThing name ("result: " ++ show r) debugResult
-            $ return (Right r)
+            endThing name ("result: " ++ show r) debugResult $
+                return (Right r)
 
-{-|Wraps a 'MaybeT' action for printing debug messages, similar to 'trace'.
+{- |Wraps a 'MaybeT' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
 -}
-traceMaybeT
-    :: (Monad m, Show a)
-    => DebugPlace
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> MaybeT m a
-    -- ^ Action to wrap
-    -> MaybeT m a
+traceMaybeT ::
+    (Monad m, Show a) =>
+    -- | Action name
+    DebugPlace ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    -- | Action to wrap
+    MaybeT m a ->
+    MaybeT m a
 traceMaybeT name startValues =
     traceWhenEnabled
         name
         (traceMaybeTS (show name) startValues)
 
-traceMaybeTS
-    :: (Monad m, Show a)
-    => String
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> DebugResult
-    -> MaybeT m a
-    -- ^ Action to wrap
-    -> MaybeT m a
+traceMaybeTS ::
+    (Monad m, Show a) =>
+    -- | Action name
+    String ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    DebugResult ->
+    -- | Action to wrap
+    MaybeT m a ->
+    MaybeT m a
 traceMaybeTS name startValues debugResult action = MaybeT $ do
     result <- startThing name startValues $ runMaybeT action
     case result of
         Nothing ->
-            endThing name "nothing" debugResult
-            $ return Nothing
+            endThing name "nothing" debugResult $
+                return Nothing
         Just r ->
-            endThing name ("result: " ++ show r) debugResult
-            $ return (Just r)
+            endThing name ("result: " ++ show r) debugResult $
+                return (Just r)
 
-{-|Wraps an 'Either' action for printing debug messages, similar to 'trace'.
+{- |Wraps an 'Either' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
 -}
-traceEither
-    :: (Show a, Show b)
-    => DebugPlace
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> Either a b
-    -- ^ Action to wrap
-    -> Either a b
+traceEither ::
+    (Show a, Show b) =>
+    -- | Action name
+    DebugPlace ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    -- | Action to wrap
+    Either a b ->
+    Either a b
 traceEither name startValues =
     traceWhenEnabled
         name
         (traceEitherS (show name) startValues)
 
-traceEitherS
-    :: (Show a, Show b)
-    => String
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> DebugResult
-    -> Either a b
-    -- ^ Action to wrap
-    -> Either a b
+traceEitherS ::
+    (Show a, Show b) =>
+    -- | Action name
+    String ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    DebugResult ->
+    -- | Action to wrap
+    Either a b ->
+    Either a b
 traceEitherS name startValues debugResult action =
-    startThing name startValues
-    $ case action of
-        Left err ->
-            endThing name ("error: " ++ show err) debugResult
-            $ Left err
-        Right r ->
-            endThing name ("result: " ++ show r) debugResult
-            $ Right r
+    startThing name startValues $
+        case action of
+            Left err ->
+                endThing name ("error: " ++ show err) debugResult $
+                    Left err
+            Right r ->
+                endThing name ("result: " ++ show r) debugResult $
+                    Right r
 
-{-|Wraps a 'Maybe' action for printing debug messages, similar to 'trace'.
+{- |Wraps a 'Maybe' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
 -}
-traceMaybe
-    :: Show a
-    => DebugPlace
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> Maybe a
-    -- ^ Action to wrap
-    -> Maybe a
+traceMaybe ::
+    Show a =>
+    -- | Action name
+    DebugPlace ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    -- | Action to wrap
+    Maybe a ->
+    Maybe a
 traceMaybe name startValues =
     traceWhenEnabled
         name
         (traceMaybeS (show name) startValues)
 
-traceMaybeS
-    :: Show a
-    => String
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> DebugResult
-    -> Maybe a
-    -- ^ Action to wrap
-    -> Maybe a
+traceMaybeS ::
+    Show a =>
+    -- | Action name
+    String ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    DebugResult ->
+    -- | Action to wrap
+    Maybe a ->
+    Maybe a
 traceMaybeS name startValues debugResult action =
-    startThing name startValues
-    $ case action of
-        Nothing ->
-            endThing name "Nothing" debugResult Nothing
-        Just r ->
-            endThing name ("result: " ++ show r) debugResult
-            $ Just r
+    startThing name startValues $
+        case action of
+            Nothing ->
+                endThing name "Nothing" debugResult Nothing
+            Just r ->
+                endThing name ("result: " ++ show r) debugResult $
+                    Just r
 
-{-|Wraps a generic monad action for printing debug messages, similar to 'trace'.
+{- |Wraps a generic monad action for printing debug messages, similar to 'trace'.
 
 The monad must not have an error case because this function will
 not print an "ending ..." line for errors, making the output confusing
@@ -330,69 +334,69 @@ and ruining the indentation produced by debugFilter.py.
 It prints the name and the start values before the action, and the action
 result after.
 -}
-traceNonErrorMonad
-    :: (Monad m, Show a)
-    => DebugPlace
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> m a
-    -- ^ Action to wrap
-    -> m a
+traceNonErrorMonad ::
+    (Monad m, Show a) =>
+    -- | Action name
+    DebugPlace ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    -- | Action to wrap
+    m a ->
+    m a
 traceNonErrorMonad name startValues =
     traceWhenEnabled
         name
         (traceNonErrorMonadS (show name) startValues)
 
-traceNonErrorMonadS
-    :: (Monad m, Show a)
-    => String
-    -- ^ Action name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> DebugResult
-    -> m a
-    -- ^ Action to wrap
-    -> m a
+traceNonErrorMonadS ::
+    (Monad m, Show a) =>
+    -- | Action name
+    String ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    DebugResult ->
+    -- | Action to wrap
+    m a ->
+    m a
 traceNonErrorMonadS name startValues debugResult action =
-    startThing name startValues
-    $ do
-        result <- action
-        endThing name ("result: " ++ show result) debugResult
-            $ return result
+    startThing name startValues $
+        do
+            result <- action
+            endThing name ("result: " ++ show result) debugResult $
+                return result
 
-{-|Wraps a function for printing debug messages, similar to 'Debug.trace'.
+{- |Wraps a function for printing debug messages, similar to 'Debug.trace'.
 
 It prints the name and the start values before evaluating the function,
 and the function result after.
 -}
-traceFunction
-    :: (Show a)
-    => DebugPlace
-    -- ^ function name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> a
+traceFunction ::
+    (Show a) =>
+    -- | function name
+    DebugPlace ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    a ->
     -- function result
-    -> a
+    a
 traceFunction name startValues =
     traceWhenEnabled
         name
         (traceFunctionS (show name) startValues)
 
-traceFunctionS
-    :: (Show a)
-    => String
-    -- ^ function name
-    -> [DebugArg]
-    -- ^ Extra debugging info (usually the inputs)
-    -> DebugResult
-    -> a
+traceFunctionS ::
+    (Show a) =>
+    -- | function name
+    String ->
+    -- | Extra debugging info (usually the inputs)
+    [DebugArg] ->
+    DebugResult ->
+    a ->
     -- function result
-    -> a
+    a
 traceFunctionS name startValues debugResult result =
-    startThing name startValues
-    $ endThing name ("result: " ++ show result) debugResult result
+    startThing name startValues $
+        endThing name ("result: " ++ show result) debugResult result
 
 startThing :: String -> [DebugArg] -> a -> a
 startThing name startValues =

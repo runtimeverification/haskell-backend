@@ -3,48 +3,43 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 Target specific variables for unification.
+-}
+module Kore.Variables.Target (
+    Target (..),
+    unTarget,
+    unTargetElement,
+    unTargetSet,
+    mkElementTarget,
+    mkSetTarget,
+    mkUnifiedTarget,
+    isTarget,
+    mkElementNonTarget,
+    mkSetNonTarget,
+    mkUnifiedNonTarget,
+    isNonTarget,
+    targetIfEqual,
+    isSomeTargetName,
+    isSomeNonTargetName,
+) where
 
- -}
-
-module Kore.Variables.Target
-    ( Target (..)
-    , unTarget
-    , unTargetElement
-    , unTargetSet
-    , mkElementTarget
-    , mkSetTarget
-    , mkUnifiedTarget
-    , isTarget
-    , mkElementNonTarget
-    , mkSetNonTarget
-    , mkUnifiedNonTarget
-    , isNonTarget
-    , targetIfEqual
-    , isSomeTargetName
-    , isSomeNonTargetName
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 import Kore.Internal.Variable
-import Kore.Unparser
-    ( Unparse (..)
-    )
-import Kore.Variables.Fresh
-    ( FreshPartialOrd (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
+import Kore.Variables.Fresh (
+    FreshPartialOrd (..),
+ )
+import Prelude.Kore
 
 {- | Distinguish variables by their source.
 
 'Target' variables always compare 'LT' 'NonTarget' variables under
 'SubstitutionOrd', so that the unification procedure prefers to generate
 substitutions for 'Target' variables instead of 'NonTarget' variables.
-
- -}
+-}
 data Target variable
     = Target !variable
     | NonTarget !variable
@@ -66,11 +61,8 @@ instance Hashable variable => Hashable (Target variable) where
     hashWithSalt salt target = hashWithSalt salt (unTarget target)
     {-# INLINE hashWithSalt #-}
 
-{- | Prefer substitutions for 'isTarget' variables.
- -}
-instance
-    SubstitutionOrd variable => SubstitutionOrd (Target variable)
-  where
+-- | Prefer substitutions for 'isTarget' variables.
+instance SubstitutionOrd variable => SubstitutionOrd (Target variable) where
     compareSubstitution (Target _) (NonTarget _) = LT
     compareSubstitution (NonTarget _) (Target _) = GT
     compareSubstitution variable1 variable2 =
@@ -87,14 +79,14 @@ unTargetElement = (fmap . fmap) unTarget
 unTargetSet :: SetVariable (Target variable) -> SetVariable variable
 unTargetSet = (fmap . fmap) unTarget
 
-mkElementTarget
-    :: ElementVariable variable
-    -> ElementVariable (Target variable)
+mkElementTarget ::
+    ElementVariable variable ->
+    ElementVariable (Target variable)
 mkElementTarget = (fmap . fmap) Target
 
-mkSetTarget
-    :: SetVariable variable
-    -> SetVariable (Target variable)
+mkSetTarget ::
+    SetVariable variable ->
+    SetVariable (Target variable)
 mkSetTarget = (fmap . fmap) Target
 
 mkUnifiedTarget :: AdjSomeVariableName (variable -> Target variable)
@@ -104,14 +96,14 @@ isTarget :: Target variable -> Bool
 isTarget (Target _) = True
 isTarget (NonTarget _) = False
 
-mkElementNonTarget
-    :: ElementVariable variable
-    -> ElementVariable (Target variable)
+mkElementNonTarget ::
+    ElementVariable variable ->
+    ElementVariable (Target variable)
 mkElementNonTarget = (fmap . fmap) NonTarget
 
-mkSetNonTarget
-    :: SetVariable variable
-    -> SetVariable (Target variable)
+mkSetNonTarget ::
+    SetVariable variable ->
+    SetVariable (Target variable)
 mkSetNonTarget = (fmap . fmap) NonTarget
 
 mkUnifiedNonTarget :: AdjSomeVariableName (variable -> Target variable)
@@ -140,21 +132,20 @@ instance From variable1 variable2 => From (Target variable1) variable2 where
 instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
     minBoundName =
         \case
-            Target var    -> Target (minBoundName var)
+            Target var -> Target (minBoundName var)
             NonTarget var -> NonTarget (minBoundName var)
     {-# INLINE minBoundName #-}
 
     maxBoundName =
         \case
-            Target var    -> Target (maxBoundName var)
+            Target var -> Target (maxBoundName var)
             NonTarget var -> NonTarget (maxBoundName var)
     {-# INLINE maxBoundName #-}
 
     nextName name1 name2 = traverse (flip nextName (unTarget name2)) name1
     {-# INLINE nextName #-}
 
-{- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
- -}
+-- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
 instance FreshPartialOrd variable => FreshName (Target variable)
 
 instance Unparse variable => Unparse (Target variable) where

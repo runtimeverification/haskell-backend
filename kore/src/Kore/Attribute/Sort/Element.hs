@@ -1,28 +1,28 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Attribute.Sort.Element
-    ( Element (..)
-    , elementId, elementSymbol, elementAttribute
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Sort.Element (
+    Element (..),
+    elementId,
+    elementSymbol,
+    elementAttribute,
+) where
 
 import Data.Default
-
 import Kore.Attribute.Parser
+import Prelude.Kore
 
 -- | @Element@ represents the @element@ attribute for sorts.
-newtype Element = Element { getElement :: Maybe SymbolOrAlias }
+newtype Element = Element {getElement :: Maybe SymbolOrAlias}
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Element where
-    (<>) a@(Element (Just _))  _ = a
-    (<>) _                     b = b
+    (<>) a@(Element (Just _)) _ = a
+    (<>) _ b = b
 
 instance Monoid Element where
-    mempty = Element { getElement = Nothing }
+    mempty = Element{getElement = Nothing}
 
 instance Default Element where
     def = mempty
@@ -49,13 +49,13 @@ elementAttribute symbol =
 instance ParseAttributes Element where
     parseAttribute = withApplication' parseApplication
       where
-        parseApplication params args Element { getElement }
-          | Just _ <- getElement = failDuplicate'
-          | otherwise = do
-            getZeroParams params
-            arg <- getOneArgument args
-            symbol <- getSymbolOrAlias arg
-            return Element { getElement = Just symbol }
+        parseApplication params args Element{getElement}
+            | Just _ <- getElement = failDuplicate'
+            | otherwise = do
+                getZeroParams params
+                arg <- getOneArgument args
+                symbol <- getSymbolOrAlias arg
+                return Element{getElement = Just symbol}
         withApplication' = withApplication elementId
         failDuplicate' = failDuplicate elementId
 

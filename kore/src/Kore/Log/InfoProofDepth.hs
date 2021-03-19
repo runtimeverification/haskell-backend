@@ -1,30 +1,26 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Kore.Log.InfoProofDepth
-    ( InfoProofDepth (..)
-    , infoUnprovenDepth
-    , infoProvenDepth
-    , ProofDepth (..)
-    ) where
-
-import Prelude.Kore
+module Kore.Log.InfoProofDepth (
+    InfoProofDepth (..),
+    infoUnprovenDepth,
+    infoProvenDepth,
+    ProofDepth (..),
+) where
 
 import qualified Data.Semigroup as Semigroup
-import Numeric.Natural
-    ( Natural
-    )
-
 import Log
-import Pretty
-    ( Pretty
-    )
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
-newtype ProofDepth = ProofDepth { getProofDepth :: Natural }
+newtype ProofDepth = ProofDepth {getProofDepth :: Natural}
     deriving (Eq, Ord, Show)
     deriving (Enum)
     deriving (Semigroup) via (Semigroup.Max Natural)
@@ -36,7 +32,7 @@ instance Pretty ProofDepth where
 data InfoProofDepth
     = InfoUnprovenDepth ProofDepth
     | InfoProvenDepth ProofDepth
-    deriving Show
+    deriving (Show)
 
 instance Pretty InfoProofDepth where
     pretty (InfoUnprovenDepth depth) =

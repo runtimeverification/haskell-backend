@@ -1,21 +1,17 @@
-module Test.Kore.Log.DebugEvaluateCondition
-    ( test_instance_Table_DebugEvaluateCondition
-    ) where
+module Test.Kore.Log.DebugEvaluateCondition (
+    test_instance_Table_DebugEvaluateCondition,
+) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
-import Data.List
-    ( inits
-    )
-
+import Data.List (
+    inits,
+ )
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Log.DebugEvaluateCondition
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SQL
+import Test.Tasty
 
 test_instance_Table_DebugEvaluateCondition :: TestTree
 test_instance_Table_DebugEvaluateCondition =

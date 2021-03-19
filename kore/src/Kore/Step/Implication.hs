@@ -1,105 +1,99 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
+module Kore.Step.Implication (
+    Implication (..),
+    freeVariablesLeft,
+    freeVariablesRight,
+    mkImplication,
+    substitute,
+    assertRefreshed,
+    refreshExistentials,
+    applySubstitution,
+    termToExistentials,
+    resetConfigVariables,
+    forgetSimplified,
+    parseRightHandSide,
+    implicationToTerm,
+) where
 
-module Kore.Step.Implication
-    ( Implication (..)
-    , freeVariablesLeft
-    , freeVariablesRight
-    , mkImplication
-    , substitute
-    , assertRefreshed
-    , refreshExistentials
-    , applySubstitution
-    , termToExistentials
-    , resetConfigVariables
-    , forgetSimplified
-    , parseRightHandSide
-    , implicationToTerm
-    ) where
-
-import Prelude.Kore
-
-import Control.Error.Util
-    ( hush
-    )
-import Control.Monad.State.Strict
-    ( evalState
-    )
+import Control.Error.Util (
+    hush,
+ )
+import Control.Monad.State.Strict (
+    evalState,
+ )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , HasFreeVariables (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    HasFreeVariables (..),
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitution
-    ( Substitution
-    )
+import Kore.Internal.Substitution (
+    Substitution,
+ )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.Symbol
-    ( Symbol
-    )
-import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
-    , Modality
-    , SomeVariable
-    , SomeVariableName (..)
-    , TermLike
-    , Variable (..)
-    , VariableName
-    )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
+import Kore.Internal.TermLike (
+    ElementVariable,
+    InternalVariable,
+    Modality,
+    SomeVariable,
+    SomeVariableName (..),
+    TermLike,
+    Variable (..),
+    VariableName,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , getRewritingTerm
-    , resetConfigVariable
-    )
-import Kore.Rewriting.UnifyingRule
-    ( UnifyingRule (..)
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Kore.Unparser
-    ( Unparse (..)
-    )
-import Kore.Variables.Fresh
-    ( refreshVariables
-    )
-
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingTerm,
+    resetConfigVariable,
+ )
+import Kore.Rewriting.UnifyingRule (
+    UnifyingRule (..),
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Kore.Unparser (
+    Unparse (..),
+ )
+import Kore.Variables.Fresh (
+    refreshVariables,
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
 -- | Representation of reachability claim types as well as rules
-data Implication modality =
-    Implication
+data Implication modality = Implication
     { left :: !(Pattern RewritingVariableName)
     , modality :: !modality
     , existentials :: ![ElementVariable RewritingVariableName]
@@ -145,40 +139,42 @@ instance TopBottom (Implication modality) where
 instance From (Implication modality) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-freeVariablesRight
-    :: Implication modality
-    -> FreeVariables RewritingVariableName
+freeVariablesRight ::
+    Implication modality ->
+    FreeVariables RewritingVariableName
 freeVariablesRight implication'@(Implication _ _ _ _ _) =
     freeVariables
-        ( TermLike.mkExistsN existentials
+        ( TermLike.mkExistsN
+            existentials
             (OrPattern.toTermLike right)
         )
   where
-    Implication { right, existentials } = implication'
+    Implication{right, existentials} = implication'
 
-freeVariablesLeft
-    :: Implication modality
-    -> FreeVariables RewritingVariableName
+freeVariablesLeft ::
+    Implication modality ->
+    FreeVariables RewritingVariableName
 freeVariablesLeft implication'@(Implication _ _ _ _ _) =
     freeVariables left
   where
-    Implication { left } = implication'
+    Implication{left} = implication'
 
 instance HasFreeVariables (Implication modality) RewritingVariableName where
     freeVariables implication'@(Implication _ _ _ _ _) =
         freeVariablesLeft implication'
-        <> freeVariablesRight implication'
+            <> freeVariablesRight implication'
 
--- | Creates an 'Implication' from a left hand side 'Pattern'
--- and an 'OrPattern', representing the right hand side pattern.
--- The list of element variables are existentially quantified
--- in the right hand side.
-mkImplication
-    :: modality
-    -> Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> Implication modality
+{- | Creates an 'Implication' from a left hand side 'Pattern'
+ and an 'OrPattern', representing the right hand side pattern.
+ The list of element variables are existentially quantified
+ in the right hand side.
+-}
+mkImplication ::
+    modality ->
+    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    [ElementVariable RewritingVariableName] ->
+    Implication modality
 mkImplication modality left right existentials =
     Implication
         { left
@@ -201,37 +197,36 @@ that is,
 @
 left ∧ requires → modality(∃ {Xₙ:Sₙ}. right)
 @
-
- -}
-implicationToTerm
-    :: Implication Modality
-    -> TermLike VariableName
+-}
+implicationToTerm ::
+    Implication Modality ->
+    TermLike VariableName
 implicationToTerm representation@(Implication _ _ _ _ _) =
     TermLike.mkImplies
         (TermLike.mkAnd leftCondition leftTerm)
         (TermLike.applyModality modality rightPattern)
   where
-    Implication { left, modality, right, existentials } = representation
+    Implication{left, modality, right, existentials} = representation
     leftTerm =
         Pattern.term left
-        & getRewritingTerm
+            & getRewritingTerm
     sort = TermLike.termLikeSort leftTerm
     leftCondition =
         Pattern.withoutTerm left
-        & Condition.toPredicate
-        & Predicate.fromPredicate sort
-        & getRewritingTerm
+            & Condition.toPredicate
+            & Predicate.fromPredicate sort
+            & getRewritingTerm
     rightPattern =
         TermLike.mkExistsN existentials (OrPattern.toTermLike right)
-        & getRewritingTerm
+            & getRewritingTerm
 
-substituteRight
-    :: Map
+substituteRight ::
+    Map
         (SomeVariableName RewritingVariableName)
-        (TermLike RewritingVariableName)
-    -> Implication modality
-    -> Implication modality
-substituteRight rename implication'@Implication{ right, existentials } =
+        (TermLike RewritingVariableName) ->
+    Implication modality ->
+    Implication modality
+substituteRight rename implication'@Implication{right, existentials} =
     implication'
         { right = OrPattern.substitute newSubst right
         , existentials = renameVariable <$> existentials
@@ -239,49 +234,52 @@ substituteRight rename implication'@Implication{ right, existentials } =
   where
     existentials' = inject . TermLike.variableName <$> existentials
     subst = foldr Map.delete rename existentials'
-    newFreeVars = Foldable.foldl' Set.union Set.empty
-        (FreeVariables.toNames . freeVariables @_ @RewritingVariableName
-        <$> subst)
-    -- ^ newFreeVars is the set of free variables in all
-    -- the RHSs of substitutions
+    newFreeVars =
+        Foldable.foldl'
+            Set.union
+            Set.empty
+            ( FreeVariables.toNames . freeVariables @_ @RewritingVariableName
+                <$> subst
+            )
+
     freeVars = FreeVariables.toNames $ freeVariablesRight implication'
-    -- ^ freeVars is the set of free variables of the RHS of
-    -- the implication
+
     avoid = Set.union newFreeVars (freeVars Set.\\ Map.keysSet subst)
     subst' = refreshVariables avoid (Set.fromList $ inject <$> existentials)
     newSubst = Map.union subst (TermLike.mkVar <$> subst')
 
-    renameVariable
-        :: ElementVariable RewritingVariableName
-        -> ElementVariable RewritingVariableName
+    renameVariable ::
+        ElementVariable RewritingVariableName ->
+        ElementVariable RewritingVariableName
     renameVariable var =
         let name = SomeVariableNameElement $ variableName var
-        in maybe var TermLike.expectElementVariable
-            $ Map.lookup name subst'
+         in maybe var TermLike.expectElementVariable $
+                Map.lookup name subst'
 
 -- | Apply the substitution to the implication.
-substitute
-    :: Map
+substitute ::
+    Map
         (SomeVariableName RewritingVariableName)
-        (TermLike RewritingVariableName)
-    -> Implication modality
-    -> Implication modality
+        (TermLike RewritingVariableName) ->
+    Implication modality ->
+    Implication modality
 substitute subst implication'@(Implication _ _ _ _ _) =
-    substituteRight subst
-    $ implication'
-        { left = Pattern.substitute subst left
-        }
+    substituteRight subst $
+        implication'
+            { left = Pattern.substitute subst left
+            }
   where
-    Implication { left } = implication'
+    Implication{left} = implication'
 
--- | Applies a substitution to an implication and checks that
--- it was fully applied, i.e. there is no substitution
--- variable left in the implication.
-applySubstitution
-    :: HasCallStack
-    => Substitution RewritingVariableName
-    -> Implication modality
-    -> Implication modality
+{- | Applies a substitution to an implication and checks that
+ it was fully applied, i.e. there is no substitution
+ variable left in the implication.
+-}
+applySubstitution ::
+    HasCallStack =>
+    Substitution RewritingVariableName ->
+    Implication modality ->
+    Implication modality
 applySubstitution substitution implication' =
     if finalImplication `isFreeOf` substitutedVariables
         then finalImplication
@@ -292,20 +290,21 @@ applySubstitution substitution implication' =
     substitutedVariables = Substitution.variables substitution
 
 -- | Is the rule free of the given variables?
-isFreeOf
-    :: Implication modality
-    -> Set.Set (SomeVariable RewritingVariableName)
-    -> Bool
+isFreeOf ::
+    Implication modality ->
+    Set.Set (SomeVariable RewritingVariableName) ->
+    Bool
 isFreeOf rule =
-    Set.disjoint
-    $ FreeVariables.toSet
-    $ freeVariables rule
+    Set.disjoint $
+        FreeVariables.toSet $
+            freeVariables rule
 
 -- TODO(Ana): move this to Internal.TermLike?
+
 -- | Extracts all top level existential quantifications.
-termToExistentials
-    :: TermLike RewritingVariableName
-    -> (TermLike RewritingVariableName, [ElementVariable RewritingVariableName])
+termToExistentials ::
+    TermLike RewritingVariableName ->
+    (TermLike RewritingVariableName, [ElementVariable RewritingVariableName])
 termToExistentials (TermLike.Exists_ _ v term) =
     fmap (v :) (termToExistentials term)
 termToExistentials term = (term, [])
@@ -317,7 +316,7 @@ forgetSimplified implication'@(Implication _ _ _ _ _) =
         , right = OrPattern.forgetSimplified right
         }
   where
-    Implication { left, right } = implication'
+    Implication{left, right} = implication'
 
 {- | Ensure that the 'Implication''s bound variables are fresh.
 
@@ -325,14 +324,12 @@ The 'existentials' should not appear free on the left-hand side so that we can
 freely unwrap the right-hand side as needed.
 
 See also: 'refreshExistentials'
-
- -}
+-}
 assertRefreshed :: HasCallStack => Implication modality -> a -> a
-assertRefreshed implication'@Implication{ existentials } =
+assertRefreshed implication'@Implication{existentials} =
     assert (isFreeOf implication' (Set.fromList $ inject <$> existentials))
 
-{- | Refresh the 'existentials' of the 'Implication'.
- -}
+-- | Refresh the 'existentials' of the 'Implication'.
 refreshExistentials :: Implication modality -> Implication modality
 refreshExistentials = snd . refreshRule mempty
 
@@ -342,25 +339,26 @@ instance UnifyingRule (Implication modality) where
     matchingPattern implication'@(Implication _ _ _ _ _) =
         Pattern.term left
       where
-        Implication { left } = implication'
+        Implication{left} = implication'
 
     precondition implication'@(Implication _ _ _ _ _) =
         Condition.toPredicate . Pattern.withoutTerm $ left
       where
-        Implication { left } = implication'
+        Implication{left} = implication'
 
     refreshRule stale implication'@(Implication _ _ _ _ _) =
         do
             let variables = freeVariables implication' & FreeVariables.toSet
             renaming <- refreshVariables' variables
             refreshedImplication <- renameExistentials
-            let fullyRefreshedImplication = substitute
-                    (TermLike.mkVar <$> renaming)
-                    refreshedImplication
+            let fullyRefreshedImplication =
+                    substitute
+                        (TermLike.mkVar <$> renaming)
+                        refreshedImplication
             -- Only return the renaming of free variables.
             -- Renaming the bound variables is invisible from outside.
             pure (renaming, fullyRefreshedImplication)
-        & flip evalState (FreeVariables.toNames stale)
+            & flip evalState (FreeVariables.toNames stale)
       where
         refreshVariables' variables = do
             staleNames <- State.get
@@ -368,28 +366,29 @@ instance UnifyingRule (Implication modality) where
                 staleNames' = Set.map variableName variables
                 staleNames'' =
                     Map.elems renaming
-                    & foldMap FreeVariables.freeVariable
-                    & FreeVariables.toNames
+                        & foldMap FreeVariables.freeVariable
+                        & FreeVariables.toNames
             State.put (staleNames <> staleNames' <> staleNames'')
             pure renaming
 
-        Implication { right, existentials } = implication'
+        Implication{right, existentials} = implication'
 
         renameExistentials = do
             let existentials' = Set.fromList (inject <$> existentials)
             rename <- refreshVariables' existentials'
             let renameVariable var =
-                    maybe var TermLike.expectElementVariable
-                    $ Map.lookup
-                        (SomeVariableNameElement (variableName var))
-                        rename
+                    maybe var TermLike.expectElementVariable $
+                        Map.lookup
+                            (SomeVariableNameElement (variableName var))
+                            rename
                 subst = TermLike.mkVar <$> rename
-            pure $ implication'
-                { right = OrPattern.substitute subst right
-                , existentials = renameVariable <$> existentials
-                }
+            pure $
+                implication'
+                    { right = OrPattern.substitute subst right
+                    , existentials = renameVariable <$> existentials
+                    }
 
-resetConfigVariables :: Implication modality  -> Implication modality
+resetConfigVariables :: Implication modality -> Implication modality
 resetConfigVariables implication'@(Implication _ _ _ _ _) =
     implication'
         { left =
@@ -398,58 +397,57 @@ resetConfigVariables implication'@(Implication _ _ _ _ _) =
             OrPattern.mapVariables resetConfigVariable right
         , existentials =
             TermLike.mapElementVariable resetConfigVariable
-            <$> existentials
+                <$> existentials
         }
   where
-    Implication { left, right, existentials } = implication'
+    Implication{left, right, existentials} = implication'
 
-parseRightHandSide
-    :: forall variable
-    .  InternalVariable variable
-    => TermLike variable
-    -> OrPattern variable
+parseRightHandSide ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    OrPattern variable
 parseRightHandSide term =
     let (term', condition) =
             parsePatternFromTermLike term
-            & Pattern.splitTerm
-     in
-        OrPattern.map
+                & Pattern.splitTerm
+     in OrPattern.map
             (flip Pattern.andCondition condition)
             (parseOrPatternFromTermLike term')
   where
-    parseOrPatternFromTermLike
-        :: TermLike variable
-        -> OrPattern variable
+    parseOrPatternFromTermLike ::
+        TermLike variable ->
+        OrPattern variable
     parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
         parseOrPatternFromTermLike term1
-        <> parseOrPatternFromTermLike term2
+            <> parseOrPatternFromTermLike term2
     parseOrPatternFromTermLike term' =
         OrPattern.fromPattern
-        . parsePatternFromTermLike
-        $ term'
+            . parsePatternFromTermLike
+            $ term'
 
-    parsePatternFromTermLike
-        :: TermLike variable
-        -> Pattern variable
+    parsePatternFromTermLike ::
+        TermLike variable ->
+        Pattern variable
     parsePatternFromTermLike original@(TermLike.And_ _ term1 term2)
         | isTop term1 = Pattern.fromTermLike term2
         | isTop term2 = Pattern.fromTermLike term1
         | otherwise =
-        case (tryPredicate term1, tryPredicate term2) of
-            (Nothing, Nothing) ->
-                Pattern.fromTermLike original
-            (Just predicate, Nothing) ->
-                Pattern.fromTermAndPredicate
-                    term2
-                    predicate
-            (Nothing, Just predicate) ->
-                Pattern.fromTermAndPredicate
-                    term1
-                    predicate
-            (Just predicate, _) ->
-                Pattern.fromTermAndPredicate
-                    term2
-                    predicate
+            case (tryPredicate term1, tryPredicate term2) of
+                (Nothing, Nothing) ->
+                    Pattern.fromTermLike original
+                (Just predicate, Nothing) ->
+                    Pattern.fromTermAndPredicate
+                        term2
+                        predicate
+                (Nothing, Just predicate) ->
+                    Pattern.fromTermAndPredicate
+                        term1
+                        predicate
+                (Just predicate, _) ->
+                    Pattern.fromTermAndPredicate
+                        term2
+                        predicate
       where
         tryPredicate = hush . Predicate.makePredicate
     parsePatternFromTermLike term' = Pattern.fromTermLike term'

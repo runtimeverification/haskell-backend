@@ -1,145 +1,170 @@
-module Test.Kore.Internal.Predicate
-    ( test_predicate
-    , test_mapVariables
+module Test.Kore.Internal.Predicate (
+    test_predicate,
+    test_mapVariables,
+
     -- * Re-exports
-    , TestPredicate
-    , module Predicate
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
+    TestPredicate,
+    module Predicate,
+) where
 
 import qualified Data.Set as Set
-
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    toRepresentation,
+    top,
+ )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Prelude.Kore
 import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
-
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
 
 type TestPredicate = Predicate VariableName
 
 test_predicate :: [TestTree]
 test_predicate =
-    [ testCase "Wrapping and predicates without full simplification"
-        (assertEqual ""
-            (wrapPredicate $
+    [ testCase
+        "Wrapping and predicates without full simplification"
+        ( assertEqual
+            ""
+            ( wrapPredicate $
                 mkAnd pa1 pa2
             )
             (makeAndPredicate pr1 pr2)
         )
-    ,  testCase "Wrapping or predicates without full simplification"
-        (assertEqual ""
-            (wrapPredicate $
+    , testCase
+        "Wrapping or predicates without full simplification"
+        ( assertEqual
+            ""
+            ( wrapPredicate $
                 mkOr pa1 pa2
             )
             (makeOrPredicate pr1 pr2)
- )
-    ,  testCase "Wrapping implies predicates without full simplification"
-        (assertEqual ""
-            (wrapPredicate $
+        )
+    , testCase
+        "Wrapping implies predicates without full simplification"
+        ( assertEqual
+            ""
+            ( wrapPredicate $
                 mkImplies pa1 pa2
             )
             (makeImpliesPredicate pr1 pr2)
         )
-    , testCase "Wrapping iff predicates without full simplification"
-        (assertEqual ""
-            (wrapPredicate $
+    , testCase
+        "Wrapping iff predicates without full simplification"
+        ( assertEqual
+            ""
+            ( wrapPredicate $
                 mkIff pa1 pa2
             )
             (makeIffPredicate pr1 pr2)
         )
-    , testCase "Wrapping not predicates without full simplification"
-        (assertEqual ""
-            (wrapPredicate $
+    , testCase
+        "Wrapping not predicates without full simplification"
+        ( assertEqual
+            ""
+            ( wrapPredicate $
                 mkNot pa1
             )
             (makeNotPredicate pr1)
         )
-    , testCase "isBottom True"
-        (assertEqual ""
+    , testCase
+        "isBottom True"
+        ( assertEqual
+            ""
             True
-            (isBottom (makeFalsePredicate::Predicate VariableName))
+            (isBottom (makeFalsePredicate :: Predicate VariableName))
         )
-    , testCase "isBottom False"
-        (assertEqual ""
+    , testCase
+        "isBottom False"
+        ( assertEqual
+            ""
             False
-            (isBottom (makeTruePredicate::Predicate VariableName))
+            (isBottom (makeTruePredicate :: Predicate VariableName))
         )
-    , testCase "isBottom False for generic predicate"
-        (assertEqual ""
+    , testCase
+        "isBottom False for generic predicate"
+        ( assertEqual
+            ""
             False
             (isBottom pr1)
         )
-    , testCase "Multiple And"
+    , testCase
+        "Multiple And"
         ( do
-            assertEqual "Empty list gives Top"
+            assertEqual
+                "Empty list gives Top"
                 makeTruePredicate
-                (makeMultipleAndPredicate ([]::[Predicate VariableName]))
-            assertEqual "Multiple And singleton"
+                (makeMultipleAndPredicate ([] :: [Predicate VariableName]))
+            assertEqual
+                "Multiple And singleton"
                 pr1
                 (makeMultipleAndPredicate [pr1])
-            assertEqual "Multiple Or sanity check"
+            assertEqual
+                "Multiple Or sanity check"
                 (makeAndPredicate pr1 pr2)
                 (makeMultipleAndPredicate [pr1, pr2])
         )
-    , testCase "Multiple Or"
+    , testCase
+        "Multiple Or"
         ( do
-            assertEqual "Empty list gives Bottom"
+            assertEqual
+                "Empty list gives Bottom"
                 makeFalsePredicate
-                (makeMultipleOrPredicate ([]::[Predicate VariableName]))
-            assertEqual "Multiple Or singleton"
+                (makeMultipleOrPredicate ([] :: [Predicate VariableName]))
+            assertEqual
+                "Multiple Or singleton"
                 pr1
                 (makeMultipleOrPredicate [pr1])
-            assertEqual "Multiple Or sanity check"
+            assertEqual
+                "Multiple Or sanity check"
                 (makeOrPredicate pr1 pr2)
                 (makeMultipleOrPredicate [pr1, pr2])
         )
-    , testCase "freeVariables"
+    , testCase
+        "freeVariables"
         ( do
-            assertBool "top has no free variables"
-                $ FreeVariables.nullFreeVariables @VariableName
-                $ freeVariables (makeTruePredicate :: Predicate VariableName)
-            assertEqual "equals predicate has two variables"
-                (Set.fromList
+            assertBool "top has no free variables" $
+                FreeVariables.nullFreeVariables @VariableName $
+                    freeVariables (makeTruePredicate :: Predicate VariableName)
+            assertEqual
+                "equals predicate has two variables"
+                ( Set.fromList
                     [ inject @(SomeVariable VariableName) $ a Mock.testSort
                     , inject $ b Mock.testSort
                     ]
                 )
                 (freeVariables pr1 & FreeVariables.toSet)
-            assertBool "quantified variables are not included"
-                $ not
-                $ FreeVariables.isFreeVariable
-                    (inject . variableName $ a Mock.testSort)
-                $ freeVariables @_ @VariableName
-                $ makeExistsPredicate (a Mock.testSort)
-                $ makeEqualsPredicate
-                    (mkElemVar $ a Mock.testSort)
-                    (mkElemVar $ b Mock.testSort)
+            assertBool "quantified variables are not included" $
+                not $
+                    FreeVariables.isFreeVariable
+                        (inject . variableName $ a Mock.testSort)
+                        $ freeVariables @_ @VariableName $
+                            makeExistsPredicate (a Mock.testSort) $
+                                makeEqualsPredicate
+                                    (mkElemVar $ a Mock.testSort)
+                                    (mkElemVar $ b Mock.testSort)
         )
-    , testGroup "makePredicate"
-        [ testCase "makePredicate yields wrapPredicate"
-            (traverse_ (uncurry makePredicateYieldsWrapPredicate)
+    , testGroup
+        "makePredicate"
+        [ testCase
+            "makePredicate yields wrapPredicate"
+            ( traverse_
+                (uncurry makePredicateYieldsWrapPredicate)
                 [ ("Top", mkTop_)
                 , ("Bottom", mkBottom_)
                 , ("And", mkAnd pa1 pa2)
@@ -155,36 +180,34 @@ test_predicate =
                 , ("In", inA)
                 ]
             )
-        , testGroup "keeps simplified bit"
+        , testGroup
+            "keeps simplified bit"
             [ testCase "unsimplified stays unsimplified" $
                 (mkEquals_ Mock.cf Mock.cg, NotSimplified)
-                `makesPredicate`
-                (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
+                    `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
             , testCase "simplified stays simplified" $
                 ( simplifiedTerm $ mkEquals_ Mock.cf Mock.cg
                 , IsSimplified
                 )
-                `makesPredicate`
-                (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
+                    `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "Partial predicate stays simplified" $
-                ( simplifiedTerm
-                    $ mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
+                ( simplifiedTerm $
+                    mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
                 , IsSimplified
                 )
-                `makesPredicate`
-                (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
+                    `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "changed simplified becomes unsimplified" $
-                ( simplifiedTerm
-                    $ mkAnd
+                ( simplifiedTerm $
+                    mkAnd
                         (mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg))
                         (mkEquals_ Mock.cg Mock.ch)
                 , IsSimplified
                 )
-                `makesPredicate`
-                ( makeAndPredicate
-                    (makeEqualsPredicate Mock.cf Mock.cg)
-                    (makeEqualsPredicate Mock.cg Mock.ch)
-                , NotSimplified)
+                    `makesPredicate` ( makeAndPredicate
+                                        (makeEqualsPredicate Mock.cf Mock.cg)
+                                        (makeEqualsPredicate Mock.cg Mock.ch)
+                                     , NotSimplified
+                                     )
             ]
         ]
     ]
@@ -202,26 +225,28 @@ test_mapVariables =
 
 data Simplified = IsSimplified | NotSimplified
 
-makesPredicate
-    :: HasCallStack
-    => (TermLike VariableName, Simplified)
-    -> (Predicate VariableName, Simplified)
-    -> IO ()
+makesPredicate ::
+    HasCallStack =>
+    (TermLike VariableName, Simplified) ->
+    (Predicate VariableName, Simplified) ->
+    IO ()
 makesPredicate
     (term, termSimplification)
-    (predicate, predicateSimplification)
-  = do
-    actual <- expectRight (makePredicate term)
-    assertEqual "Predicate equality" predicate actual
-    assertEqual "Term simplification"
-        (toBool termSimplification)
-        (TermLike.isSimplified sideRepresentation term)
-    assertEqual "Predicate simplification"
-        (toBool predicateSimplification)
-        (Predicate.isSimplified sideRepresentation actual)
-  where
-    toBool IsSimplified = True
-    toBool NotSimplified = False
+    (predicate, predicateSimplification) =
+        do
+            actual <- expectRight (makePredicate term)
+            assertEqual "Predicate equality" predicate actual
+            assertEqual
+                "Term simplification"
+                (toBool termSimplification)
+                (TermLike.isSimplified sideRepresentation term)
+            assertEqual
+                "Predicate simplification"
+                (toBool predicateSimplification)
+                (Predicate.isSimplified sideRepresentation actual)
+      where
+        toBool IsSimplified = True
+        toBool NotSimplified = False
 
 makePredicateYieldsWrapPredicate :: String -> TermLike VariableName -> IO ()
 makePredicateYieldsWrapPredicate msg p = do
@@ -275,4 +300,4 @@ d = mkElementVariable (testId "d")
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
     SideCondition.toRepresentation
-    (SideCondition.top :: SideCondition VariableName)
+        (SideCondition.top :: SideCondition VariableName)

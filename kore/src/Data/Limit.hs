@@ -1,36 +1,34 @@
-{-|
+{- |
 Module      : Data.Limit
 Description : Optionally-limited quantities
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 This module is intended to be imported qualified:
 @
 import Data.Limit ( Limit (..) )
 import qualified Data.Limit as Limit
 @
 -}
-module Data.Limit
-    ( Limit (..)
-    , enumFromLimit
-    , maybeLimit
-    , replicate
-    , takeWithin
-    , withinLimit
-    ) where
+module Data.Limit (
+    Limit (..),
+    enumFromLimit,
+    maybeLimit,
+    replicate,
+    takeWithin,
+    withinLimit,
+) where
 
-import Prelude.Kore hiding
-    ( replicate
-    )
+import Prelude.Kore hiding (
+    replicate,
+ )
 
-{- | An optionally-limited quantity.
- -}
+-- | An optionally-limited quantity.
 data Limit a
-    = Unlimited
-    -- ^ No limit
-    | Limit !a
-    -- ^ Limit @a@ by the given (inclusive) upper bound
+    = -- | No limit
+      Unlimited
+    | -- | Limit @a@ by the given (inclusive) upper bound
+      Limit !a
     deriving (Eq, Read, Show, Foldable)
 
 instance Ord a => Ord (Limit a) where
@@ -52,16 +50,14 @@ instance Ord a => Monoid (Limit a) where
     mempty = Unlimited
     mappend = (<>)
 
-{- | Is the given value within the (inclusive) upper bound?
- -}
+-- | Is the given value within the (inclusive) upper bound?
 withinLimit :: Ord a => Limit a -> a -> Bool
 withinLimit =
     \case
         Unlimited -> const True
         Limit u -> (<= u)
 
-{- | Enumerate values beginning at @a@ and within the limit.
- -}
+-- | Enumerate values beginning at @a@ and within the limit.
 enumFromLimit :: (Enum a, Ord a) => Limit a -> a -> [a]
 enumFromLimit limit a = takeWhile (withinLimit limit) (enumFrom a)
 
@@ -72,13 +68,11 @@ element.
 
 @replicate (Limit n) x@ is a list of length @n@ where @x@ is the value of every
 element.
-
- -}
+-}
 replicate :: (Enum a, Ord a) => Limit a -> b -> [b]
 replicate limit b = takeWithin limit (repeat b)
 
-{- | Take a limited prefix of the given list.
- -}
+-- | Take a limited prefix of the given list.
 takeWithin :: (Enum a, Ord a) => Limit a -> [b] -> [b]
 takeWithin limit bs = zipWith const bs limiting
   where

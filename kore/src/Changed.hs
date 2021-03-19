@@ -1,44 +1,42 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-module Changed
-    ( Changed (..)
-    , getChanged
-    ) where
+module Changed (
+    Changed (..),
+    getChanged,
+) where
 
 import Prelude.Kore
 
-{- | @'Changed' thing@ carries a @thing@ and a marker.
- -}
+-- | @'Changed' thing@ carries a @thing@ and a marker.
 data Changed thing
-    = Unchanged !thing
-    -- ^ The @thing@ was not changed.
-    | Changed   !thing
-    -- ^ The @thing@ was changed.
+    = -- | The @thing@ was not changed.
+      Unchanged !thing
+    | -- | The @thing@ was changed.
+      Changed !thing
     deriving (Eq, Functor, Show)
 
 instance Applicative Changed where
     pure = Unchanged
 
     Unchanged f <*> a = fmap f a
-    Changed   f <*> a = Changed (f $ extract a)
+    Changed f <*> a = Changed (f $ extract a)
 
 instance Comonad Changed where
     extract (Unchanged a) = a
-    extract (Changed   a) = a
+    extract (Changed a) = a
 
     extend f changed@(Unchanged _) = Unchanged (f changed)
-    extend f changed@(Changed   _) = Changed   (f changed)
+    extend f changed@(Changed _) = Changed (f changed)
 
     duplicate changed@(Unchanged _) = Unchanged changed
-    duplicate changed@(Changed   _) = Changed   changed
+    duplicate changed@(Changed _) = Changed changed
 
 instance Monad Changed where
     Unchanged a >>= f = f a
-    Changed a   >>= f = Changed $ extract $ f a
+    Changed a >>= f = Changed $ extract $ f a
 
 getChanged :: Changed a -> Maybe a
-getChanged (Changed   a) = Just a
+getChanged (Changed a) = Just a
 getChanged (Unchanged _) = Nothing

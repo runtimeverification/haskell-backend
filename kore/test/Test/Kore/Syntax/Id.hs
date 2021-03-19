@@ -1,19 +1,17 @@
-module Test.Kore.Syntax.Id
-    ( test_Id
+module Test.Kore.Syntax.Id (
+    test_Id,
+
     -- * Re-exports
-    , testId
-    , module Kore.Syntax.Id
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
+    testId,
+    module Kore.Syntax.Id,
+) where
 
 import Kore.Syntax.Id
-
-import Test.Kore
-    ( testId
-    )
+import Prelude.Kore
+import Test.Kore (
+    testId,
+ )
+import Test.Tasty
 import Test.Terse
 
 test_Id :: [TestTree]

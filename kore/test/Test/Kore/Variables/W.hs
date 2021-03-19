@@ -1,29 +1,28 @@
-module Test.Kore.Variables.W
-    ( W, mkW, war'
-    , showVar
-    , showUnifiedVar
-    ) where
-
-import Prelude.Kore
+module Test.Kore.Variables.W (
+    W,
+    mkW,
+    war',
+    showVar,
+    showUnifiedVar,
+) where
 
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
-import Numeric.Natural
-
+import Data.Generics.Product (
+    field,
+ )
 import Data.Sup
 import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Kore.Variables.Fresh
+import Numeric.Natural
+import Prelude.Kore
 import Pretty
-
 import Test.Kore.Variables.V
 
-data W = W { value :: String, counter :: Maybe (Sup Natural) }
+data W = W {value :: String, counter :: Maybe (Sup Natural)}
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
     deriving anyclass (Hashable)
@@ -33,9 +32,9 @@ data W = W { value :: String, counter :: Maybe (Sup Natural) }
 mkW :: String -> Variable W
 mkW value =
     Variable
-    { variableName = W { value, counter = Nothing }
-    , variableSort = sortVariable
-    }
+        { variableName = W{value, counter = Nothing}
+        , variableSort = sortVariable
+        }
 
 instance Unparse W where
     unparse (W name _) = "W" <> pretty name <> ":" <> unparse sortVariable
@@ -48,8 +47,8 @@ instance From W VariableName where
     from = error "Not implemented"
 
 instance FreshPartialOrd W where
-    minBoundName w = w { counter = Nothing }
-    maxBoundName w = w { counter = Just Sup }
+    minBoundName w = w{counter = Nothing}
+    maxBoundName w = w{counter = Just Sup}
     nextName w1 w2 =
         Just $ Lens.set (field @"counter") counter' w1
       where

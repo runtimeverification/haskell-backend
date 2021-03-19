@@ -9,53 +9,52 @@ definitions. We assume several conventions:
     whitespace. (See "Kore.Parser.Lexer" for whitespace definitions.)
 2.  Parsers named @Remainder@ assume that their prefix (usually, an identifier)
     has already been parsed.
-
- -}
-
-module Kore.Parser.Parser
-    ( parseDefinition, parseDefinitionAux
-    , parseModule, parseModuleAux
-    , parsePattern
-    , embedParsedPattern
-    , parseAliasHead, parseSymbolHead
-    , parseSortVariable
-    , parseSort
-    , parseAttributes
-    , parseSentence
-    , parseElementVariable
-    , parseSetVariable
-    , parseVariableCounter
-    ) where
-
-import Prelude.Kore hiding
-    ( many
-    , some
-    )
+-}
+module Kore.Parser.Parser (
+    parseDefinition,
+    parseDefinitionAux,
+    parseModule,
+    parseModuleAux,
+    parsePattern,
+    embedParsedPattern,
+    parseAliasHead,
+    parseSymbolHead,
+    parseSortVariable,
+    parseSort,
+    parseAttributes,
+    parseSentence,
+    parseElementVariable,
+    parseSetVariable,
+    parseVariableCounter,
+) where
 
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
-import Data.Text
-    ( Text
-    )
-import qualified Data.Text as Text
-import Text.Megaparsec
-    ( many
-    , some
-    , (<?>)
-    )
-import qualified Text.Megaparsec as Parse
-
 import Data.Sup
+import Data.Text (
+    Text,
+ )
+import qualified Data.Text as Text
 import Kore.Parser.Lexer
-import Kore.Parser.ParserUtils
-    ( Parser
-    )
+import Kore.Parser.ParserUtils (
+    Parser,
+ )
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Unparser
-    ( unparse
-    )
+import Kore.Unparser (
+    unparse,
+ )
 import Numeric.Natural
+import Prelude.Kore hiding (
+    many,
+    some,
+ )
+import Text.Megaparsec (
+    many,
+    some,
+    (<?>),
+ )
+import qualified Text.Megaparsec as Parse
 
 embedParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
 embedParsedPattern patternBase = asPattern (mempty :< patternBase)
@@ -81,12 +80,12 @@ parseSort =
   where
     parseRemainder ident =
         (SortActualSort <$> parseSortActualRemainder ident)
-        <|> (SortVariableSort <$> parseSortVariableRemainder ident)
+            <|> (SortVariableSort <$> parseSortVariableRemainder ident)
 
 parseSortActualRemainder :: Id -> Parser SortActual
 parseSortActualRemainder sortActualName = do
     sortActualSorts <- braces . list $ parseSort
-    pure SortActual { sortActualName, sortActualSorts }
+    pure SortActual{sortActualName, sortActualSorts}
 
 parseSortVariableRemainder :: Id -> Parser SortVariable
 parseSortVariableRemainder = pure . SortVariable
@@ -96,11 +95,11 @@ parseSortVariableRemainder = pure . SortVariable
 @
 <symbol-or-alias> ::= <symbol-id> "{" <sort-variables> "}"
 @
-
 -}
-parseSymbolOrAliasDeclarationHead
-    :: (Id -> [SortVariable] -> head)  -- ^ head constructor
-    -> Parser head
+parseSymbolOrAliasDeclarationHead ::
+    -- | head constructor
+    (Id -> [SortVariable] -> head) ->
+    Parser head
 parseSymbolOrAliasDeclarationHead mkHead = do
     identifier <- parseSymbolId
     parameters <- braces . list $ parseSortVariable
@@ -111,23 +110,20 @@ parseSymbolOrAliasDeclarationHead mkHead = do
 @
 <alias> ::= <symbol-or-alias>
 @
-
- -}
+-}
 parseAliasHead :: Parser Alias
 parseAliasHead = parseSymbolOrAliasDeclarationHead Alias
-
 
 {- | Parses @symbol-or-alias@ and interprets it as a 'Symbol'.
 
 @
 <symbol> ::= <symbol-or-alias>
 @
-
- -}
+-}
 parseSymbolHead :: Parser Symbol
 parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 
-{-| Parses a pattern.
+{- | Parses a pattern.
 
 @
 <pattern>
@@ -144,8 +140,8 @@ parsePattern =
   where
     parseRemainder identifier =
         parseVariableRemainder identifier
-        <|> parseKoreRemainder identifier
-        <|> parseApplicationRemainder identifier
+            <|> parseKoreRemainder identifier
+            <|> parseApplicationRemainder identifier
 
 parseLiteral :: Parser ParsedPattern
 parseLiteral = (from <$> parseStringLiteral) <?> "string literal"
@@ -155,7 +151,7 @@ parseVariable = do
     variableName <- parseAnyId >>= getSomeVariableName
     colon
     variableSort <- parseSort
-    pure Variable { variableName, variableSort }
+    pure Variable{variableName, variableSort}
 
 {- | Parse a variable, given that the identifier is already parsed.
 
@@ -174,25 +170,25 @@ parseVariableRemainder identifier = do
     -- variable, not a symbol, and now we will validate it as a variable name.
     variableName <- getSomeVariableName identifier
     variableSort <- parseSort
-    (pure . from) Variable { variableName, variableSort }
+    (pure . from) Variable{variableName, variableSort}
 
 getSomeVariableName :: Id -> Parser (SomeVariableName VariableName)
 getSomeVariableName identifier =
     (inject <$> getSetVariableName identifier)
-    <|> (inject <$> getElementVariableName identifier)
-    <|> expectedVariableName
+        <|> (inject <$> getElementVariableName identifier)
+        <|> expectedVariableName
   where
     expectedVariableName =
         (fail . unwords)
-        [ "expected a variable name, but found:"
-        , (show . unparse) identifier
-        ]
+            [ "expected a variable name, but found:"
+            , (show . unparse) identifier
+            ]
 
 getSetVariableName :: Id -> Parser (SetVariableName VariableName)
 getSetVariableName identifier
-  | isSetVariableId identifier =
-    pure (SetVariableName (getVariableName identifier))
-  | otherwise = empty
+    | isSetVariableId identifier =
+        pure (SetVariableName (getVariableName identifier))
+    | otherwise = empty
 
 {- | Parse a set variable.
 
@@ -205,13 +201,13 @@ parseSetVariable = do
     variableName <- parseSetId >>= getSetVariableName
     colon
     variableSort <- parseSort
-    pure Variable { variableName, variableSort }
+    pure Variable{variableName, variableSort}
 
 getElementVariableName :: Id -> Parser (ElementVariableName VariableName)
 getElementVariableName identifier
-  | isElementVariableId identifier =
-    pure (ElementVariableName (getVariableName identifier))
-  | otherwise = empty
+    | isElementVariableId identifier =
+        pure (ElementVariableName (getVariableName identifier))
+    | otherwise = empty
 
 {- | Parse an element variable.
 
@@ -224,10 +220,9 @@ parseElementVariable = do
     variableName <- parseId >>= getElementVariableName
     colon
     variableSort <- parseSort
-    pure Variable { variableName, variableSort }
+    pure Variable{variableName, variableSort}
 
-{- | Parse an entire 'SymbolOrAlias' occurring in a pattern.
- -}
+-- | Parse an entire 'SymbolOrAlias' occurring in a pattern.
 parseSymbolOrAlias :: Parser SymbolOrAlias
 parseSymbolOrAlias = parseSymbolId >>= parseSymbolOrAliasRemainder
 
@@ -236,38 +231,38 @@ parseSymbolOrAlias = parseSymbolId >>= parseSymbolOrAliasRemainder
 @
 <application-pattern> ::= <symbol-id> "{" <sorts> "}" "(" <patterns> ")"
 @
- -}
-parseApplication
-    :: Parser child
-    -> Parser (Application SymbolOrAlias child)
+-}
+parseApplication ::
+    Parser child ->
+    Parser (Application SymbolOrAlias child)
 parseApplication parseChild = do
     applicationSymbolOrAlias <- parseSymbolOrAlias
     applicationChildren <- parens . list $ parseChild
-    pure Application { applicationSymbolOrAlias, applicationChildren }
+    pure Application{applicationSymbolOrAlias, applicationChildren}
 
 {- | Parse the tail of an 'Application' pattern, after the @Id@.
 
 @
 ... "{" <sorts> "}" "(" <patterns> ")"
 @
- -}
+-}
 parseApplicationRemainder :: Id -> Parser ParsedPattern
 parseApplicationRemainder identifier = do
     applicationSymbolOrAlias <- parseSymbolOrAliasRemainder identifier
     applicationChildren <- parens . list $ parsePattern
-    (pure . from) Application { applicationSymbolOrAlias, applicationChildren }
+    (pure . from) Application{applicationSymbolOrAlias, applicationChildren}
 
 {- | Parse the tail of a 'SymbolOrAlias', after the @Id@.
 
 @
 ... "{" <sorts> "}"
 @
- -}
+-}
 parseSymbolOrAliasRemainder :: Id -> Parser SymbolOrAlias
 parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
     Monad.guard (isSymbolId symbolOrAliasConstructor)
     symbolOrAliasParams <- braces . list $ parseSort
-    pure SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams }
+    pure SymbolOrAlias{symbolOrAliasConstructor, symbolOrAliasParams}
 
 {- | Parse the @\\left-assoc@ syntactic sugar.
 
@@ -276,7 +271,7 @@ parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
 @
 _ '{' '}' '(' <application-pattern> ')'
 @
- -}
+-}
 parseLeftAssoc :: Parser ParsedPattern
 parseLeftAssoc = parseAssoc foldl1
 
@@ -287,7 +282,7 @@ parseLeftAssoc = parseAssoc foldl1
 @
 _ '{' '}' '(' <application-pattern> ')'
 @
- -}
+-}
 parseRightAssoc :: Parser ParsedPattern
 parseRightAssoc = parseAssoc foldr1
 
@@ -298,16 +293,16 @@ parseRightAssoc = parseAssoc foldr1
 @
 _ '{' '}' '(' <application-pattern> ')'
 @
- -}
-parseAssoc
-    :: (forall r. (r -> r -> r) -> [r] -> r)
-    -- ^ folding function: 'foldl1' or 'foldr1'
-    -> Parser ParsedPattern
+-}
+parseAssoc ::
+    -- | folding function: 'foldl1' or 'foldr1'
+    (forall r. (r -> r -> r) -> [r] -> r) ->
+    Parser ParsedPattern
 parseAssoc foldAssoc = do
     braces $ pure ()
     application <- parens $ parseApplication parsePattern
     let mkApplication child1 child2 =
-            from application { applicationChildren = [child1, child2] }
+            from application{applicationChildren = [child1, child2]}
     case applicationChildren application of
         [] -> fail "expected one or more arguments"
         children -> pure (foldAssoc mkApplication children)
@@ -384,11 +379,10 @@ parseKoreRemainder identifier =
         -- Syntax sugar
         "left-assoc" -> parseLeftAssoc
         "right-assoc" -> parseRightAssoc
-
         _ -> empty
 
 getSpecialId :: Id -> Parser Text
-getSpecialId Id { getId } = do
+getSpecialId Id{getId} = do
     Monad.guard (Text.head getId == '\\')
     pure (Text.tail getId)
 
@@ -397,7 +391,7 @@ getSpecialId Id { getId } = do
 @
 _ ::= _ "{" ⟨sort⟩ "}" "(" ")"
 @
- -}
+-}
 parseConnective0 :: (Sort -> f ParsedPattern) -> Parser (f ParsedPattern)
 parseConnective0 mkResult = do
     sort <- braces parseSort
@@ -409,7 +403,7 @@ parseConnective0 mkResult = do
 @
 _ ::= _ "{" ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
 @
- -}
+-}
 parseConnective1 :: (Sort -> ParsedPattern -> result) -> Parser result
 parseConnective1 mkResult = do
     sort <- braces parseSort
@@ -421,10 +415,10 @@ parseConnective1 mkResult = do
 @
 _ ::= _ "{" ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
 @
- -}
-parseConnective2
-    :: (Sort -> ParsedPattern -> ParsedPattern -> result)
-    -> Parser result
+-}
+parseConnective2 ::
+    (Sort -> ParsedPattern -> ParsedPattern -> result) ->
+    Parser result
 parseConnective2 mkResult = do
     sort <- braces parseSort
     (child1, child2) <- parens . pair $ parsePattern
@@ -435,10 +429,10 @@ parseConnective2 mkResult = do
 @
 _ ::= _ "{" ⟨sort⟩ "}" "(" ⟨element-variable⟩ "," ⟨pattern⟩ ")"
 @
- -}
-parseQuantifier
-    :: (Sort -> ElementVariable VariableName -> ParsedPattern -> result)
-    -> Parser result
+-}
+parseQuantifier ::
+    (Sort -> ElementVariable VariableName -> ParsedPattern -> result) ->
+    Parser result
 parseQuantifier mkResult = do
     sort <- braces parseSort
     (variable, child) <- parensTuple parseElementVariable parsePattern
@@ -449,10 +443,10 @@ parseQuantifier mkResult = do
 @
 _ ::= _ "{" ⟨sort⟩ "}" "(" ⟨set-variable⟩ "," ⟨pattern⟩ ")"
 @
- -}
-parseFixpoint
-    :: (SetVariable VariableName -> ParsedPattern -> result)
-    -> Parser result
+-}
+parseFixpoint ::
+    (SetVariable VariableName -> ParsedPattern -> result) ->
+    Parser result
 parseFixpoint mkResult = do
     () <- braces $ pure ()
     (variable, child) <- parensTuple parseSetVariable parsePattern
@@ -463,10 +457,10 @@ parseFixpoint mkResult = do
 @
 _ ::= _ "{" ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
 @
- -}
-parsePredicate1
-    :: (Sort -> Sort -> ParsedPattern -> result)
-    -> Parser result
+-}
+parsePredicate1 ::
+    (Sort -> Sort -> ParsedPattern -> result) ->
+    Parser result
 parsePredicate1 mkResult = do
     (sort1, sort2) <- bracesPair parseSort
     child <- parens parsePattern
@@ -477,10 +471,10 @@ parsePredicate1 mkResult = do
 @
 _ ::= _ "{" ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
 @
- -}
-parsePredicate2
-    :: (Sort -> Sort -> ParsedPattern -> ParsedPattern -> result)
-    -> Parser result
+-}
+parsePredicate2 ::
+    (Sort -> Sort -> ParsedPattern -> ParsedPattern -> result) ->
+    Parser result
 parsePredicate2 mkResult = do
     (sort1, sort2) <- bracesPair parseSort
     (child1, child2) <- parensPair parsePattern
@@ -489,31 +483,29 @@ parsePredicate2 mkResult = do
 {- | Get a 'VariableName' from an 'Id'.
 
 Uses 'parseVariableCounter' to get the 'counter' from the 'Id', if any.
-
- -}
+-}
 getVariableName :: Id -> VariableName
 getVariableName identifier =
     let (base, counter) = parseVariableCounter identifier
-    in VariableName { base, counter }
+     in VariableName{base, counter}
 
-{- | Read the fresh name counter (if any) from the end of an 'Id'.
- -}
+-- | Read the fresh name counter (if any) from the end of an 'Id'.
 parseVariableCounter :: Id -> (Id, Maybe (Sup Natural))
-parseVariableCounter identifier@Id { getId, idLocation }
-  -- Cases:
-  -- suffix is empty: no counter, Id is not changed
-  | Text.null suffix = (identifier, Nothing)
-  -- suffix is all zeros: counter is zero, Id has final zero stripped
-  | Text.null nonZeros =
-    ( Id { idLocation, getId = base <> Text.init zeros }
-    , Just (Element 0)
-    )
-  -- suffix is some zeros followed by non-zeros:
-  --   read the counter from the non-zeros, Id is base + zeros
-  | otherwise =
-    ( Id { idLocation, getId = base <> zeros }
-    , (Just . Element) (read $ Text.unpack nonZeros)
-    )
+parseVariableCounter identifier@Id{getId, idLocation}
+    -- Cases:
+    -- suffix is empty: no counter, Id is not changed
+    | Text.null suffix = (identifier, Nothing)
+    -- suffix is all zeros: counter is zero, Id has final zero stripped
+    | Text.null nonZeros =
+        ( Id{idLocation, getId = base <> Text.init zeros}
+        , Just (Element 0)
+        )
+    -- suffix is some zeros followed by non-zeros:
+    --   read the counter from the non-zeros, Id is base + zeros
+    | otherwise =
+        ( Id{idLocation, getId = base <> zeros}
+        , (Just . Element) (read $ Text.unpack nonZeros)
+        )
   where
     base = Text.dropWhileEnd Char.isDigit getId
     suffix = Text.drop (Text.length base) getId
@@ -525,7 +517,7 @@ parseVariableCounter identifier@Id { getId, idLocation }
 @
 "\dv" "{" <sort> "}" "(" <string-literal> ")"
 @
- -}
+-}
 parseDomainValue :: Parser (DomainValue Sort ParsedPattern)
 parseDomainValue =
     DomainValue <$> braces parseSort <*> parens parseChild
@@ -538,7 +530,7 @@ parseDomainValue =
 @
 ⟨attributes⟩ ::= ‘[’ ⟨patterns⟩ ‘]’
 @
- -}
+-}
 parseAttributes :: Parser Attributes
 parseAttributes =
     Attributes <$> brackets (Parse.sepBy parsePattern comma)
@@ -553,9 +545,9 @@ parseAttributes =
 parseDefinition :: Parser ParsedDefinition
 parseDefinition = parseDefinitionAux parseSentence
 
-parseDefinitionAux
-    :: Parser sentence
-    -> Parser (Definition sentence)
+parseDefinitionAux ::
+    Parser sentence ->
+    Parser (Definition sentence)
 parseDefinitionAux parseSentence' =
     Definition
         <$> parseAttributes
@@ -574,20 +566,21 @@ parseDefinitionAux parseSentence' =
 parseModule :: Parser ParsedModule
 parseModule = parseModuleAux parseSentence
 
-parseModuleAux
-    :: Parser sentence
-    -> Parser (Module sentence)
+parseModuleAux ::
+    Parser sentence ->
+    Parser (Module sentence)
 parseModuleAux parseSentence' = do
     keyword "module"
     moduleName <- parseModuleName
     moduleSentences <- many parseSentence'
     keyword "endmodule"
     moduleAttributes <- parseAttributes
-    return Module
-           { moduleName
-           , moduleSentences
-           , moduleAttributes
-           }
+    return
+        Module
+            { moduleName
+            , moduleSentences
+            , moduleAttributes
+            }
 
 {- | Parse a Kore sentence.
 
@@ -611,18 +604,18 @@ parseModuleAux parseSentence' = do
 <hooked-sort-definition> ::= "hooked-sort" ...
 <hooked-symbol-definition> ::= "hooked-symbol" ...
 @
- -}
+-}
 parseSentence :: Parser ParsedSentence
 parseSentence =
     parseSentenceImport
-    <|> parseSentenceAlias
-    <|> parseSentenceAxiom
-    <|> parseSentenceClaim
-    <|> parseSentenceSort
-    <|> parseSentenceHookedSort
-    <|> parseSentenceSymbol
-    <|> parseSentenceHookedSymbol
-    <?> "sentence"
+        <|> parseSentenceAlias
+        <|> parseSentenceAxiom
+        <|> parseSentenceClaim
+        <|> parseSentenceSort
+        <|> parseSentenceHookedSort
+        <|> parseSentenceSymbol
+        <|> parseSentenceHookedSymbol
+        <?> "sentence"
 
 {- | Parse a symbol declaration.
 
@@ -632,7 +625,7 @@ parseSentence =
         "(" <sorts> ")" ":" <sort>
         "[" <attributes> "]"
 @
- -}
+-}
 parseSentenceSymbol :: Parser ParsedSentence
 parseSentenceSymbol = do
     keyword "symbol"
@@ -646,7 +639,7 @@ parseSentenceSymbol = do
         "(" <sorts> ")" ":" <sort>
         "[" <attributes> "]"
 @
- -}
+-}
 parseSentenceHookedSymbol :: Parser ParsedSentence
 parseSentenceHookedSymbol = do
     keyword "hooked-symbol"
@@ -661,7 +654,6 @@ _
         "(" <sorts> ")" ":" <sort>
         "[" <attributes> "]"
 @
-
 -}
 parseSentenceSymbolRemainder :: Parser SentenceSymbol
 parseSentenceSymbolRemainder = do
@@ -670,12 +662,13 @@ parseSentenceSymbolRemainder = do
     colon
     sentenceSymbolResultSort <- parseSort
     sentenceSymbolAttributes <- parseAttributes
-    pure SentenceSymbol
-        { sentenceSymbolSymbol
-        , sentenceSymbolSorts
-        , sentenceSymbolResultSort
-        , sentenceSymbolAttributes
-        }
+    pure
+        SentenceSymbol
+            { sentenceSymbolSymbol
+            , sentenceSymbolSorts
+            , sentenceSymbolResultSort
+            , sentenceSymbolAttributes
+            }
 
 {- | Parse an alias definition
 
@@ -700,14 +693,15 @@ parseSentenceAlias = do
     keyword ":="
     sentenceAliasRightPattern <- parsePattern
     sentenceAliasAttributes <- parseAttributes
-    (pure . inject) SentenceAlias
-        { sentenceAliasAlias
-        , sentenceAliasSorts
-        , sentenceAliasResultSort
-        , sentenceAliasLeftPattern
-        , sentenceAliasRightPattern
-        , sentenceAliasAttributes
-        }
+    (pure . inject)
+        SentenceAlias
+            { sentenceAliasAlias
+            , sentenceAliasSorts
+            , sentenceAliasResultSort
+            , sentenceAliasLeftPattern
+            , sentenceAliasRightPattern
+            , sentenceAliasAttributes
+            }
 
 {- | Parse an import declaration.
 
@@ -722,10 +716,11 @@ parseSentenceImport = do
     keyword "import"
     sentenceImportModuleName <- parseModuleName
     sentenceImportAttributes <- parseAttributes
-    (pure . SentenceImportSentence) SentenceImport
-        { sentenceImportModuleName
-        , sentenceImportAttributes
-        }
+    (pure . SentenceImportSentence)
+        SentenceImport
+            { sentenceImportModuleName
+            , sentenceImportAttributes
+            }
 
 {- | Parse an axiom sentence.
 
@@ -735,8 +730,7 @@ parseSentenceImport = do
         <pattern>
         "[" <attributes> "]"
 @
-
- -}
+-}
 parseSentenceAxiom :: Parser ParsedSentence
 parseSentenceAxiom = do
     keyword "axiom"
@@ -750,8 +744,7 @@ parseSentenceAxiom = do
         <pattern>
         "[" <attributes> "]"
 @
-
- -}
+-}
 parseSentenceClaim :: Parser ParsedSentence
 parseSentenceClaim = do
     keyword "claim"
@@ -763,18 +756,18 @@ keyword using the given constructor to construct the appropriate object.
 @
 _ ::= _ "{" <sort-variables> "}" <pattern> "[" <attributes> "]"
 @
-
 -}
 parseSentenceAxiomRemainder :: Parser ParsedSentenceAxiom
 parseSentenceAxiomRemainder = do
     sentenceAxiomParameters <- braces . list $ parseSortVariable
     sentenceAxiomPattern <- parsePattern
     sentenceAxiomAttributes <- parseAttributes
-    pure SentenceAxiom
-        { sentenceAxiomParameters
-        , sentenceAxiomPattern
-        , sentenceAxiomAttributes
-        }
+    pure
+        SentenceAxiom
+            { sentenceAxiomParameters
+            , sentenceAxiomPattern
+            , sentenceAxiomAttributes
+            }
 
 {- | Parse a sort sentence.
 
@@ -807,15 +800,15 @@ parseSentenceHookedSort = do
 @
 _ ::= _ <sort-id> "{" <sort-variables> "}" "[" <attributes> "]"
 @
-
 -}
 parseSentenceSortRemainder :: Parser ParsedSentenceSort
 parseSentenceSortRemainder = do
     sentenceSortName <- parseSortId
     sentenceSortParameters <- braces . list $ parseSortVariable
     sentenceSortAttributes <- parseAttributes
-    pure SentenceSort
-        { sentenceSortName
-        , sentenceSortParameters
-        , sentenceSortAttributes
-        }
+    pure
+        SentenceSort
+            { sentenceSortName
+            , sentenceSortParameters
+            , sentenceSortAttributes
+            }

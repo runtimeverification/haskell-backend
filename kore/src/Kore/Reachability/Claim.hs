@@ -1,192 +1,192 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Reachability.Claim (
+    Claim (..),
+    ApplyResult (..),
+    AppliedRule (..),
+    retractApplyRemainder,
+    strategy,
+    TransitionRule,
+    Prim,
+    ClaimExtractor (..),
+    WithConfiguration (..),
+    CheckImplicationResult (..),
+    extractClaims,
+    reachabilityFirstStep,
+    reachabilityNextStep,
+    transitionRule,
+    isTrusted,
 
-module Kore.Reachability.Claim
-    ( Claim (..)
-    , ApplyResult (..)
-    , AppliedRule (..)
-    , retractApplyRemainder
-    , strategy
-    , TransitionRule
-    , Prim
-    , ClaimExtractor (..)
-    , WithConfiguration (..)
-    , CheckImplicationResult (..)
-    , extractClaims
-    , reachabilityFirstStep
-    , reachabilityNextStep
-    , transitionRule
-    , isTrusted
     -- * Re-exports
-    , RewriteRule (..)
-    , module Kore.Log.InfoReachability
+    RewriteRule (..),
+    module Kore.Log.InfoReachability,
+
     -- * For Claim implementations
-    , deriveSeqClaim
-    , checkImplication'
-    , simplify'
-    , derivePar'
-    , deriveSeq'
+    deriveSeqClaim,
+    checkImplication',
+    simplify',
+    derivePar',
+    deriveSeq',
+
     -- * For testing
-    , checkImplicationWorker
-    , simplifyRightHandSide
-    ) where
+    checkImplicationWorker,
+    simplifyRightHandSide,
+) where
 
-import Prelude.Kore
-
-import Control.Lens
-    ( Lens'
-    )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import Control.Monad.Catch
-    ( Exception (..)
-    , SomeException (..)
-    )
-import Control.Monad.State.Strict
-    ( MonadState
-    , StateT
-    , runStateT
-    )
+import Control.Monad.Catch (
+    Exception (..),
+    SomeException (..),
+ )
+import Control.Monad.State.Strict (
+    MonadState,
+    StateT,
+    runStateT,
+ )
 import qualified Control.Monad.State.Strict as State
 import Data.Functor.Compose
-import Data.Generics.Product
-    ( field
-    )
+import Data.Generics.Product (
+    field,
+ )
 import qualified Data.Monoid as Monoid
-import Data.Stream.Infinite
-    ( Stream (..)
-    )
+import Data.Stream.Infinite (
+    Stream (..),
+ )
 import qualified Data.Stream.Infinite as Stream
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
-
 import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Label as Attribute
-    ( Label
-    )
-import qualified Kore.Attribute.RuleIndex as Attribute
-    ( RuleIndex
-    )
-import qualified Kore.Attribute.SourceLocation as Attribute
-    ( SourceLocation
-    )
+import qualified Kore.Attribute.Label as Attribute (
+    Label,
+ )
+import qualified Kore.Attribute.RuleIndex as Attribute (
+    RuleIndex,
+ )
+import qualified Kore.Attribute.SourceLocation as Attribute (
+    SourceLocation,
+ )
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
-import Kore.IndexedModule.IndexedModule
-    ( IndexedModule (indexedModuleClaims)
-    , VerifiedModule
-    )
+import Kore.IndexedModule.IndexedModule (
+    IndexedModule (indexedModuleClaims),
+    VerifiedModule,
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol
-    ( Symbol
-    )
-import Kore.Internal.TermLike
-    ( isFunctionPattern
-    , mkIn
-    , termLikeSort
-    )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
+import Kore.Internal.TermLike (
+    isFunctionPattern,
+    mkIn,
+    termLikeSort,
+ )
 import Kore.Log.InfoReachability
-import Kore.Reachability.ClaimState hiding
-    ( claimState
-    )
+import Kore.Reachability.ClaimState hiding (
+    claimState,
+ )
 import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern
-    ( AxiomPattern (..)
-    )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
-    )
+import Kore.Step.AxiomPattern (
+    AxiomPattern (..),
+ )
+import Kore.Step.ClaimPattern (
+    ClaimPattern (..),
+ )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Result
-    ( Result (..)
-    , Results (..)
-    )
+import Kore.Step.Result (
+    Result (..),
+    Results (..),
+ )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (..)
-    )
-import Kore.Step.Simplification.Data
-    ( MonadSimplify
-    )
+import Kore.Step.RulePattern (
+    RewriteRule (..),
+    RulePattern (..),
+ )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import Kore.Step.Simplification.Data (
+    MonadSimplify,
+ )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Pattern
-    ( simplifyTopConfigurationDefined
-    )
+import Kore.Step.Simplification.Pattern (
+    simplifyTopConfigurationDefined,
+ )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
-import Kore.Step.Strategy
-    ( Strategy
-    )
+import Kore.Step.Strategy (
+    Strategy,
+ )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Verified as Verified
-import Logic
-    ( LogicT
-    , MonadLogic
-    )
+import Logic (
+    LogicT,
+    MonadLogic,
+ )
 import qualified Logic
-import Pretty
-    ( Pretty (..)
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
 class Claim claim where
-    {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
-    -}
-    data family Rule claim
+    -- | @Rule claim@ is the type of rule to take a single step toward @claim@.
+    data Rule claim
 
-    checkImplication
-        :: MonadSimplify m
-        => claim
-        -> LogicT m (CheckImplicationResult claim)
+    checkImplication ::
+        MonadSimplify m =>
+        claim ->
+        LogicT m (CheckImplicationResult claim)
 
-    simplify
-        :: MonadSimplify m
-        => claim
-        -> Strategy.TransitionT (AppliedRule claim) m claim
+    simplify ::
+        MonadSimplify m =>
+        claim ->
+        Strategy.TransitionT (AppliedRule claim) m claim
 
-    applyClaims
-        :: MonadSimplify m
-        => [claim]
-        -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    applyClaims ::
+        MonadSimplify m =>
+        [claim] ->
+        claim ->
+        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 
-    applyAxioms
-        :: MonadSimplify m
-        => [[Rule claim]]
-        -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    applyAxioms ::
+        MonadSimplify m =>
+        [[Rule claim]] ->
+        claim ->
+        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 
 {- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
 
@@ -200,8 +200,7 @@ data ApplyResult claim
     deriving (Show, Eq)
     deriving (Functor)
 
-{- | 'AppliedRule' represents the rule applied during a rewriting step.
--}
+-- | 'AppliedRule' represents the rule applied during a rewriting step.
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
     | AppliedClaim claim
@@ -211,33 +210,37 @@ data AppliedRule claim
 instance (Debug claim, Debug (Rule claim)) => Debug (AppliedRule claim)
 
 instance
-    ( Diff claim, Debug claim
-    , Diff (Rule claim), Debug (Rule claim)
-    ) => Diff (AppliedRule claim)
+    ( Diff claim
+    , Debug claim
+    , Diff (Rule claim)
+    , Debug (Rule claim)
+    ) =>
+    Diff (AppliedRule claim)
 
-instance (From claim Attribute.Label, From (Rule claim) Attribute.Label)
-  => From (AppliedRule claim) Attribute.Label
-  where
+instance
+    (From claim Attribute.Label, From (Rule claim) Attribute.Label) =>
+    From (AppliedRule claim) Attribute.Label
+    where
     from (AppliedAxiom rule) = from rule
     from (AppliedClaim claim) = from claim
 
-instance (From claim Attribute.RuleIndex, From (Rule claim) Attribute.RuleIndex)
-  => From (AppliedRule claim) Attribute.RuleIndex
-  where
+instance
+    (From claim Attribute.RuleIndex, From (Rule claim) Attribute.RuleIndex) =>
+    From (AppliedRule claim) Attribute.RuleIndex
+    where
     from (AppliedAxiom rule) = from rule
     from (AppliedClaim claim) = from claim
 
 instance
     ( From claim Attribute.SourceLocation
     , From (Rule claim) Attribute.SourceLocation
-    )
-    => From (AppliedRule claim) Attribute.SourceLocation
-  where
+    ) =>
+    From (AppliedRule claim) Attribute.SourceLocation
+    where
     from (AppliedAxiom rule) = from rule
     from (AppliedClaim claim) = from claim
 
-instance (Unparse claim, Unparse (Rule claim)) => Unparse (AppliedRule claim)
-  where
+instance (Unparse claim, Unparse (Rule claim)) => Unparse (AppliedRule claim) where
     unparse (AppliedAxiom rule) = unparse rule
     unparse (AppliedClaim claim) = unparse claim
 
@@ -250,95 +253,91 @@ class ClaimExtractor claim where
     extractClaim :: (AxiomAttributes, Verified.SentenceClaim) -> Maybe claim
 
 -- | Extracts all One-Path claims from a verified module.
-extractClaims
-    :: ClaimExtractor claim
-    => VerifiedModule declAtts
-    -- ^ 'IndexedModule' containing the definition
-    -> [claim]
+extractClaims ::
+    ClaimExtractor claim =>
+    -- | 'IndexedModule' containing the definition
+    VerifiedModule declAtts ->
+    [claim]
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
-deriveSeqClaim
-    :: MonadSimplify m
-    => Step.UnifyingRule claim
-    => Step.UnifyingRuleVariable claim ~ RewritingVariableName
-    => From claim (AxiomPattern RewritingVariableName)
-    => From claim Attribute.SourceLocation
-    => Lens' claim ClaimPattern
-    -> (ClaimPattern -> claim)
-    -> [claim]
-    -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+deriveSeqClaim ::
+    MonadSimplify m =>
+    Step.UnifyingRule claim =>
+    Step.UnifyingRuleVariable claim ~ RewritingVariableName =>
+    From claim (AxiomPattern RewritingVariableName) =>
+    From claim Attribute.SourceLocation =>
+    Lens' claim ClaimPattern ->
+    (ClaimPattern -> claim) ->
+    [claim] ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
-    getCompose
-    $ Lens.forOf lensClaimPattern claim
-    $ \claimPattern ->
-        fmap (snd . Step.refreshRule mempty)
-        $ Lens.forOf (field @"left") claimPattern
-        $ \config -> Compose $ do
-            results <-
-                Step.applyClaimsSequence
-                    mkClaim
-                    config
-                    (Lens.view lensClaimPattern <$> claims)
-                    & lift
-            deriveResults fromAppliedRule results
+    getCompose $
+        Lens.forOf lensClaimPattern claim $
+            \claimPattern ->
+                fmap (snd . Step.refreshRule mempty) $
+                    Lens.forOf (field @"left") claimPattern $
+                        \config -> Compose $ do
+                            results <-
+                                Step.applyClaimsSequence
+                                    mkClaim
+                                    config
+                                    (Lens.view lensClaimPattern <$> claims)
+                                    & lift
+                            deriveResults fromAppliedRule results
   where
     fromAppliedRule =
         AppliedClaim
-        . mkClaim
-        . Step.withoutUnification
+            . mkClaim
+            . Step.withoutUnification
 
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
 
-transitionRule
-    :: forall m claim
-    .  MonadSimplify m
-    => Claim claim
-    => [claim]
-    -> [[Rule claim]]
-    -> TransitionRule m (AppliedRule claim) (ClaimState claim)
+transitionRule ::
+    forall m claim.
+    MonadSimplify m =>
+    Claim claim =>
+    [claim] ->
+    [[Rule claim]] ->
+    TransitionRule m (AppliedRule claim) (ClaimState claim)
 transitionRule claims axiomGroups = transitionRuleWorker
   where
-    transitionRuleWorker
-        :: Prim
-        -> ClaimState claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    transitionRuleWorker ::
+        Prim ->
+        ClaimState claim ->
+        Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
     transitionRuleWorker Begin (Rewritten claim) = pure (Claimed claim)
     transitionRuleWorker Begin claimState = pure claimState
-
     transitionRuleWorker Simplify claimState
-      | Just claim <- retractSimplifiable claimState =
-        Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
-      | otherwise =
-        pure claimState
-
+        | Just claim <- retractSimplifiable claimState =
+            Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
+        | otherwise =
+            pure claimState
     transitionRuleWorker CheckImplication claimState
-      | Just claim <- retractRewritable claimState = do
-        result <- checkImplication claim & Logic.lowerLogicT
-        case result of
-            Implied -> pure Proven
-            NotImpliedStuck a -> do
-                pure (Stuck a)
-            NotImplied a
-              | isRemainder claimState -> do
-                pure (Stuck a)
-              | otherwise -> pure (Claimed a)
-      | otherwise = pure claimState
-
+        | Just claim <- retractRewritable claimState = do
+            result <- checkImplication claim & Logic.lowerLogicT
+            case result of
+                Implied -> pure Proven
+                NotImpliedStuck a -> do
+                    pure (Stuck a)
+                NotImplied a
+                    | isRemainder claimState -> do
+                        pure (Stuck a)
+                    | otherwise -> pure (Claimed a)
+        | otherwise = pure claimState
     transitionRuleWorker ApplyClaims (Claimed claim) =
         applyClaims claims claim
-        >>= return . applyResultToClaimState
+            >>= return . applyResultToClaimState
     transitionRuleWorker ApplyClaims claimState = pure claimState
-
     transitionRuleWorker ApplyAxioms claimState
-      | Just claim <- retractRewritable claimState =
-        applyAxioms axiomGroups claim
-        >>= return . applyResultToClaimState
-      | otherwise = pure claimState
+        | Just claim <- retractRewritable claimState =
+            applyAxioms axiomGroups claim
+                >>= return . applyResultToClaimState
+        | otherwise = pure claimState
 
     applyResultToClaimState (ApplyRewritten a) = Rewritten a
     applyResultToClaimState (ApplyRemainder a) = Remaining a
@@ -387,16 +386,15 @@ strategy =
 As an optimization, 'checkImplication' returns 'NotImpliedStuck' when the
 implication between /terms/ is valid, but the implication between side
 conditions does not hold.
-
- -}
+-}
 data CheckImplicationResult a
-    = Implied
-    -- ^ The implication is valid.
-    | NotImplied !a
-    -- ^ The implication is not valid.
-    | NotImpliedStuck !a
-    -- ^ The implication between /terms/ is valid, but the implication between
-    -- side-conditions is not valid.
+    = -- | The implication is valid.
+      Implied
+    | -- | The implication is not valid.
+      NotImplied !a
+    | -- | The implication between /terms/ is valid, but the implication between
+      -- side-conditions is not valid.
+      NotImpliedStuck !a
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -418,37 +416,37 @@ instance Pretty a => Pretty (CheckImplicationResult a) where
             ]
 
 -- | Remove the destination of the claim.
-checkImplication'
-    :: forall claim m
-    .  (MonadLogic m, MonadSimplify m)
-    => Lens' claim ClaimPattern
-    -> claim
-    -> m (CheckImplicationResult claim)
+checkImplication' ::
+    forall claim m.
+    (MonadLogic m, MonadSimplify m) =>
+    Lens' claim ClaimPattern ->
+    claim ->
+    m (CheckImplicationResult claim)
 checkImplication' lensRulePattern claim =
     claim
-    & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
-    & getCompose
+        & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
+        & getCompose
 
-assertFunctionLikeConfiguration
-    :: forall m
-    .  Monad m
-    => HasCallStack
-    => ClaimPattern
-    -> m ()
+assertFunctionLikeConfiguration ::
+    forall m.
+    Monad m =>
+    HasCallStack =>
+    ClaimPattern ->
+    m ()
 assertFunctionLikeConfiguration claimPattern
-  | (not . isFunctionPattern) leftTerm =
-    error . show . Pretty.vsep $
-        [ "The check implication step expects\
-        \ the configuration term to be function-like."
-        , Pretty.indent 2 "Configuration term:"
-        , Pretty.indent 4 (unparse leftTerm)
-        ]
-  | otherwise = pure ()
+    | (not . isFunctionPattern) leftTerm =
+        error . show . Pretty.vsep $
+            [ "The check implication step expects\
+              \ the configuration term to be function-like."
+            , Pretty.indent 2 "Configuration term:"
+            , Pretty.indent 4 (unparse leftTerm)
+            ]
+    | otherwise = pure ()
   where
-    ClaimPattern { left } = claimPattern
+    ClaimPattern{left} = claimPattern
     leftTerm = Pattern.term left
 
-newtype AnyUnified = AnyUnified { didAnyUnify :: Bool }
+newtype AnyUnified = AnyUnified {didAnyUnify :: Bool}
     deriving stock (Eq, Ord, Read, Show)
     deriving (Semigroup, Monoid) via Monoid.Any
 
@@ -503,29 +501,28 @@ state ("inventing" programs), but at the cost that it does prevent the prover
 from visiting the final program state twice. In practice, we find that deductive
 proofs should not require the prover to visit the final program state twice,
 anyway.
-
- -}
-checkImplicationWorker
-    :: forall m
-    .  (MonadLogic m, MonadSimplify m)
-    => ClaimPattern
-    -> m (CheckImplicationResult ClaimPattern)
+-}
+checkImplicationWorker ::
+    forall m.
+    (MonadLogic m, MonadSimplify m) =>
+    ClaimPattern ->
+    m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
-                Pattern.andCondition left
-                $ from $ makeCeilPredicate leftTerm
+                Pattern.andCondition left $
+                    from $ makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
             Logic.scatter configs'
-            >>= Pattern.simplify
-            >>= SMT.Evaluator.filterMultiOr
-            >>= Logic.scatter
+                >>= Pattern.simplify
+                >>= SMT.Evaluator.filterMultiOr
+                >>= Logic.scatter
         pure (examine anyUnified stuck)
-    & elseImplied
+        & elseImplied
   where
-    ClaimPattern { right, left, existentials } = claimPattern
+    ClaimPattern{right, left, existentials} = claimPattern
     leftTerm = Pattern.term left
     sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
@@ -548,19 +545,19 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             let (rightTerm, rightCondition) = Pattern.splitTerm right'
             unified <-
                 mkIn sort leftTerm rightTerm
-                & Pattern.fromTermLike
-                & Pattern.simplify
-                & (>>= Logic.scatter)
+                    & Pattern.fromTermLike
+                    & Pattern.simplify
+                    & (>>= Logic.scatter)
             didUnify
             removed <-
                 Pattern.andCondition unified rightCondition
-                & Pattern.simplify
-                & (>>= Logic.scatter)
+                    & Pattern.simplify
+                    & (>>= Logic.scatter)
             Exists.makeEvaluate sideCondition existentials removed
                 >>= Logic.scatter
-        & OrPattern.observeAllT
-        & (>>= Not.simplifyEvaluated sideCondition)
-        & wereAnyUnified
+            & OrPattern.observeAllT
+            & (>>= Not.simplifyEvaluated sideCondition)
+            & wereAnyUnified
 
     wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
     wereAnyUnified act = swap <$> runStateT act mempty
@@ -570,28 +567,28 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
 
     elseImplied acts = Logic.ifte acts pure (pure Implied)
 
-    examine
-        :: AnyUnified
-        -> Pattern RewritingVariableName
-        -> CheckImplicationResult ClaimPattern
-    examine AnyUnified { didAnyUnify } stuck
-      | didAnyUnify
-      , isBottom condition =
-          Implied
-      | not didAnyUnify
-      , not (isBottom right) =
-          NotImplied claimPattern
-      | otherwise =
-        Lens.set (field @"left") stuck claimPattern
-        & NotImpliedStuck
+    examine ::
+        AnyUnified ->
+        Pattern RewritingVariableName ->
+        CheckImplicationResult ClaimPattern
+    examine AnyUnified{didAnyUnify} stuck
+        | didAnyUnify
+          , isBottom condition =
+            Implied
+        | not didAnyUnify
+          , not (isBottom right) =
+            NotImplied claimPattern
+        | otherwise =
+            Lens.set (field @"left") stuck claimPattern
+                & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
 
-simplify'
-    :: MonadSimplify m
-    => Lens' claim ClaimPattern
-    -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m claim
+simplify' ::
+    MonadSimplify m =>
+    Lens' claim ClaimPattern ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) m claim
 simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
     let sideCondition = extractSideCondition claim'
@@ -599,117 +596,119 @@ simplify' lensClaimPattern claim = do
   where
     extractSideCondition =
         SideCondition.assumeTrueCondition
-        . Pattern.withoutTerm
-        . Lens.view (lensClaimPattern . field @"left")
+            . Pattern.withoutTerm
+            . Lens.view (lensClaimPattern . field @"left")
 
     simplifyLeftHandSide =
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
             Monad.guard (not . isBottom . Conditional.term $ config)
             let definedConfig =
-                    Pattern.andCondition config
-                    $ from $ makeCeilPredicate (Conditional.term config)
+                    Pattern.andCondition config $
+                        from $ makeCeilPredicate (Conditional.term config)
                 assumedDefined = Pattern.term config
             configs <-
                 simplifyTopConfigurationDefined
                     definedConfig
                     assumedDefined
-                >>= SMT.Evaluator.filterMultiOr
-                & lift
+                    >>= SMT.Evaluator.filterMultiOr
+                    & lift
             asum (pure <$> toList configs)
 
-simplifyRightHandSide
-    :: MonadSimplify m
-    => Lens' claim ClaimPattern
-    -> SideCondition RewritingVariableName
-    -> claim
-    -> m claim
+simplifyRightHandSide ::
+    MonadSimplify m =>
+    Lens' claim ClaimPattern ->
+    SideCondition RewritingVariableName ->
+    claim ->
+    m claim
 simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
-        OrPattern.observeAllT
-        $ Logic.scatter dest
-        >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
-        >>= SMT.Evaluator.filterMultiOr
-        >>= Logic.scatter
+        OrPattern.observeAllT $
+            Logic.scatter dest
+                >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
+                >>= SMT.Evaluator.filterMultiOr
+                >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
 
 -- | Exception that contains the last configuration before the error.
-data WithConfiguration =
-    WithConfiguration (Pattern VariableName) SomeException
+data WithConfiguration
+    = WithConfiguration (Pattern VariableName) SomeException
     deriving (Show, Typeable)
 
 instance Exception WithConfiguration
 
 -- | Apply 'Rule's to the claim in parallel.
-derivePar'
-    :: forall m claim
-    .  MonadSimplify m
-    => Lens' claim ClaimPattern
-    -> (RewriteRule RewritingVariableName -> Rule claim)
-    -> [RewriteRule RewritingVariableName]
-    -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+derivePar' ::
+    forall m claim.
+    MonadSimplify m =>
+    Lens' claim ClaimPattern ->
+    (RewriteRule RewritingVariableName -> Rule claim) ->
+    [RewriteRule RewritingVariableName] ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
 
 type Deriver monad =
-        [RewriteRule RewritingVariableName]
-    ->  Pattern RewritingVariableName
-    ->  monad (Step.Results (RulePattern RewritingVariableName))
+    [RewriteRule RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    monad (Step.Results (RulePattern RewritingVariableName))
 
 -- | Apply 'Rule's to the claim in parallel.
-deriveWith
-    :: forall m claim
-    .  Monad m
-    => Lens' claim ClaimPattern
-    -> (RewriteRule RewritingVariableName -> Rule claim)
-    -> Deriver m
-    -> [RewriteRule RewritingVariableName]
-    -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+deriveWith ::
+    forall m claim.
+    Monad m =>
+    Lens' claim ClaimPattern ->
+    (RewriteRule RewritingVariableName -> Rule claim) ->
+    Deriver m ->
+    [RewriteRule RewritingVariableName] ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveWith lensClaimPattern mkRule takeStep rewrites claim =
-    getCompose
-    $ Lens.forOf lensClaimPattern claim
-    $ \claimPattern ->
-        fmap (snd . Step.refreshRule mempty)
-        $ Lens.forOf (field @"left") claimPattern
-        $ \config -> Compose $ do
-            results <- takeStep rewrites config & lift
-            deriveResults fromAppliedRule results
+    getCompose $
+        Lens.forOf lensClaimPattern claim $
+            \claimPattern ->
+                fmap (snd . Step.refreshRule mempty) $
+                    Lens.forOf (field @"left") claimPattern $
+                        \config -> Compose $ do
+                            results <- takeStep rewrites config & lift
+                            deriveResults fromAppliedRule results
   where
     fromAppliedRule =
         AppliedAxiom
-        . mkRule
-        . RewriteRule
-        . Step.withoutUnification
+            . mkRule
+            . RewriteRule
+            . Step.withoutUnification
 
 -- | Apply 'Rule's to the claim in sequence.
-deriveSeq'
-    :: forall m claim
-    .  MonadSimplify m
-    => Lens' claim ClaimPattern
-    -> (RewriteRule RewritingVariableName -> Rule claim)
-    -> [RewriteRule RewritingVariableName]
-    -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+deriveSeq' ::
+    forall m claim.
+    MonadSimplify m =>
+    Lens' claim ClaimPattern ->
+    (RewriteRule RewritingVariableName -> Rule claim) ->
+    [RewriteRule RewritingVariableName] ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
 
-deriveResults
-    :: Step.UnifyingRuleVariable representation ~ RewritingVariableName
-    => (Step.UnifiedRule representation -> AppliedRule claim)
-    -> Step.Results representation
-    -> Strategy.TransitionT (AppliedRule claim) simplifier
+deriveResults ::
+    Step.UnifyingRuleVariable representation ~ RewritingVariableName =>
+    (Step.UnifiedRule representation -> AppliedRule claim) ->
+    Step.Results representation ->
+    Strategy.TransitionT
+        (AppliedRule claim)
+        simplifier
         (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
-deriveResults fromAppliedRule Results { results, remainders } =
+deriveResults fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
     addRemainders = asum (addRemainder <$> toList remainders)
 
-    addResult Result { appliedRule, result } = do
+    addResult Result{appliedRule, result} = do
         addRule appliedRule
         case toList result of
             [] -> addRewritten Pattern.bottom

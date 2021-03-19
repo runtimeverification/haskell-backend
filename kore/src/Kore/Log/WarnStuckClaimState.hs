@@ -1,38 +1,34 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Log.WarnStuckClaimState
-    ( WarnStuckClaimState (..)
-    , warnStuckClaimStateTermsUnifiable
-    , warnStuckClaimStateTermsNotUnifiable
-    ) where
-
-import Prelude.Kore
+module Kore.Log.WarnStuckClaimState (
+    WarnStuckClaimState (..),
+    warnStuckClaimStateTermsUnifiable,
+    warnStuckClaimStateTermsNotUnifiable,
+) where
 
 import Kore.Attribute.SourceLocation
 import Kore.Reachability.SomeClaim
 import Log
-import Pretty
-    ( Pretty
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
 {- | @WarnStuckClaimState@ is emitted when a proof gets stuck.
 
 The warning message distinguishes for the user the ways that a proof can be stuck.
-
- -}
+-}
 data WarnStuckClaimState
-    = TermsUnifiableStuck !SomeClaim
-    -- ^ The terms of the left- and right-hand sides do not unify,
-    -- and the left-hand side cannot be rewritten any further.
-    | TermsNotUnifiableStuck !SomeClaim
-    -- ^ The left- and right-hand side terms are unifiable, but the left-hand side
-    -- condition does not imply the right-hand side condition.
-    deriving Show
+    = -- | The terms of the left- and right-hand sides do not unify,
+      -- and the left-hand side cannot be rewritten any further.
+      TermsUnifiableStuck !SomeClaim
+    | -- | The left- and right-hand side terms are unifiable, but the left-hand side
+      -- condition does not imply the right-hand side condition.
+      TermsNotUnifiableStuck !SomeClaim
+    deriving (Show)
 
 instance Pretty WarnStuckClaimState where
     pretty (TermsUnifiableStuck claim) =

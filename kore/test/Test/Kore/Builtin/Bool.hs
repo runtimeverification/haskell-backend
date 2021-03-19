@@ -1,64 +1,61 @@
 {-# LANGUAGE Strict #-}
-module Test.Kore.Builtin.Bool
-    ( test_or
-    , test_orElse
-    , test_and
-    , test_andThen
-    , test_xor
-    , test_ne
-    , test_eq
-    , test_not
-    , test_implies
-    , hprop_unparse
-    , test_unifyBoolValues
-    , test_unifyBoolAnd
-    , test_unifyBoolOr
-    , test_contradiction
+
+module Test.Kore.Builtin.Bool (
+    test_or,
+    test_orElse,
+    test_and,
+    test_andThen,
+    test_xor,
+    test_ne,
+    test_eq,
+    test_not,
+    test_implies,
+    hprop_unparse,
+    test_unifyBoolValues,
+    test_unifyBoolAnd,
+    test_unifyBoolOr,
+    test_contradiction,
     --
-    , asPattern
-    , asInternal
-    ) where
-
-import Prelude.Kore
-
-import Hedgehog hiding
-    ( test
-    )
-import qualified Hedgehog.Gen as Gen
-import Test.Tasty
+    asPattern,
+    asInternal,
+) where
 
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
-
+import Hedgehog hiding (
+    test,
+ )
+import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeEqualsPredicate
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeEqualsPredicate,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    )
-import Kore.Step.Simplification.Data
-    ( SimplifierT
-    , runSimplifier
-    , runSimplifierBranch
-    , simplifyCondition
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+ )
+import Kore.Step.Simplification.Data (
+    SimplifierT,
+    runSimplifier,
+    runSimplifierBranch,
+    simplifyCondition,
+ )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( UnifierT
-    , runUnifierT
-    )
+import Kore.Unification.UnifierT (
+    UnifierT,
+    runUnifierT,
+ )
+import Prelude.Kore
 import qualified SMT
-
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_or :: TestTree
@@ -93,22 +90,22 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal
-    :: InternalVariable variable => Bool -> TermLike variable
+asInternal ::
+    InternalVariable variable => Bool -> TermLike variable
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern
-    :: InternalVariable variable => Bool -> Pattern variable
+asPattern ::
+    InternalVariable variable => Bool -> Pattern variable
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
-testBinary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Bool -> Bool -> Bool)
-    -- ^ operator
-    -> TestTree
+testBinary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Bool -> Bool -> Bool) ->
+    TestTree
 testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
@@ -120,12 +117,12 @@ testBinary symb impl =
     name = expectHook symb
 
 -- | Test a unary operator hooked to the given symbol
-testUnary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Bool -> Bool)
-    -- ^ operator
-    -> TestTree
+testUnary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Bool -> Bool) ->
+    TestTree
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
@@ -144,20 +141,20 @@ test_unifyBoolValues =
         (term1, value1) <- literals
         (term2, value2) <- literals
         let result
-              | value1 == value2 = [Just (Pattern.fromTermLike term1)]
-              | otherwise        = []
+                | value1 == value2 = [Just (Pattern.fromTermLike term1)]
+                | otherwise = []
         [test "" term1 term2 result]
     ]
   where
     literals = [(_True, True), (_False, False)]
 
-    test
-        :: HasCallStack
-        => TestName
-        -> TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> [Maybe (Pattern RewritingVariableName)]
-        -> TestTree
+    test ::
+        HasCallStack =>
+        TestName ->
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        [Maybe (Pattern RewritingVariableName)] ->
+        TestTree
     test testName term1 term2 expected =
         testCase testName $ do
             actual <- unify term1 term2
@@ -168,30 +165,26 @@ test_unifyBoolValues =
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
-    [
-        let term1 = _True
-            term2 = andBool (mkVar x) (mkVar y)
-            condition =
-                Condition.assign x _True
+    [ let term1 = _True
+          term2 = andBool (mkVar x) (mkVar y)
+          condition =
+            Condition.assign x _True
                 <> Condition.assign y _True
-            result = [Just (Pattern.withCondition _True condition)]
-        in
-            test "BOOL.and - true" term1 term2 result
-    ,
-        let term1 = _False
-            term2 = andBool (mkVar x) (mkVar y)
-            result = [Nothing]
-        in
-            test "BOOL.and - false" term1 term2 result
+          result = [Just (Pattern.withCondition _True condition)]
+       in test "BOOL.and - true" term1 term2 result
+    , let term1 = _False
+          term2 = andBool (mkVar x) (mkVar y)
+          result = [Nothing]
+       in test "BOOL.and - false" term1 term2 result
     ]
   where
-    test
-        :: HasCallStack
-        => TestName
-        -> TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> [Maybe (Pattern RewritingVariableName)]
-        -> TestTree
+    test ::
+        HasCallStack =>
+        TestName ->
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        [Maybe (Pattern RewritingVariableName)] ->
+        TestTree
     test testName term1 term2 expected =
         testCase testName $ do
             actual <- unify term1 term2
@@ -202,29 +195,26 @@ test_unifyBoolAnd =
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
-    [   let term1 = _False
-            term2 = orBool (mkVar x) (mkVar y)
-            condition =
-                Condition.assign x _False
+    [ let term1 = _False
+          term2 = orBool (mkVar x) (mkVar y)
+          condition =
+            Condition.assign x _False
                 <> Condition.assign y _False
-            result = [Just (Pattern.withCondition _False condition)]
-        in
-            test "BOOL.or - false" term1 term2 result
-    ,
-        let term1 = _True
-            term2 = andBool (mkVar x) (mkVar y)
-            result = [Nothing]
-        in
-            test "BOOL.or - true" term1 term2 result
+          result = [Just (Pattern.withCondition _False condition)]
+       in test "BOOL.or - false" term1 term2 result
+    , let term1 = _True
+          term2 = andBool (mkVar x) (mkVar y)
+          result = [Nothing]
+       in test "BOOL.or - true" term1 term2 result
     ]
   where
-    test
-        :: HasCallStack
-        => TestName
-        -> TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> [Maybe (Pattern RewritingVariableName)]
-        -> TestTree
+    test ::
+        HasCallStack =>
+        TestName ->
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        [Maybe (Pattern RewritingVariableName)] ->
+        TestTree
     test testName term1 term2 expected =
         testCase testName $ do
             actual <- unify term1 term2
@@ -236,30 +226,30 @@ test_unifyBoolOr =
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =
     runNoSMT
-    . runSimplifier testEnv
-    . runUnifierT Not.notSimplifier
-    . runMaybeT
+        . runSimplifier testEnv
+        . runUnifierT Not.notSimplifier
+        . runMaybeT
 
-termSimplifier
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> UnifierT (SimplifierT SMT.NoSMT) (Pattern RewritingVariableName)
+termSimplifier ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    UnifierT (SimplifierT SMT.NoSMT) (Pattern RewritingVariableName)
 termSimplifier = \term1 term2 ->
     runMaybeT (worker term1 term2 <|> worker term2 term1)
-    >>= maybe (fallback term1 term2) return
+        >>= maybe (fallback term1 term2) return
   where
     worker term1 term2
-      | ElemVar_ var <- term1 =
-        Pattern.assign (inject var) term2
-        & return
-      | otherwise = empty
+        | ElemVar_ var <- term1 =
+            Pattern.assign (inject var) term2
+                & return
+        | otherwise = empty
     fallback term1 term2 =
         mkAnd term1 term2
-        & Pattern.fromTermLike
-        & return
+            & Pattern.fromTermLike
+            & return
 
 _True, _False :: TermLike RewritingVariableName
-_True  = asInternal True
+_True = asInternal True
 _False = asInternal False
 
 x, y :: SomeVariable RewritingVariableName
@@ -279,14 +269,14 @@ test_contradiction =
                     (andThenBool (mkVar x) (mkVar y))
             condition =
                 makeAndPredicate clause0 clause1
-                & Condition.fromPredicate
+                    & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
   where
-    simplifyCondition'
-        :: Condition RewritingVariableName
-        -> IO [Condition RewritingVariableName]
+    simplifyCondition' ::
+        Condition RewritingVariableName ->
+        IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runSimplifierBranch testEnv
+            & runNoSMT
