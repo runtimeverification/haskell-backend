@@ -48,3 +48,4 @@ cabal.project.local
 /.TAGS*
 kore-exec.tar.gz
 hie.yaml
+.hie/
