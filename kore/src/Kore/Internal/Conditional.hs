@@ -5,6 +5,7 @@ License     : NCSA
 Representation of conditional terms.
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Internal.Conditional
     ( Conditional (..)

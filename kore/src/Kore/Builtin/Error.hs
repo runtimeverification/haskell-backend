@@ -9,6 +9,7 @@ This module defines reusable error conditions to be triggered when a bug in the
 pattern verifier has admitted an invalid builtin domain expression.
 
  -}
+{-# LANGUAGE Strict #-}
 module Kore.Builtin.Error
     ( verifierBug
     , wrongArity

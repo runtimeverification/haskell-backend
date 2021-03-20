@@ -4,6 +4,7 @@ License     : NCSA
 
 Representation of program configurations as conditional patterns.
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Internal.Pattern
     ( Pattern
     , coerceSort

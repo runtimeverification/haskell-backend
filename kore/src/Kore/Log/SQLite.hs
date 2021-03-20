@@ -5,6 +5,7 @@ License     : NCSA
 Record log entries to a SQLite database.
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Log.SQLite
     ( LogSQLiteOptions (..)

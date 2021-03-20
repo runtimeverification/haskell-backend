@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict #-}
 module Kore.Builtin.Symbols
     ( lookupSymbol
     , lookupSymbolUnit
@@ -93,7 +94,7 @@ lookupSymbolUnit tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingUnitAttribute =
+    ~missingUnitAttribute =
         verifierBug
         $ "missing 'unit' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -128,7 +129,7 @@ lookupSymbolElement tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingElementAttribute =
+    ~missingElementAttribute =
         verifierBug
         $ "missing 'element' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -163,7 +164,7 @@ lookupSymbolConcat tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingConcatAttribute =
+    ~missingConcatAttribute =
         verifierBug
         $ "missing 'concat' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"

@@ -10,6 +10,7 @@ Portability : portable
 -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Kore.Internal.MultiOr
     ( MultiOr

@@ -14,6 +14,7 @@ builtin modules.
     import qualified Kore.Builtin.Krypto as Krypto
 @
  -}
+{-# LANGUAGE Strict #-}
 module Kore.Builtin.Krypto
     ( verifiers
     , builtinFunctions
