@@ -17,7 +17,7 @@ clean:
 
 .PHONY: test-k test golden clean
 
-test-kompiled/definition.kore: test.k $(K) $(KORE_PARSER)
+test-kompiled/definition.kore: test.k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
 	$(KOMPILE) $(KOMPILE_OPTS) $<; if [ $$? -eq 0 ]; then exit 1; fi
