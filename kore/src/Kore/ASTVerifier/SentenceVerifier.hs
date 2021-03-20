@@ -87,9 +87,16 @@ import Kore.Equation.Sentence
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
+import Kore.Internal.Predicate
+    ( pattern PredicateIn
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
     ( pattern App_
+    , pattern Var_
+    , pattern And_
+    , pattern DV_
     )
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
@@ -400,9 +407,9 @@ verifyAxiomSentence sentence =
                 ConstructorAxiom -> return ()
                 SubsortAxiom -> return ()
             )
-            (\ Equation {left, attributes} ->
+            (\ Equation {left, argument, attributes} ->
                 when (isNotSimplification attributes)
-                    (checkTerm left)
+                    $ checkLHS left >> checkArg argument
             )
             $ fromSentenceAxiom (attrs, verified)
   where
@@ -415,37 +422,61 @@ verifyAxiomSentence sentence =
         Attribute.simplification attributes ==
         NotSimplification
 
-    checkTerm termLike
-        | Just _ <- headsNonconstructorFunctionSymbol termLike =
-            failOnJust $ asum $ containedNonconstructorFunctionSymbol <$> termLikeF
-        | otherwise = koreFail $ show $ Pretty.vsep
+    checkLHS termLike =
+        if isNonconstructorFunctionSymbol termLike
+        then failOnJust
+            "LHS of NotSimplification axiom contains non-variable:"
+            $ asum $ getNotVar <$> termLikeF
+        else koreFail $ show $ Pretty.vsep
             [ "Head of LHS of Notsimplification axiom is not a non-constructor function symbol. This is the LHS:"
             , unparse termLike
             ]
       where
         _ :< termLikeF = Recursive.project termLike
 
-        failOnJust Nothing = return ()
-        failOnJust (Just sym') = koreFailWithLocations
-            [sym']
-            (pack $ show $ Pretty.vsep
-                [ "LHS of NotSimplification axiom contains non-constructor function symbol:"
-                , unparse sym'
-                ]
+        isNonconstructorFunctionSymbol term
+          | App_ sym _ <- term =
+            Symbol.isFunction sym
+            && not (Symbol.isConstructorLike sym)
+          | otherwise = False
+
+        getNotVar (Var_ _) = Nothing
+        getNotVar term = Just term
+
+    checkArg Nothing = return ()
+    checkArg (Just arg) =
+        traverse_
+            ( failOnJust "Found invalid subterm of Axiom equation argument:"
+            . checkArgIn
             )
-
-    containedNonconstructorFunctionSymbol term =
-            headsNonconstructorFunctionSymbol term
-            <|> asum
-                (containedNonconstructorFunctionSymbol <$> termF)
+        $ Predicate.getMultiAndPredicate arg
       where
-        _ :< termF = Recursive.project term
+        checkArgIn (PredicateIn (Var_ _) term) = findSubterm
+            isBadArgSubterm
+            term
+        checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
 
-    headsNonconstructorFunctionSymbol term
-        | App_ sym _ <- term
-        , Symbol.isFunction sym
-        , not (Symbol.isConstructorLike sym) = Just sym
-        | otherwise = Nothing
+        isBadArgSubterm (App_ sym _) = not (Symbol.isConstructorLike sym)
+        isBadArgSubterm (DV_ _ _) = False
+        isBadArgSubterm (And_ _ _ _) = False
+        isBadArgSubterm (Var_ _) = False
+        isBadArgSubterm _ = True
+
+    failOnJust _ Nothing = return ()
+    failOnJust errorMessage (Just term) = koreFailWithLocations
+        [term]
+        (pack $ show $ Pretty.vsep
+            [ errorMessage
+            , unparse term
+            ]
+        )
+
+    findSubterm criterion termLike =
+        if criterion termLike
+            then Just termLike
+            else asum $ findSubterm criterion <$> termLikeF
+      where
+        _ :< termLikeF = Recursive.project termLike
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
