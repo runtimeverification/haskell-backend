@@ -1320,6 +1320,8 @@ unifyEqualsElementLists
                             , Pretty.indent 4 (unparse first)
                             , Pretty.indent 2 "second="
                             , Pretty.indent 4 (unparse second)
+                            , Pretty.indent 2 "opaque="
+                            , Pretty.indent 4 (unparse opaque)
                             ]
       where
         unifyWithPermutations =
