@@ -93,10 +93,10 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-    ( pattern App_
-    , pattern Var_
-    , pattern And_
+    ( pattern And_
+    , pattern App_
     , pattern DV_
+    , pattern Var_
     )
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
