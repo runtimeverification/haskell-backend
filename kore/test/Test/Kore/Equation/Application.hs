@@ -1,61 +1,58 @@
 {-# LANGUAGE Strict #-}
-module Test.Kore.Equation.Application
-    ( test_attemptEquation
-    , test_attemptEquationUnification
-    , test_applySubstitutionAndSimplify
-    ) where
 
-import Prelude.Kore
+module Test.Kore.Equation.Application (
+    test_attemptEquation,
+    test_attemptEquationUnification,
+    test_applySubstitutionAndSimplify,
+) where
 
-import Test.Tasty
-
-import Control.Monad
-    ( (>=>)
-    )
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
+import Control.Monad (
+    (>=>),
+ )
+import Control.Monad.Trans.Except (
+    runExceptT,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
-
+import Data.Text (
+    Text,
+ )
 import qualified Kore.Equation as Equation
-import Kore.Equation.Application hiding
-    ( attemptEquation
-    )
+import Kore.Equation.Application hiding (
+    attemptEquation,
+ )
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.Axiom.Registry
-    ( mkEvaluatorRegistry
-    )
+import Kore.Step.Axiom.Registry (
+    mkEvaluatorRegistry,
+ )
+import Prelude.Kore
 import qualified Pretty
-import Test.Kore.Equation.Common
-
 import Test.Expect
+import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type AttemptEquationError' = AttemptEquationError RewritingVariableName
 type AttemptEquationResult' = AttemptEquationResult RewritingVariableName
 
-attemptEquation
-    :: SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Equation'
-    -> IO AttemptEquationResult'
+attemptEquation ::
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Equation' ->
+    IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
     Equation.attemptEquation sideCondition termLike equation
-    & runSimplifierSMT Mock.env
+        & runSimplifierSMT Mock.env
 
 assertNotMatched :: AttemptEquationError' -> Assertion
 assertNotMatched (WhileMatch _) = return ()
@@ -83,181 +80,191 @@ assertRequiresNotMet result =
 
 test_attemptEquation :: [TestTree]
 test_attemptEquation =
-    [ applies "applies identity axiom"
+    [ applies
+        "applies identity axiom"
         (axiom_ x x)
         SideCondition.top
         x
         (Pattern.fromTermLike x)
-
-    , applies "applies identity without renaming"
+    , applies
+        "applies identity without renaming"
         (axiom_ x x)
         SideCondition.top
         y
         (Pattern.fromTermLike y)
-
-    , applies "Σ(X, X) => X applies to Σ(f(X), f(X))"
+    , applies
+        "Σ(X, X) => X applies to Σ(f(X), f(X))"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma (f x) (f x))
         (Pattern.fromTermLike $ f x)
-
-    , notMatched "merge configuration patterns"
+    , notMatched
+        "merge configuration patterns"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma x (f x))
-
-    , notMatched "substitution with symbol matching"
+    , notMatched
+        "substitution with symbol matching"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma (f y) (f z))
-
-    , notMatched "merge multiple variables"
+    , notMatched
+        "merge multiple variables"
         (axiom_ (sigma (sigma x x) (sigma y y)) (sigma x y))
         SideCondition.top
         (sigma (sigma x y) (sigma y x))
-
-    , notMatched "symbol clash"
+    , notMatched
+        "symbol clash"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma (f x) (g x))
-
-    , notMatched "impossible substitution"
+    , notMatched
+        "impossible substitution"
         (axiom_ (sigma (sigma x x) (sigma y y)) (sigma x y))
         SideCondition.top
         (sigma (sigma x (f y)) (sigma x y))
-
-    , notMatched "circular dependency error"
+    , notMatched
+        "circular dependency error"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma x (f x))
-
-    , notMatched "non-function substitution error"
+    , notMatched
+        "non-function substitution error"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma x (f y))
-
-    , notMatched "unify all children"
+    , notMatched
+        "unify all children"
         (axiom_ (sigma x x) x)
         SideCondition.top
         (sigma (sigma x x) (sigma (sigma y z) (sigma y y)))
-
-    , notMatched "normalize substitution"
+    , notMatched
+        "normalize substitution"
         (axiom_ (sigma (sigma x x) y) (sigma x y))
         SideCondition.top
         (sigma (sigma x (f b)) x)
-
-    , notMatched "merge substitution with initial"
+    , notMatched
+        "merge substitution with initial"
         (axiom_ (sigma (sigma x x) y) (sigma x y))
         SideCondition.top
         (sigma (sigma (f z) (f y)) (f z))
-
-    , notMatched "unmatched strings"
+    , notMatched
+        "unmatched strings"
         (axiom_ (string "Good-bye, world!") xString)
         SideCondition.top
         (string "Hello, world!")
-
     , testCase "conjoin rule ensures" $ do
-        let
-            ensures =
+        let ensures =
                 makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.xConfig))
                     (Mock.functional10 (mkElemVar Mock.xConfig))
             expect =
-                Pattern.withCondition initial
-                $ Condition.fromPredicate
-                $ makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.yConfig))
-                    (Mock.functional10 (mkElemVar Mock.yConfig))
+                Pattern.withCondition initial $
+                    Condition.fromPredicate $
+                        makeEqualsPredicate
+                            (Mock.functional11 (mkElemVar Mock.yConfig))
+                            (Mock.functional10 (mkElemVar Mock.yConfig))
             initial = mkElemVar Mock.yConfig
-            equation = equationId { ensures }
+            equation = equationId{ensures}
         attemptEquation SideCondition.top initial equation
-            >>= expectRight >>= assertEqual "" expect
-
+            >>= expectRight
+            >>= assertEqual "" expect
     , testCase "equation requirement" $ do
-        let
-            requires =
+        let requires =
                 makeEqualsPredicate
                     (Mock.functional10 (mkElemVar Mock.xConfig))
                     (Mock.functional11 (mkElemVar Mock.xConfig))
-            equation = equationId { requires }
+            equation = equationId{requires}
             initial = Mock.a
         let requires1 =
                 makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
             expect1 =
-                WhileCheckRequires CheckRequiresError
-                { matchPredicate = makeTruePredicate
-                , equationRequires = requires1
-                , sideCondition = SideCondition.top
-                }
+                WhileCheckRequires
+                    CheckRequiresError
+                        { matchPredicate = makeTruePredicate
+                        , equationRequires = requires1
+                        , sideCondition = SideCondition.top
+                        }
         attemptEquation SideCondition.top initial equation
-            >>= expectLeft >>= assertEqual "" expect1
+            >>= expectLeft
+            >>= assertEqual "" expect1
         let requires2 =
                 makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
             sideCondition2 =
-                SideCondition.fromCondition . Condition.fromPredicate
-                $ requires2
+                SideCondition.fromCondition . Condition.fromPredicate $
+                    requires2
             expect2 = Pattern.fromTermLike initial
         attemptEquation sideCondition2 initial equation
-            >>= expectRight >>= assertEqual "" expect2
-
+            >>= expectRight
+            >>= assertEqual "" expect2
     , testCase "rule a => \\bottom" $ do
         let expect =
-                Pattern.withCondition (mkBottom Mock.testSort)
-                Condition.top
+                Pattern.withCondition
+                    (mkBottom Mock.testSort)
+                    Condition.top
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
-            >>= expectRight >>= assertEqual "" expect
-
+            >>= expectRight
+            >>= assertEqual "" expect
     , testCase "rule a => b ensures \\bottom" $ do
         let expect =
-                Pattern.withCondition Mock.b
-                Condition.bottom
+                Pattern.withCondition
+                    Mock.b
+                    Condition.bottom
             initial = Mock.a
         attemptEquation SideCondition.top initial equationEnsuresBottom
-            >>= expectRight >>= assertEqual "" expect
-
+            >>= expectRight
+            >>= assertEqual "" expect
     , testCase "rule a => b requires \\bottom" $ do
         let expect =
-                WhileCheckRequires CheckRequiresError
-                    { matchPredicate = makeTruePredicate
-                    , equationRequires = makeFalsePredicate
-                    , sideCondition = SideCondition.top
-                    }
+                WhileCheckRequires
+                    CheckRequiresError
+                        { matchPredicate = makeTruePredicate
+                        , equationRequires = makeFalsePredicate
+                        , sideCondition = SideCondition.top
+                        }
             initial = Mock.a
         attemptEquation SideCondition.top initial equationRequiresBottom
-            >>= expectLeft >>= assertEqual "" expect
-
+            >>= expectLeft
+            >>= assertEqual "" expect
     , testCase "rule a => \\bottom does not apply to c" $ do
         let initial = Mock.c
         attemptEquation SideCondition.top initial equationRequiresBottom
-            >>= expectLeft >>= assertNotMatched
-    , applies "F(x) => G(x) applies to F(x)"
+            >>= expectLeft
+            >>= assertNotMatched
+    , applies
+        "F(x) => G(x) applies to F(x)"
         (axiom_ (f x) (g x))
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
-    , applies "F(x) => G(x) [symbolic(x)] applies to F(x)"
+    , applies
+        "F(x) => G(x) [symbolic(x)] applies to F(x)"
         (axiom_ (f x) (g x) & symbolic [x])
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
-    , notInstantiated "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
+    , notInstantiated
+        "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
         (axiom_ (f x) (g x) & concrete [x])
         SideCondition.top
         (f x)
-    , notInstantiated "F(x) => G(x) [concrete] doesn't apply to f(cf)"
+    , notInstantiated
+        "F(x) => G(x) [concrete] doesn't apply to f(cf)"
         (axiom_ (f x) (g x) & concrete [x])
         SideCondition.top
         (f cf)
-    , notMatched "F(x) => G(x) doesn't apply to F(top)"
+    , notMatched
+        "F(x) => G(x) doesn't apply to F(top)"
         (axiom_ (f x) (g x))
         SideCondition.top
         (f mkTop_)
-    , applies "F(x) => G(x) [concrete] applies to F(a)"
+    , applies
+        "F(x) => G(x) [concrete] applies to F(a)"
         (axiom_ (f x) (g x) & concrete [x])
         SideCondition.top
         (f a)
@@ -278,11 +285,13 @@ test_attemptEquation =
         (axiom_ (sigma x y) a & symbolic [x] & concrete [y])
         SideCondition.top
         (sigma x x)
-    , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
+    , requiresNotMet
+        "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
         (axiom (f x) (g x) makeFalsePredicate)
         SideCondition.top
         (f x)
-    , notMatched "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
+    , notMatched
+        "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
         (axiom_ (sigma x x) (g x))
         SideCondition.top
         (sigma y z)
@@ -316,16 +325,19 @@ test_attemptEquation =
     , testCase "X => X does not apply to X / X" $ do
         let initial = tdivInt xInt xInt
         attemptEquation SideCondition.top initial equationId
-            >>= expectLeft >>= assertRequiresNotMet
+            >>= expectLeft
+            >>= assertRequiresNotMet
     , testCase "X => X does apply to X / X if \\ceil(X / X)" $ do
         let initial = tdivInt xInt xInt
             sideCondition =
                 makeCeilPredicate initial
-                & SideCondition.fromPredicate
+                    & SideCondition.fromPredicate
             expect = Pattern.fromTermLike initial
         attemptEquation sideCondition initial equationId
-            >>= expectRight >>= assertEqual "" expect
-    , notInstantiated "does not introduce variables"
+            >>= expectRight
+            >>= assertEqual "" expect
+    , notInstantiated
+        "does not introduce variables"
         (axiom_ (f a) (g x))
         SideCondition.top
         (f a)
@@ -333,140 +345,167 @@ test_attemptEquation =
 
 test_attemptEquationUnification :: [TestTree]
 test_attemptEquationUnification =
-    [ applies "Σ(X, X) => X applies to Σ(f(X), f(X))"
+    [ applies
+        "Σ(X, X) => X applies to Σ(f(X), f(X))"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (f x))
         (Pattern.fromTermLike $ f x)
-
-    , notMatched "merge configuration patterns"
+    , notMatched
+        "merge configuration patterns"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
-
-    , notInstantiated "substitution with symbol matching"
+    , notInstantiated
+        "substitution with symbol matching"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f y) (f z))
-
-    , notInstantiated "merge multiple variables"
+    , notInstantiated
+        "merge multiple variables"
         (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x y) (sigma y x))
-
-    , notMatched "symbol clash"
+    , notMatched
+        "symbol clash"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (g x))
-
-    , notMatched "impossible substitution"
+    , notMatched
+        "impossible substitution"
         (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x (f y)) (sigma x y))
-
-    , notMatched "circular dependency error"
+    , notMatched
+        "circular dependency error"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
-
-    , notInstantiated "non-function substitution error"
+    , notInstantiated
+        "non-function substitution error"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f y))
-
-    , notInstantiated "unify all children"
+    , notInstantiated
+        "unify all children"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (sigma x x) (sigma (sigma y z) (sigma y y)))
-
-    , notInstantiated "normalize substitution"
+    , notInstantiated
+        "normalize substitution"
         (functionAxiomUnification_ sigmaSymbol [sigma x x, y] (sigma x y))
         SideCondition.top
         (sigma (sigma x (f b)) x)
-
-    , notInstantiated "merge substitution with initial"
+    , notInstantiated
+        "merge substitution with initial"
         (functionAxiomUnification_ sigmaSymbol [sigma x x, y] (sigma x y))
         SideCondition.top
         (sigma (sigma (f z) (f y)) (f z))
-
     , testCase "rule a => \\bottom" $ do
         let expect =
-                Pattern.withCondition (mkBottom Mock.testSort)
-                Condition.top
+                Pattern.withCondition
+                    (mkBottom Mock.testSort)
+                    Condition.top
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
-            >>= expectRight >>= assertEqual "" expect
-
-    , applies "F(x) => G(x) applies to F(x)"
+            >>= expectRight
+            >>= assertEqual "" expect
+    , applies
+        "F(x) => G(x) applies to F(x)"
         (functionAxiomUnification_ fSymbol [x] (g x))
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
-    , applies "F(x) => G(x) [symbolic(x)] applies to F(x)"
+    , applies
+        "F(x) => G(x) [symbolic(x)] applies to F(x)"
         (functionAxiomUnification_ fSymbol [x] (g x) & symbolic [x])
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
-    , notInstantiated "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
+    , notInstantiated
+        "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
         (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f x)
-    , notInstantiated "F(x) => G(x) [concrete] doesn't apply to f(cf)"
+    , notInstantiated
+        "F(x) => G(x) [concrete] doesn't apply to f(cf)"
         (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f cf)
-    , notMatched "F(x) => G(x) doesn't apply to F(top)"
+    , notMatched
+        "F(x) => G(x) doesn't apply to F(top)"
         (functionAxiomUnification_ fSymbol [x] (g x))
         SideCondition.top
         (f mkTop_)
-    , applies "F(x) => G(x) [concrete] applies to F(a)"
+    , applies
+        "F(x) => G(x) [concrete] applies to F(a)"
         (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f a)
         (Pattern.fromTermLike $ g a)
     , applies
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (functionAxiomUnification_
-            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        ( functionAxiomUnification_
+            sigmaSymbol
+            [x, y]
+            a
+            & symbolic [x]
+            & concrete [y]
         )
         SideCondition.top
         (sigma x a)
         (Pattern.fromTermLike a)
     , notInstantiated
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (functionAxiomUnification_
-            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        ( functionAxiomUnification_
+            sigmaSymbol
+            [x, y]
+            a
+            & symbolic [x]
+            & concrete [y]
         )
         SideCondition.top
         (sigma a a)
     , notInstantiated
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (functionAxiomUnification_
-            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        ( functionAxiomUnification_
+            sigmaSymbol
+            [x, y]
+            a
+            & symbolic [x]
+            & concrete [y]
         )
         SideCondition.top
         (sigma x x)
-    , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
+    , requiresNotMet
+        "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
         (functionAxiomUnification fSymbol [x] (g x) makeFalsePredicate)
         SideCondition.top
         (f x)
-    , notInstantiated "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
+    , notInstantiated
+        "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
         (functionAxiomUnification_ sigmaSymbol [x, x] (g x))
         SideCondition.top
         (sigma y z)
     , requiresNotMet
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
-        (functionAxiomUnification
-            sigmaSymbol [x, y] a (positive x `andNot` positive y)
+        ( functionAxiomUnification
+            sigmaSymbol
+            [x, y]
+            a
+            (positive x `andNot` positive y)
         )
         SideCondition.top
         (sigma z z)
     , applies
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
-        (functionAxiomUnification
-            sigmaSymbol [x, y] a (positive x `orNot` positive y)
+        ( functionAxiomUnification
+            sigmaSymbol
+            [x, y]
+            a
+            (positive x `orNot` positive y)
         )
         (SideCondition.fromPredicate $ positive a)
         (sigma a a)
@@ -485,7 +524,8 @@ test_attemptEquationUnification =
         (SideCondition.fromPredicate $ positive z)
         (f z)
         (Pattern.fromTermLike a)
-    , notInstantiated "does not introduce variables"
+    , notInstantiated
+        "does not introduce variables"
         (functionAxiomUnification_ fSymbol [a] (g x))
         SideCondition.top
         (f a)
@@ -506,25 +546,27 @@ test_applySubstitutionAndSimplify =
                 (Just mockArgument)
                 Nothing
                 mempty
-            & runExceptT
-            & runSimplifier env
+                & runExceptT
+                & runSimplifier env
         assertEqual "" expected actual
     ]
   where
     subst var term =
         Map.fromList [(var, term)]
-    env = Mock.env { simplifierAxioms }
+    env = Mock.env{simplifierAxioms}
     simplifierAxioms =
-        mkEvaluatorRegistry
-        $ Map.fromList
-        [ (AxiomIdentifier.Application Mock.fId
-          , [ functionAxiomUnification_
-                Mock.fSymbol
-                [mkElemVar Mock.zConfig]
-                Mock.a
-            ]
-          )
-        ]
+        mkEvaluatorRegistry $
+            Map.fromList
+                [
+                    ( AxiomIdentifier.Application Mock.fId
+                    ,
+                        [ functionAxiomUnification_
+                            Mock.fSymbol
+                            [mkElemVar Mock.zConfig]
+                            Mock.a
+                        ]
+                    )
+                ]
     someVar1 = Mock.xConfig & inject
     var1Term = mkElemVar Mock.xConfig
     var2Term = mkElemVar Mock.yConfig
@@ -537,12 +579,14 @@ equationId = mkEquation (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
 equationRequiresBottom :: Equation'
 equationRequiresBottom =
     (mkEquation Mock.a Mock.b)
-        { requires = makeFalsePredicate }
+        { requires = makeFalsePredicate
+        }
 
 equationEnsuresBottom :: Equation'
 equationEnsuresBottom =
     (mkEquation Mock.a Mock.b)
-        { ensures = makeFalsePredicate }
+        { ensures = makeFalsePredicate
+        }
 
 equationBottom :: Equation'
 equationBottom =
@@ -558,10 +602,10 @@ fSymbol = Mock.functionalConstr10Symbol
 cf :: TermLike RewritingVariableName
 cf = Mock.cf
 
-sigma
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+sigma ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
 sigma = Mock.functionalConstr20
 
 sigmaSymbol :: Symbol
@@ -581,47 +625,47 @@ a, b :: TermLike RewritingVariableName
 a = Mock.a
 b = Mock.b
 
-tdivInt
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+tdivInt ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
 tdivInt = Mock.tdivInt
 
-positive :: TermLike RewritingVariableName ->  Predicate RewritingVariableName
+positive :: TermLike RewritingVariableName -> Predicate RewritingVariableName
 positive u' =
     makeEqualsPredicate
-        (Mock.lessInt
-            (Mock.fTestFunctionalInt u')  -- wrap the given term for sort agreement
+        ( Mock.lessInt
+            (Mock.fTestFunctionalInt u') -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
         (Mock.builtinBool False)
 
-andNot, orNot
-    :: Predicate RewritingVariableName
-    -> Predicate RewritingVariableName
-    -> Predicate RewritingVariableName
+andNot
+    , orNot ::
+        Predicate RewritingVariableName ->
+        Predicate RewritingVariableName ->
+        Predicate RewritingVariableName
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
-
 -- * Test cases
 
-withAttemptEquationResult
-    :: (AttemptEquationResult' -> Assertion)
-    -> TestName
-    -> Equation'
-    -> SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TestTree
+withAttemptEquationResult ::
+    (AttemptEquationResult' -> Assertion) ->
+    TestName ->
+    Equation' ->
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TestTree
 withAttemptEquationResult check testName equation sideCondition initial =
     testCase testName (attemptEquation sideCondition initial equation >>= check)
 
-applies
-    :: TestName
-    -> Equation'
-    -> SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> TestTree
+applies ::
+    TestName ->
+    Equation' ->
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    TestTree
 applies testName equation sideCondition initial expect =
     withAttemptEquationResult
         (expectRight >=> assertEqual "" expect)
@@ -630,29 +674,28 @@ applies testName equation sideCondition initial expect =
         sideCondition
         initial
 
-notMatched
-    :: TestName
-    -> Equation'
-    -> SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TestTree
+notMatched ::
+    TestName ->
+    Equation' ->
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TestTree
 notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
-notInstantiated
-    :: TestName
-    -> Equation'
-    -> SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TestTree
+notInstantiated ::
+    TestName ->
+    Equation' ->
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TestTree
 notInstantiated =
     withAttemptEquationResult (expectLeft >=> assertApplyMatchResultErrors)
 
-requiresNotMet
-    :: TestName
-    -> Equation'
-    -> SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TestTree
+requiresNotMet ::
+    TestName ->
+    Equation' ->
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)
-

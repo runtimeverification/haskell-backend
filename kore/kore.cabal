@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80d27d36f0343e3b6779aa37ed5fccc747fd7c1b66c7b9bd2fb27c1f6a2d6403
+-- hash: 4b5fd2532b308aa61e5a6e5433a8265b7ac6fe0c0fb0d671edc9e76ff6a80091
 
 name:           kore
-version:        0.41.0.0
+version:        0.42.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -70,9 +70,7 @@ library
       Kore.Attribute.Axiom.Symbolic
       Kore.Attribute.Axiom.Unit
       Kore.Attribute.Comm
-      Kore.Attribute.Concat
       Kore.Attribute.Constructor
-      Kore.Attribute.Element
       Kore.Attribute.Function
       Kore.Attribute.Functional
       Kore.Attribute.Hook
@@ -103,9 +101,12 @@ library
       Kore.Attribute.Smtlib.Smthook
       Kore.Attribute.Smtlib.Smtlib
       Kore.Attribute.Sort
+      Kore.Attribute.Sort.Concat
       Kore.Attribute.Sort.Constructors
       Kore.Attribute.Sort.ConstructorsBuilder
+      Kore.Attribute.Sort.Element
       Kore.Attribute.Sort.HasDomainValues
+      Kore.Attribute.Sort.Unit
       Kore.Attribute.SortInjection
       Kore.Attribute.Source
       Kore.Attribute.SourceLocation
@@ -119,7 +120,6 @@ library
       Kore.Attribute.Synthetic
       Kore.Attribute.Trusted
       Kore.Attribute.UniqueId
-      Kore.Attribute.Unit
       Kore.BugReport
       Kore.Builtin
       Kore.Builtin.AssocComm.AssocComm
@@ -224,6 +224,7 @@ library
       Kore.Log.Registry
       Kore.Log.SQLite
       Kore.Log.WarnBoundedModelChecker
+      Kore.Log.WarnDepthLimitExceeded
       Kore.Log.WarnFunctionWithoutEvaluators
       Kore.Log.WarnIfLowProductivity
       Kore.Log.WarnRetrySolverQuery
@@ -284,7 +285,6 @@ library
       Kore.Step.Simplification.CeilSimplifier
       Kore.Step.Simplification.Condition
       Kore.Step.Simplification.Data
-      Kore.Step.Simplification.Defined
       Kore.Step.Simplification.DomainValue
       Kore.Step.Simplification.Equals
       Kore.Step.Simplification.Exists
@@ -408,14 +408,12 @@ library
   hs-source-dirs:
       src
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , clock >=0.8
@@ -438,14 +436,11 @@ library
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , integer-gmp >=1.0
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative >=0.14
@@ -457,19 +452,21 @@ library
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , template-haskell >=2.14
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   default-language: Haskell2010
@@ -483,14 +480,12 @@ executable kore-exec
       app/exec
       app/share
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances -eventlog
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , clock >=0.8
@@ -513,15 +508,12 @@ executable kore-exec
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , integer-gmp >=1.0
     , kore
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative >=0.14
@@ -533,19 +525,21 @@ executable kore-exec
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , template-haskell >=2.14
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   if flag(threaded)
@@ -563,14 +557,12 @@ executable kore-format
       app/format
       app/share
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances -eventlog
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , clock >=0.8
@@ -593,15 +585,12 @@ executable kore-format
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , integer-gmp >=1.0
     , kore
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative >=0.14
@@ -613,19 +602,21 @@ executable kore-format
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , template-haskell >=2.14
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   if flag(threaded)
@@ -643,14 +634,12 @@ executable kore-parser
       app/parser
       app/share
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances -eventlog
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , clock >=0.8
@@ -673,15 +662,12 @@ executable kore-parser
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , integer-gmp >=1.0
     , kore
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative >=0.14
@@ -693,19 +679,21 @@ executable kore-parser
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , template-haskell >=2.14
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   if flag(threaded)
@@ -721,14 +709,12 @@ executable kore-prof
   hs-source-dirs:
       app/prof
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , clock >=0.8
@@ -752,14 +738,11 @@ executable kore-prof
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , integer-gmp >=1.0
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative
@@ -771,19 +754,21 @@ executable kore-prof
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , template-haskell >=2.14
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   default-language: Haskell2010
@@ -797,14 +782,12 @@ executable kore-repl
       app/repl
       app/share
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances -eventlog
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , clock >=0.8
@@ -827,15 +810,12 @@ executable kore-repl
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , integer-gmp >=1.0
     , kore
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative >=0.14
@@ -847,19 +827,21 @@ executable kore-repl
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , template-haskell >=2.14
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   if flag(threaded)
@@ -916,6 +898,7 @@ test-suite kore-test
       Test.Kore.Attribute.Smtlib
       Test.Kore.Attribute.Sort.ConstructorsBuilder
       Test.Kore.Attribute.Sort.HasDomainValues
+      Test.Kore.Attribute.Sort.Unit
       Test.Kore.Attribute.SortInjection
       Test.Kore.Attribute.Subsort
       Test.Kore.Attribute.Symbol
@@ -926,11 +909,9 @@ test-suite kore-test
       Test.Kore.Attribute.Symbol.SymbolKywd
       Test.Kore.Attribute.Trusted
       Test.Kore.Attribute.UniqueId
-      Test.Kore.Attribute.Unit
       Test.Kore.BugReport
       Test.Kore.Builtin
       Test.Kore.Builtin.AssocComm.CeilSimplifier
-      Test.Kore.Builtin.AssociativeCommutative
       Test.Kore.Builtin.Bool
       Test.Kore.Builtin.Builtin
       Test.Kore.Builtin.Definition
@@ -1074,15 +1055,13 @@ test-suite kore-test
   hs-source-dirs:
       test
   default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
-  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wnoncanonical-monad-instances -eventlog
   build-tool-depends:
       tasty-discover:tasty-discover >=4.2
   build-depends:
       QuickCheck >=2.13
     , adjunctions >=4.4
     , aeson >=1.4
-    , array >=0.5
-    , async >=2.2
     , base >=4.7
     , bytestring >=0.10
     , call-stack >=0.1
@@ -1106,16 +1085,13 @@ test-suite kore-test
     , ghc-trace-events >=0.1
     , gitrev >=1.3
     , graphviz >=2999.20
-    , groom >=0.1
     , hashable >=1.2
-    , haskeline >=0.7
     , hedgehog >=1.0
     , integer-gmp >=1.0
     , kore
     , lens >=4.17
     , logict >=0.7
     , megaparsec >=7.0.4
-    , memory >=0.14
     , mmorph >=1.1
     , mtl >=2.2
     , optparse-applicative >=0.14
@@ -1128,7 +1104,6 @@ test-suite kore-test
     , reflection >=2.1
     , semialign >=1
     , sqlite-simple >=0.4
-    , stm >=2.5
     , streams
     , tar >=0.5
     , tasty >=1.2
@@ -1141,12 +1116,15 @@ test-suite kore-test
     , temporary >=1.3
     , text >=1.2
     , these >=1.0
-    , time >=1.8
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
   if !flag(release)
     ghc-options: -fno-specialise
   if flag(threaded)

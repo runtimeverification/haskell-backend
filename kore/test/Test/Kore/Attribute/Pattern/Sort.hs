@@ -1,108 +1,124 @@
-module Test.Kore.Attribute.Pattern.Sort
-    ( test_instance_Synthetic
-    ) where
+module Test.Kore.Attribute.Pattern.Sort (
+    test_instance_Synthetic,
+) where
 
+import qualified Control.Exception as Exception
+import Kore.Attribute.Synthetic
+import Kore.Internal.TermLike (
+    TermLikeF (..),
+ )
+import Kore.Sort
+import Kore.Syntax hiding (
+    PatternF (..),
+ )
 import Prelude.Kore
-
+import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Control.Exception as Exception
-
-import Kore.Attribute.Synthetic
-import Kore.Internal.TermLike
-    ( TermLikeF (..)
-    )
-import Kore.Sort
-import Kore.Syntax hiding
-    ( PatternF (..)
-    )
-
-import qualified Test.Kore.Step.MockSymbols as Mock
-
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
-    [ testGroup "AndF"
+    [ testGroup
+        "AndF"
         [ success $ AndF (And sort sort sort)
         , failure $ AndF (And sort sort0 sort)
         , failure $ AndF (And sort sort sort0)
         ]
-    , testGroup "ApplySymbolF"
+    , testGroup
+        "ApplySymbolF"
         [ success $ ApplySymbolF (Application sigma [sort, sort])
         , failure $ ApplySymbolF (Application sigma [sort0, sort])
         , failure $ ApplySymbolF (Application sigma [sort, sort0])
         ]
-    , testGroup "BottomF"
+    , testGroup
+        "BottomF"
         [ success $ BottomF (Bottom sort)
         ]
-    , testGroup "CeilF"
+    , testGroup
+        "CeilF"
         [ success $ CeilF (Ceil sort0 sort sort0)
         , failure $ CeilF (Ceil sort sort sort0)
         ]
-    , testGroup "DomainValueF"
+    , testGroup
+        "DomainValueF"
         [ success $ DomainValueF (DomainValue sort stringMetaSort)
         ]
-    , testGroup "EqualsF"
+    , testGroup
+        "EqualsF"
         [ success $ EqualsF (Equals sort0 sort sort0 sort0)
         , failure $ EqualsF (Equals sort sort0 sort0 sort)
         , failure $ EqualsF (Equals sort sort0 sort sort0)
         ]
-    , testGroup "FloorF"
+    , testGroup
+        "FloorF"
         [ success $ FloorF (Floor sort0 sort sort0)
         , failure $ FloorF (Floor sort sort0 sort0)
         ]
-    , testGroup "IffF"
+    , testGroup
+        "IffF"
         [ success $ IffF (Iff sort sort sort)
         , failure $ IffF (Iff sort sort0 sort)
         , failure $ IffF (Iff sort sort sort0)
         ]
-    , testGroup "ImpliesF"
+    , testGroup
+        "ImpliesF"
         [ success $ ImpliesF (Implies sort sort sort)
         , failure $ ImpliesF (Implies sort sort0 sort)
         , failure $ ImpliesF (Implies sort sort sort0)
         ]
-    , testGroup "InF"
+    , testGroup
+        "InF"
         [ success $ InF (In sort0 sort sort0 sort0)
         , failure $ InF (In sort sort0 sort0 sort)
         , failure $ InF (In sort sort0 sort sort0)
         ]
-    , testGroup "NextF"
+    , testGroup
+        "NextF"
         [ success $ NextF (Next sort sort)
         , failure $ NextF (Next sort sort0)
         ]
-    , testGroup "NotF"
+    , testGroup
+        "NotF"
         [ success $ NotF (Not sort sort)
         , failure $ NotF (Not sort sort0)
         ]
-    , testGroup "OrF"
+    , testGroup
+        "OrF"
         [ success $ OrF (Or sort sort sort)
         , failure $ OrF (Or sort sort0 sort)
         , failure $ OrF (Or sort sort sort0)
         ]
-    , testGroup "RewritesF"
+    , testGroup
+        "RewritesF"
         [ success $ RewritesF (Rewrites sort sort sort)
         , failure $ RewritesF (Rewrites sort sort0 sort)
         , failure $ RewritesF (Rewrites sort sort sort0)
         ]
-    , testGroup "TopF"
+    , testGroup
+        "TopF"
         [ success $ TopF (Top sort)
         ]
-    , testGroup "ExistsF"
+    , testGroup
+        "ExistsF"
         [ success $ ExistsF (Exists sort Mock.x sort)
         , failure $ ExistsF (Exists sort Mock.x sort0)
         ]
-    , testGroup "ForallF"
+    , testGroup
+        "ForallF"
         [ success $ ForallF (Forall sort Mock.x sort)
         , failure $ ForallF (Forall sort Mock.x sort0)
         ]
-    , testGroup "VariableF"
+    , testGroup
+        "VariableF"
         [ success $ VariableF (Const (inject Mock.x))
         ]
-    , testGroup "MuF"
+    , testGroup
+        "MuF"
         [ success $ MuF (Mu Mock.setX sort)
         , failure $ MuF (Mu Mock.setX sort0)
         ]
-    , testGroup "NuF"
+    , testGroup
+        "NuF"
         [ success $ NuF (Nu Mock.setX sort)
         , failure $ NuF (Nu Mock.setX sort0)
         ]
@@ -112,18 +128,18 @@ test_instance_Synthetic =
     sort0 = Mock.testSort0
     sigma = Mock.sigmaSymbol
     expected = sort
-    success
-        :: HasCallStack
-        => TermLikeF VariableName Sort
-        -> TestTree
+    success ::
+        HasCallStack =>
+        TermLikeF VariableName Sort ->
+        TestTree
     success termLikeF =
         testCase "Sorts match" $ do
             let actual = synthetic termLikeF
             assertEqual "" expected actual
-    failure
-        :: HasCallStack
-        => TermLikeF VariableName Sort
-        -> TestTree
+    failure ::
+        HasCallStack =>
+        TermLikeF VariableName Sort ->
+        TestTree
     failure termLikeF =
         testCase "Sorts mismatch" $ do
             let original = synthetic termLikeF

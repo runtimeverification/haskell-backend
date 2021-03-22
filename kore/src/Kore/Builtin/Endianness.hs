@@ -1,43 +1,39 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Builtin.Endianness (
+    verifiers,
+    littleEndianKey,
+    bigEndianKey,
+    unifyEquals,
+    module Kore.Builtin.Endianness.Endianness,
+) where
 
- -}
-
-module Kore.Builtin.Endianness
-    ( verifiers
-    , littleEndianKey
-    , bigEndianKey
-    , unifyEquals
-    , module Kore.Builtin.Endianness.Endianness
-    ) where
-
-import Prelude.Kore
-
-import Control.Error
-    ( MaybeT
-    )
+import Control.Error (
+    MaybeT,
+ )
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
-import Data.String
-    ( IsString
-    )
-
+import Data.String (
+    IsString,
+ )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Builtin
 import Kore.Builtin.Endianness.Endianness
 import Kore.Error
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Unification.Unify
-    ( MonadUnify
-    , explainAndReturnBottom
-    )
+import Kore.Unification.Unify (
+    MonadUnify,
+    explainAndReturnBottom,
+ )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 verifiers :: Verifiers
 verifiers =
@@ -45,7 +41,7 @@ verifiers =
         { patternVerifierHook =
             (applicationPatternVerifierHooks . HashMap.fromList)
                 [ (KlabelSymbolKey littleEndianKey, littleEndianVerifier)
-                , (KlabelSymbolKey bigEndianKey   , bigEndianVerifier   )
+                , (KlabelSymbolKey bigEndianKey, bigEndianVerifier)
                 ]
         }
 
@@ -55,16 +51,17 @@ littleEndianKey = "littleEndianBytes"
 bigEndianKey :: IsString str => str
 bigEndianKey = "bigEndianBytes"
 
-endiannessVerifier
-    :: (Symbol -> Endianness)  -- ^ Constructor
-    -> ApplicationVerifier Verified.Pattern
+endiannessVerifier ::
+    -- | Constructor
+    (Symbol -> Endianness) ->
+    ApplicationVerifier Verified.Pattern
 endiannessVerifier ctor =
     ApplicationVerifier worker
   where
     worker application = do
         -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
         unless (null arguments) (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd { isSymbolKywd } =
+        let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
         unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
         return (EndiannessF . Const $ ctor symbol)
@@ -78,17 +75,18 @@ littleEndianVerifier = endiannessVerifier LittleEndian
 bigEndianVerifier :: ApplicationVerifier Verified.Pattern
 bigEndianVerifier = endiannessVerifier BigEndian
 
-unifyEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+unifyEquals ::
+    InternalVariable variable =>
+    MonadUnify unifier =>
+    TermLike variable ->
+    TermLike variable ->
+    MaybeT unifier (Pattern variable)
 unifyEquals termLike1@(Endianness_ end1) termLike2@(Endianness_ end2)
-  | end1 == end2 = return (Pattern.fromTermLike termLike1)
-  | otherwise =
-    lift $ explainAndReturnBottom
-        "Cannot unify distinct constructors."
-        termLike1
-        termLike2
+    | end1 == end2 = return (Pattern.fromTermLike termLike1)
+    | otherwise =
+        lift $
+            explainAndReturnBottom
+                "Cannot unify distinct constructors."
+                termLike1
+                termLike2
 unifyEquals _ _ = empty

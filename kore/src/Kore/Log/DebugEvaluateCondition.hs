@@ -1,33 +1,29 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
+module Kore.Log.DebugEvaluateCondition (
+    DebugEvaluateCondition (..),
+    whileDebugEvaluateCondition,
+    debugEvaluateConditionResult,
+) where
 
-module Kore.Log.DebugEvaluateCondition
-    ( DebugEvaluateCondition (..)
-    , whileDebugEvaluateCondition
-    , debugEvaluateConditionResult
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import qualified Generics.SOP as SOP
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Log
-import Pretty
-    ( Pretty (..)
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
-import SMT.SimpleSMT
-    ( Result (..)
-    )
+import SMT.SimpleSMT (
+    Result (..),
+ )
 import qualified SQL
 
 data DebugEvaluateCondition
@@ -40,16 +36,17 @@ data DebugEvaluateCondition
 instance Pretty DebugEvaluateCondition where
     pretty (DebugEvaluateCondition predicates) =
         Pretty.vsep
-        ( [ "evaluating predicate:",
-            Pretty.indent 4 (pretty predicate) ]
-        ++ do
-            sideCondition <- sideConditions
-            [ "with side condition:",
-                Pretty.indent 4 (pretty sideCondition) ]
-        )
+            ( [ "evaluating predicate:"
+              , Pretty.indent 4 (pretty predicate)
+              ]
+                ++ do
+                    sideCondition <- sideConditions
+                    [ "with side condition:"
+                        , Pretty.indent 4 (pretty sideCondition)
+                        ]
+            )
       where
-       predicate :| sideConditions = predicates
-
+        predicate :| sideConditions = predicates
     pretty (DebugEvaluateConditionResult result) =
         case result of
             Unsat -> "solver returned unsatisfiable"
@@ -63,16 +60,16 @@ instance Entry DebugEvaluateCondition where
 
 instance SQL.Table DebugEvaluateCondition
 
-whileDebugEvaluateCondition
-    :: MonadLog log
-    => InternalVariable variable
-    => NonEmpty (Predicate variable)
-    -> log a
-    -> log a
+whileDebugEvaluateCondition ::
+    MonadLog log =>
+    InternalVariable variable =>
+    NonEmpty (Predicate variable) ->
+    log a ->
+    log a
 whileDebugEvaluateCondition =
     logWhile
-    . DebugEvaluateCondition
-    . fmap (Predicate.mapVariables (pure toVariableName))
+        . DebugEvaluateCondition
+        . fmap (Predicate.mapVariables (pure toVariableName))
 
 debugEvaluateConditionResult :: MonadLog log => Result -> log ()
 debugEvaluateConditionResult = logEntry . DebugEvaluateConditionResult

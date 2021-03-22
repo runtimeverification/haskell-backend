@@ -3,92 +3,92 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 Strategy-based interface to rule application (step-wise execution).
+-}
+module Kore.Step (
+    ExecutionMode (..),
+    ProgramState (..),
+    Prim (..),
+    TransitionRule,
+    executionStrategy,
+    extractProgramState,
+    transitionRule,
+    groupRewritesByPriority,
+    limitedExecutionStrategy,
 
- -}
+    -- * Re-exports
+    Natural,
+    Strategy,
+    pickLongest,
+    pickFinal,
+    runStrategy,
+) where
 
-module Kore.Step
-    ( ExecutionMode (..)
-    , ProgramState (..)
-    , Prim (..)
-    , TransitionRule
-    , executionStrategy
-    , extractProgramState
-    , transitionRule
-    , groupRewritesByPriority
-    , limitedExecutionStrategy
-      -- * Re-exports
-    , Natural
-    , Strategy
-    , pickLongest
-    , pickFinal
-    , runStrategy
-    ) where
-
-import Prelude.Kore
-
-import Control.Monad
-    ( foldM
-    )
-import Data.List.Extra
-    ( groupSortOn
-    )
-import Data.Stream.Infinite
-    ( Stream
-    )
+import Control.Monad (
+    foldM,
+ )
+import Data.Limit (
+    Limit (..),
+ )
+import qualified Data.Limit as Limit
+import Data.List.Extra (
+    groupSortOn,
+ )
+import Data.Stream.Infinite (
+    Stream,
+ )
 import qualified Data.Stream.Infinite as Stream
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import Numeric.Natural
-    ( Natural
-    )
-
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Debug
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern
-    )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyTopConfiguration
-    )
+import Kore.Step.RulePattern (
+    RewriteRule (..),
+    RulePattern,
+ )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+    filterMultiOr,
+ )
+import qualified Kore.Step.Simplification.Pattern as Pattern (
+    simplifyTopConfiguration,
+ )
 import Kore.Step.Simplification.Simplify as Simplifier
-
-import Data.Limit
-    ( Limit (..)
-    )
-import qualified Data.Limit as Limit
-import Kore.Debug
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-    ( filterMultiOr
-    )
-import Kore.Step.Strategy hiding
-    ( transitionRule
-    )
+import Kore.Step.Strategy hiding (
+    transitionRule,
+ )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Unparser
-    ( Unparse (..)
-    )
-import Pretty
-    ( Pretty
-    )
+import Kore.TopBottom (
+    isBottom,
+ )
+import Kore.Unparser (
+    Unparse (..),
+ )
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
-{- | The program's state during symbolic execution.
--}
+-- | The program's state during symbolic execution.
 data ProgramState a
-    = Start !a
-    -- ^ The beginning of an execution step.
-    | Rewritten !a
-    -- ^ The configuration was rewritten after applying
-    -- the rewrite rules.
-    | Remaining !a
-    -- ^ The configuration is a remainder resulting
-    -- from rewrite rule application.
+    = -- | The beginning of an execution step.
+      Start !a
+    | -- | The configuration was rewritten after applying
+      -- the rewrite rules.
+      Rewritten !a
+    | -- | The configuration is a remainder resulting
+      -- from rewrite rule application.
+      Remaining !a
+    | -- | The execution step yields no children
+      Bottom
     deriving (Eq, Ord, Show)
     deriving (Functor)
     deriving (GHC.Generic)
@@ -111,18 +111,19 @@ instance Unparse a => Pretty (ProgramState a) where
             [ "remaining:"
             , Pretty.indent 4 $ unparse a
             ]
+    pretty Bottom = "\\bottom"
 
-extractProgramState :: ProgramState a -> a
-extractProgramState (Rewritten a) = a
-extractProgramState (Remaining a) = a
-extractProgramState (Start a) = a
+extractProgramState :: ProgramState a -> Maybe a
+extractProgramState (Rewritten a) = Just a
+extractProgramState (Remaining a) = Just a
+extractProgramState (Start a) = Just a
+extractProgramState Bottom = Nothing
 
 retractRemaining :: ProgramState a -> Maybe a
 retractRemaining (Remaining a) = Just a
 retractRemaining _ = Nothing
 
-{- | The sequence of transitions for the symbolic execution strategy.
--}
+-- | The sequence of transitions for the symbolic execution strategy.
 executionStrategy :: Stream (Strategy Prim)
 executionStrategy =
     step1 Stream.:> Stream.iterate id stepN
@@ -144,8 +145,7 @@ executionStrategy =
 {- | The sequence of transitions under the specified depth limit.
 
 See also: 'executionStrategy'
-
- -}
+-}
 limitedExecutionStrategy :: Limit Natural -> [Strategy Prim]
 limitedExecutionStrategy depthLimit =
     Limit.takeWithin depthLimit (toList executionStrategy)
@@ -164,90 +164,88 @@ data Prim
 data ExecutionMode = All | Any
     deriving (Show)
 
-{- | @TransitionRule@ is the general type of transition rules over 'Prim'.
- -}
+-- | @TransitionRule@ is the general type of transition rules over 'Prim'.
 type TransitionRule monad rule state =
     Prim -> state -> Strategy.TransitionT rule monad state
 
-{- | Transition rule for primitive strategies in 'Prim'.
- -}
-transitionRule
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => [[RewriteRule RewritingVariableName]]
-    -> ExecutionMode
-    -> TransitionRule simplifier
-            (RewriteRule RewritingVariableName)
-            (ProgramState (Pattern RewritingVariableName))
+-- | Transition rule for primitive strategies in 'Prim'.
+transitionRule ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    [[RewriteRule RewritingVariableName]] ->
+    ExecutionMode ->
+    TransitionRule
+        simplifier
+        (RewriteRule RewritingVariableName)
+        (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
     transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
     transitionRuleWorker _ Begin (Remaining _) = empty
     transitionRuleWorker _ Begin state@(Start _) = pure state
-
+    transitionRuleWorker _ Begin Bottom = empty
     transitionRuleWorker _ Simplify (Rewritten patt) =
-        Rewritten <$> transitionSimplify patt
+        transitionSimplify Rewritten patt
     transitionRuleWorker _ Simplify (Remaining patt) =
-        Remaining <$> transitionSimplify patt
+        transitionSimplify Remaining patt
     transitionRuleWorker _ Simplify (Start patt) =
-        Start <$> transitionSimplify patt
-
+        transitionSimplify Start patt
+    transitionRuleWorker _ Simplify Bottom =
+        empty
     transitionRuleWorker mode Rewrite (Remaining patt) =
         transitionRewrite mode patt
     transitionRuleWorker mode Rewrite (Start patt) =
         transitionRewrite mode patt
     transitionRuleWorker _ Rewrite state@(Rewritten _) =
         pure state
+    transitionRuleWorker _ Rewrite Bottom =
+        empty
 
-    transitionSimplify config = do
+    transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        asum (pure <$> toList filteredConfigs)
+        if isBottom filteredConfigs
+            then pure Bottom
+            else prim <$> asum (pure <$> toList filteredConfigs)
 
-    transitionRewrite All patt =
-        transitionAllRewrite patt
-    transitionRewrite Any patt =
-        transitionAnyRewrite patt
+    transitionRewrite All patt = transitionAllRewrite patt
+    transitionRewrite Any patt = transitionAnyRewrite patt
 
     transitionAllRewrite config =
         foldM transitionRewrite' (Remaining config) rewriteGroups
       where
         transitionRewrite' applied rewrites
-          | Just config' <- retractRemaining applied =
-            Step.applyRewriteRulesParallel
-                rewrites
-                config'
-                & lift
-            >>= deriveResults
-            >>= simplifyRemainder
-          | otherwise = pure applied
-        simplifyRemainder (Remaining p) =
-            Remaining <$> transitionSimplify p
+            | Just config' <- retractRemaining applied =
+                Step.applyRewriteRulesParallel rewrites config'
+                    & lift
+                    >>= deriveResults
+                    >>= simplifyRemainder
+            | otherwise = pure applied
+        simplifyRemainder (Remaining p) = transitionSimplify Remaining p
         simplifyRemainder p = return p
 
     transitionAnyRewrite config = do
         let rules = concat rewriteGroups
-        results <-
-            Step.applyRewriteRulesSequence
-                config
-                rules
+        results <- Step.applyRewriteRulesSequence config rules
         deriveResults results
 
-deriveResults
-    :: Comonad w
-    => Result.Results (w (RulePattern variable)) a
-    -> TransitionT (RewriteRule variable) m (ProgramState a)
-deriveResults Result.Results { results, remainders } =
-    addResults results <|> addRemainders remainders
+deriveResults ::
+    Comonad w =>
+    Result.Results (w (RulePattern variable)) a ->
+    TransitionT (RewriteRule variable) m (ProgramState a)
+deriveResults Result.Results{results, remainders} =
+    if null results && null remainders
+        then pure Bottom
+        else addResults results <|> addRemainders remainders
   where
     addResults results' = asum (addResult <$> results')
-    addResult Result.Result { appliedRule, result } = do
+    addResult Result.Result{appliedRule, result} = do
         addRule (RewriteRule $ extract appliedRule)
         asum (pure . Rewritten <$> toList result)
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 
-groupRewritesByPriority
-    :: [RewriteRule variable] -> [[RewriteRule variable]]
+groupRewritesByPriority ::
+    [RewriteRule variable] -> [[RewriteRule variable]]
 groupRewritesByPriority rewriteRules =
     groupSortOn Attribute.getPriorityOfAxiom rewriteRules

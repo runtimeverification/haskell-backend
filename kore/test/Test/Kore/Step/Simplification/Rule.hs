@@ -1,38 +1,37 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.Rule
-    ( test_simplifyRulePattern ) where
-
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
+module Test.Kore.Step.Simplification.Rule (test_simplifyRulePattern) where
 
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkRewritingTerm
-    )
-import Kore.Step.RulePattern
-    ( RulePattern
-    , rulePattern
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkRewritingTerm,
+ )
+import Kore.Step.RulePattern (
+    RulePattern,
+    rulePattern,
+ )
 import qualified Kore.Step.Simplification.Rule as Kore
-
+import Prelude.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.Kore.Step.Simplification
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_simplifyRulePattern :: [TestTree]
 test_simplifyRulePattern =
-    [ simplifies    "simplifies \\and (#as) patterns"
-        (rulePattern (andBool (mkAnd false x) y) x    )
-        (rulePattern (andBool false           y) false)
-    , notSimplifies "does not simplify disjunctions"
+    [ simplifies
+        "simplifies \\and (#as) patterns"
+        (rulePattern (andBool (mkAnd false x) y) x)
+        (rulePattern (andBool false y) false)
+    , notSimplifies
+        "does not simplify disjunctions"
         (rulePattern (andBool (mkOr true x) y) (mkOr y (andBool x y)))
-    , notSimplifies "does not simplify builtins"
+    , notSimplifies
+        "does not simplify builtins"
         (rulePattern (sizeList unitList) (mkInt 0))
     ]
   where
@@ -46,30 +45,30 @@ test_simplifyRulePattern =
     false = mkBool False
     mkInt = Test.Int.asInternal
 
-withSimplified
-    :: TestName
-    -> (RulePattern RewritingVariableName -> Assertion)
-    -> RulePattern RewritingVariableName
-    -> TestTree
+withSimplified ::
+    TestName ->
+    (RulePattern RewritingVariableName -> Assertion) ->
+    RulePattern RewritingVariableName ->
+    TestTree
 withSimplified testName check origin =
     testCase testName (check =<< simplifyRulePattern origin)
 
-simplifies
-    :: TestName
-    -> RulePattern RewritingVariableName
-    -> RulePattern RewritingVariableName
-    -> TestTree
+simplifies ::
+    TestName ->
+    RulePattern RewritingVariableName ->
+    RulePattern RewritingVariableName ->
+    TestTree
 simplifies testName origin expect =
     withSimplified testName (assertEqual "" expect) origin
 
-notSimplifies
-    :: TestName
-    -> RulePattern RewritingVariableName
-    -> TestTree
+notSimplifies ::
+    TestName ->
+    RulePattern RewritingVariableName ->
+    TestTree
 notSimplifies testName origin =
     withSimplified testName (assertEqual "" origin) origin
 
-simplifyRulePattern
-    :: RulePattern RewritingVariableName
-    -> IO (RulePattern RewritingVariableName)
+simplifyRulePattern ::
+    RulePattern RewritingVariableName ->
+    IO (RulePattern RewritingVariableName)
 simplifyRulePattern = runSimplifier Builtin.testEnv . Kore.simplifyRulePattern

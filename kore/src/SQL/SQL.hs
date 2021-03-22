@@ -1,44 +1,41 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
+module SQL.SQL (
+    SQL (..),
+    runSQL,
+    execute_,
+    execute,
+    executeNamed,
+    query,
+    queryNamed,
+    lastInsertRowId,
 
-module SQL.SQL
-    ( SQL (..)
-    , runSQL
-    , execute_
-    , execute
-    , executeNamed
-    , query
-    , queryNamed
-    , lastInsertRowId
     -- * Re-exports
-    , Query
-    , SQLData (..)
-    ) where
-
-import Prelude.Kore
+    Query,
+    SQLData (..),
+) where
 
 import qualified Control.Monad.Catch as Exceptions
-import Control.Monad.Reader
-    ( ReaderT (ReaderT)
-    , runReaderT
-    )
-import Data.Int
-    ( Int64
-    )
-import Database.SQLite.Simple
-    ( FromRow
-    , NamedParam
-    , Query
-    , SQLData (..)
-    )
+import Control.Monad.Reader (
+    ReaderT (ReaderT),
+    runReaderT,
+ )
+import Data.Int (
+    Int64,
+ )
+import Database.SQLite.Simple (
+    FromRow,
+    NamedParam,
+    Query,
+    SQLData (..),
+ )
 import qualified Database.SQLite.Simple as SQLite
+import Prelude.Kore
 
-{- | @SQL@ is a 'Monad' for executing SQL statements.
- -}
-newtype SQL a = SQL { getSQL :: ReaderT SQLite.Connection IO a }
+-- | @SQL@ is a 'Monad' for executing SQL statements.
+newtype SQL a = SQL {getSQL :: ReaderT SQLite.Connection IO a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadIO)
 
@@ -48,18 +45,19 @@ instance (Semigroup a) => Semigroup (SQL a) where
 instance (Monoid a) => Monoid (SQL a) where
     mempty = pure mempty
 
-{- | Run the given sequence of statements in the named database.
- -}
-runSQL
-    :: FilePath  -- ^ SQLite database
-    -> SQL a  -- ^ statements
-    -> IO a
+-- | Run the given sequence of statements in the named database.
+runSQL ::
+    -- | SQLite database
+    FilePath ->
+    -- | statements
+    SQL a ->
+    IO a
 runSQL filePath =
     Exceptions.bracket
         (liftIO $ SQLite.open filePath)
         (liftIO . SQLite.close)
-    . runReaderT
-    . getSQL
+        . runReaderT
+        . getSQL
 
 execute_ :: Query -> SQL ()
 execute_ q = SQL . ReaderT $ \conn -> SQLite.execute_ conn q

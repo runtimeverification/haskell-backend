@@ -1,27 +1,25 @@
-{-|
+{- |
 Module      : Kore.Attribute.Axiom.Constructor
 Description : Constructor axiom attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
-
 -}
-module Kore.Attribute.Axiom.Constructor
-    ( Constructor (..)
-    , constructorId, constructorSymbol, constructorAttribute
-    ) where
+module Kore.Attribute.Axiom.Constructor (
+    Constructor (..),
+    constructorId,
+    constructorSymbol,
+    constructorAttribute,
+) where
 
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
-{- | @Constructor@ represents the @constructor@ attribute for axioms.
- -}
-newtype Constructor = Constructor { isConstructor :: Bool }
+-- | @Constructor@ represents the @constructor@ attribute for axioms.
+newtype Constructor = Constructor {isConstructor :: Bool}
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Constructor

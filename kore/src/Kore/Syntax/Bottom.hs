@@ -1,31 +1,26 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Syntax.Bottom (
+    Bottom (..),
+) where
 
-module Kore.Syntax.Bottom
-    ( Bottom (..)
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 
 {- | 'Bottom' corresponds to the @\bottom@ branches of the @pattern@ syntactic
 category from the Semantics of K, Section 9.1.4 (Patterns).
 
 'bottomSort' is the sort of the result.
-
- -}
-newtype Bottom sort child = Bottom { bottomSort :: sort }
+-}
+newtype Bottom sort child = Bottom {bottomSort :: sort}
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -34,7 +29,7 @@ newtype Bottom sort child = Bottom { bottomSort :: sort }
     deriving anyclass (Debug, Diff)
 
 instance Unparse (Bottom Sort child) where
-    unparse Bottom { bottomSort } =
+    unparse Bottom{bottomSort} =
         "\\bottom" <> parameters [bottomSort] <> noArguments
     unparse2 _ = "\\bottom"
 

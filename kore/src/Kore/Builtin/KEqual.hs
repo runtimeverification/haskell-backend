@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Builtin.KEqual
 Description : Built-in KEQUAL operations
@@ -13,70 +15,70 @@ builtin modules.
 @
     import qualified Kore.Builtin.KEqual as KEqual
 @
- -}
-{-# LANGUAGE Strict #-}
+-}
+module Kore.Builtin.KEqual (
+    verifiers,
+    builtinFunctions,
+    unifyKequalsEq,
+    unifyIfThenElse,
 
-module Kore.Builtin.KEqual
-    ( verifiers
-    , builtinFunctions
-    , unifyKequalsEq
-    , unifyIfThenElse
-      -- * keys
-    , eqKey
-    , neqKey
-    , iteKey
-    ) where
+    -- * keys
+    eqKey,
+    neqKey,
+    iteKey,
+) where
 
-import Prelude.Kore
-
-import Control.Error
-    ( MaybeT
-    )
+import Control.Error (
+    MaybeT,
+ )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
-
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin
-    ( acceptAnySort
-    )
+import Kore.Builtin.Builtin (
+    acceptAnySort,
+ )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Definition
-    ( SentenceSymbol (..)
-    )
+import Kore.Syntax.Definition (
+    SentenceSymbol (..),
+ )
 import Kore.Unification.Unify as Unify
 import qualified Logic
+import Prelude.Kore
 
 verifiers :: Builtin.Verifiers
 verifiers =
@@ -89,22 +91,25 @@ verifiers =
 {- | Verify that hooked symbol declarations are well-formed.
 
   See also: 'Builtin.verifySymbol'
-
- -}
+-}
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( eqKey
-      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort])
-    , (neqKey
-      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort])
-    , (iteKey, iteVerifier)
-    ]
+        [
+            ( eqKey
+            , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort]
+            )
+        ,
+            ( neqKey
+            , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort]
+            )
+        , (iteKey, iteVerifier)
+        ]
   where
     iteVerifier :: Builtin.SymbolVerifier
     iteVerifier = Builtin.SymbolVerifier $ \findSort decl -> do
-        let SentenceSymbol { sentenceSymbolSorts = sorts } = decl
-            SentenceSymbol { sentenceSymbolResultSort = result } = decl
+        let SentenceSymbol{sentenceSymbolSorts = sorts} = decl
+            SentenceSymbol{sentenceSymbolResultSort = result} = decl
             arity = length sorts
         Kore.Error.withContext "In argument sorts" $
             case sorts of
@@ -120,7 +125,8 @@ symbolVerifiers =
                 _ ->
                     Kore.Error.koreFail
                         ( "Wrong arity, expected 3 but got "
-                        ++ show arity ++ " in KEQUAL.ite"
+                            ++ show arity
+                            ++ " in KEQUAL.ite"
                         )
 
 {- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@, @KEQUAL.neq@, and
@@ -132,59 +138,61 @@ check whether they are equal or not, producing a builtin boolean value.
 @KEQUAL.ite@ can take a boolean expression and two arbitrary terms (of the same
 sort) and return the first term if the expression is true, and the second
 otherwise.
- -}
+-}
 builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
-    [ (eqKey, applicationAxiomSimplifier (evalKEq True))
-    , (neqKey, applicationAxiomSimplifier (evalKEq False))
-    , (iteKey, applicationAxiomSimplifier evalKIte)
-    ]
+        [ (eqKey, applicationAxiomSimplifier (evalKEq True))
+        , (neqKey, applicationAxiomSimplifier (evalKEq False))
+        , (iteKey, applicationAxiomSimplifier evalKIte)
+        ]
 
-evalKEq
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => Bool
-    -> CofreeF
+evalKEq ::
+    forall variable simplifier.
+    (InternalVariable variable, MonadSimplify simplifier) =>
+    Bool ->
+    SideCondition variable ->
+    CofreeF
         (Application Symbol)
         (Attribute.Pattern variable)
-        (TermLike variable)
-    -> simplifier (AttemptedAxiom variable)
-evalKEq true (valid :< app) =
+        (TermLike variable) ->
+    simplifier (AttemptedAxiom variable)
+evalKEq true _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     sort = Attribute.patternSort valid
-    Application { applicationChildren } = app
+    Application{applicationChildren} = app
     comparison x y
         | true = x == y
         | otherwise = x /= y
-    evalEq
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT simplifier (AttemptedAxiom variable)
+    evalEq ::
+        TermLike variable ->
+        TermLike variable ->
+        MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2 = do
         -- Here we handle the case when both patterns are constructor-like
         -- (so that equality is syntactic). If either pattern is not
         -- constructor-like, we postpone evaluation until we know more.
         Monad.guard (TermLike.isConstructorLike termLike1)
         Monad.guard (TermLike.isConstructorLike termLike2)
-        Builtin.appliedFunction
-            $ Bool.asPattern sort
-            $ comparison termLike1 termLike2
+        Builtin.appliedFunction $
+            Bool.asPattern sort $
+                comparison termLike1 termLike2
 
-evalKIte
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => CofreeF
+evalKIte ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    CofreeF
         (Application Symbol)
         (Attribute.Pattern RewritingVariableName)
-        (TermLike RewritingVariableName)
-    -> simplifier (AttemptedAxiom RewritingVariableName)
-evalKIte (_ :< app) =
+        (TermLike RewritingVariableName) ->
+    simplifier (AttemptedAxiom RewritingVariableName)
+evalKIte _ (_ :< app) =
     case app of
-        Application { applicationChildren = [expr, t1, t2] } ->
+        Application{applicationChildren = [expr, t1, t2]} ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
   where
@@ -194,9 +202,9 @@ evalKIte (_ :< app) =
     evalIte expr t1 t2 =
         case evaluate expr of
             Just result
-                | result    -> purePatternAxiomEvaluator t1
+                | result -> purePatternAxiomEvaluator t1
                 | otherwise -> purePatternAxiomEvaluator t2
-            Nothing    -> notApplicableAxiomEvaluator
+            Nothing -> notApplicableAxiomEvaluator
 
 eqKey :: IsString s => s
 eqKey = "KEQUAL.eq"
@@ -207,77 +215,73 @@ neqKey = "KEQUAL.neq"
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
 
-{- | Match the @KEQUAL.eq@ hooked symbol.
- -}
+-- | Match the @KEQUAL.eq@ hooked symbol.
 matchKequalEq :: TermLike variable -> Maybe (EqTerm (TermLike variable))
 matchKequalEq =
     matchEqTerm $ \symbol ->
         do
             hook2 <- (getHook . symbolHook) symbol
             Monad.guard (hook2 == eqKey)
-        & isJust
+            & isJust
 
-unifyKequalsEq
-    :: forall unifier
-    .  MonadUnify unifier
-    => TermSimplifier RewritingVariableName unifier
-    -> NotSimplifier unifier
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyKequalsEq ::
+    forall unifier.
+    MonadUnify unifier =>
+    TermSimplifier RewritingVariableName unifier ->
+    NotSimplifier unifier ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT unifier (Pattern RewritingVariableName)
 unifyKequalsEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
     worker termLike1 termLike2
-      | Just eqTerm <- matchKequalEq termLike1
-      , isFunctionPattern termLike1
-      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-      | otherwise = empty
+        | Just eqTerm <- matchKequalEq termLike1
+          , isFunctionPattern termLike1 =
+            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
+        | otherwise = empty
 
-{- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
- -}
-data IfThenElse term =
-    IfThenElse
-        { symbol :: !Symbol
-        , condition :: !term
-        , branch1, branch2 :: !term
-        }
+-- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
+data IfThenElse term = IfThenElse
+    { symbol :: !Symbol
+    , condition :: !term
+    , branch1, branch2 :: !term
+    }
 
-{- | Match the @KEQUAL.eq@ hooked symbol.
- -}
+-- | Match the @KEQUAL.eq@ hooked symbol.
 matchIfThenElse :: TermLike variable -> Maybe (IfThenElse (TermLike variable))
 matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
     hook' <- (getHook . symbolHook) symbol
     Monad.guard (hook' == iteKey)
-    return IfThenElse { symbol, condition, branch1, branch2 }
+    return IfThenElse{symbol, condition, branch1, branch2}
 matchIfThenElse _ = Nothing
 
-unifyIfThenElse
-    :: forall unifier
-    .  MonadUnify unifier
-    => TermSimplifier RewritingVariableName unifier
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyIfThenElse ::
+    forall unifier.
+    MonadUnify unifier =>
+    TermSimplifier RewritingVariableName unifier ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT unifier (Pattern RewritingVariableName)
 unifyIfThenElse unifyChildren a b =
     worker a b <|> worker b a
   where
     takeCondition value condition' =
         makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
-        & Condition.fromPredicate
+            & Condition.fromPredicate
       where
         sort = termLikeSort condition'
     worker termLike1 termLike2
-      | Just ifThenElse <- matchIfThenElse termLike1
-      = lift (takeBranch1 ifThenElse <|> takeBranch2 ifThenElse)
+        | Just ifThenElse <- matchIfThenElse termLike1 =
+            lift (takeBranch1 ifThenElse <|> takeBranch2 ifThenElse)
       where
-        takeBranch1 IfThenElse { condition, branch1 } = do
+        takeBranch1 IfThenElse{condition, branch1} = do
             solution <- unifyChildren branch1 termLike2
             let branchCondition = takeCondition True condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
                 & Logic.lowerLogicT
-        takeBranch2 IfThenElse { condition, branch2 } = do
+        takeBranch2 IfThenElse{condition, branch2} = do
             solution <- unifyChildren branch2 termLike2
             let branchCondition = takeCondition False condition
             Pattern.andCondition solution branchCondition

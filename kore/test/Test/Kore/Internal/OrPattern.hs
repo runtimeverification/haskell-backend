@@ -1,51 +1,48 @@
-module Test.Kore.Internal.OrPattern
-    ( hprop_mergeIdemOr
-    , hprop_makeIdemOr
-    , hprop_flattenIdemOr
-    , test_distributeAnd
-    , test_distributeApplication
+module Test.Kore.Internal.OrPattern (
+    hprop_mergeIdemOr,
+    hprop_makeIdemOr,
+    hprop_flattenIdemOr,
+    test_distributeAnd,
+    test_distributeApplication,
+
     -- * Re-exports
-    , OrTestPattern
-    , module OrPattern
-    ) where
+    OrTestPattern,
+    module OrPattern,
+) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
-import Hedgehog
-    ( Property
-    , (===)
-    )
+import Hedgehog (
+    Property,
+    (===),
+ )
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.MultiOr
-    ( distributeAnd
-    , distributeApplication
-    )
+import Kore.Internal.MultiOr (
+    distributeAnd,
+    distributeApplication,
+ )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.TermLike
-    ( Application (..)
-    , Symbol
-    )
+import Kore.Internal.TermLike (
+    Application (..),
+    Symbol,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Variable
 import Kore.TopBottom
-
+import Prelude.Kore
 import Test.Kore
-import Test.Kore.Internal.Pattern
-    ( TermLike
-    , TestPattern
-    , internalPatternGen
-    )
+import Test.Kore.Internal.Pattern (
+    TermLike,
+    TestPattern,
+    internalPatternGen,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type OrTestPattern = OrPattern VariableName
@@ -83,7 +80,7 @@ test_distributeAnd =
         assertEqual "" True (isBottom (distributeAnd bottom'))
     , testCase "a and (b or c) => (a and b) or (a and c)" $ do
         let conjunction =
-                MultiAnd.make [ MultiOr.singleton a, MultiOr.make [b, c] ]
+                MultiAnd.make [MultiOr.singleton a, MultiOr.make [b, c]]
             expect =
                 MultiOr.make
                     [ MultiAnd.make [a, b]
@@ -92,28 +89,30 @@ test_distributeAnd =
         assertEqual "" expect (distributeAnd conjunction)
     , testCase "(a or b) and c => (a and c) or (b and c)" $ do
         let conjunction =
-                MultiAnd.make [ MultiOr.make [a, b], MultiOr.singleton c ]
+                MultiAnd.make [MultiOr.make [a, b], MultiOr.singleton c]
             expect =
                 MultiOr.make
                     [ MultiAnd.make [a, c]
                     , MultiAnd.make [b, c]
                     ]
         assertEqual "" expect (distributeAnd conjunction)
-    , testCase "(a or b) and (c or d) =>\
-                \ (a and c) or (a and d) or (b and c) or (b and d)" $ do
-        let conjunction =
-                MultiAnd.make [ MultiOr.make [a, b], MultiOr.make [c, d] ]
-            expect =
-                MultiOr.make
-                    [ MultiAnd.make [a, c]
-                    , MultiAnd.make [a, d]
-                    , MultiAnd.make [b, c]
-                    , MultiAnd.make [b, d]
-                    ]
-        assertEqual "" expect (distributeAnd conjunction)
+    , testCase
+        "(a or b) and (c or d) =>\
+        \ (a and c) or (a and d) or (b and c) or (b and d)"
+        $ do
+            let conjunction =
+                    MultiAnd.make [MultiOr.make [a, b], MultiOr.make [c, d]]
+                expect =
+                    MultiOr.make
+                        [ MultiAnd.make [a, c]
+                        , MultiAnd.make [a, d]
+                        , MultiAnd.make [b, c]
+                        , MultiAnd.make [b, d]
+                        ]
+            assertEqual "" expect (distributeAnd conjunction)
     , testCase "a and (b or a) => (a and b) or a" $ do
         let conjunction =
-                MultiAnd.make [ MultiOr.singleton a, MultiOr.make [b, a] ]
+                MultiAnd.make [MultiOr.singleton a, MultiOr.make [b, a]]
             expect =
                 MultiOr.make
                     [ MultiAnd.make [a, b]
@@ -155,7 +154,7 @@ test_distributeApplication =
             expect = MultiOr.singleton app'
         assertEqual "" expect (distributeApplication app)
     , testCase "sigma(a, b or c) => sigma(a, b) or sigma(a, c)" $ do
-        let app = sigma2 [ MultiOr.singleton a, MultiOr.make [b, c] ]
+        let app = sigma2 [MultiOr.singleton a, MultiOr.make [b, c]]
             expect =
                 MultiOr.make
                     [ sigma2 [a, b]
@@ -166,26 +165,28 @@ test_distributeApplication =
         let app =
                 Application
                     Mock.functional20Symbol
-                    [ MultiOr.make [a, b], MultiOr.singleton c ]
+                    [MultiOr.make [a, b], MultiOr.singleton c]
             expect =
                 MultiOr.make
                     [ sigma2 [a, c]
                     , sigma2 [b, c]
                     ]
         assertEqual "" expect (distributeApplication app)
-    , testCase "sigma(a or b, c or d) =>\
-                \ sigma(a, c) or sigma(a, d) or sigma(b, c) or sigma(b, d)" $ do
-        let app = sigma2 [ MultiOr.make [a, b], MultiOr.make [c, d] ]
-            expect =
-                MultiOr.make
-                    [ sigma2 [a, c]
-                    , sigma2 [a, d]
-                    , sigma2 [b, c]
-                    , sigma2 [b, d]
-                    ]
-        assertEqual "" expect (distributeApplication app)
+    , testCase
+        "sigma(a or b, c or d) =>\
+        \ sigma(a, c) or sigma(a, d) or sigma(b, c) or sigma(b, d)"
+        $ do
+            let app = sigma2 [MultiOr.make [a, b], MultiOr.make [c, d]]
+                expect =
+                    MultiOr.make
+                        [ sigma2 [a, c]
+                        , sigma2 [a, d]
+                        , sigma2 [b, c]
+                        , sigma2 [b, d]
+                        ]
+            assertEqual "" expect (distributeApplication app)
     , testCase "sigma(a, b or a) => sigma(a, b) or sigma(a, a)" $ do
-        let app = sigma2 [ MultiOr.singleton a, MultiOr.make [b, a] ]
+        let app = sigma2 [MultiOr.singleton a, MultiOr.make [b, a]]
             expect =
                 MultiOr.make
                     [ sigma2 [a, b]

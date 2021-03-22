@@ -1,31 +1,29 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Log.WarnBoundedModelChecker
-    ( WarnBoundedModelChecker (..)
-    , warnBoundedModelChecker
-    ) where
-
-import Prelude.Kore
+module Kore.Log.WarnBoundedModelChecker (
+    WarnBoundedModelChecker (..),
+    warnBoundedModelChecker,
+) where
 
 import Kore.Attribute.SourceLocation
 import Kore.Internal.TermLike
-import Kore.Step.RulePattern
-    ( ImplicationRule
-    )
+import Kore.Step.RulePattern (
+    ImplicationRule,
+ )
 import Log
-import Pretty
-    ( Pretty
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
 newtype WarnBoundedModelChecker
     = WarnBoundedModelChecker (ImplicationRule VariableName)
-    deriving Show
+    deriving (Show)
 
 instance Pretty WarnBoundedModelChecker where
     pretty (WarnBoundedModelChecker claim) =
@@ -38,9 +36,9 @@ instance Entry WarnBoundedModelChecker where
     entrySeverity _ = Warning
     helpDoc _ = "warn when the bounded model checker does not terminate within the given bound"
 
-warnBoundedModelChecker
-    :: MonadLog log
-    => ImplicationRule VariableName
-    -> log ()
+warnBoundedModelChecker ::
+    MonadLog log =>
+    ImplicationRule VariableName ->
+    log ()
 warnBoundedModelChecker claim =
     logEntry (WarnBoundedModelChecker claim)

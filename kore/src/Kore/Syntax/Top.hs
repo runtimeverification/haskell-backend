@@ -1,32 +1,25 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Syntax.Top (
+    Top (..),
+) where
 
-module Kore.Syntax.Top
-    ( Top (..)
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 
-{-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
-
+{- | 'Top' corresponds to the @\top{}()@ connective in Kore.
 
 'topSort' is the sort of the result.
 -}
-newtype Top sort child = Top { topSort :: sort }
+newtype Top sort child = Top {topSort :: sort}
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -35,7 +28,7 @@ newtype Top sort child = Top { topSort :: sort }
     deriving anyclass (Debug, Diff)
 
 instance Unparse (Top Sort child) where
-    unparse Top { topSort } = "\\top" <> parameters [topSort] <> noArguments
+    unparse Top{topSort} = "\\top" <> parameters [topSort] <> noArguments
 
     unparse2 _ = "\\top"
 
