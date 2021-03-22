@@ -88,8 +88,8 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
 import Kore.Internal.Predicate
-    ( pattern PredicateIn
-    , pattern PredicateCeil
+    ( pattern PredicateCeil
+    , pattern PredicateIn
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
@@ -97,8 +97,8 @@ import Kore.Internal.TermLike
     ( pattern And_
     , pattern App_
     , pattern DV_
-    , pattern Var_
     , pattern StringLiteral_
+    , pattern Var_
     )
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
