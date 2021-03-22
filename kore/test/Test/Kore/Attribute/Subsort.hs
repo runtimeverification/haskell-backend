@@ -1,22 +1,19 @@
-module Test.Kore.Attribute.Subsort
-    ( test_subsort
-    , test_Attributes
-    , test_zeroParams
-    , test_arguments
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
+module Test.Kore.Attribute.Subsort (
+    test_subsort,
+    test_Attributes,
+    test_zeroParams,
+    test_arguments,
+) where
 
 import Kore.Attribute.Subsort
 import Kore.Syntax.Pattern
-
-import Test.Kore
-    ( sortActual
-    )
+import Prelude.Kore
+import Test.Kore (
+    sortActual,
+ )
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 sub :: Sort
 sub = sortActual "sub" []
@@ -29,28 +26,28 @@ parseSubsorts = parseAttributes
 
 test_subsort :: TestTree
 test_subsort =
-    testCase "[subsort{sub{},super{}}()] :: Subsort"
-        $ expectSuccess subsorts
-        $ parseSubsorts $ Attributes [ subsortAttribute sub super ]
+    testCase "[subsort{sub{},super{}}()] :: Subsort" $
+        expectSuccess subsorts $
+            parseSubsorts $ Attributes [subsortAttribute sub super]
   where
     subsorts =
         Subsorts
             { getSubsorts =
-                [ Subsort { subsort = sub , supersort = super } ]
+                [Subsort{subsort = sub, supersort = super}]
             }
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[subsort{sub{},super{}}()] :: Attributes"
-        $ expectSuccess attrs $ parseAttributes attrs
+    testCase "[subsort{sub{},super{}}()] :: Attributes" $
+        expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ subsortAttribute sub super ]
+    attrs = Attributes [subsortAttribute sub super]
 
 test_zeroParams :: TestTree
 test_zeroParams =
-    testCase "[subsort{}()]"
-        $ expectFailure
-        $ parseSubsorts $ Attributes [ illegalAttribute ]
+    testCase "[subsort{}()]" $
+        expectFailure $
+            parseSubsorts $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -65,9 +62,9 @@ test_zeroParams =
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[subsort{sub{},super{}}(illegal)]"
-        $ expectFailure
-        $ parseSubsorts $ Attributes [ illegalAttribute ]
+    testCase "[subsort{sub{},super{}}(illegal)]" $
+        expectFailure $
+            parseSubsorts $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern (subsortSymbol sub super) [attributeString "illegal"]

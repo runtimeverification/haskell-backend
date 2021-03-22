@@ -15,6 +15,6 @@ last=2  # last exit code
 # This way, the script exits if the user interrupts it (for example).
 while test "$last" -eq 2
 do
-    fd '(package.yaml|.*.hs)' | entr -d -s "${@:-./hooks.sh}"
+    fd '(package.yaml|.*\.hs)' | entr -d -s "${@:-./hooks.sh}"
     last=$?
 done

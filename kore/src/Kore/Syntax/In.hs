@@ -1,38 +1,33 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Syntax.In (
+    In (..),
+) where
 
-module Kore.Syntax.In
-    ( In (..)
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
-{-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
+{- |'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
 'inOperandSort' is the sort of the operands.
 
 'inResultSort' is the sort of the result.
-
 -}
 data In sort child = In
-    { inOperandSort     :: !sort
-    , inResultSort      :: !sort
-    , inContainedChild  :: child
+    { inOperandSort :: !sort
+    , inResultSort :: !sort
+    , inContainedChild :: child
     , inContainingChild :: child
     }
     deriving (Eq, Ord, Show)
@@ -49,43 +44,45 @@ instance Unparse child => Unparse (In Sort child) where
             , inResultSort
             , inContainedChild
             , inContainingChild
-            }
-      =
-        "\\in"
-        <> parameters [inOperandSort, inResultSort]
-        <> arguments [inContainedChild, inContainingChild]
+            } =
+            "\\in"
+                <> parameters [inOperandSort, inResultSort]
+                <> arguments [inContainedChild, inContainingChild]
 
     unparse2
         In
             { inContainedChild
             , inContainingChild
-            }
-      = Pretty.parens (Pretty.fillSep
-            [ "\\in"
-            , unparse2 inContainedChild
-            , unparse2 inContainingChild
-            ])
+            } =
+            Pretty.parens
+                ( Pretty.fillSep
+                    [ "\\in"
+                    , unparse2 inContainedChild
+                    , unparse2 inContainingChild
+                    ]
+                )
 
 instance Unparse child => Unparse (In () child) where
     unparse
         In
             { inContainedChild
             , inContainingChild
-            }
-      =
-        "\\in"
-        <> arguments [inContainedChild, inContainingChild]
+            } =
+            "\\in"
+                <> arguments [inContainedChild, inContainingChild]
 
     unparse2
         In
             { inContainedChild
             , inContainingChild
-            }
-      = Pretty.parens (Pretty.fillSep
-            [ "\\in"
-            , unparse2 inContainedChild
-            , unparse2 inContainingChild
-            ])
+            } =
+            Pretty.parens
+                ( Pretty.fillSep
+                    [ "\\in"
+                    , unparse2 inContainedChild
+                    , unparse2 inContainingChild
+                    ]
+                )
 
 instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
     synthetic = fold
@@ -94,9 +91,9 @@ instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
 instance Synthetic Sort (In Sort) where
     synthetic in' =
         inResultSort
-        & seq (matchSort inOperandSort inContainedChild)
-        . seq (matchSort inOperandSort inContainingChild)
+            & seq (matchSort inOperandSort inContainedChild)
+                . seq (matchSort inOperandSort inContainingChild)
       where
-        In { inResultSort, inOperandSort } = in'
-        In { inContainedChild, inContainingChild } = in'
+        In{inResultSort, inOperandSort} = in'
+        In{inContainedChild, inContainingChild} = in'
     {-# INLINE synthetic #-}

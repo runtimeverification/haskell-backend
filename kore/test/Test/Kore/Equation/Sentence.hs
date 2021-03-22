@@ -1,24 +1,20 @@
-module Test.Kore.Equation.Sentence
-    ( test_fromSentenceAxiom
-    ) where
+module Test.Kore.Equation.Sentence (
+    test_fromSentenceAxiom,
+) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
-import Data.Default
-    ( def
-    )
-
+import Data.Default (
+    def,
+ )
 import Kore.Equation
-import Kore.Internal.Predicate
-    ( wrapPredicate
-    )
+import Kore.Internal.Predicate (
+    wrapPredicate,
+ )
 import Kore.Internal.TermLike
-
+import Prelude.Kore
 import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_fromSentenceAxiom :: [TestTree]
@@ -40,8 +36,8 @@ test_fromSentenceAxiom =
             left = Mock.f (mkElemVar Mock.x)
             right = Mock.g (mkElemVar Mock.x)
             original =
-                mkImplies requires
-                $ mkAnd (mkEquals sortR left right) ensures
+                mkImplies requires $
+                    mkAnd (mkEquals sortR left right) ensures
             equation =
                 (mkEquation left right)
                     { requires = wrapPredicate requires
@@ -57,8 +53,8 @@ test_fromSentenceAxiom =
             left = Mock.f (mkElemVar Mock.y)
             right = Mock.g (mkElemVar Mock.y)
             original =
-                mkImplies (mkAnd requires argument')
-                $ mkAnd (mkEquals sortR left right) ensures
+                mkImplies (mkAnd requires argument') $
+                    mkAnd (mkEquals sortR left right) ensures
             equation =
                 (mkEquation left right)
                     { requires = wrapPredicate requires
@@ -70,15 +66,16 @@ test_fromSentenceAxiom =
   where
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
-    assertions
-        :: HasCallStack
-        => TermLike VariableName
-        -> Equation VariableName
-        -> Assertion
+    assertions ::
+        HasCallStack =>
+        TermLike VariableName ->
+        Equation VariableName ->
+        Assertion
     assertions original equation = do
         actual <- expectRight $ test original
         assertEqual "Expected equation" equation actual
-        assertEqual "Expected original pattern"
+        assertEqual
+            "Expected original pattern"
             original
             (toTermLike (termLikeSort original) actual)
     test original = fromSentenceAxiom (def, mkAxiom [sortVariableR] original)

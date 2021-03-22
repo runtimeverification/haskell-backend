@@ -1,56 +1,54 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Builtin.Set.Set (
+    asTermLike,
 
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin.Set.Set
-    ( asTermLike
     -- * Symbols
-    , isSymbolConcat
-    , isSymbolElement
-    , isSymbolUnit
-    , isSymbolList2set
-    , isSymbolInclusion
-    , lookupSymbolIn
-    , lookupSymbolDifference
-    , lookupSymbolList2set
-    , lookupSymbolInclusion
-      -- * Keys
-    , concatKey
-    , differenceKey
-    , elementKey
-    , inKey
-    , intersectionKey
-    , sizeKey
-    , toListKey
-    , unitKey
-    , list2setKey
-    , inclusionKey
-    ) where
+    isSymbolConcat,
+    isSymbolElement,
+    isSymbolUnit,
+    isSymbolList2set,
+    isSymbolInclusion,
+    lookupSymbolIn,
+    lookupSymbolDifference,
+    lookupSymbolList2set,
+    lookupSymbolInclusion,
 
-import Prelude.Kore
+    -- * Keys
+    concatKey,
+    differenceKey,
+    elementKey,
+    inKey,
+    intersectionKey,
+    sizeKey,
+    toListKey,
+    unitKey,
+    list2setKey,
+    inclusionKey,
+) where
 
 import qualified Data.Map.Strict as Map
-import Data.String
-    ( IsString
-    )
-
-import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
-    )
+import Data.String (
+    IsString,
+ )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol,
+ )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
-import qualified Kore.Error as Kore
-    ( Error
-    )
-import Kore.IndexedModule.IndexedModule
-    ( VerifiedModule
-    )
+import qualified Kore.Error as Kore (
+    Error,
+ )
+import Kore.IndexedModule.IndexedModule (
+    VerifiedModule,
+ )
 import Kore.Internal.InternalSet
 import Kore.Internal.TermLike as TermLike
+import Prelude.Kore
 
 concatKey :: IsString s => s
 concatKey = "SET.concat"
@@ -82,79 +80,70 @@ list2setKey = "SET.list2set"
 inclusionKey :: IsString s => s
 inclusionKey = "SET.inclusion"
 
-{- | Find the symbol hooked to @SET.get@ in an indexed module.
- -}
-lookupSymbolIn
-    :: Sort
-    -> VerifiedModule Attribute.Symbol
-    -> Either (Kore.Error e) Symbol
+-- | Find the symbol hooked to @SET.get@ in an indexed module.
+lookupSymbolIn ::
+    Sort ->
+    VerifiedModule Attribute.Symbol ->
+    Either (Kore.Error e) Symbol
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
-{- | Find the symbol hooked to @SET.difference@ in an indexed module.
- -}
-lookupSymbolDifference
-    :: Sort
-    -> VerifiedModule Attribute.Symbol
-    -> Either (Kore.Error e) Symbol
+-- | Find the symbol hooked to @SET.difference@ in an indexed module.
+lookupSymbolDifference ::
+    Sort ->
+    VerifiedModule Attribute.Symbol ->
+    Either (Kore.Error e) Symbol
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
-{- | Find the symbol hooked to @SET.list2set@ in an indexed module.
- -}
-lookupSymbolList2set
-    :: Sort
-    -> VerifiedModule Attribute.Symbol
-    -> Either (Kore.Error e) Symbol
+-- | Find the symbol hooked to @SET.list2set@ in an indexed module.
+lookupSymbolList2set ::
+    Sort ->
+    VerifiedModule Attribute.Symbol ->
+    Either (Kore.Error e) Symbol
 lookupSymbolList2set = Builtin.lookupSymbol list2setKey
 
-{- | Find the symbol hooked to @SET.inclusion@ in an indexed module.
- -}
-lookupSymbolInclusion
-    :: Sort
-    -> VerifiedModule Attribute.Symbol
-    -> Either (Kore.Error e) Symbol
+-- | Find the symbol hooked to @SET.inclusion@ in an indexed module.
+lookupSymbolInclusion ::
+    Sort ->
+    VerifiedModule Attribute.Symbol ->
+    Either (Kore.Error e) Symbol
 lookupSymbolInclusion = Builtin.lookupSymbol inclusionKey
 
-{- | Check if the given symbol is hooked to @SET.concat@.
- -}
+-- | Check if the given symbol is hooked to @SET.concat@.
 isSymbolConcat :: Symbol -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
-{- | Check if the given symbol is hooked to @SET.element@.
- -}
+-- | Check if the given symbol is hooked to @SET.element@.
 isSymbolElement :: Symbol -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
-{- | Check if the given symbol is hooked to @SET.unit@.
--}
+-- | Check if the given symbol is hooked to @SET.unit@.
 isSymbolUnit :: Symbol -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
-{- | Check if the given symbol is hooked to @SET.set2list@.
--}
+-- | Check if the given symbol is hooked to @SET.set2list@.
 isSymbolList2set :: Symbol -> Bool
 isSymbolList2set = Builtin.isSymbol list2setKey
 
-{- | Check if the given symbol is hooked to @SET.inclusion@.
--}
+-- | Check if the given symbol is hooked to @SET.inclusion@.
 isSymbolInclusion :: Symbol -> Bool
 isSymbolInclusion = Builtin.isSymbol inclusionKey
 
 -- TODO (thomas.tuegel): Rename this function.
-{- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
--}
-asTermLike
-    :: forall variable
-    .  InternalVariable variable
-    => InternalSet Key (TermLike variable)
-    -> TermLike variable
+
+-- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
+asTermLike ::
+    forall variable.
+    InternalVariable variable =>
+    InternalSet Key (TermLike variable) ->
+    TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
         (AssocComm.UnitSymbol unitSymbol)
         (AssocComm.ConcatSymbol concatSymbol)
-        (AssocComm.ConcreteElements
+        ( AssocComm.ConcreteElements
             (map concreteElement (Map.toAscList concreteElements))
         )
-        (AssocComm.VariableElements
+        ( AssocComm.VariableElements
             (element . unwrapElement <$> elementsWithVariables)
         )
         (AssocComm.Opaque filteredSets)
@@ -163,28 +152,28 @@ asTermLike builtin =
     filteredSets = filter (not . isEmptySet) opaque
 
     isEmptySet :: TermLike variable -> Bool
-    isEmptySet (InternalSet_ InternalAc { builtinAcChild = wrappedChild }) =
+    isEmptySet (InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
         unwrapAc wrappedChild == emptyNormalizedAc
     isEmptySet (App_ symbol _) = unitSymbol == symbol
     isEmptySet _ = False
 
-    InternalAc { builtinAcChild } = builtin
-    InternalAc { builtinAcUnit = unitSymbol } = builtin
-    InternalAc { builtinAcElement = elementSymbol } = builtin
-    InternalAc { builtinAcConcat = concatSymbol } = builtin
+    InternalAc{builtinAcChild} = builtin
+    InternalAc{builtinAcUnit = unitSymbol} = builtin
+    InternalAc{builtinAcElement = elementSymbol} = builtin
+    InternalAc{builtinAcConcat = concatSymbol} = builtin
 
     normalizedAc = unwrapAc builtinAcChild
 
-    NormalizedAc { elementsWithVariables } = normalizedAc
-    NormalizedAc { concreteElements } = normalizedAc
-    NormalizedAc { opaque } = normalizedAc
+    NormalizedAc{elementsWithVariables} = normalizedAc
+    NormalizedAc{concreteElements} = normalizedAc
+    NormalizedAc{opaque} = normalizedAc
 
-    concreteElement
-        :: (Key, SetValue (TermLike variable))
-        -> TermLike variable
+    concreteElement ::
+        (Key, SetValue (TermLike variable)) ->
+        TermLike variable
     concreteElement (key, value) = element (from @Key key, value)
 
-    element
-        :: (TermLike variable, SetValue (TermLike variable))
-        -> TermLike variable
+    element ::
+        (TermLike variable, SetValue (TermLike variable)) ->
+        TermLike variable
     element (key, SetValue) = mkApplySymbol elementSymbol [key]

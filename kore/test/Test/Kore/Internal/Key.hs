@@ -1,30 +1,27 @@
-module Test.Kore.Internal.Key
-    ( test_retractKey
-    ) where
+module Test.Kore.Internal.Key (
+    test_retractKey,
+) where
 
+import Kore.Internal.TermLike (
+    Concrete,
+    DomainValue (..),
+    TermLike,
+    mkDomainValue,
+    mkStringLiteral,
+    retractKey,
+ )
 import Prelude.Kore
-
+import Test.Kore.Builtin.Definition (
+    mkBool,
+    mkBytes,
+    mkInt,
+    mkList,
+    mkMap,
+    mkSet_,
+    mkString,
+    userTokenSort,
+ )
 import Test.Tasty
-
-import Kore.Internal.TermLike
-    ( Concrete
-    , DomainValue (..)
-    , TermLike
-    , mkDomainValue
-    , mkStringLiteral
-    , retractKey
-    )
-
-import Test.Kore.Builtin.Definition
-    ( mkBool
-    , mkBytes
-    , mkInt
-    , mkList
-    , mkMap
-    , mkSet_
-    , mkString
-    , userTokenSort
-    )
 import Test.Tasty.HUnit.Ext
 
 test_retractKey :: [TestTree]
@@ -36,11 +33,13 @@ test_retractKey =
     , test "Set" (mkSet_ [mkInt 1])
     , test "Map" (mkMap [(mkInt 1, mkString "one")])
     , test "List" (mkList [mkInt 1, mkInt 2])
-    , test "token"
-        (mkDomainValue DomainValue
-            { domainValueSort = userTokenSort
-            , domainValueChild = mkStringLiteral "token"
-            }
+    , test
+        "token"
+        ( mkDomainValue
+            DomainValue
+                { domainValueSort = userTokenSort
+                , domainValueChild = mkStringLiteral "token"
+                }
         )
     ]
   where
