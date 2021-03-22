@@ -7,7 +7,6 @@ kollect() {
     local name="$1"
     shift
     echo '#!/bin/sh' > "$name.sh"
-    # TODO Mircea: change debug to save-temps after the evm-semantics repo is updated to use the latest backend
     "$@" --save-temps --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
@@ -20,6 +19,17 @@ build-evm() {
     make plugin-deps
     make build-haskell
     export PATH=$(pwd)/.build/usr/bin:$PATH
+}
+
+build-wasm() {
+    cd $KORE
+    git clone git@github.com:kframework/wasm-semantics.git
+    cd wasm-semantics
+    git submodule update --init --recursive
+    # TODO: any way to not build K as well?
+    make deps
+    # TODO: I think this uses the project's K version
+    make build-haskell
 }
 
 generate-evm() {
@@ -53,6 +63,31 @@ generate-evm() {
             VERIFICATION --format-failures
 }
 
+generate-wasm() {
+    cd $KORE/wasm-semantics
+
+    for spec in \
+        simple-arithmetic \
+        locals \
+        loops
+    do
+        kollect "test-$spec" \
+            ./kwasm prove --backend haskell \
+                tests/proofs/"$spec"-spec.k \
+                KWASM-LEMMAS
+    done
+    
+    kollect "test-memory" \
+        ./kwasm prove --backend haskell \
+            tests/proofs/memory-spec.k \
+            KWASM-LEMMAS \
+            --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive
+    
+    kollect "test-wrc20" \
+        ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
+        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend
+}
+
 replace-tests() {
     local testdir=$KORE/$1
     local tests=$KORE/$2/test-*
@@ -73,3 +108,8 @@ build-evm
 generate-evm
 replace-tests "test/regression-evm" "evm-semantics"
 rm -rf $KORE/evm-semantics
+
+build-wasm
+generate-wasm
+replace-tests "test/regression-wasm" "wasm-semantics"
+rm -rf $KORE/wasm-semantics
