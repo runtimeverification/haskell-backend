@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.41.0.0"; };
+      identifier = { name = "kore"; version = "0.42.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -35,8 +35,6 @@
         depends = [
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-          (hsPkgs."array" or (errorHandler.buildDepError "array"))
-          (hsPkgs."async" or (errorHandler.buildDepError "async"))
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -59,14 +57,11 @@
           (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
           (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
           (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-          (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
           (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-          (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
           (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-          (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -78,14 +73,12 @@
           (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
           (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
           (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-          (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
           (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
           (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
           (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
           (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
-          (hsPkgs."time" or (errorHandler.buildDepError "time"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -283,6 +276,7 @@
           "Kore/Log/Registry"
           "Kore/Log/SQLite"
           "Kore/Log/WarnBoundedModelChecker"
+          "Kore/Log/WarnDepthLimitExceeded"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnRetrySolverQuery"
@@ -469,8 +463,6 @@
           depends = [
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-            (hsPkgs."array" or (errorHandler.buildDepError "array"))
-            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -493,15 +485,12 @@
             (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-            (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -513,14 +502,12 @@
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -533,16 +520,16 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/exec" "app/share" ];
-          mainPath = ([
+          mainPath = ((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         "kore-format" = {
           depends = [
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-            (hsPkgs."array" or (errorHandler.buildDepError "array"))
-            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -565,15 +552,12 @@
             (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-            (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -585,14 +569,12 @@
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -605,16 +587,16 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/format" "app/share" ];
-          mainPath = ([
+          mainPath = ((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         "kore-parser" = {
           depends = [
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-            (hsPkgs."array" or (errorHandler.buildDepError "array"))
-            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -637,15 +619,12 @@
             (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-            (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -657,14 +636,12 @@
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -677,16 +654,16 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/parser" "app/share" ];
-          mainPath = ([
+          mainPath = ((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         "kore-prof" = {
           depends = [
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-            (hsPkgs."array" or (errorHandler.buildDepError "array"))
-            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -710,14 +687,11 @@
             (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-            (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -729,14 +703,12 @@
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -749,14 +721,14 @@
           buildable = true;
           modules = [ "Paths_kore" ];
           hsSourceDirs = [ "app/prof" ];
-          mainPath = [ "Main.hs" ] ++ (pkgs.lib).optional (!flags.release) "";
+          mainPath = (([
+            "Main.hs"
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (!flags.release) "";
           };
         "kore-repl" = {
           depends = [
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-            (hsPkgs."array" or (errorHandler.buildDepError "array"))
-            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -779,15 +751,12 @@
             (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-            (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -799,14 +768,12 @@
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -819,9 +786,11 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/repl" "app/share" ];
-          mainPath = ([
+          mainPath = ((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         };
       tests = {
@@ -830,8 +799,6 @@
             (hsPkgs."QuickCheck" or (errorHandler.buildDepError "QuickCheck"))
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
-            (hsPkgs."array" or (errorHandler.buildDepError "array"))
-            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."call-stack" or (errorHandler.buildDepError "call-stack"))
@@ -855,16 +822,13 @@
             (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError "ghc-trace-events"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
-            (hsPkgs."groom" or (errorHandler.buildDepError "groom"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
-            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."hedgehog" or (errorHandler.buildDepError "hedgehog"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -877,7 +841,6 @@
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
-            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."tasty" or (errorHandler.buildDepError "tasty"))
@@ -890,7 +853,6 @@
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))

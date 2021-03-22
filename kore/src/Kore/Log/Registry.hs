@@ -114,6 +114,9 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnBoundedModelChecker
     ( WarnBoundedModelChecker
     )
+import Kore.Log.WarnDepthLimitExceeded
+    ( WarnDepthLimitExceeded
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
@@ -182,6 +185,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         , mk $ Proxy @WarnFunctionWithoutEvaluators
         , mk $ Proxy @WarnSymbolSMTRepresentation
         , mk $ Proxy @WarnStuckClaimState
+        , mk $ Proxy @WarnDepthLimitExceeded
         , mk $ Proxy @WarnBoundedModelChecker
         , mk $ Proxy @WarnIfLowProductivity
         , mk $ Proxy @WarnTrivialClaim
