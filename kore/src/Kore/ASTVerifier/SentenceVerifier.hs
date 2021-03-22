@@ -89,6 +89,7 @@ import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
 import Kore.Internal.Predicate
     ( pattern PredicateIn
+    , pattern PredicateCeil
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
@@ -97,6 +98,7 @@ import Kore.Internal.TermLike
     , pattern App_
     , pattern DV_
     , pattern Var_
+    , pattern StringLiteral_
     )
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
@@ -407,9 +409,9 @@ verifyAxiomSentence sentence =
                 ConstructorAxiom -> return ()
                 SubsortAxiom -> return ()
             )
-            (\ Equation {left, argument, attributes} ->
+            (\ eq@Equation {left, argument, attributes} ->
                 when (isNotSimplification attributes)
-                    $ checkLHS left >> checkArg argument
+                    $ checkLHS eq left >> checkArg eq argument
             )
             $ fromSentenceAxiom (attrs, verified)
   where
@@ -422,9 +424,10 @@ verifyAxiomSentence sentence =
         Attribute.simplification attributes ==
         NotSimplification
 
-    checkLHS termLike =
+    checkLHS eq termLike =
         if isNonconstructorFunctionSymbol termLike
         then failOnJust
+            eq
             "LHS of NotSimplification axiom contains non-variable:"
             $ asum $ getNotVar <$> termLikeF
         else koreFail $ show $ Pretty.vsep
@@ -443,40 +446,40 @@ verifyAxiomSentence sentence =
         getNotVar (Var_ _) = Nothing
         getNotVar term = Just term
 
-    checkArg Nothing = return ()
-    checkArg (Just arg) =
+    checkArg _ Nothing = return ()
+    checkArg eq (Just arg) =
         traverse_
-            ( failOnJust "Found invalid subterm of Axiom equation argument:"
+            ( failOnJust eq "Found invalid subterm of Axiom equation argument:"
             . checkArgIn
             )
         $ Predicate.getMultiAndPredicate arg
       where
-        checkArgIn (PredicateIn (Var_ _) term) = findSubterm
-            isBadArgSubterm
-            term
+        checkArgIn (PredicateIn (Var_ _) term) =
+            findBadArgSubterm term
+        checkArgIn (PredicateCeil (And_ _ (Var_ _) term)) =
+            findBadArgSubterm term
         checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
 
-        isBadArgSubterm (App_ sym _) = not (Symbol.isConstructorLike sym)
-        isBadArgSubterm (DV_ _ _) = False
-        isBadArgSubterm (And_ _ _ _) = False
-        isBadArgSubterm (Var_ _) = False
-        isBadArgSubterm _ = True
+        findBadArgSubterm term@(App_ sym children) =
+            if Symbol.isConstructorLike sym
+                then asum $ findBadArgSubterm <$> children
+                else Just term
+        findBadArgSubterm (DV_ _ (StringLiteral_ _)) = Nothing
+        findBadArgSubterm (And_ _ child1 child2) =
+            findBadArgSubterm child1 <|> findBadArgSubterm child2
+        findBadArgSubterm (Var_ _) = Nothing
+        findBadArgSubterm term = Just term
 
-    failOnJust _ Nothing = return ()
-    failOnJust errorMessage (Just term) = koreFailWithLocations
+    failOnJust _ _ Nothing = return ()
+    failOnJust eq errorMessage (Just term) = koreFailWithLocations
         [term]
         (pack $ show $ Pretty.vsep
             [ errorMessage
             , unparse term
+            , "The equation that the above occurs in is:"
+            , Pretty.pretty eq
             ]
         )
-
-    findSubterm criterion termLike =
-        if criterion termLike
-            then Just termLike
-            else asum $ findSubterm criterion <$> termLikeF
-      where
-        _ :< termLikeF = Recursive.project termLike
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
