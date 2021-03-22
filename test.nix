@@ -20,6 +20,9 @@ let
       };
     in import src { inherit pkgs; };
 
+  default = import ./. {};
+  inherit (default) kore;
+
   kframework =
     let
       tag = lib.fileContents ./deps/k_release;
@@ -27,10 +30,11 @@ let
       args = import (builtins.fetchurl { inherit url; });
       src = pkgs.fetchgit args;
     in import src {};
-  inherit (kframework) k;
 
-  default = import ./. {};
-  inherit (default) kore;
+  k = kframework.k.override {
+    haskell-backend = kore;
+  };
+
 in
 
 stdenv.mkDerivation {
@@ -38,7 +42,7 @@ stdenv.mkDerivation {
   src = ttuegel.cleanGitSubtree { name = "kore"; src = ./.; };
   preferLocalBuild = true;
   buildInputs = [
-    k kore
+    k kore  # some tests use kore-exec directly, others run through the frontend
     ncurses  # TODO: .../lib/kframework/setenv: line 31: tput: command not found
     z3
   ];
