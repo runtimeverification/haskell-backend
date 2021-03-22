@@ -4,8 +4,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE Strict #-}
 
 module Kore.Attribute.Pattern
     ( Pattern (Pattern, patternSort, freeVariables, functional, function, defined, created)

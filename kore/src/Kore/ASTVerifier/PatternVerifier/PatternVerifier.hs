@@ -3,8 +3,8 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE Strict #-}
 
 module Kore.ASTVerifier.PatternVerifier.PatternVerifier
     ( PatternVerifier (..)

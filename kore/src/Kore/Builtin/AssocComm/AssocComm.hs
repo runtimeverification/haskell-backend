@@ -4,8 +4,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE Strict #-}
 
 module Kore.Builtin.AssocComm.AssocComm
     ( asTermLike
