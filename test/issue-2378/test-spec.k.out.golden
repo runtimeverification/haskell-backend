@@ -1,19 +1,16 @@
-  #Not ( #Exists _0 . #Exists S . #Ceil ( S
-    SetItem ( _0 ) )
-  #And
-    {
-      _M
-    #Equals
-      S
-      SetItem ( _0 )
-    } )
+  #Not ( #Exists _0 . #Exists S . {
+    keys ( _M )
+  #Equals
+    S
+    SetItem ( _0 )
+  } )
 #And
   #Not ( {
-    _M
-  #Equals
     .Set
+  #Equals
+    keys ( _M )
   } )
 #And
   <k>
-    b ( _M ) ~> _DotVar1 ~> .
+    b ( keys ( _M ) ) ~> _DotVar1 ~> .
   </k>
