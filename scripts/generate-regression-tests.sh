@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 set -exuo pipefail
 
 kollect() {
@@ -26,9 +25,6 @@ build-wasm() {
     git clone git@github.com:kframework/wasm-semantics.git
     cd wasm-semantics
     git submodule update --init --recursive
-    # TODO: any way to not build K as well?
-    make deps
-    # TODO: I think this uses the project's K version
     make build-haskell
 }
 
