@@ -1,1 +1,19 @@
-#Top
+  #Not ( #Exists _0 . #Exists S . #Ceil ( S
+    SetItem ( _0 ) )
+  #And
+    {
+      _M
+    #Equals
+      S
+      SetItem ( _0 )
+    } )
+#And
+  #Not ( {
+    _M
+  #Equals
+    .Set
+  } )
+#And
+  <k>
+    b ( _M ) ~> _DotVar1 ~> .
+  </k>

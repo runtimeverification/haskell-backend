@@ -803,13 +803,13 @@ unifyEqualsNormalizedAc
                             allElements1
                             allElements2
                             Nothing
-                ([opaque@(ElemVar_ _)], []) ->
+                ([ElemVar_ opaque], []) ->
                     lift $
                         unifyEqualsElementLists'
                             allElements1
                             allElements2
                             (Just opaque)
-                ([], [opaque@(ElemVar_ _)]) ->
+                ([], [ElemVar_ opaque]) ->
                     lift $
                         unifyEqualsElementLists'
                             allElements2
@@ -1204,8 +1204,8 @@ unifyEqualsElementLists ::
     [ConcreteOrWithVariable normalized variable] ->
     -- | Second structure elements
     [ConcreteOrWithVariable normalized variable] ->
-    -- | Opaque part of the first structure
-    Maybe (TermLike variable) ->
+    -- | Opaque element variable of the first structure
+    Maybe (ElementVariable variable) ->
     unifier
         ( Conditional
             variable
@@ -1274,7 +1274,7 @@ unifyEqualsElementLists
     unifyEqualsChildren
     firstElements
     secondElements
-    (Just opaque)
+    (Just opaqueElemVar)
         | length firstElements > length secondElements =
             -- The second structure does not include an opaque term, so all the
             -- elements in the first structure must be matched by elements in the second
@@ -1301,28 +1301,24 @@ unifyEqualsElementLists
                         "Duplicated element in unification results"
                         first
                         second
-                Just remainderTerm -> case opaque of
-                    ElemVar_ _
-                        | TermLike.isFunctionPattern remainderTerm -> do
-                            opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
-                            let (opaqueTerm, opaqueCondition) =
-                                    Pattern.splitTerm opaqueUnifier
-                                result = unifier `andCondition` opaqueCondition
-
-                            return (result, [opaqueTerm])
-                    _ ->
-                        error . show . Pretty.vsep $
-                            [ "Unification case that should be handled somewhere else: \
-                              \attempting normalized unification with a \
-                              \non-element-variable opaque term or \
-                              \non-function maps could lead to infinite loops."
-                            , Pretty.indent 2 "first="
-                            , Pretty.indent 4 (unparse first)
-                            , Pretty.indent 2 "second="
-                            , Pretty.indent 4 (unparse second)
-                            , Pretty.indent 2 "opaque="
-                            , Pretty.indent 4 (unparse opaque)
-                            ]
+                Just remainderTerm
+                  | TermLike.isFunctionPattern remainderTerm -> do
+                    opaqueUnifier <- unifyEqualsChildren
+                        (mkElemVar opaqueElemVar)
+                        remainderTerm
+                    let (opaqueTerm, opaqueCondition) =
+                            Pattern.splitTerm opaqueUnifier
+                        result = unifier `andCondition` opaqueCondition
+                    return (result, [opaqueTerm])
+                _ -> error . show . Pretty.vsep $
+                    [ "Unification case that should be handled somewhere else: \
+                        \attempting normalized unification with \
+                        \non-function maps could lead to infinite loops."
+                    , Pretty.indent 2 "first="
+                    , Pretty.indent 4 (unparse first)
+                    , Pretty.indent 2 "second="
+                    , Pretty.indent 4 (unparse second)
+                    ]
       where
         unifyWithPermutations =
             unifyEqualsElementPermutations
