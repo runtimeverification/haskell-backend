@@ -148,14 +148,13 @@ testDef =
         , updateAttributes
             (Attributes
                 [ Attribute.functionAttribute
-                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
             (Attributes
                 [ Attribute.functionAttribute
-                , Attribute.constructorAttribute]
+                ]
             )
             (simpleSymbolSentence (SymbolName "g") (SortName "S"))
         , updateAttributes
@@ -176,12 +175,23 @@ testDef =
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
-                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkTop sortVarS)
+                        (mkAnd
+                            (mkIn sortVarS
+                                (mkElemVar
+                                    $ mkElementVariable (testId "tVar") sortS)
+                                (mkApplySymbol tHead [])
+                            )
+                            (mkTop sortVarS)
+                        )
+                    )
                     (mkAnd
                         (mkEquals
                             sortVarS
                             (mkApplySymbol (injHead sortS sortS)
-                                [mkApplySymbol tHead []]
+                                [mkElemVar
+                                    $ mkElementVariable (testId "tVar") sortS]
                             )
                             (mkApplySymbol sHead [])
                         )
