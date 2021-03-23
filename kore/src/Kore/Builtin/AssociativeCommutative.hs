@@ -1302,23 +1302,25 @@ unifyEqualsElementLists
                         first
                         second
                 Just remainderTerm
-                  | TermLike.isFunctionPattern remainderTerm -> do
-                    opaqueUnifier <- unifyEqualsChildren
-                        (mkElemVar opaqueElemVar)
-                        remainderTerm
-                    let (opaqueTerm, opaqueCondition) =
-                            Pattern.splitTerm opaqueUnifier
-                        result = unifier `andCondition` opaqueCondition
-                    return (result, [opaqueTerm])
-                _ -> error . show . Pretty.vsep $
-                    [ "Unification case that should be handled somewhere else: \
-                        \attempting normalized unification with \
-                        \non-function maps could lead to infinite loops."
-                    , Pretty.indent 2 "first="
-                    , Pretty.indent 4 (unparse first)
-                    , Pretty.indent 2 "second="
-                    , Pretty.indent 4 (unparse second)
-                    ]
+                    | TermLike.isFunctionPattern remainderTerm -> do
+                        opaqueUnifier <-
+                            unifyEqualsChildren
+                                (mkElemVar opaqueElemVar)
+                                remainderTerm
+                        let (opaqueTerm, opaqueCondition) =
+                                Pattern.splitTerm opaqueUnifier
+                            result = unifier `andCondition` opaqueCondition
+                        return (result, [opaqueTerm])
+                _ ->
+                    error . show . Pretty.vsep $
+                        [ "Unification case that should be handled somewhere else: \
+                          \attempting normalized unification with \
+                          \non-function maps could lead to infinite loops."
+                        , Pretty.indent 2 "first="
+                        , Pretty.indent 4 (unparse first)
+                        , Pretty.indent 2 "second="
+                        , Pretty.indent 4 (unparse second)
+                        ]
       where
         unifyWithPermutations =
             unifyEqualsElementPermutations
