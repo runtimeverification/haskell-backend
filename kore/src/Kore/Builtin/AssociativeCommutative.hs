@@ -803,13 +803,13 @@ unifyEqualsNormalizedAc
                             allElements1
                             allElements2
                             Nothing
-                ([opaque], []) ->
+                ([opaque@(ElemVar_ _)], []) ->
                     lift $
                         unifyEqualsElementLists'
                             allElements1
                             allElements2
                             (Just opaque)
-                ([], [opaque]) ->
+                ([], [opaque@(ElemVar_ _)]) ->
                     lift $
                         unifyEqualsElementLists'
                             allElements2
