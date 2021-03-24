@@ -19,7 +19,7 @@ KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 export KOMPILED
 DEF_KORE_DEFAULT = $(KOMPILED)/definition.kore
 DEF_KORE ?= $(DEF_KORE_DEFAULT)
-TEST_DEPS = $(K) $(KORE_PARSER) $(DEF_KORE) $(KORE_EXEC)
+TEST_DEPS = $(K) $(DEF_KORE)
 
 TESTS = \
 	$(wildcard $(DEF_DIR)/*.verify) \
@@ -44,7 +44,7 @@ KORE_EXEC_OPTS += \
 KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
 
-$(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K) $(KORE_PARSER)
+$(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
 	$(KOMPILE) $(KOMPILE_OPTS) $<
@@ -112,10 +112,10 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %.save-proofs.kore: %.out
 	[ -f $@ ]
 
-%-spec.k.repl: $(TEST_DIR)/%-spec.k $(KORE_REPL) $(TEST_DEPS)
+%-spec.k.repl: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
 	$(KPROVE) $(KPROVE_REPL_OPTS) $<
 
-%-spec.k.run-repl-script: $(TEST_DIR)/%-spec.k $(KORE_REPL) $(TEST_DEPS)
+%-spec.k.run-repl-script: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
 	$(KPROVE) $(KPROVE_REPL_OPTS) $<
 %-spec.k.run-repl-script: KORE_REPL_OPTS= -r --repl-script $@
 
@@ -133,7 +133,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 ### MERGE
 
-%.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE) $(KORE_EXEC)
+%.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE)
 	@echo ">>>" $(CURDIR) "kore-exec --merge-rules" $<
 	rm -f $@
 	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
@@ -141,7 +141,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 ### SCRIPTS
 
-test-%.sh.out: $(KORE_EXEC) $(TEST_DIR)/test-%.sh
+test-%.sh.out: $(TEST_DIR)/test-%.sh
 	@echo ">>>" $(CURDIR) $(@:.out=)
 	rm -f $@
 	$(TEST_DIR)/$(@:.out=) > $@ || true
