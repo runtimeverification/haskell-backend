@@ -67,7 +67,6 @@ import Test.Tasty.HUnit (
     assertFailure,
     testCase,
  )
-import Kore.Unparser (unparseToString)
 
 type PartitionedEquationsMap =
     Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEquations
