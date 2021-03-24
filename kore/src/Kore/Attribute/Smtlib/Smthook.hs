@@ -4,28 +4,28 @@ Description : SMT-HOOK translation attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
-
 -}
-module Kore.Attribute.Smtlib.Smthook
-    ( Smthook (..), SExpr (..)
-    , smthookId, smthookSymbol, smthookAttribute
-    ) where
+module Kore.Attribute.Smtlib.Smthook (
+    Smthook (..),
+    SExpr (..),
+    smthookId,
+    smthookSymbol,
+    smthookAttribute,
+) where
 
-import Prelude.Kore
-
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser
 import Kore.Debug
-import SMT.SimpleSMT
-    ( SExpr (..)
-    , showSExpr
-    )
+import Prelude.Kore
+import SMT.SimpleSMT (
+    SExpr (..),
+    showSExpr,
+ )
 
 {- | The @smthook@ attribute for symbols.
 
@@ -36,9 +36,8 @@ builtin operations provided by the SMT solver and, as such, the symbol
 used for encoding needs not be declared.
 
 See 'Kore.Attribute.Smtlib.Smtlib'
-
- -}
-newtype Smthook = Smthook { getSmthook :: Maybe SExpr }
+-}
+newtype Smthook = Smthook {getSmthook :: Maybe SExpr}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
@@ -67,13 +66,13 @@ smthookAttribute syntax =
 
 instance ParseAttributes Smthook where
     parseAttribute =
-        withApplication' $ \params args Smthook { getSmthook } -> do
+        withApplication' $ \params args Smthook{getSmthook} -> do
             getZeroParams params
             arg <- getOneArgument args
             StringLiteral syntax <- getStringLiteral arg
             sExpr <- parseSExpr syntax
             unless (isNothing getSmthook) failDuplicate'
-            return Smthook { getSmthook = Just sExpr }
+            return Smthook{getSmthook = Just sExpr}
       where
         withApplication' = withApplication smthookId
         failDuplicate' = failDuplicate smthookId

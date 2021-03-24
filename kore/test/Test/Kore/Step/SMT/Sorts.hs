@@ -1,69 +1,66 @@
-module Test.Kore.Step.SMT.Sorts
-    ( test_sortDeclaration
-    ) where
+module Test.Kore.Step.SMT.Sorts (
+    test_sortDeclaration,
+) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
-import Data.Text
-    ( Text
-    )
-
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
-    ( indexBySort
-    )
-import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
-    )
+import Data.Text (
+    Text,
+ )
+import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+    indexBySort,
+ )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol,
+ )
 import qualified Kore.Builtin.Int as Int
-import Kore.IndexedModule.IndexedModule
-    ( VerifiedModule
-    )
-import qualified Kore.Step.SMT.Declaration.All as Declaration
-    ( declare
-    )
-import Kore.Step.SMT.Encoder
-    ( encodeName
-    )
-import qualified Kore.Step.SMT.Representation.All as Representation
-    ( build
-    )
+import Kore.IndexedModule.IndexedModule (
+    VerifiedModule,
+ )
+import qualified Kore.Step.SMT.Declaration.All as Declaration (
+    declare,
+ )
+import Kore.Step.SMT.Encoder (
+    encodeName,
+ )
+import qualified Kore.Step.SMT.Representation.All as Representation (
+    build,
+ )
 import Kore.Syntax.Definition
+import Prelude.Kore
 import qualified SMT
-
-import Test.Kore.Step.SMT.Builders
-    ( constructor
-    , emptyModule
-    , functional
-    , hook
-    , hookedSortDeclaration
-    , indexModule
-    , indexModules
-    , sortDeclaration
-    , symbolDeclaration
-    )
-import Test.Kore.Step.SMT.Helpers
-    ( atom
-    , constructorAxiom
-    , eq
-    , gt
-    , isNotSatisfiable
-    , isSatisfiable
-    , list
-    , lt
-    , ofType
-    )
-import qualified Test.Kore.Step.SMT.Helpers as Helpers
-    ( testsForModule
-    )
-import Test.Kore.With
-    ( with
-    )
+import Test.Kore.Step.SMT.Builders (
+    constructor,
+    emptyModule,
+    functional,
+    hook,
+    hookedSortDeclaration,
+    indexModule,
+    indexModules,
+    sortDeclaration,
+    symbolDeclaration,
+ )
+import Test.Kore.Step.SMT.Helpers (
+    atom,
+    constructorAxiom,
+    eq,
+    gt,
+    isNotSatisfiable,
+    isSatisfiable,
+    list,
+    lt,
+    ofType,
+ )
+import qualified Test.Kore.Step.SMT.Helpers as Helpers (
+    testsForModule,
+ )
+import Test.Kore.With (
+    with,
+ )
+import Test.Tasty
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =
-    [ testsForModule "Empty definition"
+    [ testsForModule
+        "Empty definition"
         (indexModule $ emptyModule "m")
         [ isSatisfiable
             [ "i" `ofType` "Int"
@@ -78,9 +75,11 @@ test_sortDeclaration =
             , SMT.assert (atom "i" `lt` atom "0")
             ]
         ]
-    , testsForModule "One sort without constructors"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "S"
+    , testsForModule
+        "One sort without constructors"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -97,12 +96,13 @@ test_sortDeclaration =
             , SMT.assert (atom "i" `lt` atom "0")
             ]
         ]
-    , testsForModule "One sort with one constructor"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with`
-                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with` constructorAxiom "S" [("C", [])]
+    , testsForModule
+        "One sort with one constructor"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` constructorAxiom "S" [("C", [])]
         )
         [ isNotSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -119,14 +119,14 @@ test_sortDeclaration =
             , SMT.assert (atom "i" `lt` atom "0")
             ]
         ]
-    , testsForModule "One sort with two constructors"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with`
-                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with`
-                (symbolDeclaration "D" "S" [] `with` [functional, constructor])
-            `with` constructorAxiom "S" [("C", []), ("D", [])]
+    , testsForModule
+        "One sort with two constructors"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` (symbolDeclaration "D" "S" [] `with` [functional, constructor])
+                `with` constructorAxiom "S" [("C", []), ("D", [])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -147,17 +147,17 @@ test_sortDeclaration =
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "D")))
             ]
         ]
-    , testsForModule "Constructor with arguments"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
-            `with`
-                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with`
-                (symbolDeclaration "D" "S" ["Integer"]
-                    `with` [functional, constructor]
-                )
-            `with` constructorAxiom "S" [("C", []), ("D", ["Integer"])]
+    , testsForModule
+        "Constructor with arguments"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` ( symbolDeclaration "D" "S" ["Integer"]
+                            `with` [functional, constructor]
+                       )
+                `with` constructorAxiom "S" [("C", []), ("D", ["Integer"])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -171,7 +171,7 @@ test_sortDeclaration =
         , isSatisfiable
             [ "x" `ofType` encodeName "S"
             , SMT.assert
-                (SMT.not
+                ( SMT.not
                     (atom "x" `eq` list [atom (encodeName "D"), atom "10"])
                 )
             ]
@@ -179,16 +179,16 @@ test_sortDeclaration =
             [ "x" `ofType` encodeName "S"
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "C")))
             , SMT.assert
-                (SMT.not
+                ( SMT.not
                     (atom "x" `eq` list [atom (encodeName "D"), atom "10"])
                 )
             ]
         , isSatisfiable
             [ "x" `ofType` encodeName "S"
             , SMT.assert
-                (SMT.forallQ
+                ( SMT.forallQ
                     [list [atom "y", atom "Int"]]
-                    (SMT.not
+                    ( SMT.not
                         (atom "x" `eq` list [atom (encodeName "D"), atom "y"])
                     )
                 )
@@ -197,28 +197,27 @@ test_sortDeclaration =
             [ "x" `ofType` encodeName "S"
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "C")))
             , SMT.assert
-                (SMT.forallQ
+                ( SMT.forallQ
                     [list [atom "y", atom "Int"]]
-                    (SMT.not
+                    ( SMT.not
                         (atom "x" `eq` list [atom (encodeName "D"), atom "y"])
                     )
                 )
             ]
         ]
-    , testsForModule "Sort dependencies"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "T"
-            `with` sortDeclaration "S"
-            `with`
-                (symbolDeclaration "E" "S" [] `with` [functional, constructor])
-            `with`
-                (symbolDeclaration "C" "T" [] `with` [functional, constructor])
-            `with`
-                (symbolDeclaration "D" "T" ["S"]
-                    `with` [functional, constructor]
-                )
-            `with` constructorAxiom "T" [("C", []), ("D", ["S"])]
-            `with` constructorAxiom "S" [("E", [])]
+    , testsForModule
+        "Sort dependencies"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "T"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "E" "S" [] `with` [functional, constructor])
+                `with` (symbolDeclaration "C" "T" [] `with` [functional, constructor])
+                `with` ( symbolDeclaration "D" "T" ["S"]
+                            `with` [functional, constructor]
+                       )
+                `with` constructorAxiom "T" [("C", []), ("D", ["S"])]
+                `with` constructorAxiom "S" [("E", [])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "T"
@@ -227,9 +226,9 @@ test_sortDeclaration =
         , isSatisfiable
             [ "x" `ofType` encodeName "T"
             , SMT.assert
-                (SMT.not
-                    (    atom "x"
-                    `eq` list [atom (encodeName "D"), atom (encodeName "E")]
+                ( SMT.not
+                    ( atom "x"
+                        `eq` list [atom (encodeName "D"), atom (encodeName "E")]
                     )
                 )
             ]
@@ -245,27 +244,26 @@ test_sortDeclaration =
             [ "x" `ofType` encodeName "T"
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "C")))
             , SMT.assert
-                (SMT.not
-                    (    atom "x"
-                    `eq` list [atom (encodeName "D"), atom (encodeName "E")]
+                ( SMT.not
+                    ( atom "x"
+                        `eq` list [atom (encodeName "D"), atom (encodeName "E")]
                     )
                 )
             ]
         ]
-    , testsForModule "Sort dependencies reverse order"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with`
-                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with`
-                (symbolDeclaration "D" "S" ["T"]
-                    `with` [functional, constructor]
-                )
-            `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
-            `with` sortDeclaration "T"
-            `with`
-                (symbolDeclaration "E" "T" [] `with` [functional, constructor])
-            `with` constructorAxiom "T" [("E", [])]
+    , testsForModule
+        "Sort dependencies reverse order"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` ( symbolDeclaration "D" "S" ["T"]
+                            `with` [functional, constructor]
+                       )
+                `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
+                `with` sortDeclaration "T"
+                `with` (symbolDeclaration "E" "T" [] `with` [functional, constructor])
+                `with` constructorAxiom "T" [("E", [])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -274,9 +272,9 @@ test_sortDeclaration =
         , isSatisfiable
             [ "x" `ofType` encodeName "S"
             , SMT.assert
-                (SMT.not
-                    (    atom "x"
-                    `eq` list [atom (encodeName "D"), atom (encodeName "E")]
+                ( SMT.not
+                    ( atom "x"
+                        `eq` list [atom (encodeName "D"), atom (encodeName "E")]
                     )
                 )
             ]
@@ -292,34 +290,32 @@ test_sortDeclaration =
             [ "x" `ofType` encodeName "S"
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "C")))
             , SMT.assert
-                (SMT.not
-                    (    atom "x"
-                    `eq` list [atom (encodeName "D"), atom (encodeName "E")]
+                ( SMT.not
+                    ( atom "x"
+                        `eq` list [atom (encodeName "D"), atom (encodeName "E")]
                     )
                 )
             ]
         ]
-    , testsForModule "Sort dependencies different modules"
-        (indexModules
+    , testsForModule
+        "Sort dependencies different modules"
+        ( indexModules
             (ModuleName "first")
             [ emptyModule "first"
                 `with` sortDeclaration "S"
-                `with`
-                    (symbolDeclaration "C" "S" []
-                        `with` [functional, constructor]
-                    )
-                `with`
-                    (symbolDeclaration "D" "S" ["T"]
-                        `with` [functional, constructor]
-                    )
+                `with` ( symbolDeclaration "C" "S" []
+                            `with` [functional, constructor]
+                       )
+                `with` ( symbolDeclaration "D" "S" ["T"]
+                            `with` [functional, constructor]
+                       )
                 `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
                 `with` importModule "second"
             , emptyModule "second"
                 `with` sortDeclaration "T"
-                `with`
-                    (symbolDeclaration "E" "T" []
-                        `with` [functional, constructor]
-                    )
+                `with` ( symbolDeclaration "E" "T" []
+                            `with` [functional, constructor]
+                       )
                 `with` constructorAxiom "T" [("E", [])]
             ]
         )
@@ -330,9 +326,9 @@ test_sortDeclaration =
         , isSatisfiable
             [ "x" `ofType` encodeName "S"
             , SMT.assert
-                (SMT.not
-                    (    atom "x"
-                    `eq` list [atom (encodeName "D"), atom (encodeName "E")]
+                ( SMT.not
+                    ( atom "x"
+                        `eq` list [atom (encodeName "D"), atom (encodeName "E")]
                     )
                 )
             ]
@@ -348,9 +344,9 @@ test_sortDeclaration =
             [ "x" `ofType` encodeName "S"
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "C")))
             , SMT.assert
-                (SMT.not
-                    (    atom "x"
-                    `eq` list [atom (encodeName "D"), atom (encodeName "E")]
+                ( SMT.not
+                    ( atom "x"
+                        `eq` list [atom (encodeName "D"), atom (encodeName "E")]
                     )
                 )
             ]
@@ -359,17 +355,18 @@ test_sortDeclaration =
   where
     importModule :: Text -> ParsedSentence
     importModule name =
-        asSentence SentenceImport
-            { sentenceImportModuleName = ModuleName name
-            , sentenceImportAttributes = Attributes []
-            }
+        asSentence
+            SentenceImport
+                { sentenceImportModuleName = ModuleName name
+                , sentenceImportAttributes = Attributes []
+                }
 
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
 
-    declareSymbolsAndSorts
-        :: SMT.MonadSMT m
-        => VerifiedModule Attribute.Symbol
-        -> m ()
+    declareSymbolsAndSorts ::
+        SMT.MonadSMT m =>
+        VerifiedModule Attribute.Symbol ->
+        m ()
     declareSymbolsAndSorts m =
         Declaration.declare
             (Representation.build m (Attribute.Constructors.indexBySort m))

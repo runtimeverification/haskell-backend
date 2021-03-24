@@ -10,7 +10,7 @@ let
   pkgs = import sources."nixpkgs" {};
 
   inherit (pkgs) cabal-install ghcid stack;
-  inherit (pkgs) gnumake yq z3;
+  inherit (pkgs) fd gnumake yq z3;
 
   # Change the compiler when updating our own resolver.
   compiler-nix-name = "ghc8104";
@@ -35,6 +35,13 @@ let
   };
   inherit (stylish-haskell-project.stylish-haskell.components.exes) stylish-haskell;
 
+  fourmolu-project = default.pkgs.haskell-nix.cabalProject {
+    src = sources."fourmolu";
+    inherit checkMaterialization compiler-nix-name index-state;
+    materialized = ./nix/fourmolu.nix.d;
+  };
+  inherit (fourmolu-project.fourmolu.components.exes) fourmolu;
+
   hpack-project = default.pkgs.haskell-nix.cabalProject {
     src = sources."hpack";
     inherit checkMaterialization compiler-nix-name index-state;
@@ -47,9 +54,9 @@ in
 shellFor {
   buildInputs =
     [
-      gnumake z3
+      gnumake fd z3
       hls-renamed
-      ghcid hlint hpack stylish-haskell
+      ghcid hlint hpack stylish-haskell fourmolu
       cabal-install stack
     ];
   passthru.rematerialize = pkgs.writeScript "rematerialize-shell.sh" ''

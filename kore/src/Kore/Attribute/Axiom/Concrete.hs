@@ -1,48 +1,46 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Attribute.Axiom.Concrete (
+    Concrete (..),
+    isConcrete,
+    concreteId,
+    concreteSymbol,
+    concreteAttribute,
+    mapConcreteVariables,
+    parseConcreteAttribute,
+    parseFreeVariables, -- used by Symbolic
 
-module Kore.Attribute.Axiom.Concrete
-    ( Concrete (..), isConcrete
-    , concreteId, concreteSymbol, concreteAttribute
-    , mapConcreteVariables
-    , parseConcreteAttribute
-    , parseFreeVariables -- used by Symbolic
     -- * Re-exports
-    , FreeVariables
-    ) where
-
-import Prelude.Kore
+    FreeVariables,
+) where
 
 import qualified Control.Error as Safe
 import qualified Control.Monad as Monad
 import qualified Data.List as List
-import Data.Set
-    ( Set
-    )
-import qualified Generics.SOP as SOP
+import Data.Set (
+    Set,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , freeVariable
-    , isFreeVariable
-    , mapFreeVariables
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    freeVariable,
+    isFreeVariable,
+    mapFreeVariables,
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
-import Kore.Syntax.Variable hiding
-    ( Concrete
-    )
+import Kore.Syntax.Variable hiding (
+    Concrete,
+ )
+import Prelude.Kore
 
-{- | @Concrete@ represents the @concrete@ attribute for axioms.
- -}
-newtype Concrete variable =
-    Concrete { unConcrete :: FreeVariables variable }
+-- | @Concrete@ represents the @concrete@ attribute for axioms.
+newtype Concrete variable = Concrete {unConcrete :: FreeVariables variable}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -77,28 +75,29 @@ concreteSymbol =
 concreteAttribute :: [SomeVariable VariableName] -> AttributePattern
 concreteAttribute = attributePattern concreteSymbol . map attributeVariable
 
-parseConcreteAttribute
-    :: FreeVariables VariableName
-    -> AttributePattern
-    -> Concrete VariableName
-    -> Parser (Concrete VariableName)
+parseConcreteAttribute ::
+    FreeVariables VariableName ->
+    AttributePattern ->
+    Concrete VariableName ->
+    Parser (Concrete VariableName)
 parseConcreteAttribute freeVariables =
     Parser.withApplication concreteId parseApplication
   where
     parseApplication params args (Concrete concreteVars) =
         Concrete <$> parseFreeVariables freeVariables params args concreteVars
 
-parseFreeVariables
-    :: FreeVariables VariableName
-    -> [Sort]
-    -> [AttributePattern]
-    -> FreeVariables VariableName
-    -> Parser (FreeVariables VariableName)
+parseFreeVariables ::
+    FreeVariables VariableName ->
+    [Sort] ->
+    [AttributePattern] ->
+    FreeVariables VariableName ->
+    Parser (FreeVariables VariableName)
 parseFreeVariables freeVariables params args concreteVars = do
     Parser.getZeroParams params
     vars <- mapM getVariable args
     mapM_ checkFree vars
-    let newVars = -- if no arguments are provides, assume all free variables
+    let newVars =
+            -- if no arguments are provides, assume all free variables
             if null vars
                 then FreeVariables.toList freeVariables
                 else vars
@@ -107,37 +106,38 @@ parseFreeVariables freeVariables params args concreteVars = do
         nubVars = mapMaybe Safe.headMay groupedVars
         duplicateVars =
             mapMaybe (Safe.headMay Monad.<=< Safe.tailMay) groupedVars
-    unless (null duplicateVars)
-        $ Kore.Error.koreFail
-            ("duplicate concrete/symbolic variable annotations for "
-            ++ show duplicateVars)
+    unless (null duplicateVars) $
+        Kore.Error.koreFail
+            ( "duplicate concrete/symbolic variable annotations for "
+                ++ show duplicateVars
+            )
     return (foldMap freeVariable nubVars)
   where
     checkFree :: SomeVariable VariableName -> Parser ()
-    checkFree variable@Variable { variableName } =
-        unless (isFreeVariable variableName freeVariables)
-        $ Kore.Error.koreFail
-            ("expected free variable, found " ++ show variable)
+    checkFree variable@Variable{variableName} =
+        unless (isFreeVariable variableName freeVariables) $
+            Kore.Error.koreFail
+                ("expected free variable, found " ++ show variable)
 
 instance From (Concrete VariableName) Attributes where
     from =
         from @AttributePattern
-        . concreteAttribute
-        . FreeVariables.toList
-        . unConcrete
+            . concreteAttribute
+            . FreeVariables.toList
+            . unConcrete
 
-mapConcreteVariables
-    :: Ord variable2
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> Concrete variable1
-    -> Concrete variable2
+mapConcreteVariables ::
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    Concrete variable1 ->
+    Concrete variable2
 mapConcreteVariables adj (Concrete freeVariables) =
     Concrete (mapFreeVariables adj freeVariables)
 
-isConcrete
-    :: Ord variable
-    => Concrete variable
-    -> SomeVariableName variable
-    -> Bool
-isConcrete Concrete { unConcrete } someVariableName =
+isConcrete ::
+    Ord variable =>
+    Concrete variable ->
+    SomeVariableName variable ->
+    Bool
+isConcrete Concrete{unConcrete} someVariableName =
     isFreeVariable someVariableName unConcrete

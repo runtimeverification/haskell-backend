@@ -1,35 +1,32 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Attribute.Pattern.Created (
+    Created (..),
+    hasKnownCreator,
+) where
 
- -}
-
-module Kore.Attribute.Pattern.Created
-    ( Created (..)
-    , hasKnownCreator
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( SrcLoc (..)
-    )
+import GHC.Stack (
+    SrcLoc (..),
+ )
 import qualified GHC.Stack as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Pretty
-    ( Pretty
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
--- | 'Created' is used for debugging patterns, specifically for finding out
--- where a pattern was created. This is a field in the attributes of a pattern,
--- and it will default to 'Nothing'. This field is populated via the smart
--- constructors in 'Kore.Internal.TermLike'.
-newtype Created = Created { getCreated :: Maybe GHC.CallStack }
+{- | 'Created' is used for debugging patterns, specifically for finding out
+ where a pattern was created. This is a field in the attributes of a pattern,
+ and it will default to 'Nothing'. This field is populated via the smart
+ constructors in 'Kore.Internal.TermLike'.
+-}
+newtype Created = Created {getCreated :: Maybe GHC.CallStack}
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
@@ -56,14 +53,14 @@ instance Pretty Created where
             Pretty.hsep ["/* Created:", qualifiedName, "*/"]
           where
             qualifiedName =
-                    Pretty.pretty srcLocModule
-                <>  Pretty.dot
-                <>  Pretty.pretty name
-            SrcLoc { srcLocModule } = srcLoc
+                Pretty.pretty srcLocModule
+                    <> Pretty.dot
+                    <> Pretty.pretty name
+            SrcLoc{srcLocModule} = srcLoc
 
 instance Functor pat => Synthetic Created pat where
     synthetic = const (Created Nothing)
 
 getCallStackHead :: Created -> Maybe (String, SrcLoc)
-getCallStackHead Created { getCreated } =
+getCallStackHead Created{getCreated} =
     getCreated >>= headMay . GHC.getCallStack

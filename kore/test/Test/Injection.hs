@@ -1,30 +1,28 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Test.Injection
-    ( hpropInjection
-    , hprop_Injection_Maybe
-    , hprop_Injection_Dynamic
+module Test.Injection (
+    hpropInjection,
+    hprop_Injection_Maybe,
+    hprop_Injection_Dynamic,
+
     -- * Re-exports
-    , module Hedgehog
-    , Int8
-    , genInt8
-    ) where
+    module Hedgehog,
+    Int8,
+    genInt8,
+) where
 
-import Prelude
-
-import Hedgehog hiding
-    ( test
-    )
+import Data.Dynamic (
+    Dynamic,
+ )
+import Data.Int (
+    Int8,
+ )
+import Hedgehog hiding (
+    test,
+ )
 import qualified Hedgehog.Gen as Gen
-
-import Data.Dynamic
-    ( Dynamic
-    )
-import Data.Int
-    ( Int8
-    )
-
 import Injection
+import Prelude
 
 {- | Create a property test for an 'Injection' instance.
 
@@ -32,13 +30,13 @@ Only the "left identity" property is tested; as long as the instance is not
 partial, this property implies all others.
 
 Note: The @into@ type parameter *must* be specified by type application.
-
- -}
-hpropInjection
-    :: forall into from
-    .  (Eq from, Show from)
-    => Injection into from
-    => Gen from -> Property
+-}
+hpropInjection ::
+    forall into from.
+    (Eq from, Show from) =>
+    Injection into from =>
+    Gen from ->
+    Property
 hpropInjection genFrom =
     property $ do
         from <- forAll genFrom

@@ -13,7 +13,7 @@ TESTS = $(wildcard *.kore)
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
 GOLDEN += $(foreach TEST, $(TESTS), $(TEST).golden)
 
-%.kore.out : %.kore $(KORE_PARSER)
+%.kore.out : %.kore
 	$(KORE_PARSER) --no-print-definition $< 2>$@ || true
 	$(DIFF) $*.kore.golden $@ || $(FAILED)
 

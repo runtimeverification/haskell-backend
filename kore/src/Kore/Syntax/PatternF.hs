@@ -1,36 +1,33 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Syntax.PatternF (
+    PatternF (..),
+    mapVariables,
+    traverseVariables,
 
-module Kore.Syntax.PatternF
-    ( PatternF (..)
-    , mapVariables
-    , traverseVariables
     -- * Pure pattern heads
-    , groundHead
-    , constant
-    -- * Re-exports
-    , Const (..)
-    ) where
+    groundHead,
+    constant,
 
-import Prelude.Kore
+    -- * Re-exports
+    Const (..),
+) where
 
 import qualified Control.Lens as Lens
 import Data.Functor.Const
-import Data.Functor.Identity
-    ( Identity (..)
-    )
-import Data.Generics.Wrapped
-    ( _Unwrapped
-    )
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Functor.Identity (
+    Identity (..),
+ )
+import Data.Generics.Wrapped (
+    _Unwrapped,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.And
@@ -56,33 +53,32 @@ import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Prelude.Kore
 
-{- | 'PatternF' is the 'Base' functor of Kore patterns
-
--}
+-- | 'PatternF' is the 'Base' functor of Kore patterns
 data PatternF variable child
-    = AndF           !(And Sort child)
-    | ApplicationF   !(Application SymbolOrAlias child)
-    | BottomF        !(Bottom Sort child)
-    | CeilF          !(Ceil Sort child)
-    | DomainValueF   !(DomainValue Sort child)
-    | EqualsF        !(Equals Sort child)
-    | ExistsF        !(Exists Sort variable child)
-    | FloorF         !(Floor Sort child)
-    | ForallF        !(Forall Sort variable child)
-    | IffF           !(Iff Sort child)
-    | ImpliesF       !(Implies Sort child)
-    | InF            !(In Sort child)
-    | MuF            !(Mu variable child)
-    | NextF          !(Next Sort child)
-    | NotF           !(Not Sort child)
-    | NuF            !(Nu variable child)
-    | OrF            !(Or Sort child)
-    | RewritesF      !(Rewrites Sort child)
-    | TopF           !(Top Sort child)
-    | InhabitantF    !(Inhabitant child)
+    = AndF !(And Sort child)
+    | ApplicationF !(Application SymbolOrAlias child)
+    | BottomF !(Bottom Sort child)
+    | CeilF !(Ceil Sort child)
+    | DomainValueF !(DomainValue Sort child)
+    | EqualsF !(Equals Sort child)
+    | ExistsF !(Exists Sort variable child)
+    | FloorF !(Floor Sort child)
+    | ForallF !(Forall Sort variable child)
+    | IffF !(Iff Sort child)
+    | ImpliesF !(Implies Sort child)
+    | InF !(In Sort child)
+    | MuF !(Mu variable child)
+    | NextF !(Next Sort child)
+    | NotF !(Not Sort child)
+    | NuF !(Nu variable child)
+    | OrF !(Or Sort child)
+    | RewritesF !(Rewrites Sort child)
+    | TopF !(Top Sort child)
+    | InhabitantF !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
-    | VariableF      !(Const (SomeVariable variable) child)
+    | VariableF !(Const (SomeVariable variable) child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -90,9 +86,7 @@ data PatternF variable child
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance
-    (Unparse variable, Unparse child) => Unparse (PatternF variable child)
-  where
+instance (Unparse variable, Unparse child) => Unparse (PatternF variable child) where
     unparse = unparseGeneric
     unparse2 = unparse2Generic
 
@@ -188,12 +182,11 @@ instance From (SomeVariable variable) (PatternF variable child) where
 
 __Warning__: @mapVariables@ will capture variables if the provided mapping is
 not injective!
-
 -}
-mapVariables
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> PatternF variable1 child
-    -> PatternF variable2 child
+mapVariables ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    PatternF variable1 child ->
+    PatternF variable2 child
 mapVariables adj =
     runIdentity . traverseVariables adj'
   where
@@ -204,12 +197,12 @@ mapVariables adj =
 
 __Warning__: @traverseVariables@ will capture variables if the provided
 traversal is not injective!
-
 -}
-traverseVariables
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> PatternF variable1 child -> f (PatternF variable2 child)
+traverseVariables ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    PatternF variable1 child ->
+    f (PatternF variable2 child)
 traverseVariables adj =
     \case
         -- Non-trivial cases
@@ -241,40 +234,47 @@ traverseVariables adj =
     trSetVar = traverse $ traverseSetVariableName adj
     traverseVariable =
         fmap VariableF
-        . Lens.traverseOf _Unwrapped (traverseSomeVariable adj)
-    traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
+            . Lens.traverseOf _Unwrapped (traverseSomeVariable adj)
+    traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
         Exists existsSort
-        <$> trElemVar existsVariable
-        <*> pure existsChild
-    traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
+            <$> trElemVar existsVariable
+            <*> pure existsChild
+    traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
         Forall forallSort
-        <$> trElemVar forallVariable
-        <*> pure forallChild
-    traverseVariablesMu Mu { muVariable, muChild } =
+            <$> trElemVar forallVariable
+            <*> pure forallChild
+    traverseVariablesMu Mu{muVariable, muChild} =
         Mu <$> trSetVar muVariable <*> pure muChild
-    traverseVariablesNu Nu { nuVariable, nuChild } =
+    traverseVariablesNu Nu{nuVariable, nuChild} =
         Nu <$> trSetVar nuVariable <*> pure nuChild
 
--- | Given an 'Id', 'groundHead' produces the head of an 'Application'
--- corresponding to that argument.
+{- | Given an 'Id', 'groundHead' produces the head of an 'Application'
+ corresponding to that argument.
+-}
 groundHead :: Text -> AstLocation -> SymbolOrAlias
-groundHead ctor location = SymbolOrAlias
-    { symbolOrAliasConstructor = Id
-        { getId = ctor
-        , idLocation = location
+groundHead ctor location =
+    SymbolOrAlias
+        { symbolOrAliasConstructor =
+            Id
+                { getId = ctor
+                , idLocation = location
+                }
+        , symbolOrAliasParams = []
         }
-    , symbolOrAliasParams = []
-    }
 
--- | Given a head and a list of children, produces an 'ApplicationF'
---  applying the given head to the children
+{- | Given a head and a list of children, produces an 'ApplicationF'
+  applying the given head to the children
+-}
 apply :: SymbolOrAlias -> [child] -> PatternF variable child
-apply patternHead patterns = ApplicationF Application
-    { applicationSymbolOrAlias = patternHead
-    , applicationChildren = patterns
-    }
+apply patternHead patterns =
+    ApplicationF
+        Application
+            { applicationSymbolOrAlias = patternHead
+            , applicationChildren = patterns
+            }
 
--- |Applies the given head to the empty list of children to obtain a
--- constant 'ApplicationF'
+{- |Applies the given head to the empty list of children to obtain a
+ constant 'ApplicationF'
+-}
 constant :: SymbolOrAlias -> PatternF variable child
 constant patternHead = apply patternHead []

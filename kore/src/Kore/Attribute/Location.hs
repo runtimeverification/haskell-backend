@@ -1,37 +1,33 @@
-{-|
+{- |
 Module      : Kore.Attribute.Location
 Description : Line/column location attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
-
 -}
-module Kore.Attribute.Location
-    ( Location (..)
-    , LineColumn (..)
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Location (
+    Location (..),
+    LineColumn (..),
+) where
 
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import Text.Megaparsec
-    ( Parsec
-    , parseMaybe
-    )
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
-    ( decimal
-    )
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
 import qualified Kore.Error
+import Prelude.Kore
+import Text.Megaparsec (
+    Parsec,
+    parseMaybe,
+ )
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer (
+    decimal,
+ )
 
-data LineColumn =
-    LineColumn
-    { line   :: !Int
+data LineColumn = LineColumn
+    { line :: !Int
     , column :: !Int
     }
     deriving (Eq, Ord, Show)
@@ -40,10 +36,9 @@ data LineColumn =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-data Location =
-    Location
+data Location = Location
     { start :: Maybe LineColumn
-    , end   :: Maybe LineColumn
+    , end :: Maybe LineColumn
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -61,11 +56,11 @@ locationId = "org'Stop'kframework'Stop'attributes'Stop'Location"
 instance ParseAttributes Location where
     parseAttribute = AttributeParser.withApplication locationId parseApplication
       where
-        parseApplication
-            :: [Sort]
-            -> [AttributePattern]
-            -> Location
-            -> AttributeParser.Parser Location
+        parseApplication ::
+            [Sort] ->
+            [AttributePattern] ->
+            Location ->
+            AttributeParser.Parser Location
         parseApplication params args l@(Location Nothing Nothing) = do
             AttributeParser.getZeroParams params
             case args of
@@ -87,9 +82,10 @@ instance From Location Attributes where
     -- TODO (thomas.tuegel): Implement
     from = def
 
--- | This parser is used to parse the inner representation of the attribute.
--- The expected format is "Location(sl,sc,el,ec)" where sc, sc, el, and ec are
--- all numbers.
+{- | This parser is used to parse the inner representation of the attribute.
+ The expected format is "Location(sl,sc,el,ec)" where sc, sc, el, and ec are
+ all numbers.
+-}
 type StringParser = Parsec String String
 
 locationParser :: StringParser Location

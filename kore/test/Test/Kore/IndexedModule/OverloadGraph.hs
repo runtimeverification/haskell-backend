@@ -1,45 +1,41 @@
-module Test.Kore.IndexedModule.OverloadGraph
-    ( test_isOverloaded
-    , test_isOverloading
-    , test_commonOverloads
-    , test_fromIndexedModule
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
+module Test.Kore.IndexedModule.OverloadGraph (
+    test_isOverloaded,
+    test_isOverloading,
+    test_commonOverloads,
+    test_fromIndexedModule,
+) where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
-import Kore.ASTVerifier.DefinitionVerifier
-    ( verifyAndIndexDefinition
-    )
-import Kore.Attribute.Overload
-    ( overloadAttribute
-    )
+import Kore.ASTVerifier.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
+import Kore.Attribute.Overload (
+    overloadAttribute,
+ )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-    ( assertRight
-    )
+import Kore.Error (
+    assertRight,
+ )
 import Kore.IndexedModule.OverloadGraph
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike
-    ( Sort
-    , mkTop
-    )
-import Kore.Syntax.Definition
-    ( Attributes (..)
-    , Definition (..)
-    , Module (..)
-    , ParsedSentence
-    , Sentence (..)
-    , SentenceAxiom (..)
-    )
-
+import Kore.Internal.TermLike (
+    Sort,
+    mkTop,
+ )
+import Kore.Syntax.Definition (
+    Attributes (..),
+    Definition (..),
+    Module (..),
+    ParsedSentence,
+    Sentence (..),
+    SentenceAxiom (..),
+ )
+import Prelude.Kore
 import Test.Kore
 import qualified Test.Kore.Builtin.Definition as Definition
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 symbolA, symbolB, symbolC, symbolD, symbolE :: Symbol
@@ -80,11 +76,14 @@ test_isOverloaded =
 test_isOverloading :: [TestTree]
 test_isOverloading =
     [ test "overloading" (isOverloading' symbolD symbolB)
-    , test "not overloading, known symbols, comparable"
+    , test
+        "not overloading, known symbols, comparable"
         (not (isOverloading' symbolA symbolB))
-    , test "not overloading, known symbols, not comparable"
+    , test
+        "not overloading, known symbols, not comparable"
         (not (isOverloading' symbolB symbolC))
-    , test "not overloading, symbol not overloaded"
+    , test
+        "not overloading, symbol not overloaded"
         (not (isOverloading' symbolD symbolE))
     ]
   where
@@ -92,27 +91,32 @@ test_isOverloading =
 
 test_commonOverloads :: [TestTree]
 test_commonOverloads =
-    [ test "same symbol"
+    [ test
+        "same symbol"
         [symbolB, symbolC, symbolD]
         (commonOverloads' symbolA symbolA)
-    , test "unifiable symbols"
+    , test
+        "unifiable symbols"
         [symbolD]
         (commonOverloads' symbolB symbolC)
-    , test "non-unifiable symbols"
+    , test
+        "non-unifiable symbols"
         []
         (commonOverloads' symbolA symbolE)
     ]
   where
     test name expected actual =
-        testCase name
+        testCase
+            name
             (assertEqual "" (Set.fromList expected) (Set.fromList actual))
 
 test_fromIndexedModule :: TestTree
 test_fromIndexedModule =
-    testCase "fromIndexedModule = fromSubsorts"
-    $ assertEqual ""
-        overloadGraph
-        (fromIndexedModule verifiedModule)
+    testCase "fromIndexedModule = fromSubsorts" $
+        assertEqual
+            ""
+            overloadGraph
+            (fromIndexedModule verifiedModule)
   where
     verifiedModules =
         assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers definition
@@ -125,7 +129,7 @@ test_fromIndexedModule =
     definition =
         Definition
             { definitionAttributes = Attributes []
-            , definitionModules = [ overloadsModule ]
+            , definitionModules = [overloadsModule]
             }
 
     overloadsModule =
@@ -152,14 +156,15 @@ test_fromIndexedModule =
     overloadAxiom :: Symbol -> Symbol -> ParsedSentence
     overloadAxiom
         (toSymbolOrAlias -> overloading)
-        (toSymbolOrAlias -> overloaded)
-      =
-        SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = [sortVariable "R"]
-            , sentenceAxiomPattern = Builtin.externalize (mkTop sortVarR)
-            , sentenceAxiomAttributes = Attributes
-                [overloadAttribute overloading overloaded]
-            }
+        (toSymbolOrAlias -> overloaded) =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = [sortVariable "R"]
+                    , sentenceAxiomPattern = Builtin.externalize (mkTop sortVarR)
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [overloadAttribute overloading overloaded]
+                    }
 
     sortVarR :: Sort
     sortVarR = sortVariableSort "R"

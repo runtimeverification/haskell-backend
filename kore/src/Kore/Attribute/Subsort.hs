@@ -1,24 +1,22 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
-module Kore.Attribute.Subsort
-    ( Subsort (..)
-    , Subsorts (..)
-    , subsortId
-    , subsortSymbol
-    , subsortAttribute
-    ) where
+module Kore.Attribute.Subsort (
+    Subsort (..),
+    Subsorts (..),
+    subsortId,
+    subsortSymbol,
+    subsortAttribute,
+) where
 
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
-{- | The @subsort@ attribute. -}
+-- | The @subsort@ attribute.
 data Subsort = Subsort
     { subsort :: Sort
     , supersort :: Sort
@@ -29,7 +27,7 @@ data Subsort = Subsort
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-newtype Subsorts = Subsorts { getSubsorts :: [Subsort] }
+newtype Subsorts = Subsorts {getSubsorts :: [Subsort]}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -47,21 +45,19 @@ subsortId = "subsort"
 
 Kore syntax: @subsort{Sub,Super}@
 where @Sub@ is the subsort and @Super@ is the supersort.
-
- -}
+-}
 subsortSymbol :: Sort -> Sort -> SymbolOrAlias
 subsortSymbol subsort supersort =
     SymbolOrAlias
         { symbolOrAliasConstructor = subsortId
-        , symbolOrAliasParams = [ subsort, supersort ]
+        , symbolOrAliasParams = [subsort, supersort]
         }
 
 {- | Kore pattern representing a @subsort@ attribute.
 
 Kore syntax: @subsort{Sub,Super}()@
 where @Sub@ is the subsort and @Super@ is the supersort.
-
- -}
+-}
 subsortAttribute :: Sort -> Sort -> AttributePattern
 subsortAttribute subsort supersort =
     attributePattern_ $ subsortSymbol subsort supersort
@@ -72,8 +68,7 @@ subsortAttribute subsort supersort =
   two sort parameters
 
   See also: 'subsortAttribute'
-
- -}
+-}
 instance ParseAttributes Subsorts where
     parseAttribute =
         withApplication' $ \params args (Subsorts subsorts) -> do

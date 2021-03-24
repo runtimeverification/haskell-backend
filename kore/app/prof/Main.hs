@@ -1,9 +1,8 @@
 module Main (main) where
 
-import Prelude
-
 import qualified Options.Applicative as Options
 import qualified Speedscope.Main as Speedscope
+import Prelude
 
 main :: IO ()
 main =
@@ -12,7 +11,7 @@ main =
     info =
         Options.info
             (Speedscope.parseOptions Options.<**> Options.helper)
-            (mconcat
+            ( mconcat
                 [ Options.fullDesc
                 , Options.progDesc "Write a speedscope profile for FILENAME"
                 , Options.header "kore-prof - Kore profiler"

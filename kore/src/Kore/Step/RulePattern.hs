@@ -1,145 +1,140 @@
-{-|
+{- |
 Description : Rewrite rules
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Step.RulePattern (
+    RulePattern (..),
+    RewriteRule (..),
+    ImplicationRule (..),
+    RHS (..),
+    HasAttributes (..),
+    UnifyingRule (..),
+    rulePattern,
+    leftPattern,
+    applySubstitution,
+    topExistsToImplicitForall,
+    isFreeOf,
+    Kore.Step.RulePattern.substitute,
+    lhsEqualsRhs,
+    rhsSubstitute,
+    rhsForgetSimplified,
+    rhsToTerm,
+    lhsToTerm,
+    rhsToPattern,
+    termToRHS,
+    injectTermIntoRHS,
+    rewriteRuleToTerm,
+    implicationRuleToTerm,
+    allPathGlobally,
+    aPG,
+    mapRuleVariables,
+    mkRewritingRule,
+    unRewritingRule,
+) where
 
-module Kore.Step.RulePattern
-    ( RulePattern (..)
-    , RewriteRule (..)
-    , ImplicationRule (..)
-    , RHS (..)
-    , HasAttributes (..)
-    , UnifyingRule (..)
-    , rulePattern
-    , leftPattern
-    , applySubstitution
-    , topExistsToImplicitForall
-    , isFreeOf
-    , Kore.Step.RulePattern.substitute
-    , lhsEqualsRhs
-    , rhsSubstitute
-    , rhsForgetSimplified
-    , rhsToTerm
-    , lhsToTerm
-    , rhsToPattern
-    , termToRHS
-    , injectTermIntoRHS
-    , rewriteRuleToTerm
-    , implicationRuleToTerm
-    , allPathGlobally
-    , aPG
-    , mapRuleVariables
-    , mkRewritingRule
-    , unRewritingRule
-    ) where
-
-import Prelude.Kore
-
-import Control.Lens
-    ( Lens'
-    )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
-import Control.Monad.State.Strict
-    ( evalState
-    )
+import Control.Monad.State.Strict (
+    evalState,
+ )
 import qualified Control.Monad.State.Strict as State
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
+import Data.Coerce (
+    Coercible,
+    coerce,
+ )
 import qualified Data.Default as Default
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , HasFreeVariables (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    HasFreeVariables (..),
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
-import Kore.Internal.Alias
-    ( Alias (..)
-    )
+import Kore.Internal.Alias (
+    Alias (..),
+ )
 import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
+import Kore.Internal.Pattern (
+    Conditional (..),
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitution
-    ( Substitution
-    )
-import qualified Kore.Internal.Substitution as Substitution
-    ( toMap
-    , variables
-    )
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
-import Kore.Internal.TermLike
-    ( TermLike
-    )
+import Kore.Internal.Substitution (
+    Substitution,
+ )
+import qualified Kore.Internal.Substitution as Substitution (
+    toMap,
+    variables,
+ )
+import Kore.Internal.Symbol (
+    Symbol (..),
+ )
+import Kore.Internal.TermLike (
+    TermLike,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , getRewritingVariable
-    , mkRuleVariable
-    )
-import Kore.Sort
-    ( Sort (..)
-    )
-import Kore.Step.AntiLeft
-    ( AntiLeft
-    )
-import qualified Kore.Step.AntiLeft as AntiLeft
-    ( mapVariables
-    , substitute
-    , toTermLike
-    )
-import Kore.Step.Step
-    ( UnifyingRule (..)
-    )
-import Kore.Syntax.Id
-    ( AstLocation (..)
-    , Id (..)
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Kore.Unparser
-    ( Unparse
-    , unparse
-    , unparse2
-    )
-import Kore.Variables.Fresh hiding
-    ( refreshVariables'
-    )
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Internal.Variable (
+    InternalVariable,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingVariable,
+    mkRuleVariable,
+ )
+import Kore.Sort (
+    Sort (..),
+ )
+import Kore.Step.AntiLeft (
+    AntiLeft,
+ )
+import qualified Kore.Step.AntiLeft as AntiLeft (
+    mapVariables,
+    substitute,
+    toTermLike,
+ )
+import Kore.Step.Step (
+    UnifyingRule (..),
+ )
+import Kore.Syntax.Id (
+    AstLocation (..),
+    Id (..),
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Kore.Unparser (
+    Unparse,
+    unparse,
+    unparse2,
+ )
+import Kore.Variables.Fresh hiding (
+    refreshVariables',
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
-{-| Defines the right-hand-side of a rewrite rule / claim
--}
+-- | Defines the right-hand-side of a rewrite rule / claim
 data RHS variable = RHS
     { existentials :: ![TermLike.ElementVariable variable]
     , right :: !(TermLike.TermLike variable)
@@ -151,18 +146,18 @@ data RHS variable = RHS
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-{-| Given a collection of 'FreeVariables' and a RHS, it removes
+{- | Given a collection of 'FreeVariables' and a RHS, it removes
 converts existential quantifications at the top of the term to implicit
 universal quantification,
 renaming them (if needed) to avoid clashing with the given free variables.
 -}
-topExistsToImplicitForall
-    :: forall variable
-    .  InternalVariable variable
-    => FreeVariables variable
-    -> RHS variable
-    -> Pattern variable
-topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
+topExistsToImplicitForall ::
+    forall variable.
+    InternalVariable variable =>
+    FreeVariables variable ->
+    RHS variable ->
+    Pattern variable
+topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
     Conditional
         { term = TermLike.substitute subst right
         , predicate = Predicate.substitute subst ensures
@@ -172,8 +167,8 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
     avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
         freeVariables right <> freeVariables ensures
-        & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
-        & FreeVariables.toNames
+            & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
+            & FreeVariables.toNames
     rename :: Map (SomeVariableName variable) (SomeVariable variable)
     rename =
         refreshVariables
@@ -181,11 +176,9 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
             (Set.fromList $ mkSomeVariable <$> existentials)
     subst = TermLike.mkVar <$> rename
 
-{- | Normal rewriting axioms
-
- -}
+-- | Normal rewriting axioms
 data RulePattern variable = RulePattern
-    { left  :: !(TermLike.TermLike variable)
+    { left :: !(TermLike.TermLike variable)
     , antiLeft :: !(Maybe (AntiLeft variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
@@ -207,7 +200,7 @@ instance From (RulePattern variable) Attribute.RuleIndex where
     from = Attribute.identifier . attributes
 
 instance InternalVariable variable => Pretty (RulePattern variable) where
-    pretty rulePattern'@(RulePattern _ _ _ _ _ ) =
+    pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -224,7 +217,7 @@ instance InternalVariable variable => Pretty (RulePattern variable) where
         RulePattern
             { left
             , requires
-            , rhs = RHS { right, existentials, ensures }
+            , rhs = RHS{right, existentials, ensures}
             } = rulePattern'
 
 instance TopBottom (RulePattern variable) where
@@ -235,11 +228,11 @@ instance From (RulePattern variable) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
 -- | Creates a basic, unconstrained, Equality pattern
-rulePattern
-    :: InternalVariable variable
-    => TermLike.TermLike variable
-    -> TermLike.TermLike variable
-    -> RulePattern variable
+rulePattern ::
+    InternalVariable variable =>
+    TermLike.TermLike variable ->
+    TermLike.TermLike variable ->
+    RulePattern variable
 rulePattern left right =
     RulePattern
         { left
@@ -249,27 +242,26 @@ rulePattern left right =
         , attributes = Default.def
         }
 
-{- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
- -}
-leftPattern
-    :: InternalVariable variable
-    => Lens' (RulePattern variable) (Pattern variable)
+-- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
+leftPattern ::
+    InternalVariable variable =>
+    Lens' (RulePattern variable) (Pattern variable)
 leftPattern =
     Lens.lens get set
   where
-    get RulePattern { left, requires } =
+    get RulePattern{left, requires} =
         Pattern.withCondition left $ from @(Predicate _) requires
     set rule@(RulePattern _ _ _ _ _) pattern' =
-        rule { left, requires = Condition.toPredicate condition }
+        rule{left, requires = Condition.toPredicate condition}
       where
         (left, condition) = Pattern.splitTerm pattern'
 
 -- | Converts the 'RHS' back to the term form.
-rhsToTerm
-    :: InternalVariable variable
-    => RHS variable
-    -> TermLike.TermLike variable
-rhsToTerm RHS { existentials, right, ensures } =
+rhsToTerm ::
+    InternalVariable variable =>
+    RHS variable ->
+    TermLike.TermLike variable
+rhsToTerm RHS{existentials, right, ensures} =
     TermLike.mkExistsN existentials rhs
   where
     rhs = case ensures of
@@ -278,13 +270,13 @@ rhsToTerm RHS { existentials, right, ensures } =
     sort = TermLike.termLikeSort right
 
 -- | Converts the 'RHS' back to the term form.
-rhsToPattern
-    :: InternalVariable variable
-    => RHS variable
-    -> Pattern variable
-rhsToPattern RHS { existentials, right, ensures } =
+rhsToPattern ::
+    InternalVariable variable =>
+    RHS variable ->
+    Pattern variable
+rhsToPattern RHS{existentials, right, ensures} =
     TermLike.mkExistsN existentials rhs
-    & Pattern.fromTermLike
+        & Pattern.fromTermLike
   where
     rhs =
         Pattern.toTermLike
@@ -295,12 +287,12 @@ rhsToPattern RHS { existentials, right, ensures } =
                 }
 
 -- | Converts the left-hand side to the term form
-lhsToTerm
-    :: InternalVariable variable
-    => TermLike variable
-    -> Maybe (AntiLeft variable)
-    -> Predicate variable
-    -> TermLike variable
+lhsToTerm ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe (AntiLeft variable) ->
+    Predicate variable ->
+    TermLike variable
 lhsToTerm left Nothing requires =
     TermLike.mkAnd (Predicate.fromPredicate_ requires) left
 lhsToTerm left (Just antiLeft) requires =
@@ -309,67 +301,66 @@ lhsToTerm left (Just antiLeft) requires =
         (TermLike.mkAnd (Predicate.fromPredicate_ requires) left)
 
 -- | Wraps a term as a RHS
-injectTermIntoRHS
-    :: InternalVariable variable
-    => TermLike.TermLike variable
-    -> RHS variable
+injectTermIntoRHS ::
+    InternalVariable variable =>
+    TermLike.TermLike variable ->
+    RHS variable
 injectTermIntoRHS right =
     RHS
-    { existentials = []
-    , right
-    , ensures = Predicate.makeTruePredicate
-    }
+        { existentials = []
+        , right
+        , ensures = Predicate.makeTruePredicate
+        }
 
 -- | Parses a term representing a RHS into a RHS
-termToRHS
-    :: InternalVariable variable
-    => TermLike.TermLike variable
-    -> RHS variable
+termToRHS ::
+    InternalVariable variable =>
+    TermLike.TermLike variable ->
+    RHS variable
 termToRHS (TermLike.Exists_ _ v pat) =
-    rhs { existentials = v : existentials rhs }
+    rhs{existentials = v : existentials rhs}
   where
     rhs = termToRHS pat
 termToRHS (TermLike.And_ _ ensures right) =
-    RHS { existentials = [], right, ensures = Predicate.wrapPredicate ensures }
+    RHS{existentials = [], right, ensures = Predicate.wrapPredicate ensures}
 termToRHS term = injectTermIntoRHS term
 
 instance
-    InternalVariable variable
-    => HasFreeVariables (RHS variable) variable
-  where
+    InternalVariable variable =>
+    HasFreeVariables (RHS variable) variable
+    where
     freeVariables = freeVariables . rhsToTerm
 
 instance
-    InternalVariable variable
-    => HasFreeVariables (RulePattern variable) variable
-  where
+    InternalVariable variable =>
+    HasFreeVariables (RulePattern variable) variable
+    where
     freeVariables rule@(RulePattern _ _ _ _ _) = case rule of
-        RulePattern { left, antiLeft, requires, rhs } ->
+        RulePattern{left, antiLeft, requires, rhs} ->
             freeVariables left
-            <> foldMap freeVariables antiLeft
-            <> freeVariables requires
-            <> freeVariables rhs
+                <> foldMap freeVariables antiLeft
+                <> freeVariables requires
+                <> freeVariables rhs
 
 -- |Is the rule free of the given variables?
-isFreeOf
-    :: forall variable
-    .  InternalVariable variable
-    => RulePattern variable
-    -> Set.Set (SomeVariable variable)
-    -> Bool
+isFreeOf ::
+    forall variable.
+    InternalVariable variable =>
+    RulePattern variable ->
+    Set.Set (SomeVariable variable) ->
+    Bool
 isFreeOf rule =
-    Set.disjoint
-    $ FreeVariables.toSet
-    $ freeVariables rule
+    Set.disjoint $
+        FreeVariables.toSet $
+            freeVariables rule
 
-{- | Apply the substitution to the right-hand-side of a rule.
- -}
-rhsSubstitute
-    :: InternalVariable variable
-    => Map (SomeVariableName variable) (TermLike.TermLike variable)
-    -> RHS variable
-    -> RHS variable
-rhsSubstitute subst RHS { existentials, right, ensures } =
+-- | Apply the substitution to the right-hand-side of a rule.
+rhsSubstitute ::
+    InternalVariable variable =>
+    Map (SomeVariableName variable) (TermLike.TermLike variable) ->
+    RHS variable ->
+    RHS variable
+rhsSubstitute subst RHS{existentials, right, ensures} =
     RHS
         { existentials
         , right = TermLike.substitute subst' right
@@ -378,14 +369,14 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
   where
     subst' = foldr (Map.delete . inject . variableName) subst existentials
 
-renameExistentials
-    :: forall variable
-    .  HasCallStack
-    => InternalVariable variable
-    => Map (SomeVariableName variable) (SomeVariable variable)
-    -> RHS variable
-    -> RHS variable
-renameExistentials rename RHS { existentials, right, ensures } =
+renameExistentials ::
+    forall variable.
+    HasCallStack =>
+    InternalVariable variable =>
+    Map (SomeVariableName variable) (SomeVariable variable) ->
+    RHS variable ->
+    RHS variable
+renameExistentials rename RHS{existentials, right, ensures} =
     RHS
         { existentials =
             renameVariable <$> existentials
@@ -393,30 +384,29 @@ renameExistentials rename RHS { existentials, right, ensures } =
         , ensures = Predicate.substitute subst ensures
         }
   where
-    renameVariable
-        :: ElementVariable variable
-        -> ElementVariable variable
+    renameVariable ::
+        ElementVariable variable ->
+        ElementVariable variable
     renameVariable var =
         let name = SomeVariableNameElement . variableName $ var
-         in maybe var expectElementVariable
-            $ Map.lookup name rename
+         in maybe var expectElementVariable $
+                Map.lookup name rename
     subst = TermLike.mkVar <$> rename
 
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
-rhsForgetSimplified RHS { existentials, right, ensures } =
+rhsForgetSimplified RHS{existentials, right, ensures} =
     RHS
         { existentials
         , right = TermLike.forgetSimplified right
         , ensures = Predicate.forgetSimplified ensures
         }
 
-{- | Apply the substitution to the rule.
- -}
-substitute
-    :: InternalVariable variable
-    => Map (SomeVariableName variable) (TermLike.TermLike variable)
-    -> RulePattern variable
-    -> RulePattern variable
+-- | Apply the substitution to the rule.
+substitute ::
+    InternalVariable variable =>
+    Map (SomeVariableName variable) (TermLike.TermLike variable) ->
+    RulePattern variable ->
+    RulePattern variable
 substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
     rulePattern'
         { left = TermLike.substitute subst left
@@ -425,24 +415,25 @@ substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
         , rhs = rhsSubstitute subst rhs
         }
   where
-    RulePattern { left, antiLeft, requires, rhs } = rulePattern'
+    RulePattern{left, antiLeft, requires, rhs} = rulePattern'
 
-{-| Applies a substitution to a rule and checks that it was fully applied,
+{- | Applies a substitution to a rule and checks that it was fully applied,
 i.e. there is no substitution variable left in the rule.
 -}
-applySubstitution
-    :: HasCallStack
-    => InternalVariable variable
-    => Substitution variable
-    -> RulePattern variable
-    -> RulePattern variable
+applySubstitution ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Substitution variable ->
+    RulePattern variable ->
+    RulePattern variable
 applySubstitution substitution rule =
     if finalRule `isFreeOf` substitutedVariables
         then finalRule
-        else error
-            (  "Substituted variables not removed from the rule, cannot throw "
-            ++ "substitution away."
-            )
+        else
+            error
+                ( "Substituted variables not removed from the rule, cannot throw "
+                    ++ "substitution away."
+                )
   where
     subst = Substitution.toMap substitution
     finalRule = substitute subst rule
@@ -456,8 +447,7 @@ instance HasAttributes RulePattern where
 
 {-  | Rewrite-based rule pattern.
 -}
-newtype RewriteRule variable =
-    RewriteRule { getRewriteRule :: RulePattern variable }
+newtype RewriteRule variable = RewriteRule {getRewriteRule :: RulePattern variable}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
@@ -474,16 +464,16 @@ instance From (RewriteRule variable) Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getRewriteRule
 
 instance
-    InternalVariable variable
-    => Unparse (RewriteRule variable)
-  where
+    InternalVariable variable =>
+    Unparse (RewriteRule variable)
+    where
     unparse = unparse . rewriteRuleToTerm
     unparse2 = unparse2 . rewriteRuleToTerm
 
 instance
-    InternalVariable variable
-    => HasFreeVariables (RewriteRule variable) variable
-  where
+    InternalVariable variable =>
+    HasFreeVariables (RewriteRule variable) variable
+    where
     freeVariables (RewriteRule rule) = freeVariables rule
     {-# INLINE freeVariables #-}
 
@@ -496,8 +486,7 @@ instance TopBottom (RewriteRule variable) where
 
 {-  | Implication-based pattern.
 -}
-newtype ImplicationRule variable =
-    ImplicationRule { getImplicationRule :: RulePattern variable }
+newtype ImplicationRule variable = ImplicationRule {getImplicationRule :: RulePattern variable}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
@@ -508,53 +497,54 @@ instance From (ImplicationRule variable) Attribute.SourceLocation where
     from (ImplicationRule rule) = from rule
 
 instance
-    InternalVariable variable
-    => Unparse (ImplicationRule variable)
-  where
+    InternalVariable variable =>
+    Unparse (ImplicationRule variable)
+    where
     unparse = unparse . implicationRuleToTerm
     unparse2 = unparse2 . implicationRuleToTerm
 
-{-| Reverses an 'RewriteRule' back into its 'Pattern' representation.
+{- | Reverses an 'RewriteRule' back into its 'Pattern' representation.
   Should be the inverse of 'Rule.termToAxiomPattern'.
 -}
+rewriteRuleToTerm ::
+    InternalVariable variable =>
+    RewriteRule variable ->
+    TermLike.TermLike variable
 rewriteRuleToTerm
-    :: InternalVariable variable
-    => RewriteRule variable
-    -> TermLike.TermLike variable
-rewriteRuleToTerm
-    (RewriteRule
-        (RulePattern left antiLeft requires rhs _)
-    )
-  =
-    TermLike.mkRewrites
-        (lhsToTerm left antiLeft requires)
-        (rhsToTerm rhs)
+    ( RewriteRule
+            (RulePattern left antiLeft requires rhs _)
+        ) =
+        TermLike.mkRewrites
+            (lhsToTerm left antiLeft requires)
+            (rhsToTerm rhs)
 
 -- | Converts an 'ImplicationRule' into its term representation
+implicationRuleToTerm ::
+    InternalVariable variable =>
+    ImplicationRule variable ->
+    TermLike.TermLike variable
 implicationRuleToTerm
-    :: InternalVariable variable
-    => ImplicationRule variable
-    -> TermLike.TermLike variable
-implicationRuleToTerm
-    (ImplicationRule (RulePattern left _ _ (RHS _ right _) _))
-  =
-    TermLike.mkImplies left right
+    (ImplicationRule (RulePattern left _ _ (RHS _ right _) _)) =
+        TermLike.mkImplies left right
 
 -- | 'Alias' construct for all path globally
 aPG :: Sort -> Alias (TermLike.TermLike VariableName)
-aPG sort = Alias
-    { aliasConstructor = Id
-        { getId = allPathGlobally
-        , idLocation = AstLocationNone
+aPG sort =
+    Alias
+        { aliasConstructor =
+            Id
+                { getId = allPathGlobally
+                , idLocation = AstLocationNone
+                }
+        , aliasParams = [sort]
+        , aliasSorts =
+            ApplicationSorts
+                { applicationSortsOperands = [sort]
+                , applicationSortsResult = sort
+                }
+        , aliasLeft = []
+        , aliasRight = TermLike.mkTop sort
         }
-    , aliasParams = [sort]
-    , aliasSorts = ApplicationSorts
-        { applicationSortsOperands = [sort]
-        , applicationSortsResult = sort
-        }
-    , aliasLeft = []
-    , aliasRight = TermLike.mkTop sort
-    }
 
 -- | all path globally modality symbol
 allPathGlobally :: Text
@@ -576,59 +566,62 @@ instance UnifyingRule (RulePattern variable) where
             let subst = TermLike.mkVar <$> renaming
                 rule1 =
                     RulePattern
-                    { left = TermLike.substitute subst left
-                    , antiLeft = AntiLeft.substitute subst <$> antiLeft
-                    , requires = Predicate.substitute subst requires
-                    , rhs =
-                        rhs
-                        & renameExistentials renamingExists
-                        & rhsSubstitute subst
-                    , attributes
-                    }
+                        { left = TermLike.substitute subst left
+                        , antiLeft = AntiLeft.substitute subst <$> antiLeft
+                        , requires = Predicate.substitute subst requires
+                        , rhs =
+                            rhs
+                                & renameExistentials renamingExists
+                                & rhsSubstitute subst
+                        , attributes
+                        }
             -- Only return the renaming of free variables.
             -- Renaming the bound variables is invisible from outside.
             pure (renaming, rule1)
-        & flip evalState (FreeVariables.toNames stale)
+            & flip evalState (FreeVariables.toNames stale)
       where
-        RulePattern { left, antiLeft, requires, rhs, attributes } = rule0
+        RulePattern{left, antiLeft, requires, rhs, attributes} = rule0
         refreshVariables' variables = do
             staleNames <- State.get
             let renaming = refreshVariables staleNames variables
                 staleNames' = Set.map variableName variables
                 staleNames'' =
                     Map.elems renaming
-                    & foldMap FreeVariables.freeVariable
-                    & FreeVariables.toNames
+                        & foldMap FreeVariables.freeVariable
+                        & FreeVariables.toNames
             State.put (staleNames <> staleNames' <> staleNames'')
             pure renaming
 
-mapRuleVariables
-    :: forall rule variable1 variable2
-    .  Coercible rule RulePattern
-    => InternalVariable variable1
-    => InternalVariable variable2
-    => AdjSomeVariableName
-        (variable1 -> variable2)
-    -> rule variable1
-    -> rule variable2
+mapRuleVariables ::
+    forall rule variable1 variable2.
+    Coercible rule RulePattern =>
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
+    AdjSomeVariableName
+        (variable1 -> variable2) ->
+    rule variable1 ->
+    rule variable2
 mapRuleVariables adj (coerce -> rule1@(RulePattern _ _ _ _ _)) =
-    coerce
-    $ rule1
-        { left = mapTermLikeVariables left
-        , antiLeft = mapAntiLeftVariables <$> antiLeft
-        , requires = mapPredicateVariables requires
-        , rhs = RHS
-            { existentials = mapElementVariable adj <$> existentials
-            , right = mapTermLikeVariables right
-            , ensures = mapPredicateVariables ensures
+    coerce $
+        rule1
+            { left = mapTermLikeVariables left
+            , antiLeft = mapAntiLeftVariables <$> antiLeft
+            , requires = mapPredicateVariables requires
+            , rhs =
+                RHS
+                    { existentials = mapElementVariable adj <$> existentials
+                    , right = mapTermLikeVariables right
+                    , ensures = mapPredicateVariables ensures
+                    }
+            , attributes =
+                Attribute.mapAxiomVariables adj attributes
             }
-        , attributes =
-            Attribute.mapAxiomVariables adj attributes
-        }
   where
     RulePattern
-        { left, antiLeft, requires
-        , rhs = RHS { existentials, right, ensures }
+        { left
+        , antiLeft
+        , requires
+        , rhs = RHS{existentials, right, ensures}
         , attributes
         } = rule1
     mapTermLikeVariables = TermLike.mapVariables adj
@@ -648,14 +641,14 @@ instance UnifyingRule (RewriteRule variable) where
         RewriteRule <$> refreshRule avoiding rule
     {-# INLINE refreshRule #-}
 
-lhsEqualsRhs
-    :: InternalVariable variable
-    => RulePattern variable
-    -> Bool
+lhsEqualsRhs ::
+    InternalVariable variable =>
+    RulePattern variable ->
+    Bool
 lhsEqualsRhs rule =
     lhsToTerm left antiLeft requires == rhsToTerm rhs
   where
-    RulePattern { left, antiLeft, requires, rhs } = rule
+    RulePattern{left, antiLeft, requires, rhs} = rule
 
 {- | Prepare a rule for unification or matching with the configuration.
 
@@ -663,18 +656,16 @@ The rule's variables are:
 
 * marked with 'RewritingVariable' so that they are preferred targets for substitution, and
 * renamed to avoid any free variables from the configuration and side condition.
-
- -}
-mkRewritingRule
-    :: Coercible rule RulePattern
-    => rule VariableName
-    -> rule RewritingVariableName
+-}
+mkRewritingRule ::
+    Coercible rule RulePattern =>
+    rule VariableName ->
+    rule RewritingVariableName
 mkRewritingRule = mapRuleVariables (pure mkRuleVariable)
 
-{- | Unwrap the variables in a 'RulePattern'. Inverse of 'mkRewritingRule'.
- -}
-unRewritingRule
-    :: Coercible rule RulePattern
-    => rule RewritingVariableName
-    -> rule VariableName
+-- | Unwrap the variables in a 'RulePattern'. Inverse of 'mkRewritingRule'.
+unRewritingRule ::
+    Coercible rule RulePattern =>
+    rule RewritingVariableName ->
+    rule VariableName
 unRewritingRule = mapRuleVariables getRewritingVariable

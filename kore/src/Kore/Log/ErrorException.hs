@@ -1,42 +1,37 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Log.ErrorException (
+    ErrorException,
+    errorException,
+) where
 
-module Kore.Log.ErrorException
-    ( ErrorException
-    , errorException
-    ) where
-
-import Prelude.Kore
-
-import Control.Exception
-    ( AssertionFailed
-    )
-import Control.Monad.Catch
-    ( SomeException
-    , fromException
-    )
-
+import Control.Exception (
+    AssertionFailed,
+ )
+import Control.Monad.Catch (
+    SomeException,
+    fromException,
+ )
 import Log
-import Pretty
-    ( Pretty (..)
-    , hsep
-    , prettyException
-    , vsep
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+    hsep,
+    prettyException,
+    vsep,
+ )
 
-newtype ErrorException =
-    ErrorException { getException :: SomeException }
+newtype ErrorException = ErrorException {getException :: SomeException}
     deriving (Show)
 
 instance Pretty ErrorException where
     pretty (ErrorException someException) =
         (vsep . catMaybes)
-        [ Just $ prettyException someException
-        , pleaseFileBugReport
-        ]
+            [ Just $ prettyException someException
+            , pleaseFileBugReport
+            ]
       where
         pleaseFileBugReport = do
             _ <- fromException someException :: Maybe AssertionFailed

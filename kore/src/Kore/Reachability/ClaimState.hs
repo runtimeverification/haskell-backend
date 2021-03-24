@@ -1,46 +1,44 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Reachability.ClaimState
-    ( extractRemaining
-    , extractUnproven
-    , extractStuck
-    , retractRewritable, isRewritable
-    , isRemaining
-    , ClaimState (..)
-    , claimState
-    , ClaimStateTransformer (..)
-    ) where
+module Kore.Reachability.ClaimState (
+    extractRemaining,
+    extractUnproven,
+    extractStuck,
+    retractRewritable,
+    isRewritable,
+    isRemaining,
+    ClaimState (..),
+    claimState,
+    ClaimStateTransformer (..),
+) where
 
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
-import Kore.Unparser
-    ( Unparse (..)
-    )
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
-{- | The state of the reachability proof strategy for @claim@.
- -}
+-- | The state of the reachability proof strategy for @claim@.
 data ClaimState claim
-    = Claimed !claim
-    -- ^ The claim is being proven.
-    | Remaining !claim
-    -- ^ The claim is being rewritten, but no rule has applied.
-    | Rewritten !claim
-    -- ^ The claim was rewritten.
-    | Stuck !claim
-    -- ^ The proof of this claim cannot be completed because the implication
-    -- does not hold.
-    | Proven
-    -- ^ The claim was proven.
+    = -- | The claim is being proven.
+      Claimed !claim
+    | -- | The claim is being rewritten, but no rule has applied.
+      Remaining !claim
+    | -- | The claim was rewritten.
+      Rewritten !claim
+    | -- | The proof of this claim cannot be completed because the implication
+      -- does not hold.
+      Stuck !claim
+    | -- | The claim was proven.
+      Proven
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -74,27 +72,26 @@ instance Unparse claim => Pretty (ClaimState claim) where
 {- | Extract the unproven claims of a 'ClaimState'.
 
 Returns 'Nothing' if there is no remaining unproven claim.
-
- -}
+-}
 extractUnproven :: ClaimState a -> Maybe a
-extractUnproven (Claimed t)   = Just t
+extractUnproven (Claimed t) = Just t
 extractUnproven (Rewritten t) = Just t
 extractUnproven (Remaining t) = Just t
-extractUnproven (Stuck t)     = Just t
-extractUnproven Proven        = Nothing
+extractUnproven (Stuck t) = Just t
+extractUnproven Proven = Nothing
 
 extractRemaining :: ClaimState a -> Maybe a
 extractRemaining (Remaining t) = Just t
-extractRemaining _             = Nothing
+extractRemaining _ = Nothing
 
 extractStuck :: ClaimState a -> Maybe a
 extractStuck (Stuck a) = Just a
-extractStuck _         = Nothing
+extractStuck _ = Nothing
 
 retractRewritable :: ClaimState a -> Maybe a
-retractRewritable (Claimed a)   = Just a
+retractRewritable (Claimed a) = Just a
 retractRewritable (Remaining a) = Just a
-retractRewritable _             = Nothing
+retractRewritable _ = Nothing
 
 isRewritable :: ClaimState a -> Bool
 isRewritable = isJust . retractRewritable
@@ -102,21 +99,19 @@ isRewritable = isJust . retractRewritable
 isRemaining :: ClaimState a -> Bool
 isRemaining = isJust . extractRemaining
 
-data ClaimStateTransformer a val =
-    ClaimStateTransformer
-        { claimedTransformer :: a -> val
-        , remainingTransformer :: a -> val
-        , rewrittenTransformer :: a -> val
-        , stuckTransformer :: a -> val
-        , provenValue :: val
-        }
+data ClaimStateTransformer a val = ClaimStateTransformer
+    { claimedTransformer :: a -> val
+    , remainingTransformer :: a -> val
+    , rewrittenTransformer :: a -> val
+    , stuckTransformer :: a -> val
+    , provenValue :: val
+    }
 
-{- | Catamorphism for 'ClaimState'
--}
-claimState
-    :: ClaimStateTransformer a val
-    -> ClaimState a
-    -> val
+-- | Catamorphism for 'ClaimState'
+claimState ::
+    ClaimStateTransformer a val ->
+    ClaimState a ->
+    val
 claimState
     ClaimStateTransformer
         { claimedTransformer
@@ -124,11 +119,10 @@ claimState
         , rewrittenTransformer
         , stuckTransformer
         , provenValue
-        }
-  =
-    \case
-        Claimed claim -> claimedTransformer claim
-        Remaining claim -> remainingTransformer claim
-        Rewritten claim -> rewrittenTransformer claim
-        Stuck claim -> stuckTransformer claim
-        Proven -> provenValue
+        } =
+        \case
+            Claimed claim -> claimedTransformer claim
+            Remaining claim -> remainingTransformer claim
+            Rewritten claim -> rewrittenTransformer claim
+            Stuck claim -> stuckTransformer claim
+            Proven -> provenValue
