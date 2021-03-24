@@ -1,37 +1,34 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.Not
-    ( test_simplifyEvaluated
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
-    ( TestTree
-    )
+module Test.Kore.Step.Simplification.Not (
+    test_simplifyEvaluated,
+) where
 
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
+import Kore.Internal.Conditional (
+    Conditional (Conditional),
+ )
 import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    top,
+ )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
-
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty (
+    TestTree,
+ )
 import Test.Tasty.HUnit.Ext
 
 test_simplifyEvaluated :: [TestTree]
@@ -49,11 +46,11 @@ test_simplifyEvaluated =
     , [termNotXAndY] `becomes_` [termX, termNotY]
     ]
   where
-    becomes_
-        :: HasCallStack
-        => [Pattern.Pattern RewritingVariableName]
-        -> [Pattern.Pattern RewritingVariableName]
-        -> TestTree
+    becomes_ ::
+        HasCallStack =>
+        [Pattern.Pattern RewritingVariableName] ->
+        [Pattern.Pattern RewritingVariableName] ->
+        TestTree
     becomes_ originals expecteds =
         testCase "becomes" $ do
             actual <- simplifyEvaluated original
@@ -62,10 +59,10 @@ test_simplifyEvaluated =
       where
         original =
             OrPattern.fromPatterns
-            (Pattern.coerceSort Mock.testSort <$> originals)
+                (Pattern.coerceSort Mock.testSort <$> originals)
         expected =
             OrPattern.fromPatterns
-            (Pattern.coerceSort Mock.testSort <$> expecteds)
+                (Pattern.coerceSort Mock.testSort <$> expecteds)
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
@@ -77,11 +74,11 @@ test_simplifyEvaluated =
                 ]
           where
             actuals = toList actual
-    patternBecomes
-        :: HasCallStack
-        => Pattern.Pattern RewritingVariableName
-        -> [Pattern.Pattern RewritingVariableName]
-        -> TestTree
+    patternBecomes ::
+        HasCallStack =>
+        Pattern.Pattern RewritingVariableName ->
+        [Pattern.Pattern RewritingVariableName] ->
+        TestTree
     patternBecomes original expecteds =
         testCase "patternBecomes" $ do
             let actuals = toList $ Not.makeEvaluate original
@@ -119,11 +116,12 @@ xAndEqualsXA :: Pattern.Pattern RewritingVariableName
 xAndEqualsXA = const <$> termX <*> equalsXA
 
 equalsXAWithSortedBottom :: Pattern.Pattern RewritingVariableName
-equalsXAWithSortedBottom = Conditional
-    { term = mkBottom Mock.testSort
-    , predicate = equalsXA_
-    , substitution = mempty
-    }
+equalsXAWithSortedBottom =
+    Conditional
+        { term = mkBottom Mock.testSort
+        , predicate = equalsXA_
+        , substitution = mempty
+        }
 
 equalsXA :: Pattern.Pattern RewritingVariableName
 equalsXA = fromPredicate equalsXA_
@@ -146,39 +144,39 @@ notEqualsXASorted =
 
 neitherXAB :: Pattern.Pattern RewritingVariableName
 neitherXAB =
-    Pattern.coerceSort Mock.testSort
-    $ fromPredicate
-    $ Predicate.makeAndPredicate
-        (Predicate.makeNotPredicate equalsXA_)
-        (Predicate.makeNotPredicate equalsXB_)
+    Pattern.coerceSort Mock.testSort $
+        fromPredicate $
+            Predicate.makeAndPredicate
+                (Predicate.makeNotPredicate equalsXA_)
+                (Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern.Pattern RewritingVariableName
 substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.xConfig, Mock.a)]
 
-forceTermSort
-    :: Pattern.Pattern RewritingVariableName
-    -> Pattern.Pattern RewritingVariableName
+forceTermSort ::
+    Pattern.Pattern RewritingVariableName ->
+    Pattern.Pattern RewritingVariableName
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate
-    :: Predicate.Predicate RewritingVariableName
-    -> Pattern.Pattern RewritingVariableName
+fromPredicate ::
+    Predicate.Predicate RewritingVariableName ->
+    Pattern.Pattern RewritingVariableName
 fromPredicate =
     forceTermSort
-    . Pattern.fromCondition_
-    . Condition.fromPredicate
+        . Pattern.fromCondition_
+        . Condition.fromPredicate
 
-fromSubstitution
-    :: Substitution RewritingVariableName
-    -> Pattern.Pattern RewritingVariableName
+fromSubstitution ::
+    Substitution RewritingVariableName ->
+    Pattern.Pattern RewritingVariableName
 fromSubstitution =
     forceTermSort
-    . Pattern.fromCondition_
-    . Condition.fromSubstitution
+        . Pattern.fromCondition_
+        . Condition.fromSubstitution
 
-simplifyEvaluated
-    :: OrPattern.OrPattern RewritingVariableName
-    -> IO (OrPattern.OrPattern RewritingVariableName)
+simplifyEvaluated ::
+    OrPattern.OrPattern RewritingVariableName ->
+    IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated =
     runSimplifier mockEnv . Not.simplifyEvaluated SideCondition.top
   where

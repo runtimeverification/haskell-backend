@@ -1,4 +1,4 @@
-{-|
+{- |
 Module      : Kore.ASTVerifier.Error
 Description : Helpers for verification errors.
 Copyright   : (c) Runtime Verification, 2018
@@ -7,36 +7,35 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.Error
-    ( VerifyError (..)
-    , VerifySuccess (..)
-    , verifySuccess
-    , sortNeedsDomainValueAttributeMessage
-    , noConstructorWithVariableSort
-    , noConstructorInHookedSort
-    , noConstructorWithDomainValues
-    ) where
+module Kore.ASTVerifier.Error (
+    VerifyError (..),
+    VerifySuccess (..),
+    verifySuccess,
+    sortNeedsDomainValueAttributeMessage,
+    noConstructorWithVariableSort,
+    noConstructorInHookedSort,
+    noConstructorWithDomainValues,
+) where
 
-import Prelude.Kore
-
-import Data.Text
-    ( Text
-    )
-
+import Data.Text (
+    Text,
+ )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import Kore.Error
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
-{-| 'VerifyError' is a tag for verification errors. -}
+-- | 'VerifyError' is a tag for verification errors.
 newtype VerifyError = VerifyError ()
     deriving (Eq, Show)
-{-| 'VerifySuccess' is a tag for verification success. -}
+
+-- | 'VerifySuccess' is a tag for verification success.
 newtype VerifySuccess = VerifySuccess ()
     deriving (Eq, Show)
 
-{-| 'verifySuccess' helper for signaling verification success. -}
+-- | 'verifySuccess' helper for signaling verification success.
 verifySuccess :: MonadError (Error VerifyError) m => m VerifySuccess
 verifySuccess = return (VerifySuccess ())
 
@@ -70,5 +69,6 @@ noConstructorWithVariableSort symbolId =
 sortNeedsDomainValueAttributeMessage :: Text
 sortNeedsDomainValueAttributeMessage =
     "Sorts used with domain value must have the "
-    <> getId Attribute.HasDomainValues.hasDomainValuesId
-    <> " " <> "attribute."
+        <> getId Attribute.HasDomainValues.hasDomainValuesId
+        <> " "
+        <> "attribute."

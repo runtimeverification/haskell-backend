@@ -60,6 +60,7 @@ Use `docker.sh` to run commands inside the container:
 
 ``` sh
 ./docker/build.sh  # run once when dependencies change
+./docker/run.sh make  # build the backend
 ./docker/run.sh make test  # run all tests
 ./docker/run.sh make -C test/imp test  # run all tests in test/imp
 ```
@@ -116,6 +117,13 @@ When the `.cabal` package description file changes, run:
 
 This script is also run by an automatic workflow.
 
+We provide a `test.nix` for running integration tests:
+
+``` sh
+nix-build test.nix  # run all integration tests
+nix-build test.nix --argstr test imp  # run the integration tests in test/imp
+nix-shell test.nix  # enter a shell where we can run tests manually
+```
 
 [git]: https://git-scm.com/
 [stack]: https://www.haskellstack.org/

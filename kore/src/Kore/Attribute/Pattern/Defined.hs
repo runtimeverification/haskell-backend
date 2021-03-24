@@ -1,36 +1,31 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Pattern.Defined
-    ( Defined (..)
-    , alwaysDefined
-    ) where
-
-import Prelude.Kore
+-}
+module Kore.Attribute.Pattern.Defined (
+    Defined (..),
+    alwaysDefined,
+) where
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
+import Prelude.Kore
 
-{- | A pattern is 'Defined' if it matches at least one element.
- -}
-newtype Defined = Defined { isDefined :: Bool }
+-- | A pattern is 'Defined' if it matches at least one element.
+newtype Defined = Defined {isDefined :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -49,8 +44,9 @@ instance Synthetic Defined (Bottom sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
--- | An 'Application' pattern is 'Defined' if the symbol is total and its
--- arguments are 'Defined'.
+{- | An 'Application' pattern is 'Defined' if the symbol is total and its
+ arguments are 'Defined'.
+-}
 instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
         totalSymbol <> fold children
@@ -141,8 +137,9 @@ instance Synthetic Defined Inhabitant where
     synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
--- | An element variable pattern is always 'Defined'.
---   A set variable is not.
+{- | An element variable pattern is always 'Defined'.
+   A set variable is not.
+-}
 instance Synthetic Defined (Const (SomeVariable variable)) where
     synthetic (Const unifiedVariable) =
         Defined (isElementVariable unifiedVariable)

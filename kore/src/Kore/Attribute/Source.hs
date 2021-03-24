@@ -1,33 +1,30 @@
-{-|
+{- |
 Module      : Kore.Attribute.Source
 Description : Source file attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
-
 -}
-module Kore.Attribute.Source
-    ( Source (..)
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Source (
+    Source (..),
+) where
 
 import Data.Default
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import Text.Megaparsec
-    ( Parsec
-    , noneOf
-    , parseMaybe
-    )
-import Text.Megaparsec.Char
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
 import qualified Kore.Error
+import Prelude.Kore
+import Text.Megaparsec (
+    Parsec,
+    noneOf,
+    parseMaybe,
+ )
+import Text.Megaparsec.Char
 
-newtype Source = Source { unSource :: Maybe String }
+newtype Source = Source {unSource :: Maybe String}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -44,12 +41,11 @@ sourceId = "org'Stop'kframework'Stop'attributes'Stop'Source"
 instance ParseAttributes Source where
     parseAttribute = AttributeParser.withApplication sourceId parseApplication
       where
-
-        parseApplication
-            :: [Sort]
-            -> [AttributePattern]
-            -> Source
-            -> AttributeParser.Parser Source
+        parseApplication ::
+            [Sort] ->
+            [AttributePattern] ->
+            Source ->
+            AttributeParser.Parser Source
         parseApplication params args s@(Source Nothing) = do
             AttributeParser.getZeroParams params
             case args of
@@ -71,8 +67,9 @@ instance From Source Attributes where
     -- TODO (thomas.tuegel): Implement
     from _ = def
 
--- | This parser is used to parse the inner representation of the attribute.
--- The expected format is "Source(path)" where path is a FilePath.
+{- | This parser is used to parse the inner representation of the attribute.
+ The expected format is "Source(path)" where path is a FilePath.
+-}
 type StringParser = Parsec String String
 
 sourceParser :: StringParser Source

@@ -1,15 +1,13 @@
-module Test.Data.Limit
-    ( prop_append
-    , prop_dominate
-    , prop_homomorphism
-    , prop_identity
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty.QuickCheck
+module Test.Data.Limit (
+    prop_append,
+    prop_dominate,
+    prop_homomorphism,
+    prop_identity,
+) where
 
 import Data.Limit
+import Prelude.Kore
+import Test.Tasty.QuickCheck
 
 limit :: Integer -> Limit Integer
 limit = Limit
@@ -17,8 +15,8 @@ limit = Limit
 prop_dominate :: Integer -> Property
 prop_dominate a =
     (.&&.)
-    (compare (limit a) Unlimited === LT)
-    (compare Unlimited (limit a) === GT)
+        (compare (limit a) Unlimited === LT)
+        (compare Unlimited (limit a) === GT)
 
 prop_homomorphism :: Integer -> Integer -> Property
 prop_homomorphism a b =
@@ -30,5 +28,5 @@ prop_append (limit -> a) (limit -> b) = a <> b === min a b
 prop_identity :: Integer -> Property
 prop_identity (limit -> a) =
     (.&&.)
-    (mappend mempty a === a)
-    (mappend a mempty === a)
+        (mappend mempty a === a)
+        (mappend a mempty === a)

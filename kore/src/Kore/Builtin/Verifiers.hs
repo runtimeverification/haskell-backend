@@ -1,165 +1,163 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Builtin.Verifiers (
+    Verifiers (..),
+    SymbolVerifier (..),
+    SymbolVerifiers,
+    SortDeclVerifier,
+    SortDeclVerifiers,
+    SortVerifier (..),
+    ApplicationVerifier (..),
+    SymbolKey (..),
+    ApplicationVerifiers,
+    lookupApplicationVerifier,
+    PatternVerifierHook (..),
+    PatternVerifier,
+    domainValuePatternVerifierHook,
+    applicationPatternVerifierHooks,
+    Parser,
+    symbolVerifier,
+    sortDeclVerifier,
 
- -}
-module Kore.Builtin.Verifiers
-    ( Verifiers (..)
-    , SymbolVerifier (..), SymbolVerifiers
-    , SortDeclVerifier, SortDeclVerifiers
-    , SortVerifier (..)
-    , ApplicationVerifier (..), SymbolKey(..), ApplicationVerifiers
-    , lookupApplicationVerifier
-    , PatternVerifierHook (..)
-    , PatternVerifier
-    , domainValuePatternVerifierHook
-    , applicationPatternVerifierHooks
-    , Parser
-    , symbolVerifier
-    , sortDeclVerifier
-      -- * Declaring builtin verifiers
-    , verifySortDecl
-    , getUnitId
-    , getElementId
-    , getConcatId
-    , assertSymbolHook
-    , assertSymbolResultSort
-    , verifySort
-    , verifySortHasDomainValues
-    , expectDomainValue
-    , acceptAnySort
-    , verifySymbol
-    , verifySymbolArguments
-    , parseString
-    ) where
+    -- * Declaring builtin verifiers
+    verifySortDecl,
+    getUnitId,
+    getElementId,
+    getConcatId,
+    assertSymbolHook,
+    assertSymbolResultSort,
+    verifySort,
+    verifySortHasDomainValues,
+    expectDomainValue,
+    acceptAnySort,
+    verifySymbol,
+    verifySymbolArguments,
+    parseString,
+) where
 
-import Prelude.Kore
-
-import Control.Error
-    ( MaybeT (..)
-    )
-import Control.Monad
-    ( zipWithM_
-    )
+import Control.Error (
+    MaybeT (..),
+ )
+import Control.Monad (
+    zipWithM_,
+ )
 import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
-import Data.HashMap.Strict
-    ( HashMap
-    )
+import Data.HashMap.Strict (
+    HashMap,
+ )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import Data.Void
-    ( Void
-    )
+import Data.Void (
+    Void,
+ )
 import qualified GHC.Generics as GHC
-import Text.Megaparsec
-    ( Parsec
-    )
-import qualified Text.Megaparsec as Parsec
-
 import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
-import Kore.ASTVerifier.Error
-    ( VerifyError
-    )
-import Kore.ASTVerifier.PatternVerifier.PatternVerifier
-    ( PatternVerifier
-    , PatternVerifierHook (..)
-    )
+import Kore.ASTVerifier.Error (
+    VerifyError,
+ )
+import Kore.ASTVerifier.PatternVerifier.PatternVerifier (
+    PatternVerifier,
+    PatternVerifierHook (..),
+ )
 import qualified Kore.ASTVerifier.PatternVerifier.PatternVerifier as PatternVerifier
-import Kore.Attribute.Attributes
-    ( Attributes (..)
-    )
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
+import Kore.Attribute.Attributes (
+    Attributes (..),
+ )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol (..)
-    )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol (..),
+ )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
 import Kore.Builtin.Error
-import Kore.Error
-    ( Error
-    )
+import Kore.Error (
+    Error,
+ )
 import qualified Kore.Error
-import Kore.IndexedModule.IndexedModule
-    ( IndexedModule
-    , VerifiedModule
-    )
+import Kore.IndexedModule.IndexedModule (
+    IndexedModule,
+    VerifiedModule,
+ )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.TermLike as TermLike
-import Kore.Syntax.Definition
-    ( ParsedSentenceSort
-    , ParsedSentenceSymbol
-    , SentenceSort (..)
-    , SentenceSymbol (..)
-    )
+import Kore.Syntax.Definition (
+    ParsedSentenceSort,
+    ParsedSentenceSymbol,
+    SentenceSort (..),
+    SentenceSymbol (..),
+ )
 import Kore.Unparser
 import qualified Kore.Verified as Verified
+import Prelude.Kore
+import Text.Megaparsec (
+    Parsec,
+ )
+import qualified Text.Megaparsec as Parsec
 
 type Parser = Parsec Void Text
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-        VerifiedModule Attribute.Symbol
-    -- ^ Indexed module, to look up sort declarations
-    ->  ParsedSentenceSort
-    -- ^ Sort declaration to verify
-    ->  Attribute.Sort
-    -- ^ Declared sort attributes
-    ->  Either (Error VerifyError) ()
+    -- | Indexed module, to look up sort declarations
+    VerifiedModule Attribute.Symbol ->
+    -- | Sort declaration to verify
+    ParsedSentenceSort ->
+    -- | Declared sort attributes
+    Attribute.Sort ->
+    Either (Error VerifyError) ()
 
-newtype SortVerifier =
-    SortVerifier
-        { runSortVerifier
-            :: (Id -> Either (Error VerifyError) SentenceSort)
-            -> Sort
-            -> Either (Error VerifyError) ()
-        }
+newtype SortVerifier = SortVerifier
+    { runSortVerifier ::
+        (Id -> Either (Error VerifyError) SentenceSort) ->
+        Sort ->
+        Either (Error VerifyError) ()
+    }
 
 -- | @SortDeclVerifiers@ associates a sort verifier with its builtin sort name.
 type SortDeclVerifiers = HashMap Text SortDeclVerifier
 
-newtype SymbolVerifier =
-    SymbolVerifier
-        { runSymbolVerifier
-            :: (Id -> Either (Error VerifyError) SentenceSort)
-            -> ParsedSentenceSymbol
-            -> Either (Error VerifyError) ()
-        }
+newtype SymbolVerifier = SymbolVerifier
+    { runSymbolVerifier ::
+        (Id -> Either (Error VerifyError) SentenceSort) ->
+        ParsedSentenceSymbol ->
+        Either (Error VerifyError) ()
+    }
 
 {- | @SymbolVerifiers@ associates a @SymbolVerifier@ with each builtin
   symbol name.
- -}
+-}
 type SymbolVerifiers = HashMap Text SymbolVerifier
 
 -- | Verify (and internalize) an application pattern.
-newtype ApplicationVerifier patternType =
-    ApplicationVerifier
-        { runApplicationVerifier
-            :: Application Symbol Verified.Pattern
-            -> PatternVerifier (TermLikeF VariableName Verified.Pattern)
-        }
+newtype ApplicationVerifier patternType = ApplicationVerifier
+    { runApplicationVerifier ::
+        Application Symbol Verified.Pattern ->
+        PatternVerifier (TermLikeF VariableName Verified.Pattern)
+    }
 
-{- | @SymbolKey@ names builtin functions and constructors.
- -}
+-- | @SymbolKey@ names builtin functions and constructors.
 data SymbolKey
-    = HookedSymbolKey !Text
-    -- ^ A builtin function identified by its @hook@ attribute.
-    | KlabelSymbolKey !Text
-    -- ^ A builtin constructor identified by its @klabel@ attribute.
+    = -- | A builtin function identified by its @hook@ attribute.
+      HookedSymbolKey !Text
+    | -- | A builtin constructor identified by its @klabel@ attribute.
+      KlabelSymbolKey !Text
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
@@ -168,77 +166,78 @@ instance Hashable SymbolKey
 type ApplicationVerifiers patternType =
     HashMap SymbolKey (ApplicationVerifier patternType)
 
-lookupApplicationVerifier
-    :: Symbol
-    -> ApplicationVerifiers patternType
-    -> Maybe (ApplicationVerifier patternType)
+lookupApplicationVerifier ::
+    Symbol ->
+    ApplicationVerifiers patternType ->
+    Maybe (ApplicationVerifier patternType)
 lookupApplicationVerifier symbol verifiers = do
     key <- getHook symbol <|> getKlabel symbol
     HashMap.lookup key verifiers
   where
     getHook =
         fmap HookedSymbolKey
-        . Attribute.Symbol.getHook . Attribute.Symbol.hook
-        . symbolAttributes
+            . Attribute.Symbol.getHook
+            . Attribute.Symbol.hook
+            . symbolAttributes
     getKlabel =
         fmap KlabelSymbolKey
-        . Attribute.Symbol.getKlabel . Attribute.Symbol.klabel
-        . symbolAttributes
+            . Attribute.Symbol.getKlabel
+            . Attribute.Symbol.klabel
+            . symbolAttributes
 
-applicationPatternVerifierHooks
-    :: ApplicationVerifiers patternType
-    -> PatternVerifierHook
+applicationPatternVerifierHooks ::
+    ApplicationVerifiers patternType ->
+    PatternVerifierHook
 applicationPatternVerifierHooks applicationVerifiers =
     PatternVerifierHook $ \termLike ->
-        let _ :< termLikeF = Recursive.project termLike in
-        case termLikeF of
-            ApplySymbolF application
-              | Just verifier <- lookupVerifier symbol ->
-                synthesize <$> runApplicationVerifier verifier application
-              where
-                Application { applicationSymbolOrAlias = symbol } = application
-            _ -> return termLike
+        let _ :< termLikeF = Recursive.project termLike
+         in case termLikeF of
+                ApplySymbolF application
+                    | Just verifier <- lookupVerifier symbol ->
+                        synthesize <$> runApplicationVerifier verifier application
+                  where
+                    Application{applicationSymbolOrAlias = symbol} = application
+                _ -> return termLike
   where
     lookupVerifier symbol =
         lookupApplicationVerifier symbol applicationVerifiers
 
-domainValuePatternVerifierHook
-    ::  Text
-    ->  (   DomainValue Sort Verified.Pattern
-        ->  PatternVerifier (TermLikeF VariableName Verified.Pattern)
-        )
-    ->  PatternVerifierHook
+domainValuePatternVerifierHook ::
+    Text ->
+    ( DomainValue Sort Verified.Pattern ->
+      PatternVerifier (TermLikeF VariableName Verified.Pattern)
+    ) ->
+    PatternVerifierHook
 domainValuePatternVerifierHook hook verifier =
     PatternVerifierHook $ \termLike ->
-        let _ :< termLikeF = Recursive.project termLike in
-        case termLikeF of
-            DomainValueF domainValue
-              | SortActualSort _ <- domainValueSort -> do
-                hook' <- lookupHookSort domainValueSort
-                fromMaybe (return termLike) $ do
-                    Monad.guard (hook' == Just hook)
-                    let context =
-                            unwords
-                                [ "Verifying builtin sort"
-                                , "'" ++ Text.unpack hook ++ "'"
-                                ]
-                        verify =
-                            Kore.Error.withContext context
-                            . Kore.Error.withContext
-                                "While parsing domain value"
-                            . fmap synthesize
-                            . verifier
-                    pure (verify domainValue)
-              where
-                DomainValue { domainValueSort } = domainValue
-            _ -> return termLike
+        let _ :< termLikeF = Recursive.project termLike
+         in case termLikeF of
+                DomainValueF domainValue
+                    | SortActualSort _ <- domainValueSort -> do
+                        hook' <- lookupHookSort domainValueSort
+                        fromMaybe (return termLike) $ do
+                            Monad.guard (hook' == Just hook)
+                            let context =
+                                    unwords
+                                        [ "Verifying builtin sort"
+                                        , "'" ++ Text.unpack hook ++ "'"
+                                        ]
+                                verify =
+                                    Kore.Error.withContext context
+                                        . Kore.Error.withContext
+                                            "While parsing domain value"
+                                        . fmap synthesize
+                                        . verifier
+                            pure (verify domainValue)
+                  where
+                    DomainValue{domainValueSort} = domainValue
+                _ -> return termLike
 
-{- | Verify builtin sorts, symbols, and patterns.
- -}
+-- | Verify builtin sorts, symbols, and patterns.
 data Verifiers = Verifiers
-    { sortDeclVerifiers    :: SortDeclVerifiers
-    , symbolVerifiers      :: SymbolVerifiers
-    , patternVerifierHook  :: PatternVerifierHook
+    { sortDeclVerifiers :: SortDeclVerifiers
+    , symbolVerifiers :: SymbolVerifiers
+    , patternVerifierHook :: PatternVerifierHook
     }
 
 instance Semigroup Verifiers where
@@ -261,17 +260,14 @@ instance Monoid Verifiers where
 
 The 'Hook' name should refer to a builtin sort; if it is unset or the name is
 not recognized, verification succeeds.
-
- -}
+-}
 sortDeclVerifier :: Verifiers -> Hook -> SortDeclVerifier
-sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
-    let
-        hookedSortVerifier = do
+sortDeclVerifier Verifiers{sortDeclVerifiers} hook =
+    let hookedSortVerifier = do
             -- Get the builtin sort name.
             sortName <- getHook hook
             HashMap.lookup sortName sortDeclVerifiers
-    in
-        fromMaybe
+     in fromMaybe
             -- There is nothing to verify because either
             -- 1. the sort is not hooked, or
             -- 2. there is no SortVerifier registered to the hooked name.
@@ -284,17 +280,14 @@ sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
 
 The 'Hook' name should refer to a builtin symbol; if it is unset or the name is
 not recognized, verification succeeds.
-
- -}
+-}
 symbolVerifier :: Verifiers -> Hook -> SymbolVerifier
-symbolVerifier Verifiers { symbolVerifiers } hook =
-    let
-        hookedSymbolVerifier = do
+symbolVerifier Verifiers{symbolVerifiers} hook =
+    let hookedSymbolVerifier = do
             -- Get the builtin sort name.
             symbolName <- getHook hook
             HashMap.lookup symbolName symbolVerifiers
-    in
-        fromMaybe
+     in fromMaybe
             -- There is nothing to verify because either
             -- 1. the symbol is not hooked, or
             -- 2. there is no SymbolVerifier registered to the hooked name.
@@ -306,14 +299,12 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
 {- | Verify a builtin sort declaration.
 
   Check that the hooked sort does not take any sort parameters.
-
- -}
+-}
 verifySortDecl :: SortDeclVerifier
-verifySortDecl _ SentenceSort { sentenceSortParameters } _ =
+verifySortDecl _ SentenceSort{sentenceSortParameters} _ =
     getZeroParams sentenceSortParameters
 
-{- | Throw a 'VerifyError' if there are any sort parameters.
- -}
+-- | Throw a 'VerifyError' if there are any sort parameters.
 getZeroParams :: [SortVariable] -> Either (Error VerifyError) ()
 getZeroParams =
     \case
@@ -325,73 +316,68 @@ getZeroParams =
 {- | Get the identifier of the @unit@ sort attribute.
 
 Fail if the attribute is missing.
-
- -}
-getUnitId
-    :: Attribute.Sort
-    -- ^ Sort attributes
-    -> Either (Error VerifyError) Id
-getUnitId Attribute.Sort { unit = Attribute.Sort.Unit sortUnit } =
+-}
+getUnitId ::
+    -- | Sort attributes
+    Attribute.Sort ->
+    Either (Error VerifyError) Id
+getUnitId Attribute.Sort{unit = Attribute.Sort.Unit sortUnit} =
     case sortUnit of
-        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+        Just SymbolOrAlias{symbolOrAliasConstructor} ->
             return symbolOrAliasConstructor
         Nothing -> Kore.Error.koreFail "Missing 'unit' attribute."
 
 {- | Get the identifier of the @element@ sort attribute.
 
 Fail if the attribute is missing.
-
- -}
-getElementId
-    :: Attribute.Sort
-    -- ^ Sort attributes
-    -> Either (Error VerifyError) Id
-getElementId Attribute.Sort { element = Attribute.Sort.Element sortElement } =
+-}
+getElementId ::
+    -- | Sort attributes
+    Attribute.Sort ->
+    Either (Error VerifyError) Id
+getElementId Attribute.Sort{element = Attribute.Sort.Element sortElement} =
     case sortElement of
-        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+        Just SymbolOrAlias{symbolOrAliasConstructor} ->
             return symbolOrAliasConstructor
         Nothing -> Kore.Error.koreFail "Missing 'element' attribute."
 
 {- | Get the identifier of the @concat@ sort attribute.
 
 Fail if the attribute is missing.
-
- -}
-getConcatId
-    :: Attribute.Sort
-    -- ^ Sort attributes
-    -> Either (Error VerifyError) Id
-getConcatId Attribute.Sort { concat = Attribute.Sort.Concat sortConcat } =
+-}
+getConcatId ::
+    -- | Sort attributes
+    Attribute.Sort ->
+    Either (Error VerifyError) Id
+getConcatId Attribute.Sort{concat = Attribute.Sort.Concat sortConcat} =
     case sortConcat of
-        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+        Just SymbolOrAlias{symbolOrAliasConstructor} ->
             return symbolOrAliasConstructor
         Nothing -> Kore.Error.koreFail "Missing 'concat' attribute."
 
 {- | Check that the symbol's @hook@ attribute matches the expected value.
 
 Fail if the symbol is not defined or the attribute is missing.
-
- -}
-assertSymbolHook
-    :: IndexedModule patternType declAttrs axiomAttrs
-    -> Id
-    -- ^ Symbol identifier
-    -> Text
-    -- ^ Expected hook
-    -> Either (Error VerifyError) ()
+-}
+assertSymbolHook ::
+    IndexedModule patternType declAttrs axiomAttrs ->
+    -- | Symbol identifier
+    Id ->
+    -- | Expected hook
+    Text ->
+    Either (Error VerifyError) ()
 assertSymbolHook indexedModule symbolId expected = do
     (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
-    let
-        SentenceSymbol { sentenceSymbolAttributes = attrs } = decl
-        SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
-    Hook { getHook } <- Verifier.Attributes.parseAttributes attrs
+    let SentenceSymbol{sentenceSymbolAttributes = attrs} = decl
+        SentenceSymbol{sentenceSymbolSymbol = symbol} = decl
+    Hook{getHook} <- Verifier.Attributes.parseAttributes attrs
     case getHook of
         Just hook
-          | hook == expected -> return ()
-          | otherwise ->
-            Kore.Error.koreFailWithLocations
-                [symbol]
-                ("Symbol is not hooked to builtin symbol '" <> expected <> "'")
+            | hook == expected -> return ()
+            | otherwise ->
+                Kore.Error.koreFailWithLocations
+                    [symbol]
+                    ("Symbol is not hooked to builtin symbol '" <> expected <> "'")
         Nothing ->
             Kore.Error.koreFailWithLocations
                 [symbol]
@@ -400,91 +386,99 @@ assertSymbolHook indexedModule symbolId expected = do
 {- | Check that the symbol's result sort matches the expected value.
 
 Fail if the symbol is not defined.
-
- -}
-assertSymbolResultSort
-    :: IndexedModule patternType declAttrs axiomAttrs
-    -> Id
-    -- ^ Symbol identifier
-    -> Sort
-    -- ^ Expected result sort
-    -> Either (Error VerifyError) ()
+-}
+assertSymbolResultSort ::
+    IndexedModule patternType declAttrs axiomAttrs ->
+    -- | Symbol identifier
+    Id ->
+    -- | Expected result sort
+    Sort ->
+    Either (Error VerifyError) ()
 assertSymbolResultSort indexedModule symbolId expectedSort = do
     (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
-    let
-        SentenceSymbol { sentenceSymbolResultSort = actualSort } = decl
-        SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
-    unless (actualSort == expectedSort)
-        $ Kore.Error.koreFailWithLocations
+    let SentenceSymbol{sentenceSymbolResultSort = actualSort} = decl
+        SentenceSymbol{sentenceSymbolSymbol = symbol} = decl
+    unless (actualSort == expectedSort) $
+        Kore.Error.koreFailWithLocations
             [symbol]
-            ("Symbol does not return sort '"
-                <> unparseToText expectedSort <> "'")
+            ( "Symbol does not return sort '"
+                <> unparseToText expectedSort
+                <> "'"
+            )
 
 {- | Verify the occurrence of a builtin sort.
 
   Check that the sort is hooked to the named builtin. The sort parameters are
   already checked by the verifier.
-
- -}
-verifySort
-    :: Text
-    -> SortVerifier
+-}
+verifySort ::
+    Text ->
+    SortVerifier
 verifySort builtinName =
     SortVerifier worker
   where
-    worker
-        :: (Id -> Either (Error VerifyError) SentenceSort)
-        -> Sort
-        -> Either (Error VerifyError) ()
-    worker findSort (SortActualSort SortActual { sortActualName }) = do
-        SentenceSort { sentenceSortAttributes } <- findSort sortActualName
+    worker ::
+        (Id -> Either (Error VerifyError) SentenceSort) ->
+        Sort ->
+        Either (Error VerifyError) ()
+    worker findSort (SortActualSort SortActual{sortActualName}) = do
+        SentenceSort{sentenceSortAttributes} <- findSort sortActualName
         let expectHook = Hook (Just builtinName)
         declHook <- Verifier.Attributes.parseAttributes sentenceSortAttributes
-        Kore.Error.koreFailWhen (expectHook /= declHook)
-            ("Sort '" ++ getIdForError sortActualName
+        Kore.Error.koreFailWhen
+            (expectHook /= declHook)
+            ( "Sort '" ++ getIdForError sortActualName
                 ++ "' is not hooked to builtin sort '"
-                ++ Text.unpack builtinName ++ "'")
-    worker _ (SortVariableSort SortVariable { getSortVariable }) =
+                ++ Text.unpack builtinName
+                ++ "'"
+            )
+    worker _ (SortVariableSort SortVariable{getSortVariable}) =
         Kore.Error.koreFail
-            ("unexpected sort variable '"
-                ++ getIdForError getSortVariable ++ "'")
+            ( "unexpected sort variable '"
+                ++ getIdForError getSortVariable
+                ++ "'"
+            )
 
 -- Verify a sort by only checking if it has domain values.
 verifySortHasDomainValues :: SortVerifier
 verifySortHasDomainValues = SortVerifier worker
   where
-    worker
-        :: (Id -> Either (Error VerifyError) SentenceSort)
-        -> Sort
-        -> Either (Error VerifyError) ()
-    worker findSort (SortActualSort SortActual { sortActualName }) = do
-        SentenceSort { sentenceSortAttributes } <- findSort sortActualName
+    worker ::
+        (Id -> Either (Error VerifyError) SentenceSort) ->
+        Sort ->
+        Either (Error VerifyError) ()
+    worker findSort (SortActualSort SortActual{sortActualName}) = do
+        SentenceSort{sentenceSortAttributes} <- findSort sortActualName
         sortAttr <- parseSortAttributes sentenceSortAttributes
         let hasDomainValues =
                 Attribute.getHasDomainValues
-                . Attribute.hasDomainValues
-                $ sortAttr
-        Kore.Error.koreFailWhen (not hasDomainValues)
-            ("Sort '" ++ getIdForError sortActualName
-                ++ "' does not have domain values.")
-    worker _ (SortVariableSort SortVariable { getSortVariable }) =
+                    . Attribute.hasDomainValues
+                    $ sortAttr
+        Kore.Error.koreFailWhen
+            (not hasDomainValues)
+            ( "Sort '" ++ getIdForError sortActualName
+                ++ "' does not have domain values."
+            )
+    worker _ (SortVariableSort SortVariable{getSortVariable}) =
         Kore.Error.koreFail
-            ("unexpected sort variable '"
-                ++ getIdForError getSortVariable ++ "'")
-    parseSortAttributes
-        :: Attributes
-        -> Either (Error VerifyError) Attribute.Sort
+            ( "unexpected sort variable '"
+                ++ getIdForError getSortVariable
+                ++ "'"
+            )
+    parseSortAttributes ::
+        Attributes ->
+        Either (Error VerifyError) Attribute.Sort
     parseSortAttributes rawSortAttributes =
-        Attribute.Parser.liftParser
-        $ Attribute.Parser.parseAttributes rawSortAttributes
+        Attribute.Parser.liftParser $
+            Attribute.Parser.parseAttributes rawSortAttributes
 
-expectDomainValue
-    :: Monad m
-    => Text
-    -- ^ Context for error message
-    -> TermLike variable
-    -- ^ Operand pattern
-    -> MaybeT m Text
+expectDomainValue ::
+    Monad m =>
+    -- | Context for error message
+    Text ->
+    -- | Operand pattern
+    TermLike variable ->
+    MaybeT m Text
 expectDomainValue ctx =
     \case
         DV_ _ child ->
@@ -492,21 +486,21 @@ expectDomainValue ctx =
                 StringLiteral_ text ->
                     return text
                 _ ->
-                    verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a string literal"
+                    verifierBug $
+                        Text.unpack ctx ++ ": Domain value is not a string literal"
         _ -> empty
 
 -- | Wildcard for sort verification on parameterized builtin sorts
 acceptAnySort :: SortVerifier
 acceptAnySort = SortVerifier $ \_ _ -> return ()
 
-{- | Find the hooked sort for a domain value sort. -}
+-- | Find the hooked sort for a domain value sort.
 lookupHookSort :: Sort -> PatternVerifier (Maybe Text)
-lookupHookSort (SortActualSort SortActual { sortActualName }) = do
-    SentenceSort { sentenceSortAttributes } <- PatternVerifier.lookupSortDeclaration sortActualName
+lookupHookSort (SortActualSort SortActual{sortActualName}) = do
+    SentenceSort{sentenceSortAttributes} <- PatternVerifier.lookupSortDeclaration sortActualName
     Hook mHookSort <- Verifier.Attributes.parseAttributes sentenceSortAttributes
     return mHookSort
-lookupHookSort (SortVariableSort SortVariable { getSortVariable }) =
+lookupHookSort (SortVariableSort SortVariable{getSortVariable}) =
     Kore.Error.koreFail
         ("unexpected sort variable '" ++ getIdForError getSortVariable ++ "'")
 
@@ -515,16 +509,18 @@ lookupHookSort (SortVariableSort SortVariable { getSortVariable }) =
   The declared sorts must match the builtin sorts.
 
   See also: 'verifySymbolArguments'
-
- -}
-verifySymbol
-    :: SortVerifier  -- ^ Builtin result sort
-    -> [SortVerifier]  -- ^ Builtin argument sorts
-    -> SymbolVerifier
+-}
+verifySymbol ::
+    -- | Builtin result sort
+    SortVerifier ->
+    -- | Builtin argument sorts
+    [SortVerifier] ->
+    SymbolVerifier
 verifySymbol verifyResult verifyArguments =
     SymbolVerifier $ \findSort decl -> do
-        let SentenceSymbol { sentenceSymbolResultSort = result } = decl
-        Kore.Error.withContext "In result sort"
+        let SentenceSymbol{sentenceSymbolResultSort = result} = decl
+        Kore.Error.withContext
+            "In result sort"
             (runSortVerifier verifyResult findSort result)
         runSymbolVerifier (verifySymbolArguments verifyArguments) findSort decl
 
@@ -535,35 +531,37 @@ verifySymbol verifyResult verifyArguments =
   'verifySymbol' if it is also necessary to check the symbol's result sort.
 
   See also: 'verifySymbol'
-
- -}
-verifySymbolArguments
-    :: [SortVerifier]  -- ^ Builtin argument sorts
-    -> SymbolVerifier
+-}
+verifySymbolArguments ::
+    -- | Builtin argument sorts
+    [SortVerifier] ->
+    SymbolVerifier
 verifySymbolArguments verifyArguments =
     SymbolVerifier $ \findSort sentenceSymbol ->
         Kore.Error.withContext "In argument sorts" $ do
-            let SentenceSymbol { sentenceSymbolSorts = sorts } = sentenceSymbol
+            let SentenceSymbol{sentenceSymbolSorts = sorts} = sentenceSymbol
                 builtinArity = length verifyArguments
                 arity = length sorts
-            Kore.Error.koreFailWhen (arity /= builtinArity)
-                ("Expected " ++ show builtinArity
-                ++ " arguments, found " ++ show arity)
-            zipWithM_ (\verify sort -> verify findSort sort)
+            Kore.Error.koreFailWhen
+                (arity /= builtinArity)
+                ( "Expected " ++ show builtinArity
+                    ++ " arguments, found "
+                    ++ show arity
+                )
+            zipWithM_
+                (\verify sort -> verify findSort sort)
                 (runSortVerifier <$> verifyArguments)
                 sorts
 
-{- | Run a parser on a string.
-
- -}
-parseString
-    :: Kore.Error.MonadError (Error VerifyError) error
-    => Parser a
-    -> Text
-    -> error a
+-- | Run a parser on a string.
+parseString ::
+    Kore.Error.MonadError (Error VerifyError) error =>
+    Parser a ->
+    Text ->
+    error a
 parseString parser lit =
     let parsed = Parsec.parse (parser <* Parsec.eof) "<string literal>" lit
-    in castParseError parsed
+     in castParseError parsed
   where
     castParseError =
         either (Kore.Error.koreFail . Parsec.errorBundlePretty) pure

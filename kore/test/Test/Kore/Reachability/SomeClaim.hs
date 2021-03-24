@@ -1,76 +1,76 @@
-module Test.Kore.Reachability.SomeClaim
-    ( test_extractClaim
-    ) where
+module Test.Kore.Reachability.SomeClaim (
+    test_extractClaim,
+) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
-import Data.Default
-    ( def
-    )
-
+import Data.Default (
+    def,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( fromPredicate
-    , makeEqualsPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Predicate (
+    fromPredicate,
+    makeEqualsPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
 import Kore.Internal.TermLike
 import Kore.Reachability.SomeClaim
-import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
-    )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
-    )
-import Kore.Syntax.Sentence
-    ( SentenceAxiom (..)
-    , SentenceClaim (..)
-    )
-
+import Kore.Rewriting.RewritingVariable (
+    mkRuleVariable,
+ )
+import Kore.Step.ClaimPattern (
+    ClaimPattern (..),
+ )
+import Kore.Syntax.Sentence (
+    SentenceAxiom (..),
+    SentenceClaim (..),
+ )
+import Prelude.Kore
 import Test.Expect
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_extractClaim :: [TestTree]
 test_extractClaim =
-    [ test "without constraints"
+    [ test
+        "without constraints"
         Mock.a
         makeTruePredicate
         []
         [Mock.b]
         makeTruePredicate
-    , test "with constraints"
+    , test
+        "with constraints"
         Mock.a
         (makeEqualsPredicate (mkElemVar Mock.x) Mock.c)
         []
         [Mock.b]
         (makeNotPredicate (makeEqualsPredicate (mkElemVar Mock.x) Mock.a))
-    , test "with existentials"
+    , test
+        "with existentials"
         Mock.a
         (makeEqualsPredicate (mkElemVar Mock.x) Mock.c)
         [Mock.z, Mock.y]
         [Mock.f (mkElemVar Mock.z)]
-        (makeNotPredicate
+        ( makeNotPredicate
             (makeEqualsPredicate (mkElemVar Mock.x) (mkElemVar Mock.z))
         )
-    , test "with branching"
+    , test
+        "with branching"
         Mock.a
         (makeEqualsPredicate (mkElemVar Mock.x) Mock.c)
         [Mock.z, Mock.y]
         [Mock.f (mkElemVar Mock.z), Mock.g (mkElemVar Mock.y)]
-        (makeNotPredicate
+        ( makeNotPredicate
             (makeEqualsPredicate (mkElemVar Mock.x) (mkElemVar Mock.z))
         )
     ]
   where
     mkPattern term predicate =
         Pattern.fromTermAndPredicate term predicate
-        & Pattern.mapVariables (pure mkRuleVariable)
-        & Pattern.syncSort
+            & Pattern.mapVariables (pure mkRuleVariable)
+            & Pattern.syncSort
     test name leftTerm requires existentials rightTerms ensures =
         testCase name $ do
             let rightTerm = foldr1 mkOr rightTerms
@@ -79,30 +79,32 @@ test_extractClaim =
                 termLike =
                     mkImplies
                         (mkAnd (fromPredicate leftSort requires) leftTerm)
-                        (applyModality WAF
-                            (foldr
+                        ( applyModality
+                            WAF
+                            ( foldr
                                 mkExists
                                 (mkAnd (fromPredicate rightSort ensures) rightTerm)
                                 existentials
                             )
                         )
                 sentence =
-                    SentenceClaim SentenceAxiom
-                    { sentenceAxiomParameters = []
-                    , sentenceAxiomPattern = termLike
-                    , sentenceAxiomAttributes = mempty
-                    }
+                    SentenceClaim
+                        SentenceAxiom
+                            { sentenceAxiomParameters = []
+                            , sentenceAxiomPattern = termLike
+                            , sentenceAxiomAttributes = mempty
+                            }
                 expect =
                     (AllPath . AllPathClaim)
-                    ClaimPattern
-                    { left = mkPattern leftTerm requires
-                    , right =
-                        OrPattern.fromPatterns
-                        (map (\term -> mkPattern term ensures) rightTerms)
-                    , existentials =
-                        mapElementVariable (pure mkRuleVariable)
-                        <$> existentials
-                    , attributes = def
-                    }
+                        ClaimPattern
+                            { left = mkPattern leftTerm requires
+                            , right =
+                                OrPattern.fromPatterns
+                                    (map (\term -> mkPattern term ensures) rightTerms)
+                            , existentials =
+                                mapElementVariable (pure mkRuleVariable)
+                                    <$> existentials
+                            , attributes = def
+                            }
             actual <- expectJust $ extractClaim (def, sentence)
             assertEqual "" expect actual

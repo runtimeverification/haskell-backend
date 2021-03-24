@@ -1,39 +1,35 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Attribute.Pattern.ConstructorLike (
+    ConstructorLike (..),
+    ConstructorLikeHead (..),
+    HasConstructorLike (..),
+    assertConstructorLike,
+) where
 
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Pattern.ConstructorLike
-    ( ConstructorLike (..)
-    , ConstructorLikeHead (..)
-    , HasConstructorLike (..)
-    , assertConstructorLike
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Alias
-    ( Alias
-    )
-import Kore.Internal.Inj
-    ( Inj (..)
-    )
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
-import Kore.Internal.Symbol
-    ( Symbol
-    )
+import Kore.Internal.Alias (
+    Alias,
+ )
+import Kore.Internal.Inj (
+    Inj (..),
+ )
+import Kore.Internal.InternalBytes (
+    InternalBytes,
+ )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Syntax
+import Prelude.Kore
 
 {- | A pattern is 'ConstructorLike' if logical equality is syntactic equality.
 
@@ -54,12 +50,10 @@ Examples of patterns that are not constructor-like:
 * variables
 * function symbols
 * logical connectives
-
 -}
-newtype ConstructorLike =
-    ConstructorLike
-        { getConstructorLike :: Maybe ConstructorLikeHead
-        }
+newtype ConstructorLike = ConstructorLike
+    { getConstructorLike :: Maybe ConstructorLikeHead
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -82,17 +76,15 @@ instance Synthetic ConstructorLike (Application Symbol) where
         -- The constructor application is constructor-like if all
         -- its children are constructor-like.
         | Symbol.isConstructor symbol
-        , childrenAreConstructorLike =
+          , childrenAreConstructorLike =
             ConstructorLike . Just $ ConstructorLikeHead
-
         -- Checks that the children of a sort injection are
         -- not sort injections, i.e. that the triangle axiom
         -- for sort injections has been fully applied.
         | Symbol.isSortInjection symbol
-        , childrenAreConstructorLike
-        , childrenAreNotSortInjections =
+          , childrenAreConstructorLike
+          , childrenAreNotSortInjections =
             ConstructorLike . Just $ SortInjectionHead
-
         | otherwise =
             ConstructorLike Nothing
       where
@@ -115,7 +107,7 @@ instance Synthetic ConstructorLike (Ceil sort) where
 A domain value is not technically a constructor, but it is constructor-like for
 builtin domains, at least from the perspective of normalization (normalized
 means constructor-like here).
- -}
+-}
 instance Synthetic ConstructorLike (DomainValue sort) where
     synthetic domainValue
         | isJust . getConstructorLike $ child =
@@ -196,15 +188,16 @@ instance Synthetic ConstructorLike (Top sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic ConstructorLike Inj where
-    synthetic Inj { injChild } = ConstructorLike $ do
+    synthetic Inj{injChild} = ConstructorLike $ do
         childHead <- getConstructorLike injChild
         case childHead of
             SortInjectionHead -> Nothing
-            _                 -> pure SortInjectionHead
+            _ -> pure SortInjectionHead
     {-# INLINE synthetic #-}
 
-data ConstructorLikeHead = ConstructorLikeHead
-                         | SortInjectionHead
+data ConstructorLikeHead
+    = ConstructorLikeHead
+    | SortInjectionHead
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -227,5 +220,5 @@ instance HasConstructorLike ConstructorLike where
 assertConstructorLike :: HasConstructorLike a => String -> a -> b -> b
 assertConstructorLike message a =
     if not (isConstructorLike a)
-    then error ("Expecting constructor-like object. " ++ message)
-    else id
+        then error ("Expecting constructor-like object. " ++ message)
+        else id

@@ -1,43 +1,38 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Builtin.String
-    ( test_eq
-    , test_lt
-    , test_concat
-    , test_substr
-    , test_length
-    , test_chr
-    , test_ord
-    , test_find
-    , test_string2Base
-    , test_string2Int
-    , test_int2String
-    , test_token2String
-    , test_string2Token
-    , test_unifyStringEq
-    , test_contradiction
+module Test.Kore.Builtin.String (
+    test_eq,
+    test_lt,
+    test_concat,
+    test_substr,
+    test_length,
+    test_chr,
+    test_ord,
+    test_find,
+    test_string2Base,
+    test_string2Int,
+    test_int2String,
+    test_token2String,
+    test_string2Token,
+    test_unifyStringEq,
+    test_contradiction,
     --
-    , asPattern
-    , asInternal
-    ) where
+    asPattern,
+    asInternal,
+) where
 
-import Prelude.Kore
-
-import Hedgehog hiding
-    ( Concrete
-    )
+import Control.Monad.Trans.Maybe (
+    runMaybeT,
+ )
+import Data.Text (
+    Text,
+ )
+import qualified Data.Text as Text
+import Hedgehog hiding (
+    Concrete,
+ )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Test.Tasty
-
-import Data.Text
-    ( Text
-    )
-import qualified Data.Text as Text
-
-import Control.Monad.Trans.Maybe
-    ( runMaybeT
-    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
 import qualified Kore.Internal.Condition as Condition
@@ -46,43 +41,44 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    )
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
-import Kore.Step.Simplification.Data
-    ( runSimplifierBranch
-    , simplifyCondition
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+ )
+import Kore.Step.Simplification.AndTerms (
+    termUnification,
+ )
+import Kore.Step.Simplification.Data (
+    runSimplifierBranch,
+    simplifyCondition,
+ )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( evalEnvUnifierT
-    )
-
-import Test.Kore
-    ( testId
-    )
+import Kore.Unification.UnifierT (
+    evalEnvUnifierT,
+ )
+import Prelude.Kore
+import Test.Kore (
+    testId,
+ )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
 
 -- | Test a comparison operator hooked to the given symbol
-testComparison
-    :: TestName
-    -> (Text -> Text -> Bool)
-    -- ^ implementation
-    -> Symbol
-    -- ^ symbol
-    -> TestTree
+testComparison ::
+    TestName ->
+    -- | implementation
+    (Text -> Text -> Bool) ->
+    -- | symbol
+    Symbol ->
+    TestTree
 testComparison name impl symb =
     testPropertyWithSolver name $ do
         a <- forAll genString
@@ -264,9 +260,8 @@ test_string2Base =
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 10]
         bottom
-
-    -- Octal
-    , Test.Int.testInt
+    , -- Octal
+      Test.Int.testInt
         "string2Base octal simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 8]
@@ -296,9 +291,8 @@ test_string2Base =
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 8]
         bottom
-
-    -- Hexadecimal
-    , Test.Int.testInt
+    , -- Hexadecimal
+      Test.Int.testInt
         "string2Base hex simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 16]
@@ -404,13 +398,13 @@ asInternal = String.asInternal stringSort
 asPattern :: Text -> Pattern RewritingVariableName
 asPattern = String.asPattern stringSort
 
-testString
-    :: HasCallStack
-    => String
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> Pattern RewritingVariableName
-    -> TestTree
+testString ::
+    HasCallStack =>
+    String ->
+    Symbol ->
+    [TermLike RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    TestTree
 testString name = testSymbolWithoutSolver evaluate name
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
@@ -423,9 +417,9 @@ test_unifyStringEq =
             term2 = eqString (mkElemVar x) (mkElemVar y)
             expect =
                 makeEqualsPredicate (mkElemVar x) (mkElemVar y)
-                & makeNotPredicate
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+                    & Pattern.fromCondition_
         -- unit test
         do
             actual <- unifyStringEq term1 term2
@@ -434,51 +428,51 @@ test_unifyStringEq =
         do
             actual <-
                 makeEqualsPredicate term1 term2
-                & Condition.fromPredicate
-                & simplifyCondition'
-            assertEqual "" [expect { term = () }] actual
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
     , testCase "\\equals(true, X ==String Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqString (mkElemVar x) (mkElemVar y)
             expect =
                 Condition.assign (inject x) (mkElemVar y)
-                & Pattern.fromCondition_
+                    & Pattern.fromCondition_
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            let expect' = expect { predicate = makeTruePredicate }
+            let expect' = expect{predicate = makeTruePredicate}
             assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
                 makeEqualsPredicate term1 term2
-                & Condition.fromPredicate
-                & simplifyCondition'
-            assertEqual "" [expect { term = () }] actual
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
     ]
   where
-    unifyStringEq
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> IO [Maybe (Pattern RewritingVariableName)]
+    unifyStringEq ::
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        IO [Maybe (Pattern RewritingVariableName)]
     unifyStringEq term1 term2 =
         String.unifyStringEq
             (termUnification Not.notSimplifier)
             Not.notSimplifier
             term1
             term2
-        & runMaybeT
-        & evalEnvUnifierT Not.notSimplifier
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runMaybeT
+            & evalEnvUnifierT Not.notSimplifier
+            & runSimplifierBranch testEnv
+            & runNoSMT
 
-    simplifyCondition'
-        :: Condition RewritingVariableName
-        -> IO [Condition RewritingVariableName]
+    simplifyCondition' ::
+        Condition RewritingVariableName ->
+        IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runSimplifierBranch testEnv
+            & runNoSMT
 
 x, y :: ElementVariable RewritingVariableName
 x = "x" `ofSort` stringSort
@@ -497,14 +491,14 @@ test_contradiction =
                     (concatString (mkElemVar x) (mkElemVar y))
             condition =
                 makeAndPredicate clause0 clause1
-                & Condition.fromPredicate
+                    & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
   where
-    simplifyCondition'
-        :: Condition RewritingVariableName
-        -> IO [Condition RewritingVariableName]
+    simplifyCondition' ::
+        Condition RewritingVariableName ->
+        IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runSimplifierBranch testEnv
+            & runNoSMT

@@ -1,36 +1,32 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Syntax.StringLiteral
-    ( StringLiteral (..)
-    ) where
-
-import Prelude.Kore
+module Kore.Syntax.StringLiteral (
+    StringLiteral (..),
+) where
 
 import Data.Functor.Const
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , emptyFreeVariables
-    )
+import qualified Generics.SOP as SOP
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    emptyFreeVariables,
+ )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
-{-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
+{- |'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
-newtype StringLiteral = StringLiteral { getStringLiteral :: Text }
+newtype StringLiteral = StringLiteral {getStringLiteral :: Text}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

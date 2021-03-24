@@ -1,26 +1,25 @@
-{-|
+{- |
 Module      : Kore.Attribute.SmtLemma
 Description : Mark a rewrite rule as an smt-lemma
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
-
 -}
-module Kore.Attribute.SmtLemma
-    ( SmtLemma (..)
-    , smtLemmaId, smtLemmaSymbol, smtLemmaAttribute
-    ) where
+module Kore.Attribute.SmtLemma (
+    SmtLemma (..),
+    smtLemmaId,
+    smtLemmaSymbol,
+    smtLemmaAttribute,
+) where
 
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @SmtLemma@ represents the @smt-lemma@ attribute for symbols.
-newtype SmtLemma = SmtLemma { isSmtLemma :: Bool }
+newtype SmtLemma = SmtLemma {isSmtLemma :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

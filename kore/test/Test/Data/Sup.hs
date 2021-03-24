@@ -1,32 +1,30 @@
-module Test.Data.Sup
-    ( hprop_transitiveOrd
-    , hprop_reflexiveOrd
-    , hprop_antisymmetricOrd
-    , hprop_reflexiveEq
-    , hprop_symmetricEq
-    , hprop_transitiveEq
-    , hprop_negativeEq
-    , hprop_associativeSemigroup
-    , hprop_commutativeSemigroup
-    , hprop_idempotentSemigroup
-    , hprop_identityFunctor
-    , hprop_compositionFunctor
-    , hprop_identityApplicative
-    , hprop_compositionApplicative
-    , hprop_homomorphismApplicative
-    , hprop_interchangeApplicative
-    ) where
+module Test.Data.Sup (
+    hprop_transitiveOrd,
+    hprop_reflexiveOrd,
+    hprop_antisymmetricOrd,
+    hprop_reflexiveEq,
+    hprop_symmetricEq,
+    hprop_transitiveEq,
+    hprop_negativeEq,
+    hprop_associativeSemigroup,
+    hprop_commutativeSemigroup,
+    hprop_idempotentSemigroup,
+    hprop_identityFunctor,
+    hprop_compositionFunctor,
+    hprop_identityApplicative,
+    hprop_compositionApplicative,
+    hprop_homomorphismApplicative,
+    hprop_interchangeApplicative,
+) where
 
-import Prelude.Kore
-
+import Data.Sup
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
-import Data.Sup
+import Prelude.Kore
 
 genSup :: Gen a -> Gen (Sup a)
-genSup genA = Gen.choice [ pure Sup, Element <$> genA ]
+genSup genA = Gen.choice [pure Sup, Element <$> genA]
 
 genSmallInteger :: Gen Integer
 genSmallInteger = Gen.integral (Range.linear (-3) 3)
@@ -35,7 +33,7 @@ genSupInteger :: Gen (Sup Integer)
 genSupInteger = genSup genSmallInteger
 
 sups :: [Sup Integer]
-sups = Sup : map Element [(-3)..3]
+sups = Sup : map Element [(-3) .. 3]
 
 implies :: Monad m => Bool -> Bool -> PropertyT m ()
 implies lhs rhs = when lhs (Hedgehog.assert rhs)

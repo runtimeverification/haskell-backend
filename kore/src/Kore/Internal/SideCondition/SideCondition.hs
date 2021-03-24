@@ -1,44 +1,43 @@
-{-|
+{-# LANGUAGE NoStrict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
+module Kore.Internal.SideCondition.SideCondition (
+    Representation,
+    mkRepresentation,
+) where
 
-{-# LANGUAGE NoStrict #-}
-
-module Kore.Internal.SideCondition.SideCondition
-    ( Representation
-    , mkRepresentation
-    ) where
-
+import Data.Hashable (
+    Hashed,
+    hashed,
+    unhashed,
+ )
+import Data.Type.Equality (
+    testEquality,
+    (:~:) (..),
+ )
+import Kore.Debug (
+    Debug (..),
+    Diff (..),
+ )
 import Prelude.Kore
-import Pretty
-    ( Pretty (..)
-    )
-
-import Data.Hashable
-    ( Hashed
-    , hashed
-    , unhashed
-    )
-
-import Data.Type.Equality
-    ( (:~:) (..)
-    , testEquality
-    )
-import Kore.Debug
-    ( Debug (..)
-    , Diff (..)
-    )
-import Type.Reflection
-    ( SomeTypeRep (..)
-    , TypeRep
-    , typeRep
-    )
+import Pretty (
+    Pretty (..),
+ )
+import Type.Reflection (
+    SomeTypeRep (..),
+    TypeRep,
+    typeRep,
+ )
 
 data Representation where
-    Representation
-        :: (Ord a, Pretty a)
-        => !(TypeRep a) -> Hashed a -> Representation
+    Representation ::
+        (Ord a, Pretty a) =>
+        !(TypeRep a) ->
+        Hashed a ->
+        Representation
 
 instance Eq Representation where
     (==) (Representation typeRep1 hashed1) (Representation typeRep2 hashed2) =
@@ -50,17 +49,16 @@ instance Eq Representation where
 instance Ord Representation where
     compare
         (Representation typeRep1 hashed1)
-        (Representation typeRep2 hashed2)
-      =
-        case testEquality typeRep1 typeRep2 of
-            Nothing -> compare (SomeTypeRep typeRep1) (SomeTypeRep typeRep2)
-            Just Refl -> compare hashed1 hashed2
+        (Representation typeRep2 hashed2) =
+            case testEquality typeRep1 typeRep2 of
+                Nothing -> compare (SomeTypeRep typeRep1) (SomeTypeRep typeRep2)
+                Just Refl -> compare hashed1 hashed2
     {-# INLINE compare #-}
 
 instance Show Representation where
     showsPrec prec (Representation typeRep1 _) =
-        showParen (prec >= 10)
-        $ showString "Representation " . shows typeRep1 . showString " _"
+        showParen (prec >= 10) $
+            showString "Representation " . shows typeRep1 . showString " _"
     {-# INLINE showsPrec #-}
 
 instance Hashable Representation where
@@ -75,8 +73,9 @@ instance NFData Representation where
 instance Pretty Representation where
     pretty (Representation _ h) = pretty (unhashed h)
 
--- | Creates a 'Representation'. Should not be used directly.
--- See 'Kore.Internal.SideCondition.toRepresentation'.
+{- | Creates a 'Representation'. Should not be used directly.
+ See 'Kore.Internal.SideCondition.toRepresentation'.
+-}
 mkRepresentation :: (Ord a, Hashable a, Typeable a, Pretty a) => a -> Representation
 mkRepresentation = Representation typeRep . hashed
 

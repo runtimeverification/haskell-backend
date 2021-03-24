@@ -1,33 +1,30 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Expect
-    ( expectRight
-    , expectLeft
-    , expectJust
-    , expectThese
-    , expectOne
-    , assertNull
-    , assertTop
-    , expectBool
-    , expectJustT
-    ) where
+module Test.Expect (
+    expectRight,
+    expectLeft,
+    expectJust,
+    expectThese,
+    expectOne,
+    assertNull,
+    assertTop,
+    expectBool,
+    expectJustT,
+) where
 
-import Prelude.Kore
-
-import Control.Error
-    ( MaybeT
-    , maybeT
-    )
+import Control.Error (
+    MaybeT,
+    maybeT,
+ )
 import Data.These
-
 import Debug
 import Kore.Internal.InternalBool
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.TopBottom
-
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Prelude.Kore
 import Test.Tasty.HUnit.Ext
 
 expectRight :: HasCallStack => Debug left => Either left right -> IO right
@@ -60,8 +57,8 @@ assertNull as =
 
 assertTop :: HasCallStack => TopBottom a => Debug a => a -> IO ()
 assertTop a
-  | isTop a = return ()
-  | otherwise = (assertFailure . show) (debug a)
+    | isTop a = return ()
+    | otherwise = (assertFailure . show) (debug a)
 
 expectBool :: HasCallStack => TermLike RewritingVariableName -> IO Bool
 expectBool (InternalBool_ internalBool) = return (internalBoolValue internalBool)
