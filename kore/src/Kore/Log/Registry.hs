@@ -238,7 +238,7 @@ lookupTextFromTypeWithError type' =
     fromMaybe notFoundError
     $ Map.lookup type' (typeToText registry)
   where
-    notFoundError =
+    ~notFoundError =
         error
             $ "Tried to log nonexistent entry type: "
             <> show type'
