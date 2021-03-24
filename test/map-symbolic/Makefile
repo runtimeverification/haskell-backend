@@ -1,2 +1,2 @@
-DEF := map-tests
+DEF = map-tests
 include $(CURDIR)/../include.mk
