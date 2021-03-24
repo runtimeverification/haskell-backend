@@ -1,32 +1,32 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Module      : Kore.Attribute.Functional
 Description : Functional symbol attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-{-# LANGUAGE Strict #-}
-module Kore.Attribute.Functional
-    ( Functional (..)
-    , functionalId, functionalSymbol, functionalAttribute
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Functional (
+    Functional (..),
+    functionalId,
+    functionalSymbol,
+    functionalAttribute,
+) where
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 {- | @Functional@ represents the @functional@ attribute for symbols.
 
 Note: This attribute is also used to annotate axioms stating functionality
 constraints.
- -}
-newtype Functional = Functional { isDeclaredFunctional :: Bool }
+-}
+newtype Functional = Functional {isDeclaredFunctional :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

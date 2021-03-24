@@ -1,44 +1,40 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Log.WarnSymbolSMTRepresentation (
+    WarnSymbolSMTRepresentation (..),
+    warnSymbolSMTRepresentation,
+) where
 
-module Kore.Log.WarnSymbolSMTRepresentation
-    ( WarnSymbolSMTRepresentation (..)
-    , warnSymbolSMTRepresentation
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
-
-import Kore.Attribute.Symbol
-    ( getSmthook
-    , getSmtlib
-    )
+import qualified Generics.SOP as SOP
+import Kore.Attribute.Symbol (
+    getSmthook,
+    getSmtlib,
+ )
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.TermLike
-import Kore.Unparser
-    ( unparse
-    )
+import Kore.Unparser (
+    unparse,
+ )
 import Log
-import Pretty
-    ( Pretty
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 import qualified SQL
 
-newtype WarnSymbolSMTRepresentation =
-    WarnSymbolSMTRepresentation { symbol :: Symbol }
+newtype WarnSymbolSMTRepresentation = WarnSymbolSMTRepresentation {symbol :: Symbol}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic, Typeable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Pretty WarnSymbolSMTRepresentation where
-    pretty WarnSymbolSMTRepresentation { symbol } =
+    pretty WarnSymbolSMTRepresentation{symbol} =
         Pretty.vsep
             [ "Cannot translate symbol despite being given an SMT-LIB expression"
             , Pretty.indent 4 (unparse symbol)
@@ -52,7 +48,7 @@ instance SQL.Table WarnSymbolSMTRepresentation
 
 warnSymbolSMTRepresentation :: MonadLog m => Symbol -> m ()
 warnSymbolSMTRepresentation
-    symbol@Symbol { symbolAttributes = Attribute.Symbol { smtlib, smthook } }
-  | (isJust . getSmtlib) smtlib || (isJust . getSmthook) smthook
-  = logEntry WarnSymbolSMTRepresentation { symbol }
-  | otherwise = return ()
+    symbol@Symbol{symbolAttributes = Attribute.Symbol{smtlib, smthook}}
+        | (isJust . getSmtlib) smtlib || (isJust . getSmthook) smthook =
+            logEntry WarnSymbolSMTRepresentation{symbol}
+        | otherwise = return ()

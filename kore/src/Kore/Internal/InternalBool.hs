@@ -1,18 +1,16 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
- -}
-{-# LANGUAGE Strict #-}
-module Kore.Internal.InternalBool
-    ( InternalBool (..)
-    ) where
-
-import Prelude.Kore
+-}
+module Kore.Internal.InternalBool (
+    InternalBool (..),
+) where
 
 import Data.Functor.Const
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -23,15 +21,14 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
-{- | Internal representation of the builtin @BOOL.Bool@ domain.
- -}
-data InternalBool =
-    InternalBool
-        { internalBoolSort :: !Sort
-        , internalBoolValue :: !Bool
-        }
+-- | Internal representation of the builtin @BOOL.Bool@ domain.
+data InternalBool = InternalBool
+    { internalBoolSort :: !Sort
+    , internalBoolValue :: !Bool
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -39,26 +36,26 @@ data InternalBool =
     deriving anyclass (Debug, Diff)
 
 instance Unparse InternalBool where
-    unparse InternalBool { internalBoolSort, internalBoolValue } =
+    unparse InternalBool{internalBoolSort, internalBoolValue} =
         "\\dv"
-        <> parameters [internalBoolSort]
-        <> Pretty.parens (Pretty.dquotes value)
+            <> parameters [internalBoolSort]
+            <> Pretty.parens (Pretty.dquotes value)
       where
         value
-          | internalBoolValue = "true"
-          | otherwise        = "false"
+            | internalBoolValue = "true"
+            | otherwise = "false"
 
-    unparse2 InternalBool { internalBoolSort, internalBoolValue } =
+    unparse2 InternalBool{internalBoolSort, internalBoolValue} =
         "\\dv2"
-        <> parameters2 [internalBoolSort]
-        <> arguments' [Pretty.dquotes value]
+            <> parameters2 [internalBoolSort]
+            <> arguments' [Pretty.dquotes value]
       where
         value
-          | internalBoolValue = "true"
-          | otherwise        = "false"
+            | internalBoolValue = "true"
+            | otherwise = "false"
 
 instance Synthetic Sort (Const InternalBool) where
-    synthetic (Const InternalBool { internalBoolSort }) = internalBoolSort
+    synthetic (Const InternalBool{internalBoolSort}) = internalBoolSort
     {-# INLINE synthetic #-}
 
 instance Synthetic (FreeVariables variable) (Const InternalBool) where

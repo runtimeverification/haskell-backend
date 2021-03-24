@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict          #-}
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module GlobalMain (

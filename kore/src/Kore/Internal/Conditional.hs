@@ -1,78 +1,75 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 Representation of conditional terms.
-
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Internal.Conditional (
+    Conditional (..),
+    withoutTerm,
+    withCondition,
+    andCondition,
+    fromPredicate,
+    fromSubstitution,
+    fromSingleSubstitution,
+    assign,
+    andPredicate,
+    splitTerm,
+    isPredicate,
+    Kore.Internal.Conditional.mapVariables,
+    isNormalized,
+    assertNormalized,
+    markPredicateSimplified,
+    markPredicateSimplifiedConditional,
+    setPredicateSimplified,
+) where
 
-module Kore.Internal.Conditional
-    ( Conditional (..)
-    , withoutTerm
-    , withCondition
-    , andCondition
-    , fromPredicate
-    , fromSubstitution
-    , fromSingleSubstitution
-    , assign
-    , andPredicate
-    , splitTerm
-    , isPredicate
-    , Kore.Internal.Conditional.mapVariables
-    , isNormalized
-    , assertNormalized
-    , markPredicateSimplified
-    , markPredicateSimplifiedConditional
-    , setPredicateSimplified
-    ) where
-
-import Prelude.Kore
-
-import Data.Map.Strict
-    ( Map
-    )
-import qualified Generics.SOP as SOP
+import Data.Map.Strict (
+    Map,
+ )
 import qualified GHC.Generics as GHC
-
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
-    ( Simplified
-    )
+import qualified Generics.SOP as SOP
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+    Simplified,
+ )
 import Kore.Debug
-import Kore.Internal.Predicate
-    ( Predicate
-    , unparse2WithSort
-    , unparseWithSort
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    unparse2WithSort,
+    unparseWithSort,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Internal.Substitution
-    ( Assignment
-    , Substitution
-    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Substitution (
+    Assignment,
+    Substitution,
+ )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( AdjSomeVariableName
-    , InternalVariable
-    , SomeVariable
-    , Sort
-    , SubstitutionOrd
-    , TermLike
-    , termLikeSort
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import Kore.Internal.TermLike (
+    AdjSomeVariableName,
+    InternalVariable,
+    SomeVariable,
+    Sort,
+    SubstitutionOrd,
+    TermLike,
+    termLikeSort,
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
 import Kore.Unparser
-import Pretty
-    ( Doc
-    , Pretty (..)
-    )
+import Prelude.Kore
+import Pretty (
+    Doc,
+    Pretty (..),
+ )
 import qualified Pretty
 import qualified SQL
 
@@ -87,14 +84,12 @@ predicate and substitution are /not/ normalized.
 
 There is intentionally no 'Monad' instance; such an instance would have
 quadratic complexity.
-
- -}
-data Conditional variable child =
-    Conditional
-        { term :: !child
-        , predicate :: !(Predicate variable)
-        , substitution :: !(Substitution variable)
-        }
+-}
+data Conditional variable child = Conditional
+    { term :: !child
+    , predicate :: !(Predicate variable)
+    , substitution :: !(Substitution variable)
+    }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -103,22 +98,26 @@ data Conditional variable child =
     deriving anyclass (Debug)
 
 instance
-    ( Debug child, Diff child
-    , Debug variable, Diff variable, Ord variable, SubstitutionOrd variable
-    )
-    => Diff (Conditional variable child)
+    ( Debug child
+    , Diff child
+    , Debug variable
+    , Diff variable
+    , Ord variable
+    , SubstitutionOrd variable
+    ) =>
+    Diff (Conditional variable child)
 
 instance
-    (InternalVariable variable, Semigroup term)
-    => Semigroup (Conditional variable term)
-  where
+    (InternalVariable variable, Semigroup term) =>
+    Semigroup (Conditional variable term)
+    where
     (<>) predicated1 predicated2 = (<>) <$> predicated1 <*> predicated2
     {-# INLINE (<>) #-}
 
 instance
-    (InternalVariable variable, Monoid term)
-    => Monoid (Conditional variable term)
-  where
+    (InternalVariable variable, Monoid term) =>
+    Monoid (Conditional variable term)
+    where
     mempty =
         Conditional
             { term = mempty
@@ -156,43 +155,42 @@ environment (in this case, a conjunction of side conditions).
 @extract@ returns the 'term' of the 'Conditional'.
 
 @duplicate@ re-wraps the 'Conditional' with its own side conditions.
-
- -}
+-}
 instance Comonad (Conditional variable) where
     extract = term
     {-# INLINE extract #-}
 
-    duplicate conditional = conditional { term = conditional }
+    duplicate conditional = conditional{term = conditional}
     {-# INLINE duplicate #-}
 
-    extend f conditional = conditional { term = f conditional }
+    extend f conditional = conditional{term = f conditional}
     {-# INLINE extend #-}
 
 instance TopBottom term => TopBottom (Conditional variable term) where
-    isTop Conditional {term, predicate, substitution} =
+    isTop Conditional{term, predicate, substitution} =
         isTop term && isTop predicate && isTop substitution
-    isBottom Conditional {term, predicate, substitution} =
+    isBottom Conditional{term, predicate, substitution} =
         isBottom term || isBottom predicate || isBottom substitution
 
 instance
-    InternalVariable variable
-    => From (Conditional variable ()) (Predicate variable)
-  where
-    from Conditional { predicate, substitution } =
-        Predicate.makeAndPredicate predicate
-        $ from substitution
+    InternalVariable variable =>
+    From (Conditional variable ()) (Predicate variable)
+    where
+    from Conditional{predicate, substitution} =
+        Predicate.makeAndPredicate predicate $
+            from substitution
 
 instance
-    InternalVariable variable
-    => From (Predicate variable) (Conditional variable ())
-  where
+    InternalVariable variable =>
+    From (Predicate variable) (Conditional variable ())
+    where
     from predicate =
-        Conditional { term = (), predicate, substitution = mempty }
+        Conditional{term = (), predicate, substitution = mempty}
 
 instance
-    InternalVariable variable
-    => From (Substitution variable) (Conditional variable ())
-  where
+    InternalVariable variable =>
+    From (Substitution variable) (Conditional variable ())
+    where
     from substitution =
         Conditional
             { term = ()
@@ -201,9 +199,9 @@ instance
             }
 
 instance
-    InternalVariable variable
-    => From (Assignment variable) (Conditional variable ())
-  where
+    InternalVariable variable =>
+    From (Assignment variable) (Conditional variable ())
+    where
     from assignment =
         Conditional
             { term = ()
@@ -212,38 +210,44 @@ instance
             }
 
 instance
-    From from to
-    => From (Conditional variable from) (Conditional variable to)
-  where
+    From from to =>
+    From (Conditional variable from) (Conditional variable to)
+    where
     from = fmap from
 
 instance
-    InternalVariable variable
-    => From term (Conditional variable term)
-  where
+    InternalVariable variable =>
+    From term (Conditional variable term)
+    where
     from = pure
 
 instance
-    InternalVariable variable
-    => From (Map (SomeVariable variable) (TermLike variable)) (Conditional variable ())
-  where
+    InternalVariable variable =>
+    From (Map (SomeVariable variable) (TermLike variable)) (Conditional variable ())
+    where
     from =
         from @(Substitution variable) @(Conditional variable ())
-        . from
-            @(Map (SomeVariable variable) (TermLike variable))
-            @(Substitution variable)
+            . from
+                @(Map (SomeVariable variable) (TermLike variable))
+                @(Substitution variable)
 
-prettyConditional
-    :: Sort
-    -> Doc ann    -- ^ term
-    -> Doc ann    -- ^ predicate
-    -> [Doc ann]  -- ^ substitution
-    -> Doc ann
+prettyConditional ::
+    Sort ->
+    -- | term
+    Doc ann ->
+    -- | predicate
+    Doc ann ->
+    -- | substitution
+    [Doc ann] ->
+    Doc ann
 prettyConditional sort termDoc predicateDoc substitutionDocs =
-    unparseAssoc' andHead andIdent
+    unparseAssoc'
+        andHead
+        andIdent
         [ below "/* term: */" termDoc
         , below "/* predicate: */" predicateDoc
-        , below "/* substitution: */"
+        , below
+            "/* substitution: */"
             (unparseAssoc' andHead andIdent substitutionDocs)
         ]
   where
@@ -251,16 +255,22 @@ prettyConditional sort termDoc predicateDoc substitutionDocs =
     andIdent = "\\top" <> parameters' [unparse sort] <> noArguments
     below first second = (Pretty.align . Pretty.vsep) [first, second]
 
-prettyConditional'
-    :: Doc ann    -- ^ term
-    -> Doc ann    -- ^ predicate
-    -> [Doc ann]  -- ^ substitution
-    -> Doc ann
+prettyConditional' ::
+    -- | term
+    Doc ann ->
+    -- | predicate
+    Doc ann ->
+    -- | substitution
+    [Doc ann] ->
+    Doc ann
 prettyConditional' termDoc predicateDoc substitutionDocs =
-    unparseAssoc' andHead andIdent
+    unparseAssoc'
+        andHead
+        andIdent
         [ below "/* term: */" termDoc
         , below "/* predicate: */" predicateDoc
-        , below "/* substitution: */"
+        , below
+            "/* substitution: */"
             (unparseAssoc' andHead andIdent substitutionDocs)
         ]
   where
@@ -270,13 +280,13 @@ prettyConditional' termDoc predicateDoc substitutionDocs =
 
 instance InternalVariable variable => Pretty (Conditional variable ()) where
     pretty conditional =
-        pretty conditional { term = Predicate.makeTruePredicate :: Predicate variable }
+        pretty conditional{term = Predicate.makeTruePredicate :: Predicate variable}
 
 instance
-    InternalVariable variable
-    => Unparse (Conditional variable (TermLike variable))
-  where
-    unparse Conditional { term, predicate, substitution } =
+    InternalVariable variable =>
+    Unparse (Conditional variable (TermLike variable))
+    where
+    unparse Conditional{term, predicate, substitution} =
         prettyConditional
             sort
             (unparse term)
@@ -286,9 +296,9 @@ instance
         sort = termLikeSort term
         termLikeSubstitution =
             Substitution.singleSubstitutionToPredicate
-            <$> Substitution.unwrap substitution
+                <$> Substitution.unwrap substitution
 
-    unparse2 Conditional { term, predicate, substitution } =
+    unparse2 Conditional{term, predicate, substitution} =
         prettyConditional
             sort
             (unparse2 term)
@@ -298,13 +308,13 @@ instance
         sort = termLikeSort term
         termLikeSubstitution =
             Substitution.singleSubstitutionToPredicate
-            <$> Substitution.unwrap substitution
+                <$> Substitution.unwrap substitution
 
 instance
-    InternalVariable variable
-    => Pretty (Conditional variable (Predicate variable))
-  where
-    pretty Conditional { term, predicate, substitution } =
+    InternalVariable variable =>
+    Pretty (Conditional variable (Predicate variable))
+    where
+    pretty Conditional{term, predicate, substitution} =
         prettyConditional'
             (pretty term)
             (pretty predicate)
@@ -312,168 +322,156 @@ instance
       where
         termLikeSubstitution =
             Substitution.singleSubstitutionToPredicate
-            <$> Substitution.unwrap substitution
+                <$> Substitution.unwrap substitution
 
 instance
     ( InternalVariable variable
-    , SQL.Column term, Typeable term
-    )
-    => SQL.Table (Conditional variable term)
+    , SQL.Column term
+    , Typeable term
+    ) =>
+    SQL.Table (Conditional variable term)
 
 instance
     ( InternalVariable variable
-    , SQL.Column term, Typeable term
-    )
-    => SQL.Column (Conditional variable term)
-  where
+    , SQL.Column term
+    , Typeable term
+    ) =>
+    SQL.Column (Conditional variable term)
+    where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
-{- | Forget the 'term', keeping only the attached conditions.
- -}
+-- | Forget the 'term', keeping only the attached conditions.
 withoutTerm :: Conditional variable term -> Conditional variable ()
-withoutTerm predicated = predicated { term = () }
+withoutTerm predicated = predicated{term = ()}
 
-{- | Attach the condition to the given 'term'.
- -}
-withCondition
-    :: term
-    -> Conditional variable ()
-    -- ^ Condition
-    -> Conditional variable term
-withCondition term predicated = predicated { term }
+-- | Attach the condition to the given 'term'.
+withCondition ::
+    term ->
+    -- | Condition
+    Conditional variable () ->
+    Conditional variable term
+withCondition term predicated = predicated{term}
 
-{- | Combine the conditions of both arguments, taking the 'term' of the first.
- -}
-andCondition
-    :: InternalVariable variable
-    => Conditional variable term
-    -> Conditional variable ()
-    -> Conditional variable term
+-- | Combine the conditions of both arguments, taking the 'term' of the first.
+andCondition ::
+    InternalVariable variable =>
+    Conditional variable term ->
+    Conditional variable () ->
+    Conditional variable term
 andCondition = (<*)
 
 {- | Construct a 'Conditional' holding the given 'Predicate'.
 
 The result has an empty 'Substitution'.
-
- -}
-fromPredicate
-    :: InternalVariable variable
-    => Predicate variable
-    -> Conditional variable ()
+-}
+fromPredicate ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Conditional variable ()
 fromPredicate = from
 
 {- | Construct a 'Conditional' holding the given 'Substitution'.
 
 The result has a true 'Predicate'.
-
- -}
-fromSubstitution
-    :: InternalVariable variable
-    => Substitution variable
-    -> Conditional variable ()
+-}
+fromSubstitution ::
+    InternalVariable variable =>
+    Substitution variable ->
+    Conditional variable ()
 fromSubstitution = from
 
 {- | Construct a 'Conditional' holding a single substitution.
 
 The result has a true 'Predicate'.
-
- -}
-fromSingleSubstitution
-    :: InternalVariable variable
-    => Assignment variable
-    -> Conditional variable ()
+-}
+fromSingleSubstitution ::
+    InternalVariable variable =>
+    Assignment variable ->
+    Conditional variable ()
 fromSingleSubstitution = from
 
 {- | A 'Conditional' assigning the 'SomeVariable' to the 'TermLike'.
 
 The result has a true 'Predicate'.
-
- -}
-assign
-    :: InternalVariable variable
-    => SomeVariable variable
-    -> TermLike variable
-    -> Conditional variable ()
+-}
+assign ::
+    InternalVariable variable =>
+    SomeVariable variable ->
+    TermLike variable ->
+    Conditional variable ()
 assign uVar term = fromSingleSubstitution (Substitution.assign uVar term)
 
-{- | Combine the predicate with the conditions of the first argument.
- -}
-andPredicate
-    :: InternalVariable variable
-    => Conditional variable term
-    -> Predicate variable
-    -> Conditional variable term
+-- | Combine the predicate with the conditions of the first argument.
+andPredicate ::
+    InternalVariable variable =>
+    Conditional variable term ->
+    Predicate variable ->
+    Conditional variable term
 andPredicate config predicate = config `andCondition` fromPredicate predicate
 
 instance
-    (InternalVariable variable, HasFreeVariables term variable)
-    => HasFreeVariables (Conditional variable term) variable
-  where
-    freeVariables Conditional { term, predicate, substitution } =
+    (InternalVariable variable, HasFreeVariables term variable) =>
+    HasFreeVariables (Conditional variable term) variable
+    where
+    freeVariables Conditional{term, predicate, substitution} =
         freeVariables term
-        <> freeVariables predicate
-        <> freeVariables substitution
+            <> freeVariables predicate
+            <> freeVariables substitution
 
-{- | Check if a Conditional can be reduced to a Predicate.
--}
-isPredicate
-    :: TopBottom term
-    => Conditional variable term
-    -> Bool
-isPredicate Conditional {term} = isTop term
+-- | Check if a Conditional can be reduced to a Predicate.
+isPredicate ::
+    TopBottom term =>
+    Conditional variable term ->
+    Bool
+isPredicate Conditional{term} = isTop term
 
-{- | Transform all variables (free and quantified) in a 'Conditional' term.
-
--}
-mapVariables
-    :: InternalVariable variable1
-    => InternalVariable variable2
-    => (AdjSomeVariableName (variable1 -> variable2) -> term1 -> term2)
-    -> AdjSomeVariableName (variable1 -> variable2)
-    -> Conditional variable1 term1
-    -> Conditional variable2 term2
+-- | Transform all variables (free and quantified) in a 'Conditional' term.
+mapVariables ::
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
+    (AdjSomeVariableName (variable1 -> variable2) -> term1 -> term2) ->
+    AdjSomeVariableName (variable1 -> variable2) ->
+    Conditional variable1 term1 ->
+    Conditional variable2 term2
 mapVariables
     mapTermVariables
     adj
-    Conditional { term, predicate, substitution }
-  =
-    Conditional
-        { term = mapTermVariables adj term
-        , predicate = Predicate.mapVariables adj predicate
-        , substitution = Substitution.mapVariables adj substitution
-        }
+    Conditional{term, predicate, substitution} =
+        Conditional
+            { term = mapTermVariables adj term
+            , predicate = Predicate.mapVariables adj predicate
+            , substitution = Substitution.mapVariables adj substitution
+            }
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())
-splitTerm patt@Conditional { term } = (term, withoutTerm patt)
+splitTerm patt@Conditional{term} = (term, withoutTerm patt)
 
 {- | Is the condition normalized?
 
 The 'Substitution' must be normalized and must have been substituted into the
 'Predicate'.
-
- -}
+-}
 isNormalized :: Ord variable => Conditional variable term -> Bool
-isNormalized Conditional { predicate, substitution } =
+isNormalized Conditional{predicate, substitution} =
     Substitution.isNormalized substitution
-    && Predicate.isFreeOf predicate (Substitution.variables substitution)
+        && Predicate.isFreeOf predicate (Substitution.variables substitution)
 
-{- | See also: 'isNormalized'
- -}
-assertNormalized
-    :: HasCallStack
-    => Ord variable
-    => Conditional variable term
-    -> a
-    -> a
-assertNormalized Conditional { predicate, substitution } a =
+-- | See also: 'isNormalized'
+assertNormalized ::
+    HasCallStack =>
+    Ord variable =>
+    Conditional variable term ->
+    a ->
     a
-    & assert (Substitution.isNormalized substitution)
-    & assert (Predicate.isFreeOf predicate variables)
+assertNormalized Conditional{predicate, substitution} a =
+    a
+        & assert (Substitution.isNormalized substitution)
+        & assert (Predicate.isFreeOf predicate variables)
   where
     variables = Substitution.variables substitution
 
-{-| Marks the condition's predicate as being simplified.
+{- | Marks the condition's predicate as being simplified.
 
 Since the substitution is usually simplified, this usually marks the entire
 condition as simplified. Note however, that the way in which the condition
@@ -482,34 +480,34 @@ simplifications. As an example, if the predicate is fully simplified,
 while the substitution is simplified only for a certain side condition,
 the entire condition is simplified only for that side condition.
 -}
-markPredicateSimplified
-    :: (HasCallStack, InternalVariable variable)
-    => Conditional variable term -> Conditional variable term
-markPredicateSimplified conditional@Conditional { predicate } =
-    conditional { predicate = Predicate.markSimplified predicate }
+markPredicateSimplified ::
+    (HasCallStack, InternalVariable variable) =>
+    Conditional variable term ->
+    Conditional variable term
+markPredicateSimplified conditional@Conditional{predicate} =
+    conditional{predicate = Predicate.markSimplified predicate}
 
-markPredicateSimplifiedConditional
-    :: (HasCallStack, InternalVariable variable)
-    => SideCondition.Representation
-    -> Conditional variable term
-    -> Conditional variable term
+markPredicateSimplifiedConditional ::
+    (HasCallStack, InternalVariable variable) =>
+    SideCondition.Representation ->
+    Conditional variable term ->
+    Conditional variable term
 markPredicateSimplifiedConditional
     sideCondition
-    conditional@Conditional { predicate }
-  =
-    conditional
-        { predicate =
-            Predicate.markSimplifiedConditional sideCondition predicate
-        }
+    conditional@Conditional{predicate} =
+        conditional
+            { predicate =
+                Predicate.markSimplifiedConditional sideCondition predicate
+            }
 
-{-| Sets the simplified attribute for a condition's predicate.
+{- | Sets the simplified attribute for a condition's predicate.
 
 See 'markPredicateSimplified' for details.
 -}
-setPredicateSimplified
-    :: (InternalVariable variable)
-    => Attribute.Simplified
-    -> Conditional variable term
-    -> Conditional variable term
-setPredicateSimplified simplified conditional@Conditional { predicate } =
-    conditional { predicate = Predicate.setSimplified simplified predicate }
+setPredicateSimplified ::
+    (InternalVariable variable) =>
+    Attribute.Simplified ->
+    Conditional variable term ->
+    Conditional variable term
+setPredicateSimplified simplified conditional@Conditional{predicate} =
+    conditional{predicate = Predicate.setSimplified simplified predicate}

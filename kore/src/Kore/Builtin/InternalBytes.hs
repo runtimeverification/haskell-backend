@@ -1,57 +1,55 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
- -}
-{-# LANGUAGE Strict #-}
+-}
+module Kore.Builtin.InternalBytes (
+    sort,
+    assertSort,
+    verifiers,
+    builtinFunctions,
+    asInternal,
+    internalize,
+    asTermLike,
+    asPattern,
 
-module Kore.Builtin.InternalBytes
-    ( sort
-    , assertSort
-    , verifiers
-    , builtinFunctions
-    , asInternal
-    , internalize
-    , asTermLike
-    , asPattern
-      -- * Keys
-    , bytes2StringKey
-    , string2BytesKey
-    , updateKey
-    , getKey
-    , substrKey
-    , replaceAtKey
-    , padRightKey
-    , padLeftKey
-    , reverseKey
-    , lengthKey
-    , concatKey
-    ) where
+    -- * Keys
+    bytes2StringKey,
+    string2BytesKey,
+    updateKey,
+    getKey,
+    substrKey,
+    replaceAtKey,
+    padRightKey,
+    padLeftKey,
+    reverseKey,
+    lengthKey,
+    concatKey,
+) where
 
-import Prelude.Kore
-
-import Control.Error
-    ( MaybeT
-    )
-import Data.ByteString
-    ( ByteString
-    )
+import Control.Error (
+    MaybeT,
+ )
+import Data.ByteString (
+    ByteString,
+ )
 import qualified Data.ByteString as ByteString
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
-import Data.Word
-    ( Word8
-    )
-
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
+import Data.Word (
+    Word8,
+ )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Encoding as Encoding
 import Kore.Builtin.Endianness.Endianness
@@ -60,18 +58,20 @@ import Kore.Builtin.InternalBytes.InternalBytes
 import Kore.Builtin.Signedness.Signedness
 import qualified Kore.Builtin.String as String
 import qualified Kore.Error
-import Kore.Internal.ApplicationSorts
-    ( applicationSortsResult
-    )
+import Kore.Internal.ApplicationSorts (
+    applicationSortsResult,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifier
-    )
+import Kore.Step.Simplification.Simplify (
+    BuiltinAndAxiomSimplifier,
+ )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
--- | Verify that the sort is hooked to the @Bytes@ sort.
--- | See also: 'sort', 'Builtin.verifySort'.
+{- | Verify that the sort is hooked to the @Bytes@ sort.
+ | See also: 'sort', 'Builtin.verifySort'.
+-}
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
 
@@ -83,93 +83,107 @@ verifiers =
         , patternVerifierHook
         }
 
--- | Verify that hooked sort declarations are well-formed.
--- | See also: 'Builtin.verifySortDecl'.
+{- | Verify that hooked sort declarations are well-formed.
+ | See also: 'Builtin.verifySortDecl'.
+-}
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
-sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
+sortDeclVerifiers = HashMap.fromList [(sort, Builtin.verifySortDecl)]
 
--- | Verify that hooked symbol declarations are well-formed.
--- | See also: 'Builtin.verifySymbol'.
+{- | Verify that hooked symbol declarations are well-formed.
+ | See also: 'Builtin.verifySymbol'.
+-}
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [   ( bytes2StringKey
-        , Builtin.verifySymbol string [bytes]
-        )
-    ,   ( string2BytesKey
-        , Builtin.verifySymbol bytes [string]
-        )
-    ,   ( updateKey
-        , Builtin.verifySymbol bytes [bytes, int, int]
-        )
-    ,   ( getKey
-        , Builtin.verifySymbol int [bytes, int]
-        )
-    ,   ( substrKey
-        , Builtin.verifySymbol bytes [bytes, int, int]
-        )
-    ,   ( replaceAtKey
-        , Builtin.verifySymbol bytes [bytes, int, bytes]
-        )
-    ,   ( padRightKey
-        , Builtin.verifySymbol bytes [bytes, int, int]
-        )
-    ,   ( padLeftKey
-        , Builtin.verifySymbol bytes [bytes, int, int]
-        )
-    ,   ( reverseKey
-        , Builtin.verifySymbol bytes [bytes]
-        )
-    ,   ( lengthKey
-        , Builtin.verifySymbol int [bytes]
-        )
-    ,   ( concatKey
-        , Builtin.verifySymbol bytes [bytes, bytes]
-        )
-    ,   ( int2bytesKey
-        , Builtin.verifySymbol bytes [int, int, anySort]
-        )
-    ,   ( bytes2intKey
-        , Builtin.verifySymbol int [bytes, anySort, anySort]
-        )
-    ]
+        [
+            ( bytes2StringKey
+            , Builtin.verifySymbol string [bytes]
+            )
+        ,
+            ( string2BytesKey
+            , Builtin.verifySymbol bytes [string]
+            )
+        ,
+            ( updateKey
+            , Builtin.verifySymbol bytes [bytes, int, int]
+            )
+        ,
+            ( getKey
+            , Builtin.verifySymbol int [bytes, int]
+            )
+        ,
+            ( substrKey
+            , Builtin.verifySymbol bytes [bytes, int, int]
+            )
+        ,
+            ( replaceAtKey
+            , Builtin.verifySymbol bytes [bytes, int, bytes]
+            )
+        ,
+            ( padRightKey
+            , Builtin.verifySymbol bytes [bytes, int, int]
+            )
+        ,
+            ( padLeftKey
+            , Builtin.verifySymbol bytes [bytes, int, int]
+            )
+        ,
+            ( reverseKey
+            , Builtin.verifySymbol bytes [bytes]
+            )
+        ,
+            ( lengthKey
+            , Builtin.verifySymbol int [bytes]
+            )
+        ,
+            ( concatKey
+            , Builtin.verifySymbol bytes [bytes, bytes]
+            )
+        ,
+            ( int2bytesKey
+            , Builtin.verifySymbol bytes [int, int, anySort]
+            )
+        ,
+            ( bytes2intKey
+            , Builtin.verifySymbol int [bytes, anySort, anySort]
+            )
+        ]
   where
-    bytes   = assertSort
-    int     = Int.assertSort
-    string  = String.assertSort
+    bytes = assertSort
+    int = Int.assertSort
+    string = String.assertSort
     anySort = Builtin.acceptAnySort
 
-{- | Verify that domain value patterns are well-formed.
- -}
+-- | Verify that domain value patterns are well-formed.
 patternVerifierHook :: Builtin.PatternVerifierHook
 patternVerifierHook =
     Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
-    <> (Builtin.applicationPatternVerifierHooks . HashMap.fromList)
-        [ (Builtin.HookedSymbolKey dotBytes, dotBytesVerifier ) ]
+        <> (Builtin.applicationPatternVerifierHooks . HashMap.fromList)
+            [(Builtin.HookedSymbolKey dotBytes, dotBytesVerifier)]
   where
     patternVerifierWorker external =
         case externalChild of
             StringLiteral_ literal -> do
                 internalBytesValue <- Builtin.parseString Encoding.parse8Bit literal
                 (return . InternalBytesF . Const)
-                    InternalBytes { internalBytesSort, internalBytesValue }
+                    InternalBytes{internalBytesSort, internalBytesValue}
             _ -> Kore.Error.koreFail "Expected literal string"
       where
-        DomainValue { domainValueSort = internalBytesSort } = external
-        DomainValue { domainValueChild = externalChild } = external
+        DomainValue{domainValueSort = internalBytesSort} = external
+        DomainValue{domainValueChild = externalChild} = external
 
 dotBytes :: IsString str => str
 dotBytes = "BYTES.empty"
 
-dotBytesVerifier
-    :: Builtin.ApplicationVerifier Verified.Pattern
+dotBytesVerifier ::
+    Builtin.ApplicationVerifier Verified.Pattern
 dotBytesVerifier =
     Builtin.ApplicationVerifier worker
   where
     worker application = do
         unless (null arguments) (Kore.Error.koreFail "expected zero arguments")
         (return . InternalBytesF . Const)
-            InternalBytes { internalBytesSort, internalBytesValue = Encoding.encode8Bit "" }
+            InternalBytes{internalBytesSort, internalBytesValue = Encoding.encode8Bit ""}
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
@@ -185,10 +199,10 @@ evalBytes2String =
   where
     evalBytes2String0 :: Builtin.Function
     evalBytes2String0 _ resultSort [_bytes] = do
-            _bytes <- matchBuiltinBytes _bytes
-            Encoding.decode8Bit _bytes
-                & String.asPattern resultSort
-                & return
+        _bytes <- matchBuiltinBytes _bytes
+        Encoding.decode8Bit _bytes
+            & String.asPattern resultSort
+            & return
     evalBytes2String0 _ _ _ = Builtin.wrongArity bytes2StringKey
 
 evalString2Bytes :: BuiltinAndAxiomSimplifier
@@ -213,12 +227,13 @@ evalUpdate =
         _index <- fromInteger <$> Int.expectBuiltinInt updateKey _index
         _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
         let result
-              | _index >= 0, _index < ByteString.length _bytes =
-                ByteString.take _index _bytes
-                <> ByteString.singleton _value
-                <> ByteString.drop (_index + 1) _bytes
-                & asPattern resultSort
-              | otherwise = Pattern.bottomOf resultSort
+                | _index >= 0
+                  , _index < ByteString.length _bytes =
+                    ByteString.take _index _bytes
+                        <> ByteString.singleton _value
+                        <> ByteString.drop (_index + 1) _bytes
+                        & asPattern resultSort
+                | otherwise = Pattern.bottomOf resultSort
         return result
     evalUpdate0 _ _ _ = Builtin.wrongArity updateKey
 
@@ -231,12 +246,13 @@ evalGet =
         _bytes <- matchBuiltinBytes _bytes
         _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
         let result
-              | _index >= 0, _index < ByteString.length _bytes =
-                ByteString.index _bytes _index
-                & toInteger
-                & Int.asPattern resultSort
-              | otherwise =
-                Pattern.bottomOf resultSort
+                | _index >= 0
+                  , _index < ByteString.length _bytes =
+                    ByteString.index _bytes _index
+                        & toInteger
+                        & Int.asPattern resultSort
+                | otherwise =
+                    Pattern.bottomOf resultSort
         return result
     evalGet0 _ _ _ = Builtin.wrongArity getKey
 
@@ -248,14 +264,16 @@ evalSubstr =
     evalSubstr0 _ resultSort [_bytes, _start, _end] = do
         _bytes <- matchBuiltinBytes _bytes
         _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
-        _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
+        _end <- fromInteger <$> Int.expectBuiltinInt substrKey _end
         let result
-              | _start >= 0, _end >= _start, _end <= ByteString.length _bytes =
-                _bytes
-                & ByteString.drop _start
-                & ByteString.take (_end - _start)
-                & asPattern resultSort
-              | otherwise = Pattern.bottomOf resultSort
+                | _start >= 0
+                  , _end >= _start
+                  , _end <= ByteString.length _bytes =
+                    _bytes
+                        & ByteString.drop _start
+                        & ByteString.take (_end - _start)
+                        & asPattern resultSort
+                | otherwise = Pattern.bottomOf resultSort
         return result
     evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
 
@@ -267,22 +285,22 @@ evalReplaceAt =
     evalReplaceAt0 _ resultSort [_bytes, _index, _new] = do
         _bytes <- matchBuiltinBytes _bytes
         _index <- fromInteger <$> Int.expectBuiltinInt replaceAtKey _index
-        _new   <- matchBuiltinBytes _new
+        _new <- matchBuiltinBytes _new
         go _bytes _index _new
             & maybe (Pattern.bottomOf resultSort) (asPattern resultSort)
             & return
     evalReplaceAt0 _ _ _ = Builtin.wrongArity replaceAtKey
 
     go bytes index replacement
-      | delta == 0 = Just bytes
-      | index >= ByteString.length bytes = Nothing
-      | index < 0 = Nothing
-      | ByteString.length bytes == 0 = Nothing
-      | otherwise =
-        ByteString.take index bytes
-        <> replacement
-        <> ByteString.drop (index + delta) bytes
-        & Just
+        | delta == 0 = Just bytes
+        | index >= ByteString.length bytes = Nothing
+        | index < 0 = Nothing
+        | ByteString.length bytes == 0 = Nothing
+        | otherwise =
+            ByteString.take index bytes
+                <> replacement
+                <> ByteString.drop (index + delta) bytes
+                & Just
       where
         delta = ByteString.length replacement
 
@@ -292,10 +310,10 @@ evalPadRight =
   where
     evalPadRight0 :: Builtin.Function
     evalPadRight0 _ resultSort [_bytes, _length, _value] = do
-            _bytes  <- matchBuiltinBytes _bytes
-            _length <- fromInteger <$> Int.expectBuiltinInt padRightKey _length
-            _value  <- fromInteger <$> Int.expectBuiltinInt padRightKey _value
-            (return . asPattern resultSort) (go _bytes _length _value)
+        _bytes <- matchBuiltinBytes _bytes
+        _length <- fromInteger <$> Int.expectBuiltinInt padRightKey _length
+        _value <- fromInteger <$> Int.expectBuiltinInt padRightKey _value
+        (return . asPattern resultSort) (go _bytes _length _value)
     evalPadRight0 _ _ _ = Builtin.wrongArity padRightKey
 
     go bytes len2 val =
@@ -310,10 +328,10 @@ evalPadLeft =
   where
     evalPadLeft0 :: Builtin.Function
     evalPadLeft0 _ resultSort [_bytes, _length, _value] = do
-            _bytes  <- matchBuiltinBytes _bytes
-            _length <- fromInteger <$> Int.expectBuiltinInt padLeftKey _length
-            _value  <- fromInteger <$> Int.expectBuiltinInt padLeftKey _value
-            return . asPattern resultSort $ go _bytes _length _value
+        _bytes <- matchBuiltinBytes _bytes
+        _length <- fromInteger <$> Int.expectBuiltinInt padLeftKey _length
+        _value <- fromInteger <$> Int.expectBuiltinInt padLeftKey _value
+        return . asPattern resultSort $ go _bytes _length _value
     evalPadLeft0 _ _ _ = Builtin.wrongArity padLeftKey
 
     go bytes len2 val =
@@ -328,7 +346,7 @@ evalReverse =
   where
     evalReverse0 :: Builtin.Function
     evalReverse0 _ resultSort [_bytes] = do
-        _bytes  <- matchBuiltinBytes _bytes
+        _bytes <- matchBuiltinBytes _bytes
         ByteString.reverse _bytes
             & asPattern resultSort
             & return
@@ -340,7 +358,7 @@ evalLength =
   where
     evalLength0 :: Builtin.Function
     evalLength0 _ resultSort [_bytes] = do
-        _bytes  <- matchBuiltinBytes _bytes
+        _bytes <- matchBuiltinBytes _bytes
         toInteger (ByteString.length _bytes)
             & Int.asPattern resultSort
             & return
@@ -352,11 +370,11 @@ evalConcat =
   where
     evalConcat0 :: Builtin.Function
     evalConcat0 _ resultSort [_lhs, _rhs] = do
-            _lhs  <- matchBuiltinBytes _lhs
-            _rhs  <- matchBuiltinBytes _rhs
-            _lhs <> _rhs
-                & asPattern resultSort
-                & return
+        _lhs <- matchBuiltinBytes _lhs
+        _rhs <- matchBuiltinBytes _rhs
+        _lhs <> _rhs
+            & asPattern resultSort
+            & return
     evalConcat0 _ _ _ = Builtin.wrongArity concatKey
 
 evalInt2bytes :: BuiltinAndAxiomSimplifier
@@ -375,25 +393,25 @@ evalInt2bytes =
 
 matchEndianness :: Alternative f => TermLike variable -> f Endianness
 matchEndianness (Endianness_ endianness) = pure endianness
-matchEndianness _                        = empty
+matchEndianness _ = empty
 
 matchSignedness :: Alternative f => TermLike variable -> f Signedness
 matchSignedness (Signedness_ signedness) = pure signedness
-matchSignedness _                        = empty
+matchSignedness _ = empty
 
 int2bytes :: Int -> Integer -> Endianness -> ByteString
 int2bytes len int end =
     case end of
         LittleEndian _ -> littleEndian
-        BigEndian    _ -> ByteString.reverse littleEndian
+        BigEndian _ -> ByteString.reverse littleEndian
   where
     (littleEndian, _) = ByteString.unfoldrN len go int
     go int'
-      | int' == 0 = Just (pad, 0)
-      | otherwise = let (d, m) = divMod int' 0x100 in Just (word8 m, d)
+        | int' == 0 = Just (pad, 0)
+        | otherwise = let (d, m) = divMod int' 0x100 in Just (word8 m, d)
     pad
-      | int < 0   = 0xFF
-      | otherwise = 0x00
+        | int < 0 = 0xFF
+        | otherwise = 0x00
 
     word8 :: Integer -> Word8
     word8 = toEnum . fromEnum
@@ -416,19 +434,19 @@ bytes2int :: ByteString -> Endianness -> Signedness -> Integer
 bytes2int bytes end sign =
     case sign of
         Unsigned _ -> unsigned
-        Signed   _
-          | 2 * unsigned > modulus -> unsigned - modulus
-          | otherwise              -> unsigned
+        Signed _
+            | 2 * unsigned > modulus -> unsigned - modulus
+            | otherwise -> unsigned
   where
     (modulus, unsigned) = ByteString.foldl' go (1, 0) littleEndian
     go (!place, !acc) byte =
         let !place' = place * 0x100
             !acc' = acc + place * fromIntegral byte
-        in (place', acc')
+         in (place', acc')
     littleEndian =
         case end of
             LittleEndian _ -> bytes
-            BigEndian    _ -> ByteString.reverse bytes
+            BigEndian _ -> ByteString.reverse bytes
 
 builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =

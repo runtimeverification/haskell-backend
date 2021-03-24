@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.ASTVerifier.SortVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sort'.
@@ -7,8 +9,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-{-# LANGUAGE Strict #-}
-
 module Kore.ASTVerifier.SortVerifier (verifySort) where
 
 import qualified Data.Set as Set

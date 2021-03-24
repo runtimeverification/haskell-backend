@@ -1,28 +1,27 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Attribute.Symbol.SymbolKywd (
+    SymbolKywd (..),
+    symbolKywdId,
+    symbolKywdSymbol,
+    symbolKywdAttribute,
+) where
 
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Symbol.SymbolKywd
-    ( SymbolKywd (..)
-    , symbolKywdId, symbolKywdSymbol, symbolKywdAttribute
-    ) where
-
-import Prelude.Kore
-
-import Data.Monoid
-    ( Any (..)
-    )
-import qualified Generics.SOP as SOP
+import Data.Monoid (
+    Any (..),
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
-newtype SymbolKywd = SymbolKywd { isSymbolKywd :: Bool }
+newtype SymbolKywd = SymbolKywd {isSymbolKywd :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

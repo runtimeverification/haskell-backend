@@ -1,10 +1,8 @@
-{-|
-Module      : Kore.Attribute.Simplification
-Description : Function simplification axiom attribute
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-
 
 The simplification attribute identifies axioms that are useful for
 simplifying configurations, without being part of the main semantics.
@@ -16,30 +14,29 @@ Informal example of an axiom that would use the simplification attribute:
 (x +Int y) +Int z = (x +Int z) +Int y
     if concrete(x) and concrete(z) and not concrete(y)
 -}
-{-# LANGUAGE Strict #-}
-module Kore.Attribute.Simplification
-    ( Simplification (..)
-    , simplificationId, simplificationSymbol, simplificationAttribute
-    , defaultSimplificationPriority
-    ) where
+module Kore.Attribute.Simplification (
+    Simplification (..),
+    simplificationId,
+    simplificationSymbol,
+    simplificationAttribute,
+    defaultSimplificationPriority,
+) where
 
-import Prelude.Kore
-
-import Data.Maybe
-    ( maybeToList
-    )
-import qualified Generics.SOP as SOP
+import Data.Maybe (
+    maybeToList,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 type SimplificationPriority = Maybe Integer
 
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
     It takes an optional integer argument which represents the rule's priority.
     This allows the possibility of ordering the application of simplification rules.
- -}
+-}
 data Simplification
     = IsSimplification !SimplificationPriority
     | NotSimplification
@@ -84,16 +81,16 @@ instance ParseAttributes Simplification where
             case arg of
                 Just arg' ->
                     Parser.getStringLiteral arg'
-                    >>= Parser.parseStringLiteral readPriority
+                        >>= Parser.parseStringLiteral readPriority
                 Nothing -> pure (IsSimplification Nothing)
         parseSimplification _ _ _ =
             failDuplicate'
 
         readPriority str
-          | null str = pure (IsSimplification Nothing, "")
-          | otherwise = do
-            (integer, rest) <- reads str
-            pure (IsSimplification (Just integer), rest)
+            | null str = pure (IsSimplification Nothing, "")
+            | otherwise = do
+                (integer, rest) <- reads str
+                pure (IsSimplification (Just integer), rest)
 
         withApplication' = Parser.withApplication simplificationId
         failDuplicate' = Parser.failDuplicate simplificationId

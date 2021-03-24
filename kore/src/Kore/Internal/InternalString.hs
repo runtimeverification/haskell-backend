@@ -1,21 +1,19 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
- -}
-{-# LANGUAGE Strict #-}
-module Kore.Internal.InternalString
-    ( InternalString (..)
-    ) where
-
-import Prelude.Kore
+-}
+module Kore.Internal.InternalString (
+    InternalString (..),
+) where
 
 import Data.Functor.Const
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -27,16 +25,14 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.StringLiteral
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
-
-{- | Internal representation of the builtin @STRING.String@ domain.
- -}
-data InternalString =
-    InternalString
-        { internalStringSort :: !Sort
-        , internalStringValue :: !Text
-        }
+-- | Internal representation of the builtin @STRING.String@ domain.
+data InternalString = InternalString
+    { internalStringSort :: !Sort
+    , internalStringValue :: !Text
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -44,18 +40,18 @@ data InternalString =
     deriving anyclass (Debug, Diff)
 
 instance Unparse InternalString where
-    unparse InternalString { internalStringSort, internalStringValue } =
+    unparse InternalString{internalStringSort, internalStringValue} =
         "\\dv"
-        <> parameters [internalStringSort]
-        <> Pretty.parens (unparse $ StringLiteral internalStringValue)
+            <> parameters [internalStringSort]
+            <> Pretty.parens (unparse $ StringLiteral internalStringValue)
 
-    unparse2 InternalString { internalStringSort, internalStringValue } =
+    unparse2 InternalString{internalStringSort, internalStringValue} =
         "\\dv2"
-        <> parameters2 [internalStringSort]
-        <> arguments2 [StringLiteral internalStringValue]
+            <> parameters2 [internalStringSort]
+            <> arguments2 [StringLiteral internalStringValue]
 
 instance Synthetic Sort (Const InternalString) where
-    synthetic (Const InternalString { internalStringSort }) = internalStringSort
+    synthetic (Const InternalString{internalStringSort}) = internalStringSort
     {-# INLINE synthetic #-}
 
 instance Synthetic (FreeVariables variable) (Const InternalString) where

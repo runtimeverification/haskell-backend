@@ -1,28 +1,28 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Module      : Kore.Attribute.Constructor
 Description : Constructor symbol attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-{-# LANGUAGE Strict #-}
-module Kore.Attribute.Constructor
-    ( Constructor (..)
-    , constructorId, constructorSymbol, constructorAttribute
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Constructor (
+    Constructor (..),
+    constructorId,
+    constructorSymbol,
+    constructorAttribute,
+) where
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
-newtype Constructor = Constructor { isConstructor :: Bool }
+newtype Constructor = Constructor {isConstructor :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

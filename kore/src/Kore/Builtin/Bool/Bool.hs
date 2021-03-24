@@ -1,59 +1,57 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Builtin.Bool.Bool (
+    sort,
+    asBuiltin,
+    asInternal,
+    asTermLike,
+    asPattern,
 
- -}
-{-# LANGUAGE Strict #-}
-module Kore.Builtin.Bool.Bool
-    ( sort
-    , asBuiltin
-    , asInternal
-    , asTermLike
-    , asPattern
-      -- * Keys
-    , orKey
-    , andKey
-    , xorKey
-    , neKey
-    , eqKey
-    , notKey
-    , impliesKey
-    , andThenKey
-    , orElseKey
-    ) where
+    -- * Keys
+    orKey,
+    andKey,
+    xorKey,
+    neKey,
+    eqKey,
+    notKey,
+    impliesKey,
+    andThenKey,
+    orElseKey,
+) where
 
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
+import Kore.Internal.InternalBool
+import Kore.Internal.Pattern (
+    Pattern,
+ )
+import qualified Kore.Internal.Pattern as Pattern (
+    fromTermLike,
+ )
+import Kore.Internal.TermLike (
+    DomainValue (DomainValue),
+    InternalVariable,
+    Sort,
+    TermLike,
+    mkDomainValue,
+    mkInternalBool,
+    mkStringLiteral,
+ )
+import qualified Kore.Internal.TermLike as TermLike (
+    markSimplified,
+ )
+import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Prelude.Kore
 
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
-
-import Kore.Internal.InternalBool
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( fromTermLike
-    )
-import Kore.Internal.TermLike
-    ( DomainValue (DomainValue)
-    , InternalVariable
-    , Sort
-    , TermLike
-    , mkDomainValue
-    , mkInternalBool
-    , mkStringLiteral
-    )
-import qualified Kore.Internal.TermLike as TermLike
-    ( markSimplified
-    )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-
-{- | Builtin name of the @Bool@ sort.
- -}
+-- | Builtin name of the @Bool@ sort.
 sort :: Text
 sort = "BOOL.Bool"
 
@@ -63,21 +61,24 @@ sort = "BOOL.Bool"
   checked.
 
   See also: 'sort'
-
- -}
-asInternal
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Bool  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asInternal ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Bool ->
+    TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    TermLike.markSimplified . mkInternalBool
-    $ asBuiltin builtinBoolSort builtinBoolValue
+    TermLike.markSimplified . mkInternalBool $
+        asBuiltin builtinBoolSort builtinBoolValue
 
-asBuiltin
-    :: Sort  -- ^ resulting sort
-    -> Bool  -- ^ builtin value to render
-    -> InternalBool
+asBuiltin ::
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Bool ->
+    InternalBool
 asBuiltin = InternalBool
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
@@ -86,29 +87,32 @@ asBuiltin = InternalBool
   checked.
 
   See also: 'sort'
-
- -}
-asTermLike
-    :: InternalVariable variable
-    => InternalBool  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asTermLike ::
+    InternalVariable variable =>
+    -- | builtin value to render
+    InternalBool ->
+    TermLike variable
 asTermLike builtin =
-    mkDomainValue DomainValue
-        { domainValueSort = internalBoolSort
-        , domainValueChild = mkStringLiteral literal
-        }
+    mkDomainValue
+        DomainValue
+            { domainValueSort = internalBoolSort
+            , domainValueChild = mkStringLiteral literal
+            }
   where
-    InternalBool { internalBoolSort } = builtin
-    InternalBool { internalBoolValue = bool } = builtin
+    InternalBool{internalBoolSort} = builtin
+    InternalBool{internalBoolValue = bool} = builtin
     literal
-      | bool      = "true"
-      | otherwise = "false"
+        | bool = "true"
+        | otherwise = "false"
 
-asPattern
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Bool  -- ^ builtin value to render
-    -> Pattern variable
+asPattern ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Bool ->
+    Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 orKey :: IsString s => s

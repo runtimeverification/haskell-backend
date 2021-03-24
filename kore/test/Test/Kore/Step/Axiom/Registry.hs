@@ -493,7 +493,7 @@ test_functionRegistry =
             (length (extractRewriteAxioms testIndexedModule))
         )
     , testCase "qqChecking that evaluator simplifies correctly" $ do
-        let expect = [ mkApplySymbol sHead [] ]
+        let expect = [mkApplySymbol sHead []]
         simplified <-
             runSimplifier testEnv $
                 Pattern.simplify $
@@ -501,7 +501,7 @@ test_functionRegistry =
         let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = [ mkApplySymbol tHead [] ]
+        let expect = [mkApplySymbol tHead []]
         simplified <-
             runSimplifier testEnv $
                 Pattern.simplify $

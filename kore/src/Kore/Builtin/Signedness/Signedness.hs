@@ -1,25 +1,21 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin.Signedness.Signedness
-    ( Signedness (..)
-    , toApplication
-    ) where
-
-import Prelude.Kore
+-}
+module Kore.Builtin.Signedness.Signedness (
+    Signedness (..),
+    toApplication,
+) where
 
 import Data.Functor.Const
-import Data.Void
-    ( Void
-    )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
-
+import Data.Void (
+    Void,
+ )
 import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
@@ -30,10 +26,11 @@ import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Internal.Symbol
 import Kore.Sort
-import Kore.Syntax.Application
-    ( Application (..)
-    )
+import Kore.Syntax.Application (
+    Application (..),
+ )
 import Kore.Unparser
+import Prelude.Kore
 
 data Signedness
     = Signed !Symbol

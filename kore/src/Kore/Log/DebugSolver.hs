@@ -1,72 +1,65 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Log.DebugSolver
-    ( DebugSolverSend (..)
-    , DebugSolverRecv (..)
-    , logDebugSolverSendWith
-    , logDebugSolverRecvWith
-
-    , DebugSolverOptions (..)
-    , emptyDebugSolverOptions
-    , parseDebugSolverOptions
-
-    , solverTranscriptLogger
-    ) where
-
-import Prelude.Kore
+module Kore.Log.DebugSolver (
+    DebugSolverSend (..),
+    DebugSolverRecv (..),
+    logDebugSolverSendWith,
+    logDebugSolverRecvWith,
+    DebugSolverOptions (..),
+    emptyDebugSolverOptions,
+    parseDebugSolverOptions,
+    solverTranscriptLogger,
+) where
 
 import Data.Default
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Lazy.Builder as Text.Lazy.Builder
-import Options.Applicative
-    ( Parser
-    , help
-    , long
-    , strOption
-    )
-
-import Log
-    ( ActualEntry (..)
-    , Entry (..)
-    , LogAction (..)
-    , Severity (Debug)
-    , SomeEntry
-    , logWith
-    )
-import Pretty
-    ( Pretty (..)
-    )
-import SMT.AST
-    ( SExpr (..)
-    )
+import Log (
+    ActualEntry (..),
+    Entry (..),
+    LogAction (..),
+    Severity (Debug),
+    SomeEntry,
+    logWith,
+ )
+import Options.Applicative (
+    Parser,
+    help,
+    long,
+    strOption,
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
+import SMT.AST (
+    SExpr (..),
+ )
 import qualified SMT.AST as SMT
 
-newtype DebugSolverSend =
-    DebugSolverSend
-        { getSendSExpr :: SExpr
-        }
+newtype DebugSolverSend = DebugSolverSend
+    { getSendSExpr :: SExpr
+    }
     deriving (Show)
 
-newtype DebugSolverRecv =
-    DebugSolverRecv
-        { getRecvSExpr :: Text
-        }
+newtype DebugSolverRecv = DebugSolverRecv
+    { getRecvSExpr :: Text
+    }
     deriving (Show)
 
 instance Pretty DebugSolverSend where
-    pretty DebugSolverSend { getSendSExpr } =
+    pretty DebugSolverSend{getSendSExpr} =
         pretty . SMT.buildText $ getSendSExpr
 
 instance Pretty DebugSolverRecv where
-    pretty DebugSolverRecv { getRecvSExpr } =
+    pretty DebugSolverRecv{getRecvSExpr} =
         pretty getRecvSExpr
 
 instance Entry DebugSolverSend where
@@ -77,39 +70,39 @@ instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
     helpDoc _ = "log responses received from SMT solver"
 
-logDebugSolverSendWith
-    :: LogAction m SomeEntry
-    -> SExpr
-    -> m ()
+logDebugSolverSendWith ::
+    LogAction m SomeEntry ->
+    SExpr ->
+    m ()
 logDebugSolverSendWith logger sExpr =
     logWith logger $ DebugSolverSend sExpr
 
-logDebugSolverRecvWith
-    :: LogAction m SomeEntry
-    -> Text
-    -> m ()
+logDebugSolverRecvWith ::
+    LogAction m SomeEntry ->
+    Text ->
+    m ()
 logDebugSolverRecvWith logger smtText =
     logWith logger $ DebugSolverRecv smtText
 
-solverTranscriptLogger
-    :: Applicative m
-    => LogAction m Text
-    -> LogAction m ActualEntry
+solverTranscriptLogger ::
+    Applicative m =>
+    LogAction m Text ->
+    LogAction m ActualEntry
 solverTranscriptLogger textLogger =
     LogAction action
   where
-    action ActualEntry { actualEntry }
-      | Just sendEntry <- matchDebugSolverSend actualEntry =
-        unLogAction textLogger (sentText sendEntry)
-      | Just recvEntry <- matchDebugSolverRecv actualEntry =
-        unLogAction textLogger (receivedText recvEntry)
-      | otherwise =
-        pure ()
+    action ActualEntry{actualEntry}
+        | Just sendEntry <- matchDebugSolverSend actualEntry =
+            unLogAction textLogger (sentText sendEntry)
+        | Just recvEntry <- matchDebugSolverRecv actualEntry =
+            unLogAction textLogger (receivedText recvEntry)
+        | otherwise =
+            pure ()
       where
         sentText :: DebugSolverSend -> Text
         sentText (DebugSolverSend sexpr) =
             let builder = SMT.buildSExpr sexpr
-            in (Text.Lazy.toStrict . Text.Lazy.Builder.toLazyText) builder
+             in (Text.Lazy.toStrict . Text.Lazy.Builder.toLazyText) builder
         receivedText :: DebugSolverRecv -> Text
         receivedText (DebugSolverRecv text) = "; " <> text
 
@@ -123,12 +116,10 @@ matchDebugSolverRecv = fromEntry
 transcript.
 
 See also: 'parseDebugSolverOptions'
-
 -}
-newtype DebugSolverOptions =
-    DebugSolverOptions
-        { logFile :: Maybe FilePath
-        }
+newtype DebugSolverOptions = DebugSolverOptions
+    { logFile :: Maybe FilePath
+    }
     deriving (Eq, Show)
 
 instance Default DebugSolverOptions where
@@ -137,13 +128,13 @@ instance Default DebugSolverOptions where
 parseDebugSolverOptions :: Parser DebugSolverOptions
 parseDebugSolverOptions =
     (DebugSolverOptions . Just <$> parseLogFile)
-    <|> pure (def @DebugSolverOptions)
+        <|> pure (def @DebugSolverOptions)
   where
     parseLogFile =
         let info =
                 long "solver-transcript"
-                <> help "Name of the file for the SMT solver transcript."
-        in strOption info
+                    <> help "Name of the file for the SMT solver transcript."
+         in strOption info
 
 emptyDebugSolverOptions :: DebugSolverOptions
-emptyDebugSolverOptions = DebugSolverOptions {logFile = Nothing}
+emptyDebugSolverOptions = DebugSolverOptions{logFile = Nothing}

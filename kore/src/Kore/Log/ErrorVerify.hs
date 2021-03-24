@@ -1,32 +1,29 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Log.ErrorVerify (
+    ErrorVerify (..),
+    errorVerify,
+) where
 
-module Kore.Log.ErrorVerify
-    ( ErrorVerify (..)
-    , errorVerify
-    ) where
-
-import Prelude.Kore
-
-import Control.Monad.Catch
-    ( Exception (..)
-    , MonadThrow
-    , throwM
-    )
-import Pretty
-
-import Kore.ASTVerifier.Error
-    ( VerifyError
-    )
+import Control.Monad.Catch (
+    Exception (..),
+    MonadThrow,
+    throwM,
+ )
+import Kore.ASTVerifier.Error (
+    VerifyError,
+ )
 import qualified Kore.Error as Kore
 import Log
+import Prelude.Kore
+import Pretty
 
-newtype ErrorVerify = ErrorVerify { koreError :: Kore.Error VerifyError }
-    deriving Show
+newtype ErrorVerify = ErrorVerify {koreError :: Kore.Error VerifyError}
+    deriving (Show)
 
 instance Exception ErrorVerify where
     toException = toException . SomeEntry
@@ -34,7 +31,7 @@ instance Exception ErrorVerify where
     displayException = Kore.printError . koreError
 
 instance Pretty ErrorVerify where
-    pretty ErrorVerify { koreError } =
+    pretty ErrorVerify{koreError} =
         Pretty.pretty (Kore.printError koreError)
 
 instance Entry ErrorVerify where
@@ -42,4 +39,4 @@ instance Entry ErrorVerify where
 
 errorVerify :: MonadThrow log => Kore.Error VerifyError -> log a
 errorVerify koreError =
-    throwM ErrorVerify { koreError }
+    throwM ErrorVerify{koreError}

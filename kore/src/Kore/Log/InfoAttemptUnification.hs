@@ -1,38 +1,34 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Log.InfoAttemptUnification (
+    InfoAttemptUnification (..),
+    infoAttemptUnification,
+) where
 
-module Kore.Log.InfoAttemptUnification
-    ( InfoAttemptUnification (..)
-    , infoAttemptUnification
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
-import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
-    , VariableName
-    , toVariableName
-    )
+import qualified Generics.SOP as SOP
+import Kore.Internal.TermLike (
+    InternalVariable,
+    TermLike,
+    VariableName,
+    toVariableName,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Unparser
-    ( unparse
-    )
+import Kore.Unparser (
+    unparse,
+ )
 import Log
-import Pretty
-    ( Pretty
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
-data InfoAttemptUnification =
-    InfoAttemptUnification { term1, term2 :: TermLike VariableName }
+data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike VariableName}
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -43,7 +39,7 @@ instance Entry InfoAttemptUnification where
     helpDoc _ = "log unification attempts"
 
 instance Pretty InfoAttemptUnification where
-    pretty InfoAttemptUnification { term1, term2 } =
+    pretty InfoAttemptUnification{term1, term2} =
         Pretty.vsep
             [ "Attempting to unify"
             , Pretty.indent 4 $ unparse term1
@@ -51,15 +47,15 @@ instance Pretty InfoAttemptUnification where
             , Pretty.indent 4 $ unparse term2
             ]
 
-infoAttemptUnification
-    :: MonadLog log
-    => InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> log a
-    -> log a
+infoAttemptUnification ::
+    MonadLog log =>
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    log a ->
+    log a
 infoAttemptUnification term1' term2' =
-    logWhile InfoAttemptUnification { term1, term2 }
+    logWhile InfoAttemptUnification{term1, term2}
   where
     mapVariables = TermLike.mapVariables (pure toVariableName)
     term1 = mapVariables term1'

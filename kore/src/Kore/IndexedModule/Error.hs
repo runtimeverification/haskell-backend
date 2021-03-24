@@ -1,27 +1,25 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-{-# LANGUAGE Strict #-}
+module Kore.IndexedModule.Error (
+    noSort,
+    noSortText,
+    noHead,
+    noAlias,
+    noAliasText,
+    noSymbol,
+    noSymbolText,
+) where
 
-module Kore.IndexedModule.Error
-    ( noSort
-    , noSortText
-    , noHead
-    , noAlias
-    , noAliasText
-    , noSymbol
-    , noSymbolText
-    ) where
-
-import Prelude.Kore
-
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-
 import Kore.Syntax
+import Prelude.Kore
 
 -- | A message declaring that a Sort is undefined
 noSort :: Id -> String

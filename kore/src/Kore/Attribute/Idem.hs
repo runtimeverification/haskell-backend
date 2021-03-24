@@ -1,28 +1,27 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Module      : Kore.Attribute.Idem
 Description : Idempotency axiom attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-{-# LANGUAGE Strict #-}
-module Kore.Attribute.Idem
-    ( Idem (..)
-    , idemId, idemSymbol, idemAttribute
-    ) where
+module Kore.Attribute.Idem (
+    Idem (..),
+    idemId,
+    idemSymbol,
+    idemAttribute,
+) where
 
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
-{- | @Idem@ represents the @idem@ attribute for axioms.
- -}
-newtype Idem = Idem { isIdem :: Bool }
+-- | @Idem@ represents the @idem@ attribute for axioms.
+newtype Idem = Idem {isIdem :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

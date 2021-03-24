@@ -1,27 +1,27 @@
-{-|
+-- {-# LANGUAGE Strict #-}
+
+{- |
 Module      : Kore.Attribute.Smtlib
 Description : SMT-LIB translation attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
--- {-# LANGUAGE Strict #-}
-module Kore.Attribute.Smtlib
-    ( Smtlib (..)
-    , smtlibId, smtlibSymbol, smtlibAttribute
-    , applySExpr
-    , shortenSExpr
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Smtlib (
+    Smtlib (..),
+    smtlibId,
+    smtlibSymbol,
+    smtlibAttribute,
+    applySExpr,
+    shortenSExpr,
+) where
 
 import qualified Control.Error as Error
 import qualified Data.Text as Text
-import SMT.SimpleSMT
-
 import Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
+import Prelude.Kore
+import SMT.SimpleSMT
 
 shortenSExpr :: SExpr -> SExpr
 shortenSExpr (List [e]) = e
@@ -33,12 +33,13 @@ A placeholder is the character @#@ followed by a decimal numeral.
 
 If the 'SExpr' is an 'Atom' at the top level, it is taken to be the head of an
 'SExpr' that takes indefinitely-many arguments.
-
- -}
-applySExpr
-    :: SExpr  -- ^ 'SExpr' containing placeholder symbols
-    -> [SExpr]  -- ^ list of arguments
-    -> SExpr
+-}
+applySExpr ::
+    -- | 'SExpr' containing placeholder symbols
+    SExpr ->
+    -- | list of arguments
+    [SExpr] ->
+    SExpr
 applySExpr =
     \case
         Atom symb -> \args -> List (fillAtom symb args : args)

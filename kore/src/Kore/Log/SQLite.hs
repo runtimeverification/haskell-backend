@@ -1,64 +1,60 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 Record log entries to a SQLite database.
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Log.SQLite
-    ( LogSQLiteOptions (..)
-    , parseLogSQLiteOptions
-    , withLogSQLite
-    ) where
-
-import Prelude.Kore
+module Kore.Log.SQLite (
+    LogSQLiteOptions (..),
+    parseLogSQLiteOptions,
+    withLogSQLite,
+) where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Extra as Monad
-import Control.Monad.Reader
-    ( runReaderT
-    )
+import Control.Monad.Reader (
+    runReaderT,
+ )
 import Data.Default
 import Data.Proxy
 import qualified Database.SQLite.Simple as SQLite
+import Kore.Log.DebugEvaluateCondition (
+    DebugEvaluateCondition,
+ )
+import Kore.Log.DebugSubstitutionSimplifier (
+    DebugSubstitutionSimplifier,
+ )
+import Kore.Log.ErrorBottomTotalFunction (
+    ErrorBottomTotalFunction,
+ )
+import Kore.Log.WarnFunctionWithoutEvaluators (
+    WarnFunctionWithoutEvaluators,
+ )
+import Kore.Log.WarnSymbolSMTRepresentation (
+    WarnSymbolSMTRepresentation,
+ )
+import Log (
+    ActualEntry,
+    Entry,
+    LogAction (..),
+    SomeEntry,
+    fromEntry,
+    fromLogAction,
+ )
 import qualified Options.Applicative as Options
+import Prelude.Kore
+import SQL (
+    SQL,
+ )
+import qualified SQL
 import qualified System.Directory as Directory
 
-import Kore.Log.DebugEvaluateCondition
-    ( DebugEvaluateCondition
-    )
-import Kore.Log.DebugSubstitutionSimplifier
-    ( DebugSubstitutionSimplifier
-    )
-import Kore.Log.ErrorBottomTotalFunction
-    ( ErrorBottomTotalFunction
-    )
-import Kore.Log.WarnFunctionWithoutEvaluators
-    ( WarnFunctionWithoutEvaluators
-    )
-import Kore.Log.WarnSymbolSMTRepresentation
-    ( WarnSymbolSMTRepresentation
-    )
-import Log
-    ( ActualEntry
-    , Entry
-    , LogAction (..)
-    , SomeEntry
-    , fromEntry
-    , fromLogAction
-    )
-import SQL
-    ( SQL
-    )
-import qualified SQL
-
 -- | @LogSQLiteOptions@ are the command-line options for the SQLite logger.
-newtype LogSQLiteOptions =
-    LogSQLiteOptions
-    { sqlog :: Maybe FilePath
-    -- ^ Filename for the structured query log.
+newtype LogSQLiteOptions = LogSQLiteOptions
+    { -- | Filename for the structured query log.
+      sqlog :: Maybe FilePath
     }
     deriving (Eq, Show)
 
@@ -68,7 +64,7 @@ instance Default LogSQLiteOptions where
 parseLogSQLiteOptions :: Options.Parser LogSQLiteOptions
 parseLogSQLiteOptions =
     LogSQLiteOptions
-    <$> Options.optional parseSQLog
+        <$> Options.optional parseSQLog
 
 -- | Parse the command-line argument that takes the SQLite database's filename.
 parseSQLog :: Options.Parser FilePath
@@ -77,21 +73,21 @@ parseSQLog =
   where
     info =
         mempty
-        <> Options.long "sqlog"
-        <> Options.metavar "FILENAME"
-        <> Options.help "Write the structured query log to FILENAME."
+            <> Options.long "sqlog"
+            <> Options.metavar "FILENAME"
+            <> Options.help "Write the structured query log to FILENAME."
 
 {- | Run the continuation with a 'LogAction' to send entries to the database.
 
 The logger is configured according to the given
 'LogSQLiteOptions'. @withLogSQLite@ opens and closes the database connection
 automatically.
-
- -}
-withLogSQLite
-    :: LogSQLiteOptions
-    -> (LogAction IO ActualEntry -> IO a)  -- ^ Continuation
-    -> IO a
+-}
+withLogSQLite ::
+    LogSQLiteOptions ->
+    -- | Continuation
+    (LogAction IO ActualEntry -> IO a) ->
+    IO a
 withLogSQLite options cont =
     case sqlog of
         Nothing -> cont mempty
@@ -103,7 +99,7 @@ withLogSQLite options cont =
                 runReaderT (SQL.getSQL declareEntries) conn
                 cont (lowerLogAction conn logSQLite)
   where
-    LogSQLiteOptions { sqlog } = options
+    LogSQLiteOptions{sqlog} = options
     lowerLogAction conn logAction =
         LogAction $ \entry -> do
             let sqlt = unLogAction logAction entry
@@ -114,12 +110,11 @@ withLogSQLite options cont =
 These are the only types of 'Entry' that can be logged to the database.
 
 See also: 'declareEntries', 'logSQLite'
-
- -}
-foldMapEntries
-    :: Monoid r
-    => (forall entry. (Entry entry, SQL.Table entry) => Proxy entry -> r)
-    -> r
+-}
+foldMapEntries ::
+    Monoid r =>
+    (forall entry. (Entry entry, SQL.Table entry) => Proxy entry -> r) ->
+    r
 foldMapEntries mapEntry =
     mconcat
         [ mapEntry (Proxy @DebugEvaluateCondition)
@@ -140,17 +135,16 @@ If the 'Entry' cannot be entered in the database, it is ignored.
 @logSQLite@ is a 'LogAction' in the 'SQL' context, which requires that the
 database is already connected. See 'withLogSQLite' to obtain a 'LogAction' in
 'IO'.
-
- -}
+-}
 logSQLite :: LogAction SQL ActualEntry
 logSQLite =
     foldMapEntries (fromLogAction @SomeEntry . logEntry)
   where
-    logEntry
-        :: forall entry
-        .  (Entry entry, SQL.Table entry)
-        => Proxy entry
-        -> LogAction SQL SomeEntry
+    logEntry ::
+        forall entry.
+        (Entry entry, SQL.Table entry) =>
+        Proxy entry ->
+        LogAction SQL SomeEntry
     logEntry _ = LogAction (maybeInsertRow . fromEntry @entry)
 
     maybeInsertRow :: SQL.Table entry => Maybe entry -> SQL ()

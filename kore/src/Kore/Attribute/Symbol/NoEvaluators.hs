@@ -1,24 +1,23 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
+-}
+module Kore.Attribute.Symbol.NoEvaluators (
+    NoEvaluators (..),
+    noEvaluatorsId,
+    noEvaluatorsSymbol,
+    noEvaluatorsAttribute,
+) where
 
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Symbol.NoEvaluators
-    ( NoEvaluators (..)
-    , noEvaluatorsId, noEvaluatorsSymbol, noEvaluatorsAttribute
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
-newtype NoEvaluators = NoEvaluators { hasNoEvaluators :: Bool }
+newtype NoEvaluators = NoEvaluators {hasNoEvaluators :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

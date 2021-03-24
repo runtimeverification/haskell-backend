@@ -1,26 +1,25 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Symbol.Anywhere
-    ( Anywhere (..)
-    , anywhereId, anywhereSymbol, anywhereAttribute
-    ) where
-
-import Prelude.Kore
+-}
+module Kore.Attribute.Symbol.Anywhere (
+    Anywhere (..),
+    anywhereId,
+    anywhereSymbol,
+    anywhereAttribute,
+) where
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Anywhere@ represents the @anywhere@ attribute for symbols.
-newtype Anywhere = Anywhere { isAnywhere :: Bool }
+newtype Anywhere = Anywhere {isAnywhere :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

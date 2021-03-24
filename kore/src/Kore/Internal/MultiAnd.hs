@@ -1,4 +1,7 @@
-{-|
+{-# LANGUAGE Strict #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+{- |
 Module      : Kore.Internal.MultiAnd
 Description : Data structures and functions for manipulating
               And with any number of children.
@@ -8,59 +11,52 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE Strict #-}
-
-module Kore.Internal.MultiAnd
-    ( MultiAnd
-    , top
-    , make
-    , toPredicate
-    , fromPredicate
-    , fromTermLike
-    , singleton
-    , map
-    , traverse
-    ) where
-
-import Prelude.Kore hiding
-    ( map
-    , traverse
-    )
+module Kore.Internal.MultiAnd (
+    MultiAnd,
+    top,
+    make,
+    toPredicate,
+    fromPredicate,
+    fromTermLike,
+    singleton,
+    map,
+    traverse,
+) where
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
-import qualified Generics.SOP as SOP
+import Debug
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    )
-
-import Debug
-import Kore.Internal.Condition
-    ( Condition
-    )
-import Kore.Internal.Predicate
-    ( Predicate
-    , getMultiAndPredicate
-    , makeAndPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.TermLike
-    ( TermLike
-    , TermLikeF (..)
-    )
+import qualified Generics.SOP as SOP
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
+import Kore.Internal.Condition (
+    Condition,
+ )
+import Kore.Internal.Predicate (
+    Predicate,
+    getMultiAndPredicate,
+    makeAndPredicate,
+    makeTruePredicate,
+ )
+import Kore.Internal.TermLike (
+    TermLike,
+    TermLikeF (..),
+ )
 import Kore.Internal.Variable
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Prelude.Kore hiding (
+    map,
+    traverse,
+ )
 
-{-| 'MultiAnd' is a Matching logic and of its children
+-- | 'MultiAnd' is a Matching logic and of its children
 
--}
 {- TODO (virgil): Make 'getMultiAnd' a non-empty list ("Data.NonEmpty").
 
 An empty 'MultiAnd' corresponding to 'Top' actually discards information
@@ -70,7 +66,7 @@ which should preserve pattern sorts.
 A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
-newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
+newtype MultiAnd child = MultiAnd {getMultiAnd :: [child]}
     deriving (Eq, Ord, Show)
     deriving (Foldable)
     deriving (GHC.Generic)
@@ -84,9 +80,10 @@ instance TopBottom child => TopBottom (MultiAnd child) where
     isBottom (MultiAnd [child]) = isBottom child
     isBottom _ = False
 
-instance (Ord variable, HasFreeVariables a variable) =>
+instance
+    (Ord variable, HasFreeVariables a variable) =>
     HasFreeVariables (MultiAnd a) variable
-  where
+    where
     freeVariables = foldMap' freeVariables
 
 instance Debug child => Debug (MultiAnd child)
@@ -102,62 +99,63 @@ instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
     mempty = make []
 
 instance
-    InternalVariable variable
-    => From (MultiAnd (Predicate variable)) (Predicate variable)
-  where
+    InternalVariable variable =>
+    From (MultiAnd (Predicate variable)) (Predicate variable)
+    where
     from = toPredicate
     {-# INLINE from #-}
 
 instance
-    InternalVariable variable
-    => From (Predicate variable) (MultiAnd (Predicate variable))
-  where
+    InternalVariable variable =>
+    From (Predicate variable) (MultiAnd (Predicate variable))
+    where
     from = fromPredicate
     {-# INLINE from #-}
 
 instance
-    InternalVariable variable
-    => From (Condition variable) (MultiAnd (Predicate variable))
-  where
+    InternalVariable variable =>
+    From (Condition variable) (MultiAnd (Predicate variable))
+    where
     from = fromPredicate . from @_ @(Predicate _)
     {-# INLINE from #-}
 
 instance
-    InternalVariable variable
-    => From (TermLike variable) (MultiAnd (TermLike variable))
-  where
+    InternalVariable variable =>
+    From (TermLike variable) (MultiAnd (TermLike variable))
+    where
     from = fromTermLike
     {-# INLINE from #-}
 
 top :: MultiAnd term
 top = MultiAnd []
 
-{-| 'AndBool' is an some sort of Bool data type used when evaluating things
+{- | 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
 -}
+
 -- TODO(virgil): Refactor, this is the same as OrBool. Make it a
 -- Top | Bottom | Other or a Maybe Bool.
 data AndBool = AndTrue | AndFalse | AndUnknown
 
-{-|Does a very simple attempt to check whether a pattern
+{- |Does a very simple attempt to check whether a pattern
 is top or bottom.
 -}
--- TODO(virgil): Refactor, this is the same as patternToOrBool
-patternToAndBool
-    :: TopBottom term
-    => term -> AndBool
-patternToAndBool patt
-  | isTop patt = AndTrue
-  | isBottom patt = AndFalse
-  | otherwise = AndUnknown
 
-{-| 'make' constructs a normalized 'MultiAnd'.
--}
+-- TODO(virgil): Refactor, this is the same as patternToOrBool
+patternToAndBool ::
+    TopBottom term =>
+    term ->
+    AndBool
+patternToAndBool patt
+    | isTop patt = AndTrue
+    | isBottom patt = AndFalse
+    | otherwise = AndUnknown
+
+-- | 'make' constructs a normalized 'MultiAnd'.
 make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
 
-{-| 'make' constructs a normalized 'MultiAnd'.
--}
+-- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
 
@@ -169,13 +167,12 @@ duplicated items from the result.
 
 See also: 'filterUnique'
 -}
-filterAnd
-    :: (Ord term, TopBottom term)
-    => MultiAnd term
-    -> MultiAnd term
+filterAnd ::
+    (Ord term, TopBottom term) =>
+    MultiAnd term ->
+    MultiAnd term
 filterAnd =
     filterGeneric patternToAndBool . filterUnique
-
 
 {- | Simplify the conjunction by eliminating duplicate elements.
 
@@ -187,71 +184,71 @@ to account separately for things like α-equivalence, so, if that is not
 included in the Ord instance, items containing @\\forall@ and
 @\\exists@ may be considered inequal although they are equivalent in
 a logical sense.
-
 -}
 filterUnique :: Ord a => MultiAnd a -> MultiAnd a
 filterUnique = MultiAnd . Set.toList . Set.fromList . getMultiAnd
 
-{-| 'filterGeneric' simplifies a MultiAnd according to a function which
+{- | 'filterGeneric' simplifies a MultiAnd according to a function which
 evaluates its children to true/false/unknown.
 -}
-filterGeneric
-    :: (child -> AndBool)
-    -> MultiAnd child
-    -> MultiAnd child
+filterGeneric ::
+    (child -> AndBool) ->
+    MultiAnd child ->
+    MultiAnd child
 filterGeneric andFilter (MultiAnd patts) =
     go andFilter [] patts
   where
-    go  :: (child -> AndBool)
-        -> [child]
-        -> [child]
-        -> MultiAnd child
+    go ::
+        (child -> AndBool) ->
+        [child] ->
+        [child] ->
+        MultiAnd child
     go _ filtered [] = MultiAnd (reverse filtered)
-    go filterAnd' filtered (element:unfiltered) =
+    go filterAnd' filtered (element : unfiltered) =
         case filterAnd' element of
             AndFalse -> MultiAnd [element]
             AndTrue -> go filterAnd' filtered unfiltered
-            AndUnknown -> go filterAnd' (element:filtered) unfiltered
+            AndUnknown -> go filterAnd' (element : filtered) unfiltered
 
-toPredicate
-    :: InternalVariable variable
-    => MultiAnd (Predicate variable)
-    -> Predicate variable
+toPredicate ::
+    InternalVariable variable =>
+    MultiAnd (Predicate variable) ->
+    Predicate variable
 toPredicate (MultiAnd predicates) =
     case predicates of
         [] -> makeTruePredicate
-        _  -> foldr1 makeAndPredicate predicates
+        _ -> foldr1 makeAndPredicate predicates
 
-fromPredicate
-    :: Ord variable
-    => Predicate variable
-    -> MultiAnd (Predicate variable)
+fromPredicate ::
+    Ord variable =>
+    Predicate variable ->
+    MultiAnd (Predicate variable)
 fromPredicate = make . getMultiAndPredicate
 
-fromTermLike
-    :: InternalVariable variable
-    => TermLike variable
-    -> MultiAnd (TermLike variable)
+fromTermLike ::
+    InternalVariable variable =>
+    TermLike variable ->
+    MultiAnd (TermLike variable)
 fromTermLike termLike =
     case Recursive.project termLike of
         _ :< AndF andF -> foldMap fromTermLike andF
-        _              -> make [termLike]
+        _ -> make [termLike]
 
-map
-    :: Ord child2
-    => TopBottom child2
-    => (child1 -> child2)
-    -> MultiAnd child1
-    -> MultiAnd child2
+map ::
+    Ord child2 =>
+    TopBottom child2 =>
+    (child1 -> child2) ->
+    MultiAnd child1 ->
+    MultiAnd child2
 map f = make . fmap f . toList
 {-# INLINE map #-}
 
-traverse
-    :: Ord child2
-    => TopBottom child2
-    => Applicative f
-    => (child1 -> f child2)
-    -> MultiAnd child1
-    -> f (MultiAnd child2)
+traverse ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f child2) ->
+    MultiAnd child1 ->
+    f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}

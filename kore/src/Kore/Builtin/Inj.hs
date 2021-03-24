@@ -1,31 +1,29 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin.Inj
-    ( verifiers
-    ) where
-
-import Prelude.Kore
+-}
+module Kore.Builtin.Inj (
+    verifiers,
+) where
 
 import qualified Data.Functor.Foldable as Recursive
-
-import Kore.ASTVerifier.PatternVerifier.PatternVerifier
-    ( PatternVerifier
-    )
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
-import Kore.Builtin.Verifiers
-    ( PatternVerifierHook (..)
-    , Verifiers (..)
-    )
+import Kore.ASTVerifier.PatternVerifier.PatternVerifier (
+    PatternVerifier,
+ )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
+import Kore.Builtin.Verifiers (
+    PatternVerifierHook (..),
+    Verifiers (..),
+ )
 import Kore.Error
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Verified as Verified
+import Prelude.Kore
 
 verifiers :: Verifiers
 verifiers =
@@ -35,14 +33,13 @@ verifiers =
         , patternVerifierHook
         }
   where
-    -- | Transform sort injections into their internal representation.
     patternVerifierHook = PatternVerifierHook $ \termLike -> do
         let _ :< termLikeF = Recursive.project termLike
         case termLikeF of
             ApplySymbolF application
-              | Symbol.isSortInjection symbol -> internalizeInj application
+                | Symbol.isSortInjection symbol -> internalizeInj application
               where
-                Application { applicationSymbolOrAlias = symbol } = application
+                Application{applicationSymbolOrAlias = symbol} = application
             _ -> return termLike
 
     expectInjParams :: [Sort] -> PatternVerifier (Sort, Sort)
@@ -53,9 +50,9 @@ verifiers =
     expectInjChildren [child] = return child
     expectInjChildren _ = koreFail "Expected one argument"
 
-    internalizeInj
-        :: Application Symbol Verified.Pattern
-        -> PatternVerifier Verified.Pattern
+    internalizeInj ::
+        Application Symbol Verified.Pattern ->
+        PatternVerifier Verified.Pattern
     internalizeInj application = do
         (injFrom, injTo) <- expectInjParams symbolParams
         injChild <- expectInjChildren applicationChildren
@@ -83,8 +80,8 @@ verifiers =
         -- (return . evaluateInj) inj
         return (synthesize $ InjF inj)
       where
-        Application { applicationSymbolOrAlias = symbol } = application
-        Application { applicationChildren } = application
-        Symbol { symbolConstructor = injConstructor } = symbol
-        Symbol { symbolParams } = symbol
-        Symbol { symbolAttributes = injAttributes } = symbol
+        Application{applicationSymbolOrAlias = symbol} = application
+        Application{applicationChildren} = application
+        Symbol{symbolConstructor = injConstructor} = symbol
+        Symbol{symbolParams} = symbol
+        Symbol{symbolAttributes = injAttributes} = symbol

@@ -1,72 +1,70 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
- -}
-{-# LANGUAGE Strict #-}
+-}
+module Kore.Builtin.InternalBytes.InternalBytes (
+    sort,
+    asInternal,
+    internalize,
+    asTermLike,
+    asPattern,
 
-module Kore.Builtin.InternalBytes.InternalBytes
-    ( sort
-    , asInternal
-    , internalize
-    , asTermLike
-    , asPattern
-      -- * Keys
-    , bytes2StringKey
-    , string2BytesKey
-    , updateKey
-    , getKey
-    , substrKey
-    , replaceAtKey
-    , padRightKey
-    , padLeftKey
-    , reverseKey
-    , lengthKey
-    , concatKey
-    , int2bytesKey
-    , bytes2intKey
-    ) where
+    -- * Keys
+    bytes2StringKey,
+    string2BytesKey,
+    updateKey,
+    getKey,
+    substrKey,
+    replaceAtKey,
+    padRightKey,
+    padLeftKey,
+    reverseKey,
+    lengthKey,
+    concatKey,
+    int2bytesKey,
+    bytes2intKey,
+) where
 
-import Prelude.Kore
-
-import Data.ByteString
-    ( ByteString
-    )
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
-
+import Data.ByteString (
+    ByteString,
+ )
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Symbols as Builtin
 import Kore.Internal.InternalBytes
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( fromTermLike
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
+import qualified Kore.Internal.Pattern as Pattern (
+    fromTermLike,
+ )
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike
-    ( DomainValue (..)
-    , InternalVariable
-    , Sort
-    , TermLike
-    , mkDomainValue
-    , mkInternalBytes
-    , mkStringLiteral
-    )
-import qualified Kore.Internal.TermLike as TermLike
-    ( pattern App_
-    , pattern StringLiteral_
-    , markSimplified
-    )
+import Kore.Internal.TermLike (
+    DomainValue (..),
+    InternalVariable,
+    Sort,
+    TermLike,
+    mkDomainValue,
+    mkInternalBytes,
+    mkStringLiteral,
+ )
+import qualified Kore.Internal.TermLike as TermLike (
+    markSimplified,
+    pattern App_,
+    pattern StringLiteral_,
+ )
+import Prelude.Kore
 
 -- | Builtin name for the Bytes sort.
 sort :: Text
 sort = "BYTES.Bytes"
-
 
 {- | Render a 'ByteString' as an internal domain value of the given sort.
 
@@ -74,12 +72,14 @@ The result sort should be hooked to the builtin @Bytes@ sort, but this is
 not checked.
 
 See also: 'sort'.
- -}
-asInternal
-    :: InternalVariable variable
-    => Sort        -- ^ resulting sort
-    -> ByteString  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asInternal ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    ByteString ->
+    TermLike variable
 asInternal bytesSort bytesValue =
     TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
 
@@ -89,41 +89,44 @@ The result sort should be hooked to the builtin @Bytes@ sort, but this is
 not checked.
 
 See also: 'sort'.
- -}
-asTermLike
-    :: InternalVariable variable
-    => InternalBytes  -- ^ builtin value to render
-    -> TermLike variable
-asTermLike InternalBytes { internalBytesSort, internalBytesValue }  =
-    mkDomainValue DomainValue
-        { domainValueSort = internalBytesSort
-        , domainValueChild = mkStringLiteral $ Encoding.decode8Bit internalBytesValue
-        }
+-}
+asTermLike ::
+    InternalVariable variable =>
+    -- | builtin value to render
+    InternalBytes ->
+    TermLike variable
+asTermLike InternalBytes{internalBytesSort, internalBytesValue} =
+    mkDomainValue
+        DomainValue
+            { domainValueSort = internalBytesSort
+            , domainValueChild = mkStringLiteral $ Encoding.decode8Bit internalBytesValue
+            }
 
-internalize
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+internalize ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 internalize =
     \case
         TermLike.App_ symbol args
-          | isSymbolString2Bytes symbol
-          , [TermLike.StringLiteral_ str] <- args ->
-            let
-                Symbol { symbolSorts } = symbol
-                ApplicationSorts { applicationSortsResult } = symbolSorts
-                literal = Encoding.encode8Bit str
-             in asInternal applicationSortsResult literal
+            | isSymbolString2Bytes symbol
+              , [TermLike.StringLiteral_ str] <- args ->
+                let Symbol{symbolSorts} = symbol
+                    ApplicationSorts{applicationSortsResult} = symbolSorts
+                    literal = Encoding.encode8Bit str
+                 in asInternal applicationSortsResult literal
         termLike -> termLike
 
 isSymbolString2Bytes :: Symbol -> Bool
 isSymbolString2Bytes = Builtin.isSymbol string2BytesKey
 
-asPattern
-    :: InternalVariable variable
-    => Sort        -- ^ resulting sort
-    -> ByteString  -- ^ builtin value to render
-    -> Pattern variable
+asPattern ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    ByteString ->
+    Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 -- | Bytes

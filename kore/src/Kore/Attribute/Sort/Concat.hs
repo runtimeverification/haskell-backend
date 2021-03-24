@@ -1,34 +1,33 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Module      : Kore.Attribute.Sort.Concat
 Description : Concat sort attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Sort.Concat
-    ( Concat (..)
-    , concatId, concatSymbol, concatAttribute
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Sort.Concat (
+    Concat (..),
+    concatId,
+    concatSymbol,
+    concatAttribute,
+) where
 
 import Data.Default
-
 import Kore.Attribute.Parser
+import Prelude.Kore
 
 -- | @Concat@ represents the @concat@ attribute for sorts.
-newtype Concat = Concat { getConcat :: Maybe SymbolOrAlias }
+newtype Concat = Concat {getConcat :: Maybe SymbolOrAlias}
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Concat where
     (<>) a@(Concat (Just _)) _ = a
-    (<>) _                     b = b
+    (<>) _ b = b
 
 instance Monoid Concat where
-    mempty = Concat { getConcat = Nothing }
+    mempty = Concat{getConcat = Nothing}
 
 instance Default Concat where
     def = mempty
@@ -38,13 +37,13 @@ instance NFData Concat
 instance ParseAttributes Concat where
     parseAttribute = withApplication' parseApplication
       where
-        parseApplication params args Concat { getConcat }
-          | Just _ <- getConcat = failDuplicate'
-          | otherwise = do
-            getZeroParams params
-            arg <- getOneArgument args
-            symbol <- getSymbolOrAlias arg
-            return Concat { getConcat = Just symbol }
+        parseApplication params args Concat{getConcat}
+            | Just _ <- getConcat = failDuplicate'
+            | otherwise = do
+                getZeroParams params
+                arg <- getOneArgument args
+                symbol <- getSymbolOrAlias arg
+                return Concat{getConcat = Just symbol}
         withApplication' = withApplication concatId
         failDuplicate' = failDuplicate concatId
 

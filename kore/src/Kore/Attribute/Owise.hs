@@ -1,23 +1,23 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
+-}
+module Kore.Attribute.Owise (
+    Owise (..),
+    owiseId,
+    owiseSymbol,
+    owiseAttribute,
+) where
 
- -}
-{-# LANGUAGE Strict #-}
-module Kore.Attribute.Owise
-    ( Owise (..)
-    , owiseId, owiseSymbol, owiseAttribute
-    ) where
-
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
-newtype Owise = Owise { isOwise :: Bool }
+newtype Owise = Owise {isOwise :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)

@@ -1,47 +1,44 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
- -}
-{-# LANGUAGE Strict #-}
-module Kore.Internal.InternalList
-    ( InternalList (..)
-    ) where
+-}
+module Kore.Internal.InternalList (
+    InternalList (..),
+) where
 
-import Prelude.Kore
-
-import Data.Sequence
-    ( Seq
-    )
-import qualified Generics.SOP as SOP
+import Data.Sequence (
+    Seq,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+ )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Symbol
-    ( Symbol
-    )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
-{- | Internal representation of the builtin @LIST.List@ domain.
- -}
-data InternalList child =
-    InternalList
-        { internalListSort :: !Sort
-        , internalListUnit :: !Symbol
-        , internalListElement :: !Symbol
-        , internalListConcat :: !Symbol
-        , internalListChild :: !(Seq child)
-        }
+-- | Internal representation of the builtin @LIST.List@ domain.
+data InternalList child = InternalList
+    { internalListSort :: !Sort
+    , internalListUnit :: !Symbol
+    , internalListElement :: !Symbol
+    , internalListConcat :: !Symbol
+    , internalListChild :: !(Seq child)
+    }
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -52,40 +49,40 @@ instance Hashable child => Hashable (InternalList child) where
     hashWithSalt salt internal =
         hashWithSalt salt (toList internalListChild)
       where
-        InternalList { internalListChild } = internal
+        InternalList{internalListChild} = internal
 
 instance NFData child => NFData (InternalList child)
 
 instance Unparse child => Unparse (InternalList child) where
     unparse internalList =
         Pretty.hsep
-        [ "/* InternalList: */"
-        , unparseConcat'
-            (unparse internalListUnit)
-            (unparse internalListConcat)
-            (element <$> toList internalListChild)
-        ]
-       where
+            [ "/* InternalList: */"
+            , unparseConcat'
+                (unparse internalListUnit)
+                (unparse internalListConcat)
+                (element <$> toList internalListChild)
+            ]
+      where
         element x = unparse internalListElement <> arguments [x]
-        InternalList { internalListChild } = internalList
-        InternalList { internalListUnit } = internalList
-        InternalList { internalListElement } = internalList
-        InternalList { internalListConcat } = internalList
+        InternalList{internalListChild} = internalList
+        InternalList{internalListUnit} = internalList
+        InternalList{internalListElement} = internalList
+        InternalList{internalListConcat} = internalList
 
     unparse2 internalList =
         Pretty.hsep
-        [ "/* InternalList: */"
-        , unparseConcat'
-            (unparse internalListUnit)
-            (unparse internalListConcat)
-            (element <$> toList internalListChild)
-        ]
+            [ "/* InternalList: */"
+            , unparseConcat'
+                (unparse internalListUnit)
+                (unparse internalListConcat)
+                (element <$> toList internalListChild)
+            ]
       where
         element x = unparse2 internalListElement <> arguments2 [x]
-        InternalList { internalListChild } = internalList
-        InternalList { internalListUnit } = internalList
-        InternalList { internalListElement } = internalList
-        InternalList { internalListConcat } = internalList
+        InternalList{internalListChild} = internalList
+        InternalList{internalListUnit} = internalList
+        InternalList{internalListElement} = internalList
+        InternalList{internalListConcat} = internalList
 
 instance Synthetic Sort InternalList where
     synthetic = internalListSort
@@ -97,9 +94,9 @@ instance Ord variable => Synthetic (FreeVariables variable) InternalList where
 
 instance Synthetic ConstructorLike InternalList where
     synthetic internalList
-      | all isConstructorLike internalList =
-        ConstructorLike (Just ConstructorLikeHead)
-      | otherwise = ConstructorLike Nothing
+        | all isConstructorLike internalList =
+            ConstructorLike (Just ConstructorLikeHead)
+        | otherwise = ConstructorLike Nothing
     {-# INLINE synthetic #-}
 
 instance Synthetic Defined InternalList where

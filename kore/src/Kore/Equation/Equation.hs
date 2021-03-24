@@ -1,78 +1,75 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Equation.Equation
-    ( Equation (..)
-    , mkEquation
-    , toTermLike
-    , mapVariables
-    , refreshVariables
-    , isSimplificationRule
-    , equationPriority
-    , substitute
-    , identifiers
-    ) where
-
-import Prelude.Kore
+module Kore.Equation.Equation (
+    Equation (..),
+    mkEquation,
+    toTermLike,
+    mapVariables,
+    refreshVariables,
+    isSimplificationRule,
+    equationPriority,
+    substitute,
+    identifiers,
+) where
 
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Wrapped
-    ( _Wrapped
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Generics.Wrapped (
+    _Wrapped,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
-
+import Data.Text (
+    Text,
+ )
 import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , HasFreeVariables (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    HasFreeVariables (..),
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-import Kore.Internal.Predicate
-    ( Predicate
-    , fromPredicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    fromPredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
-import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
-    )
+import Kore.Internal.Symbol (
+    Symbol (..),
+ )
+import Kore.Internal.TermLike (
+    InternalVariable,
+    TermLike,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
-import Kore.Step.Step
-    ( Renaming
-    )
-import Kore.Syntax.Application
-    ( Application (..)
-    )
+import Kore.Step.Step (
+    Renaming,
+ )
+import Kore.Syntax.Application (
+    Application (..),
+ )
 import Kore.Syntax.Variable
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Variables.Fresh as Fresh
-import Pretty
-    ( Pretty (..)
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 import qualified SQL
 
@@ -80,7 +77,7 @@ data Equation variable = Equation
     { requires :: !(Predicate variable)
     , argument :: !(Maybe (Predicate variable))
     , antiLeft :: !(Maybe (Predicate variable))
-    , left  :: !(TermLike variable)
+    , left :: !(TermLike variable)
     , right :: !(TermLike variable)
     , ensures :: !(Predicate variable)
     , attributes :: !(Attribute.Axiom Symbol variable)
@@ -92,23 +89,24 @@ data Equation variable = Equation
     deriving anyclass (Debug, Diff)
 
 -- | Creates a basic, unconstrained, Equality pattern
-mkEquation
-    :: HasCallStack
-    => InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Equation variable
+mkEquation ::
+    HasCallStack =>
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    Equation variable
 mkEquation left right =
-    assert (TermLike.termLikeSort left == TermLike.termLikeSort right)
-    Equation
-        { left
-        , requires = Predicate.makeTruePredicate
-        , argument = Nothing
-        , antiLeft = Nothing
-        , right
-        , ensures = Predicate.makeTruePredicate
-        , attributes = Default.def
-        }
+    assert
+        (TermLike.termLikeSort left == TermLike.termLikeSort right)
+        Equation
+            { left
+            , requires = Predicate.makeTruePredicate
+            , argument = Nothing
+            , antiLeft = Nothing
+            , right
+            , ensures = Predicate.makeTruePredicate
+            , attributes = Default.def
+            }
 
 instance InternalVariable variable => Pretty (Equation variable) where
     pretty equation@(Equation _ _ _ _ _ _ _) =
@@ -146,69 +144,60 @@ instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
-toTermLike
-    :: InternalVariable variable
-    => Sort
-    -> Equation variable
-    -> TermLike variable
+toTermLike ::
+    InternalVariable variable =>
+    Sort ->
+    Equation variable ->
+    TermLike variable
 toTermLike sort equation
-  -- \ceil axiom
-  | isTop requires
-  , isTop ensures
-  , TermLike.Ceil_ _ sort1 _ <- left
-  , TermLike.Top_ sort2 <- right
-  , sort1 == sort2
-  = left
-
-  -- function rule
-  | Just argument' <- argument
-  , Just antiLeft' <- antiLeft
-  =
-    let antiLeftTerm = fromPredicate sort antiLeft'
-        argumentTerm = fromPredicate sort argument'
-     in
-        TermLike.mkImplies
-            (TermLike.mkAnd
-                antiLeftTerm
-                (TermLike.mkAnd
-                    requires'
-                    argumentTerm
+    -- \ceil axiom
+    | isTop requires
+      , isTop ensures
+      , TermLike.Ceil_ _ sort1 _ <- left
+      , TermLike.Top_ sort2 <- right
+      , sort1 == sort2 =
+        left
+    -- function rule
+    | Just argument' <- argument
+      , Just antiLeft' <- antiLeft =
+        let antiLeftTerm = fromPredicate sort antiLeft'
+            argumentTerm = fromPredicate sort argument'
+         in TermLike.mkImplies
+                ( TermLike.mkAnd
+                    antiLeftTerm
+                    ( TermLike.mkAnd
+                        requires'
+                        argumentTerm
+                    )
                 )
-            )
-            (TermLike.mkAnd
+                ( TermLike.mkAnd
+                    (TermLike.mkEquals sort left right)
+                    ensures'
+                )
+    -- function rule without priority
+    | Just argument' <- argument =
+        let argumentTerm = fromPredicate sort argument'
+         in TermLike.mkImplies
+                ( TermLike.mkAnd
+                    requires'
+                    (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
+                )
+                ( TermLike.mkAnd
+                    (TermLike.mkEquals sort left right)
+                    ensures'
+                )
+    -- unconditional equation
+    | isTop requires
+      , isTop ensures =
+        TermLike.mkEquals sort left right
+    -- conditional equation
+    | otherwise =
+        TermLike.mkImplies
+            requires'
+            ( TermLike.mkAnd
                 (TermLike.mkEquals sort left right)
                 ensures'
             )
-
-  -- function rule without priority
-  | Just argument' <- argument
-  =
-    let argumentTerm = fromPredicate sort argument'
-     in TermLike.mkImplies
-        (TermLike.mkAnd
-            requires'
-            (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
-        )
-        (TermLike.mkAnd
-            (TermLike.mkEquals sort left right)
-            ensures'
-        )
-
-  -- unconditional equation
-  | isTop requires
-  , isTop ensures
-  = TermLike.mkEquals sort left right
-
-  -- conditional equation
-  | otherwise
-  =
-    TermLike.mkImplies
-        requires'
-        (TermLike.mkAnd
-            (TermLike.mkEquals sort left right)
-            ensures'
-        )
-
   where
     requires' = fromPredicate sort requires
     ensures' = fromPredicate sort ensures
@@ -222,26 +211,26 @@ toTermLike sort equation
         } = equation
 
 instance
-    InternalVariable variable
-    => HasFreeVariables (Equation variable) variable
-  where
+    InternalVariable variable =>
+    HasFreeVariables (Equation variable) variable
+    where
     freeVariables rule@(Equation _ _ _ _ _ _ _) = case rule of
-        Equation { left, argument, antiLeft, requires, right, ensures } ->
+        Equation{left, argument, antiLeft, requires, right, ensures} ->
             freeVariables left
-            <> freeVariables requires
-            <> maybe mempty freeVariables argument
-            <> maybe mempty freeVariables antiLeft
-            <> freeVariables right
-            <> freeVariables ensures
+                <> freeVariables requires
+                <> maybe mempty freeVariables argument
+                <> maybe mempty freeVariables antiLeft
+                <> freeVariables right
+                <> freeVariables ensures
 
 instance AstWithLocation variable => AstWithLocation (Equation variable) where
     locationFromAst = locationFromAst . left
 
-mapVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> Equation variable1
-    -> Equation variable2
+mapVariables ::
+    (InternalVariable variable1, InternalVariable variable2) =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    Equation variable1 ->
+    Equation variable2
 mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
@@ -265,83 +254,81 @@ mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
     mapTermLikeVariables = TermLike.mapVariables mapping
     mapPredicateVariables = Predicate.mapVariables mapping
 
-refreshVariables
-    :: forall variable
-    .  InternalVariable variable
-    => FreeVariables variable
-    -> Equation variable
-    -> (Renaming variable, Equation variable)
+refreshVariables ::
+    forall variable.
+    InternalVariable variable =>
+    FreeVariables variable ->
+    Equation variable ->
+    (Renaming variable, Equation variable)
 refreshVariables
     (FreeVariables.toNames -> avoid)
-    equation@(Equation _ _ _ _ _ _ _)
-  =
-    let rename :: Map (SomeVariableName variable) (SomeVariable variable)
-        rename =
-            FreeVariables.toSet originalFreeVariables
-            & Fresh.refreshVariables avoid
-        lookupSomeVariableName
-            :: forall variable'
-            .  Injection (SomeVariableName variable) variable'
-            => variable'
-            -> variable'
-        lookupSomeVariableName variable =
-            do
-                let injected = inject @(SomeVariableName _) variable
-                someVariableName <- variableName <$> Map.lookup injected rename
-                retract someVariableName
-            & fromMaybe variable
-        adj :: AdjSomeVariableName (variable -> variable)
-        adj =
-            AdjSomeVariableName
-            { adjSomeVariableNameElement =
-                ElementVariableName . Lens.over _Wrapped
-                $ lookupSomeVariableName @(ElementVariableName _)
-            , adjSomeVariableNameSet =
-                SetVariableName . Lens.over _Wrapped
-                $ lookupSomeVariableName @(SetVariableName _)
-
-            }
-        subst :: Map (SomeVariableName variable) (TermLike variable)
-        subst =
-            FreeVariables.toList originalFreeVariables
-            & map mkSubst
-            & Map.fromList
-        mkSubst variable =
-            ( variableName variable
-            , TermLike.mkVar (mapSomeVariable adj variable)
-            )
-        left' = TermLike.substitute subst left
-        requires' = Predicate.substitute subst requires
-        argument' = Predicate.substitute subst <$> argument
-        antiLeft' = Predicate.substitute subst <$> antiLeft
-        right' = TermLike.substitute subst right
-        ensures' = Predicate.substitute subst ensures
-        attributes' = Attribute.mapAxiomVariables adj attributes
-        equation' =
-            equation
-                { left = left'
-                , requires = requires'
-                , argument = argument'
-                , antiLeft = antiLeft'
-                , right = right'
-                , ensures = ensures'
-                , attributes = attributes'
-                }
-    in (rename, equation')
-  where
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        , attributes
-        } = equation
-    originalFreeVariables = freeVariables equation
+    equation@(Equation _ _ _ _ _ _ _) =
+        let rename :: Map (SomeVariableName variable) (SomeVariable variable)
+            rename =
+                FreeVariables.toSet originalFreeVariables
+                    & Fresh.refreshVariables avoid
+            lookupSomeVariableName ::
+                forall variable'.
+                Injection (SomeVariableName variable) variable' =>
+                variable' ->
+                variable'
+            lookupSomeVariableName variable =
+                do
+                    let injected = inject @(SomeVariableName _) variable
+                    someVariableName <- variableName <$> Map.lookup injected rename
+                    retract someVariableName
+                    & fromMaybe variable
+            adj :: AdjSomeVariableName (variable -> variable)
+            adj =
+                AdjSomeVariableName
+                    { adjSomeVariableNameElement =
+                        ElementVariableName . Lens.over _Wrapped $
+                            lookupSomeVariableName @(ElementVariableName _)
+                    , adjSomeVariableNameSet =
+                        SetVariableName . Lens.over _Wrapped $
+                            lookupSomeVariableName @(SetVariableName _)
+                    }
+            subst :: Map (SomeVariableName variable) (TermLike variable)
+            subst =
+                FreeVariables.toList originalFreeVariables
+                    & map mkSubst
+                    & Map.fromList
+            mkSubst variable =
+                ( variableName variable
+                , TermLike.mkVar (mapSomeVariable adj variable)
+                )
+            left' = TermLike.substitute subst left
+            requires' = Predicate.substitute subst requires
+            argument' = Predicate.substitute subst <$> argument
+            antiLeft' = Predicate.substitute subst <$> antiLeft
+            right' = TermLike.substitute subst right
+            ensures' = Predicate.substitute subst ensures
+            attributes' = Attribute.mapAxiomVariables adj attributes
+            equation' =
+                equation
+                    { left = left'
+                    , requires = requires'
+                    , argument = argument'
+                    , antiLeft = antiLeft'
+                    , right = right'
+                    , ensures = ensures'
+                    , attributes = attributes'
+                    }
+         in (rename, equation')
+      where
+        Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            , attributes
+            } = equation
+        originalFreeVariables = freeVariables equation
 
 isSimplificationRule :: Equation variable -> Bool
-isSimplificationRule Equation { attributes } =
+isSimplificationRule Equation{attributes} =
     case Attribute.simplification attributes of
         Attribute.IsSimplification _ -> True
         _ -> False
@@ -349,11 +336,11 @@ isSimplificationRule Equation { attributes } =
 equationPriority :: Equation variable -> Integer
 equationPriority = Attribute.getPriorityOfAxiom . attributes
 
-substitute
-    :: InternalVariable variable
-    => Map (SomeVariableName variable) (TermLike variable)
-    -> Equation variable
-    -> Equation variable
+substitute ::
+    InternalVariable variable =>
+    Map (SomeVariableName variable) (TermLike variable) ->
+    Equation variable ->
+    Equation variable
 substitute assignments equation =
     Equation
         { requires = Predicate.substitute assignments requires
@@ -382,10 +369,9 @@ The identifiers are:
 * the rule label
 * symbol names on the left-hand side
 * symbol 'Klabel's on the left-hand side
-
- -}
+-}
 identifiers :: Equation variable -> [Text]
-identifiers Equation { left, attributes } =
+identifiers Equation{left, attributes} =
     rule <> symbols
   where
     symbols =
@@ -398,8 +384,8 @@ identifiers Equation { left, attributes } =
     applySymbolIdentifiers application =
         catMaybes [symbolName, symbolKlabel]
       where
-        Application { applicationSymbolOrAlias = symbol } = application
+        Application{applicationSymbolOrAlias = symbol} = application
         symbolName = Just . getId $ symbolConstructor symbol
         symbolKlabel =
             (Attribute.Symbol.getKlabel . Attribute.Symbol.klabel)
-            (symbolAttributes symbol)
+                (symbolAttributes symbol)
