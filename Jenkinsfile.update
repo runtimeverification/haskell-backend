@@ -1,0 +1,40 @@
+pipeline {
+  agent {
+    dockerfile {
+      label 'docker'
+      additionalBuildArgs '--build-arg K_COMMIT=$(cat deps/k_release | cut --delimiter="-" --field="2") --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+    }
+  }
+  options {
+    ansiColor('xterm')
+  }
+  environment {
+    GITHUB_TOKEN = credentials('rv-jenkins')
+  }
+  stages {
+    steps {
+      sshagent(['2b3d8d6b-0855-4b59-864a-6b3ddf9c9d1a']) {
+        sh '''
+          git checkout -b _update
+          ./generate-regression-tests.sh
+          git add test/regression-evm test/regression-wasm
+          git commit -m 'Update regression tests'
+          hub pull-request                      \
+            --head _update --base master        \
+            --reviewer ttuegel --assign ttuegel \
+            --labels automerge                  \
+            --message 'Update regression tests'
+        '''
+      }
+    }
+  }
+  post {
+    unsuccessful {
+      script {
+        slackSend color: '#cb2431'                           \
+                , channel: '#haskell-backend'                \
+                , message: "Build failure: ${env.BUILD_URL}"
+      }
+    }
+  }
+}
