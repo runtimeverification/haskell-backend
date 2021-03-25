@@ -17,14 +17,14 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Ord
 
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Attribute.Symbol
-    ( Symbol (..)
-    )
 import Kore.Attribute.Function
     ( Function (..)
     )
+import qualified Kore.Attribute.Sort as Attribute
+import Kore.Attribute.Symbol
+    ( Symbol (..)
+    )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error as Error

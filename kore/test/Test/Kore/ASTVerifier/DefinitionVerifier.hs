@@ -487,7 +487,7 @@ axiomSentenceWithParamsAndAttrs
         , sentenceAxiomPattern = pattern'
         , sentenceAxiomAttributes = Attributes attrs
         }
-    
+
 
 axiomSentenceWithSortParameters
     :: patternType -> [SortVariable] -> Sentence patternType
