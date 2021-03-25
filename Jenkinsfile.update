@@ -22,6 +22,7 @@ pipeline {
             ./scripts/generate-regression-tests.sh
             git add test/regression-evm test/regression-wasm
             git commit -m 'Update regression tests'
+            git push -u origin _update
             hub pull-request                      \
               --head _update --base master        \
               --reviewer ttuegel --assign ttuegel \
