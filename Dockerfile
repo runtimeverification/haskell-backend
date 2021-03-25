@@ -23,9 +23,7 @@ RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/
 
 ARG HUB=2.14.2
 RUN    curl -sSL https://github.com/github/hub/releases/download/v$HUB/hub-linux-amd64-$HUB.tgz | tar -xz \
-    && cd hub-linux-amd64-$HUB \
-    && sudo ./install prefix=/usr/local \
-    && cd .. \
+    && ( cd hub-linux-amd64-$HUB && ./install prefix=/usr/local ) \
     && rm -fr hub-linux-amd64-$HUB
 
 USER $USER_ID:$GROUP_ID
@@ -33,10 +31,8 @@ WORKDIR /home/user
 
 ADD --chown=user:user stack.yaml .tmp-haskell/
 ADD --chown=user:user kore/package.yaml .tmp-haskell/kore/
-WORKDIR /home/user/.tmp-haskell
-RUN stack build --only-snapshot --test --bench --haddock \
-
-WORKDIR /home/user
+RUN    ( cd .tmp-haskell && stack build --only-snapshot --test --bench --haddock ) \
+    && rm -fr .tmp-haskell
 
 ADD --chown=user:user docker/ssh/config .ssh/
 RUN    git config --global user.email "admin@runtimeverification.com" \
