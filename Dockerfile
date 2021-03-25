@@ -21,15 +21,23 @@ RUN    groupadd --gid $GROUP_ID user                                        \
 ARG STACK=2.5.1
 RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/etc/scripts/get-stack.sh | sh
 
+ARG HUB=2.14.2
+RUN    curl -sSL https://github.com/github/hub/releases/download/v$HUB/hub-linux-amd64-$HUB.tgz | tar -xz \
+    && cd hub-linux-amd64-$HUB \
+    && sudo ./install prefix=/usr/local \
+    && cd .. \
+    && rm -fr hub-linux-amd64-$HUB
+
 USER $USER_ID:$GROUP_ID
 WORKDIR /home/user
 
 ADD --chown=user:user stack.yaml .tmp-haskell/
 ADD --chown=user:user kore/package.yaml .tmp-haskell/kore/
-RUN cd .tmp-haskell && stack build --only-snapshot --test --bench --haddock
+WORKDIR /home/user/.tmp-haskell
+RUN stack build --only-snapshot --test --bench --haddock \
 
-RUN mkdir -p /home/user/.ssh
-ADD --chown=user:user docker/ssh/config /home/user/.ssh/
-RUN    chmod go-rwx -R /home/user/.ssh                                \
-    && git config --global user.email "admin@runtimeverification.com" \
+WORKDIR /home/user
+
+ADD --chown=user:user docker/ssh/config .ssh/
+RUN    git config --global user.email "admin@runtimeverification.com" \
     && git config --global user.name  "RV Jenkins"
