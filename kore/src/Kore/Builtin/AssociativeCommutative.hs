@@ -804,19 +804,21 @@ unifyEqualsNormalizedAc
                             allElements2
                             Nothing
                 ([ElemVar_ v1], _)
-                    | null opaqueDifference2 -> lift $
-                        unifyEqualsElementLists'
-                            allElements1
-                            allElements2
-                            (Just v1)
+                    | null opaqueDifference2 ->
+                        lift $
+                            unifyEqualsElementLists'
+                                allElements1
+                                allElements2
+                                (Just v1)
                     | null allElements1 ->
                         unifyOpaqueVariable' v1 allElements2 opaqueDifference2
                 (_, [ElemVar_ v2])
-                    | null opaqueDifference1 -> lift $
-                        unifyEqualsElementLists'
-                            allElements2
-                            allElements1
-                            (Just v2)
+                    | null opaqueDifference1 ->
+                        lift $
+                            unifyEqualsElementLists'
+                                allElements2
+                                allElements1
+                                (Just v2)
                     | null allElements2 ->
                         unifyOpaqueVariable' v2 allElements1 opaqueDifference1
                 _ -> empty
