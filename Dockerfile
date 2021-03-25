@@ -9,8 +9,7 @@ RUN    apt update              \
     && apt upgrade --yes       \
     && apt install --yes       \
            libtinfo-dev        \
-           curl git make unzip \
-           hub
+           curl git make unzip
 
 ENV LC_ALL=C.UTF-8
 
