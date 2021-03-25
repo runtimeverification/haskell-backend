@@ -1,0 +1,9 @@
+  #Not ( {
+    X
+  #Equals
+    Y
+  } )
+#And
+  <k>
+    removeResult ( Y:MyId |-> 2 ~> . ) ~> .
+  </k>

@@ -32,14 +32,12 @@ do
         --output)
             shift
             ;;
-        */definition.kore)
-            cp "$1" "$name-definition.kore"
-            echo -n "$name-definition.kore "
-            ;;
-        *.kore)
+        *.kore|.k*) # the .k* pattern matches files from temporary run folders
+            kollected=1
+            ;&
+        */definition.kore|*/vdefinition.kore)
             cp "$1" "$name-$(basename "$1")"
             echo -n "$name-$(basename "$1") "
-            kollected=1
             ;;
         *)
             echo -n "$1 "
