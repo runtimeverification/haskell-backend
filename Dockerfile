@@ -11,13 +11,6 @@ RUN    apt update              \
            libtinfo-dev        \
            curl git make unzip
 
-ENV LC_ALL=C.UTF-8
-
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-RUN    groupadd --gid $GROUP_ID user                                        \
-    && useradd --create-home --uid $USER_ID --shell /bin/sh --gid user user
-
 ARG STACK=2.5.1
 RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/etc/scripts/get-stack.sh | sh
 
@@ -25,6 +18,13 @@ ARG HUB=2.14.2
 RUN    curl -sSL https://github.com/github/hub/releases/download/v$HUB/hub-linux-amd64-$HUB.tgz | tar -xz \
     && ( cd hub-linux-amd64-$HUB && ./install prefix=/usr/local ) \
     && rm -fr hub-linux-amd64-$HUB
+
+ENV LC_ALL=C.UTF-8
+
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN    groupadd --gid $GROUP_ID user                                        \
+    && useradd --create-home --uid $USER_ID --shell /bin/sh --gid user user
 
 USER $USER_ID:$GROUP_ID
 WORKDIR /home/user
