@@ -5,11 +5,12 @@ ENV TZ=America/Chicago
 RUN    ln --symbolic --no-dereference --force /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone
 
-RUN    apt update                                                                \
-    && apt upgrade --yes                                                         \
-    && apt install --yes                                                         \
-           libtinfo-dev                                                          \
-           curl git make unzip
+RUN    apt update              \
+    && apt upgrade --yes       \
+    && apt install --yes       \
+           libtinfo-dev        \
+           curl git make unzip \
+           hub
 
 ENV LC_ALL=C.UTF-8
 
