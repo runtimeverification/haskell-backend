@@ -221,8 +221,8 @@ testDef =
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
-                            (mkTop sortS)
                             (mkApplySymbol fHead [])
+                            (mkTop sortS)
                         )
                         (mkTop sortVarS)
                     )
@@ -485,7 +485,7 @@ test_functionRegistry =
            (case Map.lookup axiomId testProcessedAxiomPatterns of
                 Just PartitionedEquations { functionRules } ->
                     assertEqual ""
-                        [1, 2, 3, defaultPriority, owisePriority]
+                        [1, 2, 3, defaultPriority, defaultPriority, owisePriority]
                         (fmap Equation.equationPriority functionRules)
                 _ -> assertFailure "Should find function rules for f"
             )

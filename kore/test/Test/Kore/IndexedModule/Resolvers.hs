@@ -19,6 +19,12 @@ import qualified Data.Ord
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol
+    ( Symbol (..)
+    )
+import Kore.Attribute.Function
+    ( Function (..)
+    )
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error as Error
@@ -40,7 +46,10 @@ objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol
-objectA = TermLike.mkSymbol_ (testId "a") [] objectS1
+objectA = (TermLike.mkSymbol_ (testId "a") [] objectS1)
+    { sentenceSymbolAttributes =
+        Attributes [Attribute.functionAttribute]
+    }
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
@@ -51,8 +60,8 @@ axiomA' =
     fmap Builtin.externalize
     $ TermLike.mkAxiom [sortVariableR]
     $ TermLike.mkForall x
-    $ TermLike.mkEquals sortR (TermLike.mkElemVar x)
-    $ TermLike.applySymbol_ objectA []
+    $ TermLike.mkEquals sortR (TermLike.applySymbol_ objectA [])
+    $ TermLike.mkElemVar x
   where
     x = TermLike.mkElementVariable "x" objectS1
     sortVariableR = SortVariable (testId "R")
@@ -190,13 +199,17 @@ test_resolvers =
         )
     , testCase "object symbol"
         (assertEqual ""
-            (Right (def :: Attribute.Symbol, SentenceSymbol
-                { sentenceSymbolAttributes = Attributes []
-                , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort = objectS1
-                }
-            ))
+            ( Right
+                ( def {function = Function True}
+                , SentenceSymbol
+                    { sentenceSymbolAttributes =
+                        Attributes [Attribute.functionAttribute]
+                    , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolResultSort = objectS1
+                    }
+                )
+            )
             (resolveSymbol testIndexedModule (testId "a" :: Id))
         )
     , testCase "meta symbol"

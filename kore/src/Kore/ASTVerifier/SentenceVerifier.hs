@@ -54,7 +54,7 @@ import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.ASTVerifier.SortVerifier
 import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom (simplification)
+    ( Axiom (..)
     , parseAxiomAttributes
     )
 import qualified Kore.Attribute.Hook as Attribute
@@ -66,9 +66,6 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Attribute.Simplification
-    ( Simplification (NotSimplification)
-    )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
     ( Sort
@@ -79,6 +76,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation.Equation
     ( Equation (..)
+    , isSimplificationRule
     )
 import Kore.Equation.Sentence
     ( MatchEquationError (..)
@@ -409,8 +407,8 @@ verifyAxiomSentence sentence =
                 ConstructorAxiom -> return ()
                 SubsortAxiom -> return ()
             )
-            (\ eq@Equation {left, argument, attributes} ->
-                when (isNotSimplification attributes)
+            (\ eq@Equation {left, argument} ->
+                unless (isSimplificationRule eq)
                     $ checkLHS eq left >> checkArg eq argument
             )
             $ fromSentenceAxiom (attrs, verified)
@@ -420,10 +418,6 @@ verifyAxiomSentence sentence =
             (field @"indexedModuleAxioms")
             ((attrs, verified) :)
 
-    isNotSimplification attributes =
-        Attribute.simplification attributes ==
-        NotSimplification
-
     checkLHS eq termLike =
         if isNonconstructorFunctionSymbol termLike
         then failOnJust
@@ -431,8 +425,10 @@ verifyAxiomSentence sentence =
             "LHS of NotSimplification axiom contains non-variable:"
             $ asum $ getNotVar <$> termLikeF
         else koreFail $ show $ Pretty.vsep
-            [ "Head of LHS of Notsimplification axiom is not a non-constructor function symbol. This is the LHS:"
+            [ "Head of LHS of Not Simplification axiom is not a non-constructor function symbol. This is the LHS:"
             , unparse termLike
+            , "This is the full equation:"
+            , Pretty.pretty eq
             ]
       where
         _ :< termLikeF = Recursive.project termLike

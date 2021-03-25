@@ -46,6 +46,7 @@ module Test.Kore.ASTVerifier.DefinitionVerifier
     , successTestDataGroup
     , failureTestData
     , failureTestDataGroup
+    , axiomSentenceWithParamsAndAttrs
     , axiomSentenceWithSortParameters
     , expectFailureWithError
     , objectVariableSort
@@ -471,14 +472,27 @@ symbolSentenceWithSortParametersAux (SymbolName name) sort parameters =
         , sentenceSymbolAttributes = Attributes []
         }
 
-axiomSentenceWithSortParameters
-    :: patternType -> [SortVariable] -> Sentence patternType
-axiomSentenceWithSortParameters pattern' parameters =
+axiomSentenceWithParamsAndAttrs
+    :: patternType
+    -> [SortVariable]
+    -> [AttributePattern]
+    -> Sentence patternType
+axiomSentenceWithParamsAndAttrs
+    pattern'
+    parameters
+    attrs
+  =
     SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = parameters
         , sentenceAxiomPattern = pattern'
-        , sentenceAxiomAttributes = Attributes []
+        , sentenceAxiomAttributes = Attributes attrs
         }
+    
+
+axiomSentenceWithSortParameters
+    :: patternType -> [SortVariable] -> Sentence patternType
+axiomSentenceWithSortParameters pattern' parameters =
+    axiomSentenceWithParamsAndAttrs pattern' parameters []
 
 sentenceAliasWithResultSort
     :: AliasName
