@@ -67,28 +67,7 @@ module INJ
     \equals{S3,R}(
       inj{S2,S3}(inj{S1,S2}(T:S1)),
       inj{S1,S3}(T:S1))
-  []
-  axiom{S1,S2,S3,R}
-    \implies{S1,S2,S3,R}
-      ( \and{S1,S2,S3,R}
-        ( \top{S1,S2,S3,R}()
-        , \and{S1,S2,S3,R}
-          ( \in{S2,S1,S2,S3,R}
-            ( injS1S2T:S2{}
-            , inj{S1,S2}(T:S1)
-            )
-          , \top{S1,S2,S3,R}()
-          )
-        )
-      , \and{S1,S2,S3,R}
-        ( \equals{S3,S1,S2,S3,R}
-          ( inj{S2,S3}(injS1S2T)
-          , inj{S1,S3}(T:S1)
-          )
-        , \top{S1,S2,S3,R}()
-        )
-      )
-  []
+  [simplification{}()]
 
 endmodule []
 
