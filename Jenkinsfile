@@ -124,7 +124,7 @@ pipeline {
   post {
     unsuccessful {
       script {
-        if (env.BRANCH_NAME == 'master' || params.STAGE='UPDATE-TESTS') {
+        if (env.BRANCH_NAME == 'master' || params.STAGE == 'UPDATE-TESTS') {
           slackSend color: '#cb2431'                             \
                     , channel: '#haskell-backend'                \
                     , message: "Build failure: ${env.BUILD_URL}"
