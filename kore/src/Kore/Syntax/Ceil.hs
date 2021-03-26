@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -6,8 +7,8 @@ module Kore.Syntax.Ceil (
     Ceil (..),
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -29,7 +30,7 @@ This represents the ⌈ceilPattern⌉ Matching Logic construct.
 data Ceil sort child = Ceil
     { ceilOperandSort :: !sort
     , ceilResultSort :: !sort
-    , ceilChild :: child
+    , ceilChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

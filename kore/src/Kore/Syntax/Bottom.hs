@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -6,8 +7,8 @@ module Kore.Syntax.Bottom (
     Bottom (..),
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug

@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -19,15 +20,15 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
-import Data.String (
-    IsString (..),
- )
-import Data.Text (
-    Text,
- )
+import Data.String
+    ( IsString (..)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Debug
 import Kore.Unparser
 import Prelude.Kore
@@ -115,7 +116,7 @@ data AstLocation
     | AstLocationImplicit
     | AstLocationGeneratedVariable
     | AstLocationTest
-    | AstLocationFile FileLocation
+    | AstLocationFile !FileLocation
     | -- | This should not be used and should be eliminated in further releases
       AstLocationUnknown
     deriving (Eq, Ord, Show)
@@ -149,9 +150,9 @@ prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 -- | 'FileLocation' represents a position in a source file.
 data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line :: Int
-    , column :: Int
+    { fileName :: !FilePath
+    , line :: !Int
+    , column :: !Int
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

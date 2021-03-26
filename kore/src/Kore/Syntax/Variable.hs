@@ -1,4 +1,5 @@
 {-# LANGUAGE EmptyDataDeriving #-}
+{-# LANGUAGE Strict            #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
@@ -57,29 +58,29 @@ module Kore.Syntax.Variable (
     toConcrete,
 ) where
 
-import Data.Distributive (
-    Distributive (..),
- )
-import Data.Functor.Adjunction (
-    Adjunction (..),
-    extractL,
-    indexAdjunction,
-    tabulateAdjunction,
- )
-import Data.Functor.Const (
-    Const (..),
- )
-import Data.Functor.Rep (
-    Representable (..),
- )
-import Data.Generics.Sum (
-    _Ctor,
- )
+import Data.Distributive
+    ( Distributive (..)
+    )
+import Data.Functor.Adjunction
+    ( Adjunction (..)
+    , extractL
+    , indexAdjunction
+    , tabulateAdjunction
+    )
+import Data.Functor.Const
+    ( Const (..)
+    )
+import Data.Functor.Rep
+    ( Representable (..)
+    )
+import Data.Generics.Sum
+    ( _Ctor
+    )
 import Data.Sup
 import qualified Data.Text as Text
 import Data.Void
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -398,9 +399,9 @@ function in each field of @f@ to the value in the corresponding field of @a@.
 -}
 data AdjSomeVariableName a = AdjSomeVariableName
     { -- | compare to: 'SomeVariableNameElement'
-      adjSomeVariableNameElement :: ElementVariableName a
+      adjSomeVariableNameElement :: !(ElementVariableName a)
     , -- | compare to: 'SomeVariableNameSet'
-      adjSomeVariableNameSet :: SetVariableName a
+      adjSomeVariableNameSet :: !(SetVariableName a)
     }
     deriving (Functor)
     deriving (GHC.Generic1)

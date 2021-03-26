@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -7,15 +8,15 @@ module Kore.Syntax.StringLiteral (
 ) where
 
 import Data.Functor.Const
-import Data.Text (
-    Text,
- )
-import qualified GHC.Generics as GHC
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
-import Kore.Attribute.Pattern.FreeVariables (
-    FreeVariables,
-    emptyFreeVariables,
- )
+import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , emptyFreeVariables
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort

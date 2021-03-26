@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -19,8 +20,8 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Debug
 import Kore.Sort
 import Kore.TopBottom
@@ -62,7 +63,7 @@ This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
 data Application head child = Application
     { applicationSymbolOrAlias :: !head
-    , applicationChildren :: [child]
+    , applicationChildren :: ![child]
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

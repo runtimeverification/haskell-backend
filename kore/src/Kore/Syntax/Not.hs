@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -6,8 +7,8 @@ module Kore.Syntax.Not (
     Not (..),
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -25,7 +26,7 @@ Section 9.1.4 (Patterns).
 -}
 data Not sort child = Not
     { notSort :: !sort
-    , notChild :: child
+    , notChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

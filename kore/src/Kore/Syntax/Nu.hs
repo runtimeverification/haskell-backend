@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -6,8 +7,8 @@ module Kore.Syntax.Nu (
     Nu (..),
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -24,7 +25,7 @@ The sort of the variable is the same as the sort of the result.
 -}
 data Nu variable child = Nu
     { nuVariable :: !(SetVariable variable)
-    , nuChild :: child
+    , nuChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

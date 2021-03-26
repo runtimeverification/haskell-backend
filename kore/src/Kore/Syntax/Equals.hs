@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -6,17 +7,17 @@ module Kore.Syntax.Equals (
     Equals (..),
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import Pretty (
-    Pretty (..),
- )
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {- |'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
@@ -30,8 +31,8 @@ Section 9.1.4 (Patterns).
 data Equals sort child = Equals
     { equalsOperandSort :: !sort
     , equalsResultSort :: !sort
-    , equalsFirst :: child
-    , equalsSecond :: child
+    , equalsFirst :: !child
+    , equalsSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

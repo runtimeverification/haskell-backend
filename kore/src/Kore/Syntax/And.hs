@@ -1,13 +1,15 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+
 module Kore.Syntax.And (
     And (..),
 ) where
 
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -26,8 +28,8 @@ This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And sort child = And
     { andSort :: !sort
-    , andFirst :: child
-    , andSecond :: child
+    , andFirst :: !child
+    , andSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
