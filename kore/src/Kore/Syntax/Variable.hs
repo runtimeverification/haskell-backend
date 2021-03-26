@@ -1,4 +1,5 @@
 {-# LANGUAGE EmptyDataDeriving #-}
+{-# LANGUAGE Strict #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
@@ -398,9 +399,9 @@ function in each field of @f@ to the value in the corresponding field of @a@.
 -}
 data AdjSomeVariableName a = AdjSomeVariableName
     { -- | compare to: 'SomeVariableNameElement'
-      adjSomeVariableNameElement :: ElementVariableName a
+      adjSomeVariableNameElement :: !(ElementVariableName a)
     , -- | compare to: 'SomeVariableNameSet'
-      adjSomeVariableNameSet :: SetVariableName a
+      adjSomeVariableNameSet :: !(SetVariableName a)
     }
     deriving (Functor)
     deriving (GHC.Generic1)

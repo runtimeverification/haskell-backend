@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -24,7 +26,7 @@ The sort of the variable is the same as the sort of the result.
 -}
 data Nu variable child = Nu
     { nuVariable :: !(SetVariable variable)
-    , nuChild :: child
+    , nuChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -62,7 +64,7 @@ This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
 data Application head child = Application
     { applicationSymbolOrAlias :: !head
-    , applicationChildren :: [child]
+    , applicationChildren :: ![child]
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
