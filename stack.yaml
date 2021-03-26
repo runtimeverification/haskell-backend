@@ -80,6 +80,9 @@ extra-deps:
 # TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
 allow-newer: true
 
+ghc-options:
+  "$everything": -haddock
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
