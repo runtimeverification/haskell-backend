@@ -97,7 +97,6 @@ replace-tests() {
         echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile
         echo "" >> $testdir/Makefile
         echo "test-%.sh.out: \$(TEST_DIR)/test-%-*" >> $testdir/Makefile
-        # TODO: do we want to "make golden" here?
     fi
     mv $tests $testdir
 }
