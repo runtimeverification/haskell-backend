@@ -8,18 +8,18 @@ module Kore.Syntax.Module (
     Module (..),
 ) where
 
-import Data.Kind
-    ( Type
-    )
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
+import Data.Kind (
+    Type,
+ )
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Unparser

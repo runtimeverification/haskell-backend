@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -7,17 +8,17 @@ module Kore.Syntax.Equals (
     Equals (..),
 ) where
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
 {- |'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and

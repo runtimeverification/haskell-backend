@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -20,8 +21,8 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Debug
 import Kore.Sort
 import Kore.TopBottom

@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -7,12 +8,12 @@ module Kore.Syntax.Inhabitant (
     Inhabitant (..),
 ) where
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , emptyFreeVariables
-    )
+import qualified Generics.SOP as SOP
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    emptyFreeVariables,
+ )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
