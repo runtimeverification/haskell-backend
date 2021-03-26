@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+shopt -s extglob
 set -exuo pipefail
 
 kollect() {
@@ -90,20 +91,21 @@ replace-tests() {
 
     if [ -d $testdir ]
     then
-        rm $testdir/test-*
+        rm $testdir/!(*.golden|Makefile)
     else
         mkdir $testdir
         echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile
         echo "" >> $testdir/Makefile
         echo "test-%.sh.out: \$(TEST_DIR)/test-%-*" >> $testdir/Makefile
+        # TODO: do we want to "make golden" here?
     fi
     mv $tests $testdir
 }
 
-build-evm
-generate-evm
-replace-tests "test/regression-evm" "evm-semantics"
-rm -rf $KORE/evm-semantics
+# build-evm
+# generate-evm
+# replace-tests "test/regression-evm" "evm-semantics"
+# rm -rf $KORE/evm-semantics
 
 build-wasm
 generate-wasm
