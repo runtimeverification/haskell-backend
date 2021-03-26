@@ -102,10 +102,10 @@ replace-tests() {
     mv $tests $testdir
 }
 
-# build-evm
-# generate-evm
-# replace-tests "test/regression-evm" "evm-semantics"
-# rm -rf $KORE/evm-semantics
+build-evm
+generate-evm
+replace-tests "test/regression-evm" "evm-semantics"
+rm -rf $KORE/evm-semantics
 
 build-wasm
 generate-wasm
