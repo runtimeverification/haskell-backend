@@ -19,5 +19,9 @@
         };
       };
   resolver = "lts-17.7";
-  modules = [ ({ lib, ... }: { packages = {}; }) { packages = {}; } ];
+  modules = [
+    ({ lib, ... }:
+      { packages = {}; })
+    { packages = { "$everything" = { ghcOptions = [ "-haddock" ]; }; }; }
+    ];
   }
