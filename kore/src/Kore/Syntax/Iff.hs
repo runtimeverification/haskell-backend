@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -24,8 +26,8 @@ Section 9.1.4 (Patterns).
 -}
 data Iff sort child = Iff
     { iffSort :: !sort
-    , iffFirst :: child
-    , iffSecond :: child
+    , iffFirst :: !child
+    , iffSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

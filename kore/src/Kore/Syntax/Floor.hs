@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -27,7 +29,7 @@ Section 9.1.4 (Patterns).
 data Floor sort child = Floor
     { floorOperandSort :: !sort
     , floorResultSort :: !sort
-    , floorChild :: child
+    , floorChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

@@ -48,11 +48,11 @@ KORE_REPL_OPTS = --no-bug-report
 export KORE_REPL
 export KORE_REPL_OPTS
 
-$(KORE_EXEC):
+$(BUILD_DIR)/kore/bin/kore-exec:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
 
-$(KORE_REPL):
+$(BUILD_DIR)/kore/bin/kore-repl:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
 
-$(KORE_PARSER):
+$(BUILD_DIR)/kore/bin/kore-parser:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
