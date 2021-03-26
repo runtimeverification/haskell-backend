@@ -9,6 +9,7 @@ Portability : POSIX
 
 Helper tools for parsing Kore. Meant for internal use only.
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Parser.ParserUtils (
     Parser,
     parseOnly,

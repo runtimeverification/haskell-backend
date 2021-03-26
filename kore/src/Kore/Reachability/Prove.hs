@@ -5,6 +5,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 This should be imported qualified.
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Reachability.Prove (
     CommonClaimState,
     ProveClaimsResult (..),

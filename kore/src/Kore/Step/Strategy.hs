@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Step.Strategy
 Description : Strategies for pattern rewriting

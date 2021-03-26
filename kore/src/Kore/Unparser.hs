@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Unparser
 Description : Render abstract to concrete Kore syntax

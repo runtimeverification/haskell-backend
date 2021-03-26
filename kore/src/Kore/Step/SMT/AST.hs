@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Step.SMT.AST
 Description : Data types involved in declaring and using SMT symbols.

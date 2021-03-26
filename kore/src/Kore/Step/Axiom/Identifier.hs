@@ -16,6 +16,7 @@ import Kore.Step.Axiom.Identifier ( AxiomIdentifier )
 import Kore.Step.Axiom.Identifier as AxiomIdentifier
 @
 -}
+-- {-# LANGUAGE Strict #-}
 module Kore.Step.Axiom.Identifier (
     AxiomIdentifier (..),
     matchAxiomIdentifier,

@@ -6,6 +6,7 @@ This module should be imported qualified:
 import qualified Kore.Step.Function.Memo as Memo
 @
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Step.Function.Memo (
     Self (..),
     CacheKey,

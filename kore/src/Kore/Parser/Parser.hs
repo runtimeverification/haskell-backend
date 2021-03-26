@@ -10,6 +10,7 @@ definitions. We assume several conventions:
 2.  Parsers named @Remainder@ assume that their prefix (usually, an identifier)
     has already been parsed.
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Parser.Parser (
     parseDefinition,
     parseDefinitionAux,

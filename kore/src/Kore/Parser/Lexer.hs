@@ -5,6 +5,7 @@ License     : NCSA
 All exported parsers consume the whitespace after the parsed element and expect
 no whitespace before.
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Parser.Lexer (
     -- * Lexemes
     lexeme,

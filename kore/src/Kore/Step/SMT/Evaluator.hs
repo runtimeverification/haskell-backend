@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Step.SMT.Evaluator
 Description : Uses a SMT solver for evaluating predicates.

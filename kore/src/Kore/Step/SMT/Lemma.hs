@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Step.SMT.Lemma
 Description : Declares all rules marked smt-lemma to the SMT solver.
@@ -102,7 +103,7 @@ declareSMTLemmas m = do
 
     isUnsatisfiable Unsat = True
     isUnsatisfiable _ = False
-    errorInconsistentDefinitions =
+    ~errorInconsistentDefinitions =
         error "The definitions sent to the solver are inconsistent."
 
 translateUninterpreted ::

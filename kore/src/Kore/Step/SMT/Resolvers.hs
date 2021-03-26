@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Step.SMT.Resolvers
 Description : Translates sorts and symbols to a SMT representation.
