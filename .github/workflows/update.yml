@@ -41,20 +41,19 @@ jobs:
       - name: Materialize
         run: ./nix/rematerialize.sh
 
-      - name: Check for changes
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
-            git diff
-            exit 1
-          fi
-
       - name: Update branch
-        if: ${{ github.event_name == 'push' }}
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
-        with:
-          commit_message: 'Materialize Nix expressions'
-          file_pattern: 'nix/ *.cabal'
+        run: |
+          if ${{ github.event_name == 'pull_request' }}; then
+            if [ -n "$(git status --porcelain '*.hs')" ]; then
+              git diff
+              exit 1
+            fi
+          fi
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add '*.hs'
+          git commit -m 'Materialize Nix expressions'
+          git push
 
   fourmolu:
     name: 'Style'
@@ -101,9 +100,15 @@ jobs:
           fi
 
       - name: Update branch
-        if: ${{ github.event_name == 'push' }}
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
-        with:
-          commit_message: 'Format with fourmolu'
-          file_pattern: '*.hs'
-
+        run: |
+          if ${{ github.event_name == 'pull_request' }}; then
+            if [ -n "$(git status --porcelain '*.hs')" ]; then
+              git diff
+              exit 1
+            fi
+          fi
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add '*.hs'
+          git commit -m 'Format with fourmolu'
+          git push
