@@ -2,8 +2,8 @@ name: "Test"
 on:
   pull_request:
 jobs:
-  nix:
-    name: 'Nix'
+  nix-build:
+    name: 'Nix / Build'
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -32,16 +32,71 @@ jobs:
       - name: Build
         run: nix-build -A kore
 
-      - name: Run unit tests
-        run: nix-build -A project.kore.checks
+  nix-shell:
+    name: 'Nix / Shell'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v12
+        with:
+          extra_nix_config: |
+            substituters = http://cache.nixos.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: Install Cachix
+        uses: cachix/cachix-action@v8
+        with:
+          name: kore
+          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
 
       - name: Check shell
         run: nix-shell --run "echo OK"
 
+  nix-test:
+    name: 'Nix / Test'
+    needs: nix-build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v12
+        with:
+          extra_nix_config: |
+            substituters = http://cache.nixos.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: Install Cachix
+        uses: cachix/cachix-action@v8
+        with:
+          name: kore
+          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+
+      - name: Run unit tests
+        run: nix-build -A project.kore.checks
+
   nix-integration:
     name: 'Nix / Integration'
     runs-on: ubuntu-latest
-    needs: nix
+    needs: nix-build
     steps:
       - name: Check out code
         uses: actions/checkout@v2.3.4
