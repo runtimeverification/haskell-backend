@@ -29,20 +29,6 @@ jobs:
           name: kore
           signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
 
-      - name: Check materialization
-        run: |
-          ./nix/rematerialize.sh
-          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
-            git diff
-            exit 1
-          fi
-
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
-        with:
-          commit_message: 'Materialize Nix expressions'
-          file_pattern: 'nix/'
-
       - name: Build
         run: nix-build -A kore
 
@@ -176,37 +162,3 @@ jobs:
 
       - name: Run hlint
         run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j
-
-  fourmolu:
-    name: 'Style'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2.3.4
-        with:
-          submodules: recursive
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v12
-        with:
-          extra_nix_config: |
-            substituters = http://cache.nixos.org https://hydra.iohk.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-
-      - name: Install Cachix
-        uses: cachix/cachix-action@v8
-        with:
-          name: kore
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
-          skipPush: true
-
-      - name: Format
-        run: |
-          ./nix/fourmolu.sh
-
-      - name: Check for changes
-        run: |
-          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
-            git diff
-            exit 1
-          fi
