@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -26,8 +28,8 @@ This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And sort child = And
     { andSort :: !sort
-    , andFirst :: child
-    , andSecond :: child
+    , andFirst :: !child
+    , andSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
