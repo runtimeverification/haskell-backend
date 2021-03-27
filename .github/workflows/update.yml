@@ -36,7 +36,6 @@ jobs:
         with:
           name: kore
           signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
-          skipPush: true
 
       - name: Materialize
         run: ./nix/rematerialize.sh
@@ -86,7 +85,6 @@ jobs:
         with:
           name: kore
           signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
-          skipPush: true
 
       - name: Format
         run: ./nix/fourmolu.sh
