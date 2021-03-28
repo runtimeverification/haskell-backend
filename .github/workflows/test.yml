@@ -138,17 +138,19 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
+      - name: Cache Cabal package database and store
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cabal/packages
+            ~/.cabal/store
+          key: cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+
       - uses: haskell/actions/setup@v1
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ env.ghc_version }}
           cabal-version: "3.2"
-
-      - name: Cache Cabal store
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-          key: ${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: Build
         run: cabal v2-build --enable-tests --enable-benchmarks all
