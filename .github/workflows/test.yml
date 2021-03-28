@@ -191,7 +191,7 @@ jobs:
       - name: Build dependencies
         run: |
           stack build --only-dependencies
-          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
+          if [ -n "$(git status --porcelain)" ]; then
             git diff
             exit 1
           fi
