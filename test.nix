@@ -46,6 +46,9 @@ stdenv.mkDerivation {
     ncurses  # TODO: .../lib/kframework/setenv: line 31: tput: command not found
     z3
   ];
+  configurePhase = ''
+    export TOP=$(pwd)
+  '';
   buildFlags =
     [
       "KORE_PARSER=kore-parser"
@@ -57,22 +60,8 @@ stdenv.mkDerivation {
     ++ lib.optional (test != null) "-C ${test}"
     ;
   enableParallelBuilding = true;
-  configurePhase = ''
-    runHook preConfigure
-    export TOP=$(pwd)
-    export KSERVER_SOCKET=$NIX_BUILD_TOP/kserver-socket
-    KSERVER_LOG=$NIX_BUILD_TOP/kserver.log
-    runHook postConfigure
-  '';
   preBuild = ''
     cd test
-    spawn-kserver ''${KSERVER_LOG:?}
-    sleep 4
-    cat $KSERVER_LOG
-  '';
-  postBuild = ''
-    stop-kserver
-    cat $KSERVER_LOG
   '';
   installPhase = ''
     runHook preInstall
