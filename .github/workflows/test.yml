@@ -175,23 +175,18 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
+      - name: Cache Stack root
+        uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+
       - uses: haskell/actions/setup@v1
         id: setup-haskell-stack
         with:
           enable-stack: true
           stack-no-global: true
           stack-setup-ghc: true
-
-      - name: Locate Stack root
-        id: locate-stack-root
-        run: |
-          echo "::set-output name=stack-root::$(stack path --stack-root)"
-
-      - name: Cache Stack root
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.locate-stack-root.outputs.stack-root }}
-          key: ${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
 
       - name: Build dependencies
         run: |
