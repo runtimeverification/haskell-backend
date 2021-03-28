@@ -190,7 +190,7 @@ jobs:
 
       - name: Build dependencies
         run: |
-          stack build --only-dependencies
+          stack build --test --only-dependencies
           if [ -n "$(git status --porcelain)" ]; then
             git diff
             exit 1
