@@ -492,7 +492,7 @@ test_functionRegistry =
             (1 :: Int)
             (length (extractRewriteAxioms testIndexedModule))
         )
-    , testCase "qqChecking that evaluator simplifies correctly" $ do
+    , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = [mkApplySymbol sHead []]
         simplified <-
             runSimplifier testEnv $

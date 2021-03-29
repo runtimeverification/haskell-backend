@@ -155,11 +155,14 @@ checkSubstitutionCoverage configuration unifiedRule
                 , errorCallStack = callStack
                 }
   where
-    substitutionCoverageError =
+    ~substitutionCoverageError =
         SubstitutionCoverageError{solution, location, missingVariables}
 
     missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables
     location = from @_ @SourceLocation . term $ unifiedRule
-    solution = from @rule @(AxiomPattern _) <$> unifiedRule
+    {- This is lazy because it may call allPathRuleToTerm or onePathRuleToTerm,
+       which may end up calling illSorted
+    -}
+    ~solution = from @rule @(AxiomPattern _) <$> unifiedRule
     isSymbolic = (not . isConstructorLike) (term configuration)
