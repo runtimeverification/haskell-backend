@@ -3,14 +3,28 @@ on:
   push:
     branches-ignore:
       - 'master'
+  pull_request:
 jobs:
   nix:
     name: 'Nix'
     runs-on: ubuntu-latest
     steps:
+      - id: config
+        run: |
+          if [ "${{ github.event_name }}" == 'pull_request' ]
+          then
+            echo "::set-output name=ref::${{ github.event.pull_request.head.sha }}"
+          else
+            echo "::set-output name=ref::$GITHUB_SHA"
+          fi
+
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+
       - name: Check out code
         uses: actions/checkout@v2.3.4
         with:
+          ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
 
       - name: Install Nix
@@ -25,25 +39,48 @@ jobs:
         with:
           name: kore
           signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
-          skipPush: true
 
       - name: Materialize
-        run: |
-          ./nix/rematerialize.sh
+        run: ./nix/rematerialize.sh
 
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
-        with:
-          commit_message: 'Materialize Nix expressions'
-          file_pattern: 'nix/ *.cabal'
+      - name: Update branch
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ -n "$(git status --porcelain 'nix/')" ]; then
+            if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+              echo 2>&1 "Error: found modified files"
+              git diff
+              exit 1
+            elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+              git add 'nix/'
+              git commit -m 'Materialize Nix expressions'
+              git push
+            else
+              echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
+            fi
+          fi
 
   fourmolu:
     name: 'Style'
     runs-on: ubuntu-latest
     steps:
+      - id: config
+        run: |
+          if [ "${{ github.event_name }}" == 'pull_request' ]
+          then
+            echo "::set-output name=ref::${{ github.event.pull_request.head.sha }}"
+          else
+            echo "::set-output name=ref::$GITHUB_SHA"
+          fi
+
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+
       - name: Check out code
         uses: actions/checkout@v2.3.4
         with:
+          ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
 
       - name: Install Nix
@@ -58,15 +95,24 @@ jobs:
         with:
           name: kore
           signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
-          skipPush: true
 
       - name: Format
+        run: ./nix/fourmolu.sh
+
+      - name: Update branch
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          ./nix/fourmolu.sh
-
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
-        with:
-          commit_message: 'Format with fourmolu'
-          file_pattern: '*.hs'
-
+          if [ -n "$(git status --porcelain '*.hs')" ]; then
+            if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+              echo 2>&1 "Error: found modified files"
+              git diff
+              exit 1
+            elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+              git add '*.hs'
+              git commit -m 'Format with fourmolu'
+              git push
+            else
+              echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
+            fi
+          fi
