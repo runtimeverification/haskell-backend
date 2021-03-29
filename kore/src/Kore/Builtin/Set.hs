@@ -501,10 +501,9 @@ internalize ::
     TermLike variable ->
     TermLike variable
 internalize tools termLike
-    | fromMaybe False (isSetSort tools sort')
-      , -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
-        -- apply it if we know the term head is a constructor-like symbol.
-        App_ symbol _ <- termLike
+    -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+    -- apply it if we know the term head is a constructor-like symbol.
+    | App_ symbol _ <- termLike
       , isConstructorModulo_ symbol =
         case Ac.toNormalized @NormalizedSet termLike of
             Ac.Bottom -> TermLike.mkBottom sort'

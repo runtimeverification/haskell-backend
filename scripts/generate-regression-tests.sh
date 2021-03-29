@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+shopt -s extglob
 set -exuo pipefail
 
 kollect() {
@@ -90,7 +91,7 @@ replace-tests() {
 
     if [ -d $testdir ]
     then
-        rm $testdir/test-*
+        rm $testdir/!(*.golden|Makefile)
     else
         mkdir $testdir
         echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile
