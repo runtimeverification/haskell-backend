@@ -44,16 +44,21 @@ jobs:
         run: ./nix/rematerialize.sh
 
       - name: Update branch
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          if ${{ github.event_name == 'pull_request' }}; then
-            if [ -n "$(git status --porcelain '*.hs')" ]; then
+          if [ -n "$(git status --porcelain 'nix/')" ]; then
+            if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+              echo 2>&1 "Error: found modified files"
               git diff
               exit 1
+            elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+              git add 'nix/'
+              git commit -m 'Materialize Nix expressions'
+              git push
+            else
+              echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
             fi
-          else
-            git add '*.hs'
-            git commit -m 'Format with fourmolu'
-            git push
           fi
 
   fourmolu:
@@ -95,14 +100,19 @@ jobs:
         run: ./nix/fourmolu.sh
 
       - name: Update branch
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          if ${{ github.event_name == 'pull_request' }}; then
-            if [ -n "$(git status --porcelain '*.hs')" ]; then
+          if [ -n "$(git status --porcelain '*.hs')" ]; then
+            if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+              echo 2>&1 "Error: found modified files"
               git diff
               exit 1
+            elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+              git add '*.hs'
+              git commit -m 'Format with fourmolu'
+              git push
+            else
+              echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
             fi
-          else
-            git add '*.hs'
-            git commit -m 'Format with fourmolu'
-            git push
           fi
