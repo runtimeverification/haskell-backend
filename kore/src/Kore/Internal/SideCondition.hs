@@ -384,9 +384,7 @@ toRepresentation ::
     InternalVariable variable =>
     SideCondition variable ->
     SideCondition.Representation
-toRepresentation =
-    mkRepresentation
-        . mapVariables @_ @VariableName (pure toVariableName)
+toRepresentation = mkRepresentation
 
 -- | Looks up the term in the table of replacements.
 replaceTerm ::
