@@ -116,7 +116,7 @@ data AstLocation
     | AstLocationImplicit
     | AstLocationGeneratedVariable
     | AstLocationTest
-    | AstLocationFile FileLocation
+    | AstLocationFile !FileLocation
     | -- | This should not be used and should be eliminated in further releases
       AstLocationUnknown
     deriving (Eq, Ord, Show)
@@ -150,9 +150,9 @@ prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 -- | 'FileLocation' represents a position in a source file.
 data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line :: Int
-    , column :: Int
+    { fileName :: !FilePath
+    , line :: !Int
+    , column :: !Int
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

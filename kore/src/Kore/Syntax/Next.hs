@@ -24,7 +24,7 @@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 -}
 data Next sort child = Next
     { nextSort :: !sort
-    , nextChild :: child
+    , nextChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

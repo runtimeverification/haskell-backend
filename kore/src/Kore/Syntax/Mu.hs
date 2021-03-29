@@ -25,7 +25,7 @@ The sort of the variable is the same as the sort of the result.
 -}
 data Mu variable child = Mu
     { muVariable :: !(SetVariable variable)
-    , muChild :: child
+    , muChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

@@ -24,8 +24,8 @@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 -}
 data Rewrites sort child = Rewrites
     { rewritesSort :: !sort
-    , rewritesFirst :: child
-    , rewritesSecond :: child
+    , rewritesFirst :: !child
+    , rewritesSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

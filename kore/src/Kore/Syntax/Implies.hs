@@ -25,8 +25,8 @@ Section 9.1.4 (Patterns).
 -}
 data Implies sort child = Implies
     { impliesSort :: !sort
-    , impliesFirst :: child
-    , impliesSecond :: child
+    , impliesFirst :: !child
+    , impliesSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

@@ -28,8 +28,8 @@ Section 9.1.4 (Patterns).
 -}
 data Or sort child = Or
     { orSort :: !sort
-    , orFirst :: child
-    , orSecond :: child
+    , orFirst :: !child
+    , orSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

@@ -30,7 +30,7 @@ This represents the ⌈ceilPattern⌉ Matching Logic construct.
 data Ceil sort child = Ceil
     { ceilOperandSort :: !sort
     , ceilResultSort :: !sort
-    , ceilChild :: child
+    , ceilChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

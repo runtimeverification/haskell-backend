@@ -31,8 +31,8 @@ Section 9.1.4 (Patterns).
 data Equals sort child = Equals
     { equalsOperandSort :: !sort
     , equalsResultSort :: !sort
-    , equalsFirst :: child
-    , equalsSecond :: child
+    , equalsFirst :: !child
+    , equalsSecond :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

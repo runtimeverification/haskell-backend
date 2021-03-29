@@ -28,8 +28,8 @@ Section 9.1.4 (Patterns).
 data In sort child = In
     { inOperandSort :: !sort
     , inResultSort :: !sort
-    , inContainedChild :: child
-    , inContainingChild :: child
+    , inContainedChild :: !child
+    , inContainingChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

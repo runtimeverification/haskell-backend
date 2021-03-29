@@ -27,7 +27,7 @@ Section 9.1.4 (Patterns).
 data Forall sort variable child = Forall
     { forallSort :: !sort
     , forallVariable :: !(ElementVariable variable)
-    , forallChild :: child
+    , forallChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

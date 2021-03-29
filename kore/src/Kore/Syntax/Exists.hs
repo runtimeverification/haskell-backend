@@ -27,7 +27,7 @@ Section 9.1.4 (Patterns).
 data Exists sort variable child = Exists
     { existsSort :: !sort
     , existsVariable :: !(ElementVariable variable)
-    , existsChild :: child
+    , existsChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)

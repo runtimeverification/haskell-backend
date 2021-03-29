@@ -26,7 +26,7 @@ Section 9.1.4 (Patterns).
 -}
 data Not sort child = Not
     { notSort :: !sort
-    , notChild :: child
+    , notChild :: !child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
