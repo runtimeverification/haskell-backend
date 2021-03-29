@@ -11,28 +11,16 @@
         "url": "https://github.com/parsonsmatt/fourmolu/archive/727e095ccce4c4737d6a8cd82addab360edb47f3.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "ghcide": {
-        "branch": "master",
-        "description": "A library for building Haskell IDE tooling",
-        "homepage": "",
-        "owner": "ttuegel",
-        "repo": "ghcide",
-        "rev": "f8aa8dd433cab5da79e5ed29629e94d7fd9083ea",
-        "sha256": "1lkwapmlwqjvkiwxm4ihr6y3cra9c2ii4cw846q4fdhvm620grlv",
-        "type": "tarball",
-        "url": "https://github.com/ttuegel/ghcide/archive/f8aa8dd433cab5da79e5ed29629e94d7fd9083ea.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "haskell.nix": {
         "branch": "master",
         "description": "Alternative Haskell Infrastructure for Nixpkgs",
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "05f99684cb3b86703e910da6be1e619447788c7b",
-        "sha256": "0hw7y1yv7w358786kbxrv3bgwlhjaqxhg1yw05vmiyclf5afsaaq",
+        "rev": "93ab4310e9e9846af8780dcaf829d1cd7212793d",
+        "sha256": "0asg3869fyn2b0frb6ckl054lr1i4r6mharhqk7g8lh0f2hz7g5b",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/05f99684cb3b86703e910da6be1e619447788c7b.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/93ab4310e9e9846af8780dcaf829d1cd7212793d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "05f99684cb3b86703e910da6be1e619447788c7b"
     },
@@ -79,10 +67,10 @@
         "homepage": null,
         "owner": "shajra",
         "repo": "nix-haskell-hls",
-        "rev": "09ec467622955de95ff36c9036d0d25c1c0c4846",
-        "sha256": "0191spxr30vfj0rgv1qvjwl1nbshd3gw5q1mgdhk29rsf8dan3bn",
+        "rev": "7f5dad7d3569467cd7f41429566e59f0cbf1dc40",
+        "sha256": "02fb8x5g7kc8rklb6d937xglrhkj5y6f0vlvpzalqhhfcyxp1l3q",
         "type": "tarball",
-        "url": "https://github.com/shajra/nix-haskell-hls/archive/09ec467622955de95ff36c9036d0d25c1c0c4846.tar.gz",
+        "url": "https://github.com/shajra/nix-haskell-hls/archive/7f5dad7d3569467cd7f41429566e59f0cbf1dc40.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
