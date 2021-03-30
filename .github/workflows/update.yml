@@ -11,12 +11,12 @@ jobs:
     steps:
       - id: config
         run: |
-          if [ "${{ github.event_name }}" == 'pull_request' ]
-          then
-            echo "::set-output name=ref::${{ github.event.pull_request.head.sha }}"
-          else
-            echo "::set-output name=ref::${{ github.ref }}"
+          ref=${{ github.ref }}
+          if [ "${{ github.event_name }}" == 'pull_request' ]; then
+            ref="${{ github.event.pull_request.head.sha }}"
           fi
+          ref="${ref#refs/heads/}"
+          echo "::set-output name=ref::$ref"
 
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
@@ -75,12 +75,12 @@ jobs:
     steps:
       - id: config
         run: |
-          if [ "${{ github.event_name }}" == 'pull_request' ]
-          then
-            echo "::set-output name=ref::${{ github.event.pull_request.head.sha }}"
-          else
-            echo "::set-output name=ref::${{ github.ref }}"
+          ref=${{ github.ref }}
+          if [ "${{ github.event_name }}" == 'pull_request' ]; then
+            ref="${{ github.event.pull_request.head.sha }}"
           fi
+          ref="${ref#refs/heads/}"
+          echo "::set-output name=ref::$ref"
 
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
