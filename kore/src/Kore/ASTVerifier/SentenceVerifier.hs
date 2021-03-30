@@ -78,6 +78,9 @@ import Kore.Equation.Equation
     ( Equation (..)
     , isSimplificationRule
     )
+import Kore.Equation.Registry
+    ( ignoreEquation
+    )
 import Kore.Equation.Sentence
     ( MatchEquationError (..)
     , fromSentenceAxiom
@@ -408,7 +411,7 @@ verifyAxiomSentence sentence =
                 SubsortAxiom -> return ()
             )
             (\ eq@Equation {left, argument} ->
-                unless (isSimplificationRule eq)
+                when (needsVerification eq)
                     $ checkLHS eq left >> checkArg eq argument
             )
             $ fromSentenceAxiom (attrs, verified)
@@ -417,6 +420,9 @@ verifyAxiomSentence sentence =
         Lens.over
             (field @"indexedModuleAxioms")
             ((attrs, verified) :)
+
+    needsVerification eq = not
+        (isSimplificationRule eq || ignoreEquation eq)
 
     checkLHS eq termLike =
         if isNonconstructorFunctionSymbol termLike

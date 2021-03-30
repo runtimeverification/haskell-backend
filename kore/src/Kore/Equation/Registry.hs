@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Equation.Registry (
     extractEquations,
     partitionEquations,
+    ignoreEquation,
     PartitionedEquations (..),
 ) where
 
@@ -126,7 +127,7 @@ partitionEquations equations =
 evaluation or simplification, such as if it is an associativity or commutativity
 axiom.
 -}
-ignoreEquation :: Equation RewritingVariableName -> Bool
+ignoreEquation :: Equation variable -> Bool
 ignoreEquation Equation{attributes}
     | isAssoc = True
     | isComm = True
