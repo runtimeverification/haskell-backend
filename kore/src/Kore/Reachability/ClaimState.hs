@@ -1,8 +1,8 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Reachability.ClaimState (
     extractRemaining,
     extractUnproven,

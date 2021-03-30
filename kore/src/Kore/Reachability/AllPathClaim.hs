@@ -1,8 +1,8 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Reachability.AllPathClaim (
     AllPathClaim (..),
     mkAllPathClaim,

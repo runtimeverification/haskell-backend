@@ -133,10 +133,6 @@ evalCounter counter = let (a, _) = runCounter counter 0 in a
 -}
 class Monad m => MonadCounter m where
     -- | Increment the counter and return the prior value.
-    --
-    --      Using the @MonadCounter@ interface instead of the 'MonadState' instance
-    --      ensures that the counter cannot accidentally be reset, which could
-    --      generate duplicate fresh variables.
     increment :: m Natural
 
 -- | Generic implementation of 'increment' for any 'MonadState'.

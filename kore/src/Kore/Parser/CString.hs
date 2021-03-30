@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Parser.CString
 Description : Unescaping for C-style strings. Meant for internal use only.
@@ -7,7 +8,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Parser.CString (
     unescapeCString,
     escapeCString,

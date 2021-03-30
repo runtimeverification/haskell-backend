@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.
@@ -9,7 +10,6 @@ Portability : POSIX
 
 Helper tools for parsing Kore. Meant for internal use only.
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Parser.ParserUtils (
     Parser,
     parseOnly,

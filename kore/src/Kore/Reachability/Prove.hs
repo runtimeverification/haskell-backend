@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -5,7 +6,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 This should be imported qualified.
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Reachability.Prove (
     CommonClaimState,
     ProveClaimsResult (..),
