@@ -33,12 +33,7 @@ let
   };
   inherit (stylish-haskell-project.stylish-haskell.components.exes) stylish-haskell;
 
-  fourmolu-project = default.pkgs.haskell-nix.cabalProject {
-    src = sources."fourmolu";
-    inherit checkMaterialization compiler-nix-name index-state;
-    materialized = ./nix/fourmolu.nix.d;
-  };
-  inherit (fourmolu-project.fourmolu.components.exes) fourmolu;
+  fourmolu = import ./nix/fourmolu.nix { inherit default checkMaterialization; };
 
   hpack = import ./nix/hpack.nix { inherit default checkMaterialization; };
 
@@ -56,6 +51,7 @@ shellFor {
     #!/bin/sh
     ${hlint-project.plan-nix.passthru.updateMaterialized}
     ${stylish-haskell-project.plan-nix.passthru.updateMaterialized}
+    ${fourmolu.passthru.updateMaterialized}
     ${hpack.passthru.updateMaterialized}
   '';
 }
