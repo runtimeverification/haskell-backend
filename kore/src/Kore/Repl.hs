@@ -12,9 +12,6 @@ module Kore.Repl (
 ) where
 
 import Control.Concurrent.MVar
-import Control.Exception
-    ( AsyncException (UserInterrupt)
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( forever
@@ -263,17 +260,9 @@ runRepl
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
                     proveClaimStep claims axioms graph node
-                        & Exception.handle (userInterruptHandler graph)
                         & Exception.handle (withConfigurationHandler graph)
                         & Exception.handle (someExceptionHandler graph)
                 else pure graph
-
-        userInterruptHandler :: a -> AsyncException -> m a
-        userInterruptHandler a UserInterrupt = do
-            liftIO $ hPutStrLn stderr "Step evaluation interrupted."
-            pure a
-        userInterruptHandler _ asyncException =
-            Exception.throwM asyncException
 
         withConfigurationHandler :: a -> Claim.WithConfiguration -> m a
         withConfigurationHandler
