@@ -32,16 +32,19 @@ build-wasm() {
 generate-evm() {
     cd $KORE/evm-semantics
 
-    kollect test-pop1 env MODE=VMTESTS SCHEDULE=DEFAULT \
+    kollect test-pop1 \
         kevm run --backend haskell \
+            --mode VMTESTS --schedule DEFAULT \
             tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
     
-    kollect test-add0 env MODE=VMTESTS SCHEDULE=DEFAULT \
+    kollect test-add0 env \
         kevm run --backend haskell \
+            --mode VMTESTS --schedule DEFAULT \
             tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
     
-    kollect test-sumTo10 env MODE=VMTESTS SCHEDULE=DEFAULT \
+    kollect test-sumTo10 \
         kevm run --backend haskell \
+            --mode VMTESTS --schedule DEFAULT \
             tests/interactive/sumTo10.evm \
     
     for search in \
