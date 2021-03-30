@@ -5,66 +5,81 @@
 module Main (main) where
 
 import Control.Concurrent.MVar
+import Control.Monad.Catch
+    ( SomeException
+    , fromException
+    , handle
+    , throwM
+    )
 import Data.Reflection
 import GlobalMain
 import Kore.BugReport
-import Kore.Exec (
-    proveWithRepl,
- )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
-    build,
- )
-import Kore.Log (
-    KoreLogOptions (..),
-    runLoggerT,
-    swappableLogger,
-    withLogger,
- )
-import Kore.Log.KoreLogOptions (
-    parseKoreLogOptions,
- )
-import Kore.Log.WarnIfLowProductivity (
-    warnIfLowProductivity,
- )
+import Kore.Exec
+    ( proveWithRepl
+    )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+    ( build
+    )
+import Kore.Log
+    ( KoreLogOptions (..)
+    , SomeEntry (..)
+    , logEntry
+    , runLoggerT
+    , swappableLogger
+    , withLogger
+    )
+import Kore.Log.ErrorException
+    ( errorException
+    )
+import Kore.Log.KoreLogOptions
+    ( parseKoreLogOptions
+    )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
+    )
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
-import Kore.Syntax.Module (
-    ModuleName (..),
- )
-import Options.Applicative (
-    InfoMod,
-    Parser,
-    argument,
-    flag,
-    fullDesc,
-    header,
-    help,
-    long,
-    metavar,
-    progDesc,
-    short,
-    str,
-    strOption,
- )
-import Options.SMT (
-    KoreSolverOptions (..),
-    parseKoreSolverOptions,
- )
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , argument
+    , flag
+    , fullDesc
+    , header
+    , help
+    , long
+    , metavar
+    , progDesc
+    , short
+    , str
+    , strOption
+    )
+import Options.SMT
+    ( KoreSolverOptions (..)
+    , parseKoreSolverOptions
+    )
 import Prelude.Kore
 import qualified SMT
-import System.Clock (
-    Clock (Monotonic),
-    TimeSpec,
-    getTime,
- )
-import System.Exit (
-    exitFailure,
-    exitWith,
- )
-import System.IO (
-    hPutStrLn,
-    stderr,
- )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
+import System.Exit
+    ( exitFailure
+    , exitWith
+    )
+import System.IO
+    ( hPutStrLn
+    , stderr
+    )
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule
@@ -198,7 +213,7 @@ mainWithOptions
                     withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
                         mvarLogAction <- newMVar actualLogAction
                         let swapLogAction = swappableLogger mvarLogAction
-                        flip runLoggerT swapLogAction $ do
+                        flip runLoggerT swapLogAction $ runExceptionHandlers $ do
                             definition <- loadDefinitions [definitionFileName, specFile]
                             indexedModule <- loadModule mainModuleName definition
                             specDefIndexedModule <- loadModule specModule definition
@@ -254,6 +269,32 @@ mainWithOptions
                             pure ExitSuccess
             exitWith exitCode
       where
+        runExceptionHandlers action =
+            action
+                & handle exitReplHandler
+                & handle withConfigurationHandler
+                & handle someExceptionHandler
+
+        exitReplHandler :: ExitCode -> Main ExitCode
+        exitReplHandler = pure
+
+        someExceptionHandler :: SomeException -> Main ExitCode
+        someExceptionHandler someException = do
+            case fromException someException of
+                Just (SomeEntry entry) -> logEntry entry
+                Nothing -> errorException someException
+            throwM someException
+
+        withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
+        withConfigurationHandler
+            (Claim.WithConfiguration lastConfiguration someException) =
+                do
+                    liftIO $
+                        hPutStrLn
+                            stderr
+                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
+                    throwM someException
+
         mainModuleName :: ModuleName
         mainModuleName = moduleName definitionModule
 
