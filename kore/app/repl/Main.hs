@@ -6,10 +6,7 @@ module Main (main) where
 
 import Control.Concurrent.MVar
 import Control.Monad.Catch
-    ( SomeException
-    , fromException
-    , handle
-    , throwM
+    ( handle
     )
 import Data.Reflection
 import GlobalMain
@@ -22,14 +19,9 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.Log
     ( KoreLogOptions (..)
-    , SomeEntry (..)
-    , logEntry
     , runLoggerT
     , swappableLogger
     , withLogger
-    )
-import Kore.Log.ErrorException
-    ( errorException
     )
 import Kore.Log.KoreLogOptions
     ( parseKoreLogOptions
@@ -37,14 +29,14 @@ import Kore.Log.KoreLogOptions
 import Kore.Log.WarnIfLowProductivity
     ( warnIfLowProductivity
     )
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Repl
+    ( someExceptionHandler
+    , withConfigurationHandler
+    )
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module
     ( ModuleName (..)
-    )
-import Kore.Unparser
-    ( unparseToString
     )
 import Options.Applicative
     ( InfoMod
@@ -277,23 +269,6 @@ mainWithOptions
 
         exitReplHandler :: ExitCode -> Main ExitCode
         exitReplHandler = pure
-
-        someExceptionHandler :: SomeException -> Main ExitCode
-        someExceptionHandler someException = do
-            case fromException someException of
-                Just (SomeEntry entry) -> logEntry entry
-                Nothing -> errorException someException
-            throwM someException
-
-        withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
-        withConfigurationHandler
-            (Claim.WithConfiguration lastConfiguration someException) =
-                do
-                    liftIO $
-                        hPutStrLn
-                            stderr
-                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
-                    throwM someException
 
         mainModuleName :: ModuleName
         mainModuleName = moduleName definitionModule
