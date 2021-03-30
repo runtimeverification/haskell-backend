@@ -9,8 +9,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl (
     runRepl,
-    someExceptionHandler,
-    withConfigurationHandler
 ) where
 
 import Control.Concurrent.MVar
@@ -262,16 +260,28 @@ runRepl
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
                     proveClaimStep claims axioms graph node
-                        & Exception.handle (withConfigurationHandler' graph)
-                        & Exception.handle (someExceptionHandler' graph)
+                        & Exception.handle (withConfigurationHandler graph)
+                        & Exception.handle (someExceptionHandler graph)
                 else pure graph
 
-        withConfigurationHandler' :: a -> Claim.WithConfiguration -> m a
-        withConfigurationHandler' _ = withConfigurationHandler
+        withConfigurationHandler :: a -> Claim.WithConfiguration -> m a
+        withConfigurationHandler
+            _
+            (Claim.WithConfiguration lastConfiguration someException)
+          = do
+            liftIO $
+                hPutStrLn
+                    stderr
+                    ("// Last configuration:\n" <> unparseToString lastConfiguration)
+            Exception.throwM someException
 
-        someExceptionHandler' :: a -> Exception.SomeException -> m a
-        someExceptionHandler' a someException = do
-            someExceptionHandler someException
+        someExceptionHandler :: a -> Exception.SomeException -> m a
+        someExceptionHandler a someException = do
+            case Exception.fromException someException of
+                Just (Log.SomeEntry entry) ->
+                    Log.logEntry entry
+                Nothing ->
+                    errorException someException
             pure a
 
         replGreeting :: m ()
@@ -286,27 +296,3 @@ runRepl
                 putStr $ "Kore (" <> show (unReplNode node) <> ")> "
                 hFlush stdout
                 getLine
-
-someExceptionHandler
-    :: MonadIO m
-    => Log.MonadLog m
-    => Exception.MonadThrow m
-    => Exception.SomeException -> m a
-someExceptionHandler someException = do
-    case Exception.fromException someException of
-        Just (Log.SomeEntry entry) -> Log.logEntry entry
-        Nothing -> errorException someException
-    Exception.throwM someException
-
-withConfigurationHandler
-    :: MonadIO m
-    => Exception.MonadThrow m
-    => Claim.WithConfiguration -> m a
-withConfigurationHandler
-    (Claim.WithConfiguration lastConfiguration someException) =
-        do
-            liftIO $
-                hPutStrLn
-                    stderr
-                    ("// Last configuration:\n" <> unparseToString lastConfiguration)
-            Exception.throwM someException
