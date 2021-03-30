@@ -1,77 +1,77 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
+module Kore.BugReport (
+    BugReport (..),
+    BugReportOption (..),
+    parseBugReportOption,
+    withBugReport,
 
-{-# LANGUAGE Strict #-}
-
-module Kore.BugReport
-    ( BugReport (..)
-    , BugReportOption (..)
-    , parseBugReportOption
-    , withBugReport
     -- * Re-exports
-    , ExitCode (..)
-    ) where
-
-import Prelude.Kore
+    ExitCode (..),
+) where
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
-import Control.Exception
-    ( AsyncException (UserInterrupt)
-    , fromException
-    )
-import Control.Monad.Catch
-    ( ExitCase (..)
-    , displayException
-    , generalBracket
-    , handleAll
-    )
+import Control.Exception (
+    AsyncException (UserInterrupt),
+    fromException,
+ )
+import Control.Monad.Catch (
+    ExitCase (..),
+    displayException,
+    generalBracket,
+    handleAll,
+ )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Debug
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.IO.Exception
-    ( IOErrorType (..)
-    , IOException (ioe_type)
-    )
+import GHC.IO.Exception (
+    IOErrorType (..),
+    IOException (ioe_type),
+ )
+import qualified Generics.SOP as SOP
+import Kore.Log.KoreLogOptions (
+    ExeName (..),
+ )
 import Options.Applicative
-import System.Directory
-    ( listDirectory
-    , removePathForcibly
-    )
-import System.Exit
-    ( ExitCode (..)
-    )
-import System.FilePath
-    ( (<.>)
-    , (</>)
-    )
-import System.IO
-    ( hPutStrLn
-    , stderr
-    )
-import System.IO.Temp
-    ( createTempDirectory
-    , getCanonicalTemporaryDirectory
-    )
+import Prelude.Kore
+import System.Directory (
+    listDirectory,
+    removePathForcibly,
+ )
+import System.Exit (
+    ExitCode (..),
+ )
+import System.FilePath (
+    (<.>),
+    (</>),
+ )
+import System.IO (
+    hPutStrLn,
+    stderr,
+ )
+import System.IO.Temp (
+    createTempDirectory,
+    getCanonicalTemporaryDirectory,
+ )
 
-import Kore.Log.KoreLogOptions
-    ( ExeName (..)
-    )
-
-newtype BugReport = BugReport { toReport :: FilePath }
+newtype BugReport = BugReport {toReport :: FilePath}
     deriving (Eq, Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
 data BugReportOption
-    = BugReportEnable BugReport -- ^ Always creates a bug report
-    | BugReportDisable -- ^ Never creates a bug report
-    | BugReportOnError -- ^ Creates a bug report only after a crash
+    = -- | Always creates a bug report
+      BugReportEnable BugReport
+    | -- | Never creates a bug report
+      BugReportDisable
+    | -- | Creates a bug report only after a crash
+      BugReportOnError
     deriving (Eq, Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -84,24 +84,25 @@ parseBugReportOption =
     parseBugReportEnable =
         BugReportEnable . BugReport
             <$> strOption
-                    ( metavar "REPORT_FILE"
+                ( metavar "REPORT_FILE"
                     <> long "bug-report"
                     <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
-                    )
+                )
     parseBugReportDisable =
         flag
             BugReportOnError
             BugReportDisable
             ( long "no-bug-report"
-            <> help "Disables the creation of a bug report."
+                <> help "Disables the creation of a bug report."
             )
 
-{- | Create a @.tar.gz@ archive containing the bug report.
- -}
-writeBugReportArchive
-    :: FilePath   -- ^ Directory to archive
-    -> FilePath   -- ^ Name of the archive file, without extension.
-    -> IO ()
+-- | Create a @.tar.gz@ archive containing the bug report.
+writeBugReportArchive ::
+    -- | Directory to archive
+    FilePath ->
+    -- | Name of the archive file, without extension.
+    FilePath ->
+    IO ()
 writeBugReportArchive base tar = do
     contents <- listDirectory base
     let filename = tar <.> "tar" <.> "gz"
@@ -114,13 +115,12 @@ writeBugReportArchive base tar = do
 The bug report will be saved as an archive if that was requested by the user, or
 if there is an error in the inner action other than
 'UserInterrupt' or 'ExitSuccess'.
-
- -}
-withBugReport
-    :: ExeName
-    -> BugReportOption
-    -> (FilePath -> IO ExitCode)
-    -> IO ExitCode
+-}
+withBugReport ::
+    ExeName ->
+    BugReportOption ->
+    (FilePath -> IO ExitCode) ->
+    IO ExitCode
 withBugReport exeName bugReportOption act =
     do
         (exitCode, _) <-
@@ -129,7 +129,7 @@ withBugReport exeName bugReportOption act =
                 releaseTempDirectory
                 act
         pure exitCode
-    & handleAll handler
+        & handleAll handler
   where
     handler _ = pure (ExitFailure 1)
     acquireTempDirectory = do
@@ -139,16 +139,16 @@ withBugReport exeName bugReportOption act =
         case exitCase of
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
             ExitCaseException someException
-              | Just ExitSuccess == fromException someException
-                    {- User exits the repl after the proof was finished -} ->
+                | Just ExitSuccess == fromException someException ->
+                    {- User exits the repl after the proof was finished -}
                     optionalWriteBugReport tmpDir
-              | Just UserInterrupt == fromException someException ->
+                | Just UserInterrupt == fromException someException ->
                     optionalWriteBugReport tmpDir
-              | Just (ioe :: IOException) <- fromException someException
-              , NoSuchThing <- ioe_type ioe -> do
+                | Just (ioe :: IOException) <- fromException someException
+                  , NoSuchThing <- ioe_type ioe -> do
                     hPutStrLn stderr $ displayException someException
                     optionalWriteBugReport tmpDir
-              | otherwise -> do
+                | otherwise -> do
                     let message = displayException someException
                     writeFile (tmpDir </> "error" <.> "log") message
                     alwaysWriteBugReport tmpDir

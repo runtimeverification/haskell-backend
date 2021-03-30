@@ -1,4 +1,16 @@
 {
+    "fourmolu": {
+        "branch": "master",
+        "description": "A fourk of ormolu that uses four space indentation and allows arbitrary configuration. Don't like it? PRs welcome!",
+        "homepage": "",
+        "owner": "parsonsmatt",
+        "repo": "fourmolu",
+        "rev": "727e095ccce4c4737d6a8cd82addab360edb47f3",
+        "sha256": "17dy4giyp3flfshqfrkp6mb2wnym4iz1ncas6wv2nhp3li0wd1xs",
+        "type": "tarball",
+        "url": "https://github.com/parsonsmatt/fourmolu/archive/727e095ccce4c4737d6a8cd82addab360edb47f3.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "ghcide": {
         "branch": "master",
         "description": "A library for building Haskell IDE tooling",

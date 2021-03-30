@@ -1,75 +1,72 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Step.Rule.Simplify (
+    SimplifyRuleLHS (..),
+) where
 
-module Kore.Step.Rule.Simplify
-    ( SimplifyRuleLHS (..)
-    ) where
-
-import Prelude.Kore
-
-import Control.Monad
-    ( (>=>)
-    )
-
+import Control.Monad (
+    (>=>),
+ )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.Conditional (
+    Conditional (Conditional),
+ )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    )
-import Kore.Reachability
-    ( AllPathClaim (..)
-    , OnePathClaim (..)
-    , SomeClaim (..)
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+ )
+import Kore.Reachability (
+    AllPathClaim (..),
+    OnePathClaim (..),
+    SomeClaim (..),
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Step.ClaimPattern (
+    ClaimPattern,
+ )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (RulePattern)
-    )
+import Kore.Step.RulePattern (
+    RewriteRule (..),
+    RulePattern (RulePattern),
+ )
 import qualified Kore.Step.RulePattern as OLD
-import qualified Kore.Step.RulePattern as RulePattern
-    ( RulePattern (..)
-    , applySubstitution
-    )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    )
+import qualified Kore.Step.RulePattern as RulePattern (
+    RulePattern (..),
+    applySubstitution,
+ )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import Logic
-    ( LogicT
-    )
+import qualified Kore.Step.Simplification.Pattern as Pattern
+import Kore.Step.Simplification.Simplify (
+    MonadSimplify,
+ )
+import Logic (
+    LogicT,
+ )
 import qualified Logic
+import Prelude.Kore
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
-    simplifyRuleLhs
-        :: forall simplifier
-        .  MonadSimplify simplifier
-        => rule
-        -> simplifier (MultiAnd rule)
+    simplifyRuleLhs ::
+        forall simplifier.
+        MonadSimplify simplifier =>
+        rule ->
+        simplifier (MultiAnd rule)
 
-instance SimplifyRuleLHS (RulePattern RewritingVariableName)
-  where
+instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
     simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
@@ -78,41 +75,40 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName)
         let rules = map (setRuleLeft rule) (toList fullySimplified)
         return (MultiAnd.make rules)
       where
-        RulePattern {left} = rule
+        RulePattern{left} = rule
 
+        setRuleLeft ::
+            RulePattern RewritingVariableName ->
+            Pattern RewritingVariableName ->
+            RulePattern RewritingVariableName
         setRuleLeft
-            :: RulePattern RewritingVariableName
-            -> Pattern RewritingVariableName
-            -> RulePattern RewritingVariableName
-        setRuleLeft
-            rulePattern@RulePattern {requires = requires'}
-            Conditional {term, predicate, substitution}
-          =
-            RulePattern.applySubstitution
-                substitution
-                rulePattern
-                    { RulePattern.left = term
-                    , RulePattern.requires =
-                        makeAndPredicate predicate requires'
-                    }
+            rulePattern@RulePattern{requires = requires'}
+            Conditional{term, predicate, substitution} =
+                RulePattern.applySubstitution
+                    substitution
+                    rulePattern
+                        { RulePattern.left = term
+                        , RulePattern.requires =
+                            makeAndPredicate predicate requires'
+                        }
 
 instance SimplifyRuleLHS (RewriteRule RewritingVariableName) where
     simplifyRuleLhs =
         fmap (MultiAnd.map RewriteRule)
-        . simplifyRuleLhs
-        . getRewriteRule
+            . simplifyRuleLhs
+            . getRewriteRule
 
 instance SimplifyRuleLHS OnePathClaim where
     simplifyRuleLhs =
         fmap (MultiAnd.map OnePathClaim)
-        . simplifyClaimRule
-        . getOnePathClaim
+            . simplifyClaimRule
+            . getOnePathClaim
 
 instance SimplifyRuleLHS AllPathClaim where
     simplifyRuleLhs =
         fmap (MultiAnd.map AllPathClaim)
-        . simplifyClaimRule
-        . getAllPathClaim
+            . simplifyClaimRule
+            . getAllPathClaim
 
 instance SimplifyRuleLHS SomeClaim where
     simplifyRuleLhs (OnePath rule) =
@@ -120,22 +116,23 @@ instance SimplifyRuleLHS SomeClaim where
     simplifyRuleLhs (AllPath rule) =
         (fmap . MultiAnd.map) AllPath $ simplifyRuleLhs rule
 
-simplifyClaimRule
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => ClaimPattern
-    -> simplifier (MultiAnd ClaimPattern)
+simplifyClaimRule ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    ClaimPattern ->
+    simplifier (MultiAnd ClaimPattern)
 simplifyClaimRule =
     fmap MultiAnd.make . Logic.observeAllT . worker
   where
-    simplify, filterWithSolver
-        :: Pattern RewritingVariableName
-        -> LogicT simplifier (Pattern RewritingVariableName)
+    simplify
+        , filterWithSolver ::
+            Pattern RewritingVariableName ->
+            LogicT simplifier (Pattern RewritingVariableName)
     simplify =
         (return . Pattern.requireDefined)
-        >=> Pattern.simplifyTopConfiguration
-        >=> Logic.scatter
-        >=> filterWithSolver
+            >=> Pattern.simplifyTopConfiguration
+            >=> Logic.scatter
+            >=> filterWithSolver
     filterWithSolver = SMT.Evaluator.filterBranch
 
     worker :: ClaimPattern -> LogicT simplifier ClaimPattern
@@ -143,7 +140,7 @@ simplifyClaimRule =
         let lhs = ClaimPattern.left claimPattern
         simplified <- simplify lhs
         let substitution = Pattern.substitution simplified
-            lhs' = simplified { Pattern.substitution = mempty }
+            lhs' = simplified{Pattern.substitution = mempty}
         claimPattern
             { ClaimPattern.left = lhs'
             }

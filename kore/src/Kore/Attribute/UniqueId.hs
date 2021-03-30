@@ -1,4 +1,4 @@
-{-|
+{- |
 Module      : Kore.Attribute.UniqueId
 License     : NCSA
 
@@ -8,27 +8,24 @@ various other things.
 Example:
 @UNIQUE'Unds'ID{}("07a34b11585162c291311c03441e08beb2532e48d4ece33b9d58a9456f2f7623")@
 -}
-module Kore.Attribute.UniqueId
-    ( UniqueId (..)
-    , uniqueIdId
-    , uniqueIdSymbol
-    , uniqueIdAttribute
-    ) where
+module Kore.Attribute.UniqueId (
+    UniqueId (..),
+    uniqueIdId,
+    uniqueIdSymbol,
+    uniqueIdAttribute,
+) where
 
-import Prelude.Kore
-
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
+import Prelude.Kore
 
-{- | @UniqueId@ represents the @uniqueId@ attribute for axioms.
- -}
-newtype UniqueId = UniqueId { getUniqueId :: Maybe Text }
+-- | @UniqueId@ represents the @uniqueId@ attribute for axioms.
+newtype UniqueId = UniqueId {getUniqueId :: Maybe Text}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -58,11 +55,11 @@ uniqueIdAttribute uniqueId =
 instance ParseAttributes UniqueId where
     parseAttribute = withApplication' parseApplication
       where
-        parseApplication
-            :: [Sort]
-            -> [AttributePattern]
-            -> UniqueId
-            -> AttributeParser.Parser UniqueId
+        parseApplication ::
+            [Sort] ->
+            [AttributePattern] ->
+            UniqueId ->
+            AttributeParser.Parser UniqueId
         parseApplication params args (UniqueId Nothing) = do
             AttributeParser.getZeroParams params
             arg <- AttributeParser.getOneArgument args
@@ -74,6 +71,6 @@ instance ParseAttributes UniqueId where
         failDuplicate' = AttributeParser.failDuplicate uniqueIdId
 
 instance From UniqueId Attributes where
-    from UniqueId { getUniqueId = Just uniqueId } =
+    from UniqueId{getUniqueId = Just uniqueId} =
         Attributes [uniqueIdAttribute uniqueId]
-    from UniqueId { getUniqueId = Nothing } = Attributes []
+    from UniqueId{getUniqueId = Nothing} = Attributes []

@@ -1,59 +1,55 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Log.ErrorRuleMergeDuplicate (
+    ErrorRuleMergeDuplicateIds,
+    errorRuleMergeDuplicateIds,
+    ErrorRuleMergeDuplicateLabels,
+    errorRuleMergeDuplicateLabels,
+) where
 
-module Kore.Log.ErrorRuleMergeDuplicate
-    ( ErrorRuleMergeDuplicateIds
-    , errorRuleMergeDuplicateIds
-    , ErrorRuleMergeDuplicateLabels
-    , errorRuleMergeDuplicateLabels
-    ) where
-
-import Prelude.Kore
-
-import Control.Exception
-    ( Exception (..)
-    , throw
-    )
+import Control.Exception (
+    Exception (..),
+    throw,
+ )
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
-import Data.Generics.Wrapped
-    ( _Unwrapped
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Generics.Product (
+    field,
+ )
+import Data.Generics.Wrapped (
+    _Unwrapped,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
-import Kore.Attribute.SourceLocation
-    ( SourceLocation (..)
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    )
+import qualified Generics.SOP as SOP
+import Kore.Attribute.SourceLocation (
+    SourceLocation (..),
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Step.RulePattern (
+    RewriteRule (..),
+ )
 import Log
-import Pretty
-    ( Pretty (..)
-    )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
-newtype ErrorRuleMergeDuplicateIds =
-    ErrorRuleMergeDuplicateIds
-        { unErrorRuleMergeDuplicateIds :: Map Text [SourceLocation]
-        }
+newtype ErrorRuleMergeDuplicateIds = ErrorRuleMergeDuplicateIds
+    { unErrorRuleMergeDuplicateIds :: Map Text [SourceLocation]
+    }
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -73,10 +69,9 @@ instance Pretty ErrorRuleMergeDuplicateIds where
     pretty (ErrorRuleMergeDuplicateIds duplicateIds) =
         prettyErrorText "id" duplicateIds
 
-newtype ErrorRuleMergeDuplicateLabels =
-    ErrorRuleMergeDuplicateLabels
-        { unErrorRuleMergeDuplicateLabels :: Map Text [SourceLocation]
-        }
+newtype ErrorRuleMergeDuplicateLabels = ErrorRuleMergeDuplicateLabels
+    { unErrorRuleMergeDuplicateLabels :: Map Text [SourceLocation]
+    }
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -108,12 +103,12 @@ prettyErrorText :: Text -> Map Text [SourceLocation] -> Pretty.Doc ann
 prettyErrorText type' = Map.foldMapWithKey accum
   where
     accum name locations =
-        Pretty.vsep
-            $ ["The rules at the following locations:"]
-            <> fmap (Pretty.indent 4 . pretty) locations
-            <> [ Pretty.indent 2 duplicateNameType
-               , Pretty.indent 4 (pretty name)
-               ]
+        Pretty.vsep $
+            ["The rules at the following locations:"]
+                <> fmap (Pretty.indent 4 . pretty) locations
+                <> [ Pretty.indent 2 duplicateNameType
+                   , Pretty.indent 4 (pretty name)
+                   ]
     duplicateNameType =
         Pretty.hsep ["all have the following", pretty type', ":"]
 
@@ -122,7 +117,7 @@ getLocations =
     (fmap . fmap)
         ( Lens.view
             ( _Unwrapped
-            . field @"attributes"
-            . field @"sourceLocation"
+                . field @"attributes"
+                . field @"sourceLocation"
             )
         )

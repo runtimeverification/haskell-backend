@@ -1,31 +1,25 @@
-{-|
-Module      : Kore.Attribute.Trusted
-Description : Attribute identifying trusted claim sentences
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-
 
 A trusted claim is a reachability logic verification claim
 which can be used as a circularity without needing to be proven.
-
 -}
-module Kore.Attribute.Trusted
-    ( Trusted (..)
-    , trustedId, trustedSymbol, trustedAttribute
-    ) where
+module Kore.Attribute.Trusted (
+    Trusted (..),
+    trustedId,
+    trustedSymbol,
+    trustedAttribute,
+) where
 
-import Prelude.Kore
-
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
-{- | @Trusted@ represents the @trusted@ attribute for claim sentences.
- -}
-newtype Trusted = Trusted { isTrusted :: Bool }
+-- | @Trusted@ represents the @trusted@ attribute for claim sentences.
+newtype Trusted = Trusted {isTrusted :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

@@ -1,89 +1,116 @@
-module Test.Kore.Internal.ApplicationSorts
-    ( test_symbolOrAliasSorts
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( assertEqual
-    , testCase
-    )
+module Test.Kore.Internal.ApplicationSorts (
+    test_symbolOrAliasSorts,
+) where
 
 import Kore.Error
 import Kore.Internal.ApplicationSorts
 import Kore.Syntax
 import Kore.Syntax.Definition
-
+import Prelude.Kore
 import Test.Kore
+import Test.Tasty (
+    TestTree,
+ )
+import Test.Tasty.HUnit (
+    assertEqual,
+    testCase,
+ )
 
 test_symbolOrAliasSorts :: [TestTree]
 test_symbolOrAliasSorts =
-    [ success "simple result sort"
+    [ success
+        "simple result sort"
         (applicationSorts [] simpleSortActual)
         (symbolOrAliasSorts [] (symbolSentence [] [] simpleSortActual))
-    , success "parameterized result sort"
+    , success
+        "parameterized result sort"
         (applicationSorts [] simpleSortActual)
-        (symbolOrAliasSorts
+        ( symbolOrAliasSorts
             [simpleSortActual]
             (symbolSentence [sortVariable'] [] sortVariableSort')
         )
-    , success "complex parameterized result sort"
+    , success
+        "complex parameterized result sort"
         (applicationSorts [] complexSortActualSort)
-        (symbolOrAliasSorts
+        ( symbolOrAliasSorts
             [simpleSortActual]
             (symbolSentence [sortVariable'] [] complexSortActualParam)
         )
-    , success "simple argument sort"
+    , success
+        "simple argument sort"
         (applicationSorts [simpleSortActual] simpleSortActual)
-        (symbolOrAliasSorts
+        ( symbolOrAliasSorts
             []
             (symbolSentence [] [simpleSortActual] simpleSortActual)
         )
-    , success "parameterized argument sort"
+    , success
+        "parameterized argument sort"
         (applicationSorts [simpleSortActual] simpleSortActual)
-        (symbolOrAliasSorts
+        ( symbolOrAliasSorts
             [simpleSortActual]
-            (symbolSentence
-                [sortVariable'] [sortVariableSort'] simpleSortActual)
+            ( symbolSentence
+                [sortVariable']
+                [sortVariableSort']
+                simpleSortActual
+            )
         )
-    , success "complex argument sort"
+    , success
+        "complex argument sort"
         (applicationSorts [complexSortActualSort] simpleSortActual)
-        (symbolOrAliasSorts
+        ( symbolOrAliasSorts
             [simpleSortActual]
-            (symbolSentence
-                [sortVariable'] [complexSortActualParam] simpleSortActual)
+            ( symbolSentence
+                [sortVariable']
+                [complexSortActualParam]
+                simpleSortActual
+            )
         )
-    , testCase "sort variable not found"
-        (assertEqual "Expecting error"
-            (koreFail "Sort variable not found: 'sv'."
-                :: Either (Error e) ApplicationSorts)
-            (symbolOrAliasSorts
+    , testCase
+        "sort variable not found"
+        ( assertEqual
+            "Expecting error"
+            ( koreFail "Sort variable not found: 'sv'." ::
+                Either (Error e) ApplicationSorts
+            )
+            ( symbolOrAliasSorts
                 [simpleSortActual]
-                (symbolSentence
-                    [anotherSortVariable'] [sortVariableSort'] simpleSortActual)
+                ( symbolSentence
+                    [anotherSortVariable']
+                    [sortVariableSort']
+                    simpleSortActual
+                )
             )
         )
-    , testCase "more sorts than the declaration"
-        (assertEqual "Expecting error"
-            (koreFail "Application uses more sorts than the declaration."
-                :: Either (Error e) ApplicationSorts)
-            (symbolOrAliasSorts
+    , testCase
+        "more sorts than the declaration"
+        ( assertEqual
+            "Expecting error"
+            ( koreFail "Application uses more sorts than the declaration." ::
+                Either (Error e) ApplicationSorts
+            )
+            ( symbolOrAliasSorts
                 [simpleSortActual, simpleSortActual]
-                (symbolSentence
-                    [sortVariable'] [simpleSortActual] simpleSortActual)
+                ( symbolSentence
+                    [sortVariable']
+                    [simpleSortActual]
+                    simpleSortActual
+                )
             )
         )
-    , testCase "less sorts than the declaration"
-        (assertEqual "Expecting error"
-            (koreFail "Application uses less sorts than the declaration."
-                :: Either (Error e) ApplicationSorts)
-            (symbolOrAliasSorts
+    , testCase
+        "less sorts than the declaration"
+        ( assertEqual
+            "Expecting error"
+            ( koreFail "Application uses less sorts than the declaration." ::
+                Either (Error e) ApplicationSorts
+            )
+            ( symbolOrAliasSorts
                 []
-                (symbolSentence
-                    [sortVariable'] [simpleSortActual] simpleSortActual)
+                ( symbolSentence
+                    [sortVariable']
+                    [simpleSortActual]
+                    simpleSortActual
+                )
             )
         )
     ]
@@ -97,18 +124,19 @@ test_symbolOrAliasSorts =
     success name expect actual =
         testCase name $ assertEqual "Expecting success" (Right expect) actual
 
-symbolSentence
-    :: [SortVariable]
-    -> [Sort]
-    -> Sort
-    -> ParsedSentenceSymbol
+symbolSentence ::
+    [SortVariable] ->
+    [Sort] ->
+    Sort ->
+    ParsedSentenceSymbol
 symbolSentence sortParameters operandSorts resultSort =
     SentenceSymbol
-        { sentenceSymbolSymbol     = Symbol
-            { symbolConstructor = testId "symb"
-            , symbolParams = sortParameters
-            }
-        , sentenceSymbolSorts      = operandSorts
+        { sentenceSymbolSymbol =
+            Symbol
+                { symbolConstructor = testId "symb"
+                , symbolParams = sortParameters
+                }
+        , sentenceSymbolSorts = operandSorts
         , sentenceSymbolResultSort = resultSort
         , sentenceSymbolAttributes = Attributes []
         }

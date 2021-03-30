@@ -1,40 +1,40 @@
-module Test.Kore.Syntax.Variable
-    ( test_isSetVariable
-    , test_isElementVariable
-    , hprop_instance_Injection_SomeVariableName_ElementVariableName
-    , hprop_instance_Injection_SomeVariableName_SetVariableName
+module Test.Kore.Syntax.Variable (
+    test_isSetVariable,
+    test_isElementVariable,
+    hprop_instance_Injection_SomeVariableName_ElementVariableName,
+    hprop_instance_Injection_SomeVariableName_SetVariableName,
+
     -- * Re-exports
-    , module Kore.Syntax.Variable
-    ) where
-
-import Prelude.Kore
-
-import Test.Tasty
+    module Kore.Syntax.Variable,
+) where
 
 import Kore.Syntax.Variable
-
+import Prelude.Kore
 import Test.Injection
-import Test.Kore
-    ( testId
-    )
-import Test.Kore.Step.MockSymbols
-    ( testSort
-    )
+import Test.Kore (
+    testId,
+ )
+import Test.Kore.Step.MockSymbols (
+    testSort,
+ )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_isSetVariable :: [TestTree]
 test_isSetVariable =
-    [ test "set variable"
+    [ test
+        "set variable"
         (True, mkSomeVariable $ mkSetVariable (testId "@x") testSort)
-    , test "element variable"
+    , test
+        "element variable"
         (False, mkSomeVariable $ mkElementVariable (testId "x") testSort)
     ]
   where
-    test
-        :: HasCallStack
-        => TestName
-        -> (Bool, SomeVariable VariableName)
-        -> TestTree
+    test ::
+        HasCallStack =>
+        TestName ->
+        (Bool, SomeVariable VariableName) ->
+        TestTree
     test name (expect, input) =
         testCase name $ do
             let actual = isSetVariable input
@@ -42,17 +42,19 @@ test_isSetVariable =
 
 test_isElementVariable :: [TestTree]
 test_isElementVariable =
-    [ test "set variable"
+    [ test
+        "set variable"
         (False, mkSomeVariable $ mkSetVariable (testId "@x") testSort)
-    , test "element variable"
+    , test
+        "element variable"
         (True, mkSomeVariable $ mkElementVariable (testId "x") testSort)
     ]
   where
-    test
-        :: HasCallStack
-        => TestName
-        -> (Bool, SomeVariable VariableName)
-        -> TestTree
+    test ::
+        HasCallStack =>
+        TestName ->
+        (Bool, SomeVariable VariableName) ->
+        TestTree
     test name (expect, input) =
         testCase name $ do
             let actual = isElementVariable input

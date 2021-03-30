@@ -1,15 +1,12 @@
-module Test.Kore.Log.ErrorBottomTotalFunction
-    ( test_instance_Table_ErrorBottomTotalFunction
-    ) where
-
-import Prelude.Kore ()
-
-import Test.Tasty
+module Test.Kore.Log.ErrorBottomTotalFunction (
+    test_instance_Table_ErrorBottomTotalFunction,
+) where
 
 import Kore.Log.ErrorBottomTotalFunction
-
+import Prelude.Kore ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SQL
+import Test.Tasty
 
 test_instance_Table_ErrorBottomTotalFunction :: TestTree
 test_instance_Table_ErrorBottomTotalFunction =

@@ -1,91 +1,87 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
+module Kore.Reachability.OnePathClaim (
+    OnePathClaim (..),
+    onePathRuleToTerm,
+    mkOnePathClaim,
+    Rule (..),
+) where
 
-module Kore.Reachability.OnePathClaim
-    ( OnePathClaim (..)
-    , onePathRuleToTerm
-    , mkOnePathClaim
-    , Rule (..)
-    ) where
-
-import Prelude.Kore
-
-import Data.Generics.Wrapped
-    ( _Unwrapped
-    )
-import qualified Generics.SOP as SOP
+import Data.Generics.Wrapped (
+    _Unwrapped,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
-import Kore.Internal.Alias
-    ( Alias (aliasConstructor)
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Alias (
+    Alias (aliasConstructor),
+ )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-    ( ElementVariable
-    , Id (getId)
-    , TermLike
-    , VariableName
-    , weakExistsFinally
-    )
+import Kore.Internal.TermLike (
+    ElementVariable,
+    Id (getId),
+    TermLike,
+    VariableName,
+    weakExistsFinally,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkRuleVariable
-    )
-import Kore.Rewriting.UnifyingRule
-    ( UnifyingRule (..)
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkRuleVariable,
+ )
+import Kore.Rewriting.UnifyingRule (
+    UnifyingRule (..),
+ )
 import Kore.Step.AxiomPattern
 import Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    )
-import Kore.Step.Transition
-    ( TransitionT
-    )
+import Kore.Step.Simplification.Simplify (
+    MonadSimplify,
+ )
+import Kore.Step.Transition (
+    TransitionT,
+ )
 import qualified Kore.Syntax.Sentence as Syntax
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Kore.Unparser (
+    Unparse (..),
+ )
+import Prelude.Kore
 
 -- | One-Path-Claim claim pattern.
-newtype OnePathClaim =
-    OnePathClaim { getOnePathClaim :: ClaimPattern }
+newtype OnePathClaim = OnePathClaim {getOnePathClaim :: ClaimPattern}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
--- | Converts a 'OnePathClaim' into its term representation.
--- This is intended to be used only in unparsing situations,
--- as some of the variable information related to the
--- rewriting algorithm is lost.
+{- | Converts a 'OnePathClaim' into its term representation.
+ This is intended to be used only in unparsing situations,
+ as some of the variable information related to the
+ rewriting algorithm is lost.
+-}
 onePathRuleToTerm :: OnePathClaim -> TermLike VariableName
 onePathRuleToTerm (OnePathClaim claimPattern') =
     claimPatternToTerm TermLike.WEF claimPattern'
 
-mkOnePathClaim
-    :: Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> OnePathClaim
+mkOnePathClaim ::
+    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    [ElementVariable RewritingVariableName] ->
+    OnePathClaim
 mkOnePathClaim left right existentials =
     OnePathClaim (mkClaimPattern left right existentials)
 
@@ -156,10 +152,8 @@ decision is subject to change without notice.
 -}
 
 instance Claim OnePathClaim where
-
-    newtype Rule OnePathClaim =
-        OnePathRewriteRule
-        { unRuleOnePath :: RewriteRule RewritingVariableName }
+    newtype Rule OnePathClaim = OnePathRewriteRule
+        {unRuleOnePath :: RewriteRule RewritingVariableName}
         deriving (Eq, Ord, Show)
         deriving (GHC.Generic)
         deriving anyclass (NFData)
@@ -184,47 +178,52 @@ instance From OnePathClaim (AxiomPattern VariableName) where
 instance From OnePathClaim (AxiomPattern RewritingVariableName) where
     from =
         AxiomPattern
-        . TermLike.mapVariables (pure mkRuleVariable)
-        . onePathRuleToTerm
+            . TermLike.mapVariables (pure mkRuleVariable)
+            . onePathRuleToTerm
 
 instance ClaimExtractor OnePathClaim where
     extractClaim (attributes, sentence) =
         case termLike of
-            TermLike.Implies_ _
+            TermLike.Implies_
+                _
                 (TermLike.And_ _ requires lhs)
                 (TermLike.ApplyAlias_ alias [rhs])
-              | aliasId == weakExistsFinally -> do
-                let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
-                    attributes' =
-                        Attribute.mapAxiomVariables
-                            (pure mkRuleVariable)
-                            attributes
-                    (right', existentials') =
-                        ClaimPattern.termToExistentials rhs'
-                pure $ OnePathClaim $ ClaimPattern.refreshExistentials
-                    ClaimPattern
-                    { ClaimPattern.left =
-                        Pattern.fromTermAndPredicate
-                            lhs
-                            (Predicate.wrapPredicate requires)
-                        & Pattern.mapVariables (pure mkRuleVariable)
-                    , ClaimPattern.right = parseRightHandSide right'
-                    , ClaimPattern.existentials = existentials'
-                    , ClaimPattern.attributes = attributes'
-                    }
-              where
-                aliasId = (getId . aliasConstructor) alias
+                    | aliasId == weakExistsFinally -> do
+                        let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                            attributes' =
+                                Attribute.mapAxiomVariables
+                                    (pure mkRuleVariable)
+                                    attributes
+                            (right', existentials') =
+                                ClaimPattern.termToExistentials rhs'
+                        pure $
+                            OnePathClaim $
+                                ClaimPattern.refreshExistentials
+                                    ClaimPattern
+                                        { ClaimPattern.left =
+                                            Pattern.fromTermAndPredicate
+                                                lhs
+                                                (Predicate.wrapPredicate requires)
+                                                & Pattern.mapVariables (pure mkRuleVariable)
+                                        , ClaimPattern.right = parseRightHandSide right'
+                                        , ClaimPattern.existentials = existentials'
+                                        , ClaimPattern.attributes = attributes'
+                                        }
+                  where
+                    aliasId = (getId . aliasConstructor) alias
             _ -> Nothing
       where
         termLike =
             (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
-deriveSeqAxiomOnePath
-    ::  MonadSimplify simplifier
-    =>  [Rule OnePathClaim]
-    ->  OnePathClaim
-    ->  TransitionT (AppliedRule OnePathClaim) simplifier
-            (ApplyResult OnePathClaim)
+deriveSeqAxiomOnePath ::
+    MonadSimplify simplifier =>
+    [Rule OnePathClaim] ->
+    OnePathClaim ->
+    TransitionT
+        (AppliedRule OnePathClaim)
+        simplifier
+        (ApplyResult OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where

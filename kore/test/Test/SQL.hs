@@ -1,22 +1,18 @@
-module Test.SQL
-    ( testTable
-    , test_Unit
-    , test_Either
-    , test_Maybe
-    , test_List
-    , test_NonEmpty
-    ) where
+module Test.SQL (
+    testTable,
+    test_Unit,
+    test_Either,
+    test_Maybe,
+    test_List,
+    test_NonEmpty,
+) where
 
+import Data.Int (
+    Int64,
+ )
 import Prelude.Kore
-
-import Test.Tasty
-
-import Data.Int
-    ( Int64
-    )
-
 import SQL
-
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 testTable :: forall table. Table table => [table] -> TestTree
@@ -43,7 +39,7 @@ test_Either =
         ]
 
 test_Unit :: TestTree
-test_Unit = testTable [ () ]
+test_Unit = testTable [()]
 
 test_Maybe :: TestTree
 test_Maybe =

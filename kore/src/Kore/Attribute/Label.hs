@@ -1,27 +1,26 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-module Kore.Attribute.Label
-    ( Label (..)
-    , labelId, labelSymbol, labelAttribute
-    ) where
-
-import Prelude.Kore
+module Kore.Attribute.Label (
+    Label (..),
+    labelId,
+    labelSymbol,
+    labelAttribute,
+) where
 
 import qualified Data.Monoid as Monoid
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Label@ represents the @overload@ attribute for symbols.
-newtype Label = Label { unLabel :: Maybe Text }
+newtype Label = Label {unLabel :: Maybe Text}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -51,13 +50,13 @@ labelAttribute label = attributePattern labelSymbol [attributeString label]
 instance ParseAttributes Label where
     parseAttribute = withApplication' parseApplication
       where
-        parseApplication params args Label { unLabel }
-          | Just _ <- unLabel = failDuplicate'
-          | otherwise = do
-            Parser.getZeroParams params
-            arg1 <- Parser.getOneArgument args
-            StringLiteral str <- Parser.getStringLiteral arg1
-            return Label { unLabel = Just str }
+        parseApplication params args Label{unLabel}
+            | Just _ <- unLabel = failDuplicate'
+            | otherwise = do
+                Parser.getZeroParams params
+                arg1 <- Parser.getOneArgument args
+                StringLiteral str <- Parser.getStringLiteral arg1
+                return Label{unLabel = Just str}
         withApplication' = Parser.withApplication labelId
         failDuplicate' = Parser.failDuplicate labelId
 
