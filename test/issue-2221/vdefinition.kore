@@ -301,18 +301,138 @@ module LIST-SIZER
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds-GT-Eqls'Int'Unds'{}(K0:SortInt{}, K1:SortInt{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds-GT-'Int'Unds'{}(K0:SortInt{}, K1:SortInt{}))) [functional{}()] // functional
   axiom{R} \equals{SortList{}, R} (Lbl'Unds'List'Unds'{}(Lbl'Unds'List'Unds'{}(K1:SortList{},K2:SortList{}),K3:SortList{}),Lbl'Unds'List'Unds'{}(K1:SortList{},Lbl'Unds'List'Unds'{}(K2:SortList{},K3:SortList{}))) [assoc{}()] // associativity
-  axiom{R}\equals{SortList{}, R} (Lbl'Unds'List'Unds'{}(K:SortList{},Lbl'Stop'List{}()),K:SortList{}) [unit{}()] // right unit
-  axiom{R}\equals{SortList{}, R} (Lbl'Unds'List'Unds'{}(Lbl'Stop'List{}(),K:SortList{}),K:SortList{}) [unit{}()] // left unit
+  axiom{R}
+    \implies{R}
+      ( \and{R}
+        ( \top{R}()
+        , \and{R}
+          ( \in{SortList{},R}
+            ( DotList:SortList{}
+            , Lbl'Stop'List{}()
+            )
+          , \top{R}()
+          )
+        )
+      , \and{R}
+        ( \equals{SortList{},R}
+          ( Lbl'Unds'List'Unds'{}(K:SortList{},DotList:SortList{})
+          , K:SortList{}
+          )
+        , \top{R}()
+        )
+      )
+  [unit{}()] // right unit
+  axiom{R}
+    \implies{R}
+      ( \and{R}
+        ( \top{R}()
+        , \and{R}
+          ( \in{SortList{},R}
+            ( DotList:SortList{}
+            , Lbl'Stop'List{}()
+            )
+          , \top{R}()
+          )
+        )
+      , \and{R}
+        ( \equals{SortList{},R}
+          ( Lbl'Unds'List'Unds'{}(DotList:SortList{},K:SortList{})
+          , K:SortList{}
+          )
+        , \top{R}()
+        )
+      )
+  [unit{}()] // left unit
   axiom{R} \exists{R} (Val:SortList{}, \equals{SortList{}, R} (Val:SortList{}, Lbl'Unds'List'Unds'{}(K0:SortList{}, K1:SortList{}))) [functional{}()] // functional
   axiom{R} \equals{SortMap{}, R} (Lbl'Unds'Map'Unds'{}(Lbl'Unds'Map'Unds'{}(K1:SortMap{},K2:SortMap{}),K3:SortMap{}),Lbl'Unds'Map'Unds'{}(K1:SortMap{},Lbl'Unds'Map'Unds'{}(K2:SortMap{},K3:SortMap{}))) [assoc{}()] // associativity
   axiom{R} \equals{SortMap{}, R} (Lbl'Unds'Map'Unds'{}(K1:SortMap{},K2:SortMap{}),Lbl'Unds'Map'Unds'{}(K2:SortMap{},K1:SortMap{})) [comm{}()] // commutativity
-  axiom{R}\equals{SortMap{}, R} (Lbl'Unds'Map'Unds'{}(K:SortMap{},Lbl'Stop'Map{}()),K:SortMap{}) [unit{}()] // right unit
-  axiom{R}\equals{SortMap{}, R} (Lbl'Unds'Map'Unds'{}(Lbl'Stop'Map{}(),K:SortMap{}),K:SortMap{}) [unit{}()] // left unit
+  axiom{R}
+    \implies{R}
+      ( \and{R}
+        ( \top{R}()
+        , \and{R}
+          ( \in{SortMap{},R}
+            ( DotMap:SortMap{}
+            , Lbl'Stop'Map{}()
+            )
+          , \top{R}()
+          )
+        )
+      , \and{R}
+        ( \equals{SortMap{},R}
+          ( Lbl'Unds'Map'Unds'{}(K:SortMap{},DotMap:SortMap{})
+          , K:SortMap{}
+          )
+        , \top{R}()
+        )
+      )
+  [unit{}()] // right unit
+  axiom{R}
+    \implies{R}
+      ( \and{R}
+        ( \top{R}()
+        , \and{R}
+          ( \in{SortMap{},R}
+            ( DotMap:SortMap{}
+            , Lbl'Stop'Map{}()
+            )
+          , \top{R}()
+          )
+        )
+      , \and{R}
+        ( \equals{SortMap{},R}
+          ( Lbl'Unds'Map'Unds'{}(DotMap:SortMap{},K:SortMap{})
+          , K:SortMap{}
+          )
+        , \top{R}()
+        )
+      )
+  [unit{}()] // left unit
   axiom{R} \equals{SortSet{}, R} (Lbl'Unds'Set'Unds'{}(Lbl'Unds'Set'Unds'{}(K1:SortSet{},K2:SortSet{}),K3:SortSet{}),Lbl'Unds'Set'Unds'{}(K1:SortSet{},Lbl'Unds'Set'Unds'{}(K2:SortSet{},K3:SortSet{}))) [assoc{}()] // associativity
   axiom{R} \equals{SortSet{}, R} (Lbl'Unds'Set'Unds'{}(K1:SortSet{},K2:SortSet{}),Lbl'Unds'Set'Unds'{}(K2:SortSet{},K1:SortSet{})) [comm{}()] // commutativity
   axiom{R} \equals{SortSet{}, R} (Lbl'Unds'Set'Unds'{}(K:SortSet{},K:SortSet{}),K:SortSet{}) [idem{}()] // idempotency
-  axiom{R}\equals{SortSet{}, R} (Lbl'Unds'Set'Unds'{}(K:SortSet{},Lbl'Stop'Set{}()),K:SortSet{}) [unit{}()] // right unit
-  axiom{R}\equals{SortSet{}, R} (Lbl'Unds'Set'Unds'{}(Lbl'Stop'Set{}(),K:SortSet{}),K:SortSet{}) [unit{}()] // left unit
+  axiom{R}
+    \implies{R}
+      ( \and{R}
+        ( \top{R}()
+        , \and{R}
+          ( \in{SortSet{},R}
+            ( DotSet:SortSet{}
+            , Lbl'Stop'Set{}()
+            )
+          , \top{R}()
+          )
+        )
+      , \and{R}
+        ( \equals{SortSet{},R}
+          ( Lbl'Unds'Set'Unds'{}(DotSet:SortSet{},K:SortSet{})
+          , K:SortSet{}
+          )
+        , \top{R}()
+        )
+      )
+  [unit{}()] // right unit
+  axiom{R}
+    \implies{R}
+      ( \and{R}
+        ( \top{R}()
+        , \and{R}
+          ( \in{SortSet{},R}
+            ( DotSet:SortSet{}
+            , Lbl'Stop'Set{}()
+            )
+          , \top{R}()
+          )
+        )
+      , \and{R}
+        ( \equals{SortSet{},R}
+          ( Lbl'Unds'Set'Unds'{}(K:SortSet{},DotSet:SortSet{})
+          , K:SortSet{}
+          )
+        , \top{R}()
+        )
+      )
+  [unit{}()] // left unit
   axiom{R} \exists{R} (Val:SortSet{}, \equals{SortSet{}, R} (Val:SortSet{}, Lbl'Unds'Set'Unds'{}(K0:SortSet{}, K1:SortSet{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortMap{}, \equals{SortMap{}, R} (Val:SortMap{}, Lbl'UndsLSqBUnds-LT-'-undef'RSqB'{}(K0:SortMap{}, K1:SortKItem{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, Lbl'UndsLSqBUndsRSqB'orDefault'UndsUnds'MAP'Unds'KItem'Unds'Map'Unds'KItem'Unds'KItem{}(K0:SortMap{}, K1:SortKItem{}, K2:SortKItem{}))) [functional{}()] // functional
