@@ -12,95 +12,95 @@ module Kore.Repl (
 ) where
 
 import Control.Concurrent.MVar
-import Control.Exception (
-    AsyncException (UserInterrupt),
-    fromException,
- )
+import Control.Exception
+    ( AsyncException (UserInterrupt)
+    )
 import qualified Control.Lens as Lens
-import Control.Monad (
-    forever,
-    void,
- )
-import Control.Monad.Catch (
-    MonadMask,
- )
+import Control.Monad
+    ( forever
+    , void
+    )
+import Control.Monad.Catch
+    ( MonadMask
+    )
 import qualified Control.Monad.Catch as Exception
-import Control.Monad.RWS.Strict (
-    RWST,
-    execRWST,
- )
-import Control.Monad.Reader (
-    ReaderT (..),
- )
-import Control.Monad.State.Strict (
-    MonadState,
-    StateT,
-    evalStateT,
- )
+import Control.Monad.Reader
+    ( ReaderT (..)
+    )
+import Control.Monad.RWS.Strict
+    ( RWST
+    , execRWST
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    , evalStateT
+    )
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import qualified Data.Graph.Inductive.Graph as Graph
-import Data.List (
-    findIndex,
- )
+import Data.List
+    ( findIndex
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
-import Kore.Attribute.RuleIndex (
-    RuleIndex (..),
- )
+import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
 import qualified Kore.Attribute.RuleIndex as Attribute
-import Kore.Internal.TermLike (
-    TermLike,
-    mkSortVariable,
-    mkTop,
- )
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkSortVariable
+    , mkTop
+    )
 import qualified Kore.Log as Log
-import Kore.Log.ErrorException (
-    errorException,
- )
-import Kore.Reachability (
-    SomeClaim,
-    lensClaimPattern,
- )
+import Kore.Log.ErrorException
+    ( errorException
+    )
+import Kore.Reachability
+    ( SomeClaim
+    , lensClaimPattern
+    )
 import Kore.Reachability.Claim
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.Simplification.Data (
-    MonadSimplify,
- )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.Module (
-    ModuleName (..),
- )
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import Kore.Syntax.Variable
-import Kore.Unification.Procedure (
-    unificationProcedure,
- )
-import Kore.Unparser (
-    unparseToString,
- )
+import Kore.Unification.Procedure
+    ( unificationProcedure
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
-import Prof (
-    MonadProf,
- )
-import System.Clock (
-    Clock (Monotonic),
-    TimeSpec,
-    getTime,
- )
-import System.IO (
-    hFlush,
-    hPutStrLn,
-    stderr,
-    stdout,
- )
-import Text.Megaparsec (
-    parseMaybe,
- )
+import Prof
+    ( MonadProf
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
+import System.IO
+    ( hFlush
+    , hPutStrLn
+    , stderr
+    , stdout
+    )
+import Text.Megaparsec
+    ( parseMaybe
+    )
 
 {- | Runs the repl for proof mode. It requires all the tooling and simplifiers
  that would otherwise be required in the proof and allows for step-by-step
@@ -263,25 +263,37 @@ runRepl
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
                     proveClaimStep claims axioms graph node
-                        & catchInterruptWithDefault graph
-                        & catchEverything graph
+                        & Exception.handle (userInterruptHandler graph)
+                        & Exception.handle (withConfigurationHandler graph)
+                        & Exception.handle (someExceptionHandler graph)
                 else pure graph
 
-        catchInterruptWithDefault :: a -> m a -> m a
-        catchInterruptWithDefault a =
-            Exception.handle $ \case
-                UserInterrupt -> do
-                    liftIO $ hPutStrLn stderr "Step evaluation interrupted."
-                    pure a
-                e -> Exception.throwM e
+        userInterruptHandler :: a -> AsyncException -> m a
+        userInterruptHandler a UserInterrupt = do
+            liftIO $ hPutStrLn stderr "Step evaluation interrupted."
+            pure a
+        userInterruptHandler _ asyncException =
+            Exception.throwM asyncException
 
-        catchEverything :: a -> m a -> m a
-        catchEverything a =
-            Exception.handleAll $ \e -> do
-                case fromException e of
-                    Just (Log.SomeEntry entry) -> Log.logEntry entry
-                    Nothing -> errorException e
-                pure a
+        withConfigurationHandler :: a -> Claim.WithConfiguration -> m a
+        withConfigurationHandler
+            _
+            (Claim.WithConfiguration lastConfiguration someException)
+          = do
+            liftIO $
+                hPutStrLn
+                    stderr
+                    ("// Last configuration:\n" <> unparseToString lastConfiguration)
+            Exception.throwM someException
+
+        someExceptionHandler :: a -> Exception.SomeException -> m a
+        someExceptionHandler a someException = do
+            case Exception.fromException someException of
+                Just (Log.SomeEntry entry) ->
+                    Log.logEntry entry
+                Nothing ->
+                    errorException someException
+            pure a
 
         replGreeting :: m ()
         replGreeting =
