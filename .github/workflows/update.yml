@@ -47,6 +47,13 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+            if git status -s -b | grep -q '^##.*(no branch)$'; then
+              echo 2>&1 "Error: Git is in detached HEAD state"
+              exit 1
+            fi
+          fi
+
           if [ -n "$(git status --porcelain 'nix/')" ]; then
             if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
               echo 2>&1 "Error: found modified files"
@@ -103,6 +110,13 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+            if git status -s -b | grep -q '^##.*(no branch)$'; then
+              echo 2>&1 "Error: Git is in detached HEAD state"
+              exit 1
+            fi
+          fi
+
           if [ -n "$(git status --porcelain '*.hs')" ]; then
             if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
               echo 2>&1 "Error: found modified files"
