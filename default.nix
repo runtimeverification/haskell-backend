@@ -90,6 +90,10 @@ let
         name = "kore-${version}";
         paths = pkgs.lib.attrValues project.kore.components.exes;
       };
+
+      # Change the compiler when updating our own resolver.
+      compiler-nix-name = "ghc8104";
+      index-state = "2021-02-09T00:00:00Z";
     };
 
 in default
