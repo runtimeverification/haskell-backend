@@ -13,51 +13,51 @@ module Kore.Repl.Parser (
     ReplParseError (..),
 ) where
 
-import Data.Functor
-    ( void
-    )
-import Data.GraphViz
-    ( GraphvizOutput
-    )
+import Data.Functor (
+    void,
+ )
+import Data.GraphViz (
+    GraphvizOutput,
+ )
 import qualified Data.GraphViz as Graph
 import qualified Data.HashSet as HashSet
-import Data.List
-    ( nub
-    )
+import Data.List (
+    nub,
+ )
 import qualified Data.Set as Set
-import Data.String
-    ( IsString (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Data.String (
+    IsString (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import Kore.Log
-    ( EntryTypes
-    )
+import Kore.Log (
+    EntryTypes,
+ )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
-import Prelude.Kore hiding
-    ( many
-    )
-import Text.Megaparsec
-    ( Parsec
-    , ShowErrorComponent (..)
-    , customFailure
-    , eof
-    , many
-    , manyTill
-    , noneOf
-    , oneOf
-    , option
-    , try
-    )
+import Prelude.Kore hiding (
+    many,
+ )
+import Text.Megaparsec (
+    Parsec,
+    ShowErrorComponent (..),
+    customFailure,
+    eof,
+    many,
+    manyTill,
+    noneOf,
+    oneOf,
+    option,
+    try,
+ )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import Type.Reflection
-    ( SomeTypeRep
-    )
+import Type.Reflection (
+    SomeTypeRep,
+ )
 
 type Parser = Parsec ReplParseError Text
 
