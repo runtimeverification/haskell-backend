@@ -65,6 +65,7 @@ jobs:
               git push
             else
               echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
+              exit 1
             fi
           fi
 
@@ -128,5 +129,6 @@ jobs:
               git push
             else
               echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
+              exit 1
             fi
           fi
