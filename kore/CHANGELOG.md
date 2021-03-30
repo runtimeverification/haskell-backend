@@ -14,6 +14,28 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.42.0.0] - 2021-03-17
+
+### Added
+
+- `kore-repl` accepts the `--bug-report` and `--no-bug-report` options. (#2462)
+
+### Changed
+
+- Apply user-defined equations as written, instead of simplifying the left-hand
+  side during initialization. (#2392)
+- Match `#as` (`\and`) patterns correctly, instead of relying on simplifying
+  them during initialization. (#2392)
+
+### Fixed
+
+- A performance regression related to strictness is fixed. (#2447)
+- `kore-exec` distinguishes `\bottom` from stuck states, instead of reporting
+  the last defined state as stuck. (#2451)
+- Errors are reported on `stderr` instead of `stdout`. (#2458)
+- Applying user-defined equations is more efficient. (#2438)
+- `kore-exec` reports an error when any input file is missing. (#2446)
+
 ## [0.41.0.0] - 2021-03-05
 
 ### Changed
