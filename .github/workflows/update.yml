@@ -15,7 +15,7 @@ jobs:
           then
             echo "::set-output name=ref::${{ github.event.pull_request.head.sha }}"
           else
-            echo "::set-output name=ref::$GITHUB_SHA"
+            echo "::set-output name=ref::${{ github.ref }}"
           fi
 
           git config --global user.name github-actions
@@ -79,7 +79,7 @@ jobs:
           then
             echo "::set-output name=ref::${{ github.event.pull_request.head.sha }}"
           else
-            echo "::set-output name=ref::$GITHUB_SHA"
+            echo "::set-output name=ref::${{ github.ref }}"
           fi
 
           git config --global user.name github-actions
