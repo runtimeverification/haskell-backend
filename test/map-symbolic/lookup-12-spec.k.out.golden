@@ -1,0 +1,9 @@
+  <k>
+    lookupResult ( 2 ~> . ) ~> .
+  </k>
+#And
+  {
+    false
+  #Equals
+    X:MyId in_keys ( MAP )
+  }

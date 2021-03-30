@@ -19,13 +19,8 @@
 
 let
   sources = import ./nix/sources.nix;
-
-  pkgs =
-    let
-      haskell-nix = import sources."haskell.nix" {};
-      inherit (haskell-nix) nixpkgsArgs;
-      args = nixpkgsArgs // { };
-    in import haskell-nix.sources.nixpkgs-2003 args;
+  haskell-nix = import sources."haskell.nix" {};
+  inherit (haskell-nix) pkgs;
   inherit (pkgs) lib;
 
   ttuegel =
