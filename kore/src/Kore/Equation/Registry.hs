@@ -7,7 +7,6 @@ License     : NCSA
 module Kore.Equation.Registry (
     extractEquations,
     partitionEquations,
-    ignoreEquation,
     PartitionedEquations (..),
 ) where
 
@@ -115,11 +114,10 @@ partitionEquations equations =
     equations' =
         equations
             & filter (not . ignoreEquation)
-    (simplificationRules, unProcessedFunctionRules) =
+    (simplificationRules, functionRules) =
         partition Equation.isSimplificationRule
             . sortOn Equation.equationPriority
             $ equations'
-    functionRules = filter (not . ignoreDefinition) unProcessedFunctionRules
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
@@ -127,7 +125,7 @@ partitionEquations equations =
 evaluation or simplification, such as if it is an associativity or commutativity
 axiom.
 -}
-ignoreEquation :: Equation variable -> Bool
+ignoreEquation :: Equation RewritingVariableName -> Bool
 ignoreEquation Equation{attributes}
     | isAssoc = True
     | isComm = True
@@ -143,17 +141,3 @@ ignoreEquation Equation{attributes}
     Unit{isUnit} = Attribute.unit attributes
     Idem{isIdem} = Attribute.idem attributes
     Overload{getOverload} = Attribute.overload attributes
-
--- | Should we ignore the 'EqualityRule' for evaluating function definitions?
-ignoreDefinition :: Equation RewritingVariableName -> Bool
-ignoreDefinition Equation{attributes, left}
-    | isLeftFunctionLike = False
-    | otherwise =
-        (error . show . Pretty.vsep)
-            [ "left-hand side of equation was not function-like at:"
-            , Pretty.indent 4 $ Pretty.pretty sourceLocation
-            ]
-  where
-    Attribute.Axiom{sourceLocation} = attributes
-    isLeftFunctionLike =
-        (Pattern.isFunction . Pattern.function) (extractAttributes left)

@@ -57,6 +57,13 @@ import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom (..)
     , parseAxiomAttributes
     )
+import Kore.Attribute.Axiom (
+    Assoc (..),
+    Comm (..),
+    Idem (..),
+    Unit (..),
+    Overload (..)
+ )
 import qualified Kore.Attribute.Hook as Attribute
 import Kore.Attribute.Parser
     ( ParseAttributes
@@ -77,9 +84,6 @@ import qualified Kore.Builtin as Builtin
 import Kore.Equation.Equation
     ( Equation (..)
     , isSimplificationRule
-    )
-import Kore.Equation.Registry
-    ( ignoreEquation
     )
 import Kore.Equation.Sentence
     ( MatchEquationError (..)
@@ -411,8 +415,20 @@ verifyAxiomSentence sentence =
             (field @"indexedModuleAxioms")
             ((attrs, verified) :)
 
-    needsVerification eq = not
-        (isSimplificationRule eq || ignoreEquation eq)
+    needsVerification eq@Equation{attributes} = not
+        ( isSimplificationRule eq
+        || isAssoc
+        || isComm
+        || isUnit
+        || isIdem
+        || isJust getOverload
+        )
+      where
+        Assoc{isAssoc} = Attribute.assoc attributes
+        Comm{isComm} = Attribute.comm attributes
+        Unit{isUnit} = Attribute.unit attributes
+        Idem{isIdem} = Attribute.idem attributes
+        Overload{getOverload} = Attribute.overload attributes
 
     checkLHS eq termLike =
         if isNonconstructorFunctionSymbol termLike
@@ -460,7 +476,6 @@ verifyAxiomSentence sentence =
         findBadArgSubterm (TL.InternalBool_ _) = Nothing
         findBadArgSubterm (TL.InternalInt_ _) = Nothing
         findBadArgSubterm (TL.InternalString_ _) = Nothing
-        -- | Should this case still be here?
         findBadArgSubterm (TL.DV_ _ (TL.StringLiteral_ _)) = Nothing
         findBadArgSubterm (TL.And_ _ child1 child2) =
             findBadArgSubterm child1 <|> findBadArgSubterm child2
