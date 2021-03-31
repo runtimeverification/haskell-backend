@@ -94,13 +94,7 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike
-    ( pattern And_
-    , pattern App_
-    , pattern DV_
-    , pattern StringLiteral_
-    , pattern Var_
-    )
+import qualified Kore.Internal.TermLike as TL
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
     )
@@ -387,34 +381,30 @@ verifyAxiomSentence sentence =
                 (freeVariables sentence)
                 (sentenceAxiomAttributes sentence)
         State.modify $ addAxiom verified attrs
-        either
-            (\case
-                RequiresError _ ->
-                    koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                        "RequiresError thrown during equation check"
-                ArgumentError _ ->
-                    koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                        "ArgumentError thrown during equation check"
-                AntiLeftError _ ->
-                    koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                        "AntiLeftError thrown during equation check"
-                EnsuresError _ ->
-                    koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                        "EnsuresError thrown during equation check"
-                NotEquation _ -> return ()
-                FunctionalAxiom -> return ()
-                ConstructorAxiom -> return ()
-                SubsortAxiom -> return ()
-            )
-            (\ eq@Equation {left, argument} ->
+        case fromSentenceAxiom (attrs, verified) of
+            Right eq@Equation {left, argument} ->
                 when (needsVerification eq)
                     $ checkLHS eq left >> checkArg eq argument
-            )
-            $ fromSentenceAxiom (attrs, verified)
+            Left (RequiresError _) ->
+                koreFailWithLocations
+                [sentenceAxiomPattern verified]
+                    "RequiresError thrown during equation check"
+            Left (ArgumentError _) ->
+                koreFailWithLocations
+                [sentenceAxiomPattern verified]
+                    "ArgumentError thrown during equation check"
+            Left (AntiLeftError _) ->
+                koreFailWithLocations
+                [sentenceAxiomPattern verified]
+                    "AntiLeftError thrown during equation check"
+            Left (EnsuresError _) ->
+                koreFailWithLocations
+                [sentenceAxiomPattern verified]
+                    "EnsuresError thrown during equation check"
+            Left (NotEquation _) -> return ()
+            Left FunctionalAxiom -> return ()
+            Left ConstructorAxiom -> return ()
+            Left SubsortAxiom -> return ()
   where
     addAxiom verified attrs =
         Lens.over
@@ -440,12 +430,12 @@ verifyAxiomSentence sentence =
         _ :< termLikeF = Recursive.project termLike
 
         isNonconstructorFunctionSymbol term
-          | App_ sym _ <- term =
+          | TL.App_ sym _ <- term =
             Symbol.isFunction sym
             && not (Symbol.isConstructorLike sym)
           | otherwise = False
 
-        getNotVar (Var_ _) = Nothing
+        getNotVar (TL.Var_ _) = Nothing
         getNotVar term = Just term
 
     checkArg _ Nothing = return ()
@@ -456,20 +446,27 @@ verifyAxiomSentence sentence =
             )
         $ Predicate.getMultiAndPredicate arg
       where
-        checkArgIn (PredicateIn (Var_ _) term) =
+        checkArgIn (PredicateIn (TL.Var_ _) term) =
             findBadArgSubterm term
-        checkArgIn (PredicateCeil (And_ _ (Var_ _) term)) =
+        checkArgIn (PredicateCeil (TL.And_ _ (TL.Var_ _) term)) =
             findBadArgSubterm term
         checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
 
-        findBadArgSubterm term@(App_ sym children) =
+        findBadArgSubterm term@(TL.App_ sym children) =
             if Symbol.isConstructorLike sym
                 then asum $ findBadArgSubterm <$> children
                 else Just term
-        findBadArgSubterm (DV_ _ (StringLiteral_ _)) = Nothing
-        findBadArgSubterm (And_ _ child1 child2) =
+        findBadArgSubterm (TL.InternalBytes_ _ _) = Nothing
+        findBadArgSubterm (TL.InternalBool_ _) = Nothing
+        findBadArgSubterm (TL.InternalInt_ _) = Nothing
+        findBadArgSubterm (TL.InternalString_ _) = Nothing
+        -- | Should this case still be here?
+        findBadArgSubterm (TL.DV_ _ (TL.StringLiteral_ _)) = Nothing
+        findBadArgSubterm (TL.And_ _ child1 child2) =
             findBadArgSubterm child1 <|> findBadArgSubterm child2
-        findBadArgSubterm (Var_ _) = Nothing
+        findBadArgSubterm (TL.Var_ _) = Nothing
+        findBadArgSubterm (TL.Inj_ inj) =
+            asum $ findBadArgSubterm <$> inj
         findBadArgSubterm term = Just term
 
     failOnJust _ _ Nothing = return ()
