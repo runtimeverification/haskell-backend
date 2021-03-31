@@ -1,15 +1,16 @@
 pipeline {
+  environment {
+    LONG_REV = """${sh(returnStdout: true, script: 'git rev-parse HEAD').trim()}"""
+    K_VERSION = """${sh(returnStdout: true, script: 'cat deps/k_release | cut --characters=2-').trim()}"""
+  }
   agent {
     dockerfile {
       label 'docker'
-      additionalBuildArgs '--build-arg K_COMMIT=$(cat deps/k_release | cut --delimiter="-" --field="2") --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+      additionalBuildArgs '--build-arg K_COMMIT=${K_VERSION} --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
     }
   }
   options {
     ansiColor('xterm')
-  }
-  environment {
-    LONG_REV = """${sh(returnStdout: true, script: 'git rev-parse HEAD').trim()}"""
   }
   stages {
     stage('Init title') {
