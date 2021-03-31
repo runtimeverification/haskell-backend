@@ -279,13 +279,6 @@ mainWithOptions
         exitReplHandler :: ExitCode -> Main ExitCode
         exitReplHandler = pure
 
-        someExceptionHandler :: SomeException -> Main ExitCode
-        someExceptionHandler someException = do
-            case fromException someException of
-                Just (SomeEntry entry) -> logEntry entry
-                Nothing -> errorException someException
-            throwM someException
-
         withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
         withConfigurationHandler
             (Claim.WithConfiguration lastConfiguration someException) =
@@ -295,6 +288,13 @@ mainWithOptions
                             stderr
                             ("// Last configuration:\n" <> unparseToString lastConfiguration)
                     throwM someException
+
+        someExceptionHandler :: SomeException -> Main ExitCode
+        someExceptionHandler someException = do
+            case fromException someException of
+                Just (SomeEntry entry) -> logEntry entry
+                Nothing -> errorException someException
+            throwM someException
 
         mainModuleName :: ModuleName
         mainModuleName = moduleName definitionModule
