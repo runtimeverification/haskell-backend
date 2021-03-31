@@ -29,7 +29,6 @@ import Kore.Attribute.Axiom (
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
-import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
@@ -52,7 +51,6 @@ import Kore.Syntax.Sentence (
  )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
-import qualified Pretty
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
 extractEquations ::
