@@ -469,7 +469,10 @@ verifyAxiomSentence sentence =
         checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
 
         findBadArgSubterm term@(TL.App_ sym children) =
-            if Symbol.isConstructorLike sym
+            let isGoodSymbol =
+                    Symbol.isConstructorLike sym ||
+                    (Symbol.isAnywhere sym && Symbol.isInjective sym)
+            in if isGoodSymbol
                 then asum $ findBadArgSubterm <$> children
                 else Just term
         findBadArgSubterm (TL.InternalBytes_ _ _) = Nothing
