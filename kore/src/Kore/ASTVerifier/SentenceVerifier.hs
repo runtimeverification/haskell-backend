@@ -468,24 +468,26 @@ verifyAxiomSentence sentence =
             findBadArgSubterm term
         checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
 
-        findBadArgSubterm term@(TL.App_ sym children) =
-            let isGoodSymbol =
-                    Symbol.isConstructorLike sym ||
-                    (Symbol.isAnywhere sym && Symbol.isInjective sym)
-            in if isGoodSymbol
-                then asum $ findBadArgSubterm <$> children
-                else Just term
-        findBadArgSubterm (TL.InternalBytes_ _ _) = Nothing
-        findBadArgSubterm (TL.InternalBool_ _) = Nothing
-        findBadArgSubterm (TL.InternalInt_ _) = Nothing
-        findBadArgSubterm (TL.InternalString_ _) = Nothing
-        findBadArgSubterm (TL.DV_ _ (TL.StringLiteral_ _)) = Nothing
-        findBadArgSubterm (TL.And_ _ child1 child2) =
-            findBadArgSubterm child1 <|> findBadArgSubterm child2
-        findBadArgSubterm (TL.Var_ _) = Nothing
-        findBadArgSubterm (TL.Inj_ inj) =
-            asum $ findBadArgSubterm <$> inj
-        findBadArgSubterm term = Just term
+        findBadArgSubterm term = case term of
+            _
+              | TL.isConstructorLike term ->
+                let _ :< termF = Recursive.project term
+                in asum $ findBadArgSubterm <$> termF
+            TL.App_ sym children ->
+                if Symbol.isAnywhere sym && Symbol.isInjective sym
+                    then asum $ findBadArgSubterm <$> children
+                    else Just term
+            TL.InternalBytes_ _ _ -> Nothing
+            TL.InternalBool_ _ -> Nothing
+            TL.InternalInt_ _ -> Nothing
+            TL.InternalString_ _ -> Nothing
+            TL.DV_ _ (TL.StringLiteral_ _) -> Nothing
+            TL.And_ _ child1 child2 ->
+                findBadArgSubterm child1 <|> findBadArgSubterm child2
+            TL.Var_ _ -> Nothing
+            TL.Inj_ inj ->
+                asum $ findBadArgSubterm <$> inj
+            _ -> Just term
 
     failOnJust _ _ Nothing = return ()
     failOnJust eq errorMessage (Just term) = koreFailWithLocations
