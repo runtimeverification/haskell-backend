@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Rule.Common (
     Pair (..),
     RuleBase (..),

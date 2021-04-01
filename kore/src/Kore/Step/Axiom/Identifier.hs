@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Axiom.Identifier
 Description : Data structures and manipulation helpers used for axiom
@@ -16,7 +18,6 @@ import Kore.Step.Axiom.Identifier ( AxiomIdentifier )
 import Kore.Step.Axiom.Identifier as AxiomIdentifier
 @
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Step.Axiom.Identifier (
     AxiomIdentifier (..),
     matchAxiomIdentifier,

@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Terse (
     -- Builder functions that make what's being tested stand out
     -- more than test support code. Especially useful for building

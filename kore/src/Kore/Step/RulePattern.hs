@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Description : Rewrite rules
 Copyright   : (c) Runtime Verification, 2019

@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.Encoding (
     test_decodeEncode,
     test_parseBase16,

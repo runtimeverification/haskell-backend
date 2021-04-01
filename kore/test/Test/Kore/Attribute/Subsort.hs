@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Subsort (
     test_subsort,
     test_Attributes,

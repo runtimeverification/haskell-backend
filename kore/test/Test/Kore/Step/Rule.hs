@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Rule (
     test_axiomPatterns,
     test_patternToAxiomPatternAndBack,

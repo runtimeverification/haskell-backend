@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Reachability.Prove (
     test_proveClaims,
 ) where

@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Data.Graph.TopologicalSort (test_topologicalSort) where
 
 import Data.Graph.TopologicalSort

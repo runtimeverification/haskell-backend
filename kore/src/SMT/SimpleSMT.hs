@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : SimpleSMT
 Description : Simple SMT-LIB 2 interface

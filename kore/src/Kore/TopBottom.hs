@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.TopBottom
 Description : Class for things that can be top or bottom.

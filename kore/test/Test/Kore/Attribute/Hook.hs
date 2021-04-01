@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Hook (
     test_hook,
     test_Attributes,

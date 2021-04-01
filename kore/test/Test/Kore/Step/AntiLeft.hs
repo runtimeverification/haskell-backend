@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.AntiLeft (
     test_antiLeft,
 ) where

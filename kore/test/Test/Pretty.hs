@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Pretty (
     test_layoutOneLine,
 ) where

@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.SMT.Declaration.Symbols
 Description : Declares sorts to the SMT solver.

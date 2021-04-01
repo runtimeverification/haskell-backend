@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.

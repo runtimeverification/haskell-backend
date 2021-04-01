@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.SMT.Lemma
 Description : Declares all rules marked smt-lemma to the SMT solver.

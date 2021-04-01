@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Implication (
     test_freeVariables,
     test_refreshRule,

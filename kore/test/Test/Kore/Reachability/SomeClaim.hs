@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Reachability.SomeClaim (
     test_extractClaim,
 ) where

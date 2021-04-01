@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Syntax.Variable (
     test_isSetVariable,
     test_isElementVariable,

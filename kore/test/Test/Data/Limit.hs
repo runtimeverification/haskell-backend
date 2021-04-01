@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Data.Limit (
     prop_append,
     prop_dominate,

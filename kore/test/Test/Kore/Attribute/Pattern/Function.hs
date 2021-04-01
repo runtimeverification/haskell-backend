@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Pattern.Function (
     test_instance_Synthetic,
 ) where

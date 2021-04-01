@@ -1,5 +1,4 @@
 {-# LANGUAGE Strict #-}
-{-# LANGUAGE Strict #-}
 
 module Test.Kore.Attribute.Overload (
     test_Overload,

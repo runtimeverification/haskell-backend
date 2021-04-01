@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Internal.Predicate (
     test_predicate,
     test_mapVariables,

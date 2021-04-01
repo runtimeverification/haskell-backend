@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -6,7 +8,6 @@ This module should be imported qualified:
 import qualified Kore.Step.Function.Memo as Memo
 @
 -}
-{-# LANGUAGE Strict #-}
 module Kore.Step.Function.Memo (
     Self (..),
     CacheKey,

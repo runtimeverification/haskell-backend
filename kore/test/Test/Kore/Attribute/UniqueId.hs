@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.UniqueId (
     test_UniqueId,
     test_Attributes,

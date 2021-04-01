@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Axiom.Symbolic (
     test_symbolic,
     test_symbolic_select,

@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Internal.ApplicationSorts (
     test_symbolOrAliasSorts,
 ) where

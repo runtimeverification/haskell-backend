@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.SMT.Evaluator (
     test_evaluableSyntaxPredicate,
     test_evaluableConditional,

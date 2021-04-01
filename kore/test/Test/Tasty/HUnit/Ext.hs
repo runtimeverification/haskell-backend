@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Tasty.HUnit.Ext (
     assertEqual,
     (@=?),

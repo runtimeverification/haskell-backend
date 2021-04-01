@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin (
     test_internalize,
     test_sortModuleClaims,

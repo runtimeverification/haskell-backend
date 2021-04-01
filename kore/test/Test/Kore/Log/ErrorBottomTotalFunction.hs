@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Log.ErrorBottomTotalFunction (
     test_instance_Table_ErrorBottomTotalFunction,
 ) where

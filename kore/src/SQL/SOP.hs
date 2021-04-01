@@ -1,5 +1,5 @@
-{-# LANGUAGE Strict #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE Strict #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2020

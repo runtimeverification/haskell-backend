@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.SMT.Sorts (
     test_sortDeclaration,
 ) where

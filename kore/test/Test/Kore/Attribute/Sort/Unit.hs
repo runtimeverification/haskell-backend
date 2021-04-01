@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Sort.Unit (
     test_Unit,
     test_Attributes,

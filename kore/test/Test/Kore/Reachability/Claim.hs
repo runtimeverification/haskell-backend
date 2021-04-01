@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Reachability.Claim (
     test_checkImplication,
     test_simplifyRightHandSide,

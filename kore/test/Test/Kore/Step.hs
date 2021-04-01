@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Step (
     test_stepStrategy,
     test_executionStrategy,

@@ -1,4 +1,5 @@
 {-# LANGUAGE NoStrict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
