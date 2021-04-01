@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Log.WarnSymbolSMTRepresentation (
     test_instance_Table_WarnSymbolSMTRepresentation,
 ) where

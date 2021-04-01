@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Functional (
     test_functional,
     test_Attributes,

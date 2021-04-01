@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.Rule.Expand (
     test_expandRule,
 ) where

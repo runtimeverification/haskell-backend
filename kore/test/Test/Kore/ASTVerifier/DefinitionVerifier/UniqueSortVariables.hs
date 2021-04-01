@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables (
     test_uniqueSortVariables,
 ) where

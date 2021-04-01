@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Trusted (
     test_trusted,
     test_Attributes,

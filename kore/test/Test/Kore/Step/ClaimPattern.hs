@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.ClaimPattern (
     test_freeVariables,
     test_refreshRule,

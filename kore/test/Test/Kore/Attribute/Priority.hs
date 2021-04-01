@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Priority (
     test_priority,
     test_Attributes,

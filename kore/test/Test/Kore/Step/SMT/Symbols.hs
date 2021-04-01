@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.SMT.Symbols (
     test_sortDeclaration,
     test_resolve,

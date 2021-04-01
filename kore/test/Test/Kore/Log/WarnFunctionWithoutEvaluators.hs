@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Log.WarnFunctionWithoutEvaluators (
     test_instance_Table_WarnFunctionWithoutEvaluators,
 ) where

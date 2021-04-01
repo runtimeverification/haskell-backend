@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.Axiom.Identifier (test_matchAxiomIdentifier) where
 
 import Kore.Internal.TermLike (

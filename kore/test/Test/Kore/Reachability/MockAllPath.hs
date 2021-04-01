@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Reachability.MockAllPath (
     test_unprovenNodes,
     test_transitionRule_Begin,

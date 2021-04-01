@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.SMT.Translate (
     test_translatePredicateWith,
 ) where

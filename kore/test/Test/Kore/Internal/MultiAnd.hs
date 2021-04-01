@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.MultiAnd (
     test_multiAndTopBottom,
     test_multiAndMake,

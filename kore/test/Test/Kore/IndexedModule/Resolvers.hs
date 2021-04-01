@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.IndexedModule.Resolvers (
     test_resolvers,
     test_resolver_undefined_messages,

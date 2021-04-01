@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Pattern.FreeVariables (
     test_Synthetic,
     test_instance_Synthetic_TermLike,

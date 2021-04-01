@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.Pattern (
     test_expandedPattern,
     test_hasSimplifiedChildren,

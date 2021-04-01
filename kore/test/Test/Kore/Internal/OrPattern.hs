@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.OrPattern (
     hprop_mergeIdemOr,
     hprop_makeIdemOr,

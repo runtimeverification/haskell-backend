@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.ASTVerifier.DefinitionVerifier.SentenceVerifier (
     test_FreeVarInRHS,
 ) where

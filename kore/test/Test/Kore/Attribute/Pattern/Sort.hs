@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Pattern.Sort (
     test_instance_Synthetic,
 ) where
@@ -142,6 +143,6 @@ test_instance_Synthetic =
         TestTree
     failure termLikeF =
         testCase "Sorts mismatch" $ do
-            let original = synthetic termLikeF
+            let ~original = synthetic termLikeF
             actual <- Exception.try (Exception.evaluate original)
             assertEqual "" (Left $ SortMismatch sort sort0) actual

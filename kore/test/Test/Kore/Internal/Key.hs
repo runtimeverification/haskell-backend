@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.Key (
     test_retractKey,
 ) where

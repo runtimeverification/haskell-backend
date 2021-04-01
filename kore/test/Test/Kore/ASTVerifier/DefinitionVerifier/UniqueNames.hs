@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames (
     test_uniqueNames,
 ) where

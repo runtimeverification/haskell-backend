@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Stats (test_Stats) where
 
 import Prelude.Kore

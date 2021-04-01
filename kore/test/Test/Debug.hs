@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Debug (
     test_debug,
     test_debugPrec,

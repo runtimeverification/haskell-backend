@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Simplification (
     test_simplification,
     test_simplification_with_argument,

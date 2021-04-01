@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.SMT.Representation.All (
     test_symbolParsing,
 ) where

@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.SMT (
     testPropertyWithSolver,
     testPropertyWithoutSolver,

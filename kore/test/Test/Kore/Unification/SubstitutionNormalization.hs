@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE OverloadedLists #-}
 
 module Test.Kore.Unification.SubstitutionNormalization (

@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Test.Injection (

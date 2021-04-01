@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Pattern.ConstructorLike (
     test_TermLike,
 ) where

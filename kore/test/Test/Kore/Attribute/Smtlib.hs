@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Smtlib (
     test_extracted_smtlib,
     test_extracted_smthook,

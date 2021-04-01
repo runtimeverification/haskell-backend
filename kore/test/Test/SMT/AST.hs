@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.SMT.AST (
     test_parseSExpr,
 ) where

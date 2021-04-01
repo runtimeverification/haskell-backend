@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Parser.Parser (
     test_koreParser,
     test_parseSortVariable,

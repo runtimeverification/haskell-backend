@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier (
     test_patternVerifier,
     test_verifyBinder,

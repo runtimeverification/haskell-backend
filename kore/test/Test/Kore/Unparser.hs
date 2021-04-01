@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Unparser (
     test_parse,
     test_unparse,

@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Equation.Sentence (
     test_fromSentenceAxiom,
 ) where

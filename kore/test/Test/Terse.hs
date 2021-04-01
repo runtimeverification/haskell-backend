@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Terse (
     -- Builder functions that make what's being tested stand out
     -- more than test support code. Especially useful for building
@@ -293,7 +294,7 @@ throws_from_expected_name_intention ::
     String ->
     String ->
     TestTree
-throws_from_expected_name_intention lazyValue expected name intention =
+throws_from_expected_name_intention ~lazyValue expected name intention =
     testCase name $ do
         catch (evaluate lazyValue >> missingThrow) messageChecker
         return ()
@@ -309,7 +310,7 @@ throws_from_expected_name ::
     String ->
     String ->
     TestTree
-throws_from_expected_name lazyValue expected name =
+throws_from_expected_name ~lazyValue expected name =
     throws_from_expected_name_intention lazyValue expected name ""
 
 throws_from_expected ::
@@ -317,7 +318,7 @@ throws_from_expected ::
     a ->
     String ->
     TestTree
-throws_from_expected lazyValue expected =
+throws_from_expected ~lazyValue expected =
     throws_from_expected_name lazyValue expected "unnamed `throws_`"
 {- $wrappedFunctions
 
