@@ -474,7 +474,9 @@ verifyAxiomSentence sentence =
                 let _ :< termF = Recursive.project term
                 in asum $ findBadArgSubterm <$> termF
             TL.App_ sym children ->
-                if Symbol.isAnywhere sym && Symbol.isInjective sym
+                let isGoodSymbol = Symbol.isConstructorLike sym
+                        || (Symbol.isAnywhere sym && Symbol.isInjective sym)
+                in if isGoodSymbol
                     then asum $ findBadArgSubterm <$> children
                     else Just term
             TL.InternalBytes_ _ _ -> Nothing
