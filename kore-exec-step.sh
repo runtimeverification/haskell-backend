@@ -16,6 +16,9 @@ do
             pattern="$2"
             shift
             ;;
+        --output)
+            shift
+            ;;
         --depth)
             depth="$2"
             shift
