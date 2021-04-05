@@ -7,29 +7,29 @@ module Test.Kore.Step.Simplification.Pattern (
 ) where
 
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
+import Kore.Internal.Pattern (
+    Conditional (..),
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeExistsPredicate
-    , makeImpliesPredicate
-    , makeNotPredicate
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeExistsPredicate,
+    makeImpliesPredicate,
+    makeNotPredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern
