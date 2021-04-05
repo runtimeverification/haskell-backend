@@ -35,11 +35,13 @@ then
     exit 1
 fi
 last_result="$pattern"
+csv_file="$pattern.csv"
+
 trap 'exit 1' SIGINT
 
 while [[ -z "$depth" ]] || [[ "$last" -lt "$depth" ]]
 do
-    command time -f '%S,%U,%M' -o "kore-exec-time.csv" -a -q \
+    command time -f '%S,%U,%M' -o "${csv_file:?}" -a -q \
         kore-exec "${kore_exec_args[@]}" \
             --pattern "${last_result:?}" --output "${next_result:?}" --depth 1
     if diff "$last_result" "$next_result" >/dev/null; then break; fi
