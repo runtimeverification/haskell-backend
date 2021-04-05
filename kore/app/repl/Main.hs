@@ -266,7 +266,7 @@ mainWithOptions
                                         mainModuleName
                                         koreLogOptions
 
-                                warnIfLowProductivity
+                                warnIfLowProductivity definitionFileName
                                 pure ExitSuccess
             exitWith exitCode
       where

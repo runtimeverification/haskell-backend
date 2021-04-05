@@ -586,8 +586,10 @@ mainWithOptions execOptions = do
                         { outputFileName = Just (tmpDir </> "result.kore")
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
+            let KoreExecOptions{definitionFileName} = execOptions
             e <-
-                mainDispatch execOptions' <* warnIfLowProductivity
+                mainDispatch execOptions'
+                    <* warnIfLowProductivity definitionFileName
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog tmpDir koreLogOptions
