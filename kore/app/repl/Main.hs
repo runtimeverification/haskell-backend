@@ -5,6 +5,12 @@
 module Main (main) where
 
 import Control.Concurrent.MVar
+import Control.Monad.Catch (
+    SomeException,
+    fromException,
+    handle,
+    throwM,
+ )
 import Data.Reflection
 import GlobalMain
 import Kore.BugReport
@@ -16,9 +22,14 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
  )
 import Kore.Log (
     KoreLogOptions (..),
+    SomeEntry (..),
+    logEntry,
     runLoggerT,
     swappableLogger,
     withLogger,
+ )
+import Kore.Log.ErrorException (
+    errorException,
  )
 import Kore.Log.KoreLogOptions (
     parseKoreLogOptions,
@@ -26,10 +37,14 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module (
     ModuleName (..),
+ )
+import Kore.Unparser (
+    unparseToString,
  )
 import Options.Applicative (
     InfoMod,
@@ -198,62 +213,89 @@ mainWithOptions
                     withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
                         mvarLogAction <- newMVar actualLogAction
                         let swapLogAction = swappableLogger mvarLogAction
-                        flip runLoggerT swapLogAction $ do
-                            definition <- loadDefinitions [definitionFileName, specFile]
-                            indexedModule <- loadModule mainModuleName definition
-                            specDefIndexedModule <- loadModule specModule definition
+                        flip runLoggerT swapLogAction $
+                            runExceptionHandlers $ do
+                                definition <- loadDefinitions [definitionFileName, specFile]
+                                indexedModule <- loadModule mainModuleName definition
+                                specDefIndexedModule <- loadModule specModule definition
 
-                            let smtConfig =
-                                    SMT.defaultConfig
-                                        { SMT.timeOut = smtTimeOut
-                                        , SMT.resetInterval = smtResetInterval
-                                        , SMT.prelude = smtPrelude
-                                        }
+                                let smtConfig =
+                                        SMT.defaultConfig
+                                            { SMT.timeOut = smtTimeOut
+                                            , SMT.resetInterval = smtResetInterval
+                                            , SMT.prelude = smtPrelude
+                                            }
 
-                            when
-                                ( replMode == RunScript
-                                    && isNothing (unReplScript replScript)
-                                )
-                                $ lift $ do
-                                    hPutStrLn
-                                        stderr
-                                        "You must supply the path to the repl script\
-                                        \ in order to run the repl in run-script mode."
-                                    exitFailure
+                                when
+                                    ( replMode == RunScript
+                                        && isNothing (unReplScript replScript)
+                                    )
+                                    $ lift $ do
+                                        hPutStrLn
+                                            stderr
+                                            "You must supply the path to the repl script\
+                                            \ in order to run the repl in run-script mode."
+                                        exitFailure
 
-                            when
-                                ( replMode == Interactive
-                                    && scriptModeOutput == EnableOutput
-                                )
-                                $ lift $ do
-                                    hPutStrLn
-                                        stderr
-                                        "The --save-run-output flag is only available\
-                                        \ when running the repl in run-script mode."
-                                    exitFailure
+                                when
+                                    ( replMode == Interactive
+                                        && scriptModeOutput == EnableOutput
+                                    )
+                                    $ lift $ do
+                                        hPutStrLn
+                                            stderr
+                                            "The --save-run-output flag is only available\
+                                            \ when running the repl in run-script mode."
+                                        exitFailure
 
-                            SMT.runSMT
-                                smtConfig
-                                ( give
-                                    (MetadataTools.build indexedModule)
-                                    (declareSMTLemmas indexedModule)
-                                )
-                                $ proveWithRepl
-                                    indexedModule
-                                    specDefIndexedModule
-                                    Nothing
-                                    mvarLogAction
-                                    replScript
-                                    replMode
-                                    scriptModeOutput
-                                    outputFile
-                                    mainModuleName
-                                    koreLogOptions
+                                SMT.runSMT
+                                    smtConfig
+                                    ( give
+                                        (MetadataTools.build indexedModule)
+                                        (declareSMTLemmas indexedModule)
+                                    )
+                                    $ proveWithRepl
+                                        indexedModule
+                                        specDefIndexedModule
+                                        Nothing
+                                        mvarLogAction
+                                        replScript
+                                        replMode
+                                        scriptModeOutput
+                                        outputFile
+                                        mainModuleName
+                                        koreLogOptions
 
-                            warnIfLowProductivity
-                            pure ExitSuccess
+                                warnIfLowProductivity
+                                pure ExitSuccess
             exitWith exitCode
       where
+        runExceptionHandlers action =
+            action
+                & handle exitReplHandler
+                & handle withConfigurationHandler
+                & handle someExceptionHandler
+
+        exitReplHandler :: ExitCode -> Main ExitCode
+        exitReplHandler = pure
+
+        withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
+        withConfigurationHandler
+            (Claim.WithConfiguration lastConfiguration someException) =
+                do
+                    liftIO $
+                        hPutStrLn
+                            stderr
+                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
+                    throwM someException
+
+        someExceptionHandler :: SomeException -> Main ExitCode
+        someExceptionHandler someException = do
+            case fromException someException of
+                Just (SomeEntry entry) -> logEntry entry
+                Nothing -> errorException someException
+            throwM someException
+
         mainModuleName :: ModuleName
         mainModuleName = moduleName definitionModule
 
