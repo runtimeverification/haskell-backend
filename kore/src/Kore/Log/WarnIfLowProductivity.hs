@@ -16,15 +16,14 @@ import Pretty (
 import qualified Pretty
 import Stats
 
-data WarnIfLowProductivity =
-    WarnIfLowProductivity
+data WarnIfLowProductivity = WarnIfLowProductivity
     { productivityPercent :: !Natural
     , definitionFileName :: !FilePath
     }
     deriving (Show)
 
 instance Pretty WarnIfLowProductivity where
-    pretty warn  =
+    pretty warn =
         Pretty.vsep
             [ Pretty.pretty definitionFileName <> Pretty.colon
             , Pretty.hsep
@@ -35,8 +34,8 @@ instance Pretty WarnIfLowProductivity where
             , "Please file a bug report: https://github.com/kframework/kore/issues"
             ]
       where
-        WarnIfLowProductivity {productivityPercent} = warn
-        WarnIfLowProductivity {definitionFileName} = warn
+        WarnIfLowProductivity{productivityPercent} = warn
+        WarnIfLowProductivity{definitionFileName} = warn
 
 instance Entry WarnIfLowProductivity where
     entrySeverity _ = Warning
@@ -49,8 +48,9 @@ warnIfLowProductivity definitionFileName = do
         gcPercentage = gc_cpu_ns * 100 `div` cpu_ns
         productivityPercent = 100 - gcPercentage & fromIntegral
         runTimeOver60Seconds = cpu_ns >= 60 * 10 ^ (9 :: Int)
-        warn = WarnIfLowProductivity
-            { productivityPercent
-            , definitionFileName
-            }
+        warn =
+            WarnIfLowProductivity
+                { productivityPercent
+                , definitionFileName
+                }
     when (runTimeOver60Seconds && gcTimeOver10Percent) (logEntry warn)
