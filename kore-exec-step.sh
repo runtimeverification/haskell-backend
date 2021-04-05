@@ -32,6 +32,8 @@ then
     exit 1
 fi
 last_result="$pattern"
+trap 'exit 1' SIGINT
+
 while [[ -z "$depth" ]] || [[ "$last" -lt "$depth" ]]
 do
     command time -f '%S,%U,%M' -o "kore-exec-time.csv" -a -q \
