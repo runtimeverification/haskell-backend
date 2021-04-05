@@ -3,7 +3,6 @@
 set_results() {
     last_result="result-$(printf "%04d" $last).kore"
     next_result="result-$(printf "%04d" $next).kore"
-    echo $last_result $next_result
 }
 
 kore_exec_args=()
