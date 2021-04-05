@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# USAGE: Pass the output of `krun --dry-run` to this script on the command line.
+
 set_results() {
     last_result="result-$(printf "%04d" $last).kore"
     next_result="result-$(printf "%04d" $next).kore"
