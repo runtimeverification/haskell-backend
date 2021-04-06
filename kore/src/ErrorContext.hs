@@ -7,22 +7,22 @@ module ErrorContext (
     withErrorContext,
 ) where
 
-import Control.Exception
-    ( Exception (..)
-    , SomeException
-    , mapException
-    )
-import Data.String
-    ( fromString
-    )
-import Data.Typeable
-    ( Typeable
-    )
-import Prelude
-import Pretty
-    ( Pretty
-    )
+import Control.Exception (
+    Exception (..),
+    SomeException,
+    mapException,
+ )
+import Data.String (
+    fromString,
+ )
+import Data.Typeable (
+    Typeable,
+ )
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
+import Prelude
 
 data ErrorContext where
     ErrorContext ::

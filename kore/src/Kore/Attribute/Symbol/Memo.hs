@@ -9,11 +9,11 @@ module Kore.Attribute.Symbol.Memo (
     memoAttribute,
 ) where
 
-import Data.Monoid
-    ( Any (..)
-    )
-import qualified Generics.SOP as SOP
+import Data.Monoid (
+    Any (..),
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore

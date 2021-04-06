@@ -10,11 +10,11 @@ module Kore.Attribute.Label (
 ) where
 
 import qualified Data.Monoid as Monoid
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore

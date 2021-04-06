@@ -11,14 +11,14 @@ module Kore.Attribute.Pattern.Defined (
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax

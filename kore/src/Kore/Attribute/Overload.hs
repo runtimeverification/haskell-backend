@@ -13,13 +13,14 @@ module Kore.Attribute.Overload (
 ) where
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
 -- TODO: deriving stock (Functor) ???
+
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload symbol = Overload {getOverload :: Maybe (symbol, symbol)}
     deriving stock (Eq, Ord, Show)
