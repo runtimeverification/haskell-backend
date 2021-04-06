@@ -436,7 +436,7 @@ verifyAxiomSentence sentence =
             eq
             "LHS of NotSimplification axiom contains non-variable:"
             $ asum $ getNotVar <$> termLikeF
-        else koreFail $ show $ Pretty.vsep
+        else koreFailWithLocations [eq] $ pack $ show $ Pretty.vsep
             [ "Head of LHS of Not Simplification axiom is not a non-constructor function symbol. This is the LHS:"
             , unparse termLike
             , "This is the full equation:"
@@ -496,9 +496,9 @@ verifyAxiomSentence sentence =
         [term]
         (pack $ show $ Pretty.vsep
             [ errorMessage
-            , unparse term
+            , Pretty.indent 4 $ unparse term
             , "The equation that the above occurs in is:"
-            , Pretty.pretty eq
+            , Pretty.indent 4 $ Pretty.pretty eq
             ]
         )
 
