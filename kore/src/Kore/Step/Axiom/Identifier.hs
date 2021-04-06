@@ -64,8 +64,8 @@ data AxiomIdentifier
       Exists !AxiomIdentifier
     | -- | Any variable pattern.
       Variable
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

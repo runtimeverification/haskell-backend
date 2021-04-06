@@ -28,7 +28,7 @@ data WarnStuckClaimState
     | -- | The left- and right-hand side terms are unifiable, but the left-hand side
       -- condition does not imply the right-hand side condition.
       TermsNotUnifiableStuck !SomeClaim
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty WarnStuckClaimState where
     pretty (TermsUnifiableStuck claim) =

@@ -11,18 +11,18 @@ module Kore.Log.InfoProofDepth (
 
 import qualified Data.Semigroup as Semigroup
 import Log
-import Numeric.Natural (
-    Natural,
- )
+import Numeric.Natural
+    ( Natural
+    )
 import Prelude.Kore
-import Pretty (
-    Pretty,
- )
+import Pretty
+    ( Pretty
+    )
 import qualified Pretty
 
 newtype ProofDepth = ProofDepth {getProofDepth :: Natural}
-    deriving (Eq, Ord, Show)
-    deriving (Enum)
+    deriving stock (Eq, Ord, Show)
+    deriving newtype (Enum)
     deriving (Semigroup) via (Semigroup.Max Natural)
 
 instance Pretty ProofDepth where
@@ -32,7 +32,7 @@ instance Pretty ProofDepth where
 data InfoProofDepth
     = InfoUnprovenDepth ProofDepth
     | InfoProvenDepth ProofDepth
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty InfoProofDepth where
     pretty (InfoUnprovenDepth depth) =

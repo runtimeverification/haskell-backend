@@ -10,18 +10,18 @@ module Kore.Log.InfoExecDepth (
 
 import qualified Data.Semigroup as Semigroup
 import Log
-import Numeric.Natural (
-    Natural,
- )
+import Numeric.Natural
+    ( Natural
+    )
 import Prelude.Kore
-import Pretty (
-    Pretty,
- )
+import Pretty
+    ( Pretty
+    )
 import qualified Pretty
 
 newtype ExecDepth = ExecDepth {getExecDepth :: Natural}
-    deriving (Eq, Ord, Show)
-    deriving (Enum)
+    deriving stock (Eq, Ord, Show)
+    deriving newtype (Enum)
     deriving (Semigroup) via (Semigroup.Max Natural)
 
 instance Pretty ExecDepth where
@@ -29,7 +29,7 @@ instance Pretty ExecDepth where
         Pretty.hsep ["exec depth:", Pretty.pretty (getExecDepth execDepth)]
 
 data InfoExecDepth = InfoExecDepth ExecDepth
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty InfoExecDepth where
     pretty (InfoExecDepth execDepth) =

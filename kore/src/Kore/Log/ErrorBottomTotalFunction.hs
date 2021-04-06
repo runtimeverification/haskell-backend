@@ -29,8 +29,8 @@ import qualified SQL
 newtype ErrorBottomTotalFunction = ErrorBottomTotalFunction
     { term :: TermLike VariableName
     }
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
 
 instance SOP.Generic ErrorBottomTotalFunction
 

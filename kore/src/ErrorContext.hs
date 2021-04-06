@@ -7,22 +7,22 @@ module ErrorContext (
     withErrorContext,
 ) where
 
-import Control.Exception (
-    Exception (..),
-    SomeException,
-    mapException,
- )
-import Data.String (
-    fromString,
- )
-import Data.Typeable (
-    Typeable,
- )
-import Pretty (
-    Pretty,
- )
-import qualified Pretty
+import Control.Exception
+    ( Exception (..)
+    , SomeException
+    , mapException
+    )
+import Data.String
+    ( fromString
+    )
+import Data.Typeable
+    ( Typeable
+    )
 import Prelude
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 data ErrorContext where
     ErrorContext ::
@@ -34,9 +34,9 @@ data ErrorContext where
         -- | The error itself.
         SomeException ->
         ErrorContext
-    deriving (Typeable)
+    deriving stock (Typeable)
 
-deriving instance Show ErrorContext
+deriving stock instance Show ErrorContext
 
 instance Pretty ErrorContext where
     pretty (ErrorContext intro context someException) =

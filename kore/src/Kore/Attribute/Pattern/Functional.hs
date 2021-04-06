@@ -11,14 +11,14 @@ module Kore.Attribute.Pattern.Functional (
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
-import Kore.Internal.Inj (
-    Inj,
- )
+import Kore.Internal.Inj
+    ( Inj
+    )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
@@ -26,11 +26,11 @@ import Prelude.Kore
 
 -- | A pattern is 'Functional' if it matches exactly one element.
 newtype Functional = Functional {isFunctional :: Bool}
-    deriving (Eq, GHC.Generic, Ord, Show)
-    deriving (Semigroup, Monoid) via All
+    deriving stock (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via All
 
 alwaysFunctional :: a -> Functional
 alwaysFunctional = const (Functional True)

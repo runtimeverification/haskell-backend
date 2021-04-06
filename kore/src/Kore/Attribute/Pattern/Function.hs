@@ -11,14 +11,14 @@ module Kore.Attribute.Pattern.Function (
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
-import Kore.Internal.Inj (
-    Inj,
- )
+import Kore.Internal.Inj
+    ( Inj
+    )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
@@ -26,8 +26,8 @@ import Prelude.Kore
 
 -- | A pattern is 'Function' if it matches zero or one elements.
 newtype Function = Function {isFunction :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

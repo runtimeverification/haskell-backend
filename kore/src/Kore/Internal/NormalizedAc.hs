@@ -33,34 +33,34 @@ module Kore.Internal.NormalizedAc (
 ) where
 
 import qualified Control.Lens as Lens
-import Control.Lens.Iso (
-    Iso',
- )
-import Data.Kind (
-    Type,
- )
-import Data.List.Extra (
-    nubOrdBy,
- )
-import Data.Map.Strict (
-    Map,
- )
+import Control.Lens.Iso
+    ( Iso'
+    )
+import Data.Kind
+    ( Type
+    )
+import Data.List.Extra
+    ( nubOrdBy
+    )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
 import Kore.Debug
-import Kore.Internal.Symbol hiding (
-    isConstructorLike,
- )
+import Kore.Internal.Symbol hiding
+    ( isConstructorLike
+    )
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import Pretty (
-    (<+>),
- )
+import Pretty
+    ( (<+>)
+    )
 import qualified Pretty
 
 {- | Establishes a bijection between value wrappers and entire-structure
@@ -168,7 +168,7 @@ data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
     , -- | Unoptimized (i.e. non-element) parts of the structure.
       opaque :: [child]
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 nullAc :: NormalizedAc normalized key child -> Bool
 nullAc normalizedAc =
@@ -278,7 +278,7 @@ removeConcreteKeyOfAc
                 Map.delete key concreteElements
             }
 
-deriving instance
+deriving stock instance
     ( Eq key
     , Eq child
     , Eq (Element collection child)
@@ -286,7 +286,7 @@ deriving instance
     ) =>
     Eq (NormalizedAc collection key child)
 
-deriving instance
+deriving stock instance
     ( Ord key
     , Ord child
     , Ord (Element collection child)
@@ -294,7 +294,7 @@ deriving instance
     ) =>
     Ord (NormalizedAc collection key child)
 
-deriving instance
+deriving stock instance
     ( Show key
     , Show child
     , Show (Element collection child)
@@ -302,15 +302,16 @@ deriving instance
     ) =>
     Show (NormalizedAc collection key child)
 
-deriving instance
+-- TODO: stock?
+deriving stock instance
     (Functor (Element collection), Functor (Value collection)) =>
     Functor (NormalizedAc collection key)
 
-deriving instance
+deriving stock instance
     (Foldable (Element collection), Foldable (Value collection)) =>
     Foldable (NormalizedAc collection key)
 
-deriving instance
+deriving stock instance
     (Traversable (Element collection), Traversable (Value collection)) =>
     Traversable (NormalizedAc collection key)
 
@@ -397,9 +398,9 @@ data InternalAc key (normalized :: Type -> Type -> Type) child = InternalAc
     , builtinAcConcat :: !Symbol
     , builtinAcChild :: normalized key child
     }
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Foldable, Functor, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance

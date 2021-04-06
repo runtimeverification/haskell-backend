@@ -6,26 +6,26 @@ module Kore.Step.AxiomPattern (
     AxiomPattern (..),
 ) where
 
-import Kore.Internal.TermLike (
-    InternalVariable,
-    TermLike,
-    VariableName,
- )
-import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.RulePattern (
-    RewriteRule,
-    rewriteRuleToTerm,
- )
-import Kore.Unparser (
-    Unparse (..),
- )
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , TermLike
+    , VariableName
+    )
+import Kore.Step.RulePattern
+    ( RewriteRule
+    , rewriteRuleToTerm
+    )
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import Prelude.Kore
 
+-- TODO: is this module used anymore?
 {- | A wrapper over 'TermLike variable'. It represents a rewrite axiom
  or claim as a Matching Logic pattern.
 -}
 newtype AxiomPattern variable = AxiomPattern {getAxiomPattern :: TermLike variable}
-    deriving (Show, Eq)
+    deriving stock (Show, Eq)
 
 instance Unparse (AxiomPattern VariableName) where
     unparse = unparse . getAxiomPattern

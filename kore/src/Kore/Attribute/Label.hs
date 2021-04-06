@@ -10,19 +10,19 @@ module Kore.Attribute.Label (
 ) where
 
 import qualified Data.Monoid as Monoid
-import Data.Text (
-    Text,
- )
-import qualified GHC.Generics as GHC
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
 -- | @Label@ represents the @overload@ attribute for symbols.
 newtype Label = Label {unLabel :: Maybe Text}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

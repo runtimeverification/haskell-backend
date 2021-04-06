@@ -13,8 +13,8 @@ module Kore.Attribute.Functional (
 ) where
 
 import qualified Data.Monoid as Monoid
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
@@ -25,8 +25,8 @@ Note: This attribute is also used to annotate axioms stating functionality
 constraints.
 -}
 newtype Functional = Functional {isDeclaredFunctional :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

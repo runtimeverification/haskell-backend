@@ -14,15 +14,15 @@ module Kore.Builtin.AssocComm.AssocComm (
 ) where
 
 import qualified Data.List as List
-import Kore.Internal.Symbol (
-    Symbol,
- )
-import Kore.Internal.TermLike (
-    Concrete,
-    InternalVariable,
-    TermLike,
-    mkApplySymbol,
- )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Internal.TermLike
+    ( Concrete
+    , InternalVariable
+    , TermLike
+    , mkApplySymbol
+    )
 import Prelude.Kore
 
 -- | Particularizes @Domain.NormalizedAc@ to the most common types.
@@ -36,15 +36,15 @@ data NormalizedOrBottom collection variable
     = Normalized (TermNormalizedAc collection variable)
     | Bottom
 
-deriving instance
+deriving stock instance
     Eq (TermNormalizedAc collection variable) =>
     Eq (NormalizedOrBottom collection variable)
 
-deriving instance
+deriving stock instance
     Ord (TermNormalizedAc collection variable) =>
     Ord (NormalizedOrBottom collection variable)
 
-deriving instance
+deriving stock instance
     Show (TermNormalizedAc collection variable) =>
     Show (NormalizedOrBottom collection variable)
 

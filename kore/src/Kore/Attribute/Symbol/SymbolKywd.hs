@@ -9,19 +9,19 @@ module Kore.Attribute.Symbol.SymbolKywd (
     symbolKywdAttribute,
 ) where
 
-import Data.Monoid (
-    Any (..),
- )
-import qualified GHC.Generics as GHC
+import Data.Monoid
+    ( Any (..)
+    )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
 -- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
 newtype SymbolKywd = SymbolKywd {isSymbolKywd :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

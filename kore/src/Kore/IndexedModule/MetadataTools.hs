@@ -50,7 +50,7 @@ data MetadataTools sortConstructors smt attributes = MetadataTools
     , -- | The constructors for each sort.
       sortConstructors :: Map Id sortConstructors
     }
-    deriving (Functor)
+    deriving stock (Functor)
 
 type SmtMetadataTools attributes =
     MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes

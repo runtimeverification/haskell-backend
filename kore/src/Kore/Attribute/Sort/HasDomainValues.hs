@@ -13,16 +13,16 @@ module Kore.Attribute.Sort.HasDomainValues (
 ) where
 
 import qualified Data.Monoid as Monoid
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
 -- | @HasDomainValues@ represents the @hasDomainValues@ attribute for symbols.
 newtype HasDomainValues = HasDomainValues {getHasDomainValues :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

@@ -64,8 +64,8 @@ data Narrowing variable = Narrowing
     , overloadPair :: !(Pair (TermLike variable))
     -- overload solution
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -75,8 +75,8 @@ data OverloadingResolution variable
       Simple !(Pair (TermLike variable))
     | -- |Overloading resolves, but additional narrowing is needed for solution
       WithNarrowing !(Narrowing variable)
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -87,8 +87,8 @@ data UnifyOverloadingError
     | -- | There was a clash, unification will fail.
       --         Reason for the clash is included.
       Clash !String
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
