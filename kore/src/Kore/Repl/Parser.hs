@@ -3,7 +3,7 @@
 {- |
 Module      : Kore.Repl.Parser
 Description : REPL parser.
-Copyright   : (c) Runtime Verification, 219
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
