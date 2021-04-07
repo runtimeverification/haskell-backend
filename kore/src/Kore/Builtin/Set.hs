@@ -31,7 +31,7 @@ module Kore.Builtin.Set
     , evalUnit
     , evalDifference
       -- * Unification
-    , unifyEquals
+   -- , unifyEquals
     ) where
 
 import Prelude.Kore
@@ -516,65 +516,44 @@ internalize tools termLike
     multiple sorts are hooked to the same builtin domain, the verifier should
     reject the definition.
  -}
-unifyEquals
-    :: forall unifier
-    .  MonadUnify unifier
-    =>  (  TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> unifier (Pattern RewritingVariableName)
-        )
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals
-    unifyEqualsChildren
-    first
-    second
-  = do
-    tools <- Simplifier.askMetadataTools
-    (Monad.guard . fromMaybe False) (isSetSort tools sort1)
-    MaybeT $ do
-        unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
-        case sequence unifiers of
-            Nothing -> return Nothing
-            Just us -> Monad.Unify.scatter (map Just us)
-  where
-    sort1 = termLikeSort first
+-- unifyEquals
+--     :: forall unifier
+--     .  MonadUnify unifier
+--     =>  (  TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--         )
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> InternalSet Key (TermLike RewritingVariableName)
+--     -> InternalSet Key (TermLike RewritingVariableName)
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unifyEquals
+--     unifyEqualsChildren
+--     first
+--     second
+--     normalized1
+--     normalized2
+--   = do
+--     tools <- Simplifier.askMetadataTools
+--     (Monad.guard . fromMaybe False) (isSetSort tools sort1)
+--     MaybeT $ do
+--         unifiers <- Monad.Unify.gather (runMaybeT unifyEquals0)
+--         case sequence unifiers of
+--             Nothing -> return Nothing
+--             Just us -> Monad.Unify.scatter (map Just us)
+--   where
+--     sort1 = termLikeSort first
 
-    -- | Unify the two argument patterns.
-    unifyEquals0
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> MaybeT unifier (Pattern RewritingVariableName)
-    unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2) = do
-        tools <- Simplifier.askMetadataTools
-        Ac.unifyEqualsNormalized
-            tools
-            first
-            second
-            unifyEqualsChildren
-            normalized1
-            normalized2
-
-    unifyEquals0 pat1 pat2 = do
-        firstDomain <- asDomain pat1
-        secondDomain <- asDomain pat2
-        unifyEquals0 firstDomain secondDomain
-      where
-        asDomain
-            :: TermLike RewritingVariableName
-            -> MaybeT unifier (TermLike RewritingVariableName)
-        asDomain patt =
-            case normalizedOrBottom of
-                Ac.Normalized normalized -> do
-                    tools <- Simplifier.askMetadataTools
-                    return (Ac.asInternal tools sort1 normalized)
-                Ac.Bottom ->
-                    lift $ Monad.Unify.explainAndReturnBottom
-                        "Duplicated elements in normalization."
-                        first
-                        second
-          where
-            normalizedOrBottom
-                :: Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
-            normalizedOrBottom = Ac.toNormalized patt
+--     -- | Unify the two argument patterns.
+--     unifyEquals0
+--         :: MaybeT unifier (Pattern RewritingVariableName)
+--     unifyEquals0 = do
+--         tools <- Simplifier.askMetadataTools --TODO: make arg
+--         Ac.unifyEqualsNormalized
+--             tools
+--             first
+--             second
+--             unifyEqualsChildren
+--             normalized1
+--             normalized2

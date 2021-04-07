@@ -57,6 +57,7 @@ module Kore.Internal.TermLike
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
+    , mkInjWrap
     , mkInternalBytes
     , mkInternalBytes'
     , mkInternalBool
@@ -1062,6 +1063,15 @@ mkCeil_
     => TermLike variable
     -> TermLike variable
 mkCeil_ = updateCallStack . mkCeil predicateSort
+
+{- | Construct an inj pattern.
+ -}
+mkInjWrap
+    :: HasCallStack
+    => InternalVariable variable
+    => Inj (TermLike variable)
+    -> TermLike variable
+mkInjWrap = updateCallStack . synthesize . InjF
 
 {- | Construct an internal bool pattern.
  -}

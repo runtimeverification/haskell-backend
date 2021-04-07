@@ -44,13 +44,17 @@ equalInjectiveHeadsAndEquals
     => HasCallStack
     => TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+    -> Symbol
+    -> [TermLike RewritingVariableName]
+    -> Symbol
+    -> [TermLike RewritingVariableName]
     -> MaybeT unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
-    (App_ firstHead firstChildren)
-    (App_ secondHead secondChildren)
+    firstHead
+    firstChildren
+    secondHead
+    secondChildren
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
@@ -63,10 +67,10 @@ equalInjectiveHeadsAndEquals
                 (markSimplified . mkApplySymbol firstHead)
                     (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
+  | otherwise = Error.nothing
   where
     isFirstInjective = Symbol.isInjective firstHead
     isSecondInjective = Symbol.isInjective secondHead
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
 
 {-| Unify two constructor application patterns.
 
@@ -79,10 +83,14 @@ constructorAndEqualsAssumesDifferentHeads
     => HasCallStack
     => TermLike RewritingVariableName
     -> TermLike RewritingVariableName
+    -> Symbol
+    -> Symbol
     -> MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
-    first@(App_ firstHead _)
-    second@(App_ secondHead _)
+    first
+    second
+    firstHead
+    secondHead
   = do
     Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
     Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
@@ -93,4 +101,3 @@ constructorAndEqualsAssumesDifferentHeads
             first
             second
         empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty

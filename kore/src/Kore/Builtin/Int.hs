@@ -32,6 +32,7 @@ module Kore.Builtin.Int
     , parse
     , unifyIntEq
     , unifyInt
+    , matchIntEqual
       -- * keys
     , randKey
     , srandKey
@@ -413,10 +414,10 @@ unifyInt
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+    => InternalInt
+    -> InternalInt
     -> MaybeT unifier (Pattern variable)
-unifyInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
+unifyInt int1 int2 =
     assert (on (==) internalIntSort int1 int2) $ lift worker
   where
     worker :: unifier (Pattern variable)
@@ -424,7 +425,9 @@ unifyInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
       | on (==) internalIntValue int1 int2 =
         return $ Pattern.fromTermLike term1
       | otherwise = explainAndReturnBottom "distinct integers" term1 term2
-unifyInt _ _ = empty
+    term1 = mkInternalInt int1
+    term2 = mkInternalInt int2
+--unifyInt _ = empty
 
 {- | Unification of the @INT.eq@ symbol.
 
@@ -447,3 +450,4 @@ unifyIntEq unifyChildren notSimplifier a b =
       , isFunctionPattern termLike1
       = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
       | otherwise = empty
+    --TODO remove

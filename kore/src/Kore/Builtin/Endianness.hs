@@ -83,12 +83,13 @@ unifyEquals
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
+    -> Endianness
+    -> Endianness
     -> MaybeT unifier (Pattern variable)
-unifyEquals termLike1@(Endianness_ end1) termLike2@(Endianness_ end2)
+unifyEquals termLike1 termLike2 end1 end2
   | end1 == end2 = return (Pattern.fromTermLike termLike1)
   | otherwise =
     lift $ explainAndReturnBottom
         "Cannot unify distinct constructors."
         termLike1
         termLike2
-unifyEquals _ _ = empty

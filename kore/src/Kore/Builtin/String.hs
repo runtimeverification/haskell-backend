@@ -30,6 +30,7 @@ module Kore.Builtin.String
     , parse
     , unifyString
     , unifyStringEq
+    , matchStringEqual
       -- * keys
     , ltKey
     , plusKey
@@ -421,10 +422,10 @@ unifyString
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+    => InternalString
+    -> InternalString
     -> MaybeT unifier (Pattern variable)
-unifyString term1@(InternalString_ int1) term2@(InternalString_ int2) =
+unifyString int1 int2 =
     assert (on (==) internalStringSort int1 int2) $ lift worker
   where
     worker :: unifier (Pattern variable)
@@ -432,8 +433,8 @@ unifyString term1@(InternalString_ int1) term2@(InternalString_ int2) =
       | on (==) internalStringValue int1 int2 =
         return $ Pattern.fromTermLike term1
       | otherwise = explainAndReturnBottom "distinct strings" term1 term2
-unifyString _ _ = empty
-
+    term1 = mkInternalString int1
+    term2 = mkInternalString int2
 {- | Unification of the @STRING.eq@ symbol
 
 This function is suitable only for equality simplification.

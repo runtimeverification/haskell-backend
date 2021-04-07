@@ -83,12 +83,13 @@ unifyEquals
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
+    -> Signedness
+    -> Signedness
     -> MaybeT unifier (Pattern variable)
-unifyEquals termLike1@(Signedness_ sign1) termLike2@(Signedness_ sign2)
+unifyEquals termLike1 termLike2 sign1 sign2
   | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
   | otherwise =
     lift $ explainAndReturnBottom
         "Cannot unify distinct constructors."
         termLike1
         termLike2
-unifyEquals _ _ = empty

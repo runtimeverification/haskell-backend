@@ -21,6 +21,12 @@ module Kore.Builtin.Bool
     , unifyBoolOr
     , unifyBoolNot
     , matchBool
+    , matchBoolAnd
+    , matchBoolNot
+    , matchBoolOr
+    , BoolAnd (..)
+    , BoolNot (..)
+    , BoolOr (..)
       -- * Keys
     , orKey
     , andKey
@@ -180,15 +186,13 @@ unifyBool
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
+    => InternalBool
+    -> InternalBool
     -> MaybeT unifier (Pattern variable)
 unifyBool a b =
     worker a b <|> worker b a
   where
-    worker termLike1 termLike2
-      | Just value1 <- matchBool termLike1
-      , Just value2 <- matchBool termLike2
+    worker value1 value2
       = lift $ if value1 == value2
             then return (Pattern.fromTermLike termLike1)
             else
@@ -196,7 +200,9 @@ unifyBool a b =
                     "different Bool domain values"
                     termLike1
                     termLike2
-    worker _ _ = empty
+      where
+        termLike1 = mkInternalBool value1
+        termLike2 = mkInternalBool value2
 
 unifyBoolAnd
     :: forall variable unifier
@@ -205,17 +211,14 @@ unifyBoolAnd
     => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyBoolAnd unifyChildren a b =
-    worker a b <|> worker b a
+unifyBoolAnd unifyChildren termLike1 termLike2 a b =
+    worker termLike1 a b <|> worker termLike2 b a
   where
-    worker termLike1 termLike2
-      | Just value1 <- matchBool termLike1
-      , value1
-      , Just BoolAnd { operand1, operand2 } <- matchBoolAnd termLike2
-      , isFunctionPattern termLike2
-      = unifyBothWith unifyChildren termLike1 operand1 operand2
-    worker _ _ = empty
+    worker termLike operand1 operand2
+     = unifyBothWith unifyChildren termLike operand1 operand2
 
 {-|Takes a (function-like) pattern and unifies it against two other patterns.
    Returns the original pattern and the conditions resulting from unification.
@@ -249,17 +252,11 @@ unifyBoolOr
     => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyBoolOr unifyChildren a b =
-    worker a b <|> worker b a
-  where
-    worker termLike1 termLike2
-      | Just value1 <- matchBool termLike1
-      , not value1
-      , Just BoolOr { operand1, operand2 } <- matchBoolOr termLike2
-      , isFunctionPattern termLike2
-      = unifyBothWith unifyChildren termLike1 operand1 operand2
-    worker _ _ = empty
+unifyBoolOr unifyChildren termLike op1 op2
+      = unifyBothWith unifyChildren termLike op1 op2
+      -- TODO: remove
 
 unifyBoolNot
     :: forall variable unifier
@@ -268,18 +265,11 @@ unifyBoolNot
     => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
+    -> Bool
     -> MaybeT unifier (Pattern variable)
-unifyBoolNot unifyChildren a b =
-    worker a b <|> worker b a
-  where
-    worker termLike1 boolTerm
-      | Just BoolNot { operand } <- matchBoolNot termLike1
-      , isFunctionPattern termLike1
-      , Just value <- matchBool boolTerm
-      = lift $ do
-        let notValue = asInternal (termLikeSort boolTerm) (not value)
-        unifyChildren notValue operand
-    worker _ _ = empty
+unifyBoolNot unifyChildren term operand value =
+    let notValue = asInternal (termLikeSort term) (not value) in
+        lift $ unifyChildren notValue operand
 
 {- | Match a @BOOL.Bool@ builtin value.
  -}

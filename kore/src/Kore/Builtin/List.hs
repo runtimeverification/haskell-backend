@@ -27,12 +27,17 @@ module Kore.Builtin.List
     , asInternal
     , asTermLike
     , internalize
+    , normalize
       -- * Symbols
     , lookupSymbolGet
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
-    , unifyEquals
+    , unify1
+    , unify2
+    , unify3
+    , unify4
+    , unify5
       -- * keys
     , concatKey
     , elementKey
@@ -76,18 +81,16 @@ import Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.List.List
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
 import Kore.Internal.InternalList
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern ElemVar_
+    --, pattern ElemVar_
     , pattern InternalList_
     , pattern InternalList_
     , Key
@@ -98,11 +101,11 @@ import Kore.Internal.TermLike
     , mkInternalList
     , mkSort
     , retractKey
-    , termLikeSort
+    --, termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( Symbol (..)
-    , isFunctionPattern
+    --, isFunctionPattern
     , markSimplified
     )
 import Kore.Rewriting.RewritingVariable
@@ -133,8 +136,8 @@ assertSort = Builtin.verifySort sort
 Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
 Returns Just False if the sort is a variable.
 -}
-isListSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
-isListSort = Builtin.isSort sort
+-- isListSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
+-- isListSort = Builtin.isSort sort
 
 verifiers :: Builtin.Verifiers
 verifiers =
@@ -376,57 +379,49 @@ builtinFunctions =
     multiple lists are hooked to the same builtin domain, the verifier should
     reject the definition.
  -}
-unifyEquals
-    :: forall unifier
-    .  MonadUnify unifier
-    => SimplificationType
-    ->  (  TermLike RewritingVariableName
+
+unify1
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
         -> TermLike RewritingVariableName
         -> unifier (Pattern RewritingVariableName)
-        )
+       )
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals
-    simplificationType
-    simplifyChild
-    first
-    second
-  = do
-    tools <- Simplifier.askMetadataTools
-    (Monad.guard . fromMaybe False) (isListSort tools sort1)
-    unifyEquals0 (normalize first) (normalize second)
-  where
-    sort1 = termLikeSort first
+unify1 simplifyChild first second
+  = lift $ simplifyChild first second
 
-    propagateConditions
-        :: InternalVariable variable
-        => Traversable t
-        => t (Conditional variable a)
-        -> Conditional variable (t a)
-    propagateConditions = sequenceA
-
-    unifyEquals0
-        :: TermLike RewritingVariableName
+unify2
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
         -> TermLike RewritingVariableName
-        -> MaybeT unifier (Pattern RewritingVariableName)
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unify2 = unify1
 
-    unifyEquals0 pat1@(ElemVar_ _) pat2
-      | TermLike.isFunctionPattern pat2 =
-        lift $ simplifyChild pat1 pat2
-      | otherwise = empty
-
-    unifyEquals0 pat1 pat2@(ElemVar_ _)
-      | TermLike.isFunctionPattern pat1 =
-        lift $ simplifyChild pat1 pat2
-      | otherwise = empty
-
-    unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
-      | isSymbolConcat symbol1, isSymbolConcat symbol1 =
-        lift $ case (args1, args2) of
+unify3
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Symbol
+    -> [TermLike RewritingVariableName]
+    -> [TermLike RewritingVariableName]
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unify3 simplifyChild first second symbol2 args1 args2
+  = lift $ case (args1, args2) of
             (     [ InternalList_ builtin1, x1@(Var_ _) ]
                 , [ InternalList_ builtin2, x2@(Var_ _) ] ) ->
                     unifyEqualsFramedRightRight
+                        simplifyChild
+                        first second
                         symbol2
                         builtin1
                         x1
@@ -435,200 +430,86 @@ unifyEquals
             (     [ x1@(Var_ _), InternalList_ builtin1]
                 , [ x2@(Var_ _), InternalList_ builtin2] ) ->
                     unifyEqualsFramedLeftLeft
+                        simplifyChild
+                        first second
                         symbol2
                         x1
                         builtin1
                         x2
                         builtin2
-            _ -> empty
+            _ -> empty 
 
-    unifyEquals0 dv1@(InternalList_ builtin1) pat2 =
-        case pat2 of
-            InternalList_ builtin2 ->
-                lift $ unifyEqualsConcrete builtin1 builtin2
-            app@(App_ symbol2 args2)
-              | isSymbolConcat symbol2 ->
-                lift $ case args2 of
+unify4
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> InternalList (TermLike RewritingVariableName)
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unify4 simplifyChildren first second builtin1 builtin2
+  = lift $ unifyEqualsConcrete simplifyChildren first second builtin1 builtin2
+
+unify5
+    :: MonadUnify unifier
+    => SimplificationType
+    -> (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> [TermLike RewritingVariableName]
+    -> InternalList (TermLike RewritingVariableName)
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unify5 simplificationType simplifyChildren first second args2 builtin1
+  = lift $ case args2 of
                     [ InternalList_ builtin2, x@(Var_ _) ] ->
-                        unifyEqualsFramedRight builtin1 builtin2 x
+                        unifyEqualsFramedRight simplifyChildren first second builtin1 builtin2 x
                     [ x@(Var_ _), InternalList_ builtin2 ] ->
-                        unifyEqualsFramedLeft builtin1 x builtin2
+                        unifyEqualsFramedLeft simplifyChildren first second builtin1 x builtin2
                     [ _, _ ] ->
                         Builtin.unifyEqualsUnsolved
                             simplificationType
-                            dv1
-                            app
+                            first
+                            second
                     _ -> Builtin.wrongArity concatKey
-              | otherwise -> empty
-            _ -> empty
 
-    unifyEquals0 pat1 pat2 =
-        case pat2 of
-            dv@(InternalList_ _) -> unifyEquals0 dv pat1
-            _ -> empty
-
-    unifyEqualsConcrete
-        :: InternalList (TermLike RewritingVariableName)
-        -> InternalList (TermLike RewritingVariableName)
-        -> unifier (Pattern RewritingVariableName)
-    unifyEqualsConcrete builtin1 builtin2
-      | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
-      | otherwise = do
-        tools <- Simplifier.askMetadataTools
-        Reflection.give tools $ do
-            unified <- sequence $ Seq.zipWith simplifyChild list1 list2
-            let
-                propagatedUnified = propagateConditions unified
-                result =
-                    TermLike.markSimplified
-                    . asInternal tools internalListSort
-                    <$> propagatedUnified
-            return result
-      where
-        InternalList { internalListSort } = builtin1
-        InternalList { internalListChild = list1 } = builtin1
-        InternalList { internalListChild = list2 } = builtin2
-
-    unifyEqualsFramedRight
-        :: InternalList (TermLike RewritingVariableName)
-        -> InternalList (TermLike RewritingVariableName)
+unifyEqualsFramedLeftLeft
+  :: MonadUnify unifier
+  => (   TermLike RewritingVariableName
         -> TermLike RewritingVariableName
         -> unifier (Pattern RewritingVariableName)
-    unifyEqualsFramedRight
-        internal1
-        internal2
-        frame2
-      | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation
-      | otherwise =
-        do
-            tools <- Simplifier.askMetadataTools
-            let listSuffix1 = asInternal tools internalListSort suffix1
-            prefixUnified <-
-                unifyEqualsConcrete
-                    internal1 { internalListChild = prefix1 }
-                    internal2
-            suffixUnified <- simplifyChild frame2 listSuffix1
-            let result =
-                    TermLike.markSimplified (mkInternalList internal1)
-                    <$ prefixUnified
-                    <* suffixUnified
-            return result
-      where
-        InternalList { internalListSort } = internal1
-        InternalList { internalListChild = list1 } = internal1
-        InternalList { internalListChild = prefix2 } = internal2
-        (prefix1, suffix1) = Seq.splitAt prefixLength list1
-          where
-            prefixLength = Seq.length prefix2
-
-    unifyEqualsFramedLeft
-        :: InternalList (TermLike RewritingVariableName)
-        -> TermLike RewritingVariableName
-        -> InternalList (TermLike RewritingVariableName)
-        -> unifier (Pattern RewritingVariableName)
-    unifyEqualsFramedLeft
-        internal1
-        frame2
-        internal2
-      | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation
-      | otherwise =
-        do
-            tools <- Simplifier.askMetadataTools
-            let listPrefix1 = asInternal tools internalListSort prefix1
-            prefixUnified <- simplifyChild frame2 listPrefix1
-            suffixUnified <-
-                unifyEqualsConcrete
-                    internal1 { internalListChild = suffix1 }
-                    internal2
-            let result =
-                    mkInternalList internal1
-                    <$ prefixUnified
-                    <* suffixUnified
-            return result
-      where
-        InternalList { internalListSort } = internal1
-        InternalList { internalListChild = list1 } = internal1
-        InternalList { internalListChild = suffix2 } = internal2
-        (prefix1, suffix1) = Seq.splitAt prefixLength list1
-          where
-            prefixLength = Seq.length list1 - Seq.length suffix2
-    bottomWithExplanation = do
-        Monad.Unify.explainBottom
-            "Cannot unify lists of different length."
-            first
-            second
-        return Pattern.bottom
-
-    unifyEqualsFramedRightRight
-        :: TermLike.Symbol
-        -> InternalList (TermLike RewritingVariableName)
-        -> TermLike RewritingVariableName
-        -> InternalList (TermLike RewritingVariableName)
-        -> TermLike RewritingVariableName
-        -> unifier (Pattern RewritingVariableName)
-    unifyEqualsFramedRightRight
-        symbol
-        internal1
-        frame1
-        internal2
-        frame2
-      | length1 < length2 = do
-        tools <- Simplifier.askMetadataTools
-        prefixUnified <-
-            unifyEqualsConcrete
-                internal1
-                internal2 { internalListChild = prefix2 }
-        let listSuffix2 = asInternal tools internalListSort suffix2
-            suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
-        suffixUnified <-
-            simplifyChild
-                frame1
-                suffix2Frame2
-        let result =
-                TermLike.markSimplified initial
-                <$ prefixUnified
-                <* suffixUnified
-        return result
-      | length1 == length2 = do
-        prefixUnified <-
-            unifyEqualsConcrete internal1 internal2
-        suffixUnified <- simplifyChild frame1 frame2
-        let result =
-                TermLike.markSimplified initial
-                <$ prefixUnified
-                <* suffixUnified
-        return result
-      | otherwise =
-        unifyEqualsFramedRightRight symbol internal2 frame2 internal1 frame1
-      where
-        initial = mkApplySymbol symbol [mkInternalList internal1, frame1]
-        InternalList { internalListSort } = internal1
-        InternalList { internalListChild = list1 } = internal1
-        InternalList { internalListChild = list2 } = internal2
-        length1 = Seq.length list1
-        length2 = Seq.length list2
-        (prefix2, suffix2) = Seq.splitAt length1 list2
-
-    unifyEqualsFramedLeftLeft
-        :: TermLike.Symbol
-        -> TermLike RewritingVariableName
-        -> InternalList (TermLike RewritingVariableName)
-        -> TermLike RewritingVariableName
-        -> InternalList (TermLike RewritingVariableName)
-        -> unifier (Pattern RewritingVariableName)
-    unifyEqualsFramedLeftLeft
-        symbol
-        frame1
-        internal1
-        frame2
-        internal2
-      | length1 < length2 = do
+       )
+  -> TermLike RewritingVariableName
+  -> TermLike RewritingVariableName
+  -> TermLike.Symbol
+  -> TermLike RewritingVariableName
+  -> InternalList (TermLike RewritingVariableName)
+  -> TermLike RewritingVariableName
+  -> InternalList (TermLike RewritingVariableName)
+  -> unifier (Pattern RewritingVariableName)
+unifyEqualsFramedLeftLeft
+  simplifyChild
+  first
+  second
+  symbol
+  frame1
+  internal1
+  frame2
+  internal2
+  | length1 < length2 = do
         tools <- Simplifier.askMetadataTools
         let listPrefix2 = asInternal tools internalListSort prefix2
             frame2Prefix2 = mkApplySymbol symbol [frame2, listPrefix2]
         prefixUnified <- simplifyChild frame1 frame2Prefix2
         suffixUnified <-
             unifyEqualsConcrete
+                simplifyChild
+                first second
                 internal1
                 internal2 { internalListChild = suffix2 }
         let result =
@@ -636,14 +517,14 @@ unifyEquals
         return result
       | length1 == length2 = do
         prefixUnified <- simplifyChild frame1 frame2
-        suffixUnified <- unifyEqualsConcrete internal1 internal2
+        suffixUnified <- unifyEqualsConcrete simplifyChild first second internal1 internal2
         let result =
                 TermLike.markSimplified initial
                 <$ prefixUnified
                 <* suffixUnified
         return result
       | otherwise =
-        unifyEqualsFramedLeftLeft symbol frame2 internal2 frame1 internal1
+        unifyEqualsFramedLeftLeft simplifyChild first second symbol frame2 internal2 frame1 internal1
       where
         initial = mkApplySymbol symbol [frame1, mkInternalList internal1]
         InternalList { internalListSort } = internal1
@@ -653,6 +534,290 @@ unifyEquals
         length2 = Seq.length list2
         (prefix2, suffix2) = Seq.splitAt (length2 - length1) list2
 
+bottomWithExplanation
+  :: InternalVariable variable
+  => MonadUnify unifier
+  => TermLike variable
+  -> TermLike variable
+  -> unifier (Pattern variable)
+bottomWithExplanation first second = do
+    Monad.Unify.explainBottom
+        "Cannot unify lists of different length."
+        first
+        second
+    return Pattern.bottom
+
+propagateConditions
+    :: InternalVariable variable
+    => Traversable t
+    => t (Conditional variable a)
+    -> Conditional variable (t a)
+propagateConditions = sequenceA
+
+unifyEqualsConcrete
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> InternalList (TermLike RewritingVariableName)
+    -> unifier (Pattern RewritingVariableName)
+unifyEqualsConcrete simplifyChild first second builtin1 builtin2
+  | Seq.length list1 /= Seq.length list2 = bottomWithExplanation first second
+  | otherwise = do
+    tools <- Simplifier.askMetadataTools
+    Reflection.give tools $ do
+        unified <- sequence $ Seq.zipWith simplifyChild list1 list2
+        let
+            propagatedUnified = propagateConditions unified
+            result =
+                TermLike.markSimplified
+                . asInternal tools internalListSort
+                <$> propagatedUnified
+        return result
+   where
+    InternalList { internalListSort } = builtin1
+    InternalList { internalListChild = list1 } = builtin1
+    InternalList { internalListChild = list2 } = builtin2
+
+unifyEqualsFramedRight
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> InternalList (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+    -> unifier (Pattern RewritingVariableName)
+unifyEqualsFramedRight
+    simplifyChild
+    first second
+    internal1
+    internal2
+    frame2
+  | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation first second
+  | otherwise =
+    do
+        tools <- Simplifier.askMetadataTools
+        let listSuffix1 = asInternal tools internalListSort suffix1
+        prefixUnified <-
+            unifyEqualsConcrete
+                simplifyChild
+                first second
+                internal1 { internalListChild = prefix1 }
+                internal2
+        suffixUnified <- simplifyChild frame2 listSuffix1
+        let result =
+                TermLike.markSimplified (mkInternalList internal1)
+                <$ prefixUnified
+                <* suffixUnified
+        return result
+   where
+    InternalList { internalListSort } = internal1
+    InternalList { internalListChild = list1 } = internal1
+    InternalList { internalListChild = prefix2 } = internal2
+    (prefix1, suffix1) = Seq.splitAt prefixLength list1
+      where
+        prefixLength = Seq.length prefix2
+
+unifyEqualsFramedLeft
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> unifier (Pattern RewritingVariableName)
+unifyEqualsFramedLeft
+    simplifyChild
+    first
+    second
+    internal1
+    frame2
+    internal2
+  | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation first second
+  | otherwise =
+    do
+        tools <- Simplifier.askMetadataTools
+        let listPrefix1 = asInternal tools internalListSort prefix1
+        prefixUnified <- simplifyChild frame2 listPrefix1
+        suffixUnified <-
+            unifyEqualsConcrete
+                simplifyChild
+                first
+                second
+                internal1 { internalListChild = suffix1 }
+                internal2
+        let result =
+                mkInternalList internal1
+                <$ prefixUnified
+                <* suffixUnified
+        return result
+   where
+    InternalList { internalListSort } = internal1
+    InternalList { internalListChild = list1 } = internal1
+    InternalList { internalListChild = suffix2 } = internal2
+    (prefix1, suffix1) = Seq.splitAt prefixLength list1
+      where
+        prefixLength = Seq.length list1 - Seq.length suffix2
+
+unifyEqualsFramedRightRight
+    :: MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+       )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike.Symbol
+    -> InternalList (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+    -> unifier (Pattern RewritingVariableName)
+unifyEqualsFramedRightRight
+    simplifyChild
+    first second 
+    symbol
+    internal1
+    frame1
+    internal2
+    frame2
+  | length1 < length2 = do
+    tools <- Simplifier.askMetadataTools
+    prefixUnified <-
+        unifyEqualsConcrete
+            simplifyChild
+            first
+            second
+            internal1
+            internal2 { internalListChild = prefix2 }
+    let listSuffix2 = asInternal tools internalListSort suffix2
+        suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
+    suffixUnified <-
+        simplifyChild
+            frame1
+            suffix2Frame2
+    let result =
+            TermLike.markSimplified initial
+            <$ prefixUnified
+            <* suffixUnified
+    return result
+  | length1 == length2 = do
+    prefixUnified <-
+        unifyEqualsConcrete simplifyChild first second internal1 internal2
+    suffixUnified <- simplifyChild frame1 frame2
+    let result =
+            TermLike.markSimplified initial
+            <$ prefixUnified
+            <* suffixUnified
+    return result
+  | otherwise =
+    unifyEqualsFramedRightRight simplifyChild first second symbol internal2 frame2 internal1 frame1
+  where
+    initial = mkApplySymbol symbol [mkInternalList internal1, frame1]
+    InternalList { internalListSort } = internal1
+    InternalList { internalListChild = list1 } = internal1
+    InternalList { internalListChild = list2 } = internal2
+    length1 = Seq.length list1
+    length2 = Seq.length list2
+    (prefix2, suffix2) = Seq.splitAt length1 list2
+
+-- unifyEquals
+--     :: forall unifier
+--     .  MonadUnify unifier
+--     => SimplificationType
+--     ->  (  TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--         )
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unifyEquals
+--     simplificationType
+--     simplifyChild
+--     mpat
+--     first
+--     second
+--   = do
+--     tools <- Simplifier.askMetadataTools
+--     (Monad.guard . fromMaybe False) (isListSort tools sort1)
+--     mpat
+--   where
+--     sort1 = termLikeSort first
+
+--     unifyEquals0
+--         :: TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> MaybeT unifier (Pattern RewritingVariableName)
+
+--     unifyEquals0 pat1@(ElemVar_ _) pat2
+--       | TermLike.isFunctionPattern pat2 =
+--         lift $ simplifyChild pat1 pat2
+--       | otherwise = empty
+
+--     unifyEquals0 pat1 pat2@(ElemVar_ _)
+--       | TermLike.isFunctionPattern pat1 =
+--         lift $ simplifyChild pat1 pat2
+--       | otherwise = empty
+
+--     unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
+--       | isSymbolConcat symbol1, isSymbolConcat symbol1 =
+--         lift $ case (args1, args2) of
+--             (     [ InternalList_ builtin1, x1@(Var_ _) ]
+--                 , [ InternalList_ builtin2, x2@(Var_ _) ] ) ->
+--                     unifyEqualsFramedRightRight
+--                         symbol2
+--                         builtin1
+--                         x1
+--                         builtin2
+--                         x2
+--             (     [ x1@(Var_ _), InternalList_ builtin1]
+--                 , [ x2@(Var_ _), InternalList_ builtin2] ) ->
+--                     unifyEqualsFramedLeftLeft
+--                         symbol2
+--                         x1
+--                         builtin1
+--                         x2
+--                         builtin2
+--             _ -> empty
+
+--     unifyEquals0 dv1@(InternalList_ builtin1) pat2 =
+--         case pat2 of
+--             InternalList_ builtin2 ->
+--                 lift $ unifyEqualsConcrete builtin1 builtin2
+--             app@(App_ symbol2 args2)
+--               | isSymbolConcat symbol2 ->
+--                 lift $ case args2 of
+--                     [ InternalList_ builtin2, x@(Var_ _) ] ->
+--                         unifyEqualsFramedRight builtin1 builtin2 x
+--                     [ x@(Var_ _), InternalList_ builtin2 ] ->
+--                         unifyEqualsFramedLeft builtin1 x builtin2
+--                     [ _, _ ] ->
+--                         Builtin.unifyEqualsUnsolved
+--                             simplificationType
+--                             dv1
+--                             app
+--                     _ -> Builtin.wrongArity concatKey
+--               | otherwise -> empty
+--             _ -> empty
+
+--     unifyEquals0 pat1 pat2 =
+--         case pat2 of
+--             dv@(InternalList_ _) -> unifyEquals0 dv pat1
+--             _ -> empty
 
 {- Normalizes a list expression.
 

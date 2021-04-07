@@ -21,8 +21,10 @@ module Kore.Builtin.Map
     , builtinFunctions
     , Map.asTermLike
     , internalize
+    , InKeys (..)
+    , matchInKeys
     -- * Unification
-    , unifyEquals
+    --, unifyEquals
     , unifyNotInKeys
     -- * Raw evaluators
     , evalConcat
@@ -518,61 +520,53 @@ The maps are assumed to have the same sort, but this is not checked. If
 multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
+
 unifyEquals
     :: forall unifier
     .  MonadUnify unifier
     => TermSimplifier RewritingVariableName unifier
+    -> SmtMetadataTools Attribute.Symbol
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
+    -> InternalMap Key (TermLike RewritingVariableName)
+    -> InternalMap Key (TermLike RewritingVariableName)
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals unifyEqualsChildren first second = do
-    tools <- Simplifier.askMetadataTools
+unifyEquals unifyEqualsChildren tools first second normalized1 normalized2 = do
+    --tools <- Simplifier.askMetadataTools
     (Monad.guard . fromMaybe False) (isMapSort tools sort1)
     MaybeT $ do
-        unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
+        unifiers <- Monad.Unify.gather (runMaybeT unifyEquals0)
         case sequence unifiers of
             Nothing -> return Nothing
             Just us -> Monad.Unify.scatter (map Just us)
   where
-    sort1 = termLikeSort first
+    sort1 = builtinAcSort normalized1
+
+-- unifyEqualsNormalized
+--     tools
+--     first
+--     second
+--     mcond
+--   = do
 
     -- | Unify the two argument patterns.
-    unifyEquals0
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> MaybeT unifier (Pattern RewritingVariableName)
-    unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
-        tools <- Simplifier.askMetadataTools
-        Ac.unifyEqualsNormalized
+    --unifyEquals0
+        -- :: MaybeT unifier (Pattern RewritingVariableName)
+    unifyEquals0 = 
+        Ac.unifyEqualsNormalized @NormalizedMap
             tools
             first
             second
-            unifyEqualsChildren
-            normalized1
-            normalized2
+            (lift $ Ac.unifyEqualsElementLists @NormalizedMap
+                tools
+                first
+                second
+                unifyEqualsChildren
+                undefined
+                undefined
+                Nothing
+            )
 
-    unifyEquals0 pat1 pat2 = do
-        firstDomain <- asDomain pat1
-        secondDomain <- asDomain pat2
-        unifyEquals0 firstDomain secondDomain
-      where
-        asDomain
-            :: TermLike RewritingVariableName
-            -> MaybeT unifier (TermLike RewritingVariableName)
-        asDomain patt =
-            case normalizedOrBottom of
-                Ac.Normalized normalized -> do
-                    tools <- Simplifier.askMetadataTools
-                    return (Ac.asInternal tools sort1 normalized)
-                Ac.Bottom ->
-                    lift $ Monad.Unify.explainAndReturnBottom
-                        "Duplicated elements in normalization."
-                        first
-                        second
-          where
-            normalizedOrBottom
-                :: Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
-            normalizedOrBottom = Ac.toNormalized patt
 
 data InKeys term =
     InKeys
@@ -605,10 +599,12 @@ unifyNotInKeys
     => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
     -> TermLike RewritingVariableName
+    -> InKeys (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
-    worker a b <|> worker b a
+unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) =
+    worker
   where
     normalizedOrBottom
        :: InternalVariable variable
@@ -642,13 +638,13 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
 
     worker
         :: TermLike RewritingVariableName
+       -- -> TermLike RewritingVariableName
+        -> InKeys (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
         -> TermLike RewritingVariableName
         -> MaybeT unifier (Pattern RewritingVariableName)
-    worker termLike1 termLike2
-      | Just boolValue <- Bool.matchBool termLike1
-      , not boolValue
-      , Just inKeys@InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
-      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
+    worker termLike1 inKeys keyTerm mapTerm
+      |  Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = do
         let symbolicKeys = getSymbolicKeysOfAc normalizedMap
             concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
@@ -674,5 +670,4 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                     fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
                     <> [definedKey, definedMap]
             return $ collectConditions conditions
-
-    worker _ _ = empty
+      | otherwise = empty

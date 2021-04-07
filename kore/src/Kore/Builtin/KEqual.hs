@@ -21,6 +21,7 @@ module Kore.Builtin.KEqual
     , builtinFunctions
     , unifyKequalsEq
     , unifyIfThenElse
+    , matchKequalEq
       -- * keys
     , eqKey
     , neqKey
@@ -222,17 +223,12 @@ unifyKequalsEq
     .  MonadUnify unifier
     => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike RewritingVariableName
+    -> EqTerm (TermLike RewritingVariableName)
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
-  where
-    worker termLike1 termLike2
-      | Just eqTerm <- matchKequalEq termLike1
-      , isFunctionPattern termLike1
-      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-      | otherwise = empty
+unifyKequalsEq unifyChildren notSimplifier eqTerm termLike2
+    = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
+    --TODO: remove
 
 {- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
  -}
