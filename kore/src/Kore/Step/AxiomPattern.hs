@@ -20,7 +20,6 @@ import Kore.Unparser (
  )
 import Prelude.Kore
 
--- TODO: is this module used anymore?
 
 {- | A wrapper over 'TermLike variable'. It represents a rewrite axiom
  or claim as a Matching Logic pattern.
