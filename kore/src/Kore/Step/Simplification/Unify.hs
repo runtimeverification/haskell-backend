@@ -3,8 +3,8 @@ Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
 
-{-# LANGUAGE Strict #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE Strict              #-}
 
 module Kore.Step.Simplification.Unify
     ( matchAppHeads
@@ -57,25 +57,24 @@ module Kore.Step.Simplification.Unify
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
-import Data.Text
 import qualified Data.Map.Strict as M
+import Data.Text
 -- import Pretty (
 --     Doc
 --  )
 
-import Prelude.Kore
 import qualified Kore.Attribute.Symbol as Symbol
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Bool as Bool
+import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Endianness
 import Kore.Builtin.EqTerm
-import Kore.Builtin.KEqual
 import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.KEqual
 import qualified Kore.Builtin.List.List as List
-import qualified Kore.Builtin.String as String
-import Kore.Builtin.Signedness
 import qualified Kore.Builtin.Map as Map
+import Kore.Builtin.Signedness
+import qualified Kore.Builtin.String as String
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
@@ -89,6 +88,7 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.PatternF
     ( Const (..)
     )
+import Prelude.Kore
 
 data Unification
     = UnifyInt !InternalInt !InternalInt
@@ -606,11 +606,11 @@ matchUnifyEqualsMap tools first second
             let InternalAc{builtinAcChild = secondNormalized} =
                     norm2 in
             unifyMapEqualsMatch firstNormalized secondNormalized
-        Nothing -> return UnifyMapBottom 
+        Nothing -> return UnifyMapBottom
     | otherwise = Nothing
 
       where
-        
+
         unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2)
           = return (normalized1, normalized2)
         unifyEquals0 first' second'
@@ -630,12 +630,12 @@ matchUnifyEqualsMap tools first second
                     --tools <- Simplifier.askMetadataTools
                     Ac.asInternal tools sort1 normalized
                 Ac.Bottom -> Nothing
-            
+
           where
             normalizedOrBottom ::
                 Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
             normalizedOrBottom = Ac.toNormalized patt
-        
+
 
 {-
     unifyEquals0 pat1 pat2 = do
@@ -654,7 +654,7 @@ matchUnifyEqualsMap tools first second
     = matchUnifyEqualsMap tools firstDomain secondDomain
     | otherwise
     = Just UnifyMapBottom
--}      
+-}
     --   where
     --     sort1 = termLikeSort first
 
@@ -708,7 +708,7 @@ data UnifyEqualsSetArgs = UnifyEqualsSetArgs {
     --             => TermLike RewritingVariableName
     --             -> Ac.NormalizedOrBottom NormalizedMap variable
     --         normalizedOrBottom = Ac.toNormalized
-        
+
     --     sort1 = termLikeSort first
 
 -- matchUnifyEqualsList1

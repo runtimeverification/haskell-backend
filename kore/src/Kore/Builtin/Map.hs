@@ -552,7 +552,7 @@ unifyEquals unifyEqualsChildren tools first second normalized1 normalized2 = do
     -- | Unify the two argument patterns.
     --unifyEquals0
         -- :: MaybeT unifier (Pattern RewritingVariableName)
-    unifyEquals0 = 
+    unifyEquals0 =
         Ac.unifyEqualsNormalized @NormalizedMap
             tools
             first

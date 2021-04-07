@@ -34,9 +34,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Builtin.Ac
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
+import qualified Kore.Builtin.EqTerm as Builtin.EqTerm
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.KEqual as Builtin.KEqual
-import qualified Kore.Builtin.EqTerm as Builtin.EqTerm
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 --import qualified Kore.Builtin.Set as Builtin.Set
@@ -192,7 +192,7 @@ maybeTermEquals2 notSimplifier childTransformers tools first second
   | Just (MatchAppHeads symbol1 symbol2) <- matchAppHeads first second
         = constructorAndEqualsAssumesDifferentHeads first second symbol1 symbol2
 --   | Just (UnifyOverloading1 (UnifyOverloading1Args inj firstHead secondHead firstChildren))
---         = 
+--         =
 --   -- insert overloadedConstructorSortInjectionAndEquals here
   | Just (UnifyBoolAnd term1 term2) <- matchUnifyBoolAnd first second
         = Builtin.Bool.unifyBoolAnd childTransformers first second term1 term2
@@ -218,7 +218,7 @@ maybeTermEquals2 notSimplifier childTransformers tools first second
         = undefined
   | Just UnifyMapBottom <- matchUnifyEqualsMap tools first second
         = undefined
-    
+
 --   | Just (UnifyEqualsMap (UnifyEqualsMapArgs normalized1 normalized2)) <- matchUnifyEqualsMap tools first second
 --         = Builtin.Map.unifyEquals childTransformers first second normalized1 normalized2
 --   | Just UnifyMapBottom <- matchUnifyEqualsMap tools first second
@@ -298,7 +298,7 @@ maybeTermEquals _ childTransformers first second = asum
     --     second
     --, Builtin.Endianness.unifyEquals first second
     --, Builtin.Signedness.unifyEquals first second
-    -- , 
+    -- ,
     --     Builtin.Map.unifyEquals childTransformers
     --     first
     --     second
@@ -357,7 +357,7 @@ maybeTermAnd notSimplifier childTransformers first second = asum
     , Builtin.KEqual.unifyIfThenElse childTransformers first second
     --, Builtin.Endianness.unifyEquals first second
     --, Builtin.Signedness.unifyEquals first second
-    -- , 
+    -- ,
     --     Builtin.Map.unifyEquals childTransformers
     --     first
     --     second
@@ -624,7 +624,7 @@ sortInjectionAndEquals termMerger inj1 inj2 = do
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
             inj' = evaluateInj inj { injChild = childTerm }
         return $ Pattern.withCondition inj' childCondition
-    first = mkInjWrap inj1  
+    first = mkInjWrap inj1
     second = mkInjWrap inj2
 
 {- | Unify a constructor application pattern with a sort injection pattern.
