@@ -18,13 +18,13 @@ module Kore.Internal.InternalSet (
 ) where
 
 import qualified Control.Lens as Lens
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables hiding
-    ( toList
-    )
+import Kore.Attribute.Pattern.FreeVariables hiding (
+    toList,
+ )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified

@@ -32,37 +32,37 @@ module Kore.Internal.MultiOr (
 ) where
 
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
+import Data.Generics.Product (
+    field,
+ )
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
-import qualified Generics.SOP as SOP
-import GHC.Exts
-    ( IsList
-    )
+import GHC.Exts (
+    IsList,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Debug
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Syntax.Application
-    ( Application (..)
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Logic
-    ( Logic
-    , LogicT
-    , MonadLogic
-    )
+import Kore.Syntax.Application (
+    Application (..),
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Logic (
+    Logic,
+    LogicT,
+    MonadLogic,
+ )
 import qualified Logic
-import Prelude.Kore hiding
-    ( map
-    , traverse
-    )
+import Prelude.Kore hiding (
+    map,
+    traverse,
+ )
 
 -- | 'MultiOr' is a Matching logic or of its children
 

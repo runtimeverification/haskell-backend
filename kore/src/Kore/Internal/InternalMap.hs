@@ -19,8 +19,8 @@ module Kore.Internal.InternalMap (
 
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables

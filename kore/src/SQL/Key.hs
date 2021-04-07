@@ -8,12 +8,12 @@ module SQL.Key (
     Key (..),
 ) where
 
-import Data.Int
-    ( Int64
-    )
+import Data.Int (
+    Int64,
+ )
 import Debug
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Prelude.Kore
 
 -- | A foreign key into the table for type @a@.

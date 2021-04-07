@@ -53,34 +53,34 @@ module Kore.Syntax.Sentence (
 ) where
 
 import qualified Control.Monad as Monad
-import Data.Generics.Sum.Typed
-    ( projectTyped
-    )
-import Data.Kind
-    ( Type
-    )
-import qualified Generics.SOP as SOP
+import Data.Generics.Sum.Typed (
+    projectTyped,
+ )
+import Data.Kind (
+    Type,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Null as Attribute
-    ( Null (..)
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    , freeVariable
-    )
+import qualified Kore.Attribute.Null as Attribute (
+    Null (..),
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+    freeVariable,
+ )
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Module
-import Kore.Syntax.Pattern
-    ( Pattern
-    )
+import Kore.Syntax.Pattern (
+    Pattern,
+ )
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.Free
-    ( freePureVariables
-    )
+import Kore.Variables.Free (
+    freePureVariables,
+ )
 import Prelude.Kore
 import qualified Pretty
 
