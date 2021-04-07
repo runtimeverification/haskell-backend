@@ -22,31 +22,31 @@ module Kore.Syntax.Pattern (
 ) where
 
 import Control.Comonad
-import Control.Comonad.Trans.Cofree (
-    ComonadCofree (..),
- )
+import Control.Comonad.Trans.Cofree
+    ( ComonadCofree (..)
+    )
 import qualified Control.Comonad.Trans.Env as Env
 import qualified Data.Bifunctor as Bifunctor
-import Data.Functor.Compose (
-    Compose (..),
- )
-import Data.Functor.Foldable (
-    Base,
-    Corecursive,
-    Recursive,
- )
+import Data.Functor.Compose
+    ( Compose (..)
+    )
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity (
-    Identity (..),
- )
-import Data.Kind (
-    Type,
- )
-import Data.Text (
-    Text,
- )
-import qualified GHC.Generics as GHC
+import Data.Functor.Identity
+    ( Identity (..)
+    )
+import Data.Kind
+    ( Type
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
 import Kore.Sort
@@ -68,18 +68,18 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
-import Kore.Syntax.PatternF (
-    Const (..),
-    PatternF (..),
- )
+import Kore.Syntax.PatternF
+    ( Const (..)
+    , PatternF (..)
+    )
 import qualified Kore.Syntax.PatternF as PatternF
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
-import Kore.TopBottom (
-    TopBottom (..),
- )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
@@ -99,8 +99,9 @@ newtype
         (annotation :: Type) = Pattern
     {getPattern :: Cofree (PatternF variable) annotation}
     deriving stock (Show)
-    deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
+    deriving stock (Traversable)
+    deriving newtype (Functor, Foldable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

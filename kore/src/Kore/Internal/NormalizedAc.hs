@@ -302,7 +302,6 @@ deriving stock instance
     ) =>
     Show (NormalizedAc collection key child)
 
--- TODO: stock?
 deriving stock instance
     (Functor (Element collection), Functor (Value collection)) =>
     Functor (NormalizedAc collection key)

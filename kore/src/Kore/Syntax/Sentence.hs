@@ -53,34 +53,34 @@ module Kore.Syntax.Sentence (
 ) where
 
 import qualified Control.Monad as Monad
-import Data.Generics.Sum.Typed (
-    projectTyped,
- )
-import Data.Kind (
-    Type,
- )
-import qualified GHC.Generics as GHC
+import Data.Generics.Sum.Typed
+    ( projectTyped
+    )
+import Data.Kind
+    ( Type
+    )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Null as Attribute (
-    Null (..),
- )
-import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
-    freeVariable,
- )
+import qualified Kore.Attribute.Null as Attribute
+    ( Null (..)
+    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    , freeVariable
+    )
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Module
-import Kore.Syntax.Pattern (
-    Pattern,
- )
+import Kore.Syntax.Pattern
+    ( Pattern
+    )
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.Free (
-    freePureVariables,
- )
+import Kore.Variables.Free
+    ( freePureVariables
+    )
 import Prelude.Kore
 import qualified Pretty
 
@@ -416,8 +416,9 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype SentenceClaim (patternType :: Type) = SentenceClaim {getSentenceClaim :: SentenceAxiom patternType}
     deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
+    deriving stock (Traversable)
+    deriving newtype (Functor, Foldable)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

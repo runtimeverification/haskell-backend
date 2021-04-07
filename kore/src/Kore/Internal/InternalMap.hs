@@ -19,8 +19,8 @@ module Kore.Internal.InternalMap (
 
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -46,8 +46,9 @@ type MapElement = Element NormalizedMap
 -- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
 newtype NormalizedMap key child = NormalizedMap {getNormalizedMap :: NormalizedAc NormalizedMap key child}
     deriving stock (Eq, Ord, Show)
-    deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
+    deriving newtype (Foldable, Functor)
+    deriving stock (Traversable)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

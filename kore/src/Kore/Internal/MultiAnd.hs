@@ -26,33 +26,33 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
 import Debug
+import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
- )
-import Kore.Internal.Condition (
-    Condition,
- )
-import Kore.Internal.Predicate (
-    Predicate,
-    getMultiAndPredicate,
-    makeAndPredicate,
-    makeTruePredicate,
- )
-import Kore.Internal.TermLike (
-    TermLike,
-    TermLikeF (..),
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    , getMultiAndPredicate
+    , makeAndPredicate
+    , makeTruePredicate
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , TermLikeF (..)
+    )
 import Kore.Internal.Variable
-import Kore.TopBottom (
-    TopBottom (..),
- )
-import Prelude.Kore hiding (
-    map,
-    traverse,
- )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Prelude.Kore hiding
+    ( map
+    , traverse
+    )
 
 -- | 'MultiAnd' is a Matching logic and of its children
 
@@ -67,11 +67,11 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 -}
 newtype MultiAnd child = MultiAnd {getMultiAnd :: [child]}
     deriving stock (Eq, Ord, Show)
-    deriving stock (Foldable)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving newtype (GHC.IsList)
+    deriving newtype (Foldable)
 
 instance TopBottom child => TopBottom (MultiAnd child) where
     isTop (MultiAnd []) = True

@@ -1,5 +1,5 @@
 {-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict            #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
@@ -58,29 +58,29 @@ module Kore.Syntax.Variable (
     toConcrete,
 ) where
 
-import Data.Distributive (
-    Distributive (..),
- )
-import Data.Functor.Adjunction (
-    Adjunction (..),
-    extractL,
-    indexAdjunction,
-    tabulateAdjunction,
- )
-import Data.Functor.Const (
-    Const (..),
- )
-import Data.Functor.Rep (
-    Representable (..),
- )
-import Data.Generics.Sum (
-    _Ctor,
- )
+import Data.Distributive
+    ( Distributive (..)
+    )
+import Data.Functor.Adjunction
+    ( Adjunction (..)
+    , extractL
+    , indexAdjunction
+    , tabulateAdjunction
+    )
+import Data.Functor.Const
+    ( Const (..)
+    )
+import Data.Functor.Rep
+    ( Representable (..)
+    )
+import Data.Generics.Sum
+    ( _Ctor
+    )
 import Data.Sup
 import qualified Data.Text as Text
 import Data.Void
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -214,8 +214,7 @@ instance
 
 newtype SetVariableName variable = SetVariableName {unSetVariableName :: variable}
     deriving stock (Eq, Ord, Show)
-    deriving stock (Functor)
-    deriving stock (Foldable, Traversable)
+    deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic, GHC.Generic1)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)

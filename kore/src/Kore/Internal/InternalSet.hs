@@ -18,13 +18,13 @@ module Kore.Internal.InternalSet (
 ) where
 
 import qualified Control.Lens as Lens
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables hiding (
-    toList,
- )
+import Kore.Attribute.Pattern.FreeVariables hiding
+    ( toList
+    )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
@@ -49,8 +49,9 @@ type SetElement = Element NormalizedSet
 -- | Wrapper for normalized sets, to be used in the `builtinAcChild` field.
 newtype NormalizedSet key child = NormalizedSet {getNormalizedSet :: NormalizedAc NormalizedSet key child}
     deriving stock (Eq, Ord, Show)
-    deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
+    deriving stock (Traversable)
+    deriving newtype (Foldable, Functor)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
