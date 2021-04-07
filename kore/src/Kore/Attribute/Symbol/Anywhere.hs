@@ -10,8 +10,8 @@ module Kore.Attribute.Symbol.Anywhere (
 ) where
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore

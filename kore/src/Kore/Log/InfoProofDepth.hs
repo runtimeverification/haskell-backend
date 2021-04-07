@@ -11,13 +11,13 @@ module Kore.Log.InfoProofDepth (
 
 import qualified Data.Semigroup as Semigroup
 import Log
-import Numeric.Natural
-    ( Natural
-    )
+import Numeric.Natural (
+    Natural,
+ )
 import Prelude.Kore
-import Pretty
-    ( Pretty
-    )
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
 newtype ProofDepth = ProofDepth {getProofDepth :: Natural}

@@ -16,44 +16,44 @@ module Kore.ModelChecker.Step (
     defaultOneStepStrategy,
 ) where
 
-import Control.Monad.State.Strict
-    ( StateT
-    )
+import Control.Monad.State.Strict (
+    StateT,
+ )
 import qualified Control.Monad.State.Strict as State
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import GHC.Generics
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-    ( TermLike
-    )
-import Kore.ModelChecker.Simplification
-    ( checkImplicationIsTop
-    )
+import Kore.Internal.TermLike (
+    TermLike,
+ )
+import Kore.ModelChecker.Simplification (
+    checkImplicationIsTop,
+ )
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Result as StepResult
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern
-    ( RewriteRule (RewriteRule)
-    , allPathGlobally
-    )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyTopConfiguration
-    )
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-    ( filterMultiOr
-    )
-import Kore.Step.Strategy
-    ( Strategy
-    , TransitionT
-    )
+import Kore.Step.RulePattern (
+    RewriteRule (RewriteRule),
+    allPathGlobally,
+ )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+    filterMultiOr,
+ )
+import qualified Kore.Step.Simplification.Pattern as Pattern (
+    simplifyTopConfiguration,
+ )
+import Kore.Step.Simplification.Simplify (
+    MonadSimplify,
+ )
+import Kore.Step.Strategy (
+    Strategy,
+    TransitionT,
+ )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.TopBottom
 import Prelude.Kore
