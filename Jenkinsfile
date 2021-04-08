@@ -46,11 +46,13 @@ pipeline {
             git add test/regression-evm test/regression-wasm
             git commit -m 'Update regression tests'
             git push -u origin _update
-            hub pull-request                      \
-              --head _update --base master        \
-              --reviewer ttuegel --assign ttuegel \
-              --labels automerge                  \
-              --message 'Update regression tests'
+            if ! hub pr list --format '%H%n' | grep -q '_update'; then
+              hub pull-request                      \
+                --head _update --base master        \
+                --reviewer ttuegel --assign ttuegel \
+                --labels automerge                  \
+                --message 'Update regression tests'
+            fi
           '''
         }
       }
