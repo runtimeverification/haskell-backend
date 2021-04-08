@@ -33,8 +33,14 @@ pipeline {
         sshagent(['2b3d8d6b-0855-4b59-864a-6b3ddf9c9d1a']) {
           sh '''
             git remote set-url origin git@github.com:kframework/kore
-            git checkout master
-            git checkout -b _update
+            git fetch --all
+            if git branch --all | grep -q 'origin/_update'; then
+              # _update exists on remote
+              git checkout -B _update origin/_update
+            else
+              # _update does not exist on remote
+              git checkout -B _update origin/master
+            fi
             export KORE=$(pwd)
             ./scripts/generate-regression-tests.sh
             git add test/regression-evm test/regression-wasm
