@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Symbol.Klabel (test_Klabel) where
 
 import Kore.Attribute.Symbol.Klabel

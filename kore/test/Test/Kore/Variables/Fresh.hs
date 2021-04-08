@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Variables.Fresh (
@@ -172,7 +173,7 @@ testFreshPartialOrd gen =
             Pair x _ <- forAll gen
             let inf = minBoundName x
                 sup = maxBoundName x
-                next = nextName x x
+                ~next = nextName x x
             unless (x < sup) discard
             annotateShow inf
             annotateShow sup
