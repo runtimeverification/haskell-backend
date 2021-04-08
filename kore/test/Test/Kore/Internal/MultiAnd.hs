@@ -18,8 +18,8 @@ import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 data TestTopBottom = TestTop | TestBottom | TestOther !Integer
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

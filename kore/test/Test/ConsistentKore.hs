@@ -121,13 +121,13 @@ import Test.Kore (
 data SortRequirements
     = AnySort
     | SpecificSort !Sort
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data AttributeRequirements = AttributeRequirements
     { isConstructorLike :: !Bool
     , isConcrete :: !Bool
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data TermGenerator = TermGenerator
     { arity :: !Integer
@@ -168,7 +168,7 @@ data Context = Context
     , onlyConstructorLike :: !Bool
     , onlyConcrete :: !Bool
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data Setup = Setup
     { allSorts :: ![Sort]

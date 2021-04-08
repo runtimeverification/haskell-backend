@@ -379,8 +379,8 @@ data NormalizedAndPattern variable = NormalizedAndPattern
     , predicate :: MultiAnd (Predicate variable)
     , substitution :: Substitution variable
     }
-    deriving (Eq, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

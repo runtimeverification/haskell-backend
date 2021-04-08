@@ -18,7 +18,7 @@ import Pretty (
 import qualified Pretty
 
 newtype InfoReachability = InfoReachability {prim :: Prim}
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty InfoReachability where
     pretty InfoReachability{prim} =

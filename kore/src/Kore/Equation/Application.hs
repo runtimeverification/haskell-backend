@@ -427,8 +427,8 @@ data AttemptEquationError variable
     = WhileMatch !(MatchError variable)
     | WhileApplyMatchResult !(ApplyMatchResultErrors variable)
     | WhileCheckRequires !(CheckRequiresError variable)
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -463,8 +463,8 @@ data MatchError variable = MatchError
     { matchTerm :: !(TermLike variable)
     , matchEquation :: !(Equation variable)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -480,8 +480,8 @@ data ApplyMatchResultErrors variable = ApplyMatchResultErrors
     { matchResult :: !(MatchResult variable)
     , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -505,8 +505,8 @@ data ApplyMatchResultError variable
       NotMatched (SomeVariableName variable)
     | -- | The variable is not part of the matching solution.
       NonMatchingSubstitution (SomeVariableName variable)
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -538,8 +538,8 @@ data CheckRequiresError variable = CheckRequiresError
     , equationRequires :: !(Predicate variable)
     , sideCondition :: !(SideCondition variable)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -569,8 +569,8 @@ data DebugAttemptEquation
       DebugAttemptEquationResult
         (Equation RewritingVariableName)
         (AttemptEquationResult RewritingVariableName)
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
     pretty (DebugAttemptEquation equation termLike) =
@@ -624,8 +624,8 @@ data DebugApplyEquation
       DebugApplyEquation
         (Equation RewritingVariableName)
         (Pattern RewritingVariableName)
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
 
 instance Pretty DebugApplyEquation where
     pretty (DebugApplyEquation equation result) =

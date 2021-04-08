@@ -101,8 +101,8 @@ data Assignment variable = Assignment_
     { assignedVariable :: !(SomeVariable variable)
     , assignedTerm :: !(TermLike variable)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -175,8 +175,8 @@ data Substitution variable
       Substitution ![Assignment variable]
     | NormalizedSubstitution
         !(Map (SomeVariable variable) (TermLike variable))
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -771,8 +771,8 @@ because it contained simplifiable cycles.
 -}
 data Normalization variable = Normalization
     {normalized, denormalized :: !(UnwrappedSubstitution variable)}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

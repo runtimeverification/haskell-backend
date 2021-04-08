@@ -39,9 +39,9 @@ data Definition (sentence :: Type) = Definition
     { definitionAttributes :: !Attributes
     , definitionModules :: ![Module sentence]
     }
-    deriving (Eq, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

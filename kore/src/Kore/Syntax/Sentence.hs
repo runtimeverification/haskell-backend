@@ -94,8 +94,8 @@ data Symbol = Symbol
     { symbolConstructor :: !Id
     , symbolParams :: ![SortVariable]
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -128,8 +128,8 @@ data Alias = Alias
     { aliasConstructor :: !Id
     , aliasParams :: ![SortVariable]
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -152,9 +152,9 @@ data SentenceAlias (patternType :: Type) = SentenceAlias
     , sentenceAliasRightPattern :: !patternType
     , sentenceAliasAttributes :: !Attributes
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -211,8 +211,8 @@ data SentenceSymbol = SentenceSymbol
     , sentenceSymbolResultSort :: !Sort
     , sentenceSymbolAttributes :: !Attributes
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -272,8 +272,8 @@ data SentenceImport = SentenceImport
     { sentenceImportModuleName :: !ModuleName
     , sentenceImportAttributes :: !Attributes
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -303,8 +303,8 @@ data SentenceSort = SentenceSort
     , sentenceSortParameters :: ![SortVariable]
     , sentenceSortAttributes :: !Attributes
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -355,9 +355,9 @@ data SentenceAxiom (patternType :: Type) = SentenceAxiom
     , sentenceAxiomPattern :: !patternType
     , sentenceAxiomAttributes :: !Attributes
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -415,9 +415,10 @@ unparseAxiom2
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype SentenceClaim (patternType :: Type) = SentenceClaim {getSentenceClaim :: SentenceAxiom patternType}
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
+    deriving stock (Traversable)
+    deriving newtype (Functor, Foldable)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -443,8 +444,8 @@ See also: 'SentenceSort', 'SentenceSymbol'
 data SentenceHook
     = SentenceHookedSort !SentenceSort
     | SentenceHookedSymbol !SentenceSymbol
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -471,9 +472,9 @@ data Sentence (patternType :: Type)
     | SentenceClaimSentence !(SentenceClaim patternType)
     | SentenceSortSentence !SentenceSort
     | SentenceHookSentence !SentenceHook
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

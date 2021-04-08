@@ -27,8 +27,8 @@ import qualified Pretty
  constructors in 'Kore.Internal.TermLike'.
 -}
 newtype Created = Created {getCreated :: Maybe GHC.CallStack}
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)

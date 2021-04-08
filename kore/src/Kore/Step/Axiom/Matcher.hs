@@ -109,7 +109,7 @@ import Prelude.Kore
 newtype Constraint variable = Constraint
     { getConstraint :: Pair (TermLike variable)
     }
-    deriving (Eq)
+    deriving stock (Eq)
 
 data TermLikeClass
     = Variables
@@ -118,7 +118,7 @@ data TermLikeClass
     | OtherTermLike
     | ListBuiltin
     | AssocCommBuiltin
-    deriving (Eq)
+    deriving stock (Eq)
 
 termPriority :: TermLikeClass -> Int
 termPriority Variables = 1
@@ -460,7 +460,7 @@ data MatcherState variable = MatcherState
     , -- | Variables that must not be shadowed.
       avoiding :: !(Set (SomeVariableName variable))
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 type MatcherT variable simplifier =
     RWST (SideCondition variable) () (MatcherState variable) simplifier
