@@ -18,43 +18,43 @@ import qualified Test.Terse as Terse
 
 -- A simple type with one constructor
 data A = A
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A simple type with one constructor
 data B = B
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A record type
 data R = R {rA :: A, rB :: B}
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A sum type with unary constructors
 data S = SA A | SB B
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A product type with one constructor
 data P = P A B
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A complex algebraic data type
 data D = D S P
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A product type with an infix constructor
 data I a b = a ::: b
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -62,7 +62,7 @@ infixl 7 :::
 
 -- A product type with a prefix constructor and an auxiliary fixity declaration
 data I' = (::::) S S
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -70,19 +70,19 @@ infixl 7 ::::
 
 -- A newtype
 newtype N a = N a
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A record newtype
 newtype Rn a = Rn {unRn :: a}
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- A record
 data R3 a b c = R3 {fieldA :: a, fieldB :: b, fieldC :: c}
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

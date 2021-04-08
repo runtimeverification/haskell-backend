@@ -52,7 +52,7 @@ data Prim
     = Const Natural
     | Succ
     | Throw
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 instance Arbitrary Prim where
     arbitrary = do

@@ -54,8 +54,8 @@ Examples of patterns that are not constructor-like:
 newtype ConstructorLike = ConstructorLike
     { getConstructorLike :: Maybe ConstructorLikeHead
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -198,8 +198,8 @@ instance Synthetic ConstructorLike Inj where
 data ConstructorLikeHead
     = ConstructorLikeHead
     | SortInjectionHead
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -23,11 +25,11 @@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 -}
 data Next sort child = Next
     { nextSort :: !sort
-    , nextChild :: child
+    , nextChild :: !child
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

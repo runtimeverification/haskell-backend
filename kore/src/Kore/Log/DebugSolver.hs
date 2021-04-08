@@ -45,12 +45,12 @@ import qualified SMT.AST as SMT
 newtype DebugSolverSend = DebugSolverSend
     { getSendSExpr :: SExpr
     }
-    deriving (Show)
+    deriving stock (Show)
 
 newtype DebugSolverRecv = DebugSolverRecv
     { getRecvSExpr :: Text
     }
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty DebugSolverSend where
     pretty DebugSolverSend{getSendSExpr} =
@@ -118,7 +118,7 @@ See also: 'parseDebugSolverOptions'
 newtype DebugSolverOptions = DebugSolverOptions
     { logFile :: Maybe FilePath
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance Default DebugSolverOptions where
     def = DebugSolverOptions Nothing

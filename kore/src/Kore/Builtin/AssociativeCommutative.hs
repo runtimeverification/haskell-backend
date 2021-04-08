@@ -319,17 +319,17 @@ also allows bottom values.
 data NormalizedOrBottom collection variable
     = Normalized (TermNormalizedAc collection variable)
     | Bottom
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
-deriving instance
+deriving stock instance
     Eq (TermNormalizedAc collection variable) =>
     Eq (NormalizedOrBottom collection variable)
 
-deriving instance
+deriving stock instance
     Ord (TermNormalizedAc collection variable) =>
     Ord (NormalizedOrBottom collection variable)
 
-deriving instance
+deriving stock instance
     Show (TermNormalizedAc collection variable) =>
     Show (NormalizedOrBottom collection variable)
 
@@ -803,25 +803,25 @@ unifyEqualsNormalizedAc
                             allElements1
                             allElements2
                             Nothing
-                ([opaque], []) ->
-                    lift $
-                        unifyEqualsElementLists'
-                            allElements1
-                            allElements2
-                            (Just opaque)
-                ([], [opaque]) ->
-                    lift $
-                        unifyEqualsElementLists'
-                            allElements2
-                            allElements1
-                            (Just opaque)
                 ([ElemVar_ v1], _)
+                    | null opaqueDifference2 ->
+                        lift $
+                            unifyEqualsElementLists'
+                                allElements1
+                                allElements2
+                                (Just v1)
                     | null allElements1 ->
                         unifyOpaqueVariable' v1 allElements2 opaqueDifference2
                 (_, [ElemVar_ v2])
+                    | null opaqueDifference1 ->
+                        lift $
+                            unifyEqualsElementLists'
+                                allElements2
+                                allElements1
+                                (Just v2)
                     | null allElements2 ->
                         unifyOpaqueVariable' v2 allElements1 opaqueDifference1
-                (_, _) -> empty
+                _ -> empty
             let (unifiedElements, unifierCondition) =
                     Conditional.splitTerm simpleUnifier
             lift $ do
@@ -1204,8 +1204,8 @@ unifyEqualsElementLists ::
     [ConcreteOrWithVariable normalized variable] ->
     -- | Second structure elements
     [ConcreteOrWithVariable normalized variable] ->
-    -- | Opaque part of the first structure
-    Maybe (TermLike variable) ->
+    -- | Opaque element variable of the first structure
+    Maybe (ElementVariable variable) ->
     unifier
         ( Conditional
             variable
@@ -1274,7 +1274,7 @@ unifyEqualsElementLists
     unifyEqualsChildren
     firstElements
     secondElements
-    (Just opaque)
+    (Just opaqueElemVar)
         | length firstElements > length secondElements =
             -- The second structure does not include an opaque term, so all the
             -- elements in the first structure must be matched by elements in the second
@@ -1301,26 +1301,26 @@ unifyEqualsElementLists
                         "Duplicated element in unification results"
                         first
                         second
-                Just remainderTerm -> case opaque of
-                    ElemVar_ _
-                        | TermLike.isFunctionPattern remainderTerm -> do
-                            opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
-                            let (opaqueTerm, opaqueCondition) =
-                                    Pattern.splitTerm opaqueUnifier
-                                result = unifier `andCondition` opaqueCondition
-
-                            return (result, [opaqueTerm])
-                    _ ->
-                        error . show . Pretty.vsep $
-                            [ "Unification case that should be handled somewhere else: \
-                              \attempting normalized unification with a \
-                              \non-element-variable opaque term or \
-                              \non-function maps could lead to infinite loops."
-                            , Pretty.indent 2 "first="
-                            , Pretty.indent 4 (unparse first)
-                            , Pretty.indent 2 "second="
-                            , Pretty.indent 4 (unparse second)
-                            ]
+                Just remainderTerm
+                    | TermLike.isFunctionPattern remainderTerm -> do
+                        opaqueUnifier <-
+                            unifyEqualsChildren
+                                (mkElemVar opaqueElemVar)
+                                remainderTerm
+                        let (opaqueTerm, opaqueCondition) =
+                                Pattern.splitTerm opaqueUnifier
+                            result = unifier `andCondition` opaqueCondition
+                        return (result, [opaqueTerm])
+                _ ->
+                    error . show . Pretty.vsep $
+                        [ "Unification case that should be handled somewhere else: \
+                          \attempting normalized unification with \
+                          \non-function maps could lead to infinite loops."
+                        , Pretty.indent 2 "first="
+                        , Pretty.indent 4 (unparse first)
+                        , Pretty.indent 2 "second="
+                        , Pretty.indent 4 (unparse second)
+                        ]
       where
         unifyWithPermutations =
             unifyEqualsElementPermutations

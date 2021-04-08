@@ -17,8 +17,8 @@ import Prelude.Kore
 data RuleIndexCase
     = AxiomIndex !Int
     | ClaimIndex !Int
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -27,8 +27,8 @@ data RuleIndexCase
     and uniquely identifiying axioms and claims.
 -}
 newtype RuleIndex = RuleIndex {getRuleIndex :: Maybe RuleIndexCase}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

@@ -29,8 +29,8 @@ import qualified SQL
 data DebugEvaluateCondition
     = DebugEvaluateCondition (NonEmpty (Predicate VariableName))
     | DebugEvaluateConditionResult Result
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Pretty DebugEvaluateCondition where

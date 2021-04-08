@@ -17,13 +17,13 @@ import Pretty (
 import qualified Pretty
 
 newtype ExecBreadth = ExecBreadth {getExecBreadth :: Natural}
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty ExecBreadth where
     pretty = Pretty.pretty . getExecBreadth
 
 newtype InfoExecBreadth = InfoExecBreadth {breadth :: ExecBreadth}
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty InfoExecBreadth where
     pretty (InfoExecBreadth breadth) =

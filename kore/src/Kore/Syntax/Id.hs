@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -42,8 +44,8 @@ data Id = Id
     { getId :: !Text
     , idLocation :: !AstLocation
     }
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -115,11 +117,11 @@ data AstLocation
     | AstLocationImplicit
     | AstLocationGeneratedVariable
     | AstLocationTest
-    | AstLocationFile FileLocation
+    | AstLocationFile !FileLocation
     | -- | This should not be used and should be eliminated in further releases
       AstLocationUnknown
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -149,12 +151,12 @@ prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 -- | 'FileLocation' represents a position in a source file.
 data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line :: Int
-    , column :: Int
+    { fileName :: !FilePath
+    , line :: !Int
+    , column :: !Int
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

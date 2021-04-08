@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -27,8 +29,8 @@ import qualified Pretty
 Section 9.1.1 (Lexicon).
 -}
 newtype StringLiteral = StringLiteral {getStringLiteral :: Text}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
