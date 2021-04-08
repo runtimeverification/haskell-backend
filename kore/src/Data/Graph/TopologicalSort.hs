@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {- |
 Module      : Data.Graph.TopologicalSort
 Description : Topological sorting algorithm.
