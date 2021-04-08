@@ -1,3 +1,4 @@
+{-# LANGUAGE NoStrictData #-}
 {-# LANGUAGE NoStrict #-}
 
 {- |
