@@ -87,7 +87,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
 
         simplified <-
             simplifyPredicate sideCondition predicate'
-            >>= simplifyPredicates sideCondition . from @_ @(Predicate _)
+                >>= simplifyPredicates sideCondition . from @_ @(Predicate _)
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
