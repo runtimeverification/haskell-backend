@@ -84,7 +84,10 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
-        simplified <- simplifyPredicates sideCondition predicate'
+
+        simplified <-
+            simplifyPredicate sideCondition predicate'
+                >>= simplifyPredicates sideCondition . from @_ @(Predicate _)
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
