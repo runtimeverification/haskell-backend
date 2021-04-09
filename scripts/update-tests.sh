@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 
+set -exuo pipefail
+
 # Create a pull request to update the regression test suite.
 
 git fetch --all
-if git branch --all | grep -q 'origin/_update'; then
-  # _update exists on remote
-  git checkout -B _update origin/_update
-else
-  # _update does not exist on remote
-  git checkout -B _update origin/master
-fi
+git checkout -B _update origin/_update || git checkout -B _update origin/master
 
 export KORE=$(pwd)
 ./scripts/generate-regression-tests.sh
