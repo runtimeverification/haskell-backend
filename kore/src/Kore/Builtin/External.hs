@@ -8,6 +8,7 @@ module Kore.Builtin.External (
     externalize,
 ) where
 
+import Control.Monad.Free (Free (..))
 import Data.Functor.Const (
     Const (..),
  )
@@ -32,6 +33,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
 import Prelude.Kore
 
+type Futu t a =
+    a -> Recursive.Base t (Free (Recursive.Base t) a)
+
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
 All builtins will be rendered using their concrete Kore syntax.
@@ -44,14 +48,11 @@ externalize ::
     TermLike variable ->
     Syntax.Pattern variable Attribute.Null
 externalize =
-    Recursive.unfold worker
+    Recursive.futu externalize1
   where
-    worker ::
-        TermLike variable ->
-        Recursive.Base
-            (Syntax.Pattern variable Attribute.Null)
-            (TermLike variable)
-    worker termLike =
+    externalize1 ::
+        Futu (Syntax.Pattern variable Attribute.Null) (TermLike variable)
+    externalize1 termLike =
         -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
             InternalBoolF (Const internalBool) ->
