@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.SQL (
     testTable,
     test_Unit,

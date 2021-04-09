@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Copyright   : (c) Runtime Verification, 2020
@@ -8,7 +8,6 @@ module Injection (
     Injection (..),
     Prism',
 ) where
-
 import Control.Lens (
     Prism',
  )

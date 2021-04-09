@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Description : Rule index attribute
 Copyright   : (c) Runtime Verification, 2018

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.SourceLocation
 Description : Source and location attribute

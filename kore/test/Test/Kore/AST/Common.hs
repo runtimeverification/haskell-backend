@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.AST.Common (
     test_id,
     test_prettyPrintAstLocation,

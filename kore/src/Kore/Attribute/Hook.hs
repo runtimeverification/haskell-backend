@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Data.Attribute.Hook
 Description : Representation and parser for hook attributes

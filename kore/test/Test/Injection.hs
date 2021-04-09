@@ -1,5 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE Strict #-}
 
 module Test.Injection (
     hpropInjection,

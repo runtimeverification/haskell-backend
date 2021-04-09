@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.ASTVerifier.Error
 Description : Helpers for verification errors.

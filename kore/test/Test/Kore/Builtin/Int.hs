@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Builtin.Int (
     test_gt,
@@ -57,7 +57,6 @@ module Test.Kore.Builtin.Int (
     intLiteral,
     testInt,
 ) where
-
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )

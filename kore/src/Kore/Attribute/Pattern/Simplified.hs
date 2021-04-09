@@ -1,5 +1,5 @@
-{-# LANGUAGE NoStrictData #-}
 {-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019

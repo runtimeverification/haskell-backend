@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.TopBottom (
     test_TermLike,
     test_Predicate,

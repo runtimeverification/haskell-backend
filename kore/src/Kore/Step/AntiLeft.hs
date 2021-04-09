@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Copyright   : (c) Runtime Verification, 2020
@@ -13,7 +13,6 @@ module Kore.Step.AntiLeft (
     substitute,
     toTermLike,
 ) where
-
 import Data.Map.Strict (
     Map,
  )

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.TermLike (
     test_simplify_sideConditionReplacements,
 ) where

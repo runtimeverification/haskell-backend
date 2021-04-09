@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright : (c) 2020 Runtime Verification
 License   : NCSA

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.Constructor
 Description : Constructor symbol attribute

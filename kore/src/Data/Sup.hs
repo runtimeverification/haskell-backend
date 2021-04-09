@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Data.Sup
 Description : Extend ordered types with a least upper bound

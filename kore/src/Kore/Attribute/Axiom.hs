@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.Axiom
 Description : Axiom sentence attributes

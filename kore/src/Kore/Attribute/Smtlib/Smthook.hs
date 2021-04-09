@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.Smtlib.Smtlib
 Description : SMT-HOOK translation attribute

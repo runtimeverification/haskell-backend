@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.SMT.Representation.Builders (
     emptyDeclarations,
     unresolvedConstructorArg,

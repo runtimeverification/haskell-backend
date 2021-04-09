@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.AST.AstWithLocation
 Description : Class for extracting locations from AST terms.

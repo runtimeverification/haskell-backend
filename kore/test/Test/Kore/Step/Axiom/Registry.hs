@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Axiom.Registry (
     test_functionRegistry,
 ) where

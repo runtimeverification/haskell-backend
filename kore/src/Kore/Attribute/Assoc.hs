@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.Assoc
 Description : Associativity axiom attribute

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.ASTVerifier.DefinitionVerifier.Imports (
     test_imports,
 ) where

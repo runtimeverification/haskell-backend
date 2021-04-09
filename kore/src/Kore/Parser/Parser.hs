@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Copyright   : (c) Runtime Verification, 2018
@@ -29,7 +29,6 @@ module Kore.Parser.Parser (
     parseSetVariable,
     parseVariableCounter,
 ) where
-
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import Data.Sup

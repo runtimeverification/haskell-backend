@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.ASTVerifier.DefinitionVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Definiton'.

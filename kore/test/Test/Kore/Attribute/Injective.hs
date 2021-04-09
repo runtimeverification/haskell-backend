@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Injective (
     test_injective,
     test_Attributes,

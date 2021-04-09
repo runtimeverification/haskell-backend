@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Axiom.Identifier
 Description : Data structures and manipulation helpers used for axiom

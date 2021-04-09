@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.IndexedModule.OverloadGraph (
     test_isOverloaded,
     test_isOverloading,

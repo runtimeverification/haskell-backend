@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Main (main) where
 
 import qualified Options.Applicative as Options

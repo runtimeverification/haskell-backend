@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Remainder (
     test_existentiallyQuantifyTarget,
 ) where

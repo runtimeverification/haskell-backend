@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.ASTVerifier.DefinitionVerifier.SortUsage (
     test_sortUsage,
 ) where

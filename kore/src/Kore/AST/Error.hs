@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.AST.Error
 Description : Extensions for errors related to the AST.

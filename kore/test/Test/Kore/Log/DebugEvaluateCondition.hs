@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Log.DebugEvaluateCondition (
     test_instance_Table_DebugEvaluateCondition,
 ) where

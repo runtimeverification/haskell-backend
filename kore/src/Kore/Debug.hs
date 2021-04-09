@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {- |
@@ -55,11 +55,9 @@ module Kore.Debug (
     debugArg,
     DebugPlace (..),
     DebugResult (..),
-
     -- * Re-exports
     module Debug,
 ) where
-
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Data.List (

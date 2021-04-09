@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Owise (
     test_owise,
     test_attributes,

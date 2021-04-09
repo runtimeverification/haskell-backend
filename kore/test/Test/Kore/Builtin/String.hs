@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Builtin.String (
     test_eq,
@@ -20,7 +20,6 @@ module Test.Kore.Builtin.String (
     asPattern,
     asInternal,
 ) where
-
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )

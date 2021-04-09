@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Symbol (
     test_stepperAttributes,
     test_Anywhere,

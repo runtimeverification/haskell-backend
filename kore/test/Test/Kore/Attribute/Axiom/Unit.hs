@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Axiom.Unit (
     test_unit,
     test_Attributes,

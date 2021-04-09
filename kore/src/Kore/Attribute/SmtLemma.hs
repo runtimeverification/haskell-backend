@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.SmtLemma
 Description : Mark a rewrite rule as an smt-lemma

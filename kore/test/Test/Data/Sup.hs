@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Data.Sup (
     hprop_transitiveOrd,
     hprop_reflexiveOrd,

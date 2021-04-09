@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Builtin.InternalBytes (
     test_update,
@@ -18,7 +18,6 @@ module Test.Kore.Builtin.InternalBytes (
     test_InternalBytes,
     test_unparse,
 ) where
-
 import Data.ByteString (
     ByteString,
  )

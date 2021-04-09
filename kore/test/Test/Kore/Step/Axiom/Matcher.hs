@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Step.Axiom.Matcher (
     test_matcherEqualHeads,
@@ -22,7 +22,6 @@ module Test.Kore.Step.Axiom.Matcher (
     matches,
     doesn'tMatch,
 ) where
-
 import Data.Map.Strict (
     Map,
  )

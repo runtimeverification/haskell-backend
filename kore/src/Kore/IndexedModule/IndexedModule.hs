@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.IndexedModule.IndexedModule
 Description : Indexed representation for a module.

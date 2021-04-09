@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Sort.HasDomainValues (
     test_HasDomainValues,
     test_Attributes,

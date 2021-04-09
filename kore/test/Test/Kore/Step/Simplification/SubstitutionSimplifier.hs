@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE Strict #-}
 
 module Test.Kore.Step.Simplification.SubstitutionSimplifier (
     test_SubstitutionSimplifier,

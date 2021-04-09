@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Module      : Kore.Step.Simplification.Equals
@@ -15,7 +15,6 @@ module Kore.Step.Simplification.Equals (
     simplify,
     termEquals,
 ) where
-
 import Control.Error (
     MaybeT (..),
  )

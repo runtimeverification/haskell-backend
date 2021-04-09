@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.IndexedModule.Resolvers
 Description : Tools for resolving IDs.

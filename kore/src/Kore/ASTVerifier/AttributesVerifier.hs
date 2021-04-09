@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.ASTVerifier.AttributesVerifier
 Description : Tools for verifying the wellformedness of Kore 'Attributes'.

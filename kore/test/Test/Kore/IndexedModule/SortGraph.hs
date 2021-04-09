@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.IndexedModule.SortGraph (
     test_isSubsortOf,
     test_subsortsOf,

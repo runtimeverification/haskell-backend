@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.ASTVerifier.DefinitionVerifier (
     ErrorStack (..),
     SortName (..),

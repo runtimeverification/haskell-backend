@@ -1,11 +1,10 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Equation.Application (
     test_attemptEquation,
     test_attemptEquationUnification,
     test_applySubstitutionAndSimplify,
 ) where
-
 import Control.Monad (
     (>=>),
  )

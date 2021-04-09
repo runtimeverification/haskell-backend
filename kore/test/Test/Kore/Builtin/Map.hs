@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Builtin.Map (
     test_lookupUnit,
@@ -47,7 +47,6 @@ module Test.Kore.Builtin.Map (
     normalizedMap,
     asInternal,
 ) where
-
 import Control.Error (
     runMaybeT,
  )

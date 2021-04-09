@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Rewriting.RewritingVariable (
     test_FreshPartialOrd_RewritingVariableName,
     test_FreshPartialOrd_SomeVariableName_RewritingVariableName,

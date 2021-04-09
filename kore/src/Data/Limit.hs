@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Data.Limit
 Description : Optionally-limited quantities

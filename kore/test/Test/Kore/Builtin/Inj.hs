@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Builtin.Inj (
     test_patternVerifierHook,
 ) where

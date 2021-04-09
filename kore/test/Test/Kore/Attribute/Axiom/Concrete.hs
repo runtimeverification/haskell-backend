@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Axiom.Concrete (
     test_concrete,
     test_concrete_select,

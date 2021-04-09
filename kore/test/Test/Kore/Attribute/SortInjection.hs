@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.SortInjection (
     test_sortInjection,
     test_Attributes,

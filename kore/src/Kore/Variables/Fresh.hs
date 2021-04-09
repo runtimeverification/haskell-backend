@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Description : Parsing axiom patterns into rules (and unparsing)
 Copyright   : (c) Runtime Verification, 2019

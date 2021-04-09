@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Internal.Symbol (
     symbolGen,
 ) where

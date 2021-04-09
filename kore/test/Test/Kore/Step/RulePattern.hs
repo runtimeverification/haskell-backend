@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.RulePattern (
     test_freeVariables,
     test_refreshRule,

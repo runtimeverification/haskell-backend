@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 module Test.Kore.Variables.Target (
     test_Eq,
     test_Ord,

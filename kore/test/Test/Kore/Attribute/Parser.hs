@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Parser (
     module Kore.Attribute.Parser,
     expectSuccess,

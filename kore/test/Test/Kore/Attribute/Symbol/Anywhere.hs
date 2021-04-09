@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Symbol.Anywhere (
     test_anywhere,
     test_Attributes,

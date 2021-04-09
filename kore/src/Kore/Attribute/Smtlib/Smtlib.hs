@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Module      : Kore.Attribute.Smtlib.Smtlib
@@ -13,7 +13,6 @@ module Kore.Attribute.Smtlib.Smtlib (
     smtlibSymbol,
     smtlibAttribute,
 ) where
-
 import Data.Default (
     Default (..),
  )

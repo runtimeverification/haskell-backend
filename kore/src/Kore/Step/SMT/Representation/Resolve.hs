@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 {- |
 Module      : Kore.Step.SMT.Representation.Resolve
 Description : Resolves kore IDs and builds SMT declarations.

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.ProductionID (
     test_productionID,
     test_Attributes,

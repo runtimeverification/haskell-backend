@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Attribute.HasDomainValues
 Description : Attribute saying whether a sort has domain values.

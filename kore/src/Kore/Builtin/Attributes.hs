@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Builtin.Attributes
 Description : Built-in attributes that are not yet implemented as real

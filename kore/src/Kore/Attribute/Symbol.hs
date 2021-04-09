@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Description : Symbol declaration attributes
 Copyright   : (c) Runtime Verification, 2018

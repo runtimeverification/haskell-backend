@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Copyright   : (c) Runtime Verification, 2018
@@ -50,7 +50,6 @@ module Kore.Internal.Substitution (
     substitute,
     orientSubstitution,
 ) where
-
 import qualified Data.List as List
 import Data.Map.Strict (
     Map,

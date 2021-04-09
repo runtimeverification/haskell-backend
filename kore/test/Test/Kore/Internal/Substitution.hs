@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Internal.Substitution (
     test_substitution,
     test_toPredicate,

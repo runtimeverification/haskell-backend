@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Step.RewriteStep (
     test_applyInitialConditions,
@@ -9,7 +9,6 @@ module Test.Kore.Step.RewriteStep (
     test_applyRewriteRulesSequence,
     test_narrowing,
 ) where
-
 import qualified Control.Exception as Exception
 import Data.Default as Default (
     def,

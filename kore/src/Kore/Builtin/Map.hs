@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Module      : Kore.Builtin.Map
@@ -20,18 +20,15 @@ module Kore.Builtin.Map (
     builtinFunctions,
     Map.asTermLike,
     internalize,
-
     -- * Unification
     unifyEquals,
     unifyNotInKeys,
-
     -- * Raw evaluators
     evalConcat,
     evalElement,
     evalUnit,
     evalInKeys,
 ) where
-
 import Control.Error (
     MaybeT (MaybeT),
     hoistMaybe,

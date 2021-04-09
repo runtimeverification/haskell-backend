@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.BugReport (
     test_Parse_BugReportOption,
     test_parse,

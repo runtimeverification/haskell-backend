@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Module      : Kore.Builtin.List
@@ -26,27 +26,23 @@ module Kore.Builtin.List (
     asInternal,
     asTermLike,
     internalize,
-
     -- * Symbols
     lookupSymbolGet,
     isSymbolConcat,
     isSymbolElement,
     isSymbolUnit,
     unifyEquals,
-
     -- * keys
     concatKey,
     elementKey,
     unitKey,
     getKey,
-
     -- * Evaluators
     evalConcat,
     evalElement,
     evalUnit,
     expectConcreteBuiltinList,
 ) where
-
 import Control.Error (
     MaybeT,
     hoistMaybe,

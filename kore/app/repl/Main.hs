@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 -- Added for outputFileName

@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 module Test.Kore.Attribute.Symbol.NoEvaluators (
     test_noEvaluators,
     test_Attributes,

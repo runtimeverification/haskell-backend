@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 {- |
 Module      : Kore.Builtin.Set
@@ -29,11 +29,9 @@ module Kore.Builtin.Set (
     evalElement,
     evalUnit,
     evalDifference,
-
     -- * Unification
     unifyEquals,
 ) where
-
 import Control.Error (
     MaybeT (MaybeT),
     hoistMaybe,

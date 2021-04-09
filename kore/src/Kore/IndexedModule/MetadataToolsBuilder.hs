@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.IndexedModule.MetadataToolsBuilder
 Description : Creates a MetadataTools object from an IndexedModule

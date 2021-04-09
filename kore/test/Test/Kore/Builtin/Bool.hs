@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+
 
 module Test.Kore.Builtin.Bool (
     test_or,
@@ -19,7 +19,6 @@ module Test.Kore.Builtin.Bool (
     asPattern,
     asInternal,
 ) where
-
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
 import Hedgehog hiding (

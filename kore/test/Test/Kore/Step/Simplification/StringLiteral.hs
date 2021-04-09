@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.StringLiteral (
     test_stringLiteralSimplification,
 ) where

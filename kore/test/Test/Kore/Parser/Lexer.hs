@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Parser.Lexer (
     test_keyword,
     test_colon,

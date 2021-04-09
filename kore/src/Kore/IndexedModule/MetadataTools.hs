@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.IndexedModule.MetadataTools
 Description : Datastructures and functionality for retrieving metadata

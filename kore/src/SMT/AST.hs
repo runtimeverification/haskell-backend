@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : SMT.AST
 Description : AST for (parts of) the SMT commands

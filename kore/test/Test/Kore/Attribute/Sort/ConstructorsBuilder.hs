@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Sort.ConstructorsBuilder (
     test_sortParsing,
 ) where

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.IndexedModule.MockMetadataTools (
     makeMetadataTools,
     constructorFunctionalAttributes,

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.ConsistentKore (
     CollectionSorts (..),
     Setup (..),
