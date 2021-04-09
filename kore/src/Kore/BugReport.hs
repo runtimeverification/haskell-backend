@@ -60,8 +60,8 @@ import System.IO.Temp (
  )
 
 newtype BugReport = BugReport {toReport :: FilePath}
-    deriving (Eq, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
@@ -72,8 +72,8 @@ data BugReportOption
       BugReportDisable
     | -- | Creates a bug report only after a crash
       BugReportOnError
-    deriving (Eq, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 

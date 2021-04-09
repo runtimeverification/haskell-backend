@@ -211,7 +211,7 @@ data KoreSearchOptions = KoreSearchOptions
     , -- | The type of search to perform
       searchType :: !SearchType
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 parseKoreSearchOptions :: Parser KoreSearchOptions
 parseKoreSearchOptions =
@@ -302,7 +302,7 @@ data KoreExecOptions = KoreExecOptions
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 -- | Command Line Argument Parser
 parseKoreExecOptions :: TimeSpec -> Parser KoreExecOptions

@@ -14,6 +14,18 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.43.0.0] - 2021-04-07
+
+### Changed
+
+- `kore-repl` displays error messages in a user-friendly format. (#2514)
+
+### Fixed
+
+- Several performance regressions are fixed. (#2504, #2510)
+- The backend does not report an error when unifying a Set- or Map-valued
+  function with another term. (#2493)
+
 ## [0.42.0.0] - 2021-03-17
 
 ### Added

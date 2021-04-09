@@ -23,7 +23,7 @@ import Kore.Debug
 import Prelude.Kore
 
 newtype TopologicalSortCycles node = TopologicalSortCycles [node]
-    deriving (Eq, GHC.Generic, Show)
+    deriving stock (Eq, GHC.Generic, Show)
 
 instance SOP.Generic (TopologicalSortCycles node)
 

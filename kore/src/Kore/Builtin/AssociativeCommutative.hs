@@ -319,17 +319,17 @@ also allows bottom values.
 data NormalizedOrBottom collection variable
     = Normalized (TermNormalizedAc collection variable)
     | Bottom
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
-deriving instance
+deriving stock instance
     Eq (TermNormalizedAc collection variable) =>
     Eq (NormalizedOrBottom collection variable)
 
-deriving instance
+deriving stock instance
     Ord (TermNormalizedAc collection variable) =>
     Ord (NormalizedOrBottom collection variable)
 
-deriving instance
+deriving stock instance
     Show (TermNormalizedAc collection variable) =>
     Show (NormalizedOrBottom collection variable)
 
