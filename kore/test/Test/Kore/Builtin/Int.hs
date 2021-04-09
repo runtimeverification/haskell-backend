@@ -1,5 +1,3 @@
-
-
 module Test.Kore.Builtin.Int (
     test_gt,
     test_ge,
@@ -57,6 +55,7 @@ module Test.Kore.Builtin.Int (
     intLiteral,
     testInt,
 ) where
+
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )

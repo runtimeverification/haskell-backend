@@ -1,10 +1,9 @@
-
-
 module Test.Kore.Step.Simplification.Condition (
     test_simplify_local_functions,
     test_predicateSimplification,
     test_simplifyPredicates,
 ) where
+
 import qualified Data.Map.Strict as Map
 import Kore.Internal.Condition (
     Condition,

@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -10,6 +8,7 @@ module Kore.Step.Remainder (
     existentiallyQuantifyRuleVariables,
     ceilChildOfApplicationOrTop,
 ) where
+
 import Kore.Internal.Condition (
     Condition,
  )

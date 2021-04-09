@@ -1,5 +1,3 @@
-
-
 {- |
 Module      : Kore.Builtin.Map
 Description : Built-in key-value maps
@@ -20,15 +18,18 @@ module Kore.Builtin.Map (
     builtinFunctions,
     Map.asTermLike,
     internalize,
+
     -- * Unification
     unifyEquals,
     unifyNotInKeys,
+
     -- * Raw evaluators
     evalConcat,
     evalElement,
     evalUnit,
     evalInKeys,
 ) where
+
 import Control.Error (
     MaybeT (MaybeT),
     hoistMaybe,

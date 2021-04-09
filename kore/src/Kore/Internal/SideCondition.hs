@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -24,6 +22,7 @@ module Kore.Internal.SideCondition (
     generateNormalizedAcs,
     simplifyConjunctionByAssumption,
 ) where
+
 import Changed
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (

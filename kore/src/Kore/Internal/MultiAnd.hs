@@ -1,4 +1,3 @@
-
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -22,6 +21,7 @@ module Kore.Internal.MultiAnd (
     map,
     traverse,
 ) where
+
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable

@@ -1,4 +1,3 @@
-
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -35,6 +34,7 @@ module Kore.Builtin.AssociativeCommutative (
     UnitSymbol (..),
     VariableElements (..),
 ) where
+
 import Control.Error (
     MaybeT,
  )

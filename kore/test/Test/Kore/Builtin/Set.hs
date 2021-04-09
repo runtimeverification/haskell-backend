@@ -1,4 +1,3 @@
-
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Builtin.Set (
@@ -60,6 +59,7 @@ module Test.Kore.Builtin.Set (
     normalizedSet,
     asInternal,
 ) where
+
 import Control.Error (
     runMaybeT,
  )

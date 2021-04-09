@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -7,6 +5,7 @@ License     : NCSA
 module Kore.Syntax.Mu (
     Mu (..),
 ) where
+
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables

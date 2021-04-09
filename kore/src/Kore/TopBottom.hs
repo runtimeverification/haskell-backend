@@ -1,5 +1,3 @@
-
-
 {- |
 Module      : Kore.TopBottom
 Description : Class for things that can be top or bottom.
@@ -13,6 +11,7 @@ module Kore.TopBottom (
     TopBottom (..),
     guardAgainstBottom,
 ) where
+
 import qualified Control.Monad as Monad
 import Prelude.Kore
 

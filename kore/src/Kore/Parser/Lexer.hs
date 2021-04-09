@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -31,6 +29,7 @@ module Kore.Parser.Lexer (
     parensPair,
     parensTuple,
     bracesPair,
+
     -- * Primitive parsers
     parseId,
     parseAnyId,
@@ -42,10 +41,12 @@ module Kore.Parser.Lexer (
     parseSymbolId,
     parseModuleName,
     parseStringLiteral,
+
     -- * Error messages
     unrepresentableCode,
     illegalSurrogate,
 ) where
+
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import Data.HashSet (

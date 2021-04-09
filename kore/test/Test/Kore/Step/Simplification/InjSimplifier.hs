@@ -1,9 +1,8 @@
-
-
 module Test.Kore.Step.Simplification.InjSimplifier (
     test_unifyInj,
     test_normalize,
 ) where
+
 import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding (
     Top (..),

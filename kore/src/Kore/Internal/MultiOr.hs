@@ -1,4 +1,3 @@
-
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -27,9 +26,11 @@ module Kore.Internal.MultiOr (
     singleton,
     map,
     traverse,
+
     -- * Re-exports
     Alternative (..),
 ) where
+
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,

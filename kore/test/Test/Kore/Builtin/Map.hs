@@ -1,5 +1,3 @@
-
-
 module Test.Kore.Builtin.Map (
     test_lookupUnit,
     test_lookupUpdate,
@@ -47,6 +45,7 @@ module Test.Kore.Builtin.Map (
     normalizedMap,
     asInternal,
 ) where
+
 import Control.Error (
     runMaybeT,
  )

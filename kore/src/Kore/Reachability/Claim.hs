@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -20,19 +18,23 @@ module Kore.Reachability.Claim (
     reachabilityNextStep,
     transitionRule,
     isTrusted,
+
     -- * Re-exports
     RewriteRule (..),
     module Kore.Log.InfoReachability,
+
     -- * For Claim implementations
     deriveSeqClaim,
     checkImplication',
     simplify',
     derivePar',
     deriveSeq',
+
     -- * For testing
     checkImplicationWorker,
     simplifyRightHandSide,
 ) where
+
 import Control.Lens (
     Lens',
  )

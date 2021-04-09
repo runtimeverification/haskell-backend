@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -10,6 +8,7 @@ module Kore.Step.Simplification.InjSimplifier (
     mkInjSimplifier,
     normalize,
 ) where
+
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC

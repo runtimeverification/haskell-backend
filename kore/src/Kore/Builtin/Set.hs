@@ -1,5 +1,3 @@
-
-
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets
@@ -29,9 +27,11 @@ module Kore.Builtin.Set (
     evalElement,
     evalUnit,
     evalDifference,
+
     -- * Unification
     unifyEquals,
 ) where
+
 import Control.Error (
     MaybeT (MaybeT),
     hoistMaybe,

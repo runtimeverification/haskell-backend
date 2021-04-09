@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -36,6 +34,7 @@ module Kore.Internal.Pattern (
     requireDefined,
     substitute,
     fromMultiAnd,
+
     -- * Re-exports
     Conditional (..),
     Conditional.andCondition,
@@ -45,6 +44,7 @@ module Kore.Internal.Pattern (
     Conditional.withoutTerm,
     Condition,
 ) where
+
 import Data.Map.Strict (
     Map,
  )
@@ -92,11 +92,13 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Prelude.Kore
+
 {- | The conjunction of a pattern, predicate, and substitution.
 The form of @Pattern@ is intended to be a convenient representation of a
 program configuration for Kore execution.
 -}
 type Pattern variable = Conditional variable (TermLike variable)
+
 fromTermAndPredicate ::
     InternalVariable variable =>
     TermLike variable ->
@@ -129,6 +131,7 @@ isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =
     TermLike.isSimplified sideCondition t
         && Condition.isSimplified sideCondition p
+
 {- | Checks whether the conjunction a 'Pattern' has simplified children.
 A 'Pattern' is a conjunction at the top level:
 @
@@ -151,6 +154,7 @@ hasSimplifiedChildren sideCondition patt =
   where
     Conditional{term, predicate, substitution} = patt
     clauses = MultiAnd.fromPredicate predicate
+
 {- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
 used to simplify the children.
 -}
@@ -165,6 +169,7 @@ hasSimplifiedChildrenIgnoreConditions patt =
   where
     Conditional{term, predicate, substitution} = patt
     clauses = MultiAnd.fromPredicate predicate
+
 forgetSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
 forgetSimplified patt =
@@ -188,6 +193,7 @@ freeElementVariables ::
     [ElementVariable variable]
 freeElementVariables =
     getFreeElementVariables . freeVariables
+
 {- |'mapVariables' transforms all variables, including the quantified ones,
 in an Pattern.
 -}
@@ -202,6 +208,7 @@ mapVariables adj Conditional{term, predicate, substitution} =
         , predicate = Predicate.mapVariables adj predicate
         , substitution = Substitution.mapVariables adj substitution
         }
+
 {- | Convert an 'Pattern' to an ordinary 'TermLike'.
 Conversion relies on the interpretation of 'Pattern' as a conjunction of
 patterns. Conversion erases the distinction between terms, predicates, and

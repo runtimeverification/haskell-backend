@@ -1,5 +1,3 @@
-
-
 module Test.Kore.Step.RewriteStep (
     test_applyInitialConditions,
     test_renameRuleVariables,
@@ -9,6 +7,7 @@ module Test.Kore.Step.RewriteStep (
     test_applyRewriteRulesSequence,
     test_narrowing,
 ) where
+
 import qualified Control.Exception as Exception
 import Data.Default as Default (
     def,

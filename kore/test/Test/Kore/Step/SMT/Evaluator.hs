@@ -1,5 +1,3 @@
-
-
 module Test.Kore.Step.SMT.Evaluator (
     test_evaluableSyntaxPredicate,
     test_evaluableConditional,
@@ -8,6 +6,7 @@ module Test.Kore.Step.SMT.Evaluator (
     test_Int_contradictions,
     test_Bool_contradictions,
 ) where
+
 import Hedgehog hiding (
     property,
  )

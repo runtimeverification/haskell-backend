@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -19,6 +17,7 @@ module Kore.Step.Implication (
     parseRightHandSide,
     implicationToTerm,
 ) where
+
 import Control.Error.Util (
     hush,
  )

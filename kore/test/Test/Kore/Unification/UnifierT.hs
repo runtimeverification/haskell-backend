@@ -1,9 +1,8 @@
-
-
 module Test.Kore.Unification.UnifierT (
     test_mergeAndNormalizeSubstitutions,
     test_simplifyCondition,
 ) where
+
 import qualified Data.Map.Strict as Map
 import qualified Kore.Equation as Equation
 import Kore.Internal.Condition (

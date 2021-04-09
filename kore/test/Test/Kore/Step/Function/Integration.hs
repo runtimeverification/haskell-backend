@@ -1,4 +1,3 @@
-
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Step.Function.Integration (
@@ -13,6 +12,7 @@ module Test.Kore.Step.Function.Integration (
     test_updateList,
     test_Ceil,
 ) where
+
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import Data.Map.Strict (

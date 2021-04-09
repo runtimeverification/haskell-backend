@@ -1,9 +1,8 @@
-
-
 module Test.Kore.Builtin.Encoding (
     test_decodeEncode,
     test_parseBase16,
 ) where
+
 import qualified Data.ByteString as ByteString
 import Data.Text (
     Text,

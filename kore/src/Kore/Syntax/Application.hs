@@ -1,5 +1,3 @@
-
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -20,6 +18,7 @@ module Kore.Syntax.Application (
     Application (..),
     mapHead,
 ) where
+
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Debug

@@ -1,5 +1,3 @@
-
-
 module Test.Kore.Builtin.String (
     test_eq,
     test_lt,
@@ -20,6 +18,7 @@ module Test.Kore.Builtin.String (
     asPattern,
     asInternal,
 ) where
+
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )

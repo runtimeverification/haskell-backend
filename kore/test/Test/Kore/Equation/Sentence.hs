@@ -1,8 +1,7 @@
-
-
 module Test.Kore.Equation.Sentence (
     test_fromSentenceAxiom,
 ) where
+
 import Data.Default (
     def,
  )

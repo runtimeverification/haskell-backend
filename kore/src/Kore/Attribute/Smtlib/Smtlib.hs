@@ -1,5 +1,3 @@
-
-
 {- |
 Module      : Kore.Attribute.Smtlib.Smtlib
 Description : SMT-LIB translation attribute
@@ -13,6 +11,7 @@ module Kore.Attribute.Smtlib.Smtlib (
     smtlibSymbol,
     smtlibAttribute,
 ) where
+
 import Data.Default (
     Default (..),
  )

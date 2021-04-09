@@ -1,5 +1,3 @@
-
-
 {- |
 Module      : SimpleSMT
 Description : Simple SMT-LIB 2 interface
@@ -25,10 +23,12 @@ module SMT.SimpleSMT (
     simpleCommandMaybe,
     loadFile,
     SolverException (..),
+
     -- ** S-Expressions
     SExpr (..),
     showSExpr,
     readSExprs,
+
     -- * Common SMT-LIB 2 Commands
     Constructor (..),
     SmtConstructor,
@@ -68,16 +68,19 @@ module SMT.SimpleSMT (
     getUnsatCore,
     Value (..),
     sexprToVal,
+
     -- * Convenience Functions for SMT-LIB2 Expressions
     fam,
     fun,
     const,
+
     -- ** Types
     tInt,
     tBool,
     tReal,
     tArray,
     tBits,
+
     -- ** Literals
     int,
     real,
@@ -85,6 +88,7 @@ module SMT.SimpleSMT (
     bvBin,
     bvHex,
     value,
+
     -- ** Connectives
     not,
     and,
@@ -93,8 +97,10 @@ module SMT.SimpleSMT (
     orMany,
     xor,
     implies,
+
     -- ** If-then-else
     ite,
+
     -- ** Relational Predicates
     eq,
     distinct,
@@ -106,6 +112,7 @@ module SMT.SimpleSMT (
     bvULeq,
     bvSLt,
     bvSLeq,
+
     -- ** Arithmetic
     add,
     addMany,
@@ -117,6 +124,7 @@ module SMT.SimpleSMT (
     mod,
     divisible,
     realDiv,
+
     -- ** Bit Vectors
     concat,
     extract,
@@ -137,6 +145,7 @@ module SMT.SimpleSMT (
     bvAShr,
     signExtend,
     zeroExtend,
+
     -- ** Arrays
     select,
     store,
@@ -144,6 +153,7 @@ module SMT.SimpleSMT (
     forallQ,
     existsQ,
 ) where
+
 import qualified Colog
 import Control.Concurrent (
     forkIO,

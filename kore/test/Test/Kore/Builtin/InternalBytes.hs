@@ -1,5 +1,3 @@
-
-
 module Test.Kore.Builtin.InternalBytes (
     test_update,
     test_get,
@@ -18,6 +16,7 @@ module Test.Kore.Builtin.InternalBytes (
     test_InternalBytes,
     test_unparse,
 ) where
+
 import Data.ByteString (
     ByteString,
  )

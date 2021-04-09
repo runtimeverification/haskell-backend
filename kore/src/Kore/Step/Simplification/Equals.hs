@@ -1,5 +1,3 @@
-
-
 {- |
 Module      : Kore.Step.Simplification.Equals
 Description : Tools for Equals pattern simplification.
@@ -15,6 +13,7 @@ module Kore.Step.Simplification.Equals (
     simplify,
     termEquals,
 ) where
+
 import Control.Error (
     MaybeT (..),
  )
