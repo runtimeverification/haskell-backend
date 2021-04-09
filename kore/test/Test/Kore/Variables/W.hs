@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Variables.W (
     W,
     mkW,

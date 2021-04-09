@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Variables.V (
     V (..),
     mkV,

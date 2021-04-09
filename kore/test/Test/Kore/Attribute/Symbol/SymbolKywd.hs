@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Symbol.SymbolKywd (
     test_symbolKywd,
     test_Attributes,

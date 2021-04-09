@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.SMT.Representation.Symbols
 Description : Builds an SMT representation for symbols.

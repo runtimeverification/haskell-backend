@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.SMT.Representation.Sorts
 Description : Builds an SMT representation for sorts.

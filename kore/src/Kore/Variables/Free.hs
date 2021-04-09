@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Variables.Free
 Description : Specifies the 'TermWithVariablesClass' which is meant to define

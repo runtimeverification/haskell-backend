@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Symbol.Memo (
     test_memo,
     test_Attributes,
