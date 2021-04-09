@@ -18,7 +18,7 @@ import Prelude.Kore
 
 -- | @Concat@ represents the @concat@ attribute for sorts.
 newtype Concat = Concat {getConcat :: Maybe SymbolOrAlias}
-    deriving (Generic, Eq, Ord, Show)
+    deriving stock (Generic, Eq, Ord, Show)
 
 instance Semigroup Concat where
     (<>) a@(Concat (Just _)) _ = a

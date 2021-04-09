@@ -40,7 +40,7 @@ data Sort = Sort
     , -- | whether the sort has domain values
       hasDomainValues :: !HasDomainValues
     }
-    deriving (Eq, Generic, Ord, Show)
+    deriving stock (Eq, Generic, Ord, Show)
 
 instance NFData Sort
 

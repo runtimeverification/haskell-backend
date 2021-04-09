@@ -97,7 +97,7 @@ data KoreLogOptions = KoreLogOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 defaultSeverity :: Severity
 defaultSeverity = Warning
@@ -128,7 +128,7 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance Default KoreLogType where
     def = LogStdErr
@@ -146,7 +146,7 @@ type EntryTypes = Set SomeTypeRep
 
 -- | Enable or disable timestamps
 data TimestampsSwitch = TimestampsEnable | TimestampsDisable
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance Default TimestampsSwitch where
     def = TimestampsEnable
@@ -268,19 +268,19 @@ parseErrorEntries =
 
 -- | Caller of the logging function
 newtype ExeName = ExeName {getExeName :: String}
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance Pretty.Pretty ExeName where
     pretty = Pretty.pretty . getExeName
 
 data WarningSwitch = AsWarning | AsError
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance Default WarningSwitch where
     def = AsWarning
 
 newtype DebugApplyEquationOptions = DebugApplyEquationOptions {selected :: HashSet Text}
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugApplyEquationOptions where
@@ -319,7 +319,7 @@ selectDebugApplyEquation options ActualEntry{actualEntry}
     DebugApplyEquationOptions{selected} = options
 
 newtype DebugAttemptEquationOptions = DebugAttemptEquationOptions {selected :: HashSet Text}
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugAttemptEquationOptions where
@@ -365,7 +365,7 @@ selectDebugAttemptEquation options ActualEntry{actualEntry}
     DebugAttemptEquationOptions{selected} = options
 
 newtype DebugEquationOptions = DebugEquationOptions {selected :: HashSet Text}
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugEquationOptions where

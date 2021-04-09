@@ -68,15 +68,15 @@ data Prim patt rewrite
       Unroll !patt
     | -- | Compute next states
       ComputeWeakNext ![rewrite]
-    deriving (Show)
+    deriving stock (Show)
 
 data ModalPattern variable = ModalPattern
     { modalOp :: !Text
     , term :: !(TermLike variable)
     }
 
-deriving instance Eq variable => Eq (ModalPattern variable)
-deriving instance Show variable => Show (ModalPattern variable)
+deriving stock instance Eq variable => Eq (ModalPattern variable)
+deriving stock instance Show variable => Show (ModalPattern variable)
 
 type CommonModalPattern = ModalPattern RewritingVariableName
 
@@ -88,7 +88,7 @@ data ProofState patt
       GoalLHS !patt
     | -- | State which can't be rewritten anymore.
       GoalRemLHS !patt
-    deriving (Show, Eq, Ord, Generic, Functor)
+    deriving stock (Show, Eq, Ord, Generic, Functor)
 
 instance TopBottom (ProofState patt) where
     isTop _ = False

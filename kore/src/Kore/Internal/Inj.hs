@@ -46,9 +46,9 @@ data Inj a = Inj
     , injAttributes :: !Attribute.Symbol
     , injChild :: !a
     }
-    deriving (Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -119,7 +119,7 @@ toApplication inj =
 The inner sort must be a subsort of the outer sort.
 -}
 newtype UnorderedInj = UnorderedInj (Inj ())
-    deriving (Show, Typeable)
+    deriving stock (Show, Typeable)
 
 instance Exception UnorderedInj where
     displayException (UnorderedInj inj) =

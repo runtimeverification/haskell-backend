@@ -27,8 +27,8 @@ import Pretty (
 import qualified Pretty
 
 data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike VariableName}
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Entry InfoAttemptUnification where

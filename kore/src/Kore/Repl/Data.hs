@@ -135,38 +135,38 @@ import SMT (
 newtype ReplScript = ReplScript
     { unReplScript :: Maybe FilePath
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data ReplMode = Interactive | RunScript
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data ScriptModeOutput = EnableOutput | DisableOutput
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 newtype OutputFile = OutputFile
     { unOutputFile :: Maybe FilePath
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 newtype AxiomIndex = AxiomIndex
     { unAxiomIndex :: Int
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 newtype ClaimIndex = ClaimIndex
     { unClaimIndex :: Int
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 newtype RuleName = RuleName
     { unRuleName :: String
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 {- | The repl keeps Kore output separated from any other kinds of auxiliary output.
  This makes it possible to treat the output differently by using different
@@ -174,7 +174,7 @@ newtype RuleName = RuleName
  process' input handle.
 -}
 newtype ReplOutput = ReplOutput {unReplOutput :: [ReplOut]}
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 -- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
@@ -185,36 +185,36 @@ newtype PrintKoreOutput = PrintKoreOutput
     {unPrintKoreOutput :: String -> IO ()}
 
 data ReplOut = AuxOut String | KoreOut String
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data AliasDefinition = AliasDefinition
     { name :: String
     , arguments :: [String]
     , command :: String
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data AliasArgument
     = SimpleArgument String
     | QuotedArgument String
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data ReplAlias = ReplAlias
     { name :: String
     , arguments :: [AliasArgument]
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data LogType
     = NoLogging
     | LogToStdErr
     | LogToFile !FilePath
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data RuleReference
     = ByIndex (Either AxiomIndex ClaimIndex)
     | ByName RuleName
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 {- | Option for viewing the full (expanded) graph
  or the collapsed graph where only the branching nodes,
@@ -223,7 +223,7 @@ data RuleReference
 data GraphView
     = Collapsed
     | Expanded
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- | Log options which can be changed by the log command.
 data GeneralLogOptions = GeneralLogOptions
@@ -232,7 +232,7 @@ data GeneralLogOptions = GeneralLogOptions
     , timestampsSwitch :: !Log.TimestampsSwitch
     , logEntries :: !Log.EntryTypes
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 generalLogOptionsTransformer ::
     GeneralLogOptions ->
@@ -375,7 +375,7 @@ data ReplCommand
       DebugEquation Log.DebugEquationOptions
     | -- | Exit the repl.
       Exit
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 commandSet :: Set String
 commandSet =
@@ -580,7 +580,7 @@ data ReplState = ReplState
       -- where.
       koreLogOptions :: !Log.KoreLogOptions
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 -- | Configuration environment for the repl.
 data Config m = Config
@@ -605,7 +605,7 @@ data Config m = Config
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 {- | Unifier that stores the first 'explainBottom'.
  See 'runUnifierWithExplanation'.
@@ -663,10 +663,10 @@ data StepResult
       SingleResult ReplNode
     | -- | configuration branched
       BranchResult [ReplNode]
-    deriving (Show)
+    deriving stock (Show)
 
 data NodeState = StuckNode | UnevaluatedNode
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data AliasError
     = NameAlreadyDefined
@@ -678,7 +678,7 @@ data GraphProofStatus
     | InProgress [Graph.Node]
     | StuckProof [Graph.Node]
     | TrustedClaim
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 makeAuxReplOutput :: String -> ReplOutput
 makeAuxReplOutput str =
@@ -719,4 +719,4 @@ data TryApplyRuleResult
     | GetsProven
     | OneResult ReplNode
     | MultipleResults
-    deriving (Show, Eq)
+    deriving stock (Show, Eq)
