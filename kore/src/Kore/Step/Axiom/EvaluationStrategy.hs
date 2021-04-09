@@ -71,7 +71,7 @@ import qualified Pretty
 
 -- |Describes whether simplifiers are allowed to return multiple results or not.
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 -- |Converts 'AcceptsMultipleResults' to Bool.
 acceptsMultipleResults :: AcceptsMultipleResults -> Bool

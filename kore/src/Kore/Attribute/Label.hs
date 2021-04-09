@@ -21,8 +21,8 @@ import Prelude.Kore
 
 -- | @Label@ represents the @overload@ attribute for symbols.
 newtype Label = Label {unLabel :: Maybe Text}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

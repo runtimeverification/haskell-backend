@@ -38,8 +38,8 @@ used for encoding needs not be declared.
 See 'Kore.Attribute.Smtlib.Smtlib'
 -}
 newtype Smthook = Smthook {getSmthook :: Maybe SExpr}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

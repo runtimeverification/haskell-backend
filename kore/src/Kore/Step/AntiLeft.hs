@@ -111,8 +111,8 @@ data AntiLeftLhs variable = AntiLeftLhs
     , predicate :: !(Predicate variable)
     , term :: !(TermLike variable)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -139,8 +139,8 @@ data AntiLeft variable = AntiLeft
     , -- | patterns corresponding to rules with the same priority number.
       leftHands :: ![AntiLeftLhs variable]
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

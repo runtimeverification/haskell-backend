@@ -53,7 +53,7 @@ data Result rule config = Result
     { appliedRule :: !rule
     , result :: !(MultiOr config)
     }
-    deriving (Eq, Foldable, GHC.Generic, Ord, Show)
+    deriving stock (Eq, Foldable, GHC.Generic, Ord, Show)
 
 -- | Apply a function to the 'appliedRule' of a 'Result'.
 mapRule :: (rule1 -> rule2) -> Result rule1 config -> Result rule2 config
@@ -86,7 +86,7 @@ data Results rule config = Results
     { results :: !(Seq (Result rule config))
     , remainders :: !(MultiOr config)
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving stock (Eq, GHC.Generic, Ord, Show)
 
 instance (Ord config, TopBottom config) => Semigroup (Results rule config) where
     (<>) results1 results2 =

@@ -39,7 +39,7 @@ data ErrorRewriteLoop = ErrorRewriteLoop
     { rule :: !(RewriteRule RewritingVariableName)
     , errorCallStack :: !CallStack
     }
-    deriving (Show)
+    deriving stock (Show)
 
 instance Exception ErrorRewriteLoop where
     toException = toException . SomeEntry

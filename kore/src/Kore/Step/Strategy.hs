@@ -128,7 +128,7 @@ data Strategy prim where
     Stuck :: Strategy prim
     -- | @Continue@ produces one child identical to its parent.
     Continue :: Strategy prim
-    deriving (Eq, Show, Functor)
+    deriving stock (Eq, Show, Functor)
 
 {- | Apply two strategies in sequence.
 
@@ -243,8 +243,8 @@ data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
     , graph :: Gr config (Seq rule)
     }
-    deriving (Eq, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
 
 {- | A temporary data structure used to construct the 'ExecutionGraph'.
  Well, it was intended to be temporary, but for the purpose of making
@@ -257,7 +257,7 @@ data ChildNode config rule = ChildNode
       -- configuration.
       parents :: [(Seq rule, Graph.Node)]
     }
-    deriving (Eq, Show, Functor)
+    deriving stock (Eq, Show, Functor)
 
 {- | Insert a node into the execution graph.
 
@@ -365,10 +365,10 @@ emptyExecutionGraph config =
         }
 
 -- | Search order of the execution graph.
-data GraphSearchOrder = BreadthFirst | DepthFirst deriving (Eq)
+data GraphSearchOrder = BreadthFirst | DepthFirst deriving stock (Eq)
 
 newtype LimitExceeded a = LimitExceeded (Seq a)
-    deriving (Show, Typeable)
+    deriving stock (Show, Typeable)
 
 instance (Show a, Typeable a) => Exception (LimitExceeded a)
 

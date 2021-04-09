@@ -20,8 +20,8 @@ import Prelude.Kore
 
 -- | @Injective@ represents the @injective@ attribute for symbols.
 newtype Injective = Injective {isDeclaredInjective :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

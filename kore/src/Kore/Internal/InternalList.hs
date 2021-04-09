@@ -37,9 +37,9 @@ data InternalList child = InternalList
     , internalListConcat :: !Symbol
     , internalListChild :: !(Seq child)
     }
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Foldable, Functor, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

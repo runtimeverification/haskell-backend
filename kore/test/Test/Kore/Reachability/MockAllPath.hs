@@ -57,8 +57,8 @@ import Test.Tasty
 import Test.Terse
 
 newtype MockInteger = MockInteger {unMockInteger :: Integer}
-    deriving (Eq, Ord)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving newtype (Num)
@@ -291,8 +291,8 @@ insEdge = Strategy.insEdge
 
 -- | Simple program configurations for unit testing.
 data K = BorC | A | B | C | D | E | F | NotDef | Bot
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -318,8 +318,8 @@ difference a b
     | otherwise = a
 
 newtype MockClaim = MockClaim {unMockClaim :: (K, K)}
-    deriving (Eq, Ord)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -337,8 +337,8 @@ type MockClaimState = ClaimState.ClaimState MockClaim
 
 instance Claim MockClaim where
     newtype Rule MockClaim = Rule {unRule :: (K, K)}
-        deriving (Eq, Show)
-        deriving (GHC.Generic)
+        deriving stock (Eq, Show)
+        deriving stock (GHC.Generic)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 

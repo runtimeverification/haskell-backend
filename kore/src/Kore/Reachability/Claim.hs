@@ -197,14 +197,14 @@ class Claim claim where
 data ApplyResult claim
     = ApplyRewritten !claim
     | ApplyRemainder !claim
-    deriving (Show, Eq)
-    deriving (Functor)
+    deriving stock (Show, Eq)
+    deriving stock (Functor)
 
 -- | 'AppliedRule' represents the rule applied during a rewriting step.
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
     | AppliedClaim claim
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug claim, Debug (Rule claim)) => Debug (AppliedRule claim)
@@ -395,9 +395,9 @@ data CheckImplicationResult a
     | -- | The implication between /terms/ is valid, but the implication between
       -- side-conditions is not valid.
       NotImpliedStuck !a
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Foldable, Functor, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -634,7 +634,7 @@ isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
 -- | Exception that contains the last configuration before the error.
 data WithConfiguration
     = WithConfiguration (Pattern VariableName) SomeException
-    deriving (Show, Typeable)
+    deriving stock (Show, Typeable)
 
 instance Exception WithConfiguration
 
