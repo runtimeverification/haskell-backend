@@ -125,8 +125,8 @@ data Axiom symbol variable = Axiom
     , -- | This is an owise evaluation rule.
       owise :: !Owise
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

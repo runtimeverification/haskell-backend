@@ -98,7 +98,7 @@ data LogMessage = LogMessage
     , -- | call stack of the message, when available
       callstack :: !GHC.CallStack
     }
-    deriving (Show)
+    deriving stock (Show)
 
 instance Entry LogMessage where
     entrySeverity LogMessage{severity} = severity
@@ -242,7 +242,7 @@ data LoggerEnv monad = LoggerEnv
     { logAction :: !(LogAction monad ActualEntry)
     , context :: ![SomeEntry]
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 askLogAction :: Monad m => LoggerT m (LogAction m SomeEntry)
 askLogAction = LoggerT $ do

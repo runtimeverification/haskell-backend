@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]
 do
     case "$1" in
         *kore-exec)
-            echo -n '$KORE_EXEC '
+            echo -n '${KORE_EXEC:?} '
             ;;
         --output)
             shift

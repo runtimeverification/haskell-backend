@@ -254,7 +254,7 @@ data Result
       Unsat
     | -- | The result is inconclusive
       Unknown
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- | Common values returned by SMT solvers.
 data Value
@@ -268,7 +268,7 @@ data Value
       Bits !Int !Integer
     | -- | Some other value
       Other !SExpr
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 --------------------------------------------------------------------------------
 
@@ -279,7 +279,7 @@ data Solver = Solver
     { solverHandle :: !SolverHandle
     , logger :: !Logger
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 data SolverHandle = SolverHandle
     { hIn :: !Handle
@@ -288,13 +288,13 @@ data SolverHandle = SolverHandle
     , hProc :: !ProcessHandle
     , queryCounter :: !Int
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 data SolverException = SolverException
     { exitCode :: !(Maybe ExitCode)
     , someException :: !Exception.SomeException
     }
-    deriving (Show, Typeable)
+    deriving stock (Show, Typeable)
 
 instance Exception.Exception SolverException where
     displayException SolverException{exitCode, someException} =

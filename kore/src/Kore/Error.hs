@@ -43,7 +43,7 @@ data Error a = Error
     { errorContext :: ![String]
     , errorError :: !String
     }
-    deriving (Eq, GHC.Generic, Show)
+    deriving stock (Eq, GHC.Generic, Show)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

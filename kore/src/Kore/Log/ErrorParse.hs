@@ -17,7 +17,7 @@ import Prelude.Kore
 import Pretty
 
 newtype ErrorParse = ErrorParse {message :: String}
-    deriving (Show)
+    deriving stock (Show)
 
 instance Exception ErrorParse where
     toException = toException . SomeEntry

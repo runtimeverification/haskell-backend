@@ -48,8 +48,8 @@ import qualified Pretty
 newtype ErrorRuleMergeDuplicateIds = ErrorRuleMergeDuplicateIds
     { unErrorRuleMergeDuplicateIds :: Map Text [SourceLocation]
     }
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRuleMergeDuplicateIds where
@@ -70,8 +70,8 @@ instance Pretty ErrorRuleMergeDuplicateIds where
 newtype ErrorRuleMergeDuplicateLabels = ErrorRuleMergeDuplicateLabels
     { unErrorRuleMergeDuplicateLabels :: Map Text [SourceLocation]
     }
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRuleMergeDuplicateLabels where

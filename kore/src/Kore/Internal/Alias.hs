@@ -35,9 +35,9 @@ data Alias patternType = Alias
     , aliasLeft :: [SomeVariable VariableName]
     , aliasRight :: patternType
     }
-    deriving (Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

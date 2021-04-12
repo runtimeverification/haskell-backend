@@ -36,8 +36,8 @@ import Prelude.Kore
 
 -- | @Symbolic@ represents the @symbolic@ attribute for axioms.
 newtype Symbolic variable = Symbolic {unSymbolic :: FreeVariables variable}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

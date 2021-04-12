@@ -108,8 +108,8 @@ test_Pattern_simplify =
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
                         ( makeExistsPredicate
-                            Mock.var_xConfig_0
-                            (makeCeilPredicate (Mock.f (mkElemVar Mock.var_xConfig_0)))
+                            Mock.xConfig
+                            (makeCeilPredicate fOfX)
                         )
                     )
                     & OrPattern.fromPattern

@@ -60,7 +60,7 @@ import Type.Reflection (
 type Parser = Parsec ReplParseError Text
 
 newtype ReplParseError = ReplParseError {unReplParseError :: String}
-    deriving (Eq, Ord)
+    deriving stock (Eq, Ord)
 
 instance IsString ReplParseError where
     fromString = ReplParseError

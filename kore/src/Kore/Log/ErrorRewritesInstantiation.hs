@@ -64,7 +64,7 @@ data ErrorRewritesInstantiation = ErrorRewritesInstantiation
     , configuration :: !(Pattern RewritingVariableName)
     , errorCallStack :: !CallStack
     }
-    deriving (Show, GHC.Generic)
+    deriving stock (Show, GHC.Generic)
 
 data SubstitutionCoverageError = SubstitutionCoverageError
     { solution ::
@@ -75,8 +75,8 @@ data SubstitutionCoverageError = SubstitutionCoverageError
     , location :: !SourceLocation
     , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
     }
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRewritesInstantiation where

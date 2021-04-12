@@ -21,7 +21,7 @@ import qualified Pretty
 
 newtype WarnBoundedModelChecker
     = WarnBoundedModelChecker (ImplicationRule VariableName)
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty WarnBoundedModelChecker where
     pretty (WarnBoundedModelChecker claim) =

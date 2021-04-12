@@ -26,8 +26,8 @@ data InternalBytes = InternalBytes
     { internalBytesSort :: !Sort
     , internalBytesValue :: !ByteString
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

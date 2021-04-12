@@ -19,11 +19,13 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
+-- TODO: deriving stock (Functor) ???
+
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload symbol = Overload {getOverload :: Maybe (symbol, symbol)}
-    deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
