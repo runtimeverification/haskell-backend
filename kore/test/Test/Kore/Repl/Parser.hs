@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Repl.Parser (
     test_replParser,
 ) where

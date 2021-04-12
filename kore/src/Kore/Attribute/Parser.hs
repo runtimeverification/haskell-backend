@@ -225,7 +225,7 @@ withApplication ident go kore =
                 Kore.Error.withLocationAndContext symbol context
                     . go symbolOrAliasParams applicationChildren
           where
-            context = "attribute '" <> Text.pack (show symbol) <> "'"
+            ~context = "attribute '" <> Text.pack (show symbol) <> "'"
             Application{applicationSymbolOrAlias = symbol} = app
             Application{applicationChildren} = app
             SymbolOrAlias{symbolOrAliasConstructor} = symbol

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.Pattern (
     test_Pattern_simplify,
     test_Pattern_simplifyAndRemoveTopExists,

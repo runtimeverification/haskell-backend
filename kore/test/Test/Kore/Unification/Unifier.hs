@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Unification.Unifier (
     test_unification,
     test_unsupportedConstructs,
