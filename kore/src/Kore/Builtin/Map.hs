@@ -32,83 +32,86 @@ module Kore.Builtin.Map (
     evalInKeys,
 ) where
 
-import Control.Error (
-    MaybeT (MaybeT),
-    hoistMaybe,
-    runMaybeT,
- )
+import Control.Error
+    ( MaybeT (MaybeT)
+    , hoistMaybe
+    , runMaybeT
+    )
 import qualified Control.Monad as Monad
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import Data.Text (
-    Text,
- )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
+import Data.Text
+    ( Text
+    )
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import Kore.Builtin.Attributes (
-    isConstructorModulo_,
- )
+import Kore.Builtin.Attributes
+    ( isConstructorModulo_
+    )
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin (
-    acceptAnySort,
- )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
-import Kore.Internal.InternalSet (
-    Value (SetValue),
- )
+import Kore.Internal.InternalSet
+    ( Value (SetValue)
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Condition,
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Condition
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    Symbol (..),
-    symbolHook,
- )
-import Kore.Internal.TermLike (
-    Key,
-    TermLike,
-    retractKey,
-    termLikeSort,
-    pattern App_,
-    pattern InternalMap_,
- )
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    , symbolHook
+    )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern InternalMap_
+    , Key
+    , TermLike
+    , retractKey
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    Sort,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Sort
+    ( Sort
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.Sentence (
-    SentenceSort (..),
- )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+import Kore.Syntax.Sentence
+    ( SentenceSort (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -262,7 +265,7 @@ expectConcreteBuiltinMap ::
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (Map Key (MapValue (TermLike variable)))
+    MaybeT m (HashMap Key (MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
     case unwrapAc _map of
@@ -279,7 +282,7 @@ as a function result.
 returnConcreteMap ::
     (MonadSimplify m, InternalVariable variable) =>
     Sort ->
-    Map Key (MapValue (TermLike variable)) ->
+    HashMap Key (MapValue (TermLike variable)) ->
     m (Pattern variable)
 returnConcreteMap = Ac.returnConcreteAc
 
@@ -287,14 +290,14 @@ evalLookup :: Builtin.Function
 evalLookup _ resultSort [_map, _key] = do
     let emptyMap = do
             _map <- expectConcreteBuiltinMap Map.lookupKey _map
-            if Map.null _map
+            if HashMap.null _map
                 then return (Pattern.bottomOf resultSort)
                 else empty
         bothConcrete = do
             _key <- hoistMaybe $ retractKey _key
             _map <- expectConcreteBuiltinMap Map.lookupKey _map
             (return . maybeBottom)
-                (getMapValue <$> Map.lookup _key _map)
+                (getMapValue <$> HashMap.lookup _key _map)
     emptyMap <|> bothConcrete
   where
     maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
@@ -304,7 +307,7 @@ evalLookupOrDefault :: Builtin.Function
 evalLookupOrDefault _ _ [_map, _key, _def] = do
     _key <- hoistMaybe $ retractKey _key
     _map <- expectConcreteBuiltinMap Map.lookupKey _map
-    Map.lookup _key _map
+    HashMap.lookup _key _map
         & maybe _def getMapValue
         & Pattern.fromTermLike
         & return
@@ -315,7 +318,7 @@ evalElement :: Builtin.Function
 evalElement _ resultSort [_key, _value] =
     case retractKey _key of
         Just concrete ->
-            Map.singleton concrete (MapValue _value)
+            HashMap.singleton concrete (MapValue _value)
                 & returnConcreteMap resultSort
                 & TermLike.assertConstructorLikeKeys [_key]
         Nothing ->
@@ -323,7 +326,7 @@ evalElement _ resultSort [_key, _value] =
                 NormalizedAc
                     { elementsWithVariables =
                         [MapElement (_key, _value)]
-                    , concreteElements = Map.empty
+                    , concreteElements = HashMap.empty
                     , opaque = []
                     }
 evalElement _ _ _ = Builtin.wrongArity Map.elementKey
@@ -340,14 +343,14 @@ evalConcat _ _ _ = Builtin.wrongArity Map.concatKey
 evalUnit :: Builtin.Function
 evalUnit _ resultSort =
     \case
-        [] -> returnConcreteMap resultSort Map.empty
+        [] -> returnConcreteMap resultSort HashMap.empty
         _ -> Builtin.wrongArity Map.unitKey
 
 evalUpdate :: Builtin.Function
 evalUpdate _ resultSort [_map, _key, value] = do
     _key <- hoistMaybe $ retractKey _key
     _map <- expectConcreteBuiltinMap Map.updateKey _map
-    Map.insert _key (MapValue value) _map
+    HashMap.insert _key (MapValue value) _map
         & returnConcreteMap resultSort
 evalUpdate _ _ _ = Builtin.wrongArity Map.updateKey
 
@@ -366,14 +369,14 @@ evalInKeys sideCondition resultSort arguments@[_key, _map] =
     -- The empty map contains no keys.
     emptyMap = do
         _map <- expectConcreteBuiltinMap Map.in_keysKey _map
-        Monad.guard (Map.null _map)
+        Monad.guard (HashMap.null _map)
         Bool.asPattern resultSort False & returnPattern
 
     -- When the map is concrete, decide if a concrete key is present or absent.
     concreteMap = do
         _map <- expectConcreteBuiltinMap Map.in_keysKey _map
         _key <- hoistMaybe $ retractKey _key
-        Map.member _key _map
+        HashMap.member _key _map
             & Bool.asPattern resultSort
             & returnPattern
 
@@ -397,7 +400,7 @@ evalInclusion :: Builtin.Function
 evalInclusion _ resultSort [_mapLeft, _mapRight] = do
     _mapLeft <- expectConcreteBuiltinMap Map.inclusionKey _mapLeft
     _mapRight <- expectConcreteBuiltinMap Map.inclusionKey _mapRight
-    Map.isSubmapOf _mapLeft _mapRight
+    HashMap.isSubmapOf _mapLeft _mapRight
         & Bool.asPattern resultSort
         & return
 evalInclusion _ _ _ = Builtin.wrongArity Map.inclusionKey
@@ -412,7 +415,7 @@ evalKeys _ _ _ = Builtin.wrongArity Map.keysKey
 evalKeysList :: Builtin.Function
 evalKeysList _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.keys_listKey _map
-    Map.keys _map
+    HashMap.keys _map
         & fmap (from @Key)
         & Seq.fromList
         & Builtin.List.returnList resultSort
@@ -422,13 +425,13 @@ evalRemove :: Builtin.Function
 evalRemove _ resultSort [_map, _key] = do
     let emptyMap = do
             _map <- expectConcreteBuiltinMap Map.removeKey _map
-            if Map.null _map
-                then returnConcreteMap resultSort Map.empty
+            if HashMap.null _map
+                then returnConcreteMap resultSort HashMap.empty
                 else empty
         bothConcrete = do
             _map <- expectConcreteBuiltinMap Map.removeKey _map
             _key <- hoistMaybe $ retractKey _key
-            returnConcreteMap resultSort $ Map.delete _key _map
+            returnConcreteMap resultSort $ HashMap.delete _key _map
     emptyMap <|> bothConcrete
 evalRemove _ _ _ = Builtin.wrongArity Map.removeKey
 
@@ -436,8 +439,8 @@ evalRemoveAll :: Builtin.Function
 evalRemoveAll _ resultSort [_map, _set] = do
     let emptyMap = do
             _map <- expectConcreteBuiltinMap Map.removeAllKey _map
-            if Map.null _map
-                then returnConcreteMap resultSort Map.empty
+            if HashMap.null _map
+                then returnConcreteMap resultSort HashMap.empty
                 else empty
         bothConcrete = do
             _map <- expectConcreteBuiltinMap Map.removeAllKey _map
@@ -445,7 +448,7 @@ evalRemoveAll _ resultSort [_map, _set] = do
                 Builtin.Set.expectConcreteBuiltinSet
                     Map.removeAllKey
                     _set
-            Map.difference _map _set
+            HashMap.difference _map _set
                 & returnConcreteMap resultSort
     emptyMap <|> bothConcrete
 evalRemoveAll _ _ _ = Builtin.wrongArity Map.removeAllKey
@@ -453,7 +456,7 @@ evalRemoveAll _ _ _ = Builtin.wrongArity Map.removeAllKey
 evalSize :: Builtin.Function
 evalSize _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.sizeKey _map
-    Map.size _map
+    HashMap.size _map
         & toInteger
         & Int.asPattern resultSort
         & return
@@ -462,7 +465,7 @@ evalSize _ _ _ = Builtin.wrongArity Map.sizeKey
 evalValues :: Builtin.Function
 evalValues _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.valuesKey _map
-    fmap getMapValue (Map.elems _map)
+    fmap getMapValue (HashMap.elems _map)
         & Seq.fromList
         & Builtin.List.returnList resultSort
 evalValues _ _ _ = Builtin.wrongArity Map.valuesKey

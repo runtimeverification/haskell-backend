@@ -4,33 +4,33 @@ module Test.Kore.Step.Simplification.InternalMap (
     test_simplify,
 ) where
 
-import Data.Bifunctor (
-    bimap,
- )
-import qualified Data.Map.Strict as Map
-import Data.Maybe (
-    fromJust,
- )
+import Data.Bifunctor
+    ( bimap
+    )
+import qualified Data.HashMap.Strict as HashMap
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.Simplification.InternalMap (
-    simplify,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Step.Simplification.InternalMap
+    ( simplify
+    )
 import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
@@ -136,7 +136,7 @@ mkMapAux concreteElements elements opaque =
                     , concreteElements =
                         concreteElements
                             & map (bimap (retractKey >>> fromJust) MapValue)
-                            & Map.fromList
+                            & HashMap.fromList
                     , opaque
                     }
         }

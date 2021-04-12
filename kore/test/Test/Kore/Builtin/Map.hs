@@ -48,32 +48,36 @@ module Test.Kore.Builtin.Map (
     asInternal,
 ) where
 
-import Control.Error (
-    runMaybeT,
- )
-import Control.Monad (
-    guard,
- )
+import Control.Error
+    ( runMaybeT
+    )
+import Control.Monad
+    ( guard
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
+import Data.HashMap.Strict
+    ( HashMap
+    )
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe (
-    fromJust,
- )
+import qualified Data.Maybe as Maybe
+    ( fromJust
+    )
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
-import Hedgehog (
-    Gen,
-    Property,
-    PropertyT,
-    discard,
-    forAll,
-    (===),
- )
+import Hedgehog
+    ( Gen
+    , Property
+    , PropertyT
+    , discard
+    , forAll
+    , (===)
+    )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -84,52 +88,52 @@ import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
-    makeMultipleAndPredicate,
-    makeTruePredicate,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike hiding (
-    asConcrete,
- )
+import Kore.Internal.TermLike hiding
+    ( asConcrete
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    configElementVariableFromId,
-    mkConfigVariable,
-    ruleElementVariableFromId,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkConfigVariable
+    , ruleElementVariableFromId
+    )
 import Kore.Step.RulePattern
-import Prelude.Kore hiding (
-    concatMap,
- )
-import SMT (
-    NoSMT,
- )
+import Prelude.Kore hiding
+    ( concatMap
+    )
+import SMT
+    ( NoSMT
+    )
 import Test.Expect
-import Test.Kore (
-    configElementVariableGen,
-    standaloneGen,
-    testId,
- )
+import Test.Kore
+    ( configElementVariableGen
+    , standaloneGen
+    , testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Builtin.Int (
-    genInteger,
-    genIntegerKey,
-    genIntegerPattern,
- )
+import Test.Kore.Builtin.Int
+    ( genInteger
+    , genIntegerKey
+    , genIntegerPattern
+    )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
-    runSimplifier,
- )
+import Test.Kore.Step.Simplification
+    ( runSimplifier
+    )
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -639,7 +643,7 @@ test_simplify =
         let x = mkIntConfigVar (testId "x")
             key = Test.Int.asKey 1
             original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
-            expected = asPattern $ Map.fromList [(key, x)]
+            expected = asPattern $ HashMap.fromList [(key, x)]
         actual <- evaluate original
         assertEqual "expected simplified Map" expected actual
 
@@ -1114,7 +1118,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                                 { elementsWithVariables =
                                     [MapElement (mkElemVar keyVar2, value2)]
                                 , concreteElements =
-                                    Map.singleton key1 (MapValue value1)
+                                    HashMap.singleton key1 (MapValue value1)
                                 , opaque = [mkElemVar mapVar]
                                 }
                 mapValue = mapValueFromVar mapVar1
@@ -1343,7 +1347,7 @@ test_renormalize =
             NormalizedAc
                 { elementsWithVariables = MapElement <$> abstract
                 , concreteElements =
-                    Map.fromList (Bifunctor.second MapValue <$> concrete)
+                    HashMap.fromList (Bifunctor.second MapValue <$> concrete)
                 , opaque =
                     Ac.asInternal testMetadataTools mapSort <$> opaque
                 }
@@ -1488,7 +1492,7 @@ asTermLike =
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern ::
-    Map Key (TermLike RewritingVariableName) ->
+    HashMap Key (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asPattern concreteMap =
     Reflection.give testMetadataTools $
@@ -1509,7 +1513,7 @@ asVariablePattern variableMap =
             wrapAc
                 NormalizedAc
                     { elementsWithVariables = MapElement <$> Map.toList variableMap
-                    , concreteElements = Map.empty
+                    , concreteElements = HashMap.empty
                     , opaque = []
                     }
 
@@ -1521,7 +1525,7 @@ asVariableInternal variableMap =
         wrapAc
             NormalizedAc
                 { elementsWithVariables = MapElement <$> Map.toList variableMap
-                , concreteElements = Map.empty
+                , concreteElements = HashMap.empty
                 , opaque = []
                 }
 
@@ -1542,7 +1546,7 @@ asInternal elements =
     asConcrete element@(key, value) =
         (,) <$> retractKey key <*> pure value
             & maybe (Left element) Right
-    (abstractElements, Map.fromList -> concreteElements) =
+    (abstractElements, HashMap.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
             & partitionEithers
 
@@ -1560,7 +1564,7 @@ normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . wrapAc $
         NormalizedAc
             { elementsWithVariables = MapElement <$> elements
-            , concreteElements = Map.empty
+            , concreteElements = HashMap.empty
             , opaque
             }
 

@@ -5,22 +5,22 @@
 module Test.Kore.Builtin.Definition where
 
 import qualified Data.Bifunctor as Bifunctor
-import Data.ByteString (
-    ByteString,
- )
+import Data.ByteString
+    ( ByteString
+    )
 import qualified Data.ByteString as ByteString
 import qualified Data.Default as Default
-import qualified Data.Map.Strict as Map
-import Data.Maybe (
-    fromJust,
- )
+import qualified Data.HashMap.Strict as HashMap
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Sequence as Seq
-import Data.Text (
-    Text,
- )
-import Data.Word (
-    Word8,
- )
+import Data.Text
+    ( Text
+    )
+import Data.Word
+    ( Word8
+    )
 import Kore.Attribute.Constructor
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
@@ -28,17 +28,17 @@ import Kore.Attribute.Injective
 import Kore.Attribute.Parser
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
-import Kore.Attribute.Sort.HasDomainValues (
-    hasDomainValuesAttribute,
- )
+import Kore.Attribute.Sort.HasDomainValues
+    ( hasDomainValuesAttribute
+    )
 import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
-import Kore.Attribute.Subsort (
-    subsortAttribute,
- )
-import Kore.Attribute.Synthetic (
-    synthesize,
- )
+import Kore.Attribute.Subsort
+    ( subsortAttribute
+    )
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
@@ -50,27 +50,27 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Symbol (
-    constructor,
-    function,
-    functional,
-    hook,
-    injective,
-    klabel,
-    smthook,
-    sortInjection,
-    symbolKywd,
- )
+import Kore.Internal.Symbol
+    ( constructor
+    , function
+    , functional
+    , hook
+    , injective
+    , klabel
+    , smthook
+    , sortInjection
+    , symbolKywd
+    )
 import qualified Kore.Internal.Symbol as Internal
-import Kore.Internal.TermLike hiding (
-    Symbol,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Syntax (
-    Const (..),
- )
+import Kore.Internal.TermLike hiding
+    ( Symbol
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Syntax
+    ( Const (..)
+    )
 import Kore.Syntax.Definition as Syntax
 import qualified Kore.Syntax.PatternF as PatternF
 import Prelude.Kore
@@ -1070,6 +1070,7 @@ mapSortDecl =
 
 builtinMap ::
     Ord key =>
+    Hashable key =>
     [(key, TermLike variable)] ->
     InternalMap key (TermLike variable)
 builtinMap children =
@@ -1083,10 +1084,11 @@ builtinMap children =
                 NormalizedAc
                     { elementsWithVariables = []
                     , concreteElements =
-                        Map.fromList (Bifunctor.second MapValue <$> children)
+                        HashMap.fromList (Bifunctor.second MapValue <$> children)
                     , opaque = []
                     }
         }
+
 mkMap ::
     InternalVariable variable =>
     [(TermLike Concrete, TermLike variable)] ->
@@ -1095,6 +1097,7 @@ mkMap =
     mkInternalMap
         . builtinMap
         . (map . Bifunctor.first) (retractKey >>> fromJust)
+
 -- ** Pair
 pairSort :: Sort -> Sort -> Sort
 pairSort lSort rSort =
@@ -1155,6 +1158,7 @@ testSort =
             }
 testSortDecl :: ParsedSentence
 testSortDecl = sortDecl testSort
+
 mkSet ::
     InternalVariable variable =>
     Foldable f =>
@@ -1180,7 +1184,7 @@ mkSet elements opaque =
     asKey key =
         (,) <$> retractKey key <*> pure SetValue
             & maybe (Left (key, SetValue)) Right
-    (abstractElements, Map.fromList -> concreteElements) =
+    (abstractElements, HashMap.fromList -> concreteElements) =
         asKey <$> toList elements
             & partitionEithers
 mkSet_ ::

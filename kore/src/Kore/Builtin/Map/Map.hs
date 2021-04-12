@@ -43,21 +43,21 @@ module Kore.Builtin.Map.Map (
     inclusionKey,
 ) where
 
-import qualified Data.Map.Strict as Map
-import Data.String (
-    IsString,
- )
-import qualified Kore.Attribute.Symbol as Attribute (
-    Symbol,
- )
+import qualified Data.HashMap.Strict as HashMap
+import Data.String
+    ( IsString
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
-import qualified Kore.Error as Kore (
-    Error,
- )
-import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
- )
+import qualified Kore.Error as Kore
+    ( Error
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import Kore.Internal.InternalMap
 import Kore.Internal.TermLike as TermLike
 import Prelude.Kore
@@ -210,7 +210,7 @@ asTermLike builtin =
         (AssocComm.UnitSymbol unitSymbol)
         (AssocComm.ConcatSymbol concatSymbol)
         ( AssocComm.ConcreteElements
-            (map concreteElement (Map.toAscList concreteElements))
+            (map concreteElement (HashMap.toList concreteElements))
         )
         ( AssocComm.VariableElements
             (element . unwrapElement <$> elementsWithVariables)

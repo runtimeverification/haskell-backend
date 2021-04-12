@@ -33,34 +33,34 @@ module Kore.Internal.NormalizedAc (
 ) where
 
 import qualified Control.Lens as Lens
-import Control.Lens.Iso (
-    Iso',
- )
-import Data.Kind (
-    Type,
- )
-import Data.List.Extra (
-    nubOrdBy,
- )
-import Data.Map.Strict (
-    Map,
- )
-import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
+import Control.Lens.Iso
+    ( Iso'
+    )
+import Data.HashMap.Strict
+    ( HashMap
+    )
+import qualified Data.HashMap.Strict as HashMap
+import Data.Kind
+    ( Type
+    )
+import Data.List.Extra
+    ( nubOrdBy
+    )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
 import Kore.Debug
-import Kore.Internal.Symbol hiding (
-    isConstructorLike,
- )
+import Kore.Internal.Symbol hiding
+    ( isConstructorLike
+    )
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import Pretty (
-    (<+>),
- )
+import Pretty
+    ( (<+>)
+    )
 import qualified Pretty
 
 {- | Establishes a bijection between value wrappers and entire-structure
@@ -130,7 +130,7 @@ unparsedChildren ::
     [Pretty.Doc ann]
 unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     (elementUnparser <$> elementsWithVariables)
-        ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
+        ++ (concreteElementUnparser <$> HashMap.toList concreteElements)
         ++ (child . childUnparser <$> opaque)
   where
     unwrapped :: NormalizedAc normalized key child
@@ -164,7 +164,7 @@ data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
       elementsWithVariables :: [Element collection child]
     , -- | Concrete elements of the structure.
       -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
-      concreteElements :: Map key (Value collection child)
+      concreteElements :: HashMap key (Value collection child)
     , -- | Unoptimized (i.e. non-element) parts of the structure.
       opaque :: [child]
     }
@@ -221,6 +221,7 @@ lookupSymbolicKeyOfAc
 removeSymbolicKeyOfAc ::
     AcWrapper normalized =>
     Ord child =>
+    Hashable child =>
     child ->
     NormalizedAc normalized key child ->
     NormalizedAc normalized key child
@@ -229,12 +230,12 @@ removeSymbolicKeyOfAc
     normalized@NormalizedAc{elementsWithVariables} =
         normalized
             { elementsWithVariables =
-                fmap wrapElement . Map.toList $
-                    Map.delete child unwrappedMap
+                fmap wrapElement . HashMap.toList $
+                    HashMap.delete child unwrappedMap
             }
       where
         unwrappedMap =
-            Map.fromList $ fmap unwrapElement elementsWithVariables
+            HashMap.fromList $ fmap unwrapElement elementsWithVariables
 
 isConcreteKeyOfAc ::
     AcWrapper normalized =>
@@ -253,7 +254,7 @@ getConcreteKeysOfAc
     ( unwrapAc ->
             NormalizedAc{concreteElements}
         ) =
-        Map.keys concreteElements
+        HashMap.keys concreteElements
 
 getConcreteValuesOfAc ::
     AcWrapper normalized =>
@@ -263,10 +264,11 @@ getConcreteValuesOfAc
     ( unwrapAc ->
             NormalizedAc{concreteElements}
         ) =
-        Map.elems concreteElements
+        HashMap.elems concreteElements
 
 removeConcreteKeyOfAc ::
     Ord key =>
+    Hashable key =>
     key ->
     NormalizedAc normalized key child ->
     NormalizedAc normalized key child
@@ -275,7 +277,7 @@ removeConcreteKeyOfAc
     normalized@NormalizedAc{concreteElements} =
         normalized
             { concreteElements =
-                Map.delete key concreteElements
+                HashMap.delete key concreteElements
             }
 
 deriving stock instance
@@ -325,7 +327,7 @@ instance
     hashWithSalt salt normalized@(NormalizedAc _ _ _) =
         salt
             `hashWithSalt` elementsWithVariables
-            `hashWithSalt` Map.toList concreteElements
+            `hashWithSalt` HashMap.toList concreteElements
             `hashWithSalt` opaque
       where
         NormalizedAc{elementsWithVariables} = normalized
@@ -368,7 +370,7 @@ emptyNormalizedAc :: NormalizedAc key valueWrapper child
 emptyNormalizedAc =
     NormalizedAc
         { elementsWithVariables = []
-        , concreteElements = Map.empty
+        , concreteElements = HashMap.empty
         , opaque = []
         }
 
@@ -453,13 +455,13 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
             , concreteElements
             , opaque = []
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         NormalizedAc
             { elementsWithVariables = []
             , concreteElements
             , opaque = [_]
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         _ -> Defined False
   where
     sameAsChildren = fold ac
@@ -479,13 +481,13 @@ normalizedAcFunctional ac@(NormalizedAc _ _ _) =
             , concreteElements
             , opaque = []
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         NormalizedAc
             { elementsWithVariables = []
             , concreteElements
             , opaque = [_]
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         _ -> Functional False
   where
     sameAsChildren = fold ac
@@ -506,7 +508,7 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
                 | all pairIsConstructorLike concreteElementsList ->
                     ConstructorLike . Just $ ConstructorLikeHead
               where
-                concreteElementsList = Map.toList concreteElements
+                concreteElementsList = HashMap.toList concreteElements
                 pairIsConstructorLike (key, value) =
                     assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
@@ -552,7 +554,7 @@ generatePairWiseElements (unwrapAc -> normalized) =
         }
   where
     symbolicElems = elementsWithVariables normalized
-    concreteElems = Map.toList . concreteElements $ normalized
+    concreteElems = HashMap.toList . concreteElements $ normalized
     opaqueElems = opaque normalized
     pairWiseElemsOfSameType elems =
         [(x, y) | x <- elems, y <- elems, x /= y]

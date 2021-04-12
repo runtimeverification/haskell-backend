@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -36,95 +36,99 @@ module Kore.Builtin.AssociativeCommutative (
     VariableElements (..),
 ) where
 
-import Control.Error (
-    MaybeT,
- )
+import Control.Error
+    ( MaybeT
+    )
 import qualified Control.Monad as Monad
-import Data.Kind (
-    Type,
- )
+import Data.HashMap.Strict
+    ( HashMap
+    )
+import qualified Data.HashMap.Strict as HashMap
+import Data.Kind
+    ( Type
+    )
 import qualified Data.List
 import qualified Data.List as List
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import Data.Reflection (
-    Given,
- )
+import Data.Reflection
+    ( Given
+    )
 import qualified Data.Reflection as Reflection
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
-    Simplified,
- )
-import qualified Kore.Attribute.Symbol as Attribute (
-    Symbol,
- )
+import qualified GHC.Generics as GHC
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
 import Kore.Debug
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
-import Kore.Internal.Condition (
-    Condition,
- )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    Conditional,
-    andCondition,
-    withCondition,
- )
+import Kore.Internal.Conditional
+    ( Conditional
+    , andCondition
+    , withCondition
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import qualified Kore.Internal.Key as Key
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition (
-    topTODO,
- )
-import Kore.Internal.Symbol (
-    Symbol,
- )
-import Kore.Internal.TermLike (
-    Key,
-    TermLike,
-    mkApplySymbol,
-    mkElemVar,
-    termLikeSort,
-    pattern App_,
-    pattern ElemVar_,
-    pattern InternalMap_,
-    pattern InternalSet_,
- )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern ElemVar_
+    , pattern InternalMap_
+    , pattern InternalSet_
+    , Key
+    , TermLike
+    , mkApplySymbol
+    , mkElemVar
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    Sort,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Sort
+    ( Sort
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Variable
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Unparser (
-    unparse,
-    unparseToString,
- )
+import Kore.Unparser
+    ( unparse
+    , unparseToString
+    )
 import qualified Kore.Unparser as Unparser
 import Logic
 import Prelude.Kore
-import Pretty (
-    Doc,
- )
+import Pretty
+    ( Doc
+    )
 import qualified Pretty
 
 -- | Any @TermWrapper@ may be inside of an 'InternalAc'.
@@ -166,6 +170,7 @@ class
     toNormalized ::
         HasCallStack =>
         Ord variable =>
+        Hashable variable =>
         TermLike variable ->
         NormalizedOrBottom normalized variable
 
@@ -211,14 +216,14 @@ instance TermWrapper NormalizedMap where
                             NormalizedAc
                                 { elementsWithVariables = []
                                 , concreteElements =
-                                    Map.singleton key' (MapValue value)
+                                    HashMap.singleton key' (MapValue value)
                                 , opaque = []
                                 }
                     | otherwise ->
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = [MapElement (key, value)]
-                                , concreteElements = Map.empty
+                                , concreteElements = HashMap.empty
                                 , opaque = []
                                 }
                 _ -> Builtin.wrongArity "MAP.element"
@@ -230,7 +235,7 @@ instance TermWrapper NormalizedMap where
         (Normalized . wrapAc)
             NormalizedAc
                 { elementsWithVariables = []
-                , concreteElements = Map.empty
+                , concreteElements = HashMap.empty
                 , opaque = [patt]
                 }
 
@@ -266,14 +271,14 @@ instance TermWrapper NormalizedSet where
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = []
-                                , concreteElements = Map.singleton elem1' SetValue
+                                , concreteElements = HashMap.singleton elem1' SetValue
                                 , opaque = []
                                 }
                     | otherwise ->
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = [SetElement elem1]
-                                , concreteElements = Map.empty
+                                , concreteElements = HashMap.empty
                                 , opaque = []
                                 }
                 _ -> Builtin.wrongArity "SET.element"
@@ -349,7 +354,7 @@ instance
 
 -- | The semigroup defined by the `concat` operation.
 instance
-    (Ord variable, TermWrapper normalized) =>
+    (Ord variable, TermWrapper normalized, Hashable variable) =>
     Semigroup (NormalizedOrBottom normalized variable)
     where
     Bottom <> _ = Bottom
@@ -359,7 +364,7 @@ instance
 
 concatNormalized ::
     forall normalized variable.
-    (TermWrapper normalized, Ord variable) =>
+    (TermWrapper normalized, Ord variable, Hashable variable) =>
     normalized Key (TermLike variable) ->
     normalized Key (TermLike variable) ->
     Maybe (normalized Key (TermLike variable))
@@ -367,7 +372,7 @@ concatNormalized normalized1 normalized2 = do
     Monad.guard disjointConcreteElements
     abstract' <-
         updateAbstractElements $ onBoth (++) elementsWithVariables
-    let concrete' = onBoth Map.union concreteElements
+    let concrete' = onBoth HashMap.union concreteElements
         opaque' = Data.List.sort $ onBoth (++) opaque
     renormalize $
         wrapAc
@@ -388,7 +393,7 @@ concatNormalized normalized1 normalized2 = do
         r
     onBoth f g = on f (g . unwrapAc) normalized1 normalized2
     disjointConcreteElements =
-        null $ onBoth Map.intersection concreteElements
+        null $ onBoth HashMap.intersection concreteElements
 
 {- | Take a (possibly de-normalized) internal representation to its normal form.
 
@@ -401,7 +406,7 @@ internal representations themselves; this "flattening" step also recurses to
 @renormalize@ the previously-opaque children.
 -}
 renormalize ::
-    (TermWrapper normalized, Ord variable) =>
+    (TermWrapper normalized, Ord variable, Hashable variable) =>
     normalized Key (TermLike variable) ->
     Maybe (normalized Key (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
@@ -409,22 +414,23 @@ renormalize = normalizeAbstractElements >=> flattenOpaque
 -- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
 insertMissing ::
     Ord key =>
+    Hashable key =>
     key ->
     value ->
-    Map key value ->
-    Maybe (Map key value)
+    HashMap key value ->
+    Maybe (HashMap key value)
 insertMissing k v m
-    | Map.member k m = Nothing
-    | otherwise = Just (Map.insert k v m)
+    | HashMap.member k m = Nothing
+    | otherwise = Just (HashMap.insert k v m)
 
 {- | Insert the new concrete elements into the 'Map'.
 
 Return 'Nothing' if there are any duplicate keys.
 -}
 updateConcreteElements ::
-    Map Key value ->
+    HashMap Key value ->
     [(Key, value)] ->
-    Maybe (Map Key value)
+    Maybe (HashMap Key value)
 updateConcreteElements elems newElems =
     foldrM (uncurry insertMissing) elems newElems
 
@@ -433,12 +439,12 @@ updateConcreteElements elems newElems =
 Return 'Nothing' if there are any duplicate keys.
 -}
 updateAbstractElements ::
-    (AcWrapper collection, Ord child) =>
+    (AcWrapper collection, Ord child, Hashable child) =>
     [Element collection child] ->
     Maybe [Element collection child]
 updateAbstractElements elements =
-    fmap (map wrapElement . Map.toList) $
-        foldrM (uncurry insertMissing) Map.empty $
+    fmap (map wrapElement . HashMap.toList) $
+        foldrM (uncurry insertMissing) HashMap.empty $
             map unwrapElement elements
 
 {- | Make any abstract elements into concrete elements if possible.
@@ -446,7 +452,7 @@ updateAbstractElements elements =
 Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 -}
 normalizeAbstractElements ::
-    (TermWrapper normalized, Ord variable) =>
+    (TermWrapper normalized, Ord variable, Hashable variable) =>
     normalized Key (TermLike variable) ->
     Maybe (normalized Key (TermLike variable))
 normalizeAbstractElements (unwrapAc -> normalized) = do
@@ -484,7 +490,7 @@ extractConcreteElement element =
 @flattenOpaque@ recursively flattens the children of children, and so on.
 -}
 flattenOpaque ::
-    (TermWrapper normalized, Ord variable) =>
+    (TermWrapper normalized, Ord variable, Hashable variable) =>
     normalized Key (TermLike variable) ->
     Maybe (normalized Key (TermLike variable))
 flattenOpaque (unwrapAc -> normalized) = do
@@ -498,7 +504,7 @@ flattenOpaque (unwrapAc -> normalized) = do
 
 -- | The monoid defined by the `concat` and `unit` operations.
 instance
-    (Ord variable, TermWrapper normalized) =>
+    (Ord variable, TermWrapper normalized, Hashable variable) =>
     Monoid (NormalizedOrBottom normalized variable)
     where
     mempty = Normalized $ wrapAc emptyNormalizedAc
@@ -507,20 +513,22 @@ instance
 otherwise.
 -}
 addToMapDisjoint ::
-    (Ord a, Traversable t) => Map a b -> t (a, b) -> Maybe (Map a b)
+    (Ord a, Traversable t, Hashable a)
+    => HashMap a b -> t (a, b) -> Maybe (HashMap a b)
 addToMapDisjoint existing traversable = do
     (_, mapResult) <- Monad.foldM addElementDisjoint ([], existing) traversable
     return mapResult
 
 addElementDisjoint ::
     Ord a =>
-    ([(a, b)], Map a b) ->
+    Hashable a =>
+    ([(a, b)], HashMap a b) ->
     (a, b) ->
-    Maybe ([(a, b)], Map a b)
+    Maybe ([(a, b)], HashMap a b)
 addElementDisjoint (list, existing) (key, value) =
-    if key `Map.member` existing
+    if key `HashMap.member` existing
         then Nothing
-        else return ((key, value) : list, Map.insert key value existing)
+        else return ((key, value) : list, HashMap.insert key value existing)
 
 -- | Given a @NormalizedAc@, returns it as a function result.
 returnAc ::
@@ -546,7 +554,7 @@ returnConcreteAc ::
     , TermWrapper normalized
     ) =>
     Sort ->
-    Map Key (Value normalized (TermLike variable)) ->
+    HashMap Key (Value normalized (TermLike variable)) ->
     m (Pattern variable)
 returnConcreteAc resultSort concrete =
     (returnAc resultSort . wrapAc)
@@ -563,7 +571,7 @@ asInternalConcrete ::
     (InternalVariable variable, TermWrapper normalized) =>
     SmtMetadataTools Attribute.Symbol ->
     Sort ->
-    Map Key (Value normalized (TermLike variable)) ->
+    HashMap Key (Value normalized (TermLike variable)) ->
     TermLike variable
 asInternalConcrete tools sort1 concreteAc =
     asInternal tools sort1 $
@@ -640,13 +648,13 @@ evalConcatNormalizedOrBottom
         maybe (return $ Pattern.bottomOf resultSort) (returnAc resultSort) $
             concatNormalized normalized1 normalized2
 
-disjointMap :: Ord a => [(a, b)] -> Maybe (Map a b)
+disjointMap :: Ord a => Hashable a => [(a, b)] -> Maybe (HashMap a b)
 disjointMap input =
-    if length input == Map.size asMap
+    if length input == HashMap.size asMap
         then Just asMap
         else Nothing
   where
-    asMap = Map.fromList input
+    asMap = HashMap.fromList input
 
 splitVariableConcrete ::
     forall variable a.
@@ -741,7 +749,7 @@ unifyEqualsNormalized
                         (unzip . map unwrapElement)
                             (elementsWithVariables unwrapped)
                     (concreteKeys, concreteValues) =
-                        (unzip . Map.toList)
+                        (unzip . HashMap.toList)
                             (concreteElements unwrapped)
 
             return (unifierTerm `Pattern.withCondition` unifierCondition)
@@ -828,9 +836,9 @@ unifyEqualsNormalizedAc
                 -- unifier monad
                 -- unify the parts not sent to unifyEqualsNormalizedElements.
                 (commonElementsTerms, commonElementsCondition) <-
-                    unifyElementList (Map.toList commonElements)
+                    unifyElementList (HashMap.toList commonElements)
                 (commonVariablesTerms, commonVariablesCondition) <-
-                    unifyElementList (Map.toList commonVariables)
+                    unifyElementList (HashMap.toList commonVariables)
 
                 -- simplify results so that things like inj applications that
                 -- may have been broken into smaller pieces are being put
@@ -890,16 +898,16 @@ unifyEqualsNormalizedAc
 
         elementsWithVariables1 = unwrapElement <$> preElementsWithVariables1
         elementsWithVariables2 = unwrapElement <$> preElementsWithVariables2
-        elementsWithVariables1Map = Map.fromList elementsWithVariables1
-        elementsWithVariables2Map = Map.fromList elementsWithVariables2
+        elementsWithVariables1Map = HashMap.fromList elementsWithVariables1
+        elementsWithVariables2Map = HashMap.fromList elementsWithVariables2
 
         commonElements =
-            Map.intersectionWith
+            HashMap.intersectionWith
                 (,)
                 concreteElements1
                 concreteElements2
         commonVariables =
-            Map.intersectionWith
+            HashMap.intersectionWith
                 (,)
                 elementsWithVariables1Map
                 elementsWithVariables2Map
@@ -913,13 +921,13 @@ unifyEqualsNormalizedAc
         commonOpaqueKeys = Map.keysSet commonOpaqueMap
 
         elementDifference1 =
-            Map.toList (Map.difference concreteElements1 commonElements)
+            HashMap.toList (HashMap.difference concreteElements1 commonElements)
         elementDifference2 =
-            Map.toList (Map.difference concreteElements2 commonElements)
+            HashMap.toList (HashMap.difference concreteElements2 commonElements)
         elementVariableDifference1 =
-            Map.toList (Map.difference elementsWithVariables1Map commonVariables)
+            HashMap.toList (HashMap.difference elementsWithVariables1Map commonVariables)
         elementVariableDifference2 =
-            Map.toList (Map.difference elementsWithVariables2Map commonVariables)
+            HashMap.toList (HashMap.difference elementsWithVariables2Map commonVariables)
         opaqueDifference1 =
             mapToList (Map.withoutKeys opaque1Map commonOpaqueKeys)
         opaqueDifference2 =
@@ -1078,7 +1086,7 @@ buildResultFromUnifiers
             withVariableMap <-
                 addAllDisjoint
                     bottomWithExplanation
-                    Map.empty
+                    HashMap.empty
                     ( commonVariablesTerms
                         ++ withVariableTerms
                         ++ opaquesElementsWithVariables
@@ -1086,10 +1094,10 @@ buildResultFromUnifiers
             concreteMap <-
                 addAllDisjoint
                     bottomWithExplanation
-                    Map.empty
+                    HashMap.empty
                     ( commonElementsTerms
                         ++ concreteTerms
-                        ++ Map.toList opaquesConcreteTerms
+                        ++ HashMap.toList opaquesConcreteTerms
                     )
             let allOpaque = Data.List.sort (commonOpaque ++ opaquesOpaque)
                 -- Merge all unification predicates.
@@ -1106,7 +1114,7 @@ buildResultFromUnifiers
                     wrapAc
                         NormalizedAc
                             { elementsWithVariables =
-                                wrapElement <$> Map.toList withVariableMap
+                                wrapElement <$> HashMap.toList withVariableMap
                             , concreteElements = concreteMap
                             , opaque = allOpaque
                             }
@@ -1115,11 +1123,11 @@ buildResultFromUnifiers
             return result
 
 addAllDisjoint ::
-    (Monad unifier, Ord a) =>
+    (Monad unifier, Ord a, Hashable a) =>
     (forall result. Doc () -> unifier result) ->
-    Map a b ->
+    HashMap a b ->
     [(a, b)] ->
-    unifier (Map a b)
+    unifier (HashMap a b)
 addAllDisjoint bottomWithExplanation existing elements =
     case addToMapDisjoint existing elements of
         Nothing ->
