@@ -9,115 +9,115 @@ module Test.ConsistentKore (
 
 import qualified Control.Arrow as Arrow
 import qualified Control.Monad as Monad
-import Control.Monad.Reader
-    ( ReaderT
-    )
+import Control.Monad.Reader (
+    ReaderT,
+ )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
-import qualified Data.List as List
-    ( foldl'
-    )
+import qualified Data.List as List (
+    foldl',
+ )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Kore.Attribute.Constructor as Attribute.Constructor
-    ( Constructor (..)
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , freeVariables
-    , nullFreeVariables
-    )
-import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
-    )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
-    ( Symbol (..)
-    )
-import Kore.Builtin.AssociativeCommutative as AssociativeCommutative
-    ( TermWrapper
-    , asInternal
-    )
-import qualified Kore.Builtin.Bool.Bool as BuiltinBool
-    ( asBuiltin
-    )
-import qualified Kore.Builtin.Int.Int as BuiltinInt
-    ( asBuiltin
-    )
-import qualified Kore.Builtin.List.List as BuiltinList
-    ( asBuiltin
-    )
-import Kore.Builtin.Map.Map as BuiltinMap
-    ( isSymbolElement
-    )
-import Kore.Builtin.Set.Set as BuiltinSet
-    ( isSymbolElement
-    )
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
+import qualified Kore.Attribute.Constructor as Attribute.Constructor (
+    Constructor (..),
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    freeVariables,
+    nullFreeVariables,
+ )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol,
+ )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol (
+    Symbol (..),
+ )
+import Kore.Builtin.AssociativeCommutative as AssociativeCommutative (
+    TermWrapper,
+    asInternal,
+ )
+import qualified Kore.Builtin.Bool.Bool as BuiltinBool (
+    asBuiltin,
+ )
+import qualified Kore.Builtin.Int.Int as BuiltinInt (
+    asBuiltin,
+ )
+import qualified Kore.Builtin.List.List as BuiltinList (
+    asBuiltin,
+ )
+import Kore.Builtin.Map.Map as BuiltinMap (
+    isSymbolElement,
+ )
+import Kore.Builtin.Set.Set as BuiltinSet (
+    isSymbolElement,
+ )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import qualified Kore.Internal.Alias as Alias.DoNotUse
-import qualified Kore.Internal.Alias as Internal
-    ( Alias (Alias)
-    )
-import Kore.Internal.ApplicationSorts
-    ( ApplicationSorts (ApplicationSorts)
-    )
+import qualified Kore.Internal.Alias as Internal (
+    Alias (Alias),
+ )
+import Kore.Internal.ApplicationSorts (
+    ApplicationSorts (ApplicationSorts),
+ )
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import qualified Kore.Internal.Symbol as Internal
-    ( Symbol (Symbol)
-    )
+import qualified Kore.Internal.Symbol as Internal (
+    Symbol (Symbol),
+ )
 import qualified Kore.Internal.Symbol as Symbol.DoNotUse
-import Kore.Internal.TermLike
-    ( Key
-    , TermLike
-    , TermLikeF (..)
-    , mkAnd
-    , mkApplyAlias
-    , mkApplySymbol
-    , mkBottom
-    , mkCeil
-    , mkElemVar
-    , mkEquals
-    , mkExists
-    , mkFloor
-    , mkForall
-    , mkIff
-    , mkImplies
-    , mkIn
-    , mkInternalBool
-    , mkInternalInt
-    , mkInternalList
-    , mkInternalString
-    , mkMu
-    , mkNot
-    , mkNu
-    , mkOr
-    , mkRewrites
-    , mkSetVar
-    , mkStringLiteral
-    , mkTop
-    , retractKey
-    )
-import qualified Kore.Internal.TermLike as TermLike
-    ( asConcrete
-    )
-import Kore.Sort
-    ( Sort
-    )
+import Kore.Internal.TermLike (
+    Key,
+    TermLike,
+    TermLikeF (..),
+    mkAnd,
+    mkApplyAlias,
+    mkApplySymbol,
+    mkBottom,
+    mkCeil,
+    mkElemVar,
+    mkEquals,
+    mkExists,
+    mkFloor,
+    mkForall,
+    mkIff,
+    mkImplies,
+    mkIn,
+    mkInternalBool,
+    mkInternalInt,
+    mkInternalList,
+    mkInternalString,
+    mkMu,
+    mkNot,
+    mkNu,
+    mkOr,
+    mkRewrites,
+    mkSetVar,
+    mkStringLiteral,
+    mkTop,
+    retractKey,
+ )
+import qualified Kore.Internal.TermLike as TermLike (
+    asConcrete,
+ )
+import Kore.Sort (
+    Sort,
+ )
 import Kore.Syntax.Variable
 import Prelude.Kore
-import Test.Kore
-    ( idGen
-    )
+import Test.Kore (
+    idGen,
+ )
 
 data SortRequirements
     = AnySort

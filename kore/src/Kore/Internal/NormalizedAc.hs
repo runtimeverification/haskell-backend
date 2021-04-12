@@ -33,34 +33,34 @@ module Kore.Internal.NormalizedAc (
 ) where
 
 import qualified Control.Lens as Lens
-import Control.Lens.Iso
-    ( Iso'
-    )
-import Data.HashMap.Strict
-    ( HashMap
-    )
+import Control.Lens.Iso (
+    Iso',
+ )
+import Data.HashMap.Strict (
+    HashMap,
+ )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Kind
-    ( Type
-    )
-import Data.List.Extra
-    ( nubOrdBy
-    )
-import qualified Generics.SOP as SOP
+import Data.Kind (
+    Type,
+ )
+import Data.List.Extra (
+    nubOrdBy,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
 import Kore.Debug
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+ )
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import Pretty
-    ( (<+>)
-    )
+import Pretty (
+    (<+>),
+ )
 import qualified Pretty
 
 {- | Establishes a bijection between value wrappers and entire-structure

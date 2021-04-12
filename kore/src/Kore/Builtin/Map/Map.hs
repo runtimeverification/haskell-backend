@@ -44,20 +44,20 @@ module Kore.Builtin.Map.Map (
 ) where
 
 import qualified Data.HashMap.Strict as HashMap
-import Data.String
-    ( IsString
-    )
-import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
-    )
+import Data.String (
+    IsString,
+ )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol,
+ )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
-import qualified Kore.Error as Kore
-    ( Error
-    )
-import Kore.IndexedModule.IndexedModule
-    ( VerifiedModule
-    )
+import qualified Kore.Error as Kore (
+    Error,
+ )
+import Kore.IndexedModule.IndexedModule (
+    VerifiedModule,
+ )
 import Kore.Internal.InternalMap
 import Kore.Internal.TermLike as TermLike
 import Prelude.Kore

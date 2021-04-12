@@ -32,28 +32,28 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Data.Sup
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
-import Kore.Attribute.Pattern.ConstructorLike
-    ( isConstructorLike
-    )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
+import Kore.Attribute.Pattern.ConstructorLike (
+    isConstructorLike,
+ )
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
-import qualified Kore.Attribute.Sort.Constructors as Attribute
-    ( Constructors
-    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute (
+    Constructors,
+ )
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
 import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
@@ -62,66 +62,66 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as Builtin.String
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    , sortInjection
-    )
-import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
-    , retractKey
-    )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+    sortInjection,
+ )
+import Kore.Internal.TermLike (
+    InternalVariable,
+    TermLike,
+    retractKey,
+ )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkConfigVariable
-    , mkRuleVariable
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+    mkRuleVariable,
+ )
 import Kore.Sort
-import Kore.Step.Axiom.EvaluationStrategy
-    ( builtinEvaluation
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( AxiomIdentifier (..)
-    )
+import Kore.Step.Axiom.EvaluationStrategy (
+    builtinEvaluation,
+ )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
 import qualified Kore.Step.Function.Memo as Memo
+import qualified Kore.Step.SMT.AST as SMT
+import qualified Kore.Step.SMT.Representation.Resolve as SMT (
+    resolve,
+ )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
-import Kore.Step.Simplification.Data
-    ( Env (Env)
-    , MonadSimplify
-    )
+import Kore.Step.Simplification.Data (
+    Env (Env),
+    MonadSimplify,
+ )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifierMap
-    , ConditionSimplifier
-    )
+import Kore.Step.Simplification.Simplify (
+    BuiltinAndAxiomSimplifierMap,
+    ConditionSimplifier,
+ )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Step.SMT.AST as SMT
-import qualified Kore.Step.SMT.Representation.Resolve as SMT
-    ( resolve
-    )
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Prelude.Kore
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
-import qualified Test.ConsistentKore as ConsistentKore
-    ( CollectionSorts (..)
-    , Setup (..)
-    )
-import Test.Kore
-    ( testId
-    )
+import qualified Test.ConsistentKore as ConsistentKore (
+    CollectionSorts (..),
+    Setup (..),
+ )
+import Test.Kore (
+    testId,
+ )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

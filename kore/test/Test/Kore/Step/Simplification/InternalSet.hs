@@ -5,29 +5,29 @@ module Test.Kore.Step.Simplification.InternalSet (
 ) where
 
 import qualified Data.HashMap.Strict as HashMap
-import Data.Maybe
-    ( fromJust
-    )
+import Data.Maybe (
+    fromJust,
+ )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalSet
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.Simplification.InternalSet
-    ( simplify
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Step.Simplification.InternalSet (
+    simplify,
+ )
 import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
