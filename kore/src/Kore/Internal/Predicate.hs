@@ -168,22 +168,22 @@ import qualified Pretty
 import qualified SQL
 
 data PredicateF variable child
-    = AndF           !(And () child)
-    | BottomF        !(Bottom () child)
-    | CeilF          !(Ceil () (TermLike variable))
-    | EqualsF        !(Equals () (TermLike variable))
-    | ExistsF        !(Exists () variable child)
-    | FloorF         !(Floor () (TermLike variable))
-    | ForallF        !(Forall () variable child)
-    | IffF           !(Iff () child)
-    | ImpliesF       !(Implies () child)
-    | InF            !(In () (TermLike variable))
-    | NotF           !(Not () child)
-    | OrF            !(Or () child)
-    | TopF           !(Top () child)
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    = AndF !(And () child)
+    | BottomF !(Bottom () child)
+    | CeilF !(Ceil () (TermLike variable))
+    | EqualsF !(Equals () (TermLike variable))
+    | ExistsF !(Exists () variable child)
+    | FloorF !(Floor () (TermLike variable))
+    | ForallF !(Forall () variable child)
+    | IffF !(Iff () child)
+    | ImpliesF !(Implies () child)
+    | InF !(In () (TermLike variable))
+    | NotF !(Not () child)
+    | OrF !(Or () child)
+    | TopF !(Top () child)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -223,13 +223,11 @@ instance Synthetic Simplified (PredicateF variable)
         OrF or' -> synthetic or'
         TopF top -> synthetic top
 
-
-newtype Predicate variable =
-    Predicate
-        { getPredicate
-            :: Cofree (PredicateF variable) (PredicatePattern variable)
-        }
-    deriving (GHC.Generic, Show)
+newtype Predicate variable = Predicate
+    { getPredicate ::
+        Cofree (PredicateF variable) (PredicatePattern variable)
+    }
+    deriving stock (GHC.Generic, Show)
 
 instance SOP.Generic (Predicate variable)
 
@@ -482,7 +480,7 @@ fromPredicate_ = fromPredicate predicateSort
     needed when these functions are called while traversing the Predicate tree.
 -}
 data HasChanged = Changed | NotChanged
-    deriving (Show, Eq)
+    deriving stock (Show, Eq)
 
 instance Semigroup HasChanged where
     NotChanged <> x = x
@@ -808,7 +806,7 @@ getMultiOrPredicate = \case
 
 newtype NotPredicate variable
     = NotPredicate (TermLikeF variable (Predicate variable))
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

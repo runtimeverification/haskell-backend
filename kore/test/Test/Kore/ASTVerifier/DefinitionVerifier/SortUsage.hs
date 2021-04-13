@@ -40,7 +40,7 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 data TestFlag
     = CannotSeeSortVariables
     | CannotSeeSortDeclarations
-    deriving Eq
+    deriving stock (Eq)
 
 data AdditionalTestConfiguration
     = SkipTest

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Simplification.Equals
 Description : Tools for Equals pattern simplification.

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -155,8 +153,8 @@ data SideCondition variable = SideCondition
     , definedTerms ::
         !(HashSet (TermLike variable))
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -410,7 +408,7 @@ data Assumptions variable = Assumptions
     { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
     , predicateMap :: HashMap (Predicate variable) (Predicate variable)
     }
-    deriving (Eq, GHC.Generic, Show)
+    deriving stock (Eq, GHC.Generic, Show)
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:

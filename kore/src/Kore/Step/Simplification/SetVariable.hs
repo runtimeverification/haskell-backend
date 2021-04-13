@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Simplification.SetVariable
 Description : Tools for SetVariable pattern simplification.

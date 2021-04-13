@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.Integration (
     test_simplificationIntegration,
     test_simplificationIntegrationUnification,

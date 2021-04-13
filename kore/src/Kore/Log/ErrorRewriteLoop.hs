@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -39,7 +37,7 @@ data ErrorRewriteLoop = ErrorRewriteLoop
     { rule :: !(RewriteRule RewritingVariableName)
     , errorCallStack :: !CallStack
     }
-    deriving (Show)
+    deriving stock (Show)
 
 instance Exception ErrorRewriteLoop where
     toException = toException . SomeEntry

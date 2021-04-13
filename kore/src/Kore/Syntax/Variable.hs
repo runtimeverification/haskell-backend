@@ -1,5 +1,4 @@
 {-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE Strict #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
@@ -147,8 +146,8 @@ data VariableName = VariableName
     { base :: !Id
     , counter :: !VariableCounter
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -170,9 +169,9 @@ instance From VariableName VariableName where
 -- * Element variables
 
 newtype ElementVariableName variable = ElementVariableName {unElementVariableName :: variable}
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -213,10 +212,9 @@ instance
     from = from . unElementVariableName
 
 newtype SetVariableName variable = SetVariableName {unSetVariableName :: variable}
-    deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
-    deriving (GHC.Generic, GHC.Generic1)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic, GHC.Generic1)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -262,9 +260,9 @@ data Variable variable = Variable
     { variableName :: !variable
     , variableSort :: !Sort
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -341,9 +339,9 @@ traverseSetVariable adj = traverse (traverseSetVariableName adj)
 data SomeVariableName variable
     = SomeVariableNameElement !(ElementVariableName variable)
     | SomeVariableNameSet !(SetVariableName variable)
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -403,8 +401,8 @@ data AdjSomeVariableName a = AdjSomeVariableName
     , -- | compare to: 'SomeVariableNameSet'
       adjSomeVariableNameSet :: !(SetVariableName a)
     }
-    deriving (Functor)
-    deriving (GHC.Generic1)
+    deriving stock (Functor)
+    deriving stock (GHC.Generic1)
 
 instance Semigroup a => Semigroup (AdjSomeVariableName a) where
     (<>) a b =

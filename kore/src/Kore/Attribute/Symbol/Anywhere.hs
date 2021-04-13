@@ -18,8 +18,8 @@ import Prelude.Kore
 
 -- | @Anywhere@ represents the @anywhere@ attribute for symbols.
 newtype Anywhere = Anywhere {isAnywhere :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

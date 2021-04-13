@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Builtin.Endianness (
     test_verify,
     test_match,

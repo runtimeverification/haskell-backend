@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Rule.Combine (
     test_combineRulesPredicate,
     test_combineRules,

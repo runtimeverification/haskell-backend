@@ -1,5 +1,5 @@
 name:                kore
-version:             0.42.0.0
+version:             0.43.0.0
 github:              "kframework/kore"
 license:             NCSA
 license-file:        LICENSE
@@ -67,6 +67,7 @@ default-extensions:
   - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving
+  - Strict
   - TypeApplications
   - TypeFamilies
   - TypeOperators
@@ -83,6 +84,7 @@ ghc-options:
   - -Wincomplete-record-updates
   - -Wredundant-constraints
   - -Wnoncanonical-monad-instances
+  - -Wmissing-deriving-strategies
 
 when:
   - condition: "impl(ghc >= 8.4)"

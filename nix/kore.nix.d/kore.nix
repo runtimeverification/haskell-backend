@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.42.0.0"; };
+      identifier = { name = "kore"; version = "0.43.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";

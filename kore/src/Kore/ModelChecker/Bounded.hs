@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -84,7 +83,7 @@ data CheckResult patt claim
       Failed !patt
     | -- | Result is unknown within the bound.
       Unknown !claim
-    deriving (Show, GHC.Generic)
+    deriving stock (Show, GHC.Generic)
 
 newtype Axiom = Axiom {unAxiom :: RewriteRule RewritingVariableName}
 

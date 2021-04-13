@@ -23,7 +23,7 @@ data WarnTrivialClaim
       WarnProvenClaimZeroDepth SomeClaim
     | -- | Warning when a claim is proved during initialization.
       WarnTrivialClaimRemoved SomeClaim
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty WarnTrivialClaim where
     pretty (WarnProvenClaimZeroDepth rule) =

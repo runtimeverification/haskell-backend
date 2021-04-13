@@ -43,7 +43,7 @@ data Error a = Error
     { errorContext :: ![String]
     , errorError :: !String
     }
-    deriving (Eq, GHC.Generic, Show)
+    deriving stock (Eq, GHC.Generic, Show)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -95,7 +95,7 @@ koreFailWhenText condition errorMessage =
 action fails.
 -}
 withContext :: MonadError (Error a) m => String -> m result -> m result
-withContext localContext action =
+withContext ~localContext action =
     catchError action inContext
   where
     inContext err@Error{errorContext} =
@@ -105,7 +105,7 @@ withContext localContext action =
 action fails.
 -}
 withTextContext :: MonadError (Error a) m => Text -> m result -> m result
-withTextContext localContext = withContext (Text.unpack localContext)
+withTextContext ~localContext = withContext (Text.unpack localContext)
 
 -- |'castError' changes an error's tag.
 castError :: Either (Error a) result -> Either (Error b) result

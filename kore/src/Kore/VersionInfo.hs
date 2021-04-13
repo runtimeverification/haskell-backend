@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE Strict #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoDuplicateRecordFields #-}
 

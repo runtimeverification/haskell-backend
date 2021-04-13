@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Search
 Description : Search functionality matching krun API
@@ -79,7 +77,7 @@ data SearchType
       STAR
     | -- | All configurations reachable in at least one step
       PLUS
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- | Search options
 data Config = Config

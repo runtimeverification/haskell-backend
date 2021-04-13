@@ -1,8 +1,6 @@
-{-# LANGUAGE Strict #-}
-
-module Test.Kore.Step.Axiom.Registry
-    ( test_functionRegistry
-    ) where
+module Test.Kore.Step.Axiom.Registry (
+    test_functionRegistry,
+) where
 
 import Prelude.Kore
 
@@ -464,20 +462,20 @@ test_functionRegistry =
             (length (extractRewriteAxioms testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = mkApplySymbol sHead []
+        let expect = [mkApplySymbol sHead []]
         simplified <-
-            runSimplifier testEnv
-            $ Pattern.simplify
-            $ makePattern $ mkApplySymbol gHead []
-        let actual = Pattern.term $ head $ toList simplified
+            runSimplifier testEnv $
+                Pattern.simplify $
+                    makePattern $ mkApplySymbol gHead []
+        let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = mkApplySymbol tHead []
+        let expect = [mkApplySymbol tHead []]
         simplified <-
-            runSimplifier testEnv
-            $ Pattern.simplify
-            $ makePattern $ mkApplySymbol pHead []
-        let actual = Pattern.term $ head $ toList simplified
+            runSimplifier testEnv $
+                Pattern.simplify $
+                    makePattern $ mkApplySymbol pHead []
+        let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase "Function rules sorted in order of priorities"
         (let axiomId = AxiomIdentifier.Application (testId "f")

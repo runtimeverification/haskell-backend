@@ -273,7 +273,7 @@ data Private = Private
     , refSolverHandle :: !(MVar SolverHandle)
     , config :: !Config
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 {- | Query an external SMT solver.
 
@@ -423,11 +423,11 @@ instance MonadSMT m => MonadSMT (RWST r () s m)
 
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut {getTimeOut :: Limit Integer}
-    deriving (Eq, Ord, Read, Show)
+    deriving stock (Eq, Ord, Read, Show)
 
 -- | Reset interval for solver.
 newtype ResetInterval = ResetInterval {getResetInterval :: Integer}
-    deriving (Eq, Ord, Read, Show)
+    deriving stock (Eq, Ord, Read, Show)
 
 -- | Optional filepath for the SMT prelude.
 newtype Prelude = Prelude {getPrelude :: Maybe FilePath}

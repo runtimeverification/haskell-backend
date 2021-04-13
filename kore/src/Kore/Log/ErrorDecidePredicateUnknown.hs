@@ -26,7 +26,7 @@ import qualified Pretty
 newtype ErrorDecidePredicateUnknown = ErrorDecidePredicateUnknown
     { predicates :: NonEmpty (Predicate VariableName)
     }
-    deriving (Show)
+    deriving stock (Show)
 
 instance Exception ErrorDecidePredicateUnknown where
     toException = toException . SomeEntry

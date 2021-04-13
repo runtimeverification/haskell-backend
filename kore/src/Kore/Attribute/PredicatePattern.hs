@@ -58,7 +58,7 @@ data PredicatePattern variable = PredicatePattern
     { freeVariables :: !(FreeVariables variable)
     , simplified :: !Simplified
     }
-    deriving (Eq, GHC.Generic, Show)
+    deriving stock (Eq, GHC.Generic, Show)
 
 instance NFData variable => NFData (PredicatePattern variable)
 
