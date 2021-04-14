@@ -23,32 +23,32 @@ module Test.Kore.Step.Axiom.Matcher (
     doesn'tMatch,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
-import Kore.Internal.Predicate (
-    Predicate,
-    makeCeilPredicate,
-    makeTruePredicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeCeilPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    configElementVariableFromId,
-    mkConfigVariable,
- )
-import Kore.Step.Axiom.Matcher (
-    matchIncremental,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkConfigVariable
+    )
+import Kore.Step.Axiom.Matcher
+    ( matchIncremental
+    )
 import Prelude.Kore
-import Test.Kore (
-    testId,
- )
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Builtin.Builtin as Test
 import qualified Test.Kore.Builtin.Definition as Test
 import qualified Test.Kore.Builtin.Int as Test.Int
@@ -876,8 +876,8 @@ test_matching_Set =
         "[x:Int] s:Set matches [0, 1]"
         (mkSet [mkElemVar xInt] [mkVar sSet])
         (mkSet [mkInt 0, mkInt 1] [])
-        [ (inject xInt, mkInt 0)
-        , (sSet, mkSet [mkInt 1] [])
+        [ (inject xInt, mkInt 1)
+        , (sSet, mkSet [mkInt 0] [])
         ]
     ]
 
@@ -1057,9 +1057,9 @@ test_matching_Map =
         "x:Int |-> y:Int  m:Map matches 0 |-> 1  2 |-> 3"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 2, mkInt 3)] [])
-        [ (inject xInt, mkInt 0)
-        , (inject yInt, mkInt 1)
-        , (inject mMap, mkMap [(mkInt 2, mkInt 3)] [])
+        [ (inject xInt, mkInt 2)
+        , (inject yInt, mkInt 3)
+        , (inject mMap, mkMap [(mkInt 0, mkInt 1)] [])
         ]
     ]
 
