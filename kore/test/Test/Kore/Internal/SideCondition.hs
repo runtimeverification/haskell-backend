@@ -7,24 +7,24 @@ module Test.Kore.Internal.SideCondition (
 ) where
 
 import qualified Data.HashSet as HashSet
-import Data.Sup (
-    Sup (..),
- )
-import GHC.Natural (
-    Natural,
- )
-import Kore.Internal.InternalMap (
-    InternalMap,
- )
-import Kore.Internal.InternalSet (
-    InternalSet,
- )
+import Data.Sup
+    ( Sup (..)
+    )
+import GHC.Natural
+    ( Natural
+    )
+import Kore.Internal.InternalMap
+    ( InternalMap
+    )
+import Kore.Internal.InternalSet
+    ( InternalSet
+    )
 import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
 import Prelude.Kore
-import Test.Kore (
-    testId,
- )
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -172,8 +172,8 @@ test_assumeDefined =
     , testCase "Assumes 2-element collection" $ do
         let collection =
                 Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
+                    [ (Mock.f Mock.plain00, Mock.b)
+                    , (mkElemVar Mock.x, Mock.a)
                     ]
                     []
             expectedTerms =
@@ -196,8 +196,8 @@ test_assumeDefined =
                 ]
             expectedCollections =
                 [ Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
+                    [ (Mock.f Mock.plain00, Mock.b)
+                    , (mkElemVar Mock.x, Mock.a)
                     ]
                     []
                 , Collection

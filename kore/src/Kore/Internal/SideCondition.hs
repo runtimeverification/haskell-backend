@@ -25,110 +25,111 @@ module Kore.Internal.SideCondition (
 
 import Changed
 import qualified Control.Lens as Lens
-import Control.Monad.State.Strict (
-    StateT,
-    runStateT,
- )
+import Control.Monad.State.Strict
+    ( StateT
+    , runStateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Product (
-    field,
- )
-import Data.HashMap.Strict (
-    HashMap,
- )
+import Data.Generics.Product
+    ( field
+    )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import Data.HashSet (
-    HashSet,
- )
+import Data.HashSet
+    ( HashSet
+    )
 import qualified Data.HashSet as HashSet
-import Data.List (
-    sortOn,
- )
+import Data.List
+    ( sortOn
+    )
 import qualified Data.Map.Strict as Map
 import Debug
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
-import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
- )
-import Kore.Attribute.Synthetic (
-    synthesize,
- )
-import Kore.Internal.Condition (
-    Condition,
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.InternalList (
-    InternalList (..),
- )
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
+import Kore.Internal.InternalList
+    ( InternalList (..)
+    )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.NormalizedAc (
-    AcWrapper (..),
-    InternalAc (..),
-    NormalizedAc (..),
-    PairWiseElements (..),
-    emptyNormalizedAc,
-    generatePairWiseElements,
-    getConcreteKeysOfAc,
-    getConcreteValuesOfAc,
-    getSymbolicKeysOfAc,
-    getSymbolicValuesOfAc,
- )
-import Kore.Internal.Predicate (
-    Predicate,
-    makeFalsePredicate,
-    makeTruePredicate,
-    pattern PredicateEquals,
-    pattern PredicateExists,
-    pattern PredicateForall,
-    pattern PredicateNot,
- )
+import Kore.Internal.NormalizedAc
+    ( pattern AcPair
+    , AcWrapper (..)
+    , InternalAc (..)
+    , NormalizedAc (..)
+    , PairWiseElements (..)
+    , emptyNormalizedAc
+    , generatePairWiseElements
+    , getConcreteKeysOfAc
+    , getConcreteValuesOfAc
+    , getSymbolicKeysOfAc
+    , getSymbolicValuesOfAc
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    , pattern PredicateEquals
+    , pattern PredicateExists
+    , pattern PredicateForall
+    , pattern PredicateNot
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    isConstructor,
-    isFunction,
-    isFunctional,
- )
-import Kore.Internal.TermLike (
-    Key,
-    TermLike,
-    extractAttributes,
-    pattern App_,
-    pattern Equals_,
-    pattern Exists_,
-    pattern Forall_,
-    pattern Inj_,
-    pattern InternalBool_,
-    pattern InternalBytes_,
-    pattern InternalInt_,
-    pattern InternalList_,
-    pattern InternalMap_,
-    pattern InternalSet_,
-    pattern InternalString_,
-    pattern Mu_,
-    pattern Nu_,
- )
+import Kore.Internal.Symbol
+    ( isConstructor
+    , isFunction
+    , isFunctional
+    )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern Equals_
+    , pattern Exists_
+    , pattern Forall_
+    , pattern Inj_
+    , pattern InternalBool_
+    , pattern InternalBytes_
+    , pattern InternalInt_
+    , pattern InternalList_
+    , pattern InternalMap_
+    , pattern InternalSet_
+    , pattern InternalString_
+    , Key
+    , pattern Mu_
+    , pattern Nu_
+    , TermLike
+    , extractAttributes
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Internal.Variable (
-    InternalVariable,
- )
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
 import Kore.Syntax.Variable
-import Kore.Unparser (
-    Unparse (..),
- )
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import Pair
 import Prelude.Kore
-import Pretty (
-    Pretty (..),
- )
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -761,20 +762,21 @@ generateNormalizedAcs ::
     Ord (Element normalized (TermLike variable)) =>
     Ord (Value normalized (TermLike variable)) =>
     Ord (normalized Key (TermLike variable)) =>
+    Hashable (Element normalized (TermLike variable)) =>
+    Hashable (Value normalized (TermLike variable)) =>
     Hashable (normalized Key (TermLike variable)) =>
     AcWrapper normalized =>
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ symbolicToAc <$> symbolicPairs
-    , concreteToAc <$> concretePairs
-    , opaqueToAc <$> opaquePairs
-    , symbolicConcreteToAc <$> symbolicConcretePairs
-    , symbolicOpaqueToAc <$> symbolicOpaquePairs
-    , concreteOpaqueToAc <$> concreteOpaquePairs
+    [ HashSet.map symbolicToAc symbolicPairs
+    , HashSet.map concreteToAc concretePairs
+    , HashSet.map opaqueToAc opaquePairs
+    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
     ]
-        & concat
-        & HashSet.fromList
+        & fold
   where
     InternalAc
         { builtinAcChild
@@ -791,21 +793,21 @@ generateNormalizedAcs internalAc =
         , symbolicOpaquePairs
         , concreteOpaquePairs
         } = generatePairWiseElements builtinAcChild
-    symbolicToAc (symbolic1, symbolic2) =
+    symbolicToAc (AcPair symbolic1 symbolic2) =
         let symbolicAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic1, symbolic2]
                     }
                     & wrapAc
          in toInternalAc symbolicAc
-    concreteToAc (concrete1, concrete2) =
+    concreteToAc (AcPair concrete1 concrete2) =
         let concreteAc =
                 emptyNormalizedAc
                     { concreteElements = [concrete1, concrete2] & Map.fromList
                     }
                     & wrapAc
          in toInternalAc concreteAc
-    opaqueToAc (opaque1, opaque2) =
+    opaqueToAc (AcPair opaque1 opaque2) =
         let opaqueAc =
                 emptyNormalizedAc
                     { opaque = [opaque1, opaque2]
