@@ -77,6 +77,7 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
+<<<<<<< Updated upstream
 import Kore.Equation.Equation (
     Equation (..),
     isSimplificationRule,
@@ -85,6 +86,19 @@ import Kore.Equation.Sentence (
     MatchEquationError (..),
     fromSentenceAxiom,
  )
+=======
+import qualified Kore.Builtin.Map.Map as Map
+import qualified Kore.Builtin.Set.Set as Set
+import qualified Kore.Builtin.List.List as List
+import Kore.Equation.Equation
+    ( Equation (..)
+    , isSimplificationRule
+    )
+import Kore.Equation.Sentence
+    ( MatchEquationError (..)
+    , fromSentenceAxiom
+    )
+>>>>>>> Stashed changes
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
@@ -475,27 +489,34 @@ verifyAxiomSentence sentence =
 
         findBadArgSubterm term = case term of
             _
-                | TL.isConstructorLike term ->
-                    let _ :< termF = Recursive.project term
-                     in asum $ findBadArgSubterm <$> termF
-            TL.App_ sym children ->
-                let isGoodSymbol =
-                        Symbol.isConstructorLike sym
-                            || (Symbol.isAnywhere sym && Symbol.isInjective sym)
-                 in if isGoodSymbol
-                        then asum $ findBadArgSubterm <$> children
-                        else Just term
+              | TL.isConstructorLike term -> descend
+            TL.App_ sym _
+              | or
+                [ Symbol.isConstructorLike sym
+                , Symbol.isAnywhere sym && Symbol.isInjective sym
+                , Map.isSymbolConcat sym
+                , Map.isSymbolElement sym
+                , Map.isSymbolUnit sym
+                , Set.isSymbolConcat sym
+                , Set.isSymbolElement sym
+                , Set.isSymbolUnit sym
+                , List.isSymbolConcat sym
+                , List.isSymbolElement sym
+                , List.isSymbolUnit sym
+                ] -> descend
+              | otherwise -> Just term
             TL.InternalBytes_ _ _ -> Nothing
             TL.InternalBool_ _ -> Nothing
             TL.InternalInt_ _ -> Nothing
             TL.InternalString_ _ -> Nothing
             TL.DV_ _ (TL.StringLiteral_ _) -> Nothing
-            TL.And_ _ child1 child2 ->
-                findBadArgSubterm child1 <|> findBadArgSubterm child2
+            TL.And_ _ _ _ -> descend
             TL.Var_ _ -> Nothing
-            TL.Inj_ inj ->
-                asum $ findBadArgSubterm <$> inj
+            TL.Inj_ _ -> descend
             _ -> Just term
+          where
+            _ :< termF = Recursive.project term
+            descend = asum $ findBadArgSubterm <$> termF
 
     failOnJust _ _ Nothing = return ()
     failOnJust eq errorMessage (Just term) =
