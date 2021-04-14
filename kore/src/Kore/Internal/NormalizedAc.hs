@@ -34,35 +34,35 @@ module Kore.Internal.NormalizedAc (
 ) where
 
 import qualified Control.Lens as Lens
-import Control.Lens.Iso
-    ( Iso'
-    )
-import Data.HashSet
-    ( HashSet
-    )
+import Control.Lens.Iso (
+    Iso',
+ )
+import Data.HashSet (
+    HashSet,
+ )
 import qualified Data.HashSet as HashSet
-import Data.Kind
-    ( Type
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Kind (
+    Type,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
 import Kore.Debug
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+ )
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import Pretty
-    ( (<+>)
-    )
+import Pretty (
+    (<+>),
+ )
 import qualified Pretty
 
 {- | Establishes a bijection between value wrappers and entire-structure
@@ -530,9 +530,9 @@ pattern AcPair a1 a2 <- AcPair_ a1 a2
 
 mkAcPair :: Ord a => a -> a -> Maybe (AcPair a)
 mkAcPair a1 a2
-  | a1 < a2 = Just $ AcPair_ a1 a2
-  | a1 > a2 = Just $ AcPair_ a2 a1
-  | otherwise = Nothing
+    | a1 < a2 = Just $ AcPair_ a1 a2
+    | a1 > a2 = Just $ AcPair_ a2 a1
+    | otherwise = Nothing
 
 acPairToPair :: AcPair a -> (a, a)
 acPairToPair (AcPair a1 a2) = (a1, a2)
@@ -589,7 +589,7 @@ generatePairWiseElements (unwrapAc -> normalized) =
     pairWiseElemsOfSameType elems =
         [mkAcPair x y | x <- elems, y <- elems]
         & catMaybes
-        & HashSet.fromList
+            & HashSet.fromList
     pairWiseElemsOfDifferentTypes elems1 elems2 =
         (,) <$> elems1 <*> elems2
-        & HashSet.fromList
+            & HashSet.fromList
