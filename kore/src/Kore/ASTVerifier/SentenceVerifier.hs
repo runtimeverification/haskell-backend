@@ -77,9 +77,9 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
-import qualified Kore.Builtin.List.List as List
 import Kore.Equation.Equation (
     Equation (..),
     isSimplificationRule,
@@ -478,22 +478,23 @@ verifyAxiomSentence sentence =
 
         findBadArgSubterm term = case term of
             _
-              | TL.isConstructorLike term -> descend
+                | TL.isConstructorLike term -> descend
             TL.App_ sym _
-              | or
-                [ Symbol.isConstructorLike sym
-                , Symbol.isAnywhere sym && Symbol.isInjective sym
-                , Map.isSymbolConcat sym
-                , Map.isSymbolElement sym
-                , Map.isSymbolUnit sym
-                , Set.isSymbolConcat sym
-                , Set.isSymbolElement sym
-                , Set.isSymbolUnit sym
-                , List.isSymbolConcat sym
-                , List.isSymbolElement sym
-                , List.isSymbolUnit sym
-                ] -> descend
-              | otherwise -> Just term
+                | or
+                    [ Symbol.isConstructorLike sym
+                    , Symbol.isAnywhere sym && Symbol.isInjective sym
+                    , Map.isSymbolConcat sym
+                    , Map.isSymbolElement sym
+                    , Map.isSymbolUnit sym
+                    , Set.isSymbolConcat sym
+                    , Set.isSymbolElement sym
+                    , Set.isSymbolUnit sym
+                    , List.isSymbolConcat sym
+                    , List.isSymbolElement sym
+                    , List.isSymbolUnit sym
+                    ] ->
+                    descend
+                | otherwise -> Just term
             TL.InternalBytes_ _ _ -> Nothing
             TL.InternalBool_ _ -> Nothing
             TL.InternalInt_ _ -> Nothing
