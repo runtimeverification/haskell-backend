@@ -51,13 +51,33 @@ module LIST
             cons{S}(X:S,L:List{S}))))) []
 
   axiom{S,R}
-    \equals{List{S},R}(
-      append{S}(nil{S}(),L:List{S}),
-      L:List{S}) []
+    \implies{R}(
+      \and{R}(
+        \top{R}(),
+        \and{R}(
+          \in{List{S},R}(
+            n:List{S},
+            nil{S}()),
+          \top{R}())),
+      \and{R}(
+        \equals{List{S},R}(
+          append{S}(n:List{S},L:List{S}),
+          L:List{S}),
+        \top{R}())) []
 
   axiom{S,R}
-    \equals{List{S},R}(
-      append{S}(cons{S}(X:S,L0:List{S}),L:List{S}),
-      cons{S}(X:S,append{S}(L0:List{S},L:List{S}))) []
+    \implies{R}(
+      \and{R}(
+        \top{R}(),
+        \and{R}(
+          \in{List{S},R}(
+            XL0:List{S},
+            cons{S}(X:S,L0:List{S})),
+          \top{R}())),
+      \and{R}(
+        \equals{List{S},R}(
+          append{S}(XL0:List{S},L:List{S}),
+          cons{S}(X:S,append{S}(L0:List{S},L:List{S}))),
+        \top{R}())) []
 
 endmodule []

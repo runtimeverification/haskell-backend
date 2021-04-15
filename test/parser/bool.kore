@@ -61,33 +61,93 @@ module BOOL
         notBool{}(X:Bool{}))) []
 
   axiom{S}
-    \equals{Bool{},S}(
-      andBool{}(true{}(),X:Bool{}),
-      X:Bool{}) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Bool{},S}(
+            T:Bool{},
+            true{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Bool{},S}(
+          andBool{}(T:Bool{},X:Bool{}),
+          X:Bool{}),
+        \top{S}())) []
 
   axiom{S}
-    \equals{Bool{},S}(
-      andBool{}(false{}(),X:Bool{}),
-      false{}()) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Bool{},S}(
+            F:Bool{},
+            false{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Bool{},S}(
+          andBool{}(F:Bool{},X:Bool{}),
+          false{}()),
+        \top{S}())) []
 
   axiom{S}
-    \equals{Bool{},S}(
-      orBool{}(true{}(),X:Bool{}),
-      true{}()) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Bool{},S}(
+            T:Bool{},
+            true{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Bool{},S}(
+          orBool{}(T:Bool{},X:Bool{}),
+          true{}()),
+        \top{S}())) []
 
   axiom{S}
-    \equals{Bool{},S}(
-      orBool{}(false{}(),X:Bool{}),
-      X:Bool{}) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Bool{},S}(
+            F:Bool{},
+            false{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Bool{},S}(
+          orBool{}(F:Bool{},X:Bool{}),
+          X:Bool{}),
+        \top{S}())) []
 
   axiom{S}
-    \equals{Bool{},S}(
-      notBool{}(true{}()),
-      false{}()) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Bool{},S}(
+            T:Bool{},
+            true{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Bool{},S}(
+          notBool{}(T:Bool{}),
+          false{}()),
+        \top{S}())) []
 
   axiom{S}
-    \equals{Bool{},S}(
-      notBool{}(false{}()),
-      true{}()) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Bool{},S}(
+            F:Bool{},
+            false{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Bool{},S}(
+          notBool{}(F:Bool{}),
+          true{}()),
+        \top{S}())) []
 
 endmodule []

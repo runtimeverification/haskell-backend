@@ -47,13 +47,34 @@ module NAT
           succ{}(X:Nat{})))) []
 
   axiom{S}
-    \equals{Nat{},S}(
-      plus{}(X:Nat{},zero{}()),
-      X:Nat{}) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Nat{},S}(
+            z:Nat{},
+            zero{}()),
+          \top{S}())),
+      \and{S}(
+        \equals{Nat{},S}(
+          plus{}(X:Nat{},z:Nat{}),
+          X:Nat{}),
+        \top{S}())) []
+
 
   axiom{S}
-    \equals{Nat{},S}(
-      plus{}(X:Nat{},succ{}(Y:Nat{})),
-      succ{}(plus{}(X:Nat{},Y:Nat{}))) []
+    \implies{S}(
+      \and{S}(
+        \top{S}(),
+        \and{S}(
+          \in{Nat{},S}(
+            sY:Nat{},
+            succ{}(Y:Nat{})),
+          \top{S}())),
+      \and{S}(
+        \equals{Nat{},S}(
+          plus{}(X:Nat{},sY:Nat{}),
+          succ{}(plus{}(X:Nat{},Y:Nat{}))),
+        \top{S}())) []
 
 endmodule []
