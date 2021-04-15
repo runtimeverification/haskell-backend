@@ -152,14 +152,14 @@ attemptEquation ::
     Equation RewritingVariableName ->
     simplifier (AttemptEquationResult RewritingVariableName)
 attemptEquation sideCondition termLike equation =
-        whileDebugAttemptEquation' $
-            runExceptT $ do
-                let Equation{left, argument, antiLeft} = equationRenamed
-                (equation', predicate) <- matchAndApplyResults left argument antiLeft
-                let Equation{requires} = equation'
-                checkRequires sideCondition predicate requires & whileCheckRequires
-                let Equation{right, ensures} = equation'
-                return $ Pattern.withCondition right $ from @(Predicate _) ensures
+    whileDebugAttemptEquation' $
+        runExceptT $ do
+            let Equation{left, argument, antiLeft} = equationRenamed
+            (equation', predicate) <- matchAndApplyResults left argument antiLeft
+            let Equation{requires} = equation'
+            checkRequires sideCondition predicate requires & whileCheckRequires
+            let Equation{right, ensures} = equation'
+            return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
     equationRenamed = refreshVariables sideCondition termLike equation
     matchError =
