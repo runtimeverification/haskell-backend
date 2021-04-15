@@ -83,7 +83,7 @@ getPackageRoot = do
     let parents = getParents bot
     TH.runIO $ findPackageRoot bot parents
   where
-    isProjectRoot here = Directory.doesFileExist (here </> "package.yaml")
+    isProjectRoot here = Directory.doesFileExist (here </> "kore.cabal")
 
     getParents bottom =
         bottom
@@ -98,7 +98,7 @@ getPackageRoot = do
     -- Find the root directory of the current package. This module file can
     -- be moved safely because the package root is found at build time.
     findPackageRoot bot [] =
-        fail ("Could not find package.yaml above " ++ bot)
+        fail ("Could not find kore.cabal above " ++ bot)
     findPackageRoot bot (here : heres) = do
         foundRoot <- isProjectRoot here
         if foundRoot then Directory.makeAbsolute here else goUp
