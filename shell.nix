@@ -35,8 +35,6 @@ let
 
   fourmolu = import ./nix/fourmolu.nix { inherit default checkMaterialization; };
 
-  hpack = import ./nix/hpack.nix { inherit default checkMaterialization; };
-
 in
 
 shellFor {
@@ -44,7 +42,7 @@ shellFor {
     [
       gnumake fd z3
       hls-renamed
-      ghcid hlint hpack stylish-haskell fourmolu
+      ghcid hlint stylish-haskell fourmolu
       cabal-install stack
     ];
   passthru.rematerialize = pkgs.writeScript "rematerialize-shell.sh" ''
@@ -52,6 +50,5 @@ shellFor {
     ${hlint-project.plan-nix.passthru.updateMaterialized}
     ${stylish-haskell-project.plan-nix.passthru.updateMaterialized}
     ${fourmolu.passthru.updateMaterialized}
-    ${hpack.passthru.updateMaterialized}
   '';
 }
