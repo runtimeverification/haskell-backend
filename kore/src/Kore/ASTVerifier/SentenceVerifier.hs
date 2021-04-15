@@ -77,7 +77,9 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
-<<<<<<< Updated upstream
+import qualified Kore.Builtin.Map.Map as Map
+import qualified Kore.Builtin.Set.Set as Set
+import qualified Kore.Builtin.List.List as List
 import Kore.Equation.Equation (
     Equation (..),
     isSimplificationRule,
@@ -86,19 +88,6 @@ import Kore.Equation.Sentence (
     MatchEquationError (..),
     fromSentenceAxiom,
  )
-=======
-import qualified Kore.Builtin.Map.Map as Map
-import qualified Kore.Builtin.Set.Set as Set
-import qualified Kore.Builtin.List.List as List
-import Kore.Equation.Equation
-    ( Equation (..)
-    , isSimplificationRule
-    )
-import Kore.Equation.Sentence
-    ( MatchEquationError (..)
-    , fromSentenceAxiom
-    )
->>>>>>> Stashed changes
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
