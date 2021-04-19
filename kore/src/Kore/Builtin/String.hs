@@ -302,19 +302,16 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
     evalString2Base0 _ resultSort [_strTerm, _baseTerm] = do
         _str <- expectBuiltinString string2BaseKey _strTerm
         _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
-        let readN =
-                case _base of
-                    -- no builtin reader for number in octal notation
-                    8 -> \s ->
-                        case readOct $ Text.unpack s of
-                            [(result, "")] -> Right (result, "")
-                            _ -> Left ""
-                    10 -> Text.signed Text.decimal
-                    16 -> Text.signed Text.hexadecimal
-                    _ ->
-                        error
-                            ("String2Base applied to invalid base: " <> show _base)
-        case readN _str of
+        packedResult <-
+            case _base of
+                -- no builtin reader for number in octal notation
+                8 -> return $ case readOct $ Text.unpack _str of
+                        [(result, "")] -> Right (result, "")
+                        _ -> Left ""
+                10 -> return $ Text.signed Text.decimal _str
+                16 -> return $ Text.signed Text.hexadecimal _str
+                _ -> empty
+        case packedResult of
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)
             _ -> return (Pattern.bottomOf resultSort)
