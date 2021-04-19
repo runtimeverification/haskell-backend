@@ -48,35 +48,35 @@ module Test.Kore.Builtin.Map (
     asInternal,
 ) where
 
-import Control.Error
-    ( runMaybeT
-    )
-import Control.Monad
-    ( guard
-    )
+import Control.Error (
+    runMaybeT,
+ )
+import Control.Monad (
+    guard,
+ )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Data.Functor
-    ( (<&>)
-    )
-import Data.HashMap.Strict
-    ( HashMap
-    )
+import Data.Functor (
+    (<&>),
+ )
+import Data.HashMap.Strict (
+    HashMap,
+ )
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashSet as HashSet
 import qualified Data.List as List
-import qualified Data.Maybe as Maybe
-    ( fromJust
-    )
+import qualified Data.Maybe as Maybe (
+    fromJust,
+ )
 import qualified Data.Reflection as Reflection
-import Hedgehog
-    ( Gen
-    , Property
-    , PropertyT
-    , discard
-    , forAll
-    , (===)
-    )
+import Hedgehog (
+    Gen,
+    Property,
+    PropertyT,
+    discard,
+    forAll,
+    (===),
+ )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -87,52 +87,52 @@ import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    , makeMultipleAndPredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+    makeMultipleAndPredicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike hiding
-    ( asConcrete
-    )
+import Kore.Internal.TermLike hiding (
+    asConcrete,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    , mkConfigVariable
-    , ruleElementVariableFromId
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+    mkConfigVariable,
+    ruleElementVariableFromId,
+ )
 import Kore.Step.RulePattern
-import Prelude.Kore hiding
-    ( concatMap
-    )
-import SMT
-    ( NoSMT
-    )
+import Prelude.Kore hiding (
+    concatMap,
+ )
+import SMT (
+    NoSMT,
+ )
 import Test.Expect
-import Test.Kore
-    ( configElementVariableGen
-    , standaloneGen
-    , testId
-    )
+import Test.Kore (
+    configElementVariableGen,
+    standaloneGen,
+    testId,
+ )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Builtin.Int
-    ( genInteger
-    , genIntegerKey
-    , genIntegerPattern
-    )
+import Test.Kore.Builtin.Int (
+    genInteger,
+    genIntegerKey,
+    genIntegerPattern,
+ )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
-    ( runSimplifier
-    )
+import Test.Kore.Step.Simplification (
+    runSimplifier,
+ )
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -140,7 +140,7 @@ import Test.Tasty.HUnit.Ext
 genMapInteger :: Gen a -> Gen (HashMap Integer a)
 genMapInteger genElement =
     Gen.list (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
-    <&> HashMap.fromList
+        <&> HashMap.fromList
 
 genConcreteMap :: Gen a -> Gen (HashMap Key a)
 genConcreteMap genElement =
@@ -158,7 +158,7 @@ genMapSortedVariable sort genElement =
             <$> standaloneGen (configElementVariableGen sort)
             <*> genElement
         )
-    <&> HashMap.fromList
+        <&> HashMap.fromList
 
 test_lookupUnit :: [TestTree]
 test_lookupUnit =
@@ -1589,13 +1589,13 @@ distinctVariables variables =
     variableNames = map asVariableName variables
 
 -- | Utility function for mapping over the keys of a 'HashMap'.
-mapKeys
-    :: Hashable k2
-    => Eq k2
-    => (k1 -> k2)
-    -> HashMap k1 v
-    -> HashMap k2 v
+mapKeys ::
+    Hashable k2 =>
+    Eq k2 =>
+    (k1 -> k2) ->
+    HashMap k1 v ->
+    HashMap k2 v
 mapKeys f =
     HashMap.fromList
-    . (fmap . Bifunctor.first) f
-    . HashMap.toList
+        . (fmap . Bifunctor.first) f
+        . HashMap.toList

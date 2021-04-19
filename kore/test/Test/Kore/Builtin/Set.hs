@@ -61,29 +61,29 @@ module Test.Kore.Builtin.Set (
     asInternal,
 ) where
 
-import Control.Error
-    ( runMaybeT
-    )
+import Control.Error (
+    runMaybeT,
+ )
 import qualified Data.Default as Default
-import Data.Functor
-    ( (<&>)
-    )
+import Data.Functor (
+    (<&>),
+ )
 import qualified Data.HashMap.Strict as HashMap
-import Data.HashSet
-    ( HashSet
-    )
+import Data.HashSet (
+    HashSet,
+ )
 import qualified Data.HashSet as HashSet
 import qualified Data.List as List
-import qualified Data.Maybe as Maybe
-    ( fromJust
-    )
+import qualified Data.Maybe as Maybe (
+    fromJust,
+ )
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
-import Hedgehog hiding
-    ( Concrete
-    , opaque
-    , property
-    )
+import Hedgehog hiding (
+    Concrete,
+    opaque,
+    property,
+ )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -99,43 +99,43 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    , mkConfigVariable
-    , mkRewritingTerm
-    , mkRuleVariable
-    )
-import Kore.Step.RulePattern
-    ( RewriteRule (RewriteRule)
-    , injectTermIntoRHS
-    )
-import Kore.Step.RulePattern as RulePattern
-    ( RulePattern (..)
-    )
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+    mkConfigVariable,
+    mkRewritingTerm,
+    mkRuleVariable,
+ )
+import Kore.Step.RulePattern (
+    RewriteRule (RewriteRule),
+    injectTermIntoRHS,
+ )
+import Kore.Step.RulePattern as RulePattern (
+    RulePattern (..),
+ )
+import Kore.Step.Simplification.AndTerms (
+    termUnification,
+ )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( runUnifierT
-    )
+import Kore.Unification.UnifierT (
+    runUnifierT,
+ )
 import Prelude.Kore
 import Test.Expect
-import Test.Kore
-    ( configElementVariableGen
-    , standaloneGen
-    , testId
-    )
+import Test.Kore (
+    configElementVariableGen,
+    standaloneGen,
+    testId,
+ )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Builtin.Int
-    ( genConcreteIntegerPattern
-    , genInteger
-    , genIntegerKey
-    , genIntegerPattern
-    )
+import Test.Kore.Builtin.Int (
+    genConcreteIntegerPattern,
+    genInteger,
+    genIntegerKey,
+    genIntegerPattern,
+ )
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
@@ -143,9 +143,9 @@ import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Kore.With
-import Test.SMT hiding
-    ( runSMT
-    )
+import Test.SMT hiding (
+    runSMT,
+ )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -173,7 +173,7 @@ elemVars' = [Mock.xConfig, Mock.yConfig, Mock.zConfig]
 genSetInteger :: Gen (HashSet Integer)
 genSetInteger =
     Gen.list (Range.linear 0 32) genInteger
-    <&> HashSet.fromList
+        <&> HashSet.fromList
 
 genSetConcreteIntegerPattern :: Gen (HashSet (TermLike Concrete))
 genSetConcreteIntegerPattern =
@@ -287,8 +287,8 @@ test_inConcatSymbolic =
             keys <- forAll genKeys
             patKey <- forAll genKey
             let patSet =
-                    mkSet_
-                    $ HashSet.insert patKey (HashSet.fromList keys)
+                    mkSet_ $
+                        HashSet.insert patKey (HashSet.fromList keys)
                 patIn = mkApplySymbol inSetSymbolTestSort [patKey, patSet]
                 patTrue = Test.Bool.asPattern True
                 conditionTerm = mkCeil boolSort patSet
@@ -524,9 +524,9 @@ test_toList =
             set1 <- forAll genSetConcreteIntegerPattern
             let set2 =
                     fmap fromConcrete
-                    . Seq.fromList
-                    . HashSet.toList
-                    $ set1
+                        . Seq.fromList
+                        . HashSet.toList
+                        $ set1
                 patSet2 = Test.List.asTermLike set2
                 patToList =
                     mkApplySymbol toListSetSymbol [mkSet_ set1]
@@ -643,12 +643,12 @@ test_inclusion =
         )
     ]
 
-setVariableGen
-    :: Sort
-    -> Gen (HashSet (ElementVariable RewritingVariableName))
+setVariableGen ::
+    Sort ->
+    Gen (HashSet (ElementVariable RewritingVariableName))
 setVariableGen sort =
     Gen.list (Range.linear 0 32) (standaloneGen $ configElementVariableGen sort)
-    <&> HashSet.fromList
+        <&> HashSet.fromList
 
 -- | Sets with symbolic keys are not simplified.
 test_symbolic :: TestTree
