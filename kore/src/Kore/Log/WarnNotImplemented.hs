@@ -16,8 +16,7 @@ import Pretty (
  )
 import qualified Pretty
 
-newtype WarnNotImplemented variable =
-    WarnNotImplemented {notImplementedTerm :: TermLike variable}
+newtype WarnNotImplemented variable = WarnNotImplemented {notImplementedTerm :: TermLike variable}
     deriving stock (Show)
 
 instance InternalVariable variable => Pretty (WarnNotImplemented variable) where
@@ -31,9 +30,9 @@ instance InternalVariable variable => Entry (WarnNotImplemented variable) where
     entrySeverity _ = Warning
     helpDoc _ = "warn when we try to evaluate a partial builtin function on unimplemented cases"
 
-warnNotImplemented
-    :: MonadLog log
-    => InternalVariable variable
-    => TermLike variable
-    -> log ()
+warnNotImplemented ::
+    MonadLog log =>
+    InternalVariable variable =>
+    TermLike variable ->
+    log ()
 warnNotImplemented = logEntry . WarnNotImplemented
