@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Simplification.Iff
 Description : Tools for Iff pattern simplification.

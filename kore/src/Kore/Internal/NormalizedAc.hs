@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -28,6 +26,9 @@ module Kore.Internal.NormalizedAc (
     normalizedAcConstructorLike,
     normalizedAcFunctional,
     unparseInternalAc,
+    AcPair,
+    pattern AcPair,
+    acPairToPair,
     PairWiseElements (..),
     generatePairWiseElements,
 ) where
@@ -36,11 +37,12 @@ import qualified Control.Lens as Lens
 import Control.Lens.Iso (
     Iso',
  )
+import Data.HashSet (
+    HashSet,
+ )
+import qualified Data.HashSet as HashSet
 import Data.Kind (
     Type,
- )
-import Data.List.Extra (
-    nubOrdBy,
  )
 import Data.Map.Strict (
     Map,
@@ -511,22 +513,48 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
                     assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
 
+{- | A representation for associative-commutative collections
+with just two elements of the same type.
+
+The smart constructor 'mkAcPair' ensures the properties of
+the collection are satisfied.
+-}
+data AcPair a = AcPair_ a a
+    deriving stock (Eq)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Hashable)
+
+pattern AcPair :: a -> a -> AcPair a
+pattern AcPair a1 a2 <- AcPair_ a1 a2
+{-# COMPLETE AcPair #-}
+
+mkAcPair :: Ord a => a -> a -> Maybe (AcPair a)
+mkAcPair a1 a2
+    | a1 < a2 = Just $ AcPair_ a1 a2
+    | a1 > a2 = Just $ AcPair_ a2 a1
+    | otherwise = Nothing
+
+acPairToPair :: AcPair a -> (a, a)
+acPairToPair (AcPair a1 a2) = (a1, a2)
+
+type ConcreteElement key normalized child = (key, Value normalized child)
+
 {- | 'PairWiseElements' is a representation of the elements of all subcollections
  necessary for proving the definedness of a collection.
 -}
 data PairWiseElements normalized key child = PairWiseElements
     { symbolicPairs ::
-        [(Element normalized child, Element normalized child)]
+        !(HashSet (AcPair (Element normalized child)))
     , concretePairs ::
-        [((key, Value normalized child), (key, Value normalized child))]
+        !(HashSet (AcPair (ConcreteElement key normalized child)))
     , opaquePairs ::
-        [(child, child)]
+        !((HashSet (AcPair child)))
     , symbolicConcretePairs ::
-        [(Element normalized child, (key, Value normalized child))]
+        !(HashSet (Element normalized child, ConcreteElement key normalized child))
     , symbolicOpaquePairs ::
-        [(Element normalized child, child)]
+        !(HashSet (Element normalized child, child))
     , concreteOpaquePairs ::
-        [((key, Value normalized child), child)]
+        !(HashSet (ConcreteElement key normalized child, child))
     }
 
 -- | Generates the 'PairWiseElements' for a 'AcWrapper' collection.
@@ -536,6 +564,10 @@ generatePairWiseElements ::
     Ord child =>
     Ord (Element normalized child) =>
     Ord (Value normalized child) =>
+    Hashable key =>
+    Hashable child =>
+    Hashable (Element normalized child) =>
+    Hashable (Value normalized child) =>
     normalized key child ->
     PairWiseElements normalized key child
 generatePairWiseElements (unwrapAc -> normalized) =
@@ -544,20 +576,20 @@ generatePairWiseElements (unwrapAc -> normalized) =
         , concretePairs = pairWiseElemsOfSameType concreteElems
         , opaquePairs = pairWiseElemsOfSameType opaqueElems
         , symbolicConcretePairs =
-            (,) <$> symbolicElems <*> concreteElems
+            pairWiseElemsOfDifferentTypes symbolicElems concreteElems
         , symbolicOpaquePairs =
-            (,) <$> symbolicElems <*> opaqueElems
+            pairWiseElemsOfDifferentTypes symbolicElems opaqueElems
         , concreteOpaquePairs =
-            (,) <$> concreteElems <*> opaqueElems
+            pairWiseElemsOfDifferentTypes concreteElems opaqueElems
         }
   where
     symbolicElems = elementsWithVariables normalized
     concreteElems = Map.toList . concreteElements $ normalized
     opaqueElems = opaque normalized
     pairWiseElemsOfSameType elems =
-        [(x, y) | x <- elems, y <- elems, x /= y]
-        & nubOrdBy applyComm
-    applyComm p1 p2
-        | p1 == p2 = EQ
-        | swap p1 == p2 = EQ
-        | otherwise = compare p1 p2
+        [mkAcPair x y | x <- elems, y <- elems]
+        & catMaybes
+            & HashSet.fromList
+    pairWiseElemsOfDifferentTypes elems1 elems2 =
+        (,) <$> elems1 <*> elems2
+            & HashSet.fromList

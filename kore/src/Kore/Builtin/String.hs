@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Builtin.String
 Description : Built-in string sort

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.RewriteStep (
     test_applyInitialConditions,
     test_renameRuleVariables,

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Unification.Procedure
 Description : Unification procedure.

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Rule.Simplify (
     test_simplifyRule_RewriteRule,
     test_simplifyRule_OnePathClaim,
