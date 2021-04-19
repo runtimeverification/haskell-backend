@@ -32,7 +32,6 @@ import Control.Monad.State.Strict (
     runStateT,
  )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Set (
@@ -41,7 +40,6 @@ import Data.Set (
 import qualified Data.Set as Set
 import Data.Text (
     Text,
-    pack,
  )
 import Kore.AST.Error
 import Kore.ASTVerifier.AttributesVerifier
@@ -49,13 +47,6 @@ import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.ASTVerifier.SortVerifier
 import Kore.ASTVerifier.Verifier
-import Kore.Attribute.Axiom (
-    Assoc (..),
-    Comm (..),
-    Idem (..),
-    Overload (..),
-    Unit (..),
- )
 import qualified Kore.Attribute.Axiom as Attribute (
     Axiom (..),
     parseAxiomAttributes,
@@ -77,27 +68,11 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.List.List as List
-import qualified Kore.Builtin.Map.Map as Map
-import qualified Kore.Builtin.Set.Set as Set
-import Kore.Equation.Equation (
-    Equation (..),
-    isSimplificationRule,
- )
-import Kore.Equation.Sentence (
-    MatchEquationError (..),
-    fromSentenceAxiom,
- )
+import Kore.Equation.Validate
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
-import Kore.Internal.Predicate (
-    pattern PredicateCeil,
-    pattern PredicateIn,
- )
-import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike.TermLike (
     freeVariables,
  )
@@ -114,12 +89,8 @@ import Kore.Step.ClaimPattern (
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
-import Kore.Unparser (
-    unparse,
- )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
-import qualified Pretty
 
 {- |'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
@@ -386,139 +357,13 @@ verifyAxiomSentence sentence =
                 verifiedModule'
                 (freeVariables sentence)
                 (sentenceAxiomAttributes sentence)
+        validateAxiom attrs verified
         State.modify $ addAxiom verified attrs
-        case fromSentenceAxiom (attrs, verified) of
-            Right eq@Equation{left, argument} ->
-                when (needsVerification eq) $
-                    checkLHS eq left >> checkArg eq argument
-            Left err@(RequiresError _) -> failWithBadEquation verified err
-            Left err@(ArgumentError _) -> failWithBadEquation verified err
-            Left err@(AntiLeftError _) -> failWithBadEquation verified err
-            Left err@(EnsuresError _) -> failWithBadEquation verified err
-            Left (NotEquation _) -> return ()
-            Left FunctionalAxiom -> return ()
-            Left ConstructorAxiom -> return ()
-            Left SubsortAxiom -> return ()
   where
-    failWithBadEquation verified =
-        koreFailWithLocations [sentenceAxiomPattern verified]
-            . pack
-            . show
-            . Pretty.pretty
     addAxiom verified attrs =
         Lens.over
             (field @"indexedModuleAxioms")
             ((attrs, verified) :)
-
-    needsVerification eq@Equation{attributes} =
-        not
-            ( isSimplificationRule eq
-                || isAssoc
-                || isComm
-                || isUnit
-                || isIdem
-                || isJust getOverload
-            )
-      where
-        Assoc{isAssoc} = Attribute.assoc attributes
-        Comm{isComm} = Attribute.comm attributes
-        Unit{isUnit} = Attribute.unit attributes
-        Idem{isIdem} = Attribute.idem attributes
-        Overload{getOverload} = Attribute.overload attributes
-
-    checkLHS eq termLike = do
-        checkAllowedFunctionSymbol
-        checkVarFunctionArguments
-      where
-        _ :< termLikeF = Recursive.project termLike
-
-        checkAllowedFunctionSymbol
-            | TermLike.App_ sym _ <- termLike =
-                unless
-                    (isAllowedFunctionSymbol sym)
-                    (throwIllegalFunctionSymbol sym)
-            | otherwise = return ()
-          where
-            isAllowedFunctionSymbol sym =
-                Symbol.isFunction sym && not (Symbol.isConstructorLike sym)
-
-        throwIllegalFunctionSymbol sym =
-            koreFailWithLocations [eq] $
-                pack $
-                    show $
-                        Pretty.vsep
-                            [ "Head of LHS of Not Simplification axiom is not a non-constructor function symbol. This is the LHS symbol:"
-                            , unparse sym
-                            ]
-
-        checkVarFunctionArguments =
-            failOnJust
-                eq
-                "LHS of NotSimplification axiom contains non-variable:"
-                $ asum $ getNotVar <$> termLikeF
-
-        getNotVar (TermLike.Var_ _) = Nothing
-        getNotVar term = Just term
-
-    checkArg _ Nothing = return ()
-    checkArg eq (Just arg) =
-        traverse_
-            ( failOnJust eq "Found invalid subterm of Axiom equation argument:"
-                . checkArgIn
-            )
-            $ Predicate.getMultiAndPredicate arg
-      where
-        checkArgIn (PredicateIn (TermLike.Var_ _) term) =
-            findBadArgSubterm term
-        checkArgIn (PredicateCeil (TermLike.And_ _ (TermLike.Var_ _) term)) =
-            findBadArgSubterm term
-        checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
-
-        findBadArgSubterm term = case term of
-            _
-                | TermLike.isConstructorLike term -> descend
-            TermLike.App_ sym _
-                | or
-                    [ Symbol.isConstructorLike sym
-                    , Symbol.isAnywhere sym && Symbol.isInjective sym
-                    , Map.isSymbolConcat sym
-                    , Map.isSymbolElement sym
-                    , Map.isSymbolUnit sym
-                    , Set.isSymbolConcat sym
-                    , Set.isSymbolElement sym
-                    , Set.isSymbolUnit sym
-                    , List.isSymbolConcat sym
-                    , List.isSymbolElement sym
-                    , List.isSymbolUnit sym
-                    ] ->
-                    descend
-                | otherwise -> Just term
-            TermLike.InternalBytes_ _ _ -> Nothing
-            TermLike.InternalBool_ _ -> Nothing
-            TermLike.InternalInt_ _ -> Nothing
-            TermLike.InternalString_ _ -> Nothing
-            TermLike.DV_ _ (TermLike.StringLiteral_ _) -> Nothing
-            TermLike.And_ _ _ _ -> descend
-            TermLike.Var_ _ -> Nothing
-            TermLike.Inj_ _ -> descend
-            _ -> Just term
-          where
-            _ :< termF = Recursive.project term
-            descend = asum $ findBadArgSubterm <$> termF
-
-    failOnJust _ _ Nothing = return ()
-    failOnJust eq errorMessage (Just term) =
-        koreFailWithLocations
-            [term]
-            ( pack $
-                show $
-                    Pretty.vsep
-                        [ errorMessage
-                        , Pretty.indent 4 $ unparse term
-                        , "The equation that the above occurs in is:"
-                        , Pretty.indent 4 $ Pretty.pretty eq
-                        ]
-            )
 
 verifyAxiomSentenceWorker ::
     ParsedSentenceAxiom ->
