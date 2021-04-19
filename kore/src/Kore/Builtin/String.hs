@@ -83,6 +83,7 @@ import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.WarnNotImplemented
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -310,7 +311,7 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                     _ -> Left ""
                 10 -> return $ Text.signed Text.decimal _str
                 16 -> return $ Text.signed Text.hexadecimal _str
-                _ -> empty
+                _ -> warnNotImplemented _baseTerm >> empty
         case packedResult of
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)

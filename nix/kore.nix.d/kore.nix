@@ -275,6 +275,7 @@
           "Kore/Log/WarnDepthLimitExceeded"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
+          "Kore/Log/WarnNotImplemented"
           "Kore/Log/WarnRetrySolverQuery"
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
