@@ -306,8 +306,8 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
             case _base of
                 -- no builtin reader for number in octal notation
                 8 -> return $ case readOct $ Text.unpack _str of
-                        [(result, "")] -> Right (result, "")
-                        _ -> Left ""
+                    [(result, "")] -> Right (result, "")
+                    _ -> Left ""
                 10 -> return $ Text.signed Text.decimal _str
                 16 -> return $ Text.signed Text.hexadecimal _str
                 _ -> empty

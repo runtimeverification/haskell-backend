@@ -324,7 +324,7 @@ test_string2Base =
         "string2Base bad base"
         string2BaseStringSymbol
         [asInternal "1", Test.Int.asInternal 17]
-        (Pattern.fromTermLike $
+        ( Pattern.fromTermLike $
             mkApplySymbol
                 string2BaseStringSymbol
                 [asInternal "1", Test.Int.asInternal 17]
