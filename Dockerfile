@@ -12,6 +12,7 @@ RUN    apt update                                                               
            curl git make unzip
 
 ENV LC_ALL=C.UTF-8
+ADD ./src/main/kore/prelude.kore /usr/include/kframework/kore/prelude.kore
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
@@ -27,5 +28,3 @@ WORKDIR /home/user
 ADD --chown=user:user stack.yaml .tmp-haskell/
 ADD --chown=user:user kore/kore.cabal .tmp-haskell/kore/
 RUN cd .tmp-haskell && stack build --only-snapshot --test --bench --haddock
-
-ADD ./src/main/kore/prelude.kore /usr/include/kframework/kore/prelude.kore

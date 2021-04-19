@@ -97,7 +97,7 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
-import qualified Kore.Internal.TermLike as TL
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike.TermLike (
     freeVariables,
  )
@@ -391,27 +391,20 @@ verifyAxiomSentence sentence =
             Right eq@Equation{left, argument} ->
                 when (needsVerification eq) $
                     checkLHS eq left >> checkArg eq argument
-            Left (RequiresError _) ->
-                koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                    "RequiresError thrown during equation check"
-            Left (ArgumentError _) ->
-                koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                    "ArgumentError thrown during equation check"
-            Left (AntiLeftError _) ->
-                koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                    "AntiLeftError thrown during equation check"
-            Left (EnsuresError _) ->
-                koreFailWithLocations
-                    [sentenceAxiomPattern verified]
-                    "EnsuresError thrown during equation check"
+            Left err@(RequiresError _) -> failWithBadEquation verified err
+            Left err@(ArgumentError _) -> failWithBadEquation verified err
+            Left err@(AntiLeftError _) -> failWithBadEquation verified err
+            Left err@(EnsuresError _) -> failWithBadEquation verified err
             Left (NotEquation _) -> return ()
             Left FunctionalAxiom -> return ()
             Left ConstructorAxiom -> return ()
             Left SubsortAxiom -> return ()
   where
+    failWithBadEquation verified =
+        koreFailWithLocations [sentenceAxiomPattern verified]
+        . pack
+        . show
+        . Pretty.pretty
     addAxiom verified attrs =
         Lens.over
             (field @"indexedModuleAxioms")
@@ -433,33 +426,38 @@ verifyAxiomSentence sentence =
         Idem{isIdem} = Attribute.idem attributes
         Overload{getOverload} = Attribute.overload attributes
 
-    checkLHS eq termLike =
-        if isNonconstructorFunctionSymbol termLike
-            then
-                failOnJust
-                    eq
-                    "LHS of NotSimplification axiom contains non-variable:"
-                    $ asum $ getNotVar <$> termLikeF
-            else
-                koreFailWithLocations [eq] $
-                    pack $
-                        show $
-                            Pretty.vsep
-                                [ "Head of LHS of Not Simplification axiom is not a non-constructor function symbol. This is the LHS:"
-                                , unparse termLike
-                                , "This is the full equation:"
-                                , Pretty.pretty eq
-                                ]
+    checkLHS eq termLike = do
+        checkAllowedFunctionSymbol
+        checkVarFunctionArguments
       where
         _ :< termLikeF = Recursive.project termLike
 
-        isNonconstructorFunctionSymbol term
-            | TL.App_ sym _ <- term =
-                Symbol.isFunction sym
-                    && not (Symbol.isConstructorLike sym)
-            | otherwise = False
+        checkAllowedFunctionSymbol
+            | TermLike.App_ sym _ <- termLike =
+                unless
+                    (isAllowedFunctionSymbol sym)
+                    (throwIllegalFunctionSymbol sym)
+            | otherwise = return ()
+          where
+            isAllowedFunctionSymbol sym =
+                Symbol.isFunction sym && not (Symbol.isConstructorLike sym)
 
-        getNotVar (TL.Var_ _) = Nothing
+        throwIllegalFunctionSymbol sym =
+            koreFailWithLocations [eq] $
+                pack $
+                    show $
+                        Pretty.vsep
+                            [ "Head of LHS of Not Simplification axiom is not a non-constructor function symbol. This is the LHS symbol:"
+                            , unparse sym
+                            ]
+
+        checkVarFunctionArguments =
+            failOnJust
+                eq
+                "LHS of NotSimplification axiom contains non-variable:"
+                $ asum $ getNotVar <$> termLikeF
+
+        getNotVar (TermLike.Var_ _) = Nothing
         getNotVar term = Just term
 
     checkArg _ Nothing = return ()
@@ -470,16 +468,16 @@ verifyAxiomSentence sentence =
             )
             $ Predicate.getMultiAndPredicate arg
       where
-        checkArgIn (PredicateIn (TL.Var_ _) term) =
+        checkArgIn (PredicateIn (TermLike.Var_ _) term) =
             findBadArgSubterm term
-        checkArgIn (PredicateCeil (TL.And_ _ (TL.Var_ _) term)) =
+        checkArgIn (PredicateCeil (TermLike.And_ _ (TermLike.Var_ _) term)) =
             findBadArgSubterm term
         checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
 
         findBadArgSubterm term = case term of
             _
-                | TL.isConstructorLike term -> descend
-            TL.App_ sym _
+                | TermLike.isConstructorLike term -> descend
+            TermLike.App_ sym _
                 | or
                     [ Symbol.isConstructorLike sym
                     , Symbol.isAnywhere sym && Symbol.isInjective sym
@@ -495,14 +493,14 @@ verifyAxiomSentence sentence =
                     ] ->
                     descend
                 | otherwise -> Just term
-            TL.InternalBytes_ _ _ -> Nothing
-            TL.InternalBool_ _ -> Nothing
-            TL.InternalInt_ _ -> Nothing
-            TL.InternalString_ _ -> Nothing
-            TL.DV_ _ (TL.StringLiteral_ _) -> Nothing
-            TL.And_ _ _ _ -> descend
-            TL.Var_ _ -> Nothing
-            TL.Inj_ _ -> descend
+            TermLike.InternalBytes_ _ _ -> Nothing
+            TermLike.InternalBool_ _ -> Nothing
+            TermLike.InternalInt_ _ -> Nothing
+            TermLike.InternalString_ _ -> Nothing
+            TermLike.DV_ _ (TermLike.StringLiteral_ _) -> Nothing
+            TermLike.And_ _ _ _ -> descend
+            TermLike.Var_ _ -> Nothing
+            TermLike.Inj_ _ -> descend
             _ -> Just term
           where
             _ :< termF = Recursive.project term
