@@ -34,86 +34,86 @@ module Kore.Builtin.Set (
     unifyEquals,
 ) where
 
-import Control.Error (
-    MaybeT (MaybeT),
-    hoistMaybe,
-    runMaybeT,
- )
+import Control.Error
+    ( MaybeT (MaybeT)
+    , hoistMaybe
+    , runMaybeT
+    )
 import qualified Control.Monad as Monad
-import Data.HashMap.Strict (
-    HashMap,
- )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict (
-    Map,
- )
+import qualified Data.HashSet as HashSet
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
-import Data.Text (
-    Text,
- )
-import qualified Kore.Attribute.Symbol as Attribute (
-    Symbol,
- )
+import Data.Text
+    ( Text
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import Kore.Builtin.Attributes (
-    isConstructorModulo_,
- )
+import Kore.Builtin.Attributes
+    ( isConstructorModulo_
+    )
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin (
-    acceptAnySort,
- )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Set.Set as Set
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
-import Kore.Internal.ApplicationSorts (
-    ApplicationSorts (..),
- )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalSet
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
-    makeMultipleAndPredicate,
- )
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    , makeMultipleAndPredicate
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.TermLike (
-    Key,
-    TermLike,
-    mkSort,
-    retractKey,
-    termLikeSort,
-    pattern App_,
-    pattern InternalSet_,
- )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern InternalSet_
+    , Key
+    , TermLike
+    , mkSort
+    , retractKey
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    Sort,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Sort
+    ( Sort
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.Sentence (
-    SentenceSort (SentenceSort),
- )
-import qualified Kore.Syntax.Sentence as Sentence.DoNotUse (
-    SentenceSort (..),
- )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+import Kore.Syntax.Sentence
+    ( SentenceSort (SentenceSort)
+    )
+import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
+    ( SentenceSort (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
@@ -382,8 +382,8 @@ evalDifference
                                 unwrapAc _set1
                         symbolic1 =
                             unwrapElement <$> symbolic1'
-                                & Map.fromList
-                        opaque1 = Set.fromList opaque1'
+                                & HashMap.fromList
+                        opaque1 = HashSet.fromList opaque1'
                     let NormalizedAc
                             { concreteElements = concrete2
                             , elementsWithVariables = symbolic2'
@@ -392,29 +392,29 @@ evalDifference
                                 unwrapAc _set2
                         symbolic2 =
                             unwrapElement <$> symbolic2'
-                                & Map.fromList
-                        opaque2 = Set.fromList opaque2'
+                                & HashMap.fromList
+                        opaque2 = HashSet.fromList opaque2'
                     let set1' =
                             NormalizedAc
                                 { concreteElements =
                                     HashMap.difference concrete1 concrete2
                                 , elementsWithVariables =
-                                    Map.difference symbolic1 symbolic2
-                                        & Map.toList
+                                    HashMap.difference symbolic1 symbolic2
+                                        & HashMap.toList
                                         & map wrapElement
                                 , opaque =
-                                    Set.difference opaque1 opaque2 & Set.toList
+                                    HashSet.difference opaque1 opaque2 & HashSet.toList
                                 }
                         set2' =
                             NormalizedAc
                                 { concreteElements =
                                     HashMap.difference concrete2 concrete1
                                 , elementsWithVariables =
-                                    Map.difference symbolic2 symbolic1
-                                        & Map.toList
+                                    HashMap.difference symbolic2 symbolic1
+                                        & HashMap.toList
                                         & map wrapElement
                                 , opaque =
-                                    Set.difference opaque1 opaque1 & Set.toList
+                                    HashSet.difference opaque1 opaque1 & HashSet.toList
                                 }
                     pat1 <- Ac.returnAc resultSort (NormalizedSet set1')
                     pat2 <- Ac.returnAc resultSort (NormalizedSet set2')

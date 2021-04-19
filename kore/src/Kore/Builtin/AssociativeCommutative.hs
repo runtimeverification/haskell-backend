@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -36,99 +36,98 @@ module Kore.Builtin.AssociativeCommutative (
     VariableElements (..),
 ) where
 
-import Control.Error (
-    MaybeT,
- )
+import Control.Error
+    ( MaybeT
+    )
 import qualified Control.Monad as Monad
-import Data.HashMap.Strict (
-    HashMap,
- )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Kind (
-    Type,
- )
+import Data.HashSet
+    ( HashSet
+    )
+import Data.Kind
+    ( Type
+    )
 import qualified Data.List
 import qualified Data.List as List
-import Data.Map.Strict (
-    Map,
- )
-import qualified Data.Map.Strict as Map
-import Data.Reflection (
-    Given,
- )
+import Data.Reflection
+    ( Given
+    )
 import qualified Data.Reflection as Reflection
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
-    Simplified,
- )
-import qualified Kore.Attribute.Symbol as Attribute (
-    Symbol,
- )
+import qualified GHC.Generics as GHC
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
 import Kore.Debug
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
-import Kore.Internal.Condition (
-    Condition,
- )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    Conditional,
-    andCondition,
-    withCondition,
- )
+import Kore.Internal.Conditional
+    ( Conditional
+    , andCondition
+    , withCondition
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import qualified Kore.Internal.Key as Key
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition (
-    topTODO,
- )
-import Kore.Internal.Symbol (
-    Symbol,
- )
-import Kore.Internal.TermLike (
-    Key,
-    TermLike,
-    mkApplySymbol,
-    mkElemVar,
-    termLikeSort,
-    pattern App_,
-    pattern ElemVar_,
-    pattern InternalMap_,
-    pattern InternalSet_,
- )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern ElemVar_
+    , pattern InternalMap_
+    , pattern InternalSet_
+    , Key
+    , TermLike
+    , mkApplySymbol
+    , mkElemVar
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    Sort,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Sort
+    ( Sort
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Variable
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Unparser (
-    unparse,
-    unparseToString,
- )
+import Kore.Unparser
+    ( unparse
+    , unparseToString
+    )
 import qualified Kore.Unparser as Unparser
 import Logic
 import Prelude.Kore
-import Pretty (
-    Doc,
- )
+import Pretty
+    ( Doc
+    )
 import qualified Pretty
 
 -- | Any @TermWrapper@ may be inside of an 'InternalAc'.
@@ -860,11 +859,11 @@ unifyEqualsNormalizedAc
                     , commonVariablesCondition
                     ]
       where
-        listToMap :: Ord a => [a] -> Map a Int
-        listToMap = List.foldl' (\m k -> Map.insertWith (+) k 1 m) Map.empty
-        mapToList :: Map a Int -> [a]
+        listToMap :: Hashable a => Ord a => [a] -> HashMap a Int
+        listToMap = List.foldl' (\m k -> HashMap.insertWith (+) k 1 m) HashMap.empty
+        mapToList :: HashMap a Int -> [a]
         mapToList =
-            Map.foldrWithKey
+            HashMap.foldrWithKey
                 (\key count result -> replicate count key ++ result)
                 []
 
@@ -917,10 +916,10 @@ unifyEqualsNormalizedAc
         -- Duplicates must be kept in case any of the opaque terms turns out to be
         -- non-empty, in which case one of the terms is bottom, which
         -- means that the unification result is bottom.
-        commonOpaqueMap = Map.intersectionWith max opaque1Map opaque2Map
+        commonOpaqueMap = HashMap.intersectionWith max opaque1Map opaque2Map
 
         commonOpaque = mapToList commonOpaqueMap
-        commonOpaqueKeys = Map.keysSet commonOpaqueMap
+        commonOpaqueKeys = HashMap.keysSet commonOpaqueMap
 
         elementDifference1 =
             HashMap.toList (HashMap.difference concreteElements1 commonElements)
@@ -931,9 +930,16 @@ unifyEqualsNormalizedAc
         elementVariableDifference2 =
             HashMap.toList (HashMap.difference elementsWithVariables2Map commonVariables)
         opaqueDifference1 =
-            mapToList (Map.withoutKeys opaque1Map commonOpaqueKeys)
+            mapToList (withoutKeys opaque1Map commonOpaqueKeys)
         opaqueDifference2 =
-            mapToList (Map.withoutKeys opaque2Map commonOpaqueKeys)
+            mapToList (withoutKeys opaque2Map commonOpaqueKeys)
+
+        withoutKeys
+            :: Hashable k
+            => Eq k
+            => HashMap k v -> HashSet k -> HashMap k v
+        withoutKeys hmap =
+            foldMap (flip HashMap.delete hmap)
 
         allElements1 =
             map WithVariablePat elementVariableDifference1

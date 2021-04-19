@@ -48,36 +48,35 @@ module Test.Kore.Builtin.Map (
     asInternal,
 ) where
 
-import Control.Error (
-    runMaybeT,
- )
-import Control.Monad (
-    guard,
- )
+import Control.Error
+    ( runMaybeT
+    )
+import Control.Monad
+    ( guard
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Data.HashMap.Strict (
-    HashMap,
- )
+import Data.Functor
+    ( (<&>)
+    )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashSet as HashSet
 import qualified Data.List as List
-import Data.Map.Strict (
-    Map,
- )
-import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe (
-    fromJust,
- )
+import qualified Data.Maybe as Maybe
+    ( fromJust
+    )
 import qualified Data.Reflection as Reflection
-import qualified Data.Set as Set
-import Hedgehog (
-    Gen,
-    Property,
-    PropertyT,
-    discard,
-    forAll,
-    (===),
- )
+import Hedgehog
+    ( Gen
+    , Property
+    , PropertyT
+    , discard
+    , forAll
+    , (===)
+    )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -88,76 +87,78 @@ import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
-    makeMultipleAndPredicate,
-    makeTruePredicate,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike hiding (
-    asConcrete,
- )
+import Kore.Internal.TermLike hiding
+    ( asConcrete
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    configElementVariableFromId,
-    mkConfigVariable,
-    ruleElementVariableFromId,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkConfigVariable
+    , ruleElementVariableFromId
+    )
 import Kore.Step.RulePattern
-import Prelude.Kore hiding (
-    concatMap,
- )
-import SMT (
-    NoSMT,
- )
+import Prelude.Kore hiding
+    ( concatMap
+    )
+import SMT
+    ( NoSMT
+    )
 import Test.Expect
-import Test.Kore (
-    configElementVariableGen,
-    standaloneGen,
-    testId,
- )
+import Test.Kore
+    ( configElementVariableGen
+    , standaloneGen
+    , testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Builtin.Int (
-    genInteger,
-    genIntegerKey,
-    genIntegerPattern,
- )
+import Test.Kore.Builtin.Int
+    ( genInteger
+    , genIntegerKey
+    , genIntegerPattern
+    )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
-    runSimplifier,
- )
+import Test.Kore.Step.Simplification
+    ( runSimplifier
+    )
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
-genMapInteger :: Gen a -> Gen (Map Integer a)
+genMapInteger :: Gen a -> Gen (HashMap Integer a)
 genMapInteger genElement =
-    Gen.map (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
+    Gen.list (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
+    <&> HashMap.fromList
 
-genConcreteMap :: Gen a -> Gen (Map Key a)
+genConcreteMap :: Gen a -> Gen (HashMap Key a)
 genConcreteMap genElement =
-    Map.mapKeys Test.Int.asKey <$> genMapInteger genElement
+    mapKeys Test.Int.asKey <$> genMapInteger genElement
 
 genMapPattern :: Gen (TermLike RewritingVariableName)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
 genMapSortedVariable ::
-    Sort -> Gen a -> Gen (Map (ElementVariable RewritingVariableName) a)
+    Sort -> Gen a -> Gen (HashMap (ElementVariable RewritingVariableName) a)
 genMapSortedVariable sort genElement =
-    Gen.map
+    Gen.list
         (Range.linear 0 32)
         ( (,)
             <$> standaloneGen (configElementVariableGen sort)
             <*> genElement
         )
+    <&> HashMap.fromList
 
 test_lookupUnit :: [TestTree]
 test_lookupUnit =
@@ -219,7 +220,7 @@ test_sizeUnit =
         "MAP.size is size"
         ( do
             someMap <- forAll $ genConcreteMap genIntegerPattern
-            let size = Map.size someMap
+            let size = HashMap.size someMap
                 patExpected = Test.Int.asInternal $ toInteger size
                 patActual =
                     mkApplySymbol
@@ -297,9 +298,9 @@ test_removeAll =
         ( do
             map' <- forAll genMapPattern
             set <- forAll Test.Set.genSetConcreteIntegerPattern
-            when (set == Set.empty) discard
-            let key = Set.elemAt 0 set
-                diffSet = Set.delete key set
+            when (set == HashSet.empty) discard
+            let key = head (HashSet.toList set)
+                diffSet = HashSet.delete key set
                 patSet = mkSet_ set & fromConcrete
                 patDiffSet = mkSet_ diffSet & fromConcrete
                 patKey = fromConcrete key
@@ -432,7 +433,7 @@ test_keysUnit =
         $ do
             let patUnit = unitMap
                 patKeys = keysMap patUnit
-                patExpect = mkSet_ Set.empty
+                patExpect = mkSet_ HashSet.empty
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
@@ -445,8 +446,8 @@ test_keysElement =
         ( do
             key <- forAll genIntegerKey
             val <- forAll genIntegerPattern
-            let patMap = asTermLike $ Map.singleton key val
-                patKeys = mkSet_ (Set.singleton $ from key) & fromConcrete
+            let patMap = asTermLike $ HashMap.singleton key val
+                patKeys = mkSet_ (HashSet.singleton $ from key) & fromConcrete
                 patSymbolic = keysMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
@@ -460,7 +461,7 @@ test_keys =
         "MAP.keys"
         ( do
             map1 <- forAll (genConcreteMap genIntegerPattern)
-            let keys1 = Map.keysSet map1 & Set.map from
+            let keys1 = HashMap.keysSet map1 & HashSet.map from
                 patConcreteKeys = mkSet_ keys1 & fromConcrete
                 patMap = asTermLike map1
                 patSymbolicKeys = keysMap patMap
@@ -490,7 +491,7 @@ test_keysListElement =
         ( do
             key <- forAll genIntegerKey
             val <- forAll genIntegerPattern
-            let patMap = asTermLike $ Map.singleton key val
+            let patMap = asTermLike $ HashMap.singleton key val
                 patKeys = Test.List.asTermLike [from key]
                 patSymbolic = keysListMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
@@ -505,7 +506,7 @@ test_keysList =
         "MAP.keys_list"
         ( do
             map1 <- forAll (genConcreteMap genIntegerPattern)
-            let keys1 = from <$> Map.keys map1
+            let keys1 = from <$> HashMap.keys map1
                 patConcreteKeys = Test.List.asTermLike keys1
                 patMap = asTermLike map1
                 patSymbolicKeys = keysListMap patMap
@@ -535,7 +536,7 @@ test_values =
         "MAP.values"
         ( do
             map1 <- forAll (genConcreteMap genIntegerPattern)
-            let values = Map.elems map1
+            let values = HashMap.elems map1
                 patConcreteValues =
                     Builtin.List.asTermLike $ builtinList values
                 patMap = asTermLike map1
@@ -642,7 +643,7 @@ test_simplify =
     testCaseWithoutSMT "simplify builtin Map elements" $ do
         let x = mkIntConfigVar (testId "x")
             key = Test.Int.asKey 1
-            original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
+            original = asTermLike $ HashMap.fromList [(key, mkAnd x mkTop_)]
             expected = asPattern $ HashMap.fromList [(key, x)]
         actual <- evaluate original
         assertEqual "expected simplified Map" expected actual
@@ -654,10 +655,10 @@ test_symbolic =
         "builtin functions are evaluated on symbolic keys"
         ( do
             elements <- forAll $ genMapSortedVariable intSort genIntegerPattern
-            let varMap = Map.mapKeys mkElemVar elements
+            let varMap = mapKeys mkElemVar elements
                 patMap = asSymbolicPattern varMap
                 expect = asVariablePattern varMap
-            if Map.null elements
+            if HashMap.null elements
                 then discard
                 else (===) expect =<< evaluateT patMap
         )
@@ -794,7 +795,7 @@ test_unifyEmptyWithEmpty =
   where
     emptyMapDV :: TermLike RewritingVariableName
     emptyMapDV = asInternal []
-    emptyMapPattern = asTermLike Map.empty
+    emptyMapPattern = asTermLike HashMap.empty
     expect =
         Conditional
             { term = emptyMapDV
@@ -828,7 +829,7 @@ test_unifySelectFromEmpty =
         emptyMap `doesNotUnifyWith` fnSelectPatRev
         fnSelectPatRev `doesNotUnifyWith` emptyMap
   where
-    emptyMap = asTermLike Map.empty
+    emptyMap = asTermLike HashMap.empty
     doesNotUnifyWith pat1 pat2 =
         (===) Pattern.bottom =<< evaluateT (mkAnd pat1 pat2)
 
@@ -882,7 +883,7 @@ test_unifySelectSingletonFromSingleton =
                 forAll (standaloneGen $ configElementVariableGen intSort)
             let variables = [keyVar, valueVar]
             unless (distinctVariables variables) discard
-            let emptyMapPat = asTermLike Map.empty
+            let emptyMapPat = asTermLike HashMap.empty
                 selectPat = addSelectElement keyVar valueVar emptyMapPat
                 singleton = asInternal [(key, value)]
                 expect =
@@ -1064,7 +1065,7 @@ test_unifySameSymbolicKey =
                         mkElemVar mapVar
                 mapValue =
                     asVariableInternal
-                        (Map.singleton (mkElemVar keyVar1) value1)
+                        (HashMap.singleton (mkElemVar keyVar1) value1)
                 expect1 =
                     Conditional
                         { term = mapValue
@@ -1211,7 +1212,7 @@ test_concretizeKeys =
     key = fromConcrete $ Test.Int.asInternal 1
     val = Test.Int.asInternal 2
     concreteMap = asInternal [(key, val)]
-    symbolic = asSymbolicPattern $ Map.fromList [(mkElemVar x, mkElemVar v)]
+    symbolic = asSymbolicPattern $ HashMap.fromList [(mkElemVar x, mkElemVar v)]
     original =
         mkAnd
             (mkPair intSort mapSort (Test.Int.asInternal 1) concreteMap)
@@ -1245,7 +1246,7 @@ test_concretizeKeysAxiom =
     testCaseWithoutSMT
         "unify a concrete Map with a symbolic Map in an axiom"
         $ do
-            let concreteMap = asTermLike $ Map.fromList [(key, val)]
+            let concreteMap = asTermLike $ HashMap.fromList [(key, val)]
             config <- evaluate $ pair symbolicKey concreteMap
             actual <- runStep config axiom
             assertEqual "expected MAP.lookup" expected actual
@@ -1255,7 +1256,7 @@ test_concretizeKeysAxiom =
     key = Test.Int.asKey 1
     symbolicKey = from key
     val = Test.Int.asInternal 2
-    symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
+    symbolicMap = asSymbolicPattern $ HashMap.fromList [(x, v)]
     axiom =
         RewriteRule
             RulePattern
@@ -1356,8 +1357,8 @@ hprop_unparse :: Property
 hprop_unparse =
     hpropUnparse
         ( asInternal
-            . Map.toList
-            . Map.mapKeys from
+            . HashMap.toList
+            . mapKeys from
             <$> genConcreteMap genValue
         )
   where
@@ -1468,13 +1469,13 @@ test_inKeys =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern ::
-    Map (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
+    HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     TermLike RewritingVariableName
 asSymbolicPattern result
-    | Map.null result =
+    | HashMap.null result =
         applyUnit
     | otherwise =
-        foldr1 applyConcat (applyElement <$> Map.toAscList result)
+        foldr1 applyConcat (applyElement <$> HashMap.toList result)
   where
     applyUnit = mkApplySymbol unitMapSymbol []
     applyElement (key, value) = elementMap key value
@@ -1483,12 +1484,12 @@ asSymbolicPattern result
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
 asTermLike ::
     InternalVariable variable =>
-    Map Key (TermLike variable) ->
+    HashMap Key (TermLike variable) ->
     TermLike variable
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
         . builtinMap
-        . Map.toAscList
+        . HashMap.toList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern ::
@@ -1505,26 +1506,26 @@ asPattern concreteMap =
                     }
 
 asVariablePattern ::
-    Map (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
+    HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asVariablePattern variableMap =
     Reflection.give testMetadataTools $
         Ac.asPattern mapSort $
             wrapAc
                 NormalizedAc
-                    { elementsWithVariables = MapElement <$> Map.toList variableMap
+                    { elementsWithVariables = MapElement <$> HashMap.toList variableMap
                     , concreteElements = HashMap.empty
                     , opaque = []
                     }
 
 asVariableInternal ::
-    Map (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
+    HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     TermLike RewritingVariableName
 asVariableInternal variableMap =
     Ac.asInternal testMetadataTools mapSort $
         wrapAc
             NormalizedAc
-                { elementsWithVariables = MapElement <$> Map.toList variableMap
+                { elementsWithVariables = MapElement <$> HashMap.toList variableMap
                 , concreteElements = HashMap.empty
                 , opaque = []
                 }
@@ -1586,3 +1587,15 @@ distinctVariables variables =
     length variableNames == length (List.nub variableNames)
   where
     variableNames = map asVariableName variables
+
+-- | Utility function for mapping over the keys of a 'HashMap'.
+mapKeys
+    :: Hashable k2
+    => Eq k2
+    => (k1 -> k2)
+    -> HashMap k1 v
+    -> HashMap k2 v
+mapKeys f =
+    HashMap.fromList
+    . (fmap . Bifunctor.first) f
+    . HashMap.toList

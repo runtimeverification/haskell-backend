@@ -3,48 +3,48 @@ module Test.Kore.Builtin (
     test_sortModuleClaims,
 ) where
 
-import Control.Lens (
-    ix,
-    (%~),
-    (.~),
- )
+import Control.Lens
+    ( ix
+    , (%~)
+    , (.~)
+    )
 import qualified Control.Lens as Lens
-import Data.Generics.Product (
-    field,
- )
-import qualified Data.Set
-import Kore.ASTVerifier.DefinitionVerifier (
-    sortModuleClaims,
- )
-import Kore.Attribute.Axiom (
-    SourceLocation,
- )
+import Data.Generics.Product
+    ( field
+    )
+import qualified Data.HashSet as HashSet
+import Kore.ASTVerifier.DefinitionVerifier
+    ( sortModuleClaims
+    )
+import Kore.Attribute.Axiom
+    ( SourceLocation
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Kore
-import Kore.IndexedModule.IndexedModule (
-    IndexedModule (..),
-    VerifiedModule,
- )
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule (..)
+    , VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    configElementVariableFromId,
- )
-import Prelude.Kore hiding (
-    concatMap,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
+import Prelude.Kore hiding
+    ( concatMap
+    )
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
 import qualified Test.Kore.Builtin.Set as Set
-import Test.Kore.Step.SMT.Builders (
-    indexModule,
- )
+import Test.Kore.Step.SMT.Builders
+    ( indexModule
+    )
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -151,7 +151,7 @@ test_internalize =
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
-    mkSet = Set.asInternal . Data.Set.fromList
+    mkSet = Set.asInternal . HashSet.fromList
     s = mkElemVar (configElementVariableFromId "s" setSort)
 
     mkInt :: InternalVariable variable => Integer -> TermLike variable

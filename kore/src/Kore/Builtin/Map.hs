@@ -32,86 +32,86 @@ module Kore.Builtin.Map (
     evalInKeys,
 ) where
 
-import Control.Error (
-    MaybeT (MaybeT),
-    hoistMaybe,
-    runMaybeT,
- )
+import Control.Error
+    ( MaybeT (MaybeT)
+    , hoistMaybe
+    , runMaybeT
+    )
 import qualified Control.Monad as Monad
-import Data.HashMap.Strict (
-    HashMap,
- )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import Data.Text (
-    Text,
- )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
+import Data.Text
+    ( Text
+    )
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import Kore.Builtin.Attributes (
-    isConstructorModulo_,
- )
+import Kore.Builtin.Attributes
+    ( isConstructorModulo_
+    )
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin (
-    acceptAnySort,
- )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
-import Kore.Internal.InternalSet (
-    Value (SetValue),
- )
+import Kore.Internal.InternalSet
+    ( Value (SetValue)
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Condition,
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Condition
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    Symbol (..),
-    symbolHook,
- )
-import Kore.Internal.TermLike (
-    Key,
-    TermLike,
-    retractKey,
-    termLikeSort,
-    pattern App_,
-    pattern InternalMap_,
- )
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    , symbolHook
+    )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern InternalMap_
+    , Key
+    , TermLike
+    , retractKey
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    Sort,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Sort
+    ( Sort
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.Sentence (
-    SentenceSort (..),
- )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+import Kore.Syntax.Sentence
+    ( SentenceSort (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified Kore.Unification.Unify as Unify
 import Prelude.Kore
