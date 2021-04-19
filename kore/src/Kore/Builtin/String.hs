@@ -311,8 +311,9 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                             _ -> Left ""
                     10 -> Text.signed Text.decimal
                     16 -> Text.signed Text.hexadecimal
-                    _ -> error
-                        ("String2Base applied to invalid base: " <> show _base)
+                    _ ->
+                        error
+                            ("String2Base applied to invalid base: " <> show _base)
         case readN _str of
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)

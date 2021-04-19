@@ -323,13 +323,15 @@ test_string2Base =
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 16]
         (Test.Int.asPattern 47789)
-    , testCase "string2Base bad base" $ assertErrorIO
-        (void . return)
-        (runNoSMT $ evaluate $
-            mkApplySymbol
-                string2BaseStringSymbol
-                [asInternal "1", Test.Int.asInternal 19]
-        )
+    , testCase "string2Base bad base" $
+        assertErrorIO
+            (void . return)
+            ( runNoSMT $
+                evaluate $
+                    mkApplySymbol
+                        string2BaseStringSymbol
+                        [asInternal "1", Test.Int.asInternal 19]
+            )
     ]
 
 test_string2Int :: [TestTree]
