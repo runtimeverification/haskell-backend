@@ -299,9 +299,9 @@ evalFind = Builtin.functionEvaluator evalFind0
 evalString2Base :: BuiltinAndAxiomSimplifier
 evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
-    evalString2Base0 _ resultSort [_str, _base] = do
-        _str <- expectBuiltinString string2BaseKey _str
-        _base <- Int.expectBuiltinInt string2BaseKey _base
+    evalString2Base0 _ resultSort [_strTerm, _baseTerm] = do
+        _str <- expectBuiltinString string2BaseKey _strTerm
+        _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
         let readN =
                 case _base of
                     -- no builtin reader for number in octal notation
@@ -311,7 +311,8 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                             _ -> Left ""
                     10 -> Text.signed Text.decimal
                     16 -> Text.signed Text.hexadecimal
-                    _ -> const empty
+                    _ -> error
+                        ("String2Base applied to invalid base: " <> show _base)
         case readN _str of
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)
