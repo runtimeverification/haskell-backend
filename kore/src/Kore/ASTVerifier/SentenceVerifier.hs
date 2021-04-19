@@ -402,9 +402,9 @@ verifyAxiomSentence sentence =
   where
     failWithBadEquation verified =
         koreFailWithLocations [sentenceAxiomPattern verified]
-        . pack
-        . show
-        . Pretty.pretty
+            . pack
+            . show
+            . Pretty.pretty
     addAxiom verified attrs =
         Lens.over
             (field @"indexedModuleAxioms")
