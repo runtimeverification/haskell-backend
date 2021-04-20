@@ -295,12 +295,13 @@ functionEvaluator impl =
             resultSort = symbolSorts symbol & applicationSortsResult
         impl sideCondition resultSort args
 
-functionEvaluatorWithApp
-    ::  ( forall variable
-        . InternalVariable variable
-        => Application Symbol (TermLike variable)
-        -> Function)
-    -> BuiltinAndAxiomSimplifier
+functionEvaluatorWithApp ::
+    ( forall variable.
+      InternalVariable variable =>
+      Application Symbol (TermLike variable) ->
+      Function
+    ) ->
+    BuiltinAndAxiomSimplifier
 functionEvaluatorWithApp impl =
     applicationEvaluator $ \sideCondition app -> do
         let Application{applicationSymbolOrAlias = symbol} = app

@@ -16,8 +16,7 @@ import Pretty (
  )
 import qualified Pretty
 
-newtype WarnNotImplemented variable =
-    WarnNotImplemented {notImplementedApp :: Application Symbol (TermLike variable)}
+newtype WarnNotImplemented variable = WarnNotImplemented {notImplementedApp :: Application Symbol (TermLike variable)}
     deriving stock (Show)
 
 instance InternalVariable variable => Pretty (WarnNotImplemented variable) where
