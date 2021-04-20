@@ -80,8 +80,8 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
-    mkEquationVariable,
     mkConfigVariable,
+    mkEquationVariable,
     mkRuleVariable,
  )
 import Kore.Sort
