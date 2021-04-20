@@ -298,9 +298,9 @@ evalFind = Builtin.functionEvaluator evalFind0
     evalFind0 _ _ _ = Builtin.wrongArity findKey
 
 evalString2Base :: BuiltinAndAxiomSimplifier
-evalString2Base = Builtin.functionEvaluator evalString2Base0
+evalString2Base = Builtin.functionEvaluatorWithApp evalString2Base0
   where
-    evalString2Base0 _ resultSort [_strTerm, _baseTerm] = do
+    evalString2Base0 app _ resultSort [_strTerm, _baseTerm] = do
         _str <- expectBuiltinString string2BaseKey _strTerm
         _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
         packedResult <-
@@ -311,12 +311,12 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                     _ -> Left ""
                 10 -> return $ Text.signed Text.decimal _str
                 16 -> return $ Text.signed Text.hexadecimal _str
-                _ -> warnNotImplemented _baseTerm >> empty
+                _ -> warnNotImplemented app >> empty
         case packedResult of
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)
             _ -> return (Pattern.bottomOf resultSort)
-    evalString2Base0 _ _ _ = Builtin.wrongArity string2BaseKey
+    evalString2Base0 _ _ _ _ = Builtin.wrongArity string2BaseKey
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0

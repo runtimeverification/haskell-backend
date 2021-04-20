@@ -16,14 +16,15 @@ import Pretty (
  )
 import qualified Pretty
 
-newtype WarnNotImplemented variable = WarnNotImplemented {notImplementedTerm :: TermLike variable}
+newtype WarnNotImplemented variable =
+    WarnNotImplemented {notImplementedApp :: Application Symbol (TermLike variable)}
     deriving stock (Show)
 
 instance InternalVariable variable => Pretty (WarnNotImplemented variable) where
-    pretty (WarnNotImplemented term) =
+    pretty (WarnNotImplemented app) =
         Pretty.vsep
-            [ "The following term is an argument to a builtin function that is not implemented on it:"
-            , unparse term
+            [ "The following application of a builtin function is not implemented:"
+            , unparse app
             ]
 
 instance InternalVariable variable => Entry (WarnNotImplemented variable) where
@@ -33,6 +34,6 @@ instance InternalVariable variable => Entry (WarnNotImplemented variable) where
 warnNotImplemented ::
     MonadLog log =>
     InternalVariable variable =>
-    TermLike variable ->
+    Application Symbol (TermLike variable) ->
     log ()
 warnNotImplemented = logEntry . WarnNotImplemented
