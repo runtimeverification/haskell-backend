@@ -70,10 +70,10 @@ Use `docker.sh` to run commands inside the container:
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [ghcide] or [haskell-language-server], [language servers] for Haskell that are
+- [haskell-language-server], a [language server] for Haskell that are
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
-- [hlint] and [stylish-haskell] for compliance with project guidelines.
+- [hlint] for compliance with project guidelines.
 - [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
 
 We recommend to keep `./entr.sh` running in the background
@@ -132,11 +132,9 @@ nix-shell test.nix  # enter a shell where we can run tests manually
 [curl]: https://curl.haxx.se/
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
-[ghcide]: https://github.com/digital-asset/ghcide
 [haskell-language-server]: https://github.com/haskell/haskell-language-server
-[language servers]: https://langserver.org/
+[language server]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
-[stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
