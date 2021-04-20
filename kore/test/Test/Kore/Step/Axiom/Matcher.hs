@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Axiom.Matcher (
     test_matcherEqualHeads,
     test_matcherVariableFunction,

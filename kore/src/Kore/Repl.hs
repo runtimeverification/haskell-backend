@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Repl
 Description : Proof REPL

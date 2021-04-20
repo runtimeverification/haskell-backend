@@ -172,8 +172,8 @@ test_assumeDefined =
     , testCase "Assumes 2-element collection" $ do
         let collection =
                 Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
+                    [ (Mock.f Mock.plain00, Mock.b)
+                    , (mkElemVar Mock.x, Mock.a)
                     ]
                     []
             expectedTerms =
@@ -196,8 +196,8 @@ test_assumeDefined =
                 ]
             expectedCollections =
                 [ Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
+                    [ (Mock.f Mock.plain00, Mock.b)
+                    , (mkElemVar Mock.x, Mock.a)
                     ]
                     []
                 , Collection

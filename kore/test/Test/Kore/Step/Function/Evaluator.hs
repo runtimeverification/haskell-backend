@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Function.Evaluator (test_evaluateApplication) where
 
 import qualified Data.Map.Strict as Map

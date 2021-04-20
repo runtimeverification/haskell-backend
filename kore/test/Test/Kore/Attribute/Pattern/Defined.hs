@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Attribute.Pattern.Defined (
     test_instance_Synthetic,
 ) where

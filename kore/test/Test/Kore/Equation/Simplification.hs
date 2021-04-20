@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Equation.Simplification (
     test_simplifyEquation,
 ) where

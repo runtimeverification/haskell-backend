@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.Application (
     test_applicationSimplification,
 ) where

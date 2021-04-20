@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets

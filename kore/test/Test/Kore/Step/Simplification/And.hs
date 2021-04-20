@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.And (
     test_andSimplification,
 ) where

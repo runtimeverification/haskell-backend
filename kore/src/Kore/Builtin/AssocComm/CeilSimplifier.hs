@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -10,64 +8,65 @@ module Kore.Builtin.AssocComm.CeilSimplifier (
     generalizeMapElement,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
-import Control.Monad.Reader (
-    MonadReader,
- )
+import Control.Error
+    ( MaybeT
+    )
+import Control.Monad.Reader
+    ( MonadReader
+    )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.HashMap.Strict as HashMap
-import Kore.Attribute.Pattern.FreeVariables (
-    FreeVariables,
- )
+import qualified Data.HashSet as HashSet
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.Predicate (
-    Predicate,
-    makeCeilPredicate,
-    makeForallPredicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeCeilPredicate
+    , makeForallPredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import Kore.Internal.TermLike (
-    Ceil (..),
-    ElementVariable,
-    InternalVariable,
-    Key,
-    TermLike,
-    fromVariableName,
-    generatedId,
-    retractKey,
-    termLikeSort,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import Kore.Internal.TermLike
+    ( Ceil (..)
+    , ElementVariable
+    , InternalVariable
+    , Key
+    , TermLike
+    , fromVariableName
+    , generatedId
+    , retractKey
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import Kore.Step.Simplification.CeilSimplifier
 import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
-    makeEvaluateTermCeil,
- )
-import Kore.Variables.Fresh (
-    refreshElementVariable,
- )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , makeEvaluateTermCeil
+    )
+import Kore.Variables.Fresh
+    ( refreshElementVariable
+    )
 import Prelude.Kore
 
 type BuiltinAssocComm normalized variable =
@@ -171,6 +170,8 @@ newBuiltinAssocCommCeilSimplifier ::
     MonadReader (SideCondition RewritingVariableName) simplifier =>
     Ord (Element normalized (TermLike RewritingVariableName)) =>
     Ord (Value normalized (TermLike RewritingVariableName)) =>
+    Hashable (Element normalized (TermLike RewritingVariableName)) =>
+    Hashable (Value normalized (TermLike RewritingVariableName)) =>
     MonadSimplify simplifier =>
     Traversable (Value normalized) =>
     AcWrapper normalized =>
@@ -222,6 +223,8 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
 
 definePairWiseElements ::
     forall normalized simplifier.
+    Ord (Element normalized (TermLike RewritingVariableName)) =>
+    Hashable (Element normalized (TermLike RewritingVariableName)) =>
     MonadSimplify simplifier =>
     MonadReader (SideCondition RewritingVariableName) simplifier =>
     AcWrapper normalized =>
@@ -234,7 +237,9 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse
             distinctKey
-            (symbolicKeyPairs <> symbolicConcreteKeyPairs)
+            ( symbolicKeyPairs <> symbolicConcreteKeyPairs
+                & HashSet.toList
+            )
             & fmap MultiAnd.make
     let definedElementOpaquePairs =
             foldMap
@@ -256,19 +261,26 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
         , concreteOpaquePairs
         } = pairWiseElements
     symbolicKeyPairs =
-        Bifunctor.bimap
-            (fst . unwrapElement)
-            (fst . unwrapElement)
-            <$> symbolicPairs
+        HashSet.map
+            ( Bifunctor.bimap
+                (fst . unwrapElement)
+                (fst . unwrapElement)
+                . acPairToPair
+            )
+            symbolicPairs
     symbolicConcreteKeyPairs =
-        Bifunctor.bimap
-            (fst . unwrapElement)
-            (from @Key @(TermLike _) . fst)
-            <$> symbolicConcretePairs
+        HashSet.map
+            ( Bifunctor.bimap
+                (fst . unwrapElement)
+                (from @Key @(TermLike _) . fst)
+            )
+            symbolicConcretePairs
     concreteOpaquePairs' =
-        Bifunctor.first
-            wrapConcreteElement
-            <$> concreteOpaquePairs
+        HashSet.map
+            ( Bifunctor.first
+                wrapConcreteElement
+            )
+            concreteOpaquePairs
 
     distinctKey ::
         ( TermLike RewritingVariableName
@@ -294,11 +306,9 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
             & MultiAnd.singleton
 
     defineOpaquePair ::
-        ( TermLike RewritingVariableName
-        , TermLike RewritingVariableName
-        ) ->
+        AcPair (TermLike RewritingVariableName) ->
         MultiAnd (OrCondition RewritingVariableName)
-    defineOpaquePair (opaque1, opaque2) =
+    defineOpaquePair (AcPair opaque1 opaque2) =
         internalAc
             { builtinAcChild =
                 wrapAc

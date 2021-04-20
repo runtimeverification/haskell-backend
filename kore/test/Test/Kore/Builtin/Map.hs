@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Builtin.Map (
     test_lookupUnit,
     test_lookupUpdate,

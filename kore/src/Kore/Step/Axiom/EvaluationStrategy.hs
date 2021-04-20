@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Axiom.EvaluationStrategy
 Description : Various strategies for axiom/builtin-based simplification.
