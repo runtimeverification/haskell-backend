@@ -1,4 +1,3 @@
-[]
 module BASIC-K
     sort SortK{} []
     sort SortKItem{} []
