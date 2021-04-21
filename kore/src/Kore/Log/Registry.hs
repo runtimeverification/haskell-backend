@@ -41,6 +41,9 @@ import Kore.Equation.Application (
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
+import Kore.Log.DebugRewriteSubstitution (
+    DebugRewriteSubstitution
+ )
 import Kore.Log.DebugClaimState (
     DebugClaimState,
  )
@@ -178,6 +181,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugSolverRecv
             , mk $ Proxy @DebugClaimState
             , mk $ Proxy @DebugAppliedRewriteRules
+            , mk $ Proxy @DebugRewriteSubstitution
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
             , mk $ Proxy @WarnSymbolSMTRepresentation
