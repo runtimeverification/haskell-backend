@@ -16,6 +16,7 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.HashSet as HashSet
 import qualified Data.Map.Strict as Map
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -169,6 +170,8 @@ newBuiltinAssocCommCeilSimplifier ::
     MonadReader (SideCondition RewritingVariableName) simplifier =>
     Ord (Element normalized (TermLike RewritingVariableName)) =>
     Ord (Value normalized (TermLike RewritingVariableName)) =>
+    Hashable (Element normalized (TermLike RewritingVariableName)) =>
+    Hashable (Value normalized (TermLike RewritingVariableName)) =>
     MonadSimplify simplifier =>
     Traversable (Value normalized) =>
     AcWrapper normalized =>
@@ -220,6 +223,8 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
 
 definePairWiseElements ::
     forall normalized simplifier.
+    Ord (Element normalized (TermLike RewritingVariableName)) =>
+    Hashable (Element normalized (TermLike RewritingVariableName)) =>
     MonadSimplify simplifier =>
     MonadReader (SideCondition RewritingVariableName) simplifier =>
     AcWrapper normalized =>
@@ -232,7 +237,9 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse
             distinctKey
-            (symbolicKeyPairs <> symbolicConcreteKeyPairs)
+            ( symbolicKeyPairs <> symbolicConcreteKeyPairs
+                & HashSet.toList
+            )
             & fmap MultiAnd.make
     let definedElementOpaquePairs =
             foldMap
@@ -254,19 +261,26 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
         , concreteOpaquePairs
         } = pairWiseElements
     symbolicKeyPairs =
-        Bifunctor.bimap
-            (fst . unwrapElement)
-            (fst . unwrapElement)
-            <$> symbolicPairs
+        HashSet.map
+            ( Bifunctor.bimap
+                (fst . unwrapElement)
+                (fst . unwrapElement)
+                . acPairToPair
+            )
+            symbolicPairs
     symbolicConcreteKeyPairs =
-        Bifunctor.bimap
-            (fst . unwrapElement)
-            (from @Key @(TermLike _) . fst)
-            <$> symbolicConcretePairs
+        HashSet.map
+            ( Bifunctor.bimap
+                (fst . unwrapElement)
+                (from @Key @(TermLike _) . fst)
+            )
+            symbolicConcretePairs
     concreteOpaquePairs' =
-        Bifunctor.first
-            wrapConcreteElement
-            <$> concreteOpaquePairs
+        HashSet.map
+            ( Bifunctor.first
+                wrapConcreteElement
+            )
+            concreteOpaquePairs
 
     distinctKey ::
         ( TermLike RewritingVariableName
@@ -292,11 +306,9 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
             & MultiAnd.singleton
 
     defineOpaquePair ::
-        ( TermLike RewritingVariableName
-        , TermLike RewritingVariableName
-        ) ->
+        AcPair (TermLike RewritingVariableName) ->
         MultiAnd (OrCondition RewritingVariableName)
-    defineOpaquePair (opaque1, opaque2) =
+    defineOpaquePair (AcPair opaque1 opaque2) =
         internalAc
             { builtinAcChild =
                 wrapAc

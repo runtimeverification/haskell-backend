@@ -80,6 +80,7 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
+    pattern AcPair,
  )
 import Kore.Internal.Predicate (
     Predicate,
@@ -761,20 +762,21 @@ generateNormalizedAcs ::
     Ord (Element normalized (TermLike variable)) =>
     Ord (Value normalized (TermLike variable)) =>
     Ord (normalized Key (TermLike variable)) =>
+    Hashable (Element normalized (TermLike variable)) =>
+    Hashable (Value normalized (TermLike variable)) =>
     Hashable (normalized Key (TermLike variable)) =>
     AcWrapper normalized =>
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ symbolicToAc <$> symbolicPairs
-    , concreteToAc <$> concretePairs
-    , opaqueToAc <$> opaquePairs
-    , symbolicConcreteToAc <$> symbolicConcretePairs
-    , symbolicOpaqueToAc <$> symbolicOpaquePairs
-    , concreteOpaqueToAc <$> concreteOpaquePairs
+    [ HashSet.map symbolicToAc symbolicPairs
+    , HashSet.map concreteToAc concretePairs
+    , HashSet.map opaqueToAc opaquePairs
+    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
     ]
-        & concat
-        & HashSet.fromList
+        & fold
   where
     InternalAc
         { builtinAcChild
@@ -791,21 +793,21 @@ generateNormalizedAcs internalAc =
         , symbolicOpaquePairs
         , concreteOpaquePairs
         } = generatePairWiseElements builtinAcChild
-    symbolicToAc (symbolic1, symbolic2) =
+    symbolicToAc (AcPair symbolic1 symbolic2) =
         let symbolicAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic1, symbolic2]
                     }
                     & wrapAc
          in toInternalAc symbolicAc
-    concreteToAc (concrete1, concrete2) =
+    concreteToAc (AcPair concrete1 concrete2) =
         let concreteAc =
                 emptyNormalizedAc
                     { concreteElements = [concrete1, concrete2] & Map.fromList
                     }
                     & wrapAc
          in toInternalAc concreteAc
-    opaqueToAc (opaque1, opaque2) =
+    opaqueToAc (AcPair opaque1 opaque2) =
         let opaqueAc =
                 emptyNormalizedAc
                     { opaque = [opaque1, opaque2]
