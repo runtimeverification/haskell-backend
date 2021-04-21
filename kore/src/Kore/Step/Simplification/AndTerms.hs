@@ -9,7 +9,6 @@ module Kore.Step.Simplification.AndTerms
     ( termUnification
     , maybeTermAnd
     , maybeTermEquals
-    , maybeTermEquals2
     , TermSimplifier
     , TermTransformationOld
     , cannotUnifyDistinctDomainValues
@@ -31,7 +30,6 @@ import Data.Text
     )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.AssociativeCommutative as Builtin.Ac
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.Int as Builtin.Int
@@ -39,7 +37,7 @@ import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.EqTerm as Builtin.EqTerm
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
---import qualified Kore.Builtin.Set as Builtin.Set
+import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
 import Kore.IndexedModule.MetadataTools
@@ -74,9 +72,6 @@ import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import qualified Kore.Step.Simplification.Exists as Exists
-import Kore.Step.Simplification.ExpandAlias
-    ( expandAlias
-    )
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
@@ -86,7 +81,6 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.Unify
-import Kore.TopBottom
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
@@ -123,11 +117,12 @@ termUnification notSimplifier = \term1 term2 ->
         -> TermLike RewritingVariableName
         -> unifier (Pattern RewritingVariableName)
     termUnificationWorker pat1 pat2 = do
+        tools <- Simplifier.askMetadataTools
         let
             maybeTermUnification
                 :: MaybeT unifier (Pattern RewritingVariableName)
             maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
+                maybeTermAnd notSimplifier termUnificationWorker tools pat1 pat2
         Error.maybeT
             (incompleteUnificationPattern pat1 pat2)
             pure
@@ -139,7 +134,7 @@ termUnification notSimplifier = \term1 term2 ->
             & Pattern.fromTermLike
             & return
 
-maybeTermEquals2
+maybeTermEquals
     :: MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
@@ -149,7 +144,7 @@ maybeTermEquals2
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-maybeTermEquals2 notSimplifier childTransformers tools first second
+maybeTermEquals notSimplifier childTransformers tools first second
   | Just (UnifyInt int1 int2) <- matchInt first second
         = Builtin.Int.unifyInt int1 int2
   | Just (UnifyBool bool1 bool2) <- matchBools first second
@@ -191,9 +186,67 @@ maybeTermEquals2 notSimplifier childTransformers tools first second
         = constructorSortInjectionAndEquals second first symbol
   | Just (MatchAppHeads symbol1 symbol2) <- matchAppHeads first second
         = constructorAndEqualsAssumesDifferentHeads first second symbol1 symbol2
---   | Just (UnifyOverloading1 (UnifyOverloading1Args inj firstHead secondHead firstChildren))
---         = 
---   -- insert overloadedConstructorSortInjectionAndEquals here
+  | Just (UnifyOverload1 (UnifyOverload1Args firstHead secondHead firstChildren inj)) <- matchUnifyOverload1 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading1
+                    firstHead
+                    firstChildren
+                    secondHead
+                    second
+                    inj
+  | Just (UnifyOverload2 (UnifyOverload2Args firstHead secondHead secondChildren inj)) <- matchUnifyOverload2 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading2
+                    firstHead
+                    first
+                    secondHead
+                    secondChildren
+                    inj
+  | Just (UnifyOverload3 (UnifyOverload3Args firstHead secondHead firstChildren secondChildren inj)) <- matchUnifyOverload3 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading3
+                    firstHead
+                    firstChildren
+                    secondHead
+                    secondChildren
+                    inj
+  | Just (UnifyOverload4 (UnifyOverload4Args firstHead secondVar inj)) <- matchUnifyOverload4 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading4
+                    first
+                    firstHead
+                    secondVar
+                    inj
+  | Just (UnifyOverload5 (UnifyOverload5Args firstTerm firstHead firstChildren secondVar inj)) <- matchUnifyOverload5 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading5
+                    firstTerm
+                    firstHead
+                    firstChildren
+                    secondVar
+                    inj
+
+  | Just (UnifyOverload6 (UnifyOverload6Args firstHead injChild)) <- matchUnifyOverload6 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading6 firstHead injChild
   | Just (UnifyBoolAnd term1 term2) <- matchUnifyBoolAnd first second
         = Builtin.Bool.unifyBoolAnd childTransformers first second term1 term2
   | Just (UnifyBoolOr (UnifyBoolOrArgs term operand1 operand2)) <- matchUnifyBoolOr first second
@@ -210,32 +263,26 @@ maybeTermEquals2 notSimplifier childTransformers tools first second
         = Builtin.Endianness.unifyEquals first second end1 end2
   | Just (UnifyEqualsSignedness (UnifyEqualsSignednessArgs sign1 sign2)) <- matchUnifyEqualsSignedness first second
         = Builtin.Signedness.unifyEquals first second sign1 sign2
-  | Just (UnifyEqualsMap1 (UnifyMapEqualsArgs preElt1 preElt2 concreteElt1 concreteElt2)) <- matchUnifyEqualsMap tools first second
-        = unifyEqualsElementList undefined undefined Nothing
-  | Just (UnifyEqualsMap2 (UnifyMapEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 var)) <- matchUnifyEqualsMap tools first second
-        = undefined
-  | Just (UnifyEqualsMap3 (UnifyMapEqualsVarArgs preElt preElt2 concreteElt1 concreteElt2 var)) <- matchUnifyEqualsMap tools first second
-        = undefined
+  | Just (UnifyEqualsMap1 (UnifyMapEqualsArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2)) <- matchUnifyEqualsMap tools first second
+        = Builtin.Map.unifyEquals1 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2
+  | Just (UnifyEqualsMap2 (UnifyMapEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsMap tools first second
+        = Builtin.Map.unifyEquals2 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just (UnifyEqualsMap3 (UnifyMapEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsMap tools first second
+        = Builtin.Map.unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
   | Just UnifyMapBottom <- matchUnifyEqualsMap tools first second
-        = undefined
-    
---   | Just (UnifyEqualsMap (UnifyEqualsMapArgs normalized1 normalized2)) <- matchUnifyEqualsMap tools first second
---         = Builtin.Map.unifyEquals childTransformers first second normalized1 normalized2
---   | Just UnifyMapBottom <- matchUnifyEqualsMap tools first second
---         = lift $ Unify.explainAndReturnBottom
---                             "Duplicated elements in normalization."
---                             first
---                             second --TODO: make separate function
+        = lift $ Unify.explainAndReturnBottom
+            "Duplicated elements in normalization." first second
+  | Just (UnifyEqualsSet1 (UnifySetEqualsArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2)) <- matchUnifyEqualsSet tools first second
+        = Builtin.Set.unifyEquals1 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2
+  | Just (UnifyEqualsSet2 (UnifySetEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsSet tools first second
+        = Builtin.Set.unifyEquals2 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just (UnifyEqualsSet3 (UnifySetEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsSet tools first second
+        = Builtin.Set.unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just UnifySetBottom <- matchUnifyEqualsSet tools first second
+        = lift $ Unify.explainAndReturnBottom
+            "Duplicated elements in normalization." first second
   | Just (UnifyNotInKeys (UnifyNotInKeysArgs inKeys term keyTerm mapTerm)) <- matchUnifyNotInKeys first second
         = Builtin.Map.unifyNotInKeys childTransformers notSimplifier term inKeys keyTerm mapTerm
---   | Just (UnifyEqualsSet (UnifyEqualsSetArgs normalized1 normalized2)) <- matchUnifyEqualsSet tools first second
---         = Builtin.Set.unifyEquals childTransformers first second normalized1 normalized2
---   | Just UnifySetBottom <- matchUnifyEqualsSet tools first second
---         = lift $ Unify.explainAndReturnBottom
---                             "Duplicated elements in normalization."
---                             first
---                             second --TODO: make separate function
-
   | Just UnifyEqualsList1 <- matchUnifyEqualsList (Builtin.List.normalize first) (Builtin.List.normalize second)
         = Builtin.List.unify1 childTransformers first second
   | Just UnifyEqualsList2 <- matchUnifyEqualsList (Builtin.List.normalize first) (Builtin.List.normalize second)
@@ -252,182 +299,177 @@ maybeTermEquals2 notSimplifier childTransformers tools first second
         = domainValueAndConstructorErrors2 first second
   | otherwise = empty
 
-maybeTermEquals
-    :: MonadUnify unifier
-    => HasCallStack
-    => NotSimplifier unifier
-    -> TermSimplifier RewritingVariableName unifier
-    -- ^ Used to simplify subterm "and".
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-maybeTermEquals _ childTransformers first second = asum
-    [ undefined
-    --  Builtin.Int.unifyInt first second
-    --, Builtin.Bool.unifyBool first second
-    --, Builtin.String.unifyString first second
-    --, unifyDomainValue first second
-    --, unifyStringLiteral first second
-    --, equalAndEquals first second
-    --, bytesDifferent first second
-    --, bottomTermEquals SideCondition.topTODO first second
-    --, termBottomEquals SideCondition.topTODO first second
-    --, variableFunctionEquals first second
-    --, variableFunctionEquals second first
-    --, equalInjectiveHeadsAndEquals childTransformers first second
-    --, sortInjectionAndEquals childTransformers first second
-    --, constructorSortInjectionAndEquals first second
-    --, constructorAndEqualsAssumesDifferentHeads first second
-    , overloadedConstructorSortInjectionAndEquals
-        childTransformers
-        first
-        second
-    --, Builtin.Bool.unifyBoolAnd childTransformers first second
-    --, Builtin.Bool.unifyBoolOr childTransformers first second
-    --, Builtin.Bool.unifyBoolNot childTransformers first second
-    -- , Builtin.Int.unifyIntEq childTransformers notSimplifier first second
-    -- , Builtin.String.unifyStringEq
-    --     childTransformers
-    --     notSimplifier
-    --     first
-    --     second
-    -- , Builtin.KEqual.unifyKequalsEq
-    --     childTransformers
-    --     notSimplifier
-    --     first
-    --     second
-    --, Builtin.Endianness.unifyEquals first second
-    --, Builtin.Signedness.unifyEquals first second
-    -- , 
-    --     Builtin.Map.unifyEquals childTransformers
-    --     first
-    --     second
-    --, Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
-    -- ,   Builtin.Set.unifyEquals childTransformers
-    --     first
-    --     second
-    -- , Builtin.List.unifyEquals
-    --     SimplificationType.Equals
-    --     childTransformers
-    --     first
-    --     second
-    --, domainValueAndConstructorErrors first second
-    ]
-
 maybeTermAnd
     :: MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
     -> TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
+    -> SmtMetadataTools Attribute.Symbol
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-maybeTermAnd notSimplifier childTransformers first second = asum
-    [ expandAlias
-        (maybeTermAnd notSimplifier childTransformers)
-        first
-        second
-    , boolAnd first second
-    --, Builtin.Int.unifyInt first second
-    --, Builtin.Bool.unifyBool first second
-    --, Builtin.String.unifyString first second
-    --, unifyDomainValue first second
-    --, unifyStringLiteral first second
-    --, equalAndEquals first second
-    --, bytesDifferent first second
-    , variableFunctionAnd first second
-    , variableFunctionAnd second first
-    --, equalInjectiveHeadsAndEquals childTransformers first second
-    --, sortInjectionAndEquals childTransformers first second
-    --, constructorSortInjectionAndEquals first second
-    --, constructorAndEqualsAssumesDifferentHeads first second
-    , overloadedConstructorSortInjectionAndEquals
-        childTransformers
-        first
-        second
-    --, Builtin.Bool.unifyBoolAnd childTransformers first second
-    --, Builtin.Bool.unifyBoolOr childTransformers first second
-    --, Builtin.Bool.unifyBoolNot childTransformers first second
-    -- , Builtin.KEqual.unifyKequalsEq
-    --     childTransformers
-    --     notSimplifier
-    --     first
-    --     second
-    , Builtin.KEqual.unifyIfThenElse childTransformers first second
-    --, Builtin.Endianness.unifyEquals first second
-    --, Builtin.Signedness.unifyEquals first second
-    -- , 
-    --     Builtin.Map.unifyEquals childTransformers
-    --     first
-    --     second
-    -- ,   Builtin.Set.unifyEquals childTransformers
-    --     first
-    --     second
-    -- , Builtin.List.unifyEquals
-    --     SimplificationType.And
-    --     childTransformers
-    --     first
-    --     second
-    --, domainValueAndConstructorErrors first second
-    , Error.hoistMaybe (functionAnd first second)
-    ]
+maybeTermAnd notSimplifier childTransformers tools first second
+  | Just (UnifyExpandAlias (UnifyExpandAliasArgs term1 term2)) <- matchExpandAlias first second
+        = maybeTermAnd
+            notSimplifier
+            childTransformers
+            tools
+            term1
+            term2
+  | Just UnifyBoolAnd1 <- matchBoolAnd1 first
+        = explainBoolAndBottom first second
+          >> return (Pattern.fromTermLike first)
+  | Just UnifyBoolAnd2 <- matchBoolAnd2 first
+        = return $ Pattern.fromTermLike second
+  | Just UnifyBoolAnd3 <- matchBoolAnd3 first
+        = explainBoolAndBottom first second
+          >> return (Pattern.fromTermLike second)
+  | Just UnifyBoolAnd4 <- matchBoolAnd4 first
+        = return $ Pattern.fromTermLike first
+  | Just (UnifyInt int1 int2) <- matchInt first second
+        = Builtin.Int.unifyInt int1 int2
+  | Just (UnifyBool bool1 bool2) <- matchBools first second
+        = Builtin.Bool.unifyBool bool1 bool2
+  | Just (UnifyString string1 string2) <- matchString first second
+        = Builtin.String.unifyString string1 string2
+  | Just (UnifyDomainValue sort1 val1 sort2 val2) <- matchDomainValue first second
+        = unifyDomainValue sort1 val1 sort2 val2
+  | Just (UnifyStringLiteral txt1 txt2) <- matchStringLiteral first second
+        = unifyStringLiteral txt1 txt2
+  | Just EqualsAndEquals <- matchUnDefined first second
+        = equalAndEquals first
+  | Just (BytesDifferent bytes1 bytes2) <- matchBytesDifferent first second
+        = bytesDifferent bytes1 bytes2
+  | Just (UnifyVariableFunctionAnd1 v) <- matchVariableFunctionAnd1 first second
+        = variableFunctionAnd1 v second
+  | Just (UnifyVariableFunctionAnd2 v) <- matchVariableFunctionAnd2 first second
+        = variableFunctionAnd2 v second
+  | Just (UnifyVariableFunctionAnd1 v) <- matchVariableFunctionAnd1 second first
+        = variableFunctionAnd1 v first
+  | Just (UnifyVariableFunctionAnd2 v) <- matchVariableFunctionAnd2 second first
+        = variableFunctionAnd2 v first
+  | Just (EqualInjectiveHeadsAndEquals
+            firstHead
+            firstChildren
+            secondHead
+            secondChildren) <- matchEqualInjectiveHeadsAndEquals first second
+        = equalInjectiveHeadsAndEquals
+            childTransformers
+            firstHead
+            firstChildren
+            secondHead
+            secondChildren
+  | Just (MatchInjs inj1 inj2) <- matchInjs first second
+        = sortInjectionAndEquals childTransformers inj1 inj2
+  | Just (MatchInjApp symbol) <- matchInjApp first second
+        = constructorSortInjectionAndEquals first second symbol
+  | Just (MatchAppInj symbol) <- matchAppInj first second
+        = constructorSortInjectionAndEquals second first symbol
+  | Just (MatchAppHeads symbol1 symbol2) <- matchAppHeads first second
+        = constructorAndEqualsAssumesDifferentHeads first second symbol1 symbol2
+  | Just (UnifyOverload1 (UnifyOverload1Args firstHead secondHead firstChildren inj)) <- matchUnifyOverload1 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading1
+                    firstHead
+                    firstChildren
+                    secondHead
+                    second
+                    inj
+  | Just (UnifyOverload2 (UnifyOverload2Args firstHead secondHead secondChildren inj)) <- matchUnifyOverload2 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading2
+                    firstHead
+                    first
+                    secondHead
+                    secondChildren
+                    inj
+  | Just (UnifyOverload3 (UnifyOverload3Args firstHead secondHead firstChildren secondChildren inj)) <- matchUnifyOverload3 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading3
+                    firstHead
+                    firstChildren
+                    secondHead
+                    secondChildren
+                    inj
+  | Just (UnifyOverload4 (UnifyOverload4Args firstHead secondVar inj)) <- matchUnifyOverload4 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading4
+                    first
+                    firstHead
+                    secondVar
+                    inj
+  | Just (UnifyOverload5 (UnifyOverload5Args firstTerm firstHead firstChildren secondVar inj)) <- matchUnifyOverload5 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading5
+                    firstTerm
+                    firstHead
+                    firstChildren
+                    secondVar
+                    inj
 
-{-
-
-= asum
-    [ expandAlias
-        (maybeTermAnd notSimplifier childTransformers)
-        first
-        second
-    , boolAnd first second
-    , Builtin.Int.unifyInt first second
-    , Builtin.Bool.unifyBool first second
-    , Builtin.String.unifyString first second
-    , unifyDomainValue first second
-    , unifyStringLiteral first second
-    , equalAndEquals first second
-    , bytesDifferent first second
-    , variableFunctionAnd first second
-    , variableFunctionAnd second first
-    , equalInjectiveHeadsAndEquals childTransformers first second
-    , sortInjectionAndEquals childTransformers first second
-    , constructorSortInjectionAndEquals first second
-    , constructorAndEqualsAssumesDifferentHeads first second
-    , overloadedConstructorSortInjectionAndEquals
-        childTransformers
-        first
-        second
-    , Builtin.Bool.unifyBoolAnd childTransformers first second
-    , Builtin.Bool.unifyBoolOr childTransformers first second
-    , Builtin.Bool.unifyBoolNot childTransformers first second
-    , Builtin.KEqual.unifyKequalsEq
-        childTransformers
-        notSimplifier
-        first
-        second
-    , Builtin.KEqual.unifyIfThenElse childTransformers first second
-    , Builtin.Endianness.unifyEquals first second
-    , Builtin.Signedness.unifyEquals first second
-    , unifyDefinedModifier
-        (Builtin.Map.unifyEquals childTransformers)
-        first
-        second
-    , unifyDefinedModifier
-        (Builtin.Set.unifyEquals childTransformers)
-        first
-        second
-    , Builtin.List.unifyEquals
-        SimplificationType.And
-        childTransformers
-        first
-        second
-    , domainValueAndConstructorErrors first second
-    , unifyDefined childTransformers first second
-    , Error.hoistMaybe (functionAnd first second)
-    ]
-
-    -}
+  | Just (UnifyOverload6 (UnifyOverload6Args firstHead injChild)) <- matchUnifyOverload6 first second
+        = overloadedConstructorSortInjectionAndEquals
+            childTransformers
+            first
+            second $
+                Overloading.unifyOverloading6 firstHead injChild
+  | Just (UnifyBoolAnd term1 term2) <- matchUnifyBoolAnd first second
+        = Builtin.Bool.unifyBoolAnd childTransformers first second term1 term2
+  | Just (UnifyBoolOr (UnifyBoolOrArgs term operand1 operand2)) <- matchUnifyBoolOr first second
+        = Builtin.Bool.unifyBoolOr childTransformers term operand1 operand2
+  | Just (UnifyBoolNot (UnifyBoolNotArgs term operand value)) <- matchUnifyBoolNot first second
+        = Builtin.Bool.unifyBoolNot childTransformers term operand value
+  | Just (UnifyKequalsEq (UnifyKequalsEqArgs eqTerm otherTerm)) <- matchUnifyKequalsEq first second
+        = Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier eqTerm otherTerm
+  | Just (UnifyIfThenElse ifThenElse) <- matchITE first
+        = Builtin.KEqual.unifyIfThenElse childTransformers ifThenElse second
+  | Just (UnifyIfThenElse ifThenElse) <- matchITE second
+        = Builtin.KEqual.unifyIfThenElse childTransformers ifThenElse first
+  | Just (UnifyEqualsEndianness (UnifyEqualsEndiannessArgs end1 end2)) <- matchUnifyKequalsEq first second
+        = Builtin.Endianness.unifyEquals first second end1 end2
+  | Just (UnifyEqualsSignedness (UnifyEqualsSignednessArgs sign1 sign2)) <- matchUnifyEqualsSignedness first second
+        = Builtin.Signedness.unifyEquals first second sign1 sign2
+  | Just (UnifyEqualsMap1 (UnifyMapEqualsArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2)) <- matchUnifyEqualsMap tools first second
+        = Builtin.Map.unifyEquals1 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2
+  | Just (UnifyEqualsMap2 (UnifyMapEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsMap tools first second
+        = Builtin.Map.unifyEquals2 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just (UnifyEqualsMap3 (UnifyMapEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsMap tools first second
+        = Builtin.Map.unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just UnifyMapBottom <- matchUnifyEqualsMap tools first second
+        = lift $ Unify.explainAndReturnBottom
+            "Duplicated elements in normalization." first second
+  | Just (UnifyEqualsSet1 (UnifySetEqualsArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2)) <- matchUnifyEqualsSet tools first second
+        = Builtin.Set.unifyEquals1 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2
+  | Just (UnifyEqualsSet2 (UnifySetEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsSet tools first second
+        = Builtin.Set.unifyEquals2 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just (UnifyEqualsSet3 (UnifySetEqualsVarArgs preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var)) <- matchUnifyEqualsSet tools first second
+        = Builtin.Set.unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var
+  | Just UnifySetBottom <- matchUnifyEqualsSet tools first second
+        = lift $ Unify.explainAndReturnBottom
+            "Duplicated elements in normalization." first second
+  | Just DomainValueAndConstructorErrors1 <- matchDomainValueAndConstructorErrors1 first second
+        = domainValueAndConstructorErrors1 first second
+  | Just DomainValueAndConstructorErrors2 <- matchDomainValueAndConstructorErrors2 first second
+        = domainValueAndConstructorErrors2 first second
+  | Just UnifyIsFunctionPatterns <- matchIsFunctionPatterns first second
+        = Error.hoistMaybe (functionAnd first second)
+  | otherwise = empty
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -448,22 +490,22 @@ type TermTransformationOld variable unifier =
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 
--- | Simplify the conjunction of terms where one is a predicate.
-boolAnd
-    :: MonadUnify unifier
-    => TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-boolAnd first second
-  | isBottom first  = do
-      explainBoolAndBottom first second
-      return (Pattern.fromTermLike first)
-  | isTop first     = return (Pattern.fromTermLike second)
-  | isBottom second = do
-      explainBoolAndBottom first second
-      return (Pattern.fromTermLike second)
-  | isTop second    = return (Pattern.fromTermLike first)
-  | otherwise       = empty
+-- -- | Simplify the conjunction of terms where one is a predicate.
+-- boolAnd
+--     :: MonadUnify unifier
+--     => TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- boolAnd first second
+--   | isBottom first  = do
+--       explainBoolAndBottom first second
+--       return (Pattern.fromTermLike first)
+--   | isTop first     = return (Pattern.fromTermLike second)
+--   | isBottom second = do
+--       explainBoolAndBottom first second
+--       return (Pattern.fromTermLike second)
+--   | isTop second    = return (Pattern.fromTermLike first)
+--   | otherwise       = empty
 
 explainBoolAndBottom
     :: MonadUnify unifier
@@ -531,27 +573,25 @@ termBottomEquals
 termBottomEquals sideCondition first sort =
     bottomTermEquals sideCondition sort first
 
-variableFunctionAnd
+variableFunctionAnd1
     :: InternalVariable variable
     => MonadUnify unifier
-    => TermLike variable
+    => ElementVariable  variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-variableFunctionAnd
-    (ElemVar_ v1)
-    second@(ElemVar_ _)
-  = return $ Pattern.assign (inject v1) second
-variableFunctionAnd
-    (ElemVar_ v)
-    second
-  | isFunctionPattern second =
-    -- Ceil predicate not needed since 'second' being bottom
-    -- will make the entire term bottom. However, one must
-    -- be careful to not just drop the term.
-    lift $ return (Pattern.withCondition second result)
+variableFunctionAnd1 v second
+    = return $ Pattern.assign (inject v) second
+
+variableFunctionAnd2
+    :: InternalVariable variable
+    => MonadUnify unifier
+    => ElementVariable  variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+variableFunctionAnd2 v second
+    = lift $ return (Pattern.withCondition second result)
   where result = Condition.fromSingleSubstitution
-            (Substitution.assign (inject v) second)
-variableFunctionAnd _ _ = empty
+             (Substitution.assign (inject v) second)
 
 {- | Unify a variable with a function pattern.
 
@@ -664,11 +704,11 @@ overloadedConstructorSortInjectionAndEquals
     => TermSimplifier RewritingVariableName unifier
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
+    -> UnifyOverloadingResult unifier RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
+overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm unifyResult
   = do
-    eunifier <- lift . Error.runExceptT
-        $ unifyOverloading (Pair firstTerm secondTerm)
+    eunifier <- lift . Error.runExceptT $ unifyResult
     case eunifier of
         Right (Simple (Pair firstTerm' secondTerm')) -> lift $
             termMerger firstTerm' secondTerm'
@@ -807,8 +847,7 @@ functionAnd
     :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> Maybe (Pattern RewritingVariableName)
-functionAnd first second
-  | isFunctionPattern first, isFunctionPattern second =
+functionAnd first second =
     makeEqualsPredicate first' second'
     & Predicate.markSimplified
     -- Ceil predicate not needed since first being
@@ -817,7 +856,6 @@ functionAnd first second
     & Condition.fromPredicate
     & Pattern.withCondition first'  -- different for Equals
     & pure
-  | otherwise = empty
   where
     (first', second') = minMaxBy compareForEquals first second
 

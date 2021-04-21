@@ -9,6 +9,12 @@ module Kore.Step.Simplification.Overloading
     ( matchOverloading
     -- for testing purposes
     , unifyOverloading
+    , unifyOverloading1
+    , unifyOverloading2
+    , unifyOverloading3
+    , unifyOverloading4
+    , unifyOverloading5
+    , unifyOverloading6
     , UnifyOverloadingResult
     , MatchOverloadingResult
     , UnifyOverloadingError (..)
@@ -147,6 +153,133 @@ matchOverloading termPair
  Note: this algorithm is used for both matching and unification; that is why
  the first and second terms in a pair are not interchangeable.
 -}
+
+flipPairBack :: Pair a -> Pair a
+flipPairBack (Pair x y) = Pair y x
+
+unifyOverloading1
+    :: forall unifier
+     . MonadSimplify unifier
+    => Symbol
+    -> [TermLike RewritingVariableName]
+    -> Symbol
+    -> TermLike RewritingVariableName
+    -> Inj (TermLike RewritingVariableName)
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyOverloading1
+    firstHead
+    firstChildren
+    secondHead
+    secondTerm
+    inj
+    = Simple . flipPairBack <$> unifyOverloadingVsOverloaded
+            secondHead
+            secondTerm
+            (Application firstHead firstChildren)
+            inj { injChild = () }
+
+unifyOverloading2
+    :: forall unifier
+     . MonadSimplify unifier
+    => Symbol
+    -> TermLike RewritingVariableName
+    -> Symbol
+    -> [TermLike RewritingVariableName]
+    -> Inj (TermLike RewritingVariableName)
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyOverloading2
+    firstHead
+    firstTerm
+    secondHead
+    secondChildren
+    inj
+    = Simple <$> unifyOverloadingVsOverloaded
+            firstHead
+            firstTerm
+            (Application secondHead secondChildren)
+            inj { injChild = () }
+
+unifyOverloading3
+    :: forall unifier
+     . MonadSimplify unifier
+    => Symbol
+    -> [TermLike RewritingVariableName]
+    -> Symbol
+    -> [TermLike RewritingVariableName]
+    -> Inj (TermLike RewritingVariableName)
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyOverloading3
+    firstHead
+    firstChildren
+    secondHead
+    secondChildren
+    inj
+    = Simple <$> unifyOverloadingCommonOverload
+            (Application firstHead firstChildren)
+            (Application secondHead secondChildren)
+            inj { injChild = () }
+
+unifyOverloading4
+    :: forall unifier
+     . MonadSimplify unifier
+    => TermLike RewritingVariableName
+    -> Symbol
+    -> ElementVariable RewritingVariableName
+    -> Inj (TermLike RewritingVariableName)
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyOverloading4
+    first
+    firstHead
+    secondVar
+    inj
+    = catchE (
+        unifyOverloadingVsOverloadedVariable
+        firstHead
+        first
+        secondVar
+        inj { injChild = () }
+        )
+        throwE
+
+
+unifyOverloading5
+    :: forall unifier
+     . MonadSimplify unifier
+    => TermLike RewritingVariableName
+    -> Symbol
+    -> [TermLike RewritingVariableName]
+    -> ElementVariable RewritingVariableName
+    -> Inj (TermLike RewritingVariableName)
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyOverloading5
+    firstTerm
+    firstHead
+    firstChildren
+    secondVar
+    inj
+    = catchE (
+        unifyOverloadingInjVsVariable
+        (Application firstHead firstChildren)
+        secondVar
+        (Attribute.freeVariables firstTerm)
+        inj { injChild = () }
+        )
+        throwE
+
+unifyOverloading6
+    :: forall unifier
+     . MonadSimplify unifier
+    => Symbol
+    -> TermLike RewritingVariableName
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyOverloading6
+    firstHead
+    injChild
+    = catchE (
+        notUnifiableTest firstHead injChild
+        )
+        throwE
+
 unifyOverloading
     :: forall unifier
      . MonadSimplify unifier
@@ -178,43 +311,47 @@ unifyOverloading termPair = case termPair of
             (Application secondHead secondChildren)
             inj { injChild = () }
     Pair firstTerm secondTerm ->
-        catchE (worker firstTerm secondTerm)
+        catchE 
+        (unifyWorker firstTerm secondTerm)
             (\case
-                NotApplicable -> worker secondTerm firstTerm
+                NotApplicable -> unifyWorker secondTerm firstTerm
                 clash -> throwE clash
             )
-  where
-    worker
-      :: TermLike RewritingVariableName
-      -> TermLike RewritingVariableName
-      -> UnifyOverloadingResult unifier RewritingVariableName
-    worker
-        firstTerm@(App_ firstHead _)
-        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
-      =
-        unifyOverloadingVsOverloadedVariable
-            firstHead
-            firstTerm
-            secondVar
-            inj { injChild = () }
-    worker
-        (Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) })
-        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
-      =
-        unifyOverloadingInjVsVariable
-            (Application firstHead firstChildren)
-            secondVar
-            (Attribute.freeVariables firstTerm)
-            inj { injChild = () }
-    worker (App_ firstHead _) (Inj_ Inj { injChild }) =
-        notUnifiableTest firstHead injChild
-    worker _ _ = notApplicable
 
-    flipPairBack (Pair x y) = Pair y x
-    notUnifiableTest termHead child = do
-        OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
-        Monad.guard (isOverloaded termHead)
-        notUnifiableError child
+
+
+unifyWorker
+    :: forall unifier
+     . MonadSimplify unifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> UnifyOverloadingResult unifier RewritingVariableName
+unifyWorker
+    firstTerm@(App_ firstHead _)
+    (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+  =
+    unifyOverloadingVsOverloadedVariable
+        firstHead
+        firstTerm
+        secondVar
+        inj { injChild = () }
+unifyWorker
+    (Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) })
+    (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+  =
+    unifyOverloadingInjVsVariable
+        (Application firstHead firstChildren)
+        secondVar
+        (Attribute.freeVariables firstTerm)
+        inj { injChild = () }
+unifyWorker (App_ firstHead _) (Inj_ Inj { injChild }) =
+    notUnifiableTest firstHead injChild
+unifyWorker _ _ = notApplicable
+
+notUnifiableTest termHead child = do
+    OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded termHead)
+    notUnifiableError child
 
 {- Handles the case
     inj{S1,injTo}(firstHead(firstChildren))

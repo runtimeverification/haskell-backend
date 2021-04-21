@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Step.Simplification.ExpandAlias
     ( expandAlias
+    , expandSingleAlias
     , substituteInAlias
     ) where
 
@@ -53,10 +54,7 @@ expandAlias
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-expandAlias recurse t1 t2 =
-    case (expandSingleAlias t1, expandSingleAlias t2) of
-        (Nothing, Nothing) -> nothing
-        (t1', t2') -> recurse (fromMaybe t1 t1') (fromMaybe t2 t2')
+expandAlias recurse = recurse
 
 expandSingleAlias
     :: TermLike RewritingVariableName

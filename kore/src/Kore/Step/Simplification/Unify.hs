@@ -32,10 +32,24 @@ module Kore.Step.Simplification.Unify
     , matchUnifyNotInKeys
     , matchDomainValueAndConstructorErrors1
     , matchDomainValueAndConstructorErrors2
-    , matchUnifyOverloading1
+    , matchUnifyOverload1
+    , matchUnifyOverload2
+    , matchUnifyOverload3
+    , matchUnifyOverload4
+    , matchUnifyOverload5
+    , matchUnifyOverload6
     , matchUnifyEqualsMap
-    --, matchUnifyEqualsSet
+    , matchUnifyEqualsSet
     , matchUnifyEqualsList
+    , matchBoolAnd1
+    , matchBoolAnd2
+    , matchBoolAnd3
+    , matchBoolAnd4
+    , matchVariableFunctionAnd1
+    , matchVariableFunctionAnd2
+    , matchITE
+    , matchExpandAlias
+    , matchIsFunctionPatterns
     , Unification (..)
     , UnifyBoolOrArgs (..)
     , UnifyBoolNotArgs (..)
@@ -45,14 +59,20 @@ module Kore.Step.Simplification.Unify
     , UnifyEqualsEndiannessArgs (..)
     , UnifyEqualsSignednessArgs (..)
     , UnifyNotInKeysArgs (..)
-    , UnifyOverloading1Args (..)
-    , UnifyEqualsMapArgs (..)
-    , UnifyEqualsSetArgs (..)
+    , UnifyOverload1Args (..)
+    , UnifyOverload2Args (..)
+    , UnifyOverload3Args (..)
+    , UnifyOverload4Args (..)
+    , UnifyOverload5Args (..)
+    , UnifyOverload6Args (..)
     , UnifyEqualsList3Args (..)
     , UnifyEqualsList4Args (..)
     , UnifyEqualsList5Args (..)
     , UnifyMapEqualsArgs (..)
     , UnifyMapEqualsVarArgs (..)
+    , UnifySetEqualsArgs (..)
+    , UnifySetEqualsVarArgs (..)
+    , UnifyExpandAliasArgs (..)
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -86,9 +106,11 @@ import Kore.Internal.InternalString
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.Simplification.ExpandAlias
 import Kore.Syntax.PatternF
     ( Const (..)
     )
+import Kore.TopBottom
 
 data Unification
     = UnifyInt !InternalInt !InternalInt
@@ -116,18 +138,34 @@ data Unification
     | UnifyNotInKeys !UnifyNotInKeysArgs
     | DomainValueAndConstructorErrors1
     | DomainValueAndConstructorErrors2
-    | UnifyOverloading1 !UnifyOverloading1Args
+    | UnifyOverload1 !UnifyOverload1Args
+    | UnifyOverload2 !UnifyOverload2Args
+    | UnifyOverload3 !UnifyOverload3Args
+    | UnifyOverload4 !UnifyOverload4Args
+    | UnifyOverload5 !UnifyOverload5Args
+    | UnifyOverload6 !UnifyOverload6Args
     | UnifyEqualsMap1 !UnifyMapEqualsArgs
     | UnifyEqualsMap2 !UnifyMapEqualsVarArgs
     | UnifyEqualsMap3 !UnifyMapEqualsVarArgs
     | UnifyMapBottom
-    | UnifyEqualsSet !UnifyEqualsSetArgs
+    | UnifyEqualsSet1 !UnifySetEqualsArgs
+    | UnifyEqualsSet2 !UnifySetEqualsVarArgs
+    | UnifyEqualsSet3 !UnifySetEqualsVarArgs
     | UnifySetBottom
     | UnifyEqualsList1
     | UnifyEqualsList2
     | UnifyEqualsList3 !UnifyEqualsList3Args
     | UnifyEqualsList4 !UnifyEqualsList4Args
     | UnifyEqualsList5 !UnifyEqualsList5Args
+    | UnifyBoolAnd1
+    | UnifyBoolAnd2
+    | UnifyBoolAnd3
+    | UnifyBoolAnd4
+    | UnifyVariableFunctionAnd1 !(ElementVariable RewritingVariableName)
+    | UnifyVariableFunctionAnd2 !(ElementVariable RewritingVariableName)
+    | UnifyIfThenElse !(IfThenElse (TermLike RewritingVariableName))
+    | UnifyExpandAlias !UnifyExpandAliasArgs
+    | UnifyIsFunctionPatterns
 
 matchInt
     :: TermLike RewritingVariableName
@@ -460,26 +498,6 @@ matchDomainValueAndConstructorErrors2 first second
     = Just DomainValueAndConstructorErrors1
     | otherwise = Nothing
 
-data UnifyOverloading1Args = UnifyOverloading1Args {
-    inj :: Inj (TermLike RewritingVariableName)
-    , firstHead, secondHead :: Symbol
-    , firstChildren :: [TermLike RewritingVariableName]
-}
-
-matchUnifyOverloading1
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe Unification
-matchUnifyOverloading1 first second
-    | Inj_ inj@Inj { injChild = App_ firstHead firstChildren } <- first
-    , App_ secondHead _ <- second
-    = Just $ UnifyOverloading1 $ UnifyOverloading1Args inj firstHead secondHead firstChildren
-    | otherwise = Nothing
-
-data UnifyEqualsMapArgs = UnifyEqualsMapArgs {
-    normalized1, normalized2 :: InternalMap Key (TermLike RewritingVariableName)
-}
-
 mapSort :: Text
 mapSort = "MAP.Map"
 
@@ -496,17 +514,17 @@ isMapSort = Builtin.isSort mapSort
   See also: 'sort', 'Builtin.verifySort'
 
  -}
-assertSort :: Builtin.SortVerifier
-assertSort = Builtin.verifySort mapSort
 
 data UnifyMapEqualsArgs = UnifyMapEqualsArgs {
     preElementsWithVariables1, preElementsWithVariables2 :: [Element NormalizedMap (TermLike RewritingVariableName)]
     , concreteElements1, concreteElements2 :: M.Map Key (Value NormalizedMap (TermLike RewritingVariableName))
+    , opaque1, opaque2 :: [TermLike RewritingVariableName]
 }
 
 data UnifyMapEqualsVarArgs = UnifyMapEqualsVarArgs {
     preElementsWithVariables1, preElementsWithVariables2 :: [Element NormalizedMap (TermLike RewritingVariableName)]
     , concreteElements1, concreteElements2 :: M.Map Key (Value NormalizedMap (TermLike RewritingVariableName))
+    , opaque1, opaque2 :: [TermLike RewritingVariableName]
     , var :: ElementVariable RewritingVariableName
 }
 
@@ -517,9 +535,9 @@ unifyMapEqualsMatch ::
 unifyMapEqualsMatch
     norm1
     norm2 = case (opaqueDifference1, opaqueDifference2) of
-        ([],[]) -> Just $ UnifyEqualsMap1 $ UnifyMapEqualsArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2
-        ([ElemVar_ v1], _) -> Just $ UnifyEqualsMap2 $ UnifyMapEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 v1
-        (_, [ElemVar_ v2]) -> Just $ UnifyEqualsMap3 $ UnifyMapEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 v2
+        ([],[]) -> Just $ UnifyEqualsMap1 $ UnifyMapEqualsArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2
+        ([ElemVar_ v1], _) -> Just $ UnifyEqualsMap2 $ UnifyMapEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2 v1
+        (_, [ElemVar_ v2]) -> Just $ UnifyEqualsMap3 $ UnifyMapEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2 v2
         _ -> Nothing
 
       where
@@ -548,49 +566,17 @@ unifyMapEqualsMatch
         opaque1Map = listToMap opaque1
         opaque2Map = listToMap opaque2
 
-        elementsWithVariables1 = unwrapElement <$> preElementsWithVariables1
-        elementsWithVariables2 = unwrapElement <$> preElementsWithVariables2
-        elementsWithVariables1Map = M.fromList elementsWithVariables1
-        elementsWithVariables2Map = M.fromList elementsWithVariables2
-
-        commonElements =
-            M.intersectionWith
-                (,)
-                concreteElements1
-                concreteElements2
-        commonVariables =
-            M.intersectionWith
-                (,)
-                elementsWithVariables1Map
-                elementsWithVariables2Map
-
         -- Duplicates must be kept in case any of the opaque terms turns out to be
         -- non-empty, in which case one of the terms is bottom, which
         -- means that the unification result is bottom.
         commonOpaqueMap = M.intersectionWith max opaque1Map opaque2Map
 
-        commonOpaque = mapToList commonOpaqueMap
         commonOpaqueKeys = M.keysSet commonOpaqueMap
 
-        elementDifference1 =
-            M.toList (M.difference concreteElements1 commonElements)
-        elementDifference2 =
-            M.toList (M.difference concreteElements2 commonElements)
-        elementVariableDifference1 =
-            M.toList (M.difference elementsWithVariables1Map commonVariables)
-        elementVariableDifference2 =
-            M.toList (M.difference elementsWithVariables2Map commonVariables)
         opaqueDifference1 =
             mapToList (M.withoutKeys opaque1Map commonOpaqueKeys)
         opaqueDifference2 =
             mapToList (M.withoutKeys opaque2Map commonOpaqueKeys)
-
-        -- allElements1 =
-        --     Prelude.Kore.map WithVariablePat elementVariableDifference1
-        --         ++ Prelude.Kore.map toConcretePat elementDifference1
-        -- allElements2 =
-        --     Prelude.Kore.map WithVariablePat elementVariableDifference2
-        --         ++ Prelude.Kore.map toConcretePat elementDifference2
 
 matchUnifyEqualsMap
     :: SmtMetadataTools Symbol.Symbol
@@ -635,101 +621,124 @@ matchUnifyEqualsMap tools first second
             normalizedOrBottom ::
                 Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
             normalizedOrBottom = Ac.toNormalized patt
-        
 
-{-
-    unifyEquals0 pat1 pat2 = do
-        firstDomain <- asDomain pat1
-        secondDomain <- asDomain pat2
-        unifyEquals0 firstDomain secondDomain
--}
-
-{-
-    | Just True <- isMapSort tools sort1
-    , InternalMap_ normalized1 <- first
-    , InternalMap_ normalized2 <- second
-    = Just $ UnifyEqualsMap $ UnifyEqualsMapArgs normalized1 normalized2
-    | Just firstDomain <- asDomain first
-    , Just secondDomain <- asDomain second
-    = matchUnifyEqualsMap tools firstDomain secondDomain
-    | otherwise
-    = Just UnifyMapBottom
--}      
-    --   where
-    --     sort1 = termLikeSort first
-
-    --     asDomain
-    --         :: InternalVariable variable
-    --         => TermLike RewritingVariableName
-    --         -> Maybe (TermLike RewritingVariableName)
-    --     asDomain patt =
-    --         case normalizedOrBottom patt of
-    --             Ac.Normalized normalized -> Just (Ac.asInternal tools sort1 normalized)
-    --             Ac.Bottom -> Nothing
-    --       where
-    --         normalizedOrBottom
-    --             :: InternalVariable variable
-    --             => TermLike RewritingVariableName
-    --             -> Ac.NormalizedOrBottom NormalizedMap variable
-    --         normalizedOrBottom = Ac.toNormalized
-
-data UnifyEqualsSetArgs = UnifyEqualsSetArgs {
-    normalized1, normalized2 :: InternalSet Key (TermLike RewritingVariableName)
+data UnifySetEqualsArgs = UnifySetEqualsArgs {
+    preElementsWithVariables1, preElementsWithVariables2 :: [Element NormalizedSet (TermLike RewritingVariableName)]
+    , concreteElements1, concreteElements2 :: M.Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    , opaque1, opaque2 :: [TermLike RewritingVariableName]
 }
 
--- matchUnifyEqualsSet
---     :: InternalVariable variable
---     => SmtMetadataTools Symbol.Symbol
---     -> TermLike RewritingVariableName
---     -> TermLike RewritingVariableName
---     -> Maybe Unification
--- matchUnifyEqualsSet tools first second
---     -- | InternalSet_ normalized1 <- first
---     -- , InternalSet_ normalized2 <- second
---     -- = Just $ UnifyEqualsSet $ UnifyEqualsSetArgs normalized1 normalized2
---     -- | Just firstDomain <- asDomain first
---     -- , Just secondDomain <- asDomain second
---     -- = matchUnifyEqualsSet tools firstDomain secondDomain
---     -- | otherwise
---     -- = Just UnifySetBottom
+data UnifySetEqualsVarArgs = UnifySetEqualsVarArgs {
+    preElementsWithVariables1, preElementsWithVariables2 :: [Element NormalizedSet (TermLike RewritingVariableName)]
+    , concreteElements1, concreteElements2 :: M.Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    , opaque1, opaque2 :: [TermLike RewritingVariableName]
+    , var :: ElementVariable RewritingVariableName
+}
 
-    --   where
-    --     asDomain
-    --       :: InternalVariable variable
-    --       => TermLike RewritingVariableName
-    --       -> Maybe (TermLike RewritingVariableName)
-    --     asDomain patt =
-    --         case normalizedOrBottom patt of
-    --             Ac.Normalized normalized -> Just (Ac.asInternal tools sort1 normalized)
-    --             Ac.Bottom -> Nothing
-    --       where
-    --         normalizedOrBottom
-    --             :: InternalVariable variable
-    --             => TermLike RewritingVariableName
-    --             -> Ac.NormalizedOrBottom NormalizedMap variable
-    --         normalizedOrBottom = Ac.toNormalized
+unifySetEqualsMatch ::
+    Ac.TermNormalizedAc NormalizedSet RewritingVariableName ->
+    Ac.TermNormalizedAc NormalizedSet RewritingVariableName ->
+    Maybe Unification
+unifySetEqualsMatch
+    norm1
+    norm2 = case (opaqueDifference1, opaqueDifference2) of
+        ([],[]) -> Just $ UnifyEqualsSet1 $ UnifySetEqualsArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2
+        ([ElemVar_ v1], _) -> Just $ UnifyEqualsSet2 $ UnifySetEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2 v1
+        (_, [ElemVar_ v2]) -> Just $ UnifyEqualsSet3 $ UnifySetEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2 v2
+        _ -> Nothing
+
+      where
+        listToMap :: Ord a => [a] -> M.Map a Int
+        listToMap = List.foldl' (\m k -> M.insertWith (+) k 1 m) M.empty
+        mapToList :: M.Map a Int -> [a]
+        mapToList =
+            M.foldrWithKey
+                (\key count' result -> List.replicate count' key ++ result)
+                []
+
+        NormalizedAc
+            { elementsWithVariables = preElementsWithVariables1
+            , concreteElements = concreteElements1
+            , opaque = opaque1
+            } =
+                unwrapAc norm1
+        NormalizedAc
+            { elementsWithVariables = preElementsWithVariables2
+            , concreteElements = concreteElements2
+            , opaque = opaque2
+            } =
+                unwrapAc norm2
+
+        --opaque1Map :: M.Map (TermLike RewritingVariableName) Int
+        opaque1Map = listToMap opaque1
+        opaque2Map = listToMap opaque2
+
+        -- Duplicates must be kept in case any of the opaque terms turns out to be
+        -- non-empty, in which case one of the terms is bottom, which
+        -- means that the unification result is bottom.
+        commonOpaqueMap = M.intersectionWith max opaque1Map opaque2Map
+
+        commonOpaqueKeys = M.keysSet commonOpaqueMap
+
+        opaqueDifference1 =
+            mapToList (M.withoutKeys opaque1Map commonOpaqueKeys)
+        opaqueDifference2 =
+            mapToList (M.withoutKeys opaque2Map commonOpaqueKeys)
+
+-- | Builtin name of the @Set@ sort.
+setSort :: Text
+setSort = "SET.Set"
+
+{- | Is the given sort hooked to the builtin Set sort?
+Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
+Returns Just False if the sort is a variable.
+-}
+isSetSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
+isSetSort = Builtin.isSort setSort
+
+matchUnifyEqualsSet
+    :: SmtMetadataTools Symbol.Symbol
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyEqualsSet tools first second
+    | Just True <- isSetSort tools sort1
+    = case unifyEquals0 first second of
+        Just (norm1, norm2) ->
+            let InternalAc{builtinAcChild = firstNormalized} =
+                    norm1 in
+            let InternalAc{builtinAcChild = secondNormalized} =
+                    norm2 in
+            unifySetEqualsMatch firstNormalized secondNormalized
+        Nothing -> return UnifySetBottom 
+    | otherwise = Nothing
+
+      where
         
-    --     sort1 = termLikeSort first
+        unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2)
+          = return (normalized1, normalized2)
+        unifyEquals0 first' second'
+          = do
+              firstDomain <- asDomain first'
+              secondDomain <- asDomain second'
+              unifyEquals0 firstDomain secondDomain
 
--- matchUnifyEqualsList1
---     :: TermLike RewritingVariableName
---     -> TermLike RewritingVariableName
---     -> Maybe Unification
--- matchUnifyEqualsList1 first second
---     | ElemVar_ _ <- first
---     , isFunctionPattern second
---     = Just UnifyEqualsList1
---     | otherwise = Nothing
+        sort1 = termLikeSort first
 
--- matchUnifyEqualsList2
---     :: TermLike RewritingVariableName
---     -> TermLike RewritingVariableName
---     -> Maybe Unification
--- matchUnifyEqualsList2 first second
---     | ElemVar_ _ <- second
---     , isFunctionPattern first
---     = Just UnifyEqualsList2
---     | otherwise = Nothing
+        asDomain ::
+            TermLike RewritingVariableName ->
+            Maybe (TermLike RewritingVariableName)
+        asDomain patt =
+            case normalizedOrBottom of
+                Ac.Normalized normalized -> Just $
+                    --tools <- Simplifier.askMetadataTools
+                    Ac.asInternal tools sort1 normalized
+                Ac.Bottom -> Nothing
+            
+          where
+            normalizedOrBottom ::
+                Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
+            normalizedOrBottom = Ac.toNormalized patt
 
 data UnifyEqualsList3Args = UnifyEqualsList3Args {
     symbol :: Symbol
@@ -770,5 +779,204 @@ matchUnifyEqualsList first second
     = Nothing
     | InternalList_ _ <- second
     = matchUnifyEqualsList second first
+    | otherwise
+    = Nothing
+
+data UnifyOverload1Args = UnifyOverload1Args {
+    firstHead, secondHead :: Symbol
+    , firstChildren :: [TermLike RewritingVariableName]
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+matchUnifyOverload1
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyOverload1 first second
+    | Inj_ inj@Inj { injChild = App_ firstHead firstChildren } <- first
+    , App_ secondHead _ <- second
+    = Just $ UnifyOverload1 $ UnifyOverload1Args firstHead secondHead firstChildren inj
+    | otherwise = Nothing
+
+data UnifyOverload2Args = UnifyOverload2Args {
+    firstHead, secondHead :: Symbol
+    , secondChildren :: [TermLike RewritingVariableName]
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+matchUnifyOverload2
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyOverload2 first second
+    | App_ firstHead _ <- first
+    , Inj_ inj@Inj { injChild = App_ secondHead secondChildren } <- second
+    = Just $ UnifyOverload2 $ UnifyOverload2Args firstHead secondHead secondChildren inj
+    | otherwise = Nothing
+
+data UnifyOverload3Args = UnifyOverload3Args {
+    firstHead, secondHead :: Symbol
+    , firstChildren, secondChildren :: [TermLike RewritingVariableName]
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+matchUnifyOverload3
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyOverload3 first second
+    | Inj_ inj@Inj { injChild = App_ firstHead firstChildren } <- first
+    , Inj_ inj'@Inj { injChild = App_ secondHead secondChildren } <- second
+    , injFrom inj /= injFrom inj'
+    = Just $ UnifyOverload3 $ UnifyOverload3Args firstHead secondHead firstChildren secondChildren inj
+    | otherwise = Nothing
+
+data UnifyOverload4Args = UnifyOverload4Args {
+    firstHead :: Symbol
+    , secondVar :: ElementVariable RewritingVariableName
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+matchUnifyOverload4
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyOverload4 first second
+    | App_ firstHead _ <- first
+    , Inj_ inj@Inj { injChild = ElemVar_ secondVar } <- second
+    = Just $ UnifyOverload4 $ UnifyOverload4Args firstHead secondVar inj
+    | App_ secondHead _ <- second
+    , Inj_ inj@Inj { injChild = ElemVar_ firstVar } <- first
+    = Just $ UnifyOverload4 $ UnifyOverload4Args secondHead firstVar inj
+    | otherwise = Nothing
+
+data UnifyOverload5Args = UnifyOverload5Args {
+    firstTerm :: TermLike RewritingVariableName
+    , firstHead :: Symbol
+    , firstChildren :: [TermLike RewritingVariableName]
+    , secondVar :: ElementVariable RewritingVariableName
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+matchUnifyOverload5
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyOverload5 first second
+    | Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) } <- first
+    , Inj_ inj@Inj { injChild = ElemVar_ secondVar } <- second
+    = Just $ UnifyOverload5 $ UnifyOverload5Args firstTerm firstHead firstChildren secondVar inj
+    | Inj_ Inj { injChild = secondTerm@(App_ secondHead secondChildren) } <- second
+    , Inj_ inj@Inj { injChild = ElemVar_ firstVar } <- first
+    = Just $ UnifyOverload5 $ UnifyOverload5Args secondTerm secondHead secondChildren firstVar inj
+    | otherwise = Nothing
+
+data UnifyOverload6Args = UnifyOverload6Args {
+    firstHead :: Symbol
+    , injChild :: TermLike RewritingVariableName
+}
+
+matchUnifyOverload6
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyOverload6 first second
+    | App_ firstHead _ <- first
+    , Inj_ Inj { injChild } <- second
+    = Just $ UnifyOverload6 $ UnifyOverload6Args firstHead injChild
+    | otherwise = Nothing
+
+matchBoolAnd1
+    :: TermLike RewritingVariableName
+    -> Maybe Unification
+matchBoolAnd1 first
+    | isBottom first
+    = Just UnifyBoolAnd1
+    | otherwise
+    = Nothing
+
+matchBoolAnd2
+    :: TermLike RewritingVariableName
+    -> Maybe Unification
+matchBoolAnd2 first
+    | isTop first
+    = Just UnifyBoolAnd2
+    | otherwise
+    = Nothing
+
+matchBoolAnd3
+    :: TermLike RewritingVariableName
+    -> Maybe Unification
+matchBoolAnd3 second
+    | isBottom second
+    = Just UnifyBoolAnd3
+    | otherwise
+    = Nothing
+
+matchBoolAnd4
+    :: TermLike RewritingVariableName
+    -> Maybe Unification
+matchBoolAnd4 second
+    | isTop second
+    = Just UnifyBoolAnd4
+    | otherwise
+    = Nothing
+
+matchVariableFunctionAnd1
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchVariableFunctionAnd1 first second
+    | ElemVar_ v <- first
+    , ElemVar_ _ <- second
+    = Just $ UnifyVariableFunctionAnd1 v
+    | otherwise
+    = Nothing
+
+matchVariableFunctionAnd2
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchVariableFunctionAnd2 first second
+    | ElemVar_ v <- first
+    , isFunctionPattern second
+    = Just $ UnifyVariableFunctionAnd2 v
+    | otherwise
+    = Nothing
+
+matchITE
+    :: TermLike RewritingVariableName
+    -> Maybe Unification
+matchITE first
+     | Just ifThenElse <- matchIfThenElse first
+     = Just $ UnifyIfThenElse ifThenElse
+     | otherwise
+     = Nothing
+
+data UnifyExpandAliasArgs = UnifyExpandAliasArgs {
+    term1, term2 :: !(TermLike RewritingVariableName)
+}
+
+matchExpandAlias
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchExpandAlias first second
+    | Just term1 <- expandSingleAlias first
+    , Just term2 <- expandSingleAlias second
+    = Just $ UnifyExpandAlias $ UnifyExpandAliasArgs term1 term2
+    | otherwise
+    = Nothing
+
+-- | isFunctionPattern first, isFunctionPattern second =
+
+matchIsFunctionPatterns
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchIsFunctionPatterns first second
+    | isFunctionPattern first
+    , isFunctionPattern second
+    = Just UnifyIsFunctionPatterns
     | otherwise
     = Nothing

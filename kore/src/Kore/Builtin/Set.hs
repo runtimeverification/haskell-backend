@@ -31,7 +31,9 @@ module Kore.Builtin.Set
     , evalUnit
     , evalDifference
       -- * Unification
-   -- , unifyEquals
+    , unifyEquals1
+    , unifyEquals2
+    , unifyEquals3
     ) where
 
 import Prelude.Kore
@@ -507,53 +509,138 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
-{- | Simplify the conjunction or equality of two concrete Set domain values.
+unifyEquals1
+    :: forall unifier
+    .  MonadUnify unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> ( TermLike RewritingVariableName ->
+         TermLike RewritingVariableName ->
+         unifier (Pattern RewritingVariableName)
+       )
+    -> [Element NormalizedSet (TermLike RewritingVariableName)]
+    -> [Element NormalizedSet (TermLike RewritingVariableName)]
+    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    -> [TermLike RewritingVariableName]
+    -> [TermLike RewritingVariableName]
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyEquals1 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 =
+    Ac.unifyEqualsNormalized tools first second $
+            Ac.unifyEqualsNormalizedAc
+                first
+                second
+                childTransformers
+                preElt1
+                preElt2
+                concreteElt1
+                concreteElt2
+                opaque1
+                opaque2 $ lift $
+                    Ac.unifyEqualsElementLists
+                        tools
+                        first
+                        second
+                        childTransformers
+                        (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
+                        (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
+                        Nothing
 
-    When it is used for simplifying equality, one should separately solve the
-    case ⊥ = ⊥. One should also throw away the term in the returned pattern.
+unifyEquals2
+    :: forall unifier
+    .  MonadUnify unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> ( TermLike RewritingVariableName ->
+         TermLike RewritingVariableName ->
+         unifier (Pattern RewritingVariableName)
+       )
+    -> [Element NormalizedSet (TermLike RewritingVariableName)]
+    -> [Element NormalizedSet (TermLike RewritingVariableName)]
+    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    -> [TermLike RewritingVariableName]
+    -> [TermLike RewritingVariableName]
+    -> TermLike.ElementVariable RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyEquals2 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var =
+    Ac.unifyEqualsNormalized tools first second $
+            Ac.unifyEqualsNormalizedAc
+                first
+                second
+                childTransformers
+                preElt1
+                preElt2
+                concreteElt1
+                concreteElt2
+                opaque1
+                opaque2 $
+                    if null $ Ac.opaqueDifference2 opaque1 opaque2 then
+                        lift $ Ac.unifyEqualsElementLists
+                            tools
+                            first
+                            second
+                            childTransformers
+                            (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
+                            (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
+                            (Just var)
+                    else if null $ Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2 then
+                        Ac.unifyOpaqueVariable
+                            tools
+                            undefined
+                            childTransformers
+                            var
+                            (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
+                            (Ac.opaqueDifference2 opaque1 opaque2)
+                    else empty
 
-    The sets are assumed to have the same sort, but this is not checked. If
-    multiple sorts are hooked to the same builtin domain, the verifier should
-    reject the definition.
- -}
--- unifyEquals
---     :: forall unifier
---     .  MonadUnify unifier
---     =>  (  TermLike RewritingVariableName
---         -> TermLike RewritingVariableName
---         -> unifier (Pattern RewritingVariableName)
---         )
---     -> TermLike RewritingVariableName
---     -> TermLike RewritingVariableName
---     -> InternalSet Key (TermLike RewritingVariableName)
---     -> InternalSet Key (TermLike RewritingVariableName)
---     -> MaybeT unifier (Pattern RewritingVariableName)
--- unifyEquals
---     unifyEqualsChildren
---     first
---     second
---     normalized1
---     normalized2
---   = do
---     tools <- Simplifier.askMetadataTools
---     (Monad.guard . fromMaybe False) (isSetSort tools sort1)
---     MaybeT $ do
---         unifiers <- Monad.Unify.gather (runMaybeT unifyEquals0)
---         case sequence unifiers of
---             Nothing -> return Nothing
---             Just us -> Monad.Unify.scatter (map Just us)
---   where
---     sort1 = termLikeSort first
-
---     -- | Unify the two argument patterns.
---     unifyEquals0
---         :: MaybeT unifier (Pattern RewritingVariableName)
---     unifyEquals0 = do
---         tools <- Simplifier.askMetadataTools --TODO: make arg
---         Ac.unifyEqualsNormalized
---             tools
---             first
---             second
---             unifyEqualsChildren
---             normalized1
---             normalized2
+unifyEquals3
+    :: forall unifier
+    .  MonadUnify unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> ( TermLike RewritingVariableName ->
+         TermLike RewritingVariableName ->
+         unifier (Pattern RewritingVariableName)
+       )
+    -> [Element NormalizedSet (TermLike RewritingVariableName)]
+    -> [Element NormalizedSet (TermLike RewritingVariableName)]
+    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    -> [TermLike RewritingVariableName]
+    -> [TermLike RewritingVariableName]
+    -> TermLike.ElementVariable RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var =
+    Ac.unifyEqualsNormalized tools first second $
+            Ac.unifyEqualsNormalizedAc
+                first
+                second
+                childTransformers
+                preElt1
+                preElt2
+                concreteElt1
+                concreteElt2
+                opaque1
+                opaque2 $
+                    if null $ Ac.opaqueDifference1 opaque1 opaque2 then
+                        lift $ Ac.unifyEqualsElementLists
+                            tools
+                            first
+                            second
+                            childTransformers
+                            (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
+                            (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
+                            (Just var)
+                    else if null $ Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2 then
+                        Ac.unifyOpaqueVariable
+                            tools
+                            undefined
+                            childTransformers
+                            var
+                            (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
+                            (Ac.opaqueDifference1 opaque1 opaque2)
+                    else empty

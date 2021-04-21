@@ -233,7 +233,8 @@ termAnd notSimplifier p1 p2 =
         -> TermLike RewritingVariableName
         -> UnifierT simplifier (Pattern RewritingVariableName)
     termAndWorker first second = do
-        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
+        tools <- askMetadataTools
+        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker tools first second
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where

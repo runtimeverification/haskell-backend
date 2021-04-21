@@ -36,6 +36,13 @@ module Kore.Builtin.AssociativeCommutative
     , UnitSymbol(..)
     , VariableElements (..)
     , unifyEqualsElementLists
+    , unifyEqualsNormalizedAc
+    , allElements1
+    , allElements2
+    , unifyOpaqueVariable
+    , opaqueDifference1
+    , opaqueDifference2
+    , explainAndReturnBottomAc
     ) where
 
 import Prelude.Kore
@@ -791,6 +798,81 @@ unifyEqualsNormalized
                 second
             Normalized n -> return n
 
+{- | Unifies two AC structs represented as @NormalizedAc@.
+Currently allows at most one opaque term in the two arguments taken together.
+-}
+unifyEqualsNormalizedAc ::
+    forall normalized unifier.
+    ( Traversable (Value normalized)
+    , TermWrapper normalized
+    , MonadUnify unifier
+    ) =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( TermLike RewritingVariableName ->
+      TermLike RewritingVariableName ->
+      unifier (Pattern RewritingVariableName)
+    ) ->
+    [Element normalized (TermLike RewritingVariableName)] ->
+    [Element normalized (TermLike RewritingVariableName)] ->
+    Map Key (Value normalized (TermLike RewritingVariableName)) ->
+    Map Key (Value normalized (TermLike RewritingVariableName)) ->
+    [TermLike RewritingVariableName] ->
+    [TermLike RewritingVariableName] ->
+    MaybeT
+        unifier
+     (Conditional
+        RewritingVariableName
+        [(TermLike RewritingVariableName,
+          Value normalized (TermLike RewritingVariableName))],
+      [TermLike RewritingVariableName]) ->
+    MaybeT
+        unifier
+        ( Conditional
+            RewritingVariableName
+            (TermNormalizedAc normalized RewritingVariableName)
+        )
+unifyEqualsNormalizedAc
+    first
+    second
+    unifyEqualsChildren
+    preElt1
+    preElt2
+    concreteElt1
+    concreteElt2
+    opaque1
+    opaque2
+    mcond =
+        do
+            (simpleUnifier, opaques) <- mcond
+            let (unifiedElements, unifierCondition) =
+                    Conditional.splitTerm simpleUnifier
+            lift $ do
+                -- unifier monad
+                -- unify the parts not sent to unifyEqualsNormalizedElements.
+                (commonElementsTerms, commonElementsCondition) <-
+                    unifyElementList unifyEqualsChildren (Map.toList (commonElements concreteElt1 concreteElt2))
+                (commonVariablesTerms, commonVariablesCondition) <-
+                    unifyElementList unifyEqualsChildren (Map.toList (commonVariables preElt1 preElt2))
+
+                -- simplify results so that things like inj applications that
+                -- may have been broken into smaller pieces are being put
+                -- back together.
+                unifiedSimplified <- mapM simplifyPair unifiedElements
+                opaquesSimplified <- mapM simplify opaques
+
+                buildResultFromUnifiers
+                    (bottomWithExplanation first second)
+                    commonElementsTerms
+                    commonVariablesTerms
+                    (commonOpaque opaque1 opaque2)
+                    unifiedSimplified
+                    opaquesSimplified
+                    [ unifierCondition
+                    , commonElementsCondition
+                    , commonVariablesCondition
+                    ]
+
 
 listToMap :: Ord a => [a] -> Map a Int
 listToMap = List.foldl' (\m k -> Map.insertWith (+) k 1 m) Map.empty
@@ -801,8 +883,8 @@ mapToList =
         (\key count result -> replicate count key ++ result)
         []
 
-bottomWithExplanation :: MonadUnify unifier => Doc () -> TermLike RewritingVariableName -> TermLike RewritingVariableName -> unifier a
-bottomWithExplanation explanation first second =
+bottomWithExplanation :: MonadUnify unifier => TermLike RewritingVariableName -> TermLike RewritingVariableName -> Doc () -> unifier a
+bottomWithExplanation first second explanation =
     Monad.Unify.explainAndReturnBottom explanation first second
 
 -- unifyEqualsElementLists' =
@@ -1147,28 +1229,27 @@ unifyWrappedValues unifier firstValue secondValue = do
 @ConcreteOrWithVariable@, with the first structure being allowed an additional
 opaque chunk (e.g. a variable) that will be sent to the unifier function
 together with some part of the second structure.
-
 The keys of the two structures are assumend to be disjoint.
 -}
-unifyEqualsElementLists
-    ::  forall normalized variable unifier
-    .   ( InternalVariable variable
-        , MonadUnify unifier
-        , TermWrapper normalized
-        , Traversable (Value normalized)
-        )
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -- ^ unifier function
-    -> [ConcreteOrWithVariable normalized variable]
-    -- ^ First structure elements
-    -> [ConcreteOrWithVariable normalized variable]
-    -- ^ Second structure elements
-    -> Maybe (TermLike variable)
-    -- ^ Opaque part of the first structure
-    -> unifier
+unifyEqualsElementLists ::
+    forall normalized variable unifier.
+    ( InternalVariable variable
+    , MonadUnify unifier
+    , TermWrapper normalized
+    , Traversable (Value normalized)
+    ) =>
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike variable ->
+    TermLike variable ->
+    -- | unifier function
+    (TermLike variable -> TermLike variable -> unifier (Pattern variable)) ->
+    -- | First structure elements
+    [ConcreteOrWithVariable normalized variable] ->
+    -- | Second structure elements
+    [ConcreteOrWithVariable normalized variable] ->
+    -- | Opaque element variable of the first structure
+    Maybe (ElementVariable variable) ->
+    unifier
         ( Conditional
             variable
             [(TermLike variable, Value normalized (TermLike variable))]
@@ -1182,50 +1263,53 @@ unifyEqualsElementLists
     firstElements
     secondElements
     Nothing
-  | length firstElements /= length secondElements
-    -- Neither the first, not the second ac structure include an opaque term, so
-    -- the listed elements form the two structures.
-    --
-    -- Since the two lists have different counts, their structures can
-    -- never unify.
-  = Monad.Unify.explainAndReturnBottom
-        "Cannot unify ac structures with different sizes."
-        first
-        second
-  | otherwise = do
-    (result, remainder1, remainder2) <-
-        unifyWithPermutations firstElements secondElements
-    -- The second structure does not include an opaque term so there is nothing
-    -- to match whatever is left in remainder1. This should have been caught by
-    -- the "length" check above so, most likely, this can be an assertion.
-    unless (null remainder1)
-        (remainderError firstElements secondElements remainder1)
-    -- The first structure does not include an opaque term so there is nothing
-    -- to match whatever is left in remainder2. This should have been caught by
-    -- the "length" check above so, most likely, this can be an assertion.
-    unless (null remainder2)
-        (remainderError firstElements secondElements remainder2)
+        | length firstElements /= length secondElements =
+            -- Neither the first, not the second ac structure include an opaque term, so
+            -- the listed elements form the two structures.
+            --
+            -- Since the two lists have different counts, their structures can
+            -- never unify.
+            Monad.Unify.explainAndReturnBottom
+                "Cannot unify ac structures with different sizes."
+                first
+                second
+        | otherwise = do
+            (result, remainder1, remainder2) <-
+                unifyWithPermutations firstElements secondElements
+            -- The second structure does not include an opaque term so there is nothing
+            -- to match whatever is left in remainder1. This should have been caught by
+            -- the "length" check above so, most likely, this can be an assertion.
+            unless
+                (null remainder1)
+                (remainderError firstElements secondElements remainder1)
+            -- The first structure does not include an opaque term so there is nothing
+            -- to match whatever is left in remainder2. This should have been caught by
+            -- the "length" check above so, most likely, this can be an assertion.
+            unless
+                (null remainder2)
+                (remainderError firstElements secondElements remainder2)
 
-    return (result, [])
-  where
-    unifyWithPermutations
-        :: [ConcreteOrWithVariable normalized variable]
-        -- ^ First structure elements
-        -> [ConcreteOrWithVariable normalized variable]
-        -- ^ Second structure elements
-        -> unifier
-            (Conditional variable
-                [   ( TermLike variable
-                    , Value normalized (TermLike variable)
-                    )
-                ]
-            , [ConcreteOrWithVariable normalized variable]
-            , [ConcreteOrWithVariable normalized variable]
-            )
-    unifyWithPermutations =
-        unifyEqualsElementPermutations
-            (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
-    remainderError = nonEmptyRemainderError first second
+            return (result, [])
+      where
+        unifyWithPermutations ::
+            -- | First structure elements
+            [ConcreteOrWithVariable normalized variable] ->
+            -- | Second structure elements
+            [ConcreteOrWithVariable normalized variable] ->
+            unifier
+                ( Conditional
+                    variable
+                    [ ( TermLike variable
+                      , Value normalized (TermLike variable)
+                      )
+                    ]
+                , [ConcreteOrWithVariable normalized variable]
+                , [ConcreteOrWithVariable normalized variable]
+                )
+        unifyWithPermutations =
+            unifyEqualsElementPermutations
+                (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
+        remainderError = nonEmptyRemainderError first second
 unifyEqualsElementLists
     tools
     first
@@ -1233,58 +1317,58 @@ unifyEqualsElementLists
     unifyEqualsChildren
     firstElements
     secondElements
-    (Just opaque)
-  | length firstElements > length secondElements
-    -- The second structure does not include an opaque term, so all the
-    -- elements in the first structure must be matched by elements in the second
-    -- one. Since we don't have enough, we return bottom.
-  = Monad.Unify.explainAndReturnBottom
-        "Cannot unify ac structures with different sizes."
-        first
-        second
-  | otherwise = do
-    (unifier, remainder1, remainder2) <-
-        unifyWithPermutations firstElements secondElements
-    -- The second structure does not include an opaque term so there is nothing
-    -- to match whatever is left in remainder1. This should have been caught by
-    -- the "length" check above so, most likely, this can be an assertion.
-    unless (null remainder1)
-        (remainderError firstElements secondElements remainder1)
+    (Just opaqueElemVar)
+        | length firstElements > length secondElements =
+            -- The second structure does not include an opaque term, so all the
+            -- elements in the first structure must be matched by elements in the second
+            -- one. Since we don't have enough, we return bottom.
+            Monad.Unify.explainAndReturnBottom
+                "Cannot unify ac structures with different sizes."
+                first
+                second
+        | otherwise = do
+            (unifier, remainder1, remainder2) <-
+                unifyWithPermutations firstElements secondElements
+            -- The second structure does not include an opaque term so there is nothing
+            -- to match whatever is left in remainder1. This should have been caught by
+            -- the "length" check above so, most likely, this can be an assertion.
+            unless
+                (null remainder1)
+                (remainderError firstElements secondElements remainder1)
 
-    let remainder2Terms = map fromConcreteOrWithVariable remainder2
+            let remainder2Terms = map fromConcreteOrWithVariable remainder2
 
-    case elementListAsInternal tools (termLikeSort first) remainder2Terms of
-        Nothing -> Monad.Unify.explainAndReturnBottom
-            "Duplicated element in unification results"
-            first
-            second
-        Just remainderTerm -> case opaque of
-            ElemVar_ _
-              | TermLike.isFunctionPattern remainderTerm -> do
-                opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
-                let
-                    (opaqueTerm, opaqueCondition) =
-                        Pattern.splitTerm opaqueUnifier
-                    result = unifier `andCondition` opaqueCondition
-
-                return (result, [opaqueTerm])
-            _ ->
-                error . show . Pretty.vsep $
-                    [ "Unification case that should be handled somewhere else: \
-                        \attempting normalized unification with a \
-                        \non-element-variable opaque term or \
-                        \non-function maps could lead to infinite loops."
-                    , Pretty.indent 2 "first="
-                    , Pretty.indent 4 (unparse first)
-                    , Pretty.indent 2 "second="
-                    , Pretty.indent 4 (unparse second)
-                    ]
-
-  where
-    unifyWithPermutations =
-        unifyEqualsElementPermutations
-            (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
-    remainderError = nonEmptyRemainderError first second
+            case elementListAsInternal tools (termLikeSort first) remainder2Terms of
+                Nothing ->
+                    Monad.Unify.explainAndReturnBottom
+                        "Duplicated element in unification results"
+                        first
+                        second
+                Just remainderTerm
+                    | TermLike.isFunctionPattern remainderTerm -> do
+                        opaqueUnifier <-
+                            unifyEqualsChildren
+                                (mkElemVar opaqueElemVar)
+                                remainderTerm
+                        let (opaqueTerm, opaqueCondition) =
+                                Pattern.splitTerm opaqueUnifier
+                            result = unifier `andCondition` opaqueCondition
+                        return (result, [opaqueTerm])
+                _ ->
+                    error . show . Pretty.vsep $
+                        [ "Unification case that should be handled somewhere else: \
+                          \attempting normalized unification with \
+                          \non-function maps could lead to infinite loops."
+                        , Pretty.indent 2 "first="
+                        , Pretty.indent 4 (unparse first)
+                        , Pretty.indent 2 "second="
+                        , Pretty.indent 4 (unparse second)
+                        ]
+      where
+        unifyWithPermutations =
+            unifyEqualsElementPermutations
+                (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
+        remainderError = nonEmptyRemainderError first second
 
 unifyOpaqueVariable
     ::  ( MonadUnify unifier
@@ -1600,3 +1684,11 @@ splitLastInit [a] = Just ([], a)
 splitLastInit (a:as) = do
     (initA, lastA) <- splitLastInit as
     return (a:initA, lastA)
+
+explainAndReturnBottomAc
+    :: MonadUnify (MaybeT unifier)
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
+explainAndReturnBottomAc first second
+    = Monad.Unify.explainAndReturnBottom "Duplicated elements in normalization." first second

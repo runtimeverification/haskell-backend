@@ -420,8 +420,14 @@ termEqualsAnd p1 p2 =
         => TermLike RewritingVariableName
         -> TermLike RewritingVariableName
         -> MaybeT unifier (Pattern RewritingVariableName)
-    maybeTermEqualsWorker =
-        maybeTermEquals Not.notSimplifier termEqualsAndWorker
+    maybeTermEqualsWorker first second = do
+        tools <- askMetadataTools
+        maybeTermEquals
+            Not.notSimplifier
+            termEqualsAndWorker
+            tools
+            first
+            second
 
     termEqualsAndWorker
         :: forall unifier

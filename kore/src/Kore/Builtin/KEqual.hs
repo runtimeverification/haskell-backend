@@ -22,6 +22,8 @@ module Kore.Builtin.KEqual
     , unifyKequalsEq
     , unifyIfThenElse
     , matchKequalEq
+    , matchIfThenElse
+    , IfThenElse (..)
       -- * keys
     , eqKey
     , neqKey
@@ -252,31 +254,29 @@ unifyIfThenElse
     :: forall unifier
     .  MonadUnify unifier
     => TermSimplifier RewritingVariableName unifier
-    -> TermLike RewritingVariableName
+    -> IfThenElse (TermLike RewritingVariableName)
     -> TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyIfThenElse unifyChildren a b =
-    worker a b <|> worker b a
+unifyIfThenElse unifyChildren ifThenElse second =
+    worker ifThenElse second
   where
     takeCondition value condition' =
         makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
         & Condition.fromPredicate
       where
         sort = termLikeSort condition'
-    worker termLike1 termLike2
-      | Just ifThenElse <- matchIfThenElse termLike1
-      = lift (takeBranch1 ifThenElse <|> takeBranch2 ifThenElse)
+    worker ifThenElse' second'
+      = lift (takeBranch1 ifThenElse' <|> takeBranch2 ifThenElse')
       where
         takeBranch1 IfThenElse { condition, branch1 } = do
-            solution <- unifyChildren branch1 termLike2
+            solution <- unifyChildren branch1 second'
             let branchCondition = takeCondition True condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
                 & Logic.lowerLogicT
         takeBranch2 IfThenElse { condition, branch2 } = do
-            solution <- unifyChildren branch2 termLike2
+            solution <- unifyChildren branch2 second'
             let branchCondition = takeCondition False condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
                 & Logic.lowerLogicT
-    worker _ _ = empty
