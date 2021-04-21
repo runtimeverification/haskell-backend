@@ -30,7 +30,7 @@ USER $USER_ID:$GROUP_ID
 WORKDIR /home/user
 
 ADD --chown=user:user stack.yaml .tmp-haskell/
-ADD --chown=user:user kore/package.yaml .tmp-haskell/kore/
+ADD --chown=user:user kore/kore.cabal .tmp-haskell/kore/
 RUN    ( cd .tmp-haskell && stack build --only-snapshot --test --bench --haddock ) \
     && rm -fr .tmp-haskell
 
