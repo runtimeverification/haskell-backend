@@ -548,7 +548,7 @@ data PairWiseElements normalized key child = PairWiseElements
     , concretePairs ::
         !(HashSet (AcPair (ConcreteElement key normalized child)))
     , opaquePairs ::
-        !((HashSet (AcPair child)))
+        !(HashSet (AcPair child))
     , symbolicConcretePairs ::
         !(HashSet (Element normalized child, ConcreteElement key normalized child))
     , symbolicOpaquePairs ::
