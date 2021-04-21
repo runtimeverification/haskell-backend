@@ -876,7 +876,7 @@ unifyEqualsNormalizedAc
 
 listToMap :: Ord a => [a] -> Map a Int
 listToMap = List.foldl' (\m k -> Map.insertWith (+) k 1 m) Map.empty
-    
+
 mapToList :: Map a Int -> [a]
 mapToList =
     Map.foldrWithKey
@@ -916,7 +916,7 @@ commonVariables preEltsWithVars1 preEltsWithVars2 =
         (,)
         (eltsWithVarsMap preEltsWithVars1)
         (eltsWithVarsMap preEltsWithVars2)
-            
+
 -- Duplicates must be kept in case any of the opaque terms turns out to be
 -- non-empty, in which case one of the terms is bottom, which
 -- means that the unification result is bottom.
@@ -1016,7 +1016,7 @@ simplify term =
 
 simplifyPair
     :: forall unifier normalized
-    .  MonadUnify unifier 
+    .  MonadUnify unifier
     => Traversable (Value normalized)
     => ( TermLike RewritingVariableName
         , Value normalized (TermLike RewritingVariableName)

@@ -32,9 +32,9 @@ import Data.Text
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
+import qualified Kore.Builtin.EqTerm as Builtin.EqTerm
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.KEqual as Builtin.KEqual
-import qualified Kore.Builtin.EqTerm as Builtin.EqTerm
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
@@ -664,7 +664,7 @@ sortInjectionAndEquals termMerger inj1 inj2 = do
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
             inj' = evaluateInj inj { injChild = childTerm }
         return $ Pattern.withCondition inj' childCondition
-    first = mkInjWrap inj1  
+    first = mkInjWrap inj1
     second = mkInjWrap inj2
 
 {- | Unify a constructor application pattern with a sort injection pattern.

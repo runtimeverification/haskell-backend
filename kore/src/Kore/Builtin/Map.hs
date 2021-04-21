@@ -38,9 +38,8 @@ module Kore.Builtin.Map
 import Prelude.Kore
 
 import Control.Error
-    ( MaybeT (MaybeT)
+    ( MaybeT
     , hoistMaybe
-    , runMaybeT
     )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
@@ -116,7 +115,6 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Unify
-import qualified Kore.Unification.Unify as Monad.Unify
 
 {- | Builtin name of the @Map@ sort.
  -}
@@ -658,52 +656,6 @@ unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 c
                             (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
                             (Ac.opaqueDifference1 opaque1 opaque2)
                     else empty
-
--- unifyEquals
---     :: forall unifier
---     .  MonadUnify unifier
---     => TermSimplifier RewritingVariableName unifier
---     -> SmtMetadataTools Attribute.Symbol
---     -> TermLike RewritingVariableName
---     -> TermLike RewritingVariableName
---     -> InternalMap Key (TermLike RewritingVariableName)
---     -> InternalMap Key (TermLike RewritingVariableName)
---     -> MaybeT unifier (Pattern RewritingVariableName)
--- unifyEquals unifyEqualsChildren tools first second normalized1 normalized2 = do
---     --tools <- Simplifier.askMetadataTools
---     --(Monad.guard . fromMaybe False) (isMapSort tools sort1)
---     MaybeT $ do
---         unifiers <- Monad.Unify.gather (runMaybeT unifyEquals0)
---         case sequence unifiers of
---             Nothing -> return Nothing
---             Just us -> Monad.Unify.scatter (map Just us)
---   where
---     sort1 = builtinAcSort normalized1
-
--- unifyEqualsNormalized
---     tools
---     first
---     second
---     mcond
---   = do
-
-    -- | Unify the two argument patterns.
-    --unifyEquals0
-        -- :: MaybeT unifier (Pattern RewritingVariableName)
-    --unifyEquals0 = undefined
-        -- Ac.unifyEqualsNormalized
-        --     tools
-        --     first
-        --     second
-        --     (lift $ Ac.unifyEqualsElementLists
-        --         tools
-        --         first
-        --         second
-        --         unifyEqualsChildren
-        --         normalized1
-        --         normalized2
-        --         Nothing
-        --     )
 
 data InKeys term =
     InKeys

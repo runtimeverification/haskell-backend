@@ -90,7 +90,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    --, pattern ElemVar_
     , pattern InternalList_
     , pattern InternalList_
     , Key
@@ -101,11 +100,9 @@ import Kore.Internal.TermLike
     , mkInternalList
     , mkSort
     , retractKey
-    --, termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( Symbol (..)
-    --, isFunctionPattern
     , markSimplified
     )
 import Kore.Rewriting.RewritingVariable
@@ -437,7 +434,7 @@ unify3 simplifyChild first second symbol2 args1 args2
                         builtin1
                         x2
                         builtin2
-            _ -> empty 
+            _ -> empty
 
 unify4
     :: MonadUnify unifier
@@ -687,7 +684,7 @@ unifyEqualsFramedRightRight
     -> unifier (Pattern RewritingVariableName)
 unifyEqualsFramedRightRight
     simplifyChild
-    first second 
+    first second
     symbol
     internal1
     frame1
