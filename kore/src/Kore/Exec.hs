@@ -173,6 +173,9 @@ import Kore.Unparser (
     unparseToText,
     unparseToText2,
  )
+import Kore.Log.DebugExecGoal (
+    debugExecGoal
+ )
 import Log (
     MonadLog,
  )
@@ -269,6 +272,7 @@ exec
                     forceSort initialSort $
                         OrPattern.toTermLike
                             (MultiOr.map getRewritingPattern finalConfigs')
+            debugExecGoal initialTerm finalTerm
             return (exitCode, finalTerm)
       where
         dropStrategy = snd

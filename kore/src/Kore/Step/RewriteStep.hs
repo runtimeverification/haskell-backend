@@ -288,7 +288,7 @@ applyWithFinalizer ::
     simplifier (Results rule)
 applyWithFinalizer finalize rules initial = do
     results <- unifyRules initial rules
-    debugRewriteSubstitution results
+    debugRewriteSubstitution initial results
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
     finalize initialVariables initial results
