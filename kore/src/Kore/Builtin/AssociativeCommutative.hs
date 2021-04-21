@@ -64,7 +64,9 @@ import Data.Reflection
     ( Given
     )
 import qualified Data.Reflection as Reflection
-import Data.Set.Internal (Set)
+import Data.Set.Internal
+    ( Set
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

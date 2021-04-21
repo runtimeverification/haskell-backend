@@ -311,7 +311,7 @@ unifyOverloading termPair = case termPair of
             (Application secondHead secondChildren)
             inj { injChild = () }
     Pair firstTerm secondTerm ->
-        catchE 
+        catchE
         (unifyWorker firstTerm secondTerm)
             (\case
                 NotApplicable -> unifyWorker secondTerm firstTerm

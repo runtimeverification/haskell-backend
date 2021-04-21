@@ -38,7 +38,10 @@ module Kore.Builtin.Set
 
 import Prelude.Kore
 
-import Control.Error ( MaybeT, hoistMaybe )
+import Control.Error
+    ( MaybeT
+    , hoistMaybe
+    )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
