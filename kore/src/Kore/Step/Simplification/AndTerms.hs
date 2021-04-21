@@ -517,8 +517,7 @@ explainBoolAndBottom term1 term2 =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    :: InternalVariable RewritingVariableName
-    => Monad unifier
+    :: Monad unifier
     => TermLike RewritingVariableName
     -> MaybeT unifier (Pattern RewritingVariableName)
 equalAndEquals first =

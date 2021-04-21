@@ -64,6 +64,7 @@ import Data.Reflection
     ( Given
     )
 import qualified Data.Reflection as Reflection
+import Data.Set.Internal (Set)
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -726,10 +727,8 @@ reject the definition.
 -}
 unifyEqualsNormalized
     :: forall normalized unifier
-    .   ( Traversable (Value normalized)
-        , TermWrapper normalized
-        , MonadUnify unifier
-        )
+    .  TermWrapper normalized
+    => MonadUnify unifier
     => HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike RewritingVariableName
@@ -907,10 +906,13 @@ eltsWithVars preElementsWithVariables = unwrapElement <$> preElementsWithVariabl
 eltsWithVarsMap :: (Ord child, AcWrapper normalized) => [Element normalized child] -> Map child (Value normalized child)
 eltsWithVarsMap = Map.fromList . eltsWithVars
 
+commonElements :: Map Key a -> Map Key b -> Map Key (a, b)
 commonElements =
     Map.intersectionWith
         (,)
 
+--TODO: figure out type sigs
+commonVariables :: (Ord k, AcWrapper normalized1, AcWrapper normalized2) => [Element normalized1 k] -> [Element normalized2 k] -> Map k (Value normalized1 k, Value normalized2 k)
 commonVariables preEltsWithVars1 preEltsWithVars2 =
     Map.intersectionWith
         (,)
@@ -920,9 +922,12 @@ commonVariables preEltsWithVars1 preEltsWithVars2 =
 -- Duplicates must be kept in case any of the opaque terms turns out to be
 -- non-empty, in which case one of the terms is bottom, which
 -- means that the unification result is bottom.
+commonOpaqueMap :: Ord k => [k] -> [k] -> Map k Int
 commonOpaqueMap opaque1 opaque2 = Map.intersectionWith max (listToMap opaque1) (listToMap opaque2)
 
+commonOpaque :: Ord a => [a] -> [a] -> [a]
 commonOpaque opaque1 opaque2 = mapToList $ commonOpaqueMap opaque1 opaque2
+commonOpaqueKeys :: Ord k => [k] -> [k] -> Data.Set.Internal.Set k
 
 commonOpaqueKeys opaque1 opaque2 = Map.keysSet $ commonOpaqueMap opaque1 opaque2
 
@@ -940,15 +945,19 @@ elementDifference2
 elementDifference2 concreteElts1 concreteElts2 =
     Map.toList (Map.difference concreteElts2 (commonElements concreteElts1 concreteElts2))
 
+elementVariableDifference1 :: (Ord k, AcWrapper normalized1, AcWrapper normalized2) => [Element normalized1 k] -> [Element normalized2 k] -> [(k, Value normalized1 k)]
 elementVariableDifference1 preEltsWithVars1 preEltsWithVars2 =
     Map.toList (Map.difference (eltsWithVarsMap preEltsWithVars1) (commonVariables preEltsWithVars1 preEltsWithVars2))
 
+elementVariableDifference2 :: (Ord k, AcWrapper normalized2, AcWrapper normalized1) => [Element normalized1 k] -> [Element normalized2 k] -> [(k, Value normalized2 k)]
 elementVariableDifference2 preEltsWithVars1 preEltsWithVars2 =
     Map.toList (Map.difference (eltsWithVarsMap preEltsWithVars2) (commonVariables preEltsWithVars1 preEltsWithVars2))
 
+opaqueDifference1 :: Ord a => [a] -> [a] -> [a]
 opaqueDifference1 opaque1 opaque2 =
     mapToList (Map.withoutKeys (listToMap opaque1) (commonOpaqueKeys opaque1 opaque2))
 
+opaqueDifference2 :: Ord a => [a] -> [a] -> [a]
 opaqueDifference2 opaque1 opaque2 =
     mapToList (Map.withoutKeys (listToMap opaque2) (commonOpaqueKeys opaque1 opaque2))
 
@@ -964,6 +973,7 @@ allElements1 preEltsWithVars1 preEltsWithVars2 concreteElts1 concreteElts2 =
     ++ map toConcretePat (elementDifference1 concreteElts1 concreteElts2)
 
 --allElements2 :: [ConcreteOrWithVariable normalized RewritingVariableName]
+allElements2 :: (AcWrapper normalized, AcWrapper normalized1) => [Element normalized1 (TermLike RewritingVariableName)] -> [Element normalized (TermLike RewritingVariableName)] -> Map Key (Value normalized (TermLike RewritingVariableName)) -> Map Key (Value normalized (TermLike RewritingVariableName)) -> [ConcreteOrWithVariable normalized RewritingVariableName]
 allElements2 preEltsWithVars1 preEltsWithVars2 concreteElts1 concreteElts2 =
     map WithVariablePat (elementVariableDifference2 preEltsWithVars1 preEltsWithVars2)
     ++ map toConcretePat (elementDifference2 concreteElts1 concreteElts2)
@@ -1083,10 +1093,10 @@ buildResultFromUnifiers
     -> [Condition variable]
     -> unifier (Conditional variable (TermNormalizedAc normalized variable))
 buildResultFromUnifiers
-    bottomWithExplanation
+    bottomWithExplanation'
     commonElementsTerms
     commonVariablesTerms
-    commonOpaque
+    commonOpaque'
     unifiedElementsSimplified
     opaquesSimplified
     predicates
@@ -1114,7 +1124,7 @@ buildResultFromUnifiers
         , opaque = opaquesOpaque
         } <- case opaquesNormalized of
             Bottom ->
-                bottomWithExplanation "Duplicated elements after unification."
+                bottomWithExplanation' "Duplicated elements after unification."
             Normalized result -> return (unwrapAc result)
     let opaquesElementsWithVariables =
             unwrapElement <$> preOpaquesElementsWithVariables
@@ -1123,7 +1133,7 @@ buildResultFromUnifiers
     -- unification.
     withVariableMap <-
         addAllDisjoint
-            bottomWithExplanation
+            bottomWithExplanation'
             Map.empty
             (  commonVariablesTerms
             ++ withVariableTerms
@@ -1131,13 +1141,13 @@ buildResultFromUnifiers
             )
     concreteMap <-
         addAllDisjoint
-            bottomWithExplanation
+            bottomWithExplanation'
             Map.empty
             (  commonElementsTerms
             ++ concreteTerms
             ++ Map.toList opaquesConcreteTerms
             )
-    let allOpaque = Data.List.sort (commonOpaque ++ opaquesOpaque)
+    let allOpaque = Data.List.sort (commonOpaque' ++ opaquesOpaque)
         -- Merge all unification predicates.
         predicate = List.foldl'
             andCondition
@@ -1163,10 +1173,10 @@ addAllDisjoint
     -> Map a b
     -> [(a, b)]
     -> unifier (Map a b)
-addAllDisjoint bottomWithExplanation existing elements =
+addAllDisjoint bottomWithExplanation' existing elements =
     case addToMapDisjoint existing elements of
         Nothing ->
-            bottomWithExplanation "Duplicated elements after AC unification."
+            bottomWithExplanation' "Duplicated elements after AC unification."
         Just result -> return result
 
 unifyCommonElements
@@ -1392,14 +1402,14 @@ unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] =
     noCheckUnifyOpaqueChildren unifyChildren v1 second
 unifyOpaqueVariable
     tools
-    bottomWithExplanation
+    bottomWithExplanation'
     unifyChildren
     v1
     concreteOrVariableTerms
     opaqueTerms
   =
     case elementListAsNormalized pairs of
-        Nothing -> lift $ bottomWithExplanation
+        Nothing -> lift $ bottomWithExplanation'
             "Duplicated element in unification results"
         Just elementTerm ->
             let secondTerm =

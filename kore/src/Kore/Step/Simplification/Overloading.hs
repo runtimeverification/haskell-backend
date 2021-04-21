@@ -348,6 +348,10 @@ unifyWorker (App_ firstHead _) (Inj_ Inj { injChild }) =
     notUnifiableTest firstHead injChild
 unifyWorker _ _ = notApplicable
 
+notUnifiableTest :: MonadSimplify unifier
+    => Symbol
+    -> TermLike RewritingVariableName
+    -> ExceptT UnifyOverloadingError unifier b
 notUnifiableTest termHead child = do
     OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
     Monad.guard (isOverloaded termHead)

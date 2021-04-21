@@ -38,11 +38,7 @@ module Kore.Builtin.Set
 
 import Prelude.Kore
 
-import Control.Error
-    ( MaybeT (MaybeT)
-    , hoistMaybe
-    , runMaybeT
-    )
+import Control.Error ( MaybeT, hoistMaybe )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
@@ -111,7 +107,6 @@ import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Unification.Unify
     ( MonadUnify
     )
-import qualified Kore.Unification.Unify as Monad.Unify
 
 {- | Builtin name of the @Set@ sort.
  -}

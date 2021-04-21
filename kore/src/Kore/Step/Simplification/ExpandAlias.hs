@@ -15,9 +15,6 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
-import Control.Error.Util
-    ( nothing
-    )
 import qualified Data.Map.Strict as Map
 
 import Kore.Internal.Alias
@@ -40,14 +37,10 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
 
 expandAlias
     :: forall unifier
-    .  MonadUnify unifier
-    => (   TermLike RewritingVariableName
+    . (   TermLike RewritingVariableName
         -> TermLike RewritingVariableName
         -> MaybeT unifier (Pattern RewritingVariableName)
        )
