@@ -63,7 +63,7 @@ instance Pretty DebugRewriteSubstitution where
             ruleInfo :: Maybe String -> [Pretty.Doc ann]
             ruleInfo uid =
                 pretty <$> [
-                    "- type: step" :: String,
+                    "- type: rewriting" :: String,
                     "  from: >",
                     "    " ++ unparseToCompactString (Conditional.term configuration),
                     "  rule-id: " ++ maybe "null" id uid,
