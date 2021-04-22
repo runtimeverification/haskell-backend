@@ -659,7 +659,7 @@ setVariableGen sort =
 test_symbolic :: TestTree
 test_symbolic =
     testPropertyWithSolver
-        "4TESTING concat and elem are evaluated on symbolic keys"
+        "concat and elem are evaluated on symbolic keys"
         ( do
             values <- forAll (setVariableGen intSort)
             let patMap = asSymbolicPattern (HashSet.map mkElemVar values)
@@ -1074,7 +1074,7 @@ test_unifyConcatElemVarVsElemSet =
 test_unifyConcatElemVarVsElemElem :: TestTree
 test_unifyConcatElemVarVsElemElem =
     testPropertyWithoutSolver
-        "3TESTING unify concat(elem(X), S) and concat(elem(Y), elem(Z))"
+        "unify concat(elem(X), S) and concat(elem(Y), elem(Z))"
         ( do
             setVar <-
                 forAll (standaloneGen $ configElementVariableGen setSort)
@@ -1175,7 +1175,7 @@ test_unifyConcatElemElemVsElemConcrete =
 test_unifyConcatElemElemVsElemElem :: TestTree
 test_unifyConcatElemElemVsElemElem =
     testPropertyWithoutSolver
-        "2TESTING unify concat(elem(X), elem(Y)) and concat(elem(Z), elem(T))"
+        "unify concat(elem(X), elem(Y)) and concat(elem(Z), elem(T))"
         ( do
             elemVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
@@ -1699,7 +1699,7 @@ test_unifyConcatElemElemVsElemConcat =
 test_unifyConcatElemElemVsElemConcatSet :: TestTree
 test_unifyConcatElemElemVsElemConcatSet =
     testPropertyWithoutSolver
-        "TESTING unify concat(elem(X), elem(Y)) \
+        "unify concat(elem(X), elem(Y)) \
         \ and concat(elem(Z), concat(elem(T), U))"
         ( do
             setVar <-

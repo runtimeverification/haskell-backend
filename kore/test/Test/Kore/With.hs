@@ -5,95 +5,100 @@ module Test.Kore.With (
     VariableElement (..),
 ) where
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashSet as HashSet
 import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty (
-    cons,
-    reverse,
- )
+import qualified Data.List.NonEmpty as NonEmpty
+    ( cons
+    , reverse
+    )
 import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
-    Constructors (Constructors),
- )
-import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors (
-    Constructor (Constructor),
-    ConstructorLike (..),
- )
-import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Constructor (
-    Constructor (..),
- )
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors (Constructors)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
+    ( Constructor (Constructor)
+    , ConstructorLike (..)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Constructor
+    ( Constructor (..)
+    )
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import Kore.Internal.TermLike (
-    Key,
- )
-import qualified Kore.Sort as Kore (
-    Sort,
- )
-import qualified Kore.Step.SMT.AST as AST (
-    Declarations (Declarations),
-    IndirectSymbolDeclaration (IndirectSymbolDeclaration),
-    KoreSortDeclaration (..),
-    KoreSymbolDeclaration (..),
-    Sort (Sort),
-    SortReference (SortReference),
-    Symbol (Symbol),
-    UnresolvedIndirectSymbolDeclaration,
-    UnresolvedKoreSymbolDeclaration,
-    UnresolvedSymbol,
- )
-import qualified Kore.Step.SMT.AST as AST.Declarations (
-    Declarations (..),
- )
-import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration (
-    IndirectSymbolDeclaration (..),
- )
-import qualified Kore.Step.SMT.AST as AST.Sort (
-    Sort (..),
- )
-import qualified Kore.Step.SMT.AST as AST.Symbol (
-    Symbol (..),
- )
-import Kore.Syntax.Definition (
-    Definition (Definition),
- )
-import qualified Kore.Syntax.Definition as Definition (
-    Definition (..),
- )
-import qualified Kore.Syntax.Id as Kore (
-    Id,
- )
-import qualified Kore.Syntax.Module as Module (
-    Module (..),
- )
+import Kore.Internal.TermLike
+    ( Key
+    )
+import qualified Kore.Sort as Kore
+    ( Sort
+    )
+import qualified Kore.Step.SMT.AST as AST
+    ( Declarations (Declarations)
+    , IndirectSymbolDeclaration (IndirectSymbolDeclaration)
+    , KoreSortDeclaration (..)
+    , KoreSymbolDeclaration (..)
+    , Sort (Sort)
+    , SortReference (SortReference)
+    , Symbol (Symbol)
+    , UnresolvedIndirectSymbolDeclaration
+    , UnresolvedKoreSymbolDeclaration
+    , UnresolvedSymbol
+    )
+import qualified Kore.Step.SMT.AST as AST.Declarations
+    ( Declarations (..)
+    )
+import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
+    ( IndirectSymbolDeclaration (..)
+    )
+import qualified Kore.Step.SMT.AST as AST.Sort
+    ( Sort (..)
+    )
+import qualified Kore.Step.SMT.AST as AST.Symbol
+    ( Symbol (..)
+    )
+import Kore.Syntax.Definition
+    ( Definition (Definition)
+    )
+import qualified Kore.Syntax.Definition as Definition
+    ( Definition (..)
+    )
+import qualified Kore.Syntax.Id as Kore
+    ( Id
+    )
+import qualified Kore.Syntax.Module as Module
+    ( Module (..)
+    )
 import Kore.Syntax.Sentence
-import qualified Kore.Syntax.Sentence as SentenceAlias (
-    SentenceAlias (..),
- )
-import qualified Kore.Syntax.Sentence as SentenceAxiom (
-    SentenceAxiom (..),
- )
-import qualified Kore.Syntax.Sentence as SentenceImport (
-    SentenceImport (..),
- )
-import qualified Kore.Syntax.Sentence as SentenceSort (
-    SentenceSort (..),
- )
-import qualified Kore.Syntax.Sentence as SentenceSymbol (
-    SentenceSymbol (..),
- )
+import qualified Kore.Syntax.Sentence as SentenceAlias
+    ( SentenceAlias (..)
+    )
+import qualified Kore.Syntax.Sentence as SentenceAxiom
+    ( SentenceAxiom (..)
+    )
+import qualified Kore.Syntax.Sentence as SentenceImport
+    ( SentenceImport (..)
+    )
+import qualified Kore.Syntax.Sentence as SentenceSort
+    ( SentenceSort (..)
+    )
+import qualified Kore.Syntax.Sentence as SentenceSymbol
+    ( SentenceSymbol (..)
+    )
 import Prelude.Kore
-import qualified SMT.AST as AST (
-    Constructor (Constructor),
-    ConstructorArgument,
-    DataTypeDeclaration (DataTypeDeclaration),
- )
-import qualified SMT.AST as AST.Constructor (
-    Constructor (..),
- )
-import qualified SMT.AST as AST.DataTypeDeclaration (
-    DataTypeDeclaration (..),
- )
+import qualified SMT.AST as AST
+    ( Constructor (Constructor)
+    , ConstructorArgument
+    , DataTypeDeclaration (DataTypeDeclaration)
+    )
+import qualified SMT.AST as AST.Constructor
+    ( Constructor (..)
+    )
+import qualified SMT.AST as AST.DataTypeDeclaration
+    ( DataTypeDeclaration (..)
+    )
 
 class With a b where
     with :: a -> b -> a
@@ -349,21 +354,34 @@ instance
 newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedAc NormalizedSet Key child)
         (VariableElement child)
     where
     with
-        s@NormalizedAc{elementsWithVariables}
+        internalSet
         (VariableElement v) =
-            s
-                { elementsWithVariables =
-                    List.sort (SetElement v : elementsWithVariables)
-                }
+            Lens.over
+                (field @"elementsWithVariables")
+                (\symbolicVariables ->
+                    let newElement = SetElement v
+                        newSymbolicVariables =
+                            newElement : symbolicVariables
+                        simulateNormalize = HashSet.toList . HashSet.fromList
+                     in if newElement `elem` symbolicVariables
+                            then
+                                -- user intended for a de-normalized internalSet
+                                newSymbolicVariables
+                            else
+                                -- this simulates the reordering of the elements
+                                -- which happens during AC normalization
+                                simulateNormalize newSymbolicVariables
+                )
+                internalSet
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedAc NormalizedSet Key child)
         [VariableElement child]
@@ -371,7 +389,7 @@ instance
     with = foldl' with
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedSet Key child)
         (VariableElement child)
@@ -382,7 +400,7 @@ instance
             NormalizedSet (ac `with` value)
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedSet Key child)
         [VariableElement child]
