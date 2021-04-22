@@ -32,8 +32,8 @@ import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Bool.Bool as Bool.Bool
-import Kore.Internal.InternalBool
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalBool
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
