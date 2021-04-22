@@ -77,8 +77,6 @@ import qualified Data.Maybe as Maybe (
     fromJust,
  )
 import qualified Data.Sequence as Seq
-
--- import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Hedgehog hiding (
     Concrete,
