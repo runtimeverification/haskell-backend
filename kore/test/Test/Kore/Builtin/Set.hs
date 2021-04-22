@@ -518,7 +518,7 @@ test_difference_symbolic =
 test_toList :: TestTree
 test_toList =
     testPropertyWithSolver
-        "SET.set2list is set2list"
+        "SET.set2list is implemented as a Haskell set to list transformation"
         ( do
             set <- forAll genSetInteger
             let expectedList = implToList set
