@@ -710,11 +710,11 @@ matchUnifyEqualsSet tools first second
             let InternalAc{builtinAcChild = secondNormalized} =
                     norm2 in
             unifySetEqualsMatch firstNormalized secondNormalized
-        Nothing -> return UnifySetBottom 
+        Nothing -> return UnifySetBottom
     | otherwise = Nothing
 
       where
-        
+
         unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2)
           = return (normalized1, normalized2)
         unifyEquals0 first' second'
@@ -734,7 +734,7 @@ matchUnifyEqualsSet tools first second
                     --tools <- Simplifier.askMetadataTools
                     Ac.asInternal tools sort1 normalized
                 Ac.Bottom -> Nothing
-            
+
           where
             normalizedOrBottom ::
                 Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
