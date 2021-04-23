@@ -23,7 +23,6 @@ module Kore.Builtin.Builtin (
     binaryOperator,
     ternaryOperator,
     functionEvaluator,
-    functionEvaluatorWithApp,
     applicationEvaluator,
     verifierBug,
     wrongArity,
@@ -294,20 +293,6 @@ functionEvaluator impl =
             Application{applicationChildren = args} = app
             resultSort = symbolSorts symbol & applicationSortsResult
         impl sideCondition resultSort args
-
-functionEvaluatorWithApp ::
-    ( forall variable.
-      InternalVariable variable =>
-      Application Symbol (TermLike variable) ->
-      Function
-    ) ->
-    BuiltinAndAxiomSimplifier
-functionEvaluatorWithApp impl =
-    applicationEvaluator $ \sideCondition app -> do
-        let Application{applicationSymbolOrAlias = symbol} = app
-            Application{applicationChildren = args} = app
-            resultSort = symbolSorts symbol & applicationSortsResult
-        impl app sideCondition resultSort args
 
 applicationEvaluator ::
     ( forall variable simplifier.

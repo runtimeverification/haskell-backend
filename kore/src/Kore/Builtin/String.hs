@@ -74,6 +74,9 @@ import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
 import qualified Kore.Error
+import Kore.Internal.ApplicationSorts (
+    applicationSortsResult,
+ )
 import Kore.Internal.InternalString
 import Kore.Internal.Pattern (
     Pattern,
@@ -298,9 +301,12 @@ evalFind = Builtin.functionEvaluator evalFind0
     evalFind0 _ _ _ = Builtin.wrongArity findKey
 
 evalString2Base :: BuiltinAndAxiomSimplifier
-evalString2Base = Builtin.functionEvaluatorWithApp evalString2Base0
+evalString2Base = Builtin.applicationEvaluator evalString2Base0
   where
-    evalString2Base0 app _ resultSort [_strTerm, _baseTerm] = do
+    evalString2Base0 _ app
+      | [_strTerm, _baseTerm] <- applicationChildren app = do
+        let Application{applicationSymbolOrAlias = symbol} = app
+            resultSort = symbolSorts symbol & applicationSortsResult
         _str <- expectBuiltinString string2BaseKey _strTerm
         _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
         packedResult <-
@@ -316,7 +322,7 @@ evalString2Base = Builtin.functionEvaluatorWithApp evalString2Base0
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)
             _ -> return (Pattern.bottomOf resultSort)
-    evalString2Base0 _ _ _ _ = Builtin.wrongArity string2BaseKey
+    evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
