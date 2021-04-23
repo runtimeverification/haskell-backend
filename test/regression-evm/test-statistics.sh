@@ -1,30 +1,14 @@
-#!/bin/sh
-./test-add0.sh --rts-statistics statistics-add0
-./test-branching-invalid.sh --rts-statistics statistics-branching-invalid
-./test-branching-no-invalid.sh --rts-statistics statistics-branching-no-invalid
-./test-pop1.sh --rts-statistics statistics-pop1
-./test-straight-line-no-invalid.sh --rts-statistics statistics-straight-line-no-invalid
-./test-straight-line.sh --rts-statistics statistics-straight-line
-./test-sum-to-n.sh --rts-statistics statistics-sum-to-n
-./test-sumTo10.sh --rts-statistics statistics-sumTo10
+#!/usr/bin/env nix-shell
+#!nix-shell -i bash -p jq
 
-cat \
-    statistics-add0 \
-    statistics-branching-invalid \
-    statistics-branching-no-invalid \
-    statistics-pop1 \
-    statistics-straight-line-no-invalid \
-    statistics-straight-line \
-    statistics-sum-to-n \
-    statistics-sumTo10 \
-    > ./statistics
+out="${1:?}"; shift
 
-rm \
-    statistics-add0 \
-    statistics-branching-invalid \
-    statistics-branching-no-invalid \
-    statistics-pop1 \
-    statistics-straight-line-no-invalid \
-    statistics-straight-line \
-    statistics-sum-to-n \
-    statistics-sumTo10
+tests=(add0 branching-invalid branching-no-invalid pop1 straight-line-no-invalid straight-line sum-to-n sumTo10)
+
+echo "name,allocated_bytes,max_live_bytes" >"$out"
+for each in "${tests[@]}"
+do
+    ./test-${each}.sh --rts-statistics "$each.json" >/dev/null 2>&1
+    echo "\"$each\",$(jq -r .allocated_bytes <"$each.json" ),$(jq -r .max_live_bytes <"$each.json" )" >>"$out"
+    rm "$each.json"
+done
