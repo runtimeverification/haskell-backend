@@ -52,10 +52,10 @@ import qualified Kore.Verified as Verified
 import Prelude.Kore
 import qualified Pretty
 
-validateAxiom
-    :: Attribute.Axiom TermLike.Symbol VariableName
-    -> Verified.SentenceAxiom
-    -> StateT VerifiedModule' Verifier ()
+validateAxiom ::
+    Attribute.Axiom TermLike.Symbol VariableName ->
+    Verified.SentenceAxiom ->
+    StateT VerifiedModule' Verifier ()
 validateAxiom attrs verified =
     case fromSentenceAxiom (attrs, verified) of
         Right eq@Equation{left, argument} ->
