@@ -304,24 +304,24 @@ evalString2Base :: BuiltinAndAxiomSimplifier
 evalString2Base = Builtin.applicationEvaluator evalString2Base0
   where
     evalString2Base0 _ app
-      | [_strTerm, _baseTerm] <- applicationChildren app = do
-        let Application{applicationSymbolOrAlias = symbol} = app
-            resultSort = symbolSorts symbol & applicationSortsResult
-        _str <- expectBuiltinString string2BaseKey _strTerm
-        _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
-        packedResult <-
-            case _base of
-                -- no builtin reader for number in octal notation
-                8 -> return $ case readOct $ Text.unpack _str of
-                    [(result, "")] -> Right (result, "")
-                    _ -> Left ""
-                10 -> return $ Text.signed Text.decimal _str
-                16 -> return $ Text.signed Text.hexadecimal _str
-                _ -> warnNotImplemented app >> empty
-        case packedResult of
-            Right (result, Text.unpack -> "") ->
-                return (Int.asPattern resultSort result)
-            _ -> return (Pattern.bottomOf resultSort)
+        | [_strTerm, _baseTerm] <- applicationChildren app = do
+            let Application{applicationSymbolOrAlias = symbol} = app
+                resultSort = symbolSorts symbol & applicationSortsResult
+            _str <- expectBuiltinString string2BaseKey _strTerm
+            _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
+            packedResult <-
+                case _base of
+                    -- no builtin reader for number in octal notation
+                    8 -> return $ case readOct $ Text.unpack _str of
+                        [(result, "")] -> Right (result, "")
+                        _ -> Left ""
+                    10 -> return $ Text.signed Text.decimal _str
+                    16 -> return $ Text.signed Text.hexadecimal _str
+                    _ -> warnNotImplemented app >> empty
+            case packedResult of
+                Right (result, Text.unpack -> "") ->
+                    return (Int.asPattern resultSort result)
+                _ -> return (Pattern.bottomOf resultSort)
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 evalString2Int :: BuiltinAndAxiomSimplifier
