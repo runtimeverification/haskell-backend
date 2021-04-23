@@ -320,6 +320,15 @@ test_string2Base =
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 16]
         (Test.Int.asPattern 47789)
+    , Test.Int.testInt
+        "string2Base bad base"
+        string2BaseStringSymbol
+        [asInternal "1", Test.Int.asInternal 17]
+        ( Pattern.fromTermLike $
+            mkApplySymbol
+                string2BaseStringSymbol
+                [asInternal "1", Test.Int.asInternal 17]
+        )
     ]
 
 test_string2Int :: [TestTree]
