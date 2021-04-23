@@ -11,8 +11,8 @@ module Test.Kore.Builtin.Bool
     , test_implies
     , hprop_unparse
     , test_unifyBoolValues
-    --, test_unifyBoolAnd
-    --, test_unifyBoolOr
+    , test_unifyBoolAnd
+    , test_unifyBoolOr
     , test_contradiction
     --
     , asPattern
@@ -52,6 +52,7 @@ import Kore.Step.Simplification.Data
     , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
+import Kore.Step.Simplification.Unify
 import Kore.Unification.UnifierT
     ( UnifierT
     , runUnifierT
@@ -168,7 +169,6 @@ test_unifyBoolValues =
     unify bool1 bool2 =
         run (Bool.unifyBool bool1 bool2)
 
-{-
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
     [
@@ -197,14 +197,15 @@ test_unifyBoolAnd =
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case matchUnifyBoolAnd term1 term2 of
+                Just (UnifyBoolAnd op1 op2) -> do
+                    actual <- unify term1 term2 op1 op2
+                    assertEqual "" expected actual
+                _ -> assertFailure "Terms not matched with UnifyBoolAnd as expected."
 
-    unify term1 term2 =
-        run (Bool.unifyBoolAnd termSimplifier term1 term2)
--}
+    unify term1 term2 op1 op2 =
+        run (Bool.unifyBoolAnd termSimplifier term1 term2 op1 op2)
 
-{-
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
     [   let term1 = _False
@@ -232,12 +233,14 @@ test_unifyBoolOr =
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case matchUnifyBoolOr term1 term2 of
+                Just (UnifyBoolOr (UnifyBoolOrArgs term op1 op2)) -> do
+                    actual <- unify term op1 op2
+                    assertEqual "" expected actual
+                _ -> assertFailure "Terms not matched with UnifyBoolOr as expected."
 
-    unify term1 term2 =
-        run (Bool.unifyBoolOr termSimplifier term1 term2)
--}
+    unify term op1 op2 =
+        run (Bool.unifyBoolOr termSimplifier term op1 op2)
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =
@@ -246,7 +249,6 @@ run =
     . runUnifierT Not.notSimplifier
     . runMaybeT
 
-{-
 termSimplifier
     :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
@@ -264,7 +266,6 @@ termSimplifier = \term1 term2 ->
         mkAnd term1 term2
         & Pattern.fromTermLike
         & return
--}
 
 _True, _False :: TermLike RewritingVariableName
 _True = asInternal True
