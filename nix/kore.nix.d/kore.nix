@@ -383,6 +383,7 @@
           "Kore/Step/Simplification/SubstitutionSimplifier"
           "Kore/Step/Simplification/TermLike"
           "Kore/Step/Simplification/Top"
+          "Kore/Step/Simplification/Unify"
           "Kore/Step/Simplification/Variable"
           "Kore/Step/SMT/AST"
           "Kore/Step/SMT/Declaration/All"
