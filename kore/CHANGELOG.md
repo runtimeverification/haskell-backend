@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.44.0.0] - 2021-04-22
+
+### Fixed
+
+- Concrete side conditions will be fully simplified. (#2526)
+- A memory leak is removed where deciding if a Map or Set is defined. (#2550)
+
 ## [0.43.0.0] - 2021-04-07
 
 ### Changed
