@@ -81,6 +81,7 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
+    mkEquationVariable,
     mkRuleVariable,
  )
 import Kore.Sort
@@ -742,6 +743,15 @@ mkConfigElementVariable base counter variableSort =
                 mkConfigVariable VariableName{base, counter}
         , variableSort
         }
+mkEquationElementVariable ::
+    Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkEquationElementVariable base counter variableSort =
+    Variable
+        { variableName =
+            ElementVariableName $
+                mkEquationVariable VariableName{base, counter}
+        , variableSort
+        }
 
 type MockSetVariable = SetVariable VariableName
 
@@ -841,6 +851,8 @@ zRule :: MockRewritingElementVariable
 zRule = mkRuleElementVariable (testId "z") mempty testSort
 zConfig :: MockRewritingElementVariable
 zConfig = mkConfigElementVariable (testId "z") mempty testSort
+zEquation :: MockRewritingElementVariable
+zEquation = mkEquationElementVariable (testId "z") mempty testSort
 t :: MockElementVariable
 t = MockElementVariable (testId "t") mempty testSort
 tRule :: MockRewritingElementVariable

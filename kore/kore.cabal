@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.43.0.0
+version:        0.44.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -355,6 +355,7 @@ library
     Kore.Log.WarnDepthLimitExceeded
     Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity
+    Kore.Log.WarnNotImplemented
     Kore.Log.WarnRetrySolverQuery
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation

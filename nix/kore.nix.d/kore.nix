@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.43.0.0"; };
+      identifier = { name = "kore"; version = "0.44.0.0"; };
       license = "NCSA";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -276,6 +276,7 @@
           "Kore/Log/WarnDepthLimitExceeded"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
+          "Kore/Log/WarnNotImplemented"
           "Kore/Log/WarnRetrySolverQuery"
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
