@@ -592,10 +592,9 @@ unifyEquals
               where
                 maybeNormalizedOrBottom ::
                     Maybe
-                        (Ac.NormalizedOrBottom
+                        ( Ac.NormalizedOrBottom
                             NormalizedSet
                             RewritingVariableName
                         )
                 maybeNormalizedOrBottom =
                     Ac.toNormalized @NormalizedSet patt
-

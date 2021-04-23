@@ -168,6 +168,7 @@ class
         InternalVariable variable =>
         TermLike variable ->
         Maybe (NormalizedOrBottom normalized variable)
+
     -- | Pattern match on a 'TermLike' to return a 'normalized'.
     --
     --    @matchBuiltin@ returns 'Nothing' if the 'TermLike' does not wrap a
@@ -205,21 +206,23 @@ instance TermWrapper NormalizedMap where
         | Map.isSymbolElement symbol =
             case args of
                 [key, value]
-                    | Just key' <- TermLike.retractKey key -> Just $
-                        (Normalized . wrapAc)
-                            NormalizedAc
-                                { elementsWithVariables = []
-                                , concreteElements =
-                                    Map.singleton key' (MapValue value)
-                                , opaque = []
-                                }
-                    | otherwise -> Just $
-                        (Normalized . wrapAc)
-                            NormalizedAc
-                                { elementsWithVariables = [MapElement (key, value)]
-                                , concreteElements = Map.empty
-                                , opaque = []
-                                }
+                    | Just key' <- TermLike.retractKey key ->
+                        Just $
+                            (Normalized . wrapAc)
+                                NormalizedAc
+                                    { elementsWithVariables = []
+                                    , concreteElements =
+                                        Map.singleton key' (MapValue value)
+                                    , opaque = []
+                                    }
+                    | otherwise ->
+                        Just $
+                            (Normalized . wrapAc)
+                                NormalizedAc
+                                    { elementsWithVariables = [MapElement (key, value)]
+                                    , concreteElements = Map.empty
+                                    , opaque = []
+                                    }
                 _ -> Builtin.wrongArity "MAP.element"
         | Map.isSymbolConcat symbol =
             case args of
@@ -257,20 +260,22 @@ instance TermWrapper NormalizedSet where
         | Set.isSymbolElement symbol =
             case args of
                 [elem1]
-                    | Just elem1' <- TermLike.retractKey elem1 -> Just $
-                        (Normalized . wrapAc)
-                            NormalizedAc
-                                { elementsWithVariables = []
-                                , concreteElements = Map.singleton elem1' SetValue
-                                , opaque = []
-                                }
-                    | otherwise -> Just $
-                        (Normalized . wrapAc)
-                            NormalizedAc
-                                { elementsWithVariables = [SetElement elem1]
-                                , concreteElements = Map.empty
-                                , opaque = []
-                                }
+                    | Just elem1' <- TermLike.retractKey elem1 ->
+                        Just $
+                            (Normalized . wrapAc)
+                                NormalizedAc
+                                    { elementsWithVariables = []
+                                    , concreteElements = Map.singleton elem1' SetValue
+                                    , opaque = []
+                                    }
+                    | otherwise ->
+                        Just $
+                            (Normalized . wrapAc)
+                                NormalizedAc
+                                    { elementsWithVariables = [SetElement elem1]
+                                    , concreteElements = Map.empty
+                                    , opaque = []
+                                    }
                 _ -> Builtin.wrongArity "SET.element"
         | Set.isSymbolConcat symbol =
             case args of
@@ -1072,14 +1077,14 @@ buildResultFromUnifiers
                     , [TermLike variable]
                     )
                 normalizedOrId [] = (mempty, [])
-                normalizedOrId (term: terms) =
-                    let (ns, ts) = normalizedOrId terms in
-                        case toNormalized term of
+                normalizedOrId (term : terms) =
+                    let (ns, ts) = normalizedOrId terms
+                     in case toNormalized term of
                             Just n -> (n <> ns, ts)
-                            Nothing -> (ns, term:ts)
+                            Nothing -> (ns, term : ts)
 
                 (opaquesNormalized, bareOpaques) = normalizedOrId opaquesTerms
-                
+
             NormalizedAc
                 { elementsWithVariables = preOpaquesElementsWithVariables
                 , concreteElements = opaquesConcreteTerms

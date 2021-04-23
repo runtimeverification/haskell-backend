@@ -583,7 +583,7 @@ unifyEquals unifyEqualsChildren first second = do
           where
             maybeNormalizedOrBottom ::
                 Maybe
-                    (Ac.NormalizedOrBottom
+                    ( Ac.NormalizedOrBottom
                         NormalizedMap
                         RewritingVariableName
                     )
