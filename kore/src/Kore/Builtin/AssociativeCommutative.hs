@@ -1065,9 +1065,21 @@ buildResultFromUnifiers
 
                 (opaquesTerms, opaquesConditions) =
                     unzip (map Conditional.splitTerm opaquesSimplified)
-                opaquesNormalized :: NormalizedOrBottom normalized variable
-                opaquesNormalized =
-                    fold . mapMaybe toNormalizedOrWrapped $ opaquesTerms
+
+                normalizedOrId ::
+                    [TermLike variable] ->
+                    ( NormalizedOrBottom normalized variable
+                    , [TermLike variable]
+                    )
+                normalizedOrId [] = (mempty, [])
+                normalizedOrId (term: terms) =
+                    let (ns, ts) = normalizedOrId terms in
+                        case toNormalized term of
+                            Just n -> (n <> ns, ts)
+                            Nothing -> (ns, term:ts)
+
+                (opaquesNormalized, bareOpaques) = normalizedOrId opaquesTerms
+                
             NormalizedAc
                 { elementsWithVariables = preOpaquesElementsWithVariables
                 , concreteElements = opaquesConcreteTerms
@@ -1097,7 +1109,8 @@ buildResultFromUnifiers
                         ++ concreteTerms
                         ++ Map.toList opaquesConcreteTerms
                     )
-            let allOpaque = Data.List.sort (commonOpaque ++ opaquesOpaque)
+            let allOpaque =
+                    Data.List.sort (commonOpaque ++ opaquesOpaque ++ bareOpaques)
                 -- Merge all unification predicates.
                 predicate =
                     List.foldl'
