@@ -331,11 +331,13 @@ evalUnit _ resultSort =
         _ -> Builtin.wrongArity Set.unitKey
 
 evalConcat :: Builtin.Function
-evalConcat _ resultSort [set1, set2] =
+evalConcat _ resultSort [set1, set2] = do
+    normalizedSet1 <- MaybeT (pure (Ac.toNormalizedOrWrapped set1))
+    normalizedSet2 <- MaybeT (pure (Ac.toNormalizedOrWrapped set2))
     Ac.evalConcatNormalizedOrBottom @NormalizedSet
         resultSort
-        (Ac.toNormalized set1)
-        (Ac.toNormalized set2)
+        normalizedSet1
+        normalizedSet2
 evalConcat _ _ _ = Builtin.wrongArity Set.concatKey
 
 evalDifference ::
@@ -489,9 +491,10 @@ builtinFunctions =
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
 
-The 'TermLike' is unmodified if it is not Set-sorted. @internalize@ only
-operates at the top-most level, it does not descend into the 'TermLike' to
-internalize subterms.
+The 'TermLike' is unmodified if it is not Set-sorted or consists of a "Bare" Set
+term, which @Ac.toNormalized@ doesn't transform into a @NormalizedOrBottom@.
+@internalize@ only operates at the top-most level, it does not descend into
+the 'TermLike' to internalize subterms.
 -}
 internalize ::
     InternalVariable variable =>
@@ -502,8 +505,9 @@ internalize tools termLike
     -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
     -- apply it if we know the term head is a constructor-like symbol.
     | App_ symbol _ <- termLike
-      , isConstructorModulo_ symbol =
-        case Ac.toNormalized @NormalizedSet termLike of
+      , isConstructorModulo_ symbol
+      , Just normalized <- Ac.toNormalized @NormalizedSet termLike =
+        case normalized of
             Ac.Bottom -> TermLike.mkBottom sort'
             Ac.Normalized termNormalized
                 | let unwrapped = unwrapAc termNormalized
@@ -573,7 +577,8 @@ unifyEquals
             asDomain ::
                 TermLike RewritingVariableName ->
                 MaybeT unifier (TermLike RewritingVariableName)
-            asDomain patt =
+            asDomain patt = do
+                normalizedOrBottom <- MaybeT (pure maybeNormalizedOrBottom)
                 case normalizedOrBottom of
                     Ac.Normalized normalized -> do
                         tools <- Simplifier.askMetadataTools
@@ -585,6 +590,12 @@ unifyEquals
                                 first
                                 second
               where
-                normalizedOrBottom ::
-                    Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
-                normalizedOrBottom = Ac.toNormalized patt
+                maybeNormalizedOrBottom ::
+                    Maybe
+                        (Ac.NormalizedOrBottom
+                            NormalizedSet
+                            RewritingVariableName
+                        )
+                maybeNormalizedOrBottom =
+                    Ac.toNormalized @NormalizedSet patt
+

@@ -20,6 +20,7 @@ module Kore.Builtin.AssociativeCommutative (
     asInternalConcrete,
     asPattern,
     asTermLike,
+    toNormalizedOrWrapped,
     ConcatSymbol (..),
     ConcreteElements (..),
     evalConcatNormalizedOrBottom,
@@ -36,7 +37,7 @@ module Kore.Builtin.AssociativeCommutative (
 ) where
 
 import Control.Error (
-    MaybeT,
+    MaybeT (..),
  )
 import qualified Control.Monad as Monad
 import Data.Kind (
@@ -152,7 +153,7 @@ class
         normalized Key (TermLike variable) ->
         TermLike variable
 
-    -- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
+    -- | Attempts to transform a @TermLike@ representation into a @NormalizedOrBottom@.
     --
     --    The term may become bottom if we had conflicts between elements that were
     --    not detected before, e.g.
@@ -164,10 +165,9 @@ class
     --    @
     toNormalized ::
         HasCallStack =>
-        Ord variable =>
+        InternalVariable variable =>
         TermLike variable ->
-        NormalizedOrBottom normalized variable
-
+        Maybe (NormalizedOrBottom normalized variable)
     -- | Pattern match on a 'TermLike' to return a 'normalized'.
     --
     --    @matchBuiltin@ returns 'Nothing' if the 'TermLike' does not wrap a
@@ -196,16 +196,16 @@ instance TermWrapper NormalizedMap where
         Just (builtinAcChild internalMap)
     matchBuiltin _ = Nothing
     toNormalized (InternalMap_ InternalAc{builtinAcChild}) =
-        maybe Bottom Normalized (renormalize builtinAcChild)
+        Just $ maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
         | Map.isSymbolUnit symbol =
             case args of
-                [] -> (Normalized . wrapAc) emptyNormalizedAc
+                [] -> Just $ (Normalized . wrapAc) emptyNormalizedAc
                 _ -> Builtin.wrongArity "MAP.unit"
         | Map.isSymbolElement symbol =
             case args of
                 [key, value]
-                    | Just key' <- TermLike.retractKey key ->
+                    | Just key' <- TermLike.retractKey key -> Just $
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = []
@@ -213,7 +213,7 @@ instance TermWrapper NormalizedMap where
                                     Map.singleton key' (MapValue value)
                                 , opaque = []
                                 }
-                    | otherwise ->
+                    | otherwise -> Just $
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = [MapElement (key, value)]
@@ -223,15 +223,10 @@ instance TermWrapper NormalizedMap where
                 _ -> Builtin.wrongArity "MAP.element"
         | Map.isSymbolConcat symbol =
             case args of
-                [map1, map2] -> toNormalized map1 <> toNormalized map2
+                [map1, map2] ->
+                    toNormalizedOrWrapped map1 <> toNormalizedOrWrapped map2
                 _ -> Builtin.wrongArity "MAP.concat"
-    toNormalized patt =
-        (Normalized . wrapAc)
-            NormalizedAc
-                { elementsWithVariables = []
-                , concreteElements = Map.empty
-                , opaque = [patt]
-                }
+    toNormalized _ = Nothing
 
     simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
 
@@ -251,24 +246,25 @@ instance TermWrapper NormalizedSet where
     matchBuiltin (InternalSet_ internalSet) =
         Just (builtinAcChild internalSet)
     matchBuiltin _ = Nothing
+
     toNormalized (InternalSet_ InternalAc{builtinAcChild}) =
-        maybe Bottom Normalized (renormalize builtinAcChild)
+        Just $ maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
         | Set.isSymbolUnit symbol =
             case args of
-                [] -> (Normalized . wrapAc) emptyNormalizedAc
+                [] -> Just $ (Normalized . wrapAc) emptyNormalizedAc
                 _ -> Builtin.wrongArity "SET.unit"
         | Set.isSymbolElement symbol =
             case args of
                 [elem1]
-                    | Just elem1' <- TermLike.retractKey elem1 ->
+                    | Just elem1' <- TermLike.retractKey elem1 -> Just $
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = []
                                 , concreteElements = Map.singleton elem1' SetValue
                                 , opaque = []
                                 }
-                    | otherwise ->
+                    | otherwise -> Just $
                         (Normalized . wrapAc)
                             NormalizedAc
                                 { elementsWithVariables = [SetElement elem1]
@@ -278,13 +274,23 @@ instance TermWrapper NormalizedSet where
                 _ -> Builtin.wrongArity "SET.element"
         | Set.isSymbolConcat symbol =
             case args of
-                [set1, set2] -> toNormalized set1 <> toNormalized set2
+                [set1, set2] ->
+                    toNormalizedOrWrapped set1 <> toNormalizedOrWrapped set2
                 _ -> Builtin.wrongArity "SET.concat"
-    toNormalized patt =
-        (Normalized . wrapAc)
-            emptyNormalizedAc{opaque = [patt]}
+    toNormalized _ = Nothing
 
     simplifiedAttributeValue SetValue = mempty
+
+toNormalizedOrWrapped ::
+    TermWrapper normalized =>
+    HasCallStack =>
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe (NormalizedOrBottom normalized variable)
+toNormalizedOrWrapped patt =
+    (<|>)
+        (toNormalized patt)
+        (Just (Normalized . wrapAc $ emptyNormalizedAc{opaque = [patt]}))
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @TermLike Concrete@ to @TermLike variable@.
@@ -754,13 +760,14 @@ unifyEqualsNormalized
             MaybeT unifier (TermNormalizedAc normalized variable)
         normalize1 patt =
             case toNormalized patt of
-                Bottom ->
+                Just Bottom ->
                     lift $
                         Monad.Unify.explainAndReturnBottom
                             "Duplicated elements in normalization."
                             first
                             second
-                Normalized n -> return n
+                Just (Normalized n) -> return n
+                Nothing -> empty
 
 {- | Unifies two AC structs represented as @NormalizedAc@.
 
@@ -1059,8 +1066,8 @@ buildResultFromUnifiers
                 (opaquesTerms, opaquesConditions) =
                     unzip (map Conditional.splitTerm opaquesSimplified)
                 opaquesNormalized :: NormalizedOrBottom normalized variable
-                opaquesNormalized = foldMap toNormalized opaquesTerms
-
+                opaquesNormalized =
+                    fold . mapMaybe toNormalizedOrWrapped $ opaquesTerms
             NormalizedAc
                 { elementsWithVariables = preOpaquesElementsWithVariables
                 , concreteElements = opaquesConcreteTerms

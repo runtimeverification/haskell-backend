@@ -328,11 +328,13 @@ evalElement _ _ _ = Builtin.wrongArity Map.elementKey
 
 -- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
-evalConcat _ resultSort [map1, map2] =
+evalConcat _ resultSort [map1, map2] = do
+    normalizedMap1 <- MaybeT (pure (Ac.toNormalizedOrWrapped map1))
+    normalizedMap2 <- MaybeT (pure (Ac.toNormalizedOrWrapped map2))
     Ac.evalConcatNormalizedOrBottom @NormalizedMap
         resultSort
-        (Ac.toNormalized map1)
-        (Ac.toNormalized map2)
+        normalizedMap1
+        normalizedMap2
 evalConcat _ _ _ = Builtin.wrongArity Map.concatKey
 
 evalUnit :: Builtin.Function
@@ -487,9 +489,10 @@ builtinFunctions =
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.
 
-The 'TermLike' is unmodified if it is not Map-sorted. @internalize@ only
-operates at the top-most level, it does not descend into the 'TermLike' to
-internalize subterms.
+The 'TermLike' is unmodified if it is not Map-sorted or consists of a "Bare" Set
+term, which @Ac.toNormalized@ doesn't transform into a @NormalizedOrBottom@.
+@internalize@ only operates at the top-most level, it does not descend into
+the 'TermLike' to internalize subterms.
 -}
 internalize ::
     InternalVariable variable =>
@@ -500,8 +503,9 @@ internalize tools termLike
     -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
     -- apply it if we know the term head is a constructor-like symbol.
     | App_ symbol _ <- termLike
-      , isConstructorModulo_ symbol =
-        case Ac.toNormalized @NormalizedMap termLike of
+      , isConstructorModulo_ symbol
+      , Just normalized <- Ac.toNormalized @NormalizedMap termLike =
+        case normalized of
             Ac.Bottom -> TermLike.mkBottom sort'
             Ac.Normalized termNormalized
                 | let unwrapped = unwrapAc termNormalized
@@ -564,7 +568,8 @@ unifyEquals unifyEqualsChildren first second = do
         asDomain ::
             TermLike RewritingVariableName ->
             MaybeT unifier (TermLike RewritingVariableName)
-        asDomain patt =
+        asDomain patt = do
+            normalizedOrBottom <- MaybeT (pure maybeNormalizedOrBottom)
             case normalizedOrBottom of
                 Ac.Normalized normalized -> do
                     tools <- Simplifier.askMetadataTools
@@ -576,9 +581,13 @@ unifyEquals unifyEqualsChildren first second = do
                             first
                             second
           where
-            normalizedOrBottom ::
-                Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
-            normalizedOrBottom = Ac.toNormalized patt
+            maybeNormalizedOrBottom ::
+                Maybe
+                    (Ac.NormalizedOrBottom
+                        NormalizedMap
+                        RewritingVariableName
+                    )
+            maybeNormalizedOrBottom = Ac.toNormalized patt
 
 data InKeys term = InKeys
     { symbol :: !Symbol
@@ -618,7 +627,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     normalizedOrBottom ::
         InternalVariable variable =>
         TermLike variable ->
-        Ac.NormalizedOrBottom NormalizedMap variable
+        Maybe (Ac.NormalizedOrBottom NormalizedMap variable)
     normalizedOrBottom = Ac.toNormalized
 
     defineTerm ::
@@ -654,7 +663,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
         | Just boolValue <- Bool.matchBool termLike1
           , not boolValue
           , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys termLike2
-          , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+          , Just (Ac.Normalized normalizedMap) <- normalizedOrBottom mapTerm =
             do
                 let symbolicKeys = getSymbolicKeysOfAc normalizedMap
                     concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
