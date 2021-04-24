@@ -30,10 +30,10 @@ module Test.Kore.ASTVerifier.DefinitionVerifier (
     symbolSentenceWithParametersAndArguments,
     symbolSentenceWithSortParametersAux,
     sentenceSymbolWithAttributes,
+    symbolSentenceWithParamsArgsAndAttrs,
     importSentence,
     SymbolName (..),
     objectSymbolSentenceWithArguments,
-    symbolSentenceWithResultSort,
     symbolSentenceWithSortParameters,
     AliasName (..),
     simpleAliasSentence,
@@ -47,6 +47,7 @@ module Test.Kore.ASTVerifier.DefinitionVerifier (
     successTestDataGroup,
     failureTestData,
     failureTestDataGroup,
+    axiomSentenceWithParamsAndAttrs,
     axiomSentenceWithSortParameters,
     expectFailureWithError,
     objectVariableSort,
@@ -472,15 +473,26 @@ symbolSentenceWithSortParametersAux (SymbolName name) sort parameters =
         , sentenceSymbolAttributes = Attributes []
         }
 
+axiomSentenceWithParamsAndAttrs ::
+    patternType ->
+    [SortVariable] ->
+    [AttributePattern] ->
+    Sentence patternType
+axiomSentenceWithParamsAndAttrs
+    pattern'
+    parameters
+    attrs =
+        SentenceAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = parameters
+                , sentenceAxiomPattern = pattern'
+                , sentenceAxiomAttributes = Attributes attrs
+                }
+
 axiomSentenceWithSortParameters ::
     patternType -> [SortVariable] -> Sentence patternType
 axiomSentenceWithSortParameters pattern' parameters =
-    SentenceAxiomSentence
-        SentenceAxiom
-            { sentenceAxiomParameters = parameters
-            , sentenceAxiomPattern = pattern'
-            , sentenceAxiomAttributes = Attributes []
-            }
+    axiomSentenceWithParamsAndAttrs pattern' parameters []
 
 sentenceAliasWithResultSort ::
     AliasName ->
@@ -510,25 +522,6 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
-
-symbolSentenceWithResultSort ::
-    SymbolName -> Sort -> [SortVariable] -> ParsedSentence
-symbolSentenceWithResultSort
-    (SymbolName name)
-    sort
-    parameters =
-        SentenceSymbolSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId name
-                        , symbolParams = parameters
-                        }
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort = sort
-                , sentenceSymbolAttributes =
-                    Attributes [] :: Attributes
-                }
 
 objectSymbolSentenceWithArguments ::
     SymbolName -> Sort -> [Sort] -> ParsedSentence
@@ -561,6 +554,32 @@ symbolSentenceWithParametersAndArguments
                 , sentenceSymbolResultSort = sort
                 , sentenceSymbolAttributes =
                     Attributes [] :: Attributes
+                }
+
+symbolSentenceWithParamsArgsAndAttrs ::
+    SymbolName ->
+    [SortVariable] ->
+    Sort ->
+    [Sort] ->
+    [ParsedPattern] ->
+    Sentence patternType
+symbolSentenceWithParamsArgsAndAttrs
+    (SymbolName name)
+    params
+    sort
+    operandSorts
+    attrs =
+        SentenceSymbolSentence
+            SentenceSymbol
+                { sentenceSymbolSymbol =
+                    Symbol
+                        { symbolConstructor = testId name
+                        , symbolParams = params
+                        }
+                , sentenceSymbolSorts = operandSorts
+                , sentenceSymbolResultSort = sort
+                , sentenceSymbolAttributes =
+                    Attributes attrs
                 }
 
 objectAliasSentenceWithArguments ::
