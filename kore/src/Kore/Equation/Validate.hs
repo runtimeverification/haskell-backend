@@ -157,19 +157,20 @@ validateAxiom attrs verified =
             _ -> Just term
           where
             _ :< termF = Recursive.project term
-            isGoodSymbol sym = or
-                [ Symbol.isConstructorLike sym
-                , Symbol.isAnywhere sym && Symbol.isInjective sym
-                , Map.isSymbolConcat sym
-                , Map.isSymbolElement sym
-                , Map.isSymbolUnit sym
-                , Set.isSymbolConcat sym
-                , Set.isSymbolElement sym
-                , Set.isSymbolUnit sym
-                , List.isSymbolConcat sym
-                , List.isSymbolElement sym
-                , List.isSymbolUnit sym
-                ]
+            isGoodSymbol sym =
+                or
+                    [ Symbol.isConstructorLike sym
+                    , Symbol.isAnywhere sym && Symbol.isInjective sym
+                    , Map.isSymbolConcat sym
+                    , Map.isSymbolElement sym
+                    , Map.isSymbolUnit sym
+                    , Set.isSymbolConcat sym
+                    , Set.isSymbolElement sym
+                    , Set.isSymbolUnit sym
+                    , List.isSymbolConcat sym
+                    , List.isSymbolElement sym
+                    , List.isSymbolUnit sym
+                    ]
             descend = asum $ findBadArgSubterm <$> termF
 
     failOnJust _ _ Nothing = return ()
