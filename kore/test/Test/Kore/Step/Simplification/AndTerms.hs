@@ -6,67 +6,67 @@ module Test.Kore.Step.Simplification.AndTerms (
     test_functionAnd,
 ) where
 
-import Control.Error
-    ( MaybeT (..)
-    )
+import Control.Error (
+    MaybeT (..),
+ )
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromJust
-    )
+import Data.Maybe (
+    fromJust,
+ )
 import qualified Data.Set as Set
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalSet
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    toRepresentation,
+    top,
+ )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    , mkRewritingTerm
-    )
-import Kore.Step.Simplification.And
-    ( termAnd
-    )
-import Kore.Step.Simplification.AndTerms
-    ( functionAnd
-    , termUnification
-    )
-import Kore.Step.Simplification.Equals
-    ( termEquals
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+    mkRewritingTerm,
+ )
+import Kore.Step.Simplification.And (
+    termAnd,
+ )
+import Kore.Step.Simplification.AndTerms (
+    functionAnd,
+    termUnification,
+ )
+import Kore.Step.Simplification.Equals (
+    termEquals,
+ )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Sentence
-    ( SentenceAlias
-    )
+import Kore.Syntax.Sentence (
+    SentenceAlias,
+ )
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Prelude.Kore
 import Test.Kore
@@ -1024,7 +1024,7 @@ test_andTermsSimplification =
                         (mkElemVar Mock.xConfigSet)
                     )
                     (Mock.builtinSet [Mock.a, Mock.b])
-                & fmap OrPattern.fromPatterns
+                    & fmap OrPattern.fromPatterns
             assertEqual "" expected actual
         , testCase "set elem inj splitting" $ do
             let expected =
@@ -1409,7 +1409,7 @@ test_equalsTermsSimplification =
                             (mkElemVar Mock.yConfig)
                             (mkElemVar Mock.zConfig)
                     ]
-                    & MultiAnd.make
+                        & MultiAnd.make
             actual <-
                 simplifyEquals
                     mempty
@@ -1422,7 +1422,7 @@ test_equalsTermsSimplification =
                             ]
                         )
                     )
-                & (fmap . fmap . fmap) (from @_ @(MultiAnd _))
+                    & (fmap . fmap . fmap) (from @_ @(MultiAnd _))
             assertEqual "" (Just [expect]) actual
         , testCase "unevaluated function key in singleton Map" $ do
             let expect =
