@@ -10,6 +10,9 @@ import Kore.ASTVerifier.Error (
  )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
+import Kore.Attribute.Simplification (
+    simplificationAttribute,
+ )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -1410,9 +1413,10 @@ testsForUnifiedPatternInTopLevelGenericContext
                     , testDataDefinition =
                         simpleDefinitionFromSentences
                             (ModuleName "MODULE")
-                            ( axiomSentenceWithSortParameters
+                            ( axiomSentenceWithParamsAndAttrs
                                 (testPatternUnverifiedPattern testPattern)
-                                sortVariables :
+                                sortVariables
+                                [simplificationAttribute Nothing] :
                               additionalSentences
                             )
                     }
