@@ -7,24 +7,27 @@ module Test.Kore.Internal.SideCondition (
 ) where
 
 import qualified Data.HashSet as HashSet
-import Data.Sup (
-    Sup (..),
- )
-import GHC.Natural (
-    Natural,
- )
-import Kore.Internal.InternalMap (
-    InternalMap,
- )
-import Kore.Internal.InternalSet (
-    InternalSet,
- )
+import Data.Maybe
+    ( fromJust
+    )
+import Data.Sup
+    ( Sup (..)
+    )
+import GHC.Natural
+    ( Natural
+    )
+import Kore.Internal.InternalMap
+    ( InternalMap
+    )
+import Kore.Internal.InternalSet
+    ( InternalSet
+    )
 import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
 import Prelude.Kore
-import Test.Kore (
-    testId,
- )
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -33,7 +36,17 @@ type TestSideCondition = SideCondition VariableName
 
 test_assumeDefined :: [TestTree]
 test_assumeDefined =
-    [ testCase "And: implies subterms are defined" $ do
+    [ testCase "Fails on \\bottom" $ do
+        let term :: TermLike VariableName
+            term = mkBottom_
+            actual = assumeDefined term
+        assertEqual "" Nothing actual
+    , testCase "Fails on nested \\bottom" $ do
+        let term :: TermLike VariableName
+            term = Mock.f mkBottom_
+            actual = assumeDefined term
+        assertEqual "" Nothing actual
+    , testCase "And: implies subterms are defined" $ do
         let term :: TermLike VariableName
             term =
                 mkAnd
@@ -43,6 +56,7 @@ test_assumeDefined =
                 [term, Mock.plain00, Mock.f Mock.a]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "App: implies subterms are defined" $ do
@@ -53,6 +67,7 @@ test_assumeDefined =
                 [term, Mock.g Mock.plain00, Mock.plain00]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Ceil: implies subterms are defined" $ do
@@ -62,12 +77,13 @@ test_assumeDefined =
                 [term, Mock.plain00]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "List: empty list is always defined" $ do
         let term :: TermLike VariableName
             term = Mock.builtinList []
-            expected = fromDefinedTerms mempty
+            expected = fromDefinedTerms mempty & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "List: implies subterms are defined" $ do
@@ -87,6 +103,7 @@ test_assumeDefined =
                 ]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Forall: implies subterms are defined" $ do
@@ -117,6 +134,7 @@ test_assumeDefined =
                 ]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "In: implies subterms are defined" $ do
@@ -132,6 +150,7 @@ test_assumeDefined =
                 ]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Or: does not imply subterms are defined" $ do
@@ -144,6 +163,7 @@ test_assumeDefined =
                 [term]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Empty collection is always defined" $ do
@@ -236,6 +256,7 @@ test_assumeDefined =
                 ]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined testMap
         assertEqual "" expected actual
     , testCase "2-element 1-opaque map: assumes values are also defined" $ do
@@ -265,6 +286,7 @@ test_assumeDefined =
                 ]
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             actual = assumeDefined testMap
         assertEqual "" expected actual
     ]
@@ -278,10 +300,12 @@ test_assumeDefined =
                 expectedTerms <> expectedMaps
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             setExpected =
                 expectedTerms <> expectedSets
                     & HashSet.fromList
                     & fromDefinedTerms
+                    & Just
             mapActual = assumeDefined testMap
             setActual = assumeDefined testSet
         assertEqual "Map" mapExpected mapActual
@@ -419,31 +443,35 @@ test_isDefined =
             actual = isDefined top testMap
         assertBool "" (not actual)
     , testCase "2-element 1-opaque map: value is assumed defined" $ do
-        let definedMap :: TermLike VariableName
+        let definedMap :: SideCondition VariableName
             definedMap =
                 Mock.framedMap
                     [ (Mock.a, Mock.f Mock.plain00)
                     , (Mock.g Mock.a, Mock.f (mkElemVar Mock.x))
                     ]
                     [mkElemVar Mock.xMap]
+                    & assumeDefined
+                    & fromJust
             testTerm :: TermLike VariableName
             testTerm = Mock.plain00
-            actual = isDefined (assumeDefined definedMap) testTerm
+            actual = isDefined definedMap testTerm
         assertBool "" actual
     ]
   where
     testCollection input maybeAssumeDefined expectedIsDefined = do
         let testMap = collectionToMapTerm input
             testSet = collectionToSetTerm input
+            -- The tests assume that the defined part is
+            -- well constructed (is not \\bottom)
             sideConditionMap =
                 maybe
                     top
-                    (assumeDefined . collectionToMapTerm)
+                    (fromJust . assumeDefined . collectionToMapTerm)
                     maybeAssumeDefined
             sideConditionSet =
                 maybe
                     top
-                    (assumeDefined . collectionToSetTerm)
+                    (fromJust . assumeDefined . collectionToSetTerm)
                     maybeAssumeDefined
             mapActual = isDefined sideConditionMap testMap
             setActual = isDefined sideConditionSet testSet
