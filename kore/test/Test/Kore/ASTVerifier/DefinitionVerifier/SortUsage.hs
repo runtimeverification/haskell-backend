@@ -810,7 +810,7 @@ unfilteredTestExamplesForObjectSort
                                     ]
                                 )
                                 sortVariables :
-                              symbolSentenceWithResultSort
+                              symbolSentenceWithSortParameters
                                 (SymbolName "a")
                                 resultSort
                                 [sortVariable sortVariableName1] :

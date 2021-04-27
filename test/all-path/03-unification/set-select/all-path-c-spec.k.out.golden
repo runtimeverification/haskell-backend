@@ -1,0 +1,9 @@
+<generatedTop>
+  <k>
+    b ~> .
+  </k>
+  <state>
+    SetItem ( b )
+    SetItem ( c )
+  </state>
+</generatedTop>

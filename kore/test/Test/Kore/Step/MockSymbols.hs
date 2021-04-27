@@ -26,6 +26,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import Data.Generics.Product
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -81,6 +82,7 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
+    mkEquationVariable,
     mkRuleVariable,
  )
 import Kore.Sort
@@ -742,6 +744,15 @@ mkConfigElementVariable base counter variableSort =
                 mkConfigVariable VariableName{base, counter}
         , variableSort
         }
+mkEquationElementVariable ::
+    Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkEquationElementVariable base counter variableSort =
+    Variable
+        { variableName =
+            ElementVariableName $
+                mkEquationVariable VariableName{base, counter}
+        , variableSort
+        }
 
 type MockSetVariable = SetVariable VariableName
 
@@ -841,6 +852,8 @@ zRule :: MockRewritingElementVariable
 zRule = mkRuleElementVariable (testId "z") mempty testSort
 zConfig :: MockRewritingElementVariable
 zConfig = mkConfigElementVariable (testId "z") mempty testSort
+zEquation :: MockRewritingElementVariable
+zEquation = mkEquationElementVariable (testId "z") mempty testSort
 t :: MockElementVariable
 t = MockElementVariable (testId "t") mempty testSort
 tRule :: MockRewritingElementVariable
@@ -2117,7 +2130,7 @@ framedInternalMap elements opaque =
     asConcrete element@(key, value) =
         (,) <$> retractKey key <*> pure value
             & maybe (Left element) Right
-    (abstractElements, Map.fromList -> concreteElements) =
+    (abstractElements, HashMap.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
             & partitionEithers
 
@@ -2183,7 +2196,7 @@ framedInternalSet elements opaque =
             Monad.guard (isConstructorLike key)
             (,) <$> retractKey key <*> pure SetValue
             & maybe (Left (key, SetValue)) Right
-    (abstractElements, Map.fromList -> concreteElements) =
+    (abstractElements, HashMap.fromList -> concreteElements) =
         asConcrete <$> elements
             & partitionEithers
 
