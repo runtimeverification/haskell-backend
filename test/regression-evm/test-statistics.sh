@@ -1,6 +1,10 @@
 #!/usr/bin/env nix-shell
 #!nix-shell -i bash -p jq
 
+set -xeou pipefail
+
+cd $(dirname $0)
+
 out="${1:?}"; shift
 
 tests=(add0 branching-invalid branching-no-invalid pop1 straight-line-no-invalid straight-line sum-to-n sumTo10)

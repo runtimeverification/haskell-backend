@@ -49,6 +49,7 @@ stdenv.mkDerivation {
   configurePhase = ''
     export TOP=$(pwd)
   '';
+  KORE_EXEC = "${lib.getBin kore}/bin/kore-exec";
   buildFlags =
     [
       "KORE_PARSER=kore-parser"
