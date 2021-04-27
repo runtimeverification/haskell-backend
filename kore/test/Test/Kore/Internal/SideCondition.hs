@@ -7,27 +7,27 @@ module Test.Kore.Internal.SideCondition (
 ) where
 
 import qualified Data.HashSet as HashSet
-import Data.Maybe
-    ( fromJust
-    )
-import Data.Sup
-    ( Sup (..)
-    )
-import GHC.Natural
-    ( Natural
-    )
-import Kore.Internal.InternalMap
-    ( InternalMap
-    )
-import Kore.Internal.InternalSet
-    ( InternalSet
-    )
+import Data.Maybe (
+    fromJust,
+ )
+import Data.Sup (
+    Sup (..),
+ )
+import GHC.Natural (
+    Natural,
+ )
+import Kore.Internal.InternalMap (
+    InternalMap,
+ )
+import Kore.Internal.InternalSet (
+    InternalSet,
+ )
 import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
 import Prelude.Kore
-import Test.Kore
-    ( testId
-    )
+import Test.Kore (
+    testId,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
