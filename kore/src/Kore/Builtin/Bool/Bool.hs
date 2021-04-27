@@ -7,6 +7,7 @@ module Kore.Builtin.Bool.Bool (
     asBuiltin,
     asInternal,
     asTermLike,
+    externalize1,
     asPattern,
 
     -- * Keys
@@ -21,12 +22,16 @@ module Kore.Builtin.Bool.Bool (
     orElseKey,
 ) where
 
+import Control.Monad.Free (Free (..))
+import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Const
 import Data.String (
     IsString,
  )
 import Data.Text (
     Text,
  )
+import qualified Kore.Attribute.Null as Attribute (Null (..))
 import Kore.Internal.InternalBool
 import Kore.Internal.Pattern (
     Pattern,
@@ -35,7 +40,6 @@ import qualified Kore.Internal.Pattern as Pattern (
     fromTermLike,
  )
 import Kore.Internal.TermLike (
-    DomainValue (DomainValue),
     InternalVariable,
     Sort,
     TermLike,
@@ -46,7 +50,10 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Syntax.DomainValue
+import qualified Kore.Syntax.Pattern as Syntax
+import Kore.Syntax.PatternF (PatternF (DomainValueF, StringLiteralF))
+import Kore.Syntax.StringLiteral
 import Prelude.Kore
 
 -- | Builtin name of the @Bool@ sort.
@@ -103,6 +110,27 @@ asTermLike builtin =
     literal
         | bool = "true"
         | otherwise = "false"
+
+externalize1 ::
+    InternalBool ->
+    Recursive.Base
+        (Syntax.Pattern variable Attribute.Null)
+        (Free (Recursive.Base (Syntax.Pattern variable Attribute.Null)) x)
+externalize1 builtin =
+    Attribute.Null :< DomainValueF
+        DomainValue
+            { domainValueSort = internalBoolSort
+            , domainValueChild
+            }
+  where
+    InternalBool{internalBoolSort} = builtin
+    InternalBool{internalBoolValue = bool} = builtin
+    literal
+        | bool = "true"
+        | otherwise = "false"
+    domainValueChild =
+        (Free . (:<) Attribute.Null . StringLiteralF . Const . StringLiteral)
+            literal
 
 asPattern ::
     InternalVariable variable =>

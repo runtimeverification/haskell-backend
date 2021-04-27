@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Builtin.Int.Int (
     sort,
     asTermLike,
+    externalize1,
     asBuiltin,
     asInternal,
     asPattern,
@@ -40,6 +41,9 @@ module Kore.Builtin.Int.Int (
     log2Key,
 ) where
 
+import Control.Monad.Free (Free (..))
+import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Const
 import Data.String (
     IsString,
  )
@@ -47,9 +51,15 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
+import qualified Kore.Attribute.Null as Attribute (Null (..))
 import Kore.Internal.InternalInt
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike hiding (
+    DomainValueF,
+    StringLiteralF,
+ )
+import qualified Kore.Syntax.Pattern as Syntax
+import Kore.Syntax.PatternF (PatternF (DomainValueF, StringLiteralF))
 import Prelude.Kore
 
 -- | Builtin name of the @Int@ sort.
@@ -103,6 +113,24 @@ asTermLike builtin =
             }
   where
     InternalInt{internalIntSort, internalIntValue} = builtin
+
+externalize1 ::
+    InternalInt ->
+    Recursive.Base
+        (Syntax.Pattern variable Attribute.Null)
+        (Free (Recursive.Base (Syntax.Pattern variable Attribute.Null)) x)
+externalize1 builtin =
+    Attribute.Null :< DomainValueF
+        DomainValue
+            { domainValueSort = internalIntSort
+            , domainValueChild
+            }
+  where
+    InternalInt{internalIntSort} = builtin
+    InternalInt{internalIntValue} = builtin
+    domainValueChild =
+        (Free . (:<) Attribute.Null . StringLiteralF . Const . StringLiteral)
+            (Text.pack $ show internalIntValue)
 
 asPattern ::
     InternalVariable variable =>

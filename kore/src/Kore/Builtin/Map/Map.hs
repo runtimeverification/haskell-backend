@@ -6,6 +6,7 @@ License     : NCSA
 -}
 module Kore.Builtin.Map.Map (
     asTermLike,
+    externalize1,
 
     -- * Symbols
     lookupSymbolUpdate,
@@ -43,10 +44,13 @@ module Kore.Builtin.Map.Map (
     inclusionKey,
 ) where
 
+import Control.Monad.Free (Free (..))
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import Data.String (
     IsString,
  )
+import qualified Kore.Attribute.Null as Attribute (Null (..))
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -60,6 +64,10 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Internal.InternalMap
 import Kore.Internal.TermLike as TermLike
+import Kore.Internal.Symbol (
+    toSymbolOrAlias,
+ )
+import qualified Kore.Syntax.Pattern as Syntax
 import Prelude.Kore
 
 concatKey :: IsString s => s
@@ -247,3 +255,45 @@ asTermLike builtin =
         TermLike variable
     element (key, MapValue value) =
         mkApplySymbol elementSymbol [key, value]
+
+externalize1 ::
+    InternalVariable variable =>
+    InternalMap Key (TermLike variable) ->
+    Either (TermLike variable)
+        (Recursive.Base
+            (Syntax.Pattern variable Attribute.Null)
+            (Free
+                (Recursive.Base (Syntax.Pattern variable Attribute.Null))
+                (TermLike variable)
+            )
+        )
+externalize1 builtin =
+    AssocComm.externalize1
+        (AssocComm.UnitSymbol unitSymbol)
+        (AssocComm.ConcatSymbol concatSymbol)
+        (map concreteElement (Map.toAscList concreteElements))
+        (element . unwrapElement <$> elementsWithVariables)
+        filteredMaps
+  where
+    filteredMaps = filter (not . isEmptyMap) opaque
+
+    isEmptyMap (InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
+        unwrapAc wrappedChild == emptyNormalizedAc
+    isEmptyMap (App_ symbol _) = unitSymbol == symbol
+    isEmptyMap _ = False
+
+    InternalAc{builtinAcChild} = builtin
+    InternalAc{builtinAcUnit = unitSymbol} = builtin
+    InternalAc{builtinAcElement = elementSymbol} = builtin
+    InternalAc{builtinAcConcat = concatSymbol} = builtin
+
+    normalizedAc = unwrapAc builtinAcChild
+
+    NormalizedAc{elementsWithVariables} = normalizedAc
+    NormalizedAc{concreteElements} = normalizedAc
+    NormalizedAc{opaque} = normalizedAc
+
+    concreteElement (key, mapValue) = element (into key, mapValue)
+
+    element (key, MapValue value) = (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+        . mapHead toSymbolOrAlias $ symbolApplication elementSymbol [key, value]

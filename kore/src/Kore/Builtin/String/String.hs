@@ -8,6 +8,7 @@ module Kore.Builtin.String.String (
     asInternal,
     asPattern,
     asTermLike,
+    externalize1,
     asPartialPattern,
 
     -- * keys
@@ -26,18 +27,28 @@ module Kore.Builtin.String.String (
     string2TokenKey,
 ) where
 
+import Control.Monad.Free (Free (..))
+import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Const
 import Data.String (
     IsString,
  )
 import Data.Text (
     Text,
  )
+import qualified Kore.Attribute.Null as Attribute (Null (..))
 import Kore.Internal.InternalString
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike hiding (
+    DomainValueF,
+    StringLiteralF,
+ )
+import qualified Kore.Syntax.Pattern as Syntax
+import Kore.Syntax.PatternF (PatternF (DomainValueF, StringLiteralF))
+import Kore.Syntax.StringLiteral
 import Prelude.Kore
 
 -- | Builtin name of the @String@ sort.
@@ -91,6 +102,24 @@ asTermLike internal =
   where
     InternalString{internalStringSort} = internal
     InternalString{internalStringValue} = internal
+
+externalize1 ::
+    InternalString ->
+    Recursive.Base
+        (Syntax.Pattern variable Attribute.Null)
+        (Free (Recursive.Base (Syntax.Pattern variable Attribute.Null)) x)
+externalize1 builtin =
+    Attribute.Null :< DomainValueF
+        DomainValue
+            { domainValueSort = internalStringSort
+            , domainValueChild
+            }
+  where
+    InternalString{internalStringSort} = builtin
+    InternalString{internalStringValue} = builtin
+    domainValueChild =
+        (Free . (:<) Attribute.Null . StringLiteralF . Const . StringLiteral)
+            internalStringValue
 
 asPattern ::
     InternalVariable variable =>

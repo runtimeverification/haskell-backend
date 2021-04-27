@@ -4,15 +4,11 @@ License     : NCSA
 -}
 module Kore.Internal.InternalBool (
     InternalBool (..),
-    externalize1,
 ) where
 
-import Control.Monad.Free (Free (..))
 import Data.Functor.Const
-import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Null as Attribute (Null (..))
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -22,10 +18,6 @@ import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.Syntax.DomainValue
-import Kore.Syntax.Pattern (Pattern)
-import Kore.Syntax.PatternF (PatternF (DomainValueF, StringLiteralF))
-import Kore.Syntax.StringLiteral
 import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
@@ -87,19 +79,3 @@ instance Synthetic Functional (Const InternalBool) where
 instance Synthetic Simplified (Const InternalBool) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
-
-externalize1 ::
-    InternalBool ->
-    Recursive.Base
-        (Pattern variable Attribute.Null)
-        (Free (Recursive.Base (Pattern variable Attribute.Null)) x)
-externalize1 InternalBool{internalBoolSort, internalBoolValue} =
-    Attribute.Null :< DomainValueF DomainValue{domainValueSort, domainValueChild}
-  where
-    domainValueSort = internalBoolSort
-    domainValueChild =
-        (Free . (:<) Attribute.Null . StringLiteralF . Const)
-            (StringLiteral literal)
-    literal
-        | internalBoolValue = "true"
-        | otherwise = "false"
