@@ -4,10 +4,7 @@ on:
 jobs:
   performance:
     name: 'Performance'
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2.3.4
