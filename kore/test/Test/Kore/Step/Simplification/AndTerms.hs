@@ -9,6 +9,7 @@ module Test.Kore.Step.Simplification.AndTerms (
 import Control.Error (
     MaybeT (..),
  )
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map.Strict as Map
 import Data.Maybe (
     fromJust,
@@ -21,6 +22,11 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalSet
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -1010,6 +1016,7 @@ test_andTermsSimplification =
                             , (inject Mock.xConfigSet, Mock.builtinSet [Mock.a])
                             ]
                         )
+                expected = OrPattern.fromPatterns [expected1, expected2]
             actual <-
                 unify
                     ( Mock.concatSet
@@ -1017,7 +1024,8 @@ test_andTermsSimplification =
                         (mkElemVar Mock.xConfigSet)
                     )
                     (Mock.builtinSet [Mock.a, Mock.b])
-            assertEqual "" [expected1, expected2] actual
+                    & fmap OrPattern.fromPatterns
+            assertEqual "" expected actual
         , testCase "set elem inj splitting" $ do
             let expected =
                     [ Pattern.withCondition
@@ -1320,7 +1328,9 @@ test_equalsTermsSimplification =
                 Set.Set (TermLike Concrete) -> TermLike RewritingVariableName
             asInternal =
                 Set.map (retractKey >>> fromJust)
-                    >>> Map.fromSet (const SetValue)
+                    >>> Set.toList
+                    >>> flip zip (repeat SetValue)
+                    >>> HashMap.fromList
                     >>> Ac.asInternalConcrete Mock.metadataTools Mock.setSort
             expected = Just $ do
                 -- list monad
@@ -1385,23 +1395,21 @@ test_equalsTermsSimplification =
             assertEqual "" (Just [expect]) actual
         , testCase "key not in two-element Map" $ do
             let expect =
-                    foldr1
-                        makeAndPredicate
-                        [ makeNotPredicate $
-                            makeEqualsPredicate
-                                (mkElemVar Mock.xConfig)
-                                (mkElemVar Mock.yConfig)
-                        , makeNotPredicate $
-                            makeEqualsPredicate
-                                (mkElemVar Mock.xConfig)
-                                (mkElemVar Mock.zConfig)
-                        , -- Definedness condition
-                          makeNotPredicate $
-                            makeEqualsPredicate
-                                (mkElemVar Mock.yConfig)
-                                (mkElemVar Mock.zConfig)
-                        ]
-                        & Condition.fromPredicate
+                    [ makeNotPredicate $
+                        makeEqualsPredicate
+                            (mkElemVar Mock.xConfig)
+                            (mkElemVar Mock.yConfig)
+                    , makeNotPredicate $
+                        makeEqualsPredicate
+                            (mkElemVar Mock.xConfig)
+                            (mkElemVar Mock.zConfig)
+                    , -- Definedness condition
+                      makeNotPredicate $
+                        makeEqualsPredicate
+                            (mkElemVar Mock.yConfig)
+                            (mkElemVar Mock.zConfig)
+                    ]
+                        & MultiAnd.make
             actual <-
                 simplifyEquals
                     mempty
@@ -1414,6 +1422,7 @@ test_equalsTermsSimplification =
                             ]
                         )
                     )
+                    & (fmap . fmap . fmap) (from @_ @(MultiAnd _))
             assertEqual "" (Just [expect]) actual
         , testCase "unevaluated function key in singleton Map" $ do
             let expect =
