@@ -41,7 +41,7 @@ module Kore.Builtin.Map.Map (
     inclusionKey,
 ) where
 
-import qualified Data.Map.Strict as Map
+import qualified Data.HashMap.Strict as HashMap
 import Data.String (
     IsString,
  )
@@ -208,7 +208,7 @@ asTermLike builtin =
         (AssocComm.UnitSymbol unitSymbol)
         (AssocComm.ConcatSymbol concatSymbol)
         ( AssocComm.ConcreteElements
-            (map concreteElement (Map.toAscList concreteElements))
+            (map concreteElement (HashMap.toList concreteElements))
         )
         ( AssocComm.VariableElements
             (element . unwrapElement <$> elementsWithVariables)

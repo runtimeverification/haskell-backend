@@ -26,6 +26,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import Data.Generics.Product
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -2129,7 +2130,7 @@ framedInternalMap elements opaque =
     asConcrete element@(key, value) =
         (,) <$> retractKey key <*> pure value
             & maybe (Left element) Right
-    (abstractElements, Map.fromList -> concreteElements) =
+    (abstractElements, HashMap.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
             & partitionEithers
 
@@ -2195,7 +2196,7 @@ framedInternalSet elements opaque =
             Monad.guard (isConstructorLike key)
             (,) <$> retractKey key <*> pure SetValue
             & maybe (Left (key, SetValue)) Right
-    (abstractElements, Map.fromList -> concreteElements) =
+    (abstractElements, HashMap.fromList -> concreteElements) =
         asConcrete <$> elements
             & partitionEithers
 
