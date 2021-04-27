@@ -9,49 +9,49 @@ module Kore.Step.Simplification.Pattern (
     makeEvaluate,
 ) where
 
-import Control.Monad
-    ( (>=>)
-    )
+import Control.Monad (
+    (>=>),
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Condition
-    , Conditional (..)
-    , Pattern
-    )
+import Kore.Internal.Pattern (
+    Condition,
+    Conditional (..),
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    , assumeDefined
-    , top
-    )
-import Kore.Internal.Substitution
-    ( toMap
-    )
-import Kore.Internal.TermLike
-    ( pattern Exists_
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , simplifyCondition
-    , simplifyConditionalTerm
-    )
-import Kore.Substitute
-    ( substitute
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    andCondition,
+    assumeDefined,
+    top,
+ )
+import Kore.Internal.Substitution (
+    toMap,
+ )
+import Kore.Internal.TermLike (
+    pattern Exists_,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Step.Simplification.Simplify (
+    MonadSimplify,
+    simplifyCondition,
+    simplifyConditionalTerm,
+ )
+import Kore.Substitute (
+    substitute,
+ )
 import Prelude.Kore
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
@@ -78,15 +78,15 @@ simplifyTopConfigurationDefined configuration =
   where
     worker patt condition =
         makeEvaluate condition patt
-        >>= return . removeTopExists
+            >>= return . removeTopExists
 
     term = Conditional.term configuration
     sideCondition = SideCondition.assumeDefined term
     definedConfiguration =
         Pattern.andCondition
             configuration
-            (makeCeilPredicate term
-            & from @_ @(Condition _)
+            ( makeCeilPredicate term
+                & from @_ @(Condition _)
             )
 
 -- | Removes all existential quantifiers at the top of every 'Pattern''s 'term'.
