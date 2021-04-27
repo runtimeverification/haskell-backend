@@ -48,7 +48,7 @@ import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.ASTVerifier.SortVerifier
 import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute (
-    Axiom (..),
+    Axiom,
     parseAxiomAttributes,
  )
 import qualified Kore.Attribute.Hook as Attribute
