@@ -70,9 +70,9 @@ Use `docker.sh` to run commands inside the container:
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [haskell-language-server], a [language server] for Haskell that are
-  compatible with most editors. See instructions
-  [below](#running-a-language-server) to run a language server.
+- [haskell-language-server], a [language server] for Haskell that is compatible
+  with most editors. See instructions [below](#running-a-language-server) to run
+  a language server.
 - [hlint] for compliance with project guidelines.
 - [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
 
