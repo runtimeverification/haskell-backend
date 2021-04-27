@@ -47,9 +47,6 @@ import Data.List
     ( sortOn
     )
 import qualified Data.Map.Strict as Map
-import Data.Semiring
-    ( Semiring (..)
-    )
 import Debug
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -605,6 +602,22 @@ retractLocalFunction =
                 _ -> Nothing
     go _ _ = Nothing
 
+-- | A type for combining results which can be undefined.
+-- 'Bottom' acts as the annihilator to the semigroup operation.
+data Partial a = Bottom | Defined a
+
+instance Semigroup a => Semigroup (Partial a) where
+    (<>) Bottom _ = Bottom
+    (<>) _ Bottom = Bottom
+    (<>) (Defined a) (Defined b) = Defined (a <> b)
+
+instance Monoid a => Monoid (Partial a) where
+    mempty = Defined mempty
+
+partialToMaybe :: Partial a -> Maybe a
+partialToMaybe Bottom = Nothing
+partialToMaybe (Defined a) = Just a
+
 {- | Assumes a 'TermLike' to be defined. If not always defined,
 it will be stored in the `SideCondition` together with any subterms
 resulting from the implication that the original term is defined.
@@ -619,11 +632,13 @@ assumeDefined ::
     TermLike variable ->
     Maybe (SideCondition variable)
 assumeDefined =
-    fmap fromDefinedTerms . assumeDefinedWorker
+    fmap fromDefinedTerms
+    . partialToMaybe
+    . assumeDefinedWorker
   where
     assumeDefinedWorker ::
         TermLike variable ->
-        Maybe (HashSet (TermLike variable))
+        Partial (HashSet (TermLike variable))
     assumeDefinedWorker term' =
         case term' of
             TermLike.And_ _ child1 child2 ->
@@ -644,7 +659,7 @@ assumeDefined =
                     definedMaps =
                         generateNormalizedAcs internalMap
                             & HashSet.map TermLike.mkInternalMap
-                            & Just
+                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedMaps
             TermLike.InternalSet_ internalSet ->
@@ -653,7 +668,7 @@ assumeDefined =
                     definedSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
-                            & Just
+                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedSets
             TermLike.Forall_ _ _ child ->
@@ -662,13 +677,13 @@ assumeDefined =
                 let result1 = assumeDefinedWorker child1
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ -> Nothing
+            TermLike.Bottom_ _ -> Bottom
             _ -> asSet term'
     asSet newTerm
-        | isDefinedInternal newTerm = Just HashSet.empty
-        | otherwise = Just $ HashSet.singleton newTerm
+        | isDefinedInternal newTerm = Defined HashSet.empty
+        | otherwise = Defined $ HashSet.singleton newTerm
     checkFunctional symbol newTerm
-        | isFunctional symbol = Just HashSet.empty
+        | isFunctional symbol = Defined HashSet.empty
         | otherwise = asSet newTerm
 
     getDefinedElementsOfAc ::
