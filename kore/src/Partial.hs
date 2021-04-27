@@ -2,7 +2,6 @@
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
-
 module Partial (Partial (..), getPartial) where
 
 import Prelude.Kore
