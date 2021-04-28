@@ -197,11 +197,15 @@ test_unifyBoolAnd =
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            case matchUnifyBoolAnd term1 term2 of
+            case matchUnifyBoolAnd1 term1 term2 of
                 Just (UnifyBoolAnd op1 op2) -> do
                     actual <- unify term1 term2 op1 op2
                     assertEqual "" expected actual
-                _ -> assertFailure "Terms not matched with UnifyBoolAnd as expected."
+                _ -> case matchUnifyBoolAnd2 term1 term2 of
+                    Just (UnifyBoolAnd op1 op2) -> do
+                        actual <- unify term2 term1 op1 op2
+                        assertEqual "" expected actual
+                    _ -> assertEqual "" expected [Nothing]
 
     unify term1 term2 op1 op2 =
         run (Bool.unifyBoolAnd termSimplifier term1 term2 op1 op2)
@@ -233,11 +237,15 @@ test_unifyBoolOr =
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            case matchUnifyBoolOr term1 term2 of
+            case matchUnifyBoolOr1 term1 term2 of
                 Just (UnifyBoolOr (UnifyBoolOrArgs term op1 op2)) -> do
                     actual <- unify term op1 op2
                     assertEqual "" expected actual
-                _ -> assertFailure "Terms not matched with UnifyBoolOr as expected."
+                _ -> case matchUnifyBoolOr2 term1 term2 of
+                    Just (UnifyBoolOr (UnifyBoolOrArgs term op1 op2)) -> do
+                        actual <- unify term op1 op2
+                        assertEqual "" expected actual
+                    _ -> assertEqual "" expected [Nothing]
 
     unify term op1 op2 =
         run (Bool.unifyBoolOr termSimplifier term op1 op2)

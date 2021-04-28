@@ -21,9 +21,11 @@ module Kore.Step.Simplification.Unify
     , matchString
     , matchStringLiteral
     , matchUnDefined
-    , matchUnifyBoolAnd
+    , matchUnifyBoolAnd1
+    , matchUnifyBoolAnd2
     , matchUnifyBoolNot
-    , matchUnifyBoolOr
+    , matchUnifyBoolOr1
+    , matchUnifyBoolOr2
     , matchUnifyKequalsEq
     , matchUnifyIntEq
     , matchUnifyStringEq
@@ -319,39 +321,61 @@ matchAppHeads first second
     | otherwise = Nothing
 {-# INLINE matchAppHeads #-}
 
-matchUnifyBoolAnd
+matchUnifyBoolAnd1
     :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> Maybe Unification
-matchUnifyBoolAnd first second
+matchUnifyBoolAnd1 first second
     | Just value1 <- Bool.matchBool first
     , value1
     , Just Bool.BoolAnd { operand1, operand2 } <- Bool.matchBoolAnd second
     , isFunctionPattern second
         = Just $ UnifyBoolAnd operand1 operand2
     | otherwise = Nothing
-{-# INLINE matchUnifyBoolAnd #-}
+{-# INLINE matchUnifyBoolAnd1 #-}
+
+matchUnifyBoolAnd2
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyBoolAnd2 first second
+    | Just value2 <- Bool.matchBool second
+    , value2
+    , Just Bool.BoolAnd { operand1, operand2 } <- Bool.matchBoolAnd first
+    , isFunctionPattern first
+        = Just $ UnifyBoolAnd operand1 operand2
+    | otherwise = Nothing
+{-# INLINE matchUnifyBoolAnd2 #-}
 
 data UnifyBoolOrArgs = UnifyBoolOrArgs {
     otherTerm, operand1, operand2 :: !(TermLike RewritingVariableName)
 }
 
-matchUnifyBoolOr
+matchUnifyBoolOr1
     :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> Maybe Unification
-matchUnifyBoolOr first second
+matchUnifyBoolOr1 first second
     | Just value1 <- Bool.matchBool first
     , not value1
     , Just Bool.BoolOr { operand1, operand2 } <- Bool.matchBoolOr second
     , isFunctionPattern second
     = Just $ UnifyBoolOr $ UnifyBoolOrArgs first operand1 operand2
+    | otherwise = Nothing
+{-# INLINE matchUnifyBoolOr1 #-}
+
+matchUnifyBoolOr2
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe Unification
+matchUnifyBoolOr2 first second
     | Just value2 <- Bool.matchBool second
     , not value2
     , Just Bool.BoolOr { operand1, operand2 } <- Bool.matchBoolOr first
+    , isFunctionPattern first
     = Just $ UnifyBoolOr $ UnifyBoolOrArgs second operand1 operand2
     | otherwise = Nothing
-{-# INLINE matchUnifyBoolOr #-}
+{-# INLINE matchUnifyBoolOr2 #-}
 
 data UnifyBoolNotArgs = UnifyBoolNotArgs {
     otherTerm, operand :: !(TermLike RewritingVariableName)
