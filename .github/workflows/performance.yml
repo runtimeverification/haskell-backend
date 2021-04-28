@@ -24,6 +24,7 @@ jobs:
         uses: cachix/cachix-action@v8
         with:
           name: kore
+          extraPullNames: runtimeverification
           signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
           skipPush: true
 
