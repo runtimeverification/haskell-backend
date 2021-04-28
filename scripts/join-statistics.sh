@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i bash -p miller
+#!nix-shell ../nix/shell.performance.nix -i bash
 
 old=${1:?}; shift
 new=${1:?}; shift

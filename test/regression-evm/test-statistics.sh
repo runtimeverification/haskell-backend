@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell ../../test.nix -i bash -p jq
+#!nix-shell ../../nix/shell.performance.nix -i bash
 
 set -xeou pipefail
 
