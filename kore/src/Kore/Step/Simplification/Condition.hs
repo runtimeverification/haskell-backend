@@ -40,6 +40,9 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitution (
+    Assignment,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -88,7 +91,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
 
         simplified <-
             simplifyPredicate sideCondition predicate'
-                >>= simplifyPredicates sideCondition . from @_ @(MultiAnd _)
+                >>= simplifyPredicates sideCondition
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -137,15 +140,24 @@ simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
                 & fst . extract
-    simplified <-
+    simplifiedPredicates <-
         simplifyPredicatesWithAssumptions
             sideCondition
             (toList predicates)
-    let simplifiedPredicates =
-            from @(Condition _) @(MultiAnd (Predicate _)) simplified
+    let simplified = foldMap mkCondition simplifiedPredicates
     if original == simplifiedPredicates
         then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
+
+mkCondition ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Condition variable
+mkCondition predicate
+    | Just assignment <- Substitution.retractAssignment predicate =
+        from @(Assignment _) assignment
+    | otherwise =
+        from @(Predicate _) predicate
 
 {- | Simplify a conjunction of predicates by simplifying each one
 under the assumption that the others are true.
@@ -157,8 +169,8 @@ simplifyPredicatesWithAssumptions ::
     [Predicate RewritingVariableName] ->
     LogicT
         simplifier
-        (Condition RewritingVariableName)
-simplifyPredicatesWithAssumptions _ [] = return Condition.top
+        (MultiAnd (Predicate RewritingVariableName))
+simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
     let predicatesWithUnsimplified =
             zip predicates $
@@ -168,23 +180,21 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             simplifyWithAssumptions
             predicatesWithUnsimplified
         )
-        Condition.top
+        MultiAnd.top
   where
     simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
         , MultiAnd (Predicate RewritingVariableName)
         ) ->
         StateT
-            (Condition RewritingVariableName)
+            (MultiAnd (Predicate RewritingVariableName))
             (LogicT simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         simplifiedSideCond <- State.get
         let otherSideConds =
                 SideCondition.addAssumptions
-                    ( from @_ @(MultiAnd (Predicate _)) simplifiedSideCond
-                        <> unsimplifiedSideCond
-                    )
+                    (simplifiedSideCond <> unsimplifiedSideCond)
                     sideCondition
         result <- lift $ simplifyPredicate otherSideConds predicate
         State.put (simplifiedSideCond <> result)
@@ -202,7 +212,7 @@ simplifyPredicate ::
     ) =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    LogicT simplifier (Condition RewritingVariableName)
+    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift $
@@ -210,7 +220,7 @@ simplifyPredicate sideCondition predicate = do
                 Predicate.fromPredicate_ predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
-    scatter (OrPattern.map eraseTerm patternOr)
+    from @(Condition _) @(MultiAnd (Predicate _)) <$> scatter (OrPattern.map eraseTerm patternOr)
   where
     eraseTerm conditional
         | TopBottom.isTop (Pattern.term conditional) =
