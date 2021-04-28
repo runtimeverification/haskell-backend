@@ -31,6 +31,7 @@ jobs:
       - name: Build
         run: |
           nix-shell test.nix --run './test/regression-evm/test-statistics.sh pull-request.csv'
+          git fetch origin
           git checkout master
           git checkout ${{ github.event.pull_request.head.sha }} -- test/regression-evm
           nix-shell test.nix --run './test/regression-evm/test-statistics.sh master.csv'
