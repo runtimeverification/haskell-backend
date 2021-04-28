@@ -3,7 +3,9 @@
 
 set -xeou pipefail
 
-export KORE_EXEC="$(nix-build -A kore --arg release true --no-out-link)/bin/kore-exec"
+dir="${1:?}"; shift
+
+export KORE_EXEC="$(nix-build $dir -A kore --arg release true --no-out-link)/bin/kore-exec"
 
 cd $(dirname $0)
 
