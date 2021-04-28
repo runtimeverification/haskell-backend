@@ -7,7 +7,18 @@ kollect() {
     local name="$1"
     shift
     echo '#!/bin/sh' > "$name.sh"
-    "$@" --save-temps --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
+    "$@" | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
+    chmod +x "$name.sh"
+}
+
+kollect-file() {
+    local name="$1"
+    local path="$2"
+    shift
+    shift
+    echo '#!/bin/sh' > "$name.sh"
+    "$@"
+    cat $path | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
 
@@ -32,34 +43,25 @@ build-wasm() {
 generate-evm() {
     cd $KORE/evm-semantics
 
-    kollect test-pop1 \
-        kevm run --backend haskell \
-            --mode VMTESTS --schedule DEFAULT \
-            tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
+    kollect-file test-pop1 tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.haskell-out \
+        make tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive -e TEST_CONCRETE_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" KEEP_OUTPUTS=true
     
-    kollect test-add0 env \
-        kevm run --backend haskell \
-            --mode VMTESTS --schedule DEFAULT \
-            tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
+    kollect-file test-add0 tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.haskell-out \
+        make tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive -e TEST_CONCRETE_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" KEEP_OUTPUTS=true
     
-    kollect test-sumTo10 \
-        kevm run --backend haskell \
-            --mode VMTESTS --schedule DEFAULT \
-            tests/interactive/sumTo10.evm \
+    kollect-file test-sumTo10 tests/interactive/sumTo10.evm.haskell-out \
+        make tests/interactive/sumTo10.evm.run-interactive -e TEST_CONCRETE_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" KEEP_OUTPUTS=true
     
     for search in \
         branching-no-invalid straight-line-no-invalid \
         branching-invalid straight-line
     do
-        kollect "test-$search" \
-            kevm search --backend haskell \
-                "tests/interactive/search/$search.evm" \
-                "<statusCode> EVMC_INVALID_INSTRUCTION </statusCode>"
+        kollect-file "test-$search" "tests/interactive/search/$search.evm.search-out" \
+            make tests/interactive/search/$search.evm.search -e TEST_SYMBOLIC_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" CHECK=true KEEP_OUTPUTS=true
     done
             
     kollect test-sum-to-n \
-        make tests/specs/examples/sum-to-n-spec.k.prove \
-        -e TEST_SYMBOLIC_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps"
+        make tests/specs/examples/sum-to-n-spec.k.prove -e TEST_SYMBOLIC_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps"
 }
 
 generate-wasm() {
