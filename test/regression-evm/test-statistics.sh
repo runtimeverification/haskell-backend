@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell ../../nix/shell.performance.nix -i bash
+#!nix-shell ../../test.nix -i bash
 
 set -xeou pipefail
 
@@ -16,7 +16,7 @@ tests=(add0 branching-invalid branching-no-invalid pop1 straight-line-no-invalid
 echo "name,allocated_bytes,max_live_bytes" >"$out"
 for each in "${tests[@]}"
 do
-    ./test-${each}.sh --rts-statistics "$each.json" >/dev/null 2>&1
+    ./test-${each}.sh --rts-statistics "$each.json" >/dev/null
     echo "\"$each\",$(jq -r .allocated_bytes <"$each.json" ),$(jq -r .max_live_bytes <"$each.json" )" >>"$out"
     rm "$each.json"
 done

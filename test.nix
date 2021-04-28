@@ -9,7 +9,7 @@ in
 
 let
   inherit (pkgs) stdenv lib;
-  inherit (pkgs) bison diffutils ncurses z3;
+  inherit (pkgs) bison diffutils jq miller ncurses z3;
 
   ttuegel =
     let
@@ -44,6 +44,7 @@ stdenv.mkDerivation {
   buildInputs = [
     k kore  # some tests use kore-exec directly, others run through the frontend
     ncurses  # TODO: .../lib/kframework/setenv: line 31: tput: command not found
+    jq miller # processing test statistics
     z3
   ];
   configurePhase = ''
