@@ -58,9 +58,8 @@ generate-evm() {
     done
             
     kollect test-sum-to-n \
-        kevm prove --backend haskell \
-            tests/specs/examples/sum-to-n-spec.k \
-            VERIFICATION --format-failures
+        make tests/specs/examples/sum-to-n-spec.k.prove \
+        -e TEST_SYMBOLIC_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps"
 }
 
 generate-wasm() {
