@@ -83,11 +83,9 @@ simplifyTopConfigurationDefined configuration =
     term = Conditional.term configuration
     sideCondition = SideCondition.assumeDefined term
     definedConfiguration =
-        Pattern.andCondition
-            configuration
-            ( makeCeilPredicate term
-                & from @_ @(Condition _)
-            )
+        makeCeilPredicate term
+            & from @_ @(Condition _)
+            & Pattern.andCondition configuration
 
 -- | Removes all existential quantifiers at the top of every 'Pattern''s 'term'.
 removeTopExists ::
