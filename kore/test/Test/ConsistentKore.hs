@@ -12,6 +12,7 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List (
     foldl',
  )
@@ -851,7 +852,7 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             Maybe (Key, Value normalized (TermLike VariableName))
         concreteMapElem (ma, mb) = (,) <$> ma <*> mb
         concreteMap =
-            Map.fromList
+            HashMap.fromList
                 (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
     mixedKeys <-
         requestConstructorLike $

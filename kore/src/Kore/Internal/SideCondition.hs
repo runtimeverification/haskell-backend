@@ -46,7 +46,6 @@ import qualified Data.HashSet as HashSet
 import Data.List (
     sortOn,
  )
-import qualified Data.Map.Strict as Map
 import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -807,7 +806,7 @@ generateNormalizedAcs internalAc =
     concreteToAc (AcPair concrete1 concrete2) =
         let concreteAc =
                 emptyNormalizedAc
-                    { concreteElements = [concrete1, concrete2] & Map.fromList
+                    { concreteElements = [concrete1, concrete2] & HashMap.fromList
                     }
                     & wrapAc
          in toInternalAc concreteAc
@@ -822,7 +821,7 @@ generateNormalizedAcs internalAc =
         let symbolicConcreteAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic]
-                    , concreteElements = [concrete] & Map.fromList
+                    , concreteElements = [concrete] & HashMap.fromList
                     }
                     & wrapAc
          in toInternalAc symbolicConcreteAc
@@ -837,7 +836,7 @@ generateNormalizedAcs internalAc =
     concreteOpaqueToAc (concrete, opaque') =
         let concreteOpaqueAc =
                 emptyNormalizedAc
-                    { concreteElements = [concrete] & Map.fromList
+                    { concreteElements = [concrete] & HashMap.fromList
                     , opaque = [opaque']
                     }
                     & wrapAc

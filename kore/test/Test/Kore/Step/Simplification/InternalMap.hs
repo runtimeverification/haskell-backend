@@ -5,7 +5,7 @@ module Test.Kore.Step.Simplification.InternalMap (
 import Data.Bifunctor (
     bimap,
  )
-import qualified Data.Map.Strict as Map
+import qualified Data.HashMap.Strict as HashMap
 import Data.Maybe (
     fromJust,
  )
@@ -134,7 +134,7 @@ mkMapAux concreteElements elements opaque =
                     , concreteElements =
                         concreteElements
                             & map (bimap (retractKey >>> fromJust) MapValue)
-                            & Map.fromList
+                            & HashMap.fromList
                     , opaque
                     }
         }

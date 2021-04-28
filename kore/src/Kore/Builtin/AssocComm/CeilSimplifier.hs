@@ -16,8 +16,8 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashSet as HashSet
-import qualified Data.Map.Strict as Map
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -329,7 +329,10 @@ fromElement ::
     NormalizedAc normalized Key (TermLike RewritingVariableName)
 fromElement element
     | Just concreteKey <- retractKey symbolicKey =
-        emptyNormalizedAc{concreteElements = Map.singleton concreteKey value}
+        emptyNormalizedAc
+            { concreteElements =
+                HashMap.singleton concreteKey value
+            }
     | otherwise =
         emptyNormalizedAc{elementsWithVariables = [element]}
   where
