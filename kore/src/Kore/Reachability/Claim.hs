@@ -39,7 +39,6 @@ import Control.Lens (
     Lens',
  )
 import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
 import Control.Monad.Catch (
     Exception (..),
     SomeException (..),
@@ -78,7 +77,6 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -599,15 +597,9 @@ simplify' lensClaimPattern claim = do
 
     simplifyLeftHandSide =
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
-            Monad.guard (not . isBottom . Conditional.term $ config)
-            let definedConfig =
-                    Pattern.andCondition config $
-                        from $ makeCeilPredicate (Conditional.term config)
-                assumedDefined = Pattern.term config
             configs <-
                 simplifyTopConfigurationDefined
-                    definedConfig
-                    assumedDefined
+                    config
                     >>= SMT.Evaluator.filterMultiOr
                     & lift
             asum (pure <$> toList configs)
