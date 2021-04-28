@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -48,7 +46,6 @@ import qualified Data.HashSet as HashSet
 import Data.List (
     sortOn,
  )
-import qualified Data.Map.Strict as Map
 import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -82,6 +79,7 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
+    pattern AcPair,
  )
 import Kore.Internal.Predicate (
     Predicate,
@@ -127,6 +125,10 @@ import Kore.Unparser (
     Unparse (..),
  )
 import Pair
+import Partial (
+    Partial (..),
+    getPartial,
+ )
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -615,14 +617,15 @@ assumeDefined ::
     forall variable.
     InternalVariable variable =>
     TermLike variable ->
-    SideCondition variable
-assumeDefined term =
-    assumeDefinedWorker term
-        & fromDefinedTerms
+    Maybe (SideCondition variable)
+assumeDefined =
+    fmap fromDefinedTerms
+        . getPartial
+        . assumeDefinedWorker
   where
     assumeDefinedWorker ::
         TermLike variable ->
-        HashSet (TermLike variable)
+        Partial (HashSet (TermLike variable))
     assumeDefinedWorker term' =
         case term' of
             TermLike.And_ _ child1 child2 ->
@@ -643,6 +646,7 @@ assumeDefined term =
                     definedMaps =
                         generateNormalizedAcs internalMap
                             & HashSet.map TermLike.mkInternalMap
+                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedMaps
             TermLike.InternalSet_ internalSet ->
@@ -651,6 +655,7 @@ assumeDefined term =
                     definedSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
+                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedSets
             TermLike.Forall_ _ _ child ->
@@ -659,16 +664,13 @@ assumeDefined term =
                 let result1 = assumeDefinedWorker child1
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ ->
-                error
-                    "Internal error: cannot assume\
-                    \ a \\bottom pattern is defined."
+            TermLike.Bottom_ _ -> Bottom
             _ -> asSet term'
     asSet newTerm
-        | isDefinedInternal newTerm = mempty
-        | otherwise = HashSet.singleton newTerm
+        | isDefinedInternal newTerm = Defined HashSet.empty
+        | otherwise = Defined $ HashSet.singleton newTerm
     checkFunctional symbol newTerm
-        | isFunctional symbol = mempty
+        | isFunctional symbol = Defined HashSet.empty
         | otherwise = asSet newTerm
 
     getDefinedElementsOfAc ::
@@ -763,20 +765,21 @@ generateNormalizedAcs ::
     Ord (Element normalized (TermLike variable)) =>
     Ord (Value normalized (TermLike variable)) =>
     Ord (normalized Key (TermLike variable)) =>
+    Hashable (Element normalized (TermLike variable)) =>
+    Hashable (Value normalized (TermLike variable)) =>
     Hashable (normalized Key (TermLike variable)) =>
     AcWrapper normalized =>
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ symbolicToAc <$> symbolicPairs
-    , concreteToAc <$> concretePairs
-    , opaqueToAc <$> opaquePairs
-    , symbolicConcreteToAc <$> symbolicConcretePairs
-    , symbolicOpaqueToAc <$> symbolicOpaquePairs
-    , concreteOpaqueToAc <$> concreteOpaquePairs
+    [ HashSet.map symbolicToAc symbolicPairs
+    , HashSet.map concreteToAc concretePairs
+    , HashSet.map opaqueToAc opaquePairs
+    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
     ]
-        & concat
-        & HashSet.fromList
+        & fold
   where
     InternalAc
         { builtinAcChild
@@ -793,21 +796,21 @@ generateNormalizedAcs internalAc =
         , symbolicOpaquePairs
         , concreteOpaquePairs
         } = generatePairWiseElements builtinAcChild
-    symbolicToAc (symbolic1, symbolic2) =
+    symbolicToAc (AcPair symbolic1 symbolic2) =
         let symbolicAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic1, symbolic2]
                     }
                     & wrapAc
          in toInternalAc symbolicAc
-    concreteToAc (concrete1, concrete2) =
+    concreteToAc (AcPair concrete1 concrete2) =
         let concreteAc =
                 emptyNormalizedAc
-                    { concreteElements = [concrete1, concrete2] & Map.fromList
+                    { concreteElements = [concrete1, concrete2] & HashMap.fromList
                     }
                     & wrapAc
          in toInternalAc concreteAc
-    opaqueToAc (opaque1, opaque2) =
+    opaqueToAc (AcPair opaque1 opaque2) =
         let opaqueAc =
                 emptyNormalizedAc
                     { opaque = [opaque1, opaque2]
@@ -818,7 +821,7 @@ generateNormalizedAcs internalAc =
         let symbolicConcreteAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic]
-                    , concreteElements = [concrete] & Map.fromList
+                    , concreteElements = [concrete] & HashMap.fromList
                     }
                     & wrapAc
          in toInternalAc symbolicConcreteAc
@@ -833,7 +836,7 @@ generateNormalizedAcs internalAc =
     concreteOpaqueToAc (concrete, opaque') =
         let concreteOpaqueAc =
                 emptyNormalizedAc
-                    { concreteElements = [concrete] & Map.fromList
+                    { concreteElements = [concrete] & HashMap.fromList
                     , opaque = [opaque']
                     }
                     & wrapAc

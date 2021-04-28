@@ -3,14 +3,13 @@ module VERIFICATION
 
 endmodule
 
-module ONE-PATH-B-SPEC
+module ALL-PATH-C-SPEC
   imports VERIFICATION
   imports PATH
 
   // This should be provable as an one-path claim, but should not be provable as an 
   //all-path claim.
-  claim <k> select => b </k>
-       <state> SetItem(b) SetItem(c) </state>
-    [one-path]
+  claim <k> select => c </k>
+       <state> SetItem(b) SetItem(c) </state> [all-path]
 
 endmodule

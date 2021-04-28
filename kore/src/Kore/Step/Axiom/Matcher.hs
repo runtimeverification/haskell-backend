@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -35,6 +33,7 @@ import qualified Data.Align as Align (
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
+import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
  )
@@ -806,7 +805,7 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                             removeSymbolicKeyOfAc key1 normalized2
                 push (Pair frame1 normalized2')
             Nothing ->
-                case (headMay . Map.toList $ concrete2, headMay abstract2) of
+                case (headMay . HashMap.toList $ concrete2, headMay abstract2) of
                     (Just concreteElement2, _) -> lift $ do
                         let liftedConcreteElement2 =
                                 Bifunctor.first (from @Key) concreteElement2
@@ -834,9 +833,9 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     concrete2 = concreteElements normalized2
     opaque2 = opaque normalized2
 
-    excessConcrete1 = Map.difference concrete1 concrete2
-    excessConcrete2 = Map.difference concrete2 concrete1
-    concrete12 = Map.intersectionWith Pair concrete1 concrete2
+    excessConcrete1 = HashMap.difference concrete1 concrete2
+    excessConcrete2 = HashMap.difference concrete2 concrete1
+    concrete12 = HashMap.intersectionWith Pair concrete1 concrete2
 
     IntersectionDifference
         { intersection = abstractMerge

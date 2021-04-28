@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets
@@ -40,13 +38,16 @@ import Control.Error (
     runMaybeT,
  )
 import qualified Control.Monad as Monad
+import Data.HashMap.Strict (
+    HashMap,
+ )
 import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashSet as HashSet
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import Data.Text (
     Text,
  )
@@ -240,7 +241,7 @@ expectConcreteBuiltinSet ::
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (Map Key (SetValue (TermLike variable)))
+    MaybeT m (HashMap Key (SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
     case unwrapAc _set of
@@ -260,7 +261,7 @@ expectEmptySet ::
     MaybeT m ()
 expectEmptySet cxt _set = do
     _set <- expectConcreteBuiltinSet cxt _set
-    Monad.guard (Map.null _set)
+    Monad.guard (HashMap.null _set)
 
 {- | Converts a @Set@ of concrete elements to a @NormalizedSet@ and returns it
 as a function result.
@@ -268,7 +269,7 @@ as a function result.
 returnConcreteSet ::
     (MonadSimplify m, InternalVariable variable) =>
     Sort ->
-    Map Key (SetValue (TermLike variable)) ->
+    HashMap Key (SetValue (TermLike variable)) ->
     m (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 
@@ -279,13 +280,13 @@ evalElement _ resultSort [_elem] =
             TermLike.assertConstructorLikeKeys [_elem] $
                 returnConcreteSet
                     resultSort
-                    (Map.singleton concrete SetValue)
+                    (HashMap.singleton concrete SetValue)
         Nothing ->
             (Ac.returnAc resultSort . wrapAc)
                 NormalizedAc
                     { elementsWithVariables =
                         [SetElement _elem]
-                    , concreteElements = Map.empty
+                    , concreteElements = HashMap.empty
                     , opaque = []
                     }
 evalElement _ _ _ = Builtin.wrongArity Set.elementKey
@@ -308,7 +309,7 @@ evalIn _ resultSort [_elem, _set] = do
         bothConcrete = do
             _elem <- hoistMaybe $ retractKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
-            Map.member _elem _set
+            HashMap.member _elem _set
                 & asExpandedBoolPattern
                 & return
     setSymbolic <|> bothSymbolic <|> emptySet <|> bothConcrete
@@ -329,7 +330,7 @@ evalIn _ _ _ = Builtin.wrongArity Set.inKey
 evalUnit :: Builtin.Function
 evalUnit _ resultSort =
     \case
-        [] -> returnConcreteSet resultSort Map.empty
+        [] -> returnConcreteSet resultSort HashMap.empty
         _ -> Builtin.wrongArity Set.unitKey
 
 evalConcat :: Builtin.Function
@@ -356,13 +357,13 @@ evalDifference
         do
             let rightIdentity = do
                     _set2 <- expectConcreteBuiltinSet ctx _set2
-                    if Map.null _set2
+                    if HashMap.null _set2
                         then return (Pattern.fromTermLike _set1)
                         else empty
                 bothConcrete = do
                     _set1 <- expectConcreteBuiltinSet ctx _set1
                     _set2 <- expectConcreteBuiltinSet ctx _set2
-                    returnConcreteSet resultSort (Map.difference _set1 _set2)
+                    returnConcreteSet resultSort (HashMap.difference _set1 _set2)
                 symbolic = do
                     _set1 <- expectBuiltinSet ctx _set1
                     _set2 <- expectBuiltinSet ctx _set2
@@ -379,8 +380,8 @@ evalDifference
                                 unwrapAc _set1
                         symbolic1 =
                             unwrapElement <$> symbolic1'
-                                & Map.fromList
-                        opaque1 = Set.fromList opaque1'
+                                & HashMap.fromList
+                        opaque1 = HashSet.fromList opaque1'
                     let NormalizedAc
                             { concreteElements = concrete2
                             , elementsWithVariables = symbolic2'
@@ -389,25 +390,29 @@ evalDifference
                                 unwrapAc _set2
                         symbolic2 =
                             unwrapElement <$> symbolic2'
-                                & Map.fromList
-                        opaque2 = Set.fromList opaque2'
+                                & HashMap.fromList
+                        opaque2 = HashSet.fromList opaque2'
                     let set1' =
                             NormalizedAc
-                                { concreteElements = Map.difference concrete1 concrete2
+                                { concreteElements =
+                                    HashMap.difference concrete1 concrete2
                                 , elementsWithVariables =
-                                    Map.difference symbolic1 symbolic2
-                                        & Map.toList
+                                    HashMap.difference symbolic1 symbolic2
+                                        & HashMap.toList
                                         & map wrapElement
-                                , opaque = Set.difference opaque1 opaque2 & Set.toList
+                                , opaque =
+                                    HashSet.difference opaque1 opaque2 & HashSet.toList
                                 }
                         set2' =
                             NormalizedAc
-                                { concreteElements = Map.difference concrete2 concrete1
+                                { concreteElements =
+                                    HashMap.difference concrete2 concrete1
                                 , elementsWithVariables =
-                                    Map.difference symbolic2 symbolic1
-                                        & Map.toList
+                                    HashMap.difference symbolic2 symbolic1
+                                        & HashMap.toList
                                         & map wrapElement
-                                , opaque = Set.difference opaque1 opaque1 & Set.toList
+                                , opaque =
+                                    HashSet.difference opaque1 opaque1 & HashSet.toList
                                 }
                     pat1 <- Ac.returnAc resultSort (NormalizedSet set1')
                     pat2 <- Ac.returnAc resultSort (NormalizedSet set2')
@@ -428,18 +433,17 @@ evalDifference _ _ =
 evalToList :: Builtin.Function
 evalToList _ resultSort [_set] = do
     _set <- expectConcreteBuiltinSet Set.toListKey _set
-    map dropNoValue (Map.toList _set)
+    HashMap.keysSet _set
+        & HashSet.toList
         & Seq.fromList
         & fmap (from @Key)
         & List.returnList resultSort
-  where
-    dropNoValue (a, SetValue) = a
 evalToList _ _ _ = Builtin.wrongArity Set.toListKey
 
 evalSize :: Builtin.Function
 evalSize _ resultSort [_set] = do
     _set <- expectConcreteBuiltinSet Set.sizeKey _set
-    Map.size _set
+    HashMap.size _set
         & toInteger
         & Int.asPattern resultSort
         & return
@@ -449,7 +453,7 @@ evalIntersection :: Builtin.Function
 evalIntersection _ resultSort [_set1, _set2] = do
     _set1 <- expectConcreteBuiltinSet ctx _set1
     _set2 <- expectConcreteBuiltinSet ctx _set2
-    returnConcreteSet resultSort (Map.intersection _set1 _set2)
+    returnConcreteSet resultSort (HashMap.intersection _set1 _set2)
   where
     ctx = Set.intersectionKey
 evalIntersection _ _ _ = Builtin.wrongArity Set.intersectionKey
@@ -460,7 +464,7 @@ evalList2set _ resultSort [_list] = do
     let _set =
             fmap (\x -> (x, SetValue)) _list
                 & toList
-                & Map.fromList
+                & HashMap.fromList
     returnConcreteSet resultSort _set
 evalList2set _ _ _ = Builtin.wrongArity Set.list2setKey
 
@@ -468,7 +472,7 @@ evalInclusion :: Builtin.Function
 evalInclusion _ resultSort [_setLeft, _setRight] = do
     _setLeft <- expectConcreteBuiltinSet Set.inclusionKey _setLeft
     _setRight <- expectConcreteBuiltinSet Set.inclusionKey _setRight
-    Map.isSubmapOf _setLeft _setRight
+    HashMap.isSubmapOf _setLeft _setRight
         & Bool.asPattern resultSort
         & return
 evalInclusion _ _ _ = Builtin.wrongArity Set.inclusionKey

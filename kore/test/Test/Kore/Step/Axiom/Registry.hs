@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Axiom.Registry (
     test_functionRegistry,
 ) where
@@ -144,14 +142,12 @@ testDef =
         , updateAttributes
             ( Attributes
                 [ Attribute.functionAttribute
-                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
             ( Attributes
                 [ Attribute.functionAttribute
-                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "g") (SortName "S"))
@@ -176,13 +172,27 @@ testDef =
                 , sentenceAxiomPattern =
                     Builtin.externalize $
                         mkImplies
-                            (mkTop sortVarS)
+                            ( mkAnd
+                                (mkTop sortVarS)
+                                ( mkAnd
+                                    ( mkIn
+                                        sortVarS
+                                        ( mkElemVar $
+                                            mkElementVariable (testId "tVar") sortS
+                                        )
+                                        (mkApplySymbol tHead [])
+                                    )
+                                    (mkTop sortVarS)
+                                )
+                            )
                             ( mkAnd
                                 ( mkEquals
                                     sortVarS
                                     ( mkApplySymbol
                                         (injHead sortS sortS)
-                                        [mkApplySymbol tHead []]
+                                        [ mkElemVar $
+                                            mkElementVariable (testId "tVar") sortS
+                                        ]
                                     )
                                     (mkApplySymbol sHead [])
                                 )
@@ -217,8 +227,8 @@ testDef =
                             ( mkAnd
                                 ( mkEquals
                                     sortVarS
-                                    (mkTop sortS)
                                     (mkApplySymbol fHead [])
+                                    (mkTop sortS)
                                 )
                                 (mkTop sortVarS)
                             )
@@ -493,20 +503,20 @@ test_functionRegistry =
             (length (extractRewriteAxioms testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = mkApplySymbol sHead []
+        let expect = [mkApplySymbol sHead []]
         simplified <-
             runSimplifier testEnv $
                 Pattern.simplify $
                     makePattern $ mkApplySymbol gHead []
-        let actual = Pattern.term $ head $ toList simplified
+        let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = mkApplySymbol tHead []
+        let expect = [mkApplySymbol tHead []]
         simplified <-
             runSimplifier testEnv $
                 Pattern.simplify $
                     makePattern $ mkApplySymbol pHead []
-        let actual = Pattern.term $ head $ toList simplified
+        let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase
         "Function rules sorted in order of priorities"
@@ -515,7 +525,7 @@ test_functionRegistry =
                     Just PartitionedEquations{functionRules} ->
                         assertEqual
                             ""
-                            [1, 2, 3, defaultPriority, owisePriority]
+                            [1, 2, 3, defaultPriority, defaultPriority, owisePriority]
                             (fmap Equation.equationPriority functionRules)
                     _ -> assertFailure "Should find function rules for f"
               )

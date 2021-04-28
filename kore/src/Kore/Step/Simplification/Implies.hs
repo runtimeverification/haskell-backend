@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Simplification.Implies
 Description : Tools for Implies pattern simplification.

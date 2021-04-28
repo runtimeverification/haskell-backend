@@ -42,7 +42,6 @@ let
         "/*"
         "!/stack.yaml"
         "!/kore"
-        "*.cabal"
       ];
     };
     inherit checkMaterialization;
@@ -73,6 +72,7 @@ let
   shell = import ./shell.nix { inherit default checkMaterialization; };
 
   version = project.kore.components.exes.kore-exec.version;
+  # version = "0.43.0.0";
 
   prelude-kore = ./src/main/kore/prelude.kore;
 

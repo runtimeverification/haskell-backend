@@ -12,7 +12,7 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Data.Set
+import qualified Data.HashSet as HashSet
 import Kore.ASTVerifier.DefinitionVerifier (
     sortModuleClaims,
  )
@@ -151,7 +151,7 @@ test_internalize =
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
-    mkSet = Set.asInternal . Data.Set.fromList
+    mkSet = Set.asInternal . HashSet.fromList
     s = mkElemVar (configElementVariableFromId "s" setSort)
 
     mkInt :: InternalVariable variable => Integer -> TermLike variable

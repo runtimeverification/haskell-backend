@@ -1,4 +1,3 @@
-{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 
 module Test.Kore.Builtin.AssocComm.CeilSimplifier (

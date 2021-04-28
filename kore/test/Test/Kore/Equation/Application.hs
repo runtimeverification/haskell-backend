@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Equation.Application (
     test_attemptEquation,
     test_attemptEquationUnification,
@@ -341,6 +339,13 @@ test_attemptEquation =
         (axiom_ (f a) (g x))
         SideCondition.top
         (f a)
+    , applies
+        -- using SMT
+        "equation applies on Equation variable"
+        (axiom (f x) a Predicate.makeTruePredicate)
+        SideCondition.top
+        (f zEq)
+        (Pattern.fromTermLike a)
     ]
 
 test_attemptEquationUnification :: [TestTree]
@@ -614,12 +619,13 @@ sigmaSymbol = Mock.functionalConstr20Symbol
 string :: Text -> TermLike RewritingVariableName
 string = Mock.builtinString
 
-x, xString, xInt, y, z :: TermLike RewritingVariableName
+x, xString, xInt, y, z, zEq :: TermLike RewritingVariableName
 x = mkElemVar Mock.xConfig
 xInt = mkElemVar Mock.xConfigInt
 xString = mkElemVar Mock.xConfigString
 y = mkElemVar Mock.yConfig
 z = mkElemVar Mock.zConfig
+zEq = mkElemVar Mock.zEquation
 
 a, b :: TermLike RewritingVariableName
 a = Mock.a

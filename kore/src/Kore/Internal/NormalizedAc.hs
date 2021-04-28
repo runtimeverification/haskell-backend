@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -28,6 +26,9 @@ module Kore.Internal.NormalizedAc (
     normalizedAcConstructorLike,
     normalizedAcFunctional,
     unparseInternalAc,
+    AcPair,
+    pattern AcPair,
+    acPairToPair,
     PairWiseElements (..),
     generatePairWiseElements,
 ) where
@@ -36,16 +37,17 @@ import qualified Control.Lens as Lens
 import Control.Lens.Iso (
     Iso',
  )
+import Data.HashMap.Strict (
+    HashMap,
+ )
+import qualified Data.HashMap.Strict as HashMap
+import Data.HashSet (
+    HashSet,
+ )
+import qualified Data.HashSet as HashSet
 import Data.Kind (
     Type,
  )
-import Data.List.Extra (
-    nubOrdBy,
- )
-import Data.Map.Strict (
-    Map,
- )
-import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
@@ -130,7 +132,7 @@ unparsedChildren ::
     [Pretty.Doc ann]
 unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     (elementUnparser <$> elementsWithVariables)
-        ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
+        ++ (concreteElementUnparser <$> HashMap.toList concreteElements)
         ++ (child . childUnparser <$> opaque)
   where
     unwrapped :: NormalizedAc normalized key child
@@ -164,7 +166,7 @@ data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
       elementsWithVariables :: [Element collection child]
     , -- | Concrete elements of the structure.
       -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
-      concreteElements :: Map key (Value collection child)
+      concreteElements :: HashMap key (Value collection child)
     , -- | Unoptimized (i.e. non-element) parts of the structure.
       opaque :: [child]
     }
@@ -221,6 +223,7 @@ lookupSymbolicKeyOfAc
 removeSymbolicKeyOfAc ::
     AcWrapper normalized =>
     Ord child =>
+    Hashable child =>
     child ->
     NormalizedAc normalized key child ->
     NormalizedAc normalized key child
@@ -229,12 +232,12 @@ removeSymbolicKeyOfAc
     normalized@NormalizedAc{elementsWithVariables} =
         normalized
             { elementsWithVariables =
-                fmap wrapElement . Map.toList $
-                    Map.delete child unwrappedMap
+                fmap wrapElement . HashMap.toList $
+                    HashMap.delete child unwrappedMap
             }
       where
         unwrappedMap =
-            Map.fromList $ fmap unwrapElement elementsWithVariables
+            HashMap.fromList $ fmap unwrapElement elementsWithVariables
 
 isConcreteKeyOfAc ::
     AcWrapper normalized =>
@@ -253,7 +256,7 @@ getConcreteKeysOfAc
     ( unwrapAc ->
             NormalizedAc{concreteElements}
         ) =
-        Map.keys concreteElements
+        HashMap.keys concreteElements
 
 getConcreteValuesOfAc ::
     AcWrapper normalized =>
@@ -263,10 +266,11 @@ getConcreteValuesOfAc
     ( unwrapAc ->
             NormalizedAc{concreteElements}
         ) =
-        Map.elems concreteElements
+        HashMap.elems concreteElements
 
 removeConcreteKeyOfAc ::
     Ord key =>
+    Hashable key =>
     key ->
     NormalizedAc normalized key child ->
     NormalizedAc normalized key child
@@ -275,7 +279,7 @@ removeConcreteKeyOfAc
     normalized@NormalizedAc{concreteElements} =
         normalized
             { concreteElements =
-                Map.delete key concreteElements
+                HashMap.delete key concreteElements
             }
 
 deriving stock instance
@@ -325,7 +329,7 @@ instance
     hashWithSalt salt normalized@(NormalizedAc _ _ _) =
         salt
             `hashWithSalt` elementsWithVariables
-            `hashWithSalt` Map.toList concreteElements
+            `hashWithSalt` HashMap.toList concreteElements
             `hashWithSalt` opaque
       where
         NormalizedAc{elementsWithVariables} = normalized
@@ -368,7 +372,7 @@ emptyNormalizedAc :: NormalizedAc key valueWrapper child
 emptyNormalizedAc =
     NormalizedAc
         { elementsWithVariables = []
-        , concreteElements = Map.empty
+        , concreteElements = HashMap.empty
         , opaque = []
         }
 
@@ -453,13 +457,13 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
             , concreteElements
             , opaque = []
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         NormalizedAc
             { elementsWithVariables = []
             , concreteElements
             , opaque = [_]
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         _ -> Defined False
   where
     sameAsChildren = fold ac
@@ -479,13 +483,13 @@ normalizedAcFunctional ac@(NormalizedAc _ _ _) =
             , concreteElements
             , opaque = []
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         NormalizedAc
             { elementsWithVariables = []
             , concreteElements
             , opaque = [_]
             }
-                | Map.null concreteElements -> sameAsChildren
+                | HashMap.null concreteElements -> sameAsChildren
         _ -> Functional False
   where
     sameAsChildren = fold ac
@@ -506,27 +510,53 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
                 | all pairIsConstructorLike concreteElementsList ->
                     ConstructorLike . Just $ ConstructorLikeHead
               where
-                concreteElementsList = Map.toList concreteElements
+                concreteElementsList = HashMap.toList concreteElements
                 pairIsConstructorLike (key, value) =
                     assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
+
+{- | A representation for associative-commutative collections
+with just two elements of the same type.
+
+The smart constructor 'mkAcPair' ensures the properties of
+the collection are satisfied.
+-}
+data AcPair a = AcPair_ a a
+    deriving stock (Eq)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Hashable)
+
+pattern AcPair :: a -> a -> AcPair a
+pattern AcPair a1 a2 <- AcPair_ a1 a2
+{-# COMPLETE AcPair #-}
+
+mkAcPair :: Ord a => a -> a -> Maybe (AcPair a)
+mkAcPair a1 a2
+    | a1 < a2 = Just $ AcPair_ a1 a2
+    | a1 > a2 = Just $ AcPair_ a2 a1
+    | otherwise = Nothing
+
+acPairToPair :: AcPair a -> (a, a)
+acPairToPair (AcPair a1 a2) = (a1, a2)
+
+type ConcreteElement key normalized child = (key, Value normalized child)
 
 {- | 'PairWiseElements' is a representation of the elements of all subcollections
  necessary for proving the definedness of a collection.
 -}
 data PairWiseElements normalized key child = PairWiseElements
     { symbolicPairs ::
-        [(Element normalized child, Element normalized child)]
+        !(HashSet (AcPair (Element normalized child)))
     , concretePairs ::
-        [((key, Value normalized child), (key, Value normalized child))]
+        !(HashSet (AcPair (ConcreteElement key normalized child)))
     , opaquePairs ::
-        [(child, child)]
+        !(HashSet (AcPair child))
     , symbolicConcretePairs ::
-        [(Element normalized child, (key, Value normalized child))]
+        !(HashSet (Element normalized child, ConcreteElement key normalized child))
     , symbolicOpaquePairs ::
-        [(Element normalized child, child)]
+        !(HashSet (Element normalized child, child))
     , concreteOpaquePairs ::
-        [((key, Value normalized child), child)]
+        !(HashSet (ConcreteElement key normalized child, child))
     }
 
 -- | Generates the 'PairWiseElements' for a 'AcWrapper' collection.
@@ -536,6 +566,10 @@ generatePairWiseElements ::
     Ord child =>
     Ord (Element normalized child) =>
     Ord (Value normalized child) =>
+    Hashable key =>
+    Hashable child =>
+    Hashable (Element normalized child) =>
+    Hashable (Value normalized child) =>
     normalized key child ->
     PairWiseElements normalized key child
 generatePairWiseElements (unwrapAc -> normalized) =
@@ -544,20 +578,20 @@ generatePairWiseElements (unwrapAc -> normalized) =
         , concretePairs = pairWiseElemsOfSameType concreteElems
         , opaquePairs = pairWiseElemsOfSameType opaqueElems
         , symbolicConcretePairs =
-            (,) <$> symbolicElems <*> concreteElems
+            pairWiseElemsOfDifferentTypes symbolicElems concreteElems
         , symbolicOpaquePairs =
-            (,) <$> symbolicElems <*> opaqueElems
+            pairWiseElemsOfDifferentTypes symbolicElems opaqueElems
         , concreteOpaquePairs =
-            (,) <$> concreteElems <*> opaqueElems
+            pairWiseElemsOfDifferentTypes concreteElems opaqueElems
         }
   where
     symbolicElems = elementsWithVariables normalized
-    concreteElems = Map.toList . concreteElements $ normalized
+    concreteElems = HashMap.toList . concreteElements $ normalized
     opaqueElems = opaque normalized
     pairWiseElemsOfSameType elems =
-        [(x, y) | x <- elems, y <- elems, x /= y]
-        & nubOrdBy applyComm
-    applyComm p1 p2
-        | p1 == p2 = EQ
-        | swap p1 == p2 = EQ
-        | otherwise = compare p1 p2
+        [mkAcPair x y | x <- elems, y <- elems]
+        & catMaybes
+            & HashSet.fromList
+    pairWiseElemsOfDifferentTypes elems1 elems2 =
+        (,) <$> elems1 <*> elems2
+            & HashSet.fromList
