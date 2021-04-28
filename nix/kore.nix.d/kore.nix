@@ -440,6 +440,7 @@
           "Logic"
           "Options/SMT"
           "Pair"
+          "Partial"
           "Prelude/Kore"
           "Pretty"
           "Prof"
