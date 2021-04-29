@@ -125,6 +125,10 @@ import Kore.Unparser (
     Unparse (..),
  )
 import Pair
+import Partial (
+    Partial (..),
+    getPartial,
+ )
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -613,14 +617,15 @@ assumeDefined ::
     forall variable.
     InternalVariable variable =>
     TermLike variable ->
-    SideCondition variable
-assumeDefined term =
-    assumeDefinedWorker term
-        & fromDefinedTerms
+    Maybe (SideCondition variable)
+assumeDefined =
+    fmap fromDefinedTerms
+        . getPartial
+        . assumeDefinedWorker
   where
     assumeDefinedWorker ::
         TermLike variable ->
-        HashSet (TermLike variable)
+        Partial (HashSet (TermLike variable))
     assumeDefinedWorker term' =
         case term' of
             TermLike.And_ _ child1 child2 ->
@@ -641,6 +646,7 @@ assumeDefined term =
                     definedMaps =
                         generateNormalizedAcs internalMap
                             & HashSet.map TermLike.mkInternalMap
+                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedMaps
             TermLike.InternalSet_ internalSet ->
@@ -649,6 +655,7 @@ assumeDefined term =
                     definedSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
+                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedSets
             TermLike.Forall_ _ _ child ->
@@ -657,16 +664,13 @@ assumeDefined term =
                 let result1 = assumeDefinedWorker child1
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ ->
-                error
-                    "Internal error: cannot assume\
-                    \ a \\bottom pattern is defined."
+            TermLike.Bottom_ _ -> Bottom
             _ -> asSet term'
     asSet newTerm
-        | isDefinedInternal newTerm = mempty
-        | otherwise = HashSet.singleton newTerm
+        | isDefinedInternal newTerm = Defined HashSet.empty
+        | otherwise = Defined $ HashSet.singleton newTerm
     checkFunctional symbol newTerm
-        | isFunctional symbol = mempty
+        | isFunctional symbol = Defined HashSet.empty
         | otherwise = asSet newTerm
 
     getDefinedElementsOfAc ::
