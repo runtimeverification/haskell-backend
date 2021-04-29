@@ -30,8 +30,8 @@ jobs:
 
       - name: Build
         run: |
-          ./test/regression-evm/test-statistics.sh ./. test/regression-evm >pull-request.json
+          ./scripts/test-statistics.sh ./. test/regression-evm >pull-request.json
           git fetch origin
           git worktree add kore-master master
-          ./test/regression-evm/test-statistics.sh ./kore-master test/regression-evm >master.json
+          ./scripts/test-statistics.sh ./kore-master test/regression-evm >master.json
           ./scripts/join-statistics.sh master.json pull-request.json
