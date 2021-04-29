@@ -139,6 +139,7 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
+import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
 import Kore.Reachability (
     ClaimState (..),
     ClaimStateTransformer (..),
@@ -214,7 +215,6 @@ import Text.Megaparsec (
     parseMaybe,
     runParser,
  )
-import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
 
 {- | Warning: you should never use WriterT or RWST. It is used here with
  _great care_ of evaluating the RWST to a StateT immediately, and thus getting
