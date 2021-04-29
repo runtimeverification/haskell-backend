@@ -3,6 +3,7 @@ module Test.Kore.Repl.Interpreter (
 ) where
 
 import Control.Concurrent.MVar
+import Kore.Attribute.Definition
 import qualified Control.Lens as Lens
 import Control.Monad.Reader (
     runReaderT,
@@ -794,6 +795,7 @@ mkState startTime axioms claims claim =
         , aliases = Map.empty
         , koreLogOptions =
             Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime
+        , kFileLocations = KFileLocations []
         }
   where
     graph' = emptyExecutionGraph claim

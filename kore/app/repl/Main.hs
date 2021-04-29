@@ -215,7 +215,8 @@ mainWithOptions
                         let swapLogAction = swappableLogger mvarLogAction
                         flip runLoggerT swapLogAction $
                             runExceptionHandlers $ do
-                                definition <- loadDefinitions [definitionFileName, specFile]
+                                (kFileLocations, definition) <-
+                                    loadDefinitions [definitionFileName, specFile]
                                 indexedModule <- loadModule mainModuleName definition
                                 specDefIndexedModule <- loadModule specModule definition
 
@@ -265,8 +266,9 @@ mainWithOptions
                                         outputFile
                                         mainModuleName
                                         koreLogOptions
+                                        kFileLocations
 
-                                warnIfLowProductivity
+                                warnIfLowProductivity kFileLocations
                                 pure ExitSuccess
             exitWith exitCode
       where

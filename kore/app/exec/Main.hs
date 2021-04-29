@@ -9,6 +9,9 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
+import Kore.Attribute.Definition
+    ( KFileLocations (..)
+    )
 import Data.Default (
     def,
  )
@@ -587,10 +590,14 @@ mainWithOptions execOptions = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch execOptions' <* warnIfLowProductivity
-                    & handle handleWithConfiguration
-                    & handle handleSomeException
-                    & runKoreLog tmpDir koreLogOptions
+                let run = do
+                        (kFileLocations, exitCode) <- mainDispatch execOptions'
+                        warnIfLowProductivity kFileLocations
+                        return exitCode
+                  in 
+                    run & handle handleWithConfiguration
+                        & handle handleSomeException
+                        & runKoreLog tmpDir koreLogOptions
             case outputFileName of
                 Nothing -> readFile (tmpDir </> "result.kore") >>= putStr
                 Just fileName -> copyFile (tmpDir </> "result.kore") fileName
@@ -620,7 +627,7 @@ mainWithOptions execOptions = do
                 throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
-mainDispatch :: KoreExecOptions -> Main ExitCode
+mainDispatch :: KoreExecOptions -> Main (KFileLocations, ExitCode)
 mainDispatch execOptions
     | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
         if bmc
@@ -637,10 +644,13 @@ mainDispatch execOptions
     KoreExecOptions{koreSearchOptions} = execOptions
     KoreExecOptions{koreMergeOptions} = execOptions
 
-koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
+koreSearch ::
+    KoreExecOptions ->
+    KoreSearchOptions ->
+    Main (KFileLocations, ExitCode)
 koreSearch execOptions searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
+    (kFileLocations, definition) <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreSearchOptions{searchFileName} = searchOptions
@@ -651,16 +661,16 @@ koreSearch execOptions searchOptions = do
         execute execOptions mainModule $
             search depthLimit breadthLimit mainModule initial target config
     lift $ renderResult execOptions (unparse final)
-    return ExitSuccess
+    return (kFileLocations, ExitSuccess)
   where
     KoreSearchOptions{bound, searchType} = searchOptions
     config = Search.Config{bound, searchType}
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
-koreRun :: KoreExecOptions -> Main ExitCode
+koreRun :: KoreExecOptions -> Main (KFileLocations, ExitCode)
 koreRun execOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
+    (kFileLocations, definition) <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreExecOptions{patternFileName} = execOptions
@@ -669,15 +679,18 @@ koreRun execOptions = do
         execute execOptions mainModule $
             exec depthLimit breadthLimit mainModule strategy initial
     lift $ renderResult execOptions (unparse final)
-    return exitCode
+    return (kFileLocations, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
-koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
+koreProve ::
+    KoreExecOptions ->
+    KoreProveOptions ->
+    Main (KFileLocations, ExitCode)
 koreProve execOptions proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
-    definition <- loadDefinitions [definitionFileName, specFileName]
+    (kFileLocations, definition) <- loadDefinitions [definitionFileName, specFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
@@ -710,7 +723,7 @@ koreProve execOptions proveOptions = do
                 getRewritingPattern . getConfiguration . getStuckClaim
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
-    return exitCode
+    return (kFileLocations, exitCode)
   where
     failure pat = (ExitFailure 1, pat)
     success :: (ExitCode, TermLike VariableName)
@@ -725,7 +738,7 @@ koreProve execOptions proveOptions = do
         fileExists <- lift $ doesFileExist saveProofsFileName
         if fileExists
             then do
-                savedProofsDefinition <-
+                (_srcs, savedProofsDefinition) <-
                     loadDefinitions [definitionFileName, saveProofsFileName]
                 savedProofsModule <-
                     loadModule savedProofsModuleName savedProofsDefinition
@@ -771,11 +784,14 @@ koreProve execOptions proveOptions = do
                 , definitionModules = [provenModule]
                 }
 
-koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
+koreBmc ::
+    KoreExecOptions ->
+    KoreProveOptions ->
+    Main (KFileLocations, ExitCode)
 koreBmc execOptions proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
-    definition <- loadDefinitions [definitionFileName, specFileName]
+    (kFileLocations, definition) <- loadDefinitions [definitionFileName, specFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
@@ -797,15 +813,18 @@ koreBmc execOptions proveOptions = do
                 return success
             Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)
-    return exitCode
+    return (kFileLocations, exitCode)
   where
     failure pat = (ExitFailure 1, pat)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
-koreMerge :: KoreExecOptions -> KoreMergeOptions -> Main ExitCode
+koreMerge ::
+    KoreExecOptions ->
+    KoreMergeOptions ->
+    Main (KFileLocations, ExitCode)
 koreMerge execOptions mergeOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
+    (kFileLocations, definition) <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreMergeOptions{rulesFileName} = mergeOptions
@@ -819,12 +838,12 @@ koreMerge execOptions mergeOptions = do
     case eitherMergedRule of
         (Left err) -> do
             lift $ Text.hPutStrLn stderr err
-            return (ExitFailure 1)
+            return (kFileLocations, ExitFailure 1)
         (Right mergedRule) -> do
             let mergedRule' =
                     mergedRule <&> mapRuleVariables getRewritingVariable
             lift $ renderResult execOptions (vsep (map unparse mergedRule'))
-            return ExitSuccess
+            return (kFileLocations, ExitSuccess)
 
 loadRuleIds :: FilePath -> IO [Text]
 loadRuleIds fileName = do

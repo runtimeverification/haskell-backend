@@ -96,6 +96,7 @@ import System.IO (
 import Text.Megaparsec (
     parseMaybe,
  )
+import Kore.Attribute.Definition
 
 {- | Runs the repl for proof mode. It requires all the tooling and simplifiers
  that would otherwise be required in the proof and allows for step-by-step
@@ -122,8 +123,9 @@ runRepl ::
     OutputFile ->
     ModuleName ->
     Log.KoreLogOptions ->
+    KFileLocations ->
     m ()
-runRepl _ [] _ _ _ _ outputFile _ _ =
+runRepl _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -138,7 +140,8 @@ runRepl
     scriptModeOutput
     outputFile
     mainModuleName
-    logOptions =
+    logOptions 
+    kFileLocations =
         do
             startTime <- liftIO $ getTime Monotonic
             (newState, _) <-
@@ -198,6 +201,7 @@ runRepl
                         { Log.exeName = Log.ExeName "kore-repl"
                         , Log.startTime = startTime
                         }
+                , kFileLocations
                 }
 
         config :: Config m

@@ -190,6 +190,7 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
+import Kore.Attribute.Definition
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -499,6 +500,7 @@ proveWithRepl ::
     Repl.Data.OutputFile ->
     ModuleName ->
     KoreLogOptions ->
+    KFileLocations ->
     SMT ()
 proveWithRepl
     definitionModule
@@ -510,7 +512,8 @@ proveWithRepl
     scriptModeOutput
     outputFile
     mainModuleName
-    logOptions =
+    logOptions
+    kFileLocations =
         evalSimplifier definitionModule $ do
             initialized <-
                 initializeProver
@@ -528,6 +531,7 @@ proveWithRepl
                 outputFile
                 mainModuleName
                 logOptions
+                kFileLocations
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck ::

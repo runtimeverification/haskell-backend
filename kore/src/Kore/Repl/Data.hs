@@ -126,6 +126,7 @@ import qualified Pretty
 import SMT (
     MonadSMT,
  )
+import Kore.Attribute.Definition
 
 {- | Represents an optional file name which contains a sequence of
  repl commands.
@@ -577,6 +578,7 @@ data ReplState = ReplState
     , -- | The log level, log scopes and log type decide what gets logged and
       -- where.
       koreLogOptions :: !Log.KoreLogOptions
+    , kFileLocations :: KFileLocations
     }
     deriving stock (GHC.Generic)
 
