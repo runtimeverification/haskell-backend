@@ -20,7 +20,6 @@ RUN    curl -sSL https://github.com/github/hub/releases/download/v$HUB/hub-linux
     && rm -fr hub-linux-amd64-$HUB
 
 ENV LC_ALL=C.UTF-8
-ADD ./src/main/kore/prelude.kore /usr/include/kframework/kore/prelude.kore
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000

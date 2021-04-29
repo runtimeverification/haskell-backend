@@ -38,12 +38,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
-import Kore.Unparser (
-    unparse,
- )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
-import Pretty
 
 fromSentenceAxiom ::
     (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom) ->
@@ -63,16 +59,6 @@ data MatchEquationError variable
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
-
-instance InternalVariable variable => Pretty (MatchEquationError variable) where
-    pretty (NotEquation term) = "The given term is not an equation:\n" <> unparse term
-    pretty (RequiresError notPred) = "The equation's requires clause is not a predicate:\n" <> pretty notPred
-    pretty (ArgumentError notPred) = "The equation's argument clause is not a predicate:\n" <> pretty notPred
-    pretty (AntiLeftError notPred) = "The equation's anti-left clause is not a predicate:\n" <> pretty notPred
-    pretty (EnsuresError notPred) = "The equation's ensures clause is not a predicate:\n" <> pretty notPred
-    pretty FunctionalAxiom = "The term is a functional axiom"
-    pretty ConstructorAxiom = "The term is a constructor axiom"
-    pretty SubsortAxiom = "The term is a subsort axiom"
 
 matchEquation ::
     forall variable.

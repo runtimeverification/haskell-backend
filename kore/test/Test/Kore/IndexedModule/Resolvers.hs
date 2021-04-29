@@ -11,13 +11,7 @@ import Data.Map.Strict (
 import qualified Data.Map.Strict as Map
 import qualified Data.Ord
 import Kore.ASTVerifier.DefinitionVerifier
-import Kore.Attribute.Function (
-    Function (..),
- )
 import qualified Kore.Attribute.Sort as Attribute
-import Kore.Attribute.Symbol (
-    Symbol (..),
- )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -42,11 +36,7 @@ objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol
-objectA =
-    (TermLike.mkSymbol_ (testId "a") [] objectS1)
-        { sentenceSymbolAttributes =
-            Attributes [Attribute.functionAttribute]
-        }
+objectA = TermLike.mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
@@ -57,8 +47,8 @@ axiomA' =
     fmap Builtin.externalize $
         TermLike.mkAxiom [sortVariableR] $
             TermLike.mkForall x $
-                TermLike.mkEquals sortR (TermLike.applySymbol_ objectA []) $
-                    TermLike.mkElemVar x
+                TermLike.mkEquals sortR (TermLike.mkElemVar x) $
+                    TermLike.applySymbol_ objectA []
   where
     x = TermLike.mkElementVariable "x" objectS1
     sortVariableR = SortVariable (testId "R")
@@ -209,10 +199,9 @@ test_resolvers =
         ( assertEqual
             ""
             ( Right
-                ( def{function = Function True}
+                ( def :: Attribute.Symbol
                 , SentenceSymbol
-                    { sentenceSymbolAttributes =
-                        Attributes [Attribute.functionAttribute]
+                    { sentenceSymbolAttributes = Attributes []
                     , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
                     , sentenceSymbolSorts = []
                     , sentenceSymbolResultSort = objectS1
