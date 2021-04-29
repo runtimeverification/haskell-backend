@@ -214,6 +214,7 @@ import Text.Megaparsec (
     parseMaybe,
     runParser,
  )
+import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
 
 {- | Warning: you should never use WriterT or RWST. It is used here with
  _great care_ of evaluating the RWST to a StateT immediately, and thus getting
@@ -305,8 +306,12 @@ replInterpreter0 printAux printKore replCmd = do
             output
     case shouldContinue of
         Continue -> pure Continue
-        SuccessStop -> liftIO exitSuccess
-        FailStop -> liftIO . exitWith $ ExitFailure 2
+        SuccessStop -> do
+            warnIfLowProductivity
+            liftIO exitSuccess
+        FailStop -> do
+            warnIfLowProductivity
+            liftIO . exitWith $ ExitFailure 2
   where
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
