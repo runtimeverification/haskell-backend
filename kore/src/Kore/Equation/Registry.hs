@@ -27,6 +27,7 @@ import Kore.Attribute.Axiom (
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
@@ -49,6 +50,7 @@ import Kore.Syntax.Sentence (
  )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
+import qualified Pretty
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
 extractEquations ::
@@ -110,10 +112,11 @@ partitionEquations equations =
     equations' =
         equations
             & filter (not . ignoreEquation)
-    (simplificationRules, functionRules) =
+    (simplificationRules, unProcessedFunctionRules) =
         partition Equation.isSimplificationRule
             . sortOn Equation.equationPriority
             $ equations'
+    functionRules = filter (not . ignoreDefinition) unProcessedFunctionRules
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
@@ -137,3 +140,17 @@ ignoreEquation Equation{attributes}
     Unit{isUnit} = Attribute.unit attributes
     Idem{isIdem} = Attribute.idem attributes
     Overload{getOverload} = Attribute.overload attributes
+
+-- | Should we ignore the 'EqualityRule' for evaluating function definitions?
+ignoreDefinition :: Equation RewritingVariableName -> Bool
+ignoreDefinition Equation{attributes, left}
+    | isLeftFunctionLike = False
+    | otherwise =
+        (error . show . Pretty.vsep)
+            [ "left-hand side of equation was not function-like at:"
+            , Pretty.indent 4 $ Pretty.pretty sourceLocation
+            ]
+  where
+    Attribute.Axiom{sourceLocation} = attributes
+    isLeftFunctionLike =
+        (Pattern.isFunction . Pattern.function) (extractAttributes left)

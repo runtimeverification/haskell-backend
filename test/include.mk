@@ -11,6 +11,8 @@ DEF ?= test
 EXT ?= $(DEF)
 KPROVE_MODULE ?= VERIFICATION
 
+IGNORE_EXIT = true
+
 DIFF = diff -u
 FAILED = ( mv $@ $@.fail && false )
 FAILED_STORE_PROOFS = ( mv $(STORE_PROOFS) $(STORE_PROOFS).fail && mv $@ $@.fail && false )
@@ -144,7 +146,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 test-%.sh.out: $(TEST_DIR)/test-%.sh
 	@echo ">>>" $(CURDIR) $(@:.out=)
 	rm -f $@
-	$(TEST_DIR)/$(@:.out=) > $@ || true
+	$(TEST_DIR)/$(@:.out=) > $@ || $(IGNORE_EXIT)
 	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### TARGETS
