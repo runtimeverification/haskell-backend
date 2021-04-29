@@ -113,14 +113,14 @@ validateAxiom attrs verified =
                 pack $
                     show $
                         Pretty.vsep
-                            [ "Expected function symbol, but found constructor symbol:"
+                            [ "Head of LHS of Not Simplification axiom is not a non-constructor function symbol. This is the LHS symbol:"
                             , unparse sym
                             ]
 
         checkVarFunctionArguments =
             failOnJust
                 eq
-                "Expected variable, but found:"
+                "LHS of NotSimplification axiom contains non-variable:"
                 $ asum $ getNotVar <$> termLikeF
 
         getNotVar (TermLike.Var_ _) = Nothing
@@ -129,7 +129,7 @@ validateAxiom attrs verified =
     checkArg _ Nothing = return ()
     checkArg eq (Just arg) =
         traverse_
-            ( failOnJust eq "Found invalid subterm in argument of function equation:"
+            ( failOnJust eq "Found invalid subterm of Axiom equation argument:"
                 . checkArgIn
             )
             $ Predicate.getMultiAndPredicate arg
@@ -144,7 +144,20 @@ validateAxiom attrs verified =
             _
                 | TermLike.isConstructorLike term -> descend
             TermLike.App_ sym _
-                | isGoodSymbol sym -> descend
+                | or
+                    [ Symbol.isConstructorLike sym
+                    , Symbol.isAnywhere sym && Symbol.isInjective sym
+                    , Map.isSymbolConcat sym
+                    , Map.isSymbolElement sym
+                    , Map.isSymbolUnit sym
+                    , Set.isSymbolConcat sym
+                    , Set.isSymbolElement sym
+                    , Set.isSymbolUnit sym
+                    , List.isSymbolConcat sym
+                    , List.isSymbolElement sym
+                    , List.isSymbolUnit sym
+                    ] ->
+                    descend
                 | otherwise -> Just term
             TermLike.InternalBytes_ _ _ -> Nothing
             TermLike.InternalBool_ _ -> Nothing
@@ -157,20 +170,6 @@ validateAxiom attrs verified =
             _ -> Just term
           where
             _ :< termF = Recursive.project term
-            isGoodSymbol sym =
-                or
-                    [ Symbol.isConstructorLike sym
-                    , Symbol.isAnywhere sym && Symbol.isInjective sym
-                    , Map.isSymbolConcat sym
-                    , Map.isSymbolElement sym
-                    , Map.isSymbolUnit sym
-                    , Set.isSymbolConcat sym
-                    , Set.isSymbolElement sym
-                    , Set.isSymbolUnit sym
-                    , List.isSymbolConcat sym
-                    , List.isSymbolElement sym
-                    , List.isSymbolUnit sym
-                    ]
             descend = asum $ findBadArgSubterm <$> termF
 
     failOnJust _ _ Nothing = return ()

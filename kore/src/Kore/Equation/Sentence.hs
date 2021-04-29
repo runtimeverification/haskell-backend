@@ -65,38 +65,14 @@ data MatchEquationError variable
     deriving anyclass (Debug)
 
 instance InternalVariable variable => Pretty (MatchEquationError variable) where
-    pretty (NotEquation term) =
-        Pretty.vsep
-            [ "The given term is not an equation:"
-            , unparse term
-            ]
-    pretty (RequiresError notPred) =
-        Pretty.vsep
-            [ "The equation's requires clause is not a predicate:"
-            , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
-            ]
-    pretty (ArgumentError notPred) =
-        Pretty.vsep
-            [ "The equation's argument clause is not a predicate:"
-            , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
-            ]
-    pretty (AntiLeftError notPred) =
-        Pretty.vsep
-            [ "The equation's anti-left clause is not a predicate:"
-            , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
-            ]
-    pretty (EnsuresError notPred) =
-        Pretty.vsep
-            [ "The equation's ensures clause is not a predicate:"
-            , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
-            ]
-    pretty FunctionalAxiom = "The term is a functional axiom."
-    pretty ConstructorAxiom = "The term is a constructor axiom."
-    pretty SubsortAxiom = "The term is a subsort axiom."
+    pretty (NotEquation term) = "The given term is not an equation:\n" <> unparse term
+    pretty (RequiresError notPred) = "The equation's requires clause is not a predicate:\n" <> pretty notPred
+    pretty (ArgumentError notPred) = "The equation's argument clause is not a predicate:\n" <> pretty notPred
+    pretty (AntiLeftError notPred) = "The equation's anti-left clause is not a predicate:\n" <> pretty notPred
+    pretty (EnsuresError notPred) = "The equation's ensures clause is not a predicate:\n" <> pretty notPred
+    pretty FunctionalAxiom = "The term is a functional axiom"
+    pretty ConstructorAxiom = "The term is a constructor axiom"
+    pretty SubsortAxiom = "The term is a subsort axiom"
 
 matchEquation ::
     forall variable.
