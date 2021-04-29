@@ -29,9 +29,13 @@ jobs:
           skipPush: true
 
       - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/test-statistics.sh ./. test/regression-evm >pull-request.json
           git fetch origin
           git worktree add kore-master master
           ./scripts/test-statistics.sh ./kore-master test/regression-evm >master.json
-          ./scripts/join-statistics.sh master.json pull-request.json
+          ./scripts/join-statistics.sh master.json pull-request.json \
+            | ./scripts/format-statistics.sh >comment.md
+          gh pr comment ${{ github.event.pull_request.number }} -F comment.md
