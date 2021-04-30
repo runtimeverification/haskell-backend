@@ -36,17 +36,17 @@ generate-evm() {
         kevm run --backend haskell \
             --mode VMTESTS --schedule DEFAULT \
             tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
-    
+
     kollect test-add0 env \
         kevm run --backend haskell \
             --mode VMTESTS --schedule DEFAULT \
             tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
-    
+
     kollect test-sumTo10 \
         kevm run --backend haskell \
             --mode VMTESTS --schedule DEFAULT \
             tests/interactive/sumTo10.evm \
-    
+
     for search in \
         branching-no-invalid straight-line-no-invalid \
         branching-invalid straight-line
@@ -56,11 +56,13 @@ generate-evm() {
                 "tests/interactive/search/$search.evm" \
                 "<statusCode> EVMC_INVALID_INSTRUCTION </statusCode>"
     done
-            
+
     kollect test-sum-to-n \
         kevm prove --backend haskell \
             tests/specs/examples/sum-to-n-spec.k \
             VERIFICATION --format-failures
+
+    $KORE/scripts/trim-source-paths.sh *.kore
 }
 
 generate-wasm() {
@@ -76,16 +78,18 @@ generate-wasm() {
                 tests/proofs/"$spec"-spec.k \
                 KWASM-LEMMAS
     done
-    
+
     kollect "test-memory" \
         ./kwasm prove --backend haskell \
             tests/proofs/memory-spec.k \
             KWASM-LEMMAS \
             --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive
-    
+
     kollect "test-wrc20" \
         ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
         --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend
+
+    $KORE/scripts/trim-source-paths.sh *.kore
 }
 
 replace-tests() {
