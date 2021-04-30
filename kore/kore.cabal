@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4b5fd2532b308aa61e5a6e5433a8265b7ac6fe0c0fb0d671edc9e76ff6a80091
+-- hash: 7891c91c97c9ffd152ee13df54743a1c6b58719b65f8648b70ae0b5f24d4f030
 
 name:           kore
 version:        0.42.0.0
@@ -134,7 +134,6 @@ library
       Kore.Builtin.Endianness.Endianness
       Kore.Builtin.EqTerm
       Kore.Builtin.Error
-      Kore.Builtin.External
       Kore.Builtin.Inj
       Kore.Builtin.Int
       Kore.Builtin.Int.Int
@@ -917,6 +916,7 @@ test-suite kore-test
       Test.Kore.Builtin.Definition
       Test.Kore.Builtin.Encoding
       Test.Kore.Builtin.Endianness
+      Test.Kore.Builtin.External
       Test.Kore.Builtin.Inj
       Test.Kore.Builtin.Int
       Test.Kore.Builtin.InternalBytes

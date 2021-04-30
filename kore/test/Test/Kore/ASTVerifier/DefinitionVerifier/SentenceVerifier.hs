@@ -8,7 +8,7 @@ import Data.Generics.Product
 import Kore.Attribute.Null (
     Null (..),
  )
-import Kore.Builtin.External (
+import Test.Kore.Builtin.External (
     externalize,
  )
 import Kore.Error

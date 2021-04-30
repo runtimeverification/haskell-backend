@@ -9,7 +9,6 @@ module Kore.Builtin.InternalBytes (
     builtinFunctions,
     asInternal,
     internalize,
-    asTermLike,
     asPattern,
 
     -- * Keys

@@ -9,8 +9,6 @@ module Kore.Builtin.List.List (
     asBuiltin,
     asPattern,
     asInternal,
-    asTermLike,
-    externalize1,
     internalize,
 
     -- * Symbols
@@ -31,8 +29,6 @@ module Kore.Builtin.List.List (
     updateAllKey,
 ) where
 
-import Control.Monad.Free (Free (..))
-import qualified Data.Functor.Foldable as Recursive
 import Data.Reflection (
     Given,
  )
@@ -47,7 +43,6 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Null as Attribute (Null (..))
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Error as Kore
@@ -62,59 +57,12 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Symbol (
-    toSymbolOrAlias,
- )
 import Kore.Internal.TermLike
-import qualified Kore.Syntax.Pattern as Syntax
 import Prelude.Kore
 
 -- | Builtin variable name of the @List@ sort.
 sort :: Text
 sort = "LIST.List"
-
--- | Render an 'Domain.InternalList' as a 'TermLike' domain value pattern.
-asTermLike ::
-    InternalVariable variable =>
-    InternalList (TermLike variable) ->
-    TermLike variable
-asTermLike builtin
-    | Seq.null list = unit
-    | otherwise = foldr1 concat' (element <$> list)
-  where
-    InternalList{internalListChild = list} = builtin
-    InternalList{internalListUnit = unitSymbol} = builtin
-    InternalList{internalListElement = elementSymbol} = builtin
-    InternalList{internalListConcat = concatSymbol} = builtin
-
-    unit = mkApplySymbol unitSymbol []
-    element elem' = mkApplySymbol elementSymbol [elem']
-    concat' list1 list2 = mkApplySymbol concatSymbol [list1, list2]
-
-externalize1 ::
-    InternalVariable variable =>
-    InternalList (TermLike variable) ->
-    Recursive.Base
-        (Syntax.Pattern variable Attribute.Null)
-        (Free
-            (Recursive.Base (Syntax.Pattern variable Attribute.Null))
-            (TermLike variable)
-        )
-externalize1 builtin
-    | Seq.null list = unit
-    | otherwise = foldr1 concat' (element <$> list)
-  where
-    InternalList{internalListChild = list} = builtin
-    InternalList{internalListUnit = unitSymbol} = builtin
-    InternalList{internalListElement = elementSymbol} = builtin
-    InternalList{internalListConcat = concatSymbol} = builtin
-
-    unit = (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
-        . mapHead toSymbolOrAlias $ symbolApplication unitSymbol []
-    element elem' = (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
-        . mapHead toSymbolOrAlias $ symbolApplication elementSymbol [elem']
-    concat' list1 list2 = (Attribute.Null :<) $ Syntax.ApplicationF
-        $ Application (toSymbolOrAlias concatSymbol) [Free list1, Free list2]
 
 -- | Render a 'Seq' as an expanded internal list pattern.
 asInternal ::

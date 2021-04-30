@@ -96,6 +96,7 @@ import System.Exit (
     ExitCode (..),
  )
 import Test.Kore
+import Test.Kore.Builtin.External
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.SMT (
     runNoSMT,
@@ -409,7 +410,7 @@ verifiedMyModule module_ = indexedModule
         Definition
             { definitionAttributes = Attributes []
             , definitionModules =
-                [(fmap . fmap) Builtin.externalize module_]
+                [(fmap . fmap) externalize module_]
             }
 
 mySortName :: Id

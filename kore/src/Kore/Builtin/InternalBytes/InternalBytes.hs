@@ -6,8 +6,6 @@ module Kore.Builtin.InternalBytes.InternalBytes (
     sort,
     asInternal,
     internalize,
-    asTermLike,
-    externalize1,
     asPattern,
 
     -- * Keys
@@ -26,9 +24,6 @@ module Kore.Builtin.InternalBytes.InternalBytes (
     bytes2intKey,
 ) where
 
-import Control.Monad.Free (Free (..))
-import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Const
 import Data.ByteString (
     ByteString,
  )
@@ -38,10 +33,8 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Null as Attribute (Null (..))
 import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Symbols as Builtin
-import Kore.Internal.InternalBytes
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -50,22 +43,16 @@ import qualified Kore.Internal.Pattern as Pattern (
  )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike (
-    DomainValue (..),
     InternalVariable,
     Sort,
     TermLike,
-    mkDomainValue,
     mkInternalBytes,
-    mkStringLiteral,
  )
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
     pattern App_,
     pattern StringLiteral_,
  )
-import qualified Kore.Syntax.Pattern as Syntax
-import Kore.Syntax.PatternF (PatternF (DomainValueF, StringLiteralF))
-import Kore.Syntax.StringLiteral
 import Prelude.Kore
 
 -- | Builtin name for the Bytes sort.
@@ -88,43 +75,6 @@ asInternal ::
     TermLike variable
 asInternal bytesSort bytesValue =
     TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
-
-{- | Render a 'Bytes' as a domain value pattern of the given sort.
-
-The result sort should be hooked to the builtin @Bytes@ sort, but this is
-not checked.
-
-See also: 'sort'.
--}
-asTermLike ::
-    InternalVariable variable =>
-    -- | builtin value to render
-    InternalBytes ->
-    TermLike variable
-asTermLike InternalBytes{internalBytesSort, internalBytesValue} =
-    mkDomainValue
-        DomainValue
-            { domainValueSort = internalBytesSort
-            , domainValueChild = mkStringLiteral $ Encoding.decode8Bit internalBytesValue
-            }
-
-externalize1 ::
-    InternalBytes ->
-    Recursive.Base
-        (Syntax.Pattern variable Attribute.Null)
-        (Free (Recursive.Base (Syntax.Pattern variable Attribute.Null)) x)
-externalize1 builtin =
-    Attribute.Null :< DomainValueF
-        DomainValue
-            { domainValueSort = internalBytesSort
-            , domainValueChild
-            }
-  where
-    InternalBytes{internalBytesSort} = builtin
-    InternalBytes{internalBytesValue} = builtin
-    domainValueChild =
-        (Free . (:<) Attribute.Null . StringLiteralF . Const . StringLiteral)
-            (Encoding.decode8Bit internalBytesValue)
 
 internalize ::
     InternalVariable variable =>

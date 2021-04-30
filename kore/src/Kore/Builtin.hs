@@ -30,7 +30,6 @@ module Kore.Builtin (
     koreVerifiers,
     koreEvaluators,
     evaluators,
-    externalize,
     internalize,
 ) where
 
@@ -52,7 +51,6 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
-import Kore.Builtin.External
 import qualified Kore.Builtin.Inj as Inj
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.InternalBytes as InternalBytes

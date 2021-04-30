@@ -13,7 +13,6 @@ import Data.Text (
     Text,
     pack,
  )
-import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Parser.Lexer
 import Kore.Parser.Parser
@@ -25,6 +24,7 @@ import Test.Kore hiding (
     sortVariableSort,
  )
 import Test.Kore.Parser
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -588,7 +588,7 @@ domainValuePatternParserTests =
     parseTree
         parsePattern
         [ success "\\dv{s1}(\"a\")" $
-            Builtin.externalize $
+            externalize $
                 Internal.mkDomainValue
                     DomainValue
                         { domainValueSort = sortVariableSort "s1"
@@ -1221,7 +1221,7 @@ sentenceAliasParserTests =
                                 , applicationChildren = []
                                 }
                         , sentenceAliasRightPattern =
-                            Builtin.externalize $
+                            externalize $
                                 Internal.mkDomainValue
                                     DomainValue
                                         { domainValueSort = resultSort
@@ -1263,7 +1263,7 @@ sentenceAliasParserTests =
                                 , applicationChildren = inject <$> [varA, varB]
                                 }
                         , sentenceAliasRightPattern =
-                            Builtin.externalize $
+                            externalize $
                                 Internal.mkRewrites argA argB
                         , sentenceAliasAttributes = Attributes []
                         }
@@ -1297,7 +1297,7 @@ sentenceAliasParserTests =
                                 , applicationChildren = [inject var]
                                 }
                         , sentenceAliasRightPattern =
-                            Builtin.externalize $ Internal.mkNext arg
+                            externalize $ Internal.mkNext arg
                         , sentenceAliasAttributes = Attributes []
                         }
             )

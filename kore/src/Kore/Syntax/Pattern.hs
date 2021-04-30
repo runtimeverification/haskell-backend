@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Syntax.Pattern (
     Pattern (..),
+    FutuPattern,
     asPattern,
     fromPattern,
     eraseAnnotations,
@@ -26,6 +27,7 @@ import Control.Comonad.Trans.Cofree (
     ComonadCofree (..),
  )
 import qualified Control.Comonad.Trans.Env as Env
+import Control.Monad.Free (Free (..))
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Compose (
     Compose (..),
@@ -103,6 +105,11 @@ newtype
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+type FutuPattern variable t =
+    Recursive.Base
+        (Pattern variable Attribute.Null)
+        (Free (Recursive.Base (Pattern variable Attribute.Null)) t)
 
 instance Eq variable => Eq (Pattern variable annotation) where
     (==) = eqWorker

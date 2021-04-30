@@ -39,6 +39,7 @@ import Test.Kore.Builtin.Definition (
     sortDecl,
     symbolDecl,
  )
+import Test.Kore.Builtin.External
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -171,7 +172,7 @@ test_dont_ignore =
                 { sentenceAxiomParameters = [sortVarS]
                 , sentenceAxiomAttributes = attributes
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkEquals
                             sortS
                             (mkApplySymbol superSymbol [])

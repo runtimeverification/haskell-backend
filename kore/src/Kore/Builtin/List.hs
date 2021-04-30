@@ -24,7 +24,6 @@ module Kore.Builtin.List (
     returnList,
     asPattern,
     asInternal,
-    asTermLike,
     internalize,
 
     -- * Symbols
