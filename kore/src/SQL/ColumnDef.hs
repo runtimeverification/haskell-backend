@@ -26,7 +26,7 @@ import qualified GHC.Generics as GHC
 import Prelude.Kore
 
 newtype TypeName = TypeName {getTypeName :: String}
-    deriving (Eq, Ord, Read, Show)
+    deriving stock (Eq, Ord, Read, Show)
 
 typeInteger :: TypeName
 typeInteger = TypeName "INTEGER"
@@ -35,7 +35,7 @@ typeText :: TypeName
 typeText = TypeName "TEXT"
 
 newtype ColumnConstraint = ColumnConstraint {getColumnConstraint :: String}
-    deriving (Eq, Ord, Read, Show)
+    deriving stock (Eq, Ord, Read, Show)
 
 notNull :: Set ColumnConstraint
 notNull = Set.singleton (ColumnConstraint "NOT NULL")
@@ -47,7 +47,7 @@ data ColumnDef = ColumnDef
     { columnType :: !TypeName
     , columnConstraints :: !(Set ColumnConstraint)
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 columnDef :: TypeName -> ColumnDef
 columnDef columnType = ColumnDef{columnType, columnConstraints = mempty}

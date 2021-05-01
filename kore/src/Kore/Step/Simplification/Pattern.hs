@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -21,8 +19,13 @@ import Kore.Internal.OrPattern (
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
+    Condition,
     Conditional (..),
     Pattern,
+ )
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -36,7 +39,6 @@ import Kore.Internal.Substitution (
     toMap,
  )
 import Kore.Internal.TermLike (
-    TermLike,
     pattern Exists_,
  )
 import Kore.Rewriting.RewritingVariable (
@@ -61,19 +63,29 @@ simplifyTopConfiguration ::
 simplifyTopConfiguration =
     simplify >=> return . removeTopExists
 
-{- | Simplifies the 'Pattern' with the assumption that the 'TermLike' is defined
+{- | Simplifies the 'Pattern', with the assumption that the term is defined,
 and removes the exists quantifiers at the top.
 -}
 simplifyTopConfigurationDefined ::
     MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
-    TermLike RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplifyTopConfigurationDefined patt defined =
-    makeEvaluate sideCondition patt
-        >>= return . removeTopExists
+simplifyTopConfigurationDefined configuration =
+    maybe
+        (return OrPattern.bottom)
+        (worker definedConfiguration)
+        sideCondition
   where
-    sideCondition = SideCondition.assumeDefined defined
+    worker patt condition =
+        makeEvaluate condition patt
+            >>= return . removeTopExists
+
+    term = Conditional.term configuration
+    sideCondition = SideCondition.assumeDefined term
+    definedConfiguration =
+        makeCeilPredicate term
+            & from @_ @(Condition _)
+            & Pattern.andCondition configuration
 
 -- | Removes all existential quantifiers at the top of every 'Pattern''s 'term'.
 removeTopExists ::

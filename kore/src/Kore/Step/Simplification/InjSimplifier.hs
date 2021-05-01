@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -37,8 +35,8 @@ import Prelude.Kore
 Otherwise, 'unifyInj' may return 'Unknown'.
 -}
 data Distinct = Distinct | Unknown
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

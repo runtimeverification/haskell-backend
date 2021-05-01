@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.With (
     With (..),
     Attribute (..),
@@ -7,6 +5,12 @@ module Test.Kore.With (
     VariableElement (..),
 ) where
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product (
+    field,
+ )
+import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashSet as HashSet
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty (
     cons,
@@ -313,11 +317,12 @@ instance
     with
         s@NormalizedAc{concreteElements}
         key
-            | Map.member key concreteElements = error "Duplicated key in set."
+            | HashMap.member key concreteElements =
+                error "Duplicated key in set."
             | otherwise =
                 s
                     { concreteElements =
-                        Map.insert key SetValue concreteElements
+                        HashMap.insert key SetValue concreteElements
                     }
 
 instance
@@ -349,21 +354,32 @@ instance
 newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedAc NormalizedSet Key child)
         (VariableElement child)
     where
     with
-        s@NormalizedAc{elementsWithVariables}
+        internalSet
         (VariableElement v) =
-            s
-                { elementsWithVariables =
-                    List.sort (SetElement v : elementsWithVariables)
-                }
+            Lens.over
+                (field @"elementsWithVariables")
+                ( \symbolicVariables ->
+                    let newElement = SetElement v
+                        newSymbolicVariables =
+                            newElement : symbolicVariables
+                        simulateNormalize = HashSet.toList . HashSet.fromList
+                     in if newElement `elem` symbolicVariables
+                            then -- user intended for a de-normalized internalSet
+                                newSymbolicVariables
+                            else -- this simulates the reordering of the elements
+                            -- which happens during AC normalization
+                                simulateNormalize newSymbolicVariables
+                )
+                internalSet
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedAc NormalizedSet Key child)
         [VariableElement child]
@@ -371,7 +387,7 @@ instance
     with = foldl' with
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedSet Key child)
         (VariableElement child)
@@ -382,7 +398,7 @@ instance
             NormalizedSet (ac `with` value)
 
 instance
-    Ord child =>
+    (Hashable child, Ord child) =>
     With
         (NormalizedSet Key child)
         [VariableElement child]

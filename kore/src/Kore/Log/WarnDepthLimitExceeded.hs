@@ -20,7 +20,7 @@ import Pretty (
 import qualified Pretty
 
 newtype WarnDepthLimitExceeded = WarnDepthLimitExceeded {limitExceeded :: Natural}
-    deriving (Show, Eq)
+    deriving stock (Show, Eq)
 
 instance Debug WarnDepthLimitExceeded where
     debugPrec w = \_ -> Pretty.pretty . show $ w

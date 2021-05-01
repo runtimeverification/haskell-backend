@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so

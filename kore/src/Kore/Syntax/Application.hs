@@ -36,8 +36,8 @@ data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
     , symbolOrAliasParams :: ![Sort]
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -62,11 +62,11 @@ This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
 data Application head child = Application
     { applicationSymbolOrAlias :: !head
-    , applicationChildren :: [child]
+    , applicationChildren :: ![child]
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 

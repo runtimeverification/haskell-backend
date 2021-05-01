@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Simplification.Rewrites
 Description : Tools for Rewrites pattern simplification.

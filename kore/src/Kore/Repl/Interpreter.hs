@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Interpreter
 Description : REPL interpreter
@@ -225,7 +223,7 @@ import Text.Megaparsec (
 type ReplM m a = RWST (Config m) ReplOutput ReplState m a
 
 data ReplStatus = Continue | SuccessStop | FailStop
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter ::
@@ -1511,7 +1509,7 @@ showAxiomOrClaimName
         Just $ "Claim " <> Text.unpack ruleName
 
 newtype ReplScriptParseError = ReplScriptParseError String
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 instance ShowErrorComponent ReplScriptParseError where
     showErrorComponent (ReplScriptParseError err) = err

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -41,16 +39,12 @@ module Kore.Builtin.Map.Map (
     inclusionKey,
 ) where
 
-import Control.Monad.Free (Free (..))
-import qualified Data.Map.Strict as Map
 import Data.String (
     IsString,
  )
-import qualified Kore.Attribute.Null as Attribute (Null (..))
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Error as Kore (
     Error,
@@ -58,12 +52,7 @@ import qualified Kore.Error as Kore (
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import Kore.Internal.InternalMap
 import Kore.Internal.TermLike as TermLike
-import Kore.Internal.Symbol (
-    toSymbolOrAlias,
- )
-import qualified Kore.Syntax.Pattern as Syntax
 import Prelude.Kore
 
 concatKey :: IsString s => s

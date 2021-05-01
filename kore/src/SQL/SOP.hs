@@ -84,7 +84,7 @@ data ColumnImpl a = ColumnImpl
     }
 
 newtype TableName = TableName {getTableName :: String}
-    deriving (Eq, Ord)
+    deriving stock (Eq, Ord)
 
 -- | The 'TableName' of a 'Typeable' type.
 tableNameTypeable :: Typeable table => proxy table -> TableName

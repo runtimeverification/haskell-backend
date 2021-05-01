@@ -48,7 +48,7 @@ data MLPatternType
     | OrPatternType
     | RewritesPatternType
     | TopPatternType
-    deriving (Show, Generic)
+    deriving stock (Show, Generic)
 
 instance Hashable MLPatternType
 

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.ConsistentKore (
     CollectionSorts (..),
     Setup (..),
@@ -14,6 +12,7 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List (
     foldl',
  )
@@ -121,13 +120,13 @@ import Test.Kore (
 data SortRequirements
     = AnySort
     | SpecificSort !Sort
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data AttributeRequirements = AttributeRequirements
     { isConstructorLike :: !Bool
     , isConcrete :: !Bool
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data TermGenerator = TermGenerator
     { arity :: !Integer
@@ -168,7 +167,7 @@ data Context = Context
     , onlyConstructorLike :: !Bool
     , onlyConcrete :: !Bool
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data Setup = Setup
     { allSorts :: ![Sort]
@@ -853,7 +852,7 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             Maybe (Key, Value normalized (TermLike VariableName))
         concreteMapElem (ma, mb) = (,) <$> ma <*> mb
         concreteMap =
-            Map.fromList
+            HashMap.fromList
                 (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
     mixedKeys <-
         requestConstructorLike $

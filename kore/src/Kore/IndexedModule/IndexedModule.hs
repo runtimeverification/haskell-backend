@@ -143,7 +143,7 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
       indexedModuleHooks ::
         !(Map.Map Text [Id])
     }
-    deriving (Generic, Show, Functor, Foldable, Traversable)
+    deriving stock (Generic, Show, Functor, Foldable, Traversable)
 
 recursiveIndexedModuleSortDescriptions ::
     forall pat declAtts axiomAtts.
@@ -395,7 +395,7 @@ things that are implicitly defined.
 -}
 newtype ImplicitIndexedModule pat declAtts axiomAtts
     = ImplicitIndexedModule (IndexedModule pat declAtts axiomAtts)
-    deriving (Show)
+    deriving stock (Show)
 
 type KoreImplicitIndexedModule = ImplicitIndexedModule ParsedPattern
 

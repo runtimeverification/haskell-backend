@@ -15,7 +15,7 @@ import Prelude.Kore
 
 -- | @Element@ represents the @element@ attribute for sorts.
 newtype Element = Element {getElement :: Maybe SymbolOrAlias}
-    deriving (Generic, Eq, Ord, Show)
+    deriving stock (Generic, Eq, Ord, Show)
 
 instance Semigroup Element where
     (<>) a@(Element (Just _)) _ = a

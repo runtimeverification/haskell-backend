@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.IntegrationProperty (
     test_simplifiesToSimplified,
     test_regressionGeneratedTerms,

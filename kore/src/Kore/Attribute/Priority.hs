@@ -25,8 +25,8 @@ import Prelude.Kore
     or 'Kore.Step.EqualityPattern.getPriorityOfRule' should be used instead.
 -}
 newtype Priority = Priority {getPriority :: Maybe Integer}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

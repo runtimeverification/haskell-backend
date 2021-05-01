@@ -15,7 +15,7 @@ data Changed thing
       Unchanged !thing
     | -- | The @thing@ was changed.
       Changed !thing
-    deriving (Eq, Functor, Show)
+    deriving stock (Eq, Functor, Show)
 
 instance Applicative Changed where
     pure = Unchanged

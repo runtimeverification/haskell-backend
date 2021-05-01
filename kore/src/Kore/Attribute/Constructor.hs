@@ -21,8 +21,8 @@ import Prelude.Kore
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
 newtype Constructor = Constructor {isConstructor :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

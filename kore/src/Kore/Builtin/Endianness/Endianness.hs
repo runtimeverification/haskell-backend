@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -35,8 +33,8 @@ import Prelude.Kore
 data Endianness
     = BigEndian !Symbol
     | LittleEndian !Symbol
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
 
 instance Hashable Endianness
 
