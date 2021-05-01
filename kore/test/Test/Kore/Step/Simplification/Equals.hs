@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Equals (
     test_equalsSimplification_TermLike,
     test_equalsSimplification_Or_Pattern,

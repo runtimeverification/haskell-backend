@@ -129,8 +129,8 @@ data Symbol = Symbol
     , -- | Location in the original (source) file.
       sourceLocation :: !SourceLocation
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 

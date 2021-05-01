@@ -34,9 +34,9 @@ data ErrorContext where
         -- | The error itself.
         SomeException ->
         ErrorContext
-    deriving stock (Typeable)
+    deriving (Typeable)
 
-deriving stock instance Show ErrorContext
+deriving instance Show ErrorContext
 
 instance Pretty ErrorContext where
     pretty (ErrorContext intro context someException) =

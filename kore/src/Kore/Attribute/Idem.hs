@@ -20,8 +20,8 @@ import Prelude.Kore
 
 -- | @Idem@ represents the @idem@ attribute for axioms.
 newtype Idem = Idem {isIdem :: Bool}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

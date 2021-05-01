@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Unification.UnifierT (
     test_mergeAndNormalizeSubstitutions,
     test_simplifyCondition,

@@ -1,8 +1,10 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.InternalSet (
     test_simplify,
 ) where
 
-import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Map.Strict as Map
 import Data.Maybe (
     fromJust,
  )
@@ -106,7 +108,7 @@ mkSetAux concreteElements elements opaque =
                     , concreteElements =
                         concreteElements
                             & map (retractKey >>> fromJust >>> mkSetValue)
-                            & HashMap.fromList
+                            & Map.fromList
                     , opaque
                     }
         }

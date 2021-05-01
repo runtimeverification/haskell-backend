@@ -21,7 +21,7 @@ import Prelude.Kore
 import Pretty
 
 newtype ErrorVerify = ErrorVerify {koreError :: Kore.Error VerifyError}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Exception ErrorVerify where
     toException = toException . SomeEntry

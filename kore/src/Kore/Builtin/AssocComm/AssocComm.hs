@@ -32,15 +32,15 @@ data NormalizedOrBottom collection variable
     = Normalized (TermNormalizedAc collection variable)
     | Bottom
 
-deriving stock instance
+deriving instance
     Eq (TermNormalizedAc collection variable) =>
     Eq (NormalizedOrBottom collection variable)
 
-deriving stock instance
+deriving instance
     Ord (TermNormalizedAc collection variable) =>
     Ord (NormalizedOrBottom collection variable)
 
-deriving stock instance
+deriving instance
     Show (TermNormalizedAc collection variable) =>
     Show (NormalizedOrBottom collection variable)
 

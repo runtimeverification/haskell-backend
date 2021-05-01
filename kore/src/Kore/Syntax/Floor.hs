@@ -27,11 +27,11 @@ Section 9.1.4 (Patterns).
 data Floor sort child = Floor
     { floorOperandSort :: !sort
     , floorResultSort :: !sort
-    , floorChild :: !child
+    , floorChild :: child
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

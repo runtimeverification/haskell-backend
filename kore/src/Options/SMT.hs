@@ -131,8 +131,8 @@ unparseKoreSolverOptions
 
 -- | Available SMT solvers.
 data Solver = Z3 | None
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Enum, Bounded)
+    deriving (Eq, Ord, Show)
+    deriving (Enum, Bounded)
 
 parseSolver :: Parser Solver
 parseSolver =

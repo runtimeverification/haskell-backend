@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Simplification.Next
 Description : Tools for Next pattern simplification.

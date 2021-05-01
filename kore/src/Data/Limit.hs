@@ -29,7 +29,7 @@ data Limit a
       Unlimited
     | -- | Limit @a@ by the given (inclusive) upper bound
       Limit !a
-    deriving stock (Eq, Read, Show, Foldable)
+    deriving (Eq, Read, Show, Foldable)
 
 instance Ord a => Ord (Limit a) where
     compare =

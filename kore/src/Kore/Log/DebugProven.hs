@@ -17,7 +17,7 @@ import Pretty (
 import qualified Pretty
 
 newtype DebugProven = DebugProven {claim :: SomeClaim}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty DebugProven where
     pretty DebugProven{claim} =

@@ -18,7 +18,7 @@ import Prelude.Kore
 
 -- | @Unit@ represents the @unit@ attribute for sorts.
 newtype Unit = Unit {getUnit :: Maybe SymbolOrAlias}
-    deriving stock (Generic, Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Unit where
     (<>) a@(Unit (Just _)) _ = a

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Builtin.String
 Description : Built-in string sort
@@ -73,9 +75,6 @@ import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
 import qualified Kore.Error
-import Kore.Internal.ApplicationSorts (
-    applicationSortsResult,
- )
 import Kore.Internal.InternalString
 import Kore.Internal.Pattern (
     Pattern,
@@ -85,7 +84,6 @@ import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnNotImplemented
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -300,28 +298,26 @@ evalFind = Builtin.functionEvaluator evalFind0
     evalFind0 _ _ _ = Builtin.wrongArity findKey
 
 evalString2Base :: BuiltinAndAxiomSimplifier
-evalString2Base = Builtin.applicationEvaluator evalString2Base0
+evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
-    evalString2Base0 _ app
-        | [_strTerm, _baseTerm] <- applicationChildren app = do
-            let Application{applicationSymbolOrAlias = symbol} = app
-                resultSort = symbolSorts symbol & applicationSortsResult
-            _str <- expectBuiltinString string2BaseKey _strTerm
-            _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
-            packedResult <-
+    evalString2Base0 _ resultSort [_str, _base] = do
+        _str <- expectBuiltinString string2BaseKey _str
+        _base <- Int.expectBuiltinInt string2BaseKey _base
+        let readN =
                 case _base of
                     -- no builtin reader for number in octal notation
-                    8 -> return $ case readOct $ Text.unpack _str of
-                        [(result, "")] -> Right (result, "")
-                        _ -> Left ""
-                    10 -> return $ Text.signed Text.decimal _str
-                    16 -> return $ Text.signed Text.hexadecimal _str
-                    _ -> warnNotImplemented app >> empty
-            case packedResult of
-                Right (result, Text.unpack -> "") ->
-                    return (Int.asPattern resultSort result)
-                _ -> return (Pattern.bottomOf resultSort)
-    evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
+                    8 -> \s ->
+                        case readOct $ Text.unpack s of
+                            [(result, "")] -> Right (result, "")
+                            _ -> Left ""
+                    10 -> Text.signed Text.decimal
+                    16 -> Text.signed Text.hexadecimal
+                    _ -> const empty
+        case readN _str of
+            Right (result, Text.unpack -> "") ->
+                return (Int.asPattern resultSort result)
+            _ -> return (Pattern.bottomOf resultSort)
+    evalString2Base0 _ _ _ = Builtin.wrongArity string2BaseKey
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0

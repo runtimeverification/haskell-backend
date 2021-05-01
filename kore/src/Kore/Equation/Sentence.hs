@@ -56,7 +56,7 @@ data MatchEquationError variable
     | FunctionalAxiom
     | ConstructorAxiom
     | SubsortAxiom
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 

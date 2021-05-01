@@ -62,8 +62,8 @@ import Prelude.Kore
 
 -- | @Key@ is the type of patterns that may be concrete keys of maps and sets.
 newtype Key = Key {getKey :: CofreeF KeyF (Attribute.Pattern Concrete) Key}
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
@@ -150,9 +150,9 @@ data KeyF child
     | InternalSetF !(InternalSet Key child)
     | InternalStringF !(Const InternalString child)
     | StringLiteralF !(Const StringLiteral child)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Foldable, Functor, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

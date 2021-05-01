@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -399,7 +400,7 @@ A default implementation is provided for @diffPrec@ by @diffPrecGeneric@, which
 only requires some instances to be derived:
 
 > data DataType = ...
->     deriving stock (GHC.Generics.Generic)
+>     deriving (GHC.Generics.Generic)
 >     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 >     deriving anyclass (Debug, Diff)
 -}

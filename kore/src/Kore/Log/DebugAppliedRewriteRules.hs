@@ -32,7 +32,7 @@ data DebugAppliedRewriteRules = DebugAppliedRewriteRules
     { configuration :: Pattern VariableName
     , appliedRewriteRules :: [SourceLocation]
     }
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules{configuration, appliedRewriteRules} =

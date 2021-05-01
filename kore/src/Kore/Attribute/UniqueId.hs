@@ -26,8 +26,8 @@ import Prelude.Kore
 
 -- | @UniqueId@ represents the @uniqueId@ attribute for axioms.
 newtype UniqueId = UniqueId {getUniqueId :: Maybe Text}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

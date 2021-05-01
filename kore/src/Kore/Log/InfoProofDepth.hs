@@ -21,8 +21,8 @@ import Pretty (
 import qualified Pretty
 
 newtype ProofDepth = ProofDepth {getProofDepth :: Natural}
-    deriving stock (Eq, Ord, Show)
-    deriving newtype (Enum)
+    deriving (Eq, Ord, Show)
+    deriving (Enum)
     deriving (Semigroup) via (Semigroup.Max Natural)
 
 instance Pretty ProofDepth where
@@ -32,7 +32,7 @@ instance Pretty ProofDepth where
 data InfoProofDepth
     = InfoUnprovenDepth ProofDepth
     | InfoProvenDepth ProofDepth
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty InfoProofDepth where
     pretty (InfoUnprovenDepth depth) =

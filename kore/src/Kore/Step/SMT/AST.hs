@@ -76,7 +76,7 @@ data Sort sort symbol name = Sort
       -- dependencies on other sorts and symbols.
       declaration :: !(KoreSortDeclaration sort symbol name)
     }
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -107,7 +107,7 @@ data Symbol sort name = Symbol
       -- dependencies on other sorts and symbols.
       declaration :: !(KoreSymbolDeclaration sort name)
     }
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -132,8 +132,8 @@ data KoreSortDeclaration sort symbol name
     | -- | Sort that we don't need to declare (e.g. builtins like Int) so we just
       -- represent that the SMT already knows about it.
       SortDeclaredIndirectly !name
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -153,8 +153,8 @@ data KoreSymbolDeclaration sort name
       -- The IndirectSymbolDeclaration value holds dependencies on other sorts
       -- and debug information.
       SymbolConstructor !(IndirectSymbolDeclaration sort name)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -163,8 +163,8 @@ data IndirectSymbolDeclaration sort name = IndirectSymbolDeclaration
     { name :: !name
     , sortDependencies :: ![sort]
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug name, Debug sort) => Debug (IndirectSymbolDeclaration sort name)
@@ -185,22 +185,22 @@ data Declarations sort symbol name = Declarations
     { sorts :: Map Kore.Id (Sort sort symbol name)
     , symbols :: Map Kore.Id (Symbol sort name)
     }
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- | Marks a dependency on a given sort.
 newtype SortReference = SortReference {getSortReference :: Kore.Sort}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- | Marks a dependency on a given symbol.
 newtype SymbolReference = SymbolReference {getSymbolReference :: Kore.Id}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -212,8 +212,8 @@ and @encode@ to extract its data
 data Encodable
     = AlreadyEncoded !SExpr
     | Encodable !SExpr
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

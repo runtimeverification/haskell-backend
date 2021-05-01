@@ -24,7 +24,7 @@ import Pretty (
  )
 
 newtype ErrorException = ErrorException {getException :: SomeException}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty ErrorException where
     pretty (ErrorException someException) =

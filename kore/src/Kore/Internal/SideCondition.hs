@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -46,6 +48,7 @@ import qualified Data.HashSet as HashSet
 import Data.List (
     sortOn,
  )
+import qualified Data.Map.Strict as Map
 import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -79,7 +82,6 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
-    pattern AcPair,
  )
 import Kore.Internal.Predicate (
     Predicate,
@@ -125,10 +127,6 @@ import Kore.Unparser (
     Unparse (..),
  )
 import Pair
-import Partial (
-    Partial (..),
-    getPartial,
- )
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -157,8 +155,8 @@ data SideCondition variable = SideCondition
     , definedTerms ::
         !(HashSet (TermLike variable))
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -386,7 +384,9 @@ toRepresentation ::
     InternalVariable variable =>
     SideCondition variable ->
     SideCondition.Representation
-toRepresentation = mkRepresentation
+toRepresentation =
+    mkRepresentation
+        . mapVariables @_ @VariableName (pure toVariableName)
 
 -- | Looks up the term in the table of replacements.
 replaceTerm ::
@@ -412,7 +412,7 @@ data Assumptions variable = Assumptions
     { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
     , predicateMap :: HashMap (Predicate variable) (Predicate variable)
     }
-    deriving stock (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Show)
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
@@ -617,15 +617,14 @@ assumeDefined ::
     forall variable.
     InternalVariable variable =>
     TermLike variable ->
-    Maybe (SideCondition variable)
-assumeDefined =
-    fmap fromDefinedTerms
-        . getPartial
-        . assumeDefinedWorker
+    SideCondition variable
+assumeDefined term =
+    assumeDefinedWorker term
+        & fromDefinedTerms
   where
     assumeDefinedWorker ::
         TermLike variable ->
-        Partial (HashSet (TermLike variable))
+        HashSet (TermLike variable)
     assumeDefinedWorker term' =
         case term' of
             TermLike.And_ _ child1 child2 ->
@@ -646,7 +645,6 @@ assumeDefined =
                     definedMaps =
                         generateNormalizedAcs internalMap
                             & HashSet.map TermLike.mkInternalMap
-                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedMaps
             TermLike.InternalSet_ internalSet ->
@@ -655,7 +653,6 @@ assumeDefined =
                     definedSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
-                            & Defined
                  in foldMap assumeDefinedWorker definedElems
                         <> definedSets
             TermLike.Forall_ _ _ child ->
@@ -664,13 +661,16 @@ assumeDefined =
                 let result1 = assumeDefinedWorker child1
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ -> Bottom
+            TermLike.Bottom_ _ ->
+                error
+                    "Internal error: cannot assume\
+                    \ a \\bottom pattern is defined."
             _ -> asSet term'
     asSet newTerm
-        | isDefinedInternal newTerm = Defined HashSet.empty
-        | otherwise = Defined $ HashSet.singleton newTerm
+        | isDefinedInternal newTerm = mempty
+        | otherwise = HashSet.singleton newTerm
     checkFunctional symbol newTerm
-        | isFunctional symbol = Defined HashSet.empty
+        | isFunctional symbol = mempty
         | otherwise = asSet newTerm
 
     getDefinedElementsOfAc ::
@@ -765,21 +765,20 @@ generateNormalizedAcs ::
     Ord (Element normalized (TermLike variable)) =>
     Ord (Value normalized (TermLike variable)) =>
     Ord (normalized Key (TermLike variable)) =>
-    Hashable (Element normalized (TermLike variable)) =>
-    Hashable (Value normalized (TermLike variable)) =>
     Hashable (normalized Key (TermLike variable)) =>
     AcWrapper normalized =>
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ HashSet.map symbolicToAc symbolicPairs
-    , HashSet.map concreteToAc concretePairs
-    , HashSet.map opaqueToAc opaquePairs
-    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
-    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
-    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
+    [ symbolicToAc <$> symbolicPairs
+    , concreteToAc <$> concretePairs
+    , opaqueToAc <$> opaquePairs
+    , symbolicConcreteToAc <$> symbolicConcretePairs
+    , symbolicOpaqueToAc <$> symbolicOpaquePairs
+    , concreteOpaqueToAc <$> concreteOpaquePairs
     ]
-        & fold
+        & concat
+        & HashSet.fromList
   where
     InternalAc
         { builtinAcChild
@@ -796,21 +795,21 @@ generateNormalizedAcs internalAc =
         , symbolicOpaquePairs
         , concreteOpaquePairs
         } = generatePairWiseElements builtinAcChild
-    symbolicToAc (AcPair symbolic1 symbolic2) =
+    symbolicToAc (symbolic1, symbolic2) =
         let symbolicAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic1, symbolic2]
                     }
                     & wrapAc
          in toInternalAc symbolicAc
-    concreteToAc (AcPair concrete1 concrete2) =
+    concreteToAc (concrete1, concrete2) =
         let concreteAc =
                 emptyNormalizedAc
-                    { concreteElements = [concrete1, concrete2] & HashMap.fromList
+                    { concreteElements = [concrete1, concrete2] & Map.fromList
                     }
                     & wrapAc
          in toInternalAc concreteAc
-    opaqueToAc (AcPair opaque1 opaque2) =
+    opaqueToAc (opaque1, opaque2) =
         let opaqueAc =
                 emptyNormalizedAc
                     { opaque = [opaque1, opaque2]
@@ -821,7 +820,7 @@ generateNormalizedAcs internalAc =
         let symbolicConcreteAc =
                 emptyNormalizedAc
                     { elementsWithVariables = [symbolic]
-                    , concreteElements = [concrete] & HashMap.fromList
+                    , concreteElements = [concrete] & Map.fromList
                     }
                     & wrapAc
          in toInternalAc symbolicConcreteAc
@@ -836,7 +835,7 @@ generateNormalizedAcs internalAc =
     concreteOpaqueToAc (concrete, opaque') =
         let concreteOpaqueAc =
                 emptyNormalizedAc
-                    { concreteElements = [concrete] & HashMap.fromList
+                    { concreteElements = [concrete] & Map.fromList
                     , opaque = [opaque']
                     }
                     & wrapAc

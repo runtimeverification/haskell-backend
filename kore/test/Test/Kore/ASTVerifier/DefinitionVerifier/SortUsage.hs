@@ -36,7 +36,7 @@ import Test.Tasty (
 data TestFlag
     = CannotSeeSortVariables
     | CannotSeeSortDeclarations
-    deriving stock (Eq)
+    deriving (Eq)
 
 data AdditionalTestConfiguration
     = SkipTest

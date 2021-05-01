@@ -63,8 +63,8 @@ data Symbol = Symbol
     , symbolSorts :: !ApplicationSorts
     , symbolAttributes :: !Attribute.Symbol
     }
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

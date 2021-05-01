@@ -33,8 +33,8 @@ import qualified Pretty
 import qualified SQL
 
 newtype WarnFunctionWithoutEvaluators = WarnFunctionWithoutEvaluators {symbol :: Symbol}
-    deriving stock (Show, Eq, Typeable)
-    deriving stock (GHC.Generic)
+    deriving (Show, Eq, Typeable)
+    deriving (GHC.Generic)
 
 instance SOP.Generic WarnFunctionWithoutEvaluators
 

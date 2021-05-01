@@ -5,7 +5,7 @@ allow-newer:
   ghc-trace-events:base
 
 package *
-  ghc-options: -fhide-source-paths -haddock
+  ghc-options: -fhide-source-paths
   profiling-detail: none
 
 package kore

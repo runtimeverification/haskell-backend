@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -38,7 +40,7 @@ data EqTerm term = EqTerm
     { symbol :: !Symbol
     , operand1, operand2 :: !term
     }
-    deriving stock (Show)
+    deriving (Show)
 
 -- | Match an equality-like symbol pattern.
 matchEqTerm ::

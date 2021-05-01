@@ -75,8 +75,8 @@ import qualified Pretty
 data SomeClaim
     = OnePath !OnePathClaim
     | AllPath !AllPathClaim
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -187,8 +187,8 @@ makeTrusted =
 instance Claim SomeClaim where
     newtype Rule SomeClaim = ReachabilityRewriteRule
         {unReachabilityRewriteRule :: RewriteRule RewritingVariableName}
-        deriving stock (Eq, Ord, Show)
-        deriving stock (GHC.Generic)
+        deriving (Eq, Ord, Show)
+        deriving (GHC.Generic)
         deriving anyclass (NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)

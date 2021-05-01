@@ -19,8 +19,13 @@
 
 let
   sources = import ./nix/sources.nix;
-  haskell-nix = import sources."haskell.nix" {};
-  inherit (haskell-nix) pkgs;
+
+  pkgs =
+    let
+      haskell-nix = import sources."haskell.nix" {};
+      inherit (haskell-nix) nixpkgsArgs;
+      args = nixpkgsArgs // { };
+    in import haskell-nix.sources.nixpkgs-2003 args;
   inherit (pkgs) lib;
 
   ttuegel =
@@ -42,6 +47,7 @@ let
         "/*"
         "!/stack.yaml"
         "!/kore"
+        "*.cabal"
       ];
     };
     inherit checkMaterialization;
@@ -72,9 +78,6 @@ let
   shell = import ./shell.nix { inherit default checkMaterialization; };
 
   version = project.kore.components.exes.kore-exec.version;
-  # version = "0.43.0.0";
-
-  prelude-kore = ./src/main/kore/prelude.kore;
 
   rematerialize = pkgs.writeScript "rematerialize.sh" ''
     #!/bin/sh
@@ -83,20 +86,15 @@ let
 
   default =
     {
-      inherit pkgs prelude-kore project rematerialize;
+      inherit pkgs project rematerialize;
       cache = [
         project.roots
         (pkgs.haskell-nix.withInputs shell)
       ];
-
       kore = pkgs.symlinkJoin {
         name = "kore-${version}";
         paths = pkgs.lib.attrValues project.kore.components.exes;
       };
-
-      # Change the compiler when updating our own resolver.
-      compiler-nix-name = "ghc8104";
-      index-state = "2021-02-09T00:00:00Z";
     };
 
 in default

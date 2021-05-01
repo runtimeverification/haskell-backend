@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Simplification.StringLiteral
 Description : Tools for StringLiteral pattern simplification.

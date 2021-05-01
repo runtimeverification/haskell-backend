@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {- |
@@ -88,7 +89,7 @@ data DebugPlace
     | D_SMT_referenceCheckSymbol
     | D_SMT_resolveSort
     | D_SMT_resolveSymbol
-    deriving stock (Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
 
 data DebugArg = DebugArg {name :: !String, value :: !String}
 
@@ -97,7 +98,7 @@ instance Show DebugArg where
 
 -- | Whether to dispay the function/action result when the function ends.
 data DebugResult = DebugResult | DebugNoResult
-    deriving stock (Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
 
 -- | Wraps a field in order to be displayed when debugging
 debugArg :: Show a => String -> a -> DebugArg

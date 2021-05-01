@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Simplification.Bottom
 Description : Tools for Bottom pattern simplification.

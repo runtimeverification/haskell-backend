@@ -167,7 +167,7 @@ To derive an instance for your type,
 @
 -- Note: All fields must have a 'Column' instance.
 data DataType = ...
-    deriving stock ('GHC.Generics.Generic', 'Data.Typeable.Typeable')
+    deriving ('GHC.Generics.Generic', 'Data.Typeable.Typeable')
 
 instance 'Generics.SOP.Generic' DataType
 

@@ -63,4 +63,4 @@ applySExpr =
     fillN :: Int -> [SExpr] -> SExpr
     fillN n = fromMaybe wrongArity . (`Error.atZ` (n - 1))
 
-    ~wrongArity = Builtin.Error.wrongArity "smtlib"
+    wrongArity = Builtin.Error.wrongArity "smtlib"

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Exists (
     test_makeEvaluate,
     test_simplify,

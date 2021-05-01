@@ -29,11 +29,11 @@ import qualified Pretty
 
 -- | 'VerifyError' is a tag for verification errors.
 newtype VerifyError = VerifyError ()
-    deriving stock (Eq, Show)
+    deriving (Eq, Show)
 
 -- | 'VerifySuccess' is a tag for verification success.
 newtype VerifySuccess = VerifySuccess ()
-    deriving stock (Eq, Show)
+    deriving (Eq, Show)
 
 -- | 'verifySuccess' helper for signaling verification success.
 verifySuccess :: MonadError (Error VerifyError) m => m VerifySuccess

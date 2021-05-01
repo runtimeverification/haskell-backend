@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -24,11 +26,11 @@ import Prelude.Kore
 
 -- | A pattern is 'Functional' if it matches exactly one element.
 newtype Functional = Functional {isFunctional :: Bool}
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Semigroup, Monoid) via All
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving (Semigroup, Monoid) via All
 
 alwaysFunctional :: a -> Functional
 alwaysFunctional = const (Functional True)

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Internal.Condition (
     TestCondition,
     module Kore.Internal.Condition,

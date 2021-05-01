@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Condition (
     test_simplify_local_functions,
     test_predicateSimplification,

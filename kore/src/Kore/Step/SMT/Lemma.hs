@@ -102,7 +102,7 @@ declareSMTLemmas m = do
 
     isUnsatisfiable Unsat = True
     isUnsatisfiable _ = False
-    ~errorInconsistentDefinitions =
+    errorInconsistentDefinitions =
         error "The definitions sent to the solver are inconsistent."
 
 translateUninterpreted ::

@@ -27,7 +27,7 @@ data DebugClaimState = DebugClaimState
     , transition :: Prim
     , result :: Maybe (ClaimState SomeClaim)
     }
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty DebugClaimState where
     pretty

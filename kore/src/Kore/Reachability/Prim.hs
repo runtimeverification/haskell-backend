@@ -18,7 +18,7 @@ data Prim
       CheckImplication
     | ApplyClaims
     | ApplyAxioms
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty Prim where
     pretty Begin = "begin proof step"

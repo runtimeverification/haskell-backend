@@ -54,7 +54,7 @@ newtype LogSQLiteOptions = LogSQLiteOptions
     { -- | Filename for the structured query log.
       sqlog :: Maybe FilePath
     }
-    deriving stock (Eq, Show)
+    deriving (Eq, Show)
 
 instance Default LogSQLiteOptions where
     def = LogSQLiteOptions Nothing

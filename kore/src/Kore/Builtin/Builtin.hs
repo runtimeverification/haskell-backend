@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Builtin.Builtin
 Description : Built-in sort, symbol, and pattern verifiers

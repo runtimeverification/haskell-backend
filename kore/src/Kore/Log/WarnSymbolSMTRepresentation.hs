@@ -27,8 +27,8 @@ import qualified Pretty
 import qualified SQL
 
 newtype WarnSymbolSMTRepresentation = WarnSymbolSMTRepresentation {symbol :: Symbol}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic, Typeable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic, Typeable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Pretty WarnSymbolSMTRepresentation where

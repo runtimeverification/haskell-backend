@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.Builtin (
     mkPair,
     emptyNormalizedSet,

@@ -43,9 +43,9 @@ substitutions for 'Target' variables instead of 'NonTarget' variables.
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving stock (Show)
-    deriving stock (Foldable, Functor, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

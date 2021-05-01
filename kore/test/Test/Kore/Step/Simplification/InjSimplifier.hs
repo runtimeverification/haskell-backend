@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.InjSimplifier (
     test_unifyInj,
     test_normalize,

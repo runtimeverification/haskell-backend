@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Simplification.DomainValue
 Description : Tools for DomainValue pattern simplification.

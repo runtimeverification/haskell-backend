@@ -1,7 +1,9 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Repl.Parser
 Description : REPL parser.
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 219
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
@@ -60,7 +62,7 @@ import Type.Reflection (
 type Parser = Parsec ReplParseError Text
 
 newtype ReplParseError = ReplParseError {unReplParseError :: String}
-    deriving stock (Eq, Ord)
+    deriving (Eq, Ord)
 
 instance IsString ReplParseError where
     fromString = ReplParseError

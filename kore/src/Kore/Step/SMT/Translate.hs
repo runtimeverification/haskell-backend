@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -404,7 +406,7 @@ data SMTDependentAtom variable = SMTDependentAtom
     , smtType :: !SExpr
     , boundVars :: ![ElementVariable variable]
     }
-    deriving stock (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Show)
 
 {- | Instantiates an 'SMTDependentAtom' with the current encodings for the
 variables it depends on.
@@ -435,7 +437,7 @@ data TranslatorState variable = TranslatorState
     , quantifiedVars ::
         !(Map (ElementVariable variable) (SMTDependentAtom variable))
     }
-    deriving stock (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Show)
 
 instance Default (TranslatorState variable) where
     def = TranslatorState def def def

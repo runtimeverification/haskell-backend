@@ -140,8 +140,8 @@ data RHS variable = RHS
     , right :: !(TermLike.TermLike variable)
     , ensures :: !(Predicate variable)
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -184,8 +184,8 @@ data RulePattern variable = RulePattern
     , rhs :: !(RHS variable)
     , attributes :: !(Attribute.Axiom Symbol variable)
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -448,8 +448,8 @@ instance HasAttributes RulePattern where
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule variable = RewriteRule {getRewriteRule :: RulePattern variable}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -487,8 +487,8 @@ instance TopBottom (RewriteRule variable) where
 {-  | Implication-based pattern.
 -}
 newtype ImplicationRule variable = ImplicationRule {getImplicationRule :: RulePattern variable}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

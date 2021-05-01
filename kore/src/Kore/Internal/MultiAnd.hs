@@ -66,12 +66,12 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
 newtype MultiAnd child = MultiAnd {getMultiAnd :: [child]}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving newtype (GHC.IsList)
-    deriving newtype (Foldable)
 
 instance TopBottom child => TopBottom (MultiAnd child) where
     isTop (MultiAnd []) = True

@@ -26,7 +26,7 @@ data DebugUnification
     = DebugUnificationWhile !WhileDebugUnification
     | DebugUnificationSolved UnificationSolved
     | DebugUnificationUnsolved !UnificationUnsolved
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty DebugUnification where
     pretty (DebugUnificationWhile x) = Pretty.pretty x
@@ -38,7 +38,7 @@ instance Entry DebugUnification where
 
 -- | @WhileDebugUnification@ encloses the context of unification log entries.
 data WhileDebugUnification = WhileDebugUnification {term1, term2 :: TermLike VariableName}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty WhileDebugUnification where
     pretty WhileDebugUnification{term1, term2} =
@@ -51,7 +51,7 @@ instance Pretty WhileDebugUnification where
 
 -- | @UnificationUnsolved@ represents an unsolved unification problem.
 data UnificationUnsolved = UnificationUnsolved {term1, term2 :: TermLike VariableName}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty UnificationUnsolved where
     pretty UnificationUnsolved{term1, term2} =
@@ -64,7 +64,7 @@ instance Pretty UnificationUnsolved where
 
 -- | @UnificationSolved@ represents the solution of a unification problem.
 newtype UnificationSolved = UnificationSolved {solution :: Pattern VariableName}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty UnificationSolved where
     pretty UnificationSolved{solution} =

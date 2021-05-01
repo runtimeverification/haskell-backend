@@ -51,8 +51,8 @@ meta-variable symbols are only valid in the @smtlib@ attribute; they are /not/
 valid SMT-LIB S-expressions.
 -}
 newtype Smtlib = Smtlib {getSmtlib :: Maybe SExpr}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

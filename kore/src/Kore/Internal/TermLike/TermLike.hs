@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -150,9 +151,9 @@ data TermLikeF variable child
     | EndiannessF !(Const Endianness child)
     | SignednessF !(Const Signedness child)
     | InjF !(Inj child)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Foldable, Functor, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -451,8 +452,8 @@ newtype TermLike variable = TermLike
             (Attribute.Pattern variable)
             (TermLike variable)
     }
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 

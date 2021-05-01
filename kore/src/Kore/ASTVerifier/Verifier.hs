@@ -60,12 +60,12 @@ data VerifierContext = VerifierContext
     , importing :: ![ModuleName]
     , builtinVerifiers :: !Builtin.Verifiers
     }
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 newtype VerifierState = VerifierState
     { verifiedModules :: Map ModuleName VerifiedModule'
     }
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 newtype Verifier a = Verifier
     { getVerifier ::

@@ -20,7 +20,7 @@ import Prelude.Kore
 
 -- | @Constructor@ represents the @constructor@ attribute for axioms.
 newtype Constructor = Constructor {isConstructor :: Bool}
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Constructor
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Simplification.Exists
 Description : Tools for Exists pattern simplification.

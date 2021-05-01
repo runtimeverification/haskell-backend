@@ -220,7 +220,7 @@ koreKeywordsSet = HashSet.fromList keywords
 data IdKeywordParsing
     = KeywordsPermitted
     | KeywordsForbidden
-    deriving stock (Eq)
+    deriving (Eq)
 
 {- |'genericIdRawParser' parses for tokens that can be represented as
 @⟨prefix-char⟩ ⟨body-char⟩*@. Does not consume whitespace.

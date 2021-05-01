@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -82,10 +84,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
-
-        simplified <-
-            simplifyPredicate sideCondition predicate'
-                >>= simplifyPredicates sideCondition . from @_ @(Predicate _)
+        simplified <- simplifyPredicates sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged

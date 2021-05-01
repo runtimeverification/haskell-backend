@@ -63,8 +63,8 @@ Semantics of K, Section 9.1.2 (Sorts).
 -}
 newtype SortVariable = SortVariable
     {getSortVariable :: Id}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -81,8 +81,8 @@ data SortActual = SortActual
     { sortActualName :: !Id
     , sortActualSorts :: ![Sort]
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -107,8 +107,8 @@ Section 9.1.2 (Sorts).
 data Sort
     = SortVariableSort !SortVariable
     | SortActualSort !SortActual
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -181,7 +181,7 @@ representation instead.
 -}
 data MetaSortType
     = StringSort
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 instance Hashable MetaSortType
 
@@ -242,7 +242,7 @@ rigidSort sort
     | otherwise = Just sort
 
 data SortMismatch = SortMismatch !Sort !Sort
-    deriving stock (Eq, Show, Typeable)
+    deriving (Eq, Show, Typeable)
 
 instance Exception SortMismatch where
     displayException (SortMismatch sort1 sort2) =
@@ -259,7 +259,7 @@ sortMismatch :: Sort -> Sort -> a
 sortMismatch sort1 sort2 = throw (SortMismatch sort1 sort2)
 
 newtype MissingArgument = MissingArgument Sort
-    deriving stock (Eq, Show, Typeable)
+    deriving (Eq, Show, Typeable)
 
 instance Exception MissingArgument where
     displayException (MissingArgument sort1) =
@@ -269,7 +269,7 @@ instance Exception MissingArgument where
             ]
 
 newtype UnexpectedArgument = UnexpectedArgument Sort
-    deriving stock (Eq, Show, Typeable)
+    deriving (Eq, Show, Typeable)
 
 instance Exception UnexpectedArgument where
     displayException (UnexpectedArgument sort2) =

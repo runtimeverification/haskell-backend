@@ -30,8 +30,8 @@ import qualified Pretty
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName {getModuleName :: Text}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving newtype (IsString)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -56,9 +56,9 @@ data Module (sentence :: Type) = Module
     , moduleSentences :: ![sentence]
     , moduleAttributes :: !Attributes
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -382,8 +384,8 @@ data AttemptedAxiomResults variable = AttemptedAxiomResults
     , -- | The part of the pattern that was not rewritten by the axiom.
       remainders :: !(OrPattern variable)
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -428,8 +430,8 @@ data AttemptedAxiom variable
       -- we may be able to apply them when the side condition changes.
       NotApplicableUntilConditionChanges !SideCondition.Representation
     | Applied !(AttemptedAxiomResults variable)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

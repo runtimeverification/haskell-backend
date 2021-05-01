@@ -179,7 +179,12 @@
         };
       };
   extras = hackage:
-    { packages = { hlint = ./.plan.nix/hlint.nix; }; };
+    {
+      packages = {
+        hlint = ./.plan.nix/hlint.nix;
+        engine = ./.plan.nix/engine.nix;
+        };
+      };
   modules = [
     ({ lib, ... }:
       {
@@ -192,6 +197,7 @@
               "ghc-lib" = lib.mkOverride 900 false;
               };
             };
+          "engine" = { flags = {}; };
           };
         })
     ];

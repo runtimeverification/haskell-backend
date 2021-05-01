@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-shopt -s extglob
 set -exuo pipefail
 
 kollect() {
@@ -32,19 +31,16 @@ build-wasm() {
 generate-evm() {
     cd $KORE/evm-semantics
 
-    kollect test-pop1 \
+    kollect test-pop1 env MODE=VMTESTS SCHEDULE=DEFAULT \
         kevm run --backend haskell \
-            --mode VMTESTS --schedule DEFAULT \
             tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
     
-    kollect test-add0 env \
+    kollect test-add0 env MODE=VMTESTS SCHEDULE=DEFAULT \
         kevm run --backend haskell \
-            --mode VMTESTS --schedule DEFAULT \
             tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
     
-    kollect test-sumTo10 \
+    kollect test-sumTo10 env MODE=VMTESTS SCHEDULE=DEFAULT \
         kevm run --backend haskell \
-            --mode VMTESTS --schedule DEFAULT \
             tests/interactive/sumTo10.evm \
     
     for search in \
@@ -94,7 +90,7 @@ replace-tests() {
 
     if [ -d $testdir ]
     then
-        rm $testdir/!(*.golden|Makefile)
+        rm $testdir/test-*
     else
         mkdir $testdir
         echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile

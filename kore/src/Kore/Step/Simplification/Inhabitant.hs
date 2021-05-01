@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Simplification.Inhabitant
 Description : Tools for Inhabitant pattern simplification.

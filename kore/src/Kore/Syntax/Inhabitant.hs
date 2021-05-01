@@ -20,9 +20,9 @@ import Prelude.Kore
 
 -- | 'Inhabitant' symbolizes the inhabitants of a sort.
 newtype Inhabitant child = Inhabitant {inhSort :: Sort}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

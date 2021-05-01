@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
@@ -9,7 +10,7 @@ import Data.ByteString (
  )
 import qualified Data.ByteString as ByteString
 import qualified Data.Default as Default
-import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Map.Strict as Map
 import Data.Maybe (
     fromJust,
  )
@@ -1069,7 +1070,6 @@ mapSortDecl =
 
 builtinMap ::
     Ord key =>
-    Hashable key =>
     [(key, TermLike variable)] ->
     InternalMap key (TermLike variable)
 builtinMap children =
@@ -1083,7 +1083,7 @@ builtinMap children =
                 NormalizedAc
                     { elementsWithVariables = []
                     , concreteElements =
-                        HashMap.fromList (Bifunctor.second MapValue <$> children)
+                        Map.fromList (Bifunctor.second MapValue <$> children)
                     , opaque = []
                     }
         }
@@ -1180,7 +1180,7 @@ mkSet elements opaque =
     asKey key =
         (,) <$> retractKey key <*> pure SetValue
             & maybe (Left (key, SetValue)) Right
-    (abstractElements, HashMap.fromList -> concreteElements) =
+    (abstractElements, Map.fromList -> concreteElements) =
         asKey <$> toList elements
             & partitionEithers
 mkSet_ ::

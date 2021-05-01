@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -58,8 +60,8 @@ import System.IO.Temp (
  )
 
 newtype BugReport = BugReport {toReport :: FilePath}
-    deriving stock (Eq, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
@@ -70,8 +72,8 @@ data BugReportOption
       BugReportDisable
     | -- | Creates a bug report only after a crash
       BugReportOnError
-    deriving stock (Eq, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 

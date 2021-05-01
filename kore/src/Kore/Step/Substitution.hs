@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Substitution
 Description : Tools for manipulating substitutions when doing Kore execution.

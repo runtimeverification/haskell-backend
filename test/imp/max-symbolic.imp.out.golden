@@ -4,9 +4,9 @@
       </k>
       <state>
         max |-> ?_I:Int
-        z |-> ?_I1:Int
-        y |-> ?_I0:Int
         x |-> ?_I:Int
+        y |-> ?_I0:Int
+        z |-> ?_I1:Int
       </state>
     </T>
   #And
@@ -28,9 +28,9 @@
       </k>
       <state>
         max |-> ?_I0:Int
-        z |-> ?_I1:Int
-        y |-> ?_I0:Int
         x |-> ?_I:Int
+        y |-> ?_I0:Int
+        z |-> ?_I1:Int
       </state>
     </T>
   #And
@@ -52,9 +52,9 @@
       </k>
       <state>
         max |-> ?_I1:Int
-        z |-> ?_I1:Int
-        y |-> ?_I0:Int
         x |-> ?_I:Int
+        y |-> ?_I0:Int
+        z |-> ?_I1:Int
       </state>
     </T>
   #And
@@ -76,9 +76,9 @@
       </k>
       <state>
         max |-> ?_I1:Int
-        z |-> ?_I1:Int
-        y |-> ?_I0:Int
         x |-> ?_I:Int
+        y |-> ?_I0:Int
+        z |-> ?_I1:Int
       </state>
     </T>
   #And

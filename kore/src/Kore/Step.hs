@@ -89,9 +89,9 @@ data ProgramState a
       Remaining !a
     | -- | The execution step yields no children
       Bottom
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -156,13 +156,13 @@ data Prim
     = Begin
     | Simplify
     | Rewrite
-    deriving stock (Eq, Show)
+    deriving (Eq, Show)
 
 {- The two modes of symbolic execution. Each mode determines the way
     rewrite rules are applied during a rewrite step.
 -}
 data ExecutionMode = All | Any
-    deriving stock (Show)
+    deriving (Show)
 
 -- | @TransitionRule@ is the general type of transition rules over 'Prim'.
 type TransitionRule monad rule state =

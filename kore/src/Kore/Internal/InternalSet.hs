@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
@@ -46,27 +48,26 @@ type SetElement = Element NormalizedSet
 
 -- | Wrapper for normalized sets, to be used in the `builtinAcChild` field.
 newtype NormalizedSet key child = NormalizedSet {getNormalizedSet :: NormalizedAc NormalizedSet key child}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
-    deriving stock (Traversable)
-    deriving newtype (Foldable, Functor)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 instance AcWrapper NormalizedSet where
     data Value NormalizedSet child = SetValue
-        deriving stock (Eq, Ord, Show)
-        deriving stock (Foldable, Functor, Traversable)
-        deriving stock (GHC.Generic)
+        deriving (Eq, Ord, Show)
+        deriving (Foldable, Functor, Traversable)
+        deriving (GHC.Generic)
         deriving anyclass (Hashable, NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 
     newtype Element NormalizedSet child = SetElement {getSetElement :: child}
-        deriving stock (Eq, Ord, Show)
-        deriving stock (Foldable, Functor, Traversable)
-        deriving stock (GHC.Generic)
+        deriving (Eq, Ord, Show)
+        deriving (Foldable, Functor, Traversable)
+        deriving (GHC.Generic)
         deriving anyclass (Hashable, NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)

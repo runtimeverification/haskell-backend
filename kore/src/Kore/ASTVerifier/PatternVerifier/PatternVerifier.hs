@@ -112,7 +112,7 @@ data Context = Context
         !(IndexedModule Verified.Pattern Attribute.Symbol Attribute.Null)
     , patternVerifierHook :: !PatternVerifierHook
     }
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 verifiedModuleContext :: VerifiedModule Attribute.Symbol -> Context
 verifiedModuleContext verifiedModule =

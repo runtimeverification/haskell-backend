@@ -21,8 +21,8 @@ import Prelude.Kore
 import Pretty
 
 data V = V {value :: Integer, counter :: Maybe (Sup Natural)}
-    deriving stock (Show, Eq, Ord)
-    deriving stock (GHC.Generic)
+    deriving (Show, Eq, Ord)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

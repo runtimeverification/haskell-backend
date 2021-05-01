@@ -62,8 +62,8 @@ import Prelude.Kore
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathClaim = OnePathClaim {getOnePathClaim :: ClaimPattern}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -154,8 +154,8 @@ decision is subject to change without notice.
 instance Claim OnePathClaim where
     newtype Rule OnePathClaim = OnePathRewriteRule
         {unRuleOnePath :: RewriteRule RewritingVariableName}
-        deriving stock (Eq, Ord, Show)
-        deriving stock (GHC.Generic)
+        deriving (Eq, Ord, Show)
+        deriving (GHC.Generic)
         deriving anyclass (NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)

@@ -41,7 +41,7 @@ import Prelude.Kore
 
 -- | 'SortGraph' represents the partial order on sorts.
 newtype SortGraph = SortGraph {unSortGraph :: Map Sort (Set Sort)}
-    deriving stock (GHC.Generic, Typeable)
+    deriving (GHC.Generic, Typeable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

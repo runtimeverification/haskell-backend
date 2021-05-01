@@ -97,7 +97,7 @@ import qualified Pretty
 
 -- | Error encountered when parsing patterns
 newtype AxiomPatternError = AxiomPatternError ()
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 instance NFData AxiomPatternError
 
@@ -113,8 +113,8 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
     | ImplicationAxiomPattern (ImplicationRule variable)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

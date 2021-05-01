@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Repl
 Description : Proof REPL
@@ -10,6 +12,10 @@ module Kore.Repl (
 ) where
 
 import Control.Concurrent.MVar
+import Control.Exception (
+    AsyncException (UserInterrupt),
+    fromException,
+ )
 import qualified Control.Lens as Lens
 import Control.Monad (
     forever,
@@ -58,7 +64,6 @@ import Kore.Reachability (
     lensClaimPattern,
  )
 import Kore.Reachability.Claim
-import qualified Kore.Reachability.Claim as Claim
 import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -258,29 +263,25 @@ runRepl
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
                     proveClaimStep claims axioms graph node
-                        & Exception.handle (withConfigurationHandler graph)
-                        & Exception.handle (someExceptionHandler graph)
+                        & catchInterruptWithDefault graph
+                        & catchEverything graph
                 else pure graph
 
-        withConfigurationHandler :: a -> Claim.WithConfiguration -> m a
-        withConfigurationHandler
-            _
-            (Claim.WithConfiguration lastConfiguration someException) =
-                do
-                    liftIO $
-                        hPutStrLn
-                            stderr
-                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
-                    Exception.throwM someException
+        catchInterruptWithDefault :: a -> m a -> m a
+        catchInterruptWithDefault a =
+            Exception.handle $ \case
+                UserInterrupt -> do
+                    liftIO $ hPutStrLn stderr "Step evaluation interrupted."
+                    pure a
+                e -> Exception.throwM e
 
-        someExceptionHandler :: a -> Exception.SomeException -> m a
-        someExceptionHandler a someException = do
-            case Exception.fromException someException of
-                Just (Log.SomeEntry entry) ->
-                    Log.logEntry entry
-                Nothing ->
-                    errorException someException
-            pure a
+        catchEverything :: a -> m a -> m a
+        catchEverything a =
+            Exception.handleAll $ \e -> do
+                case fromException e of
+                    Just (Log.SomeEntry entry) -> Log.logEntry entry
+                    Nothing -> errorException e
+                pure a
 
         replGreeting :: m ()
         replGreeting =

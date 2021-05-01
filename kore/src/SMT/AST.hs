@@ -69,7 +69,7 @@ import qualified Text.Megaparsec.Char.Lexer as Lexer
 data SExpr
     = Atom !Text
     | List ![SExpr]
-    deriving stock (GHC.Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -90,7 +90,7 @@ data ConstructorArgument sort name = ConstructorArgument
     { name :: !name
     , argType :: !sort
     }
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -101,7 +101,7 @@ data Constructor sort symbol name = Constructor
     { name :: !symbol
     , arguments :: ![ConstructorArgument sort name]
     }
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -115,7 +115,7 @@ data DataTypeDeclaration sort symbol name = DataTypeDeclaration
     , typeArguments :: ![name]
     , constructors :: ![Constructor sort symbol name]
     }
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance
@@ -131,7 +131,7 @@ data SortDeclaration name = SortDeclaration
     { name :: !name
     , arity :: Int
     }
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -141,7 +141,7 @@ data FunctionDeclaration sort name = FunctionDeclaration
     , inputSorts :: ![sort]
     , resultSort :: !sort
     }
-    deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug sort, Debug name) => Debug (FunctionDeclaration sort name)

@@ -9,7 +9,7 @@ module Test.Kore.Builtin.External (
 ) where
 
 import Control.Monad.Free (Free (..))
-import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Kore.Internal.InternalMap
@@ -144,9 +144,9 @@ externalizeMap builtin =
     externalizeAc
         (UnitSymbol unitSymbol)
         (ConcatSymbol concatSymbol)
-        (map concreteElement (HashMap.toList concreteElements))
+        (map concreteElement (Map.toAscList concreteElements))
         (element . unwrapElement <$> elementsWithVariables)
-        (filter (not . isEmptyMap) opaque)
+        opaque
   where
     InternalAc{builtinAcChild} = builtin
     InternalAc{builtinAcUnit = unitSymbol} = builtin
@@ -164,11 +164,6 @@ externalizeMap builtin =
     element (key, MapValue value) = (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
         . mapHead toSymbolOrAlias $ symbolApplication elementSymbol [key, value]
 
-    isEmptyMap (InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
-        unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptyMap (App_ symbol _) = unitSymbol == symbol
-    isEmptyMap _ = False
-
 -- | Externalizes a 'Domain.InternalSet'
 externalizeSet ::
     InternalVariable variable =>
@@ -180,9 +175,9 @@ externalizeSet builtin =
     externalizeAc
         (UnitSymbol unitSymbol)
         (ConcatSymbol concatSymbol)
-        (map concreteElement (HashMap.toList concreteElements))
+        (map concreteElement (Map.toAscList concreteElements))
         (element . unwrapElement <$> elementsWithVariables)
-        (filter (not . isEmptySet) opaque)
+        opaque
   where
     InternalAc{builtinAcChild} = builtin
     InternalAc{builtinAcUnit = unitSymbol} = builtin
@@ -199,11 +194,6 @@ externalizeSet builtin =
 
     element (key, SetValue) = (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
         . mapHead toSymbolOrAlias $ symbolApplication elementSymbol [key]
-
-    isEmptySet (InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
-        unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptySet (App_ symbol _) = unitSymbol == symbol
-    isEmptySet _ = False
 
 externalizeList ::
     InternalVariable variable =>

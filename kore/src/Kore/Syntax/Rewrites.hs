@@ -23,12 +23,12 @@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 -}
 data Rewrites sort child = Rewrites
     { rewritesSort :: !sort
-    , rewritesFirst :: !child
-    , rewritesSecond :: !child
+    , rewritesFirst :: child
+    , rewritesSecond :: child
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

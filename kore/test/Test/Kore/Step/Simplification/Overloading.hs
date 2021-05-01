@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Overloading (
     test_matchOverloading,
     test_unifyOverloading,

@@ -39,9 +39,9 @@ data ClaimState claim
       Stuck !claim
     | -- | The claim was proven.
       Proven
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Foldable, Functor, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

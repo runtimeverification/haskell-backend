@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -48,8 +50,8 @@ import qualified Pretty
 newtype ErrorRuleMergeDuplicateIds = ErrorRuleMergeDuplicateIds
     { unErrorRuleMergeDuplicateIds :: Map Text [SourceLocation]
     }
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRuleMergeDuplicateIds where
@@ -70,8 +72,8 @@ instance Pretty ErrorRuleMergeDuplicateIds where
 newtype ErrorRuleMergeDuplicateLabels = ErrorRuleMergeDuplicateLabels
     { unErrorRuleMergeDuplicateLabels :: Map Text [SourceLocation]
     }
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRuleMergeDuplicateLabels where

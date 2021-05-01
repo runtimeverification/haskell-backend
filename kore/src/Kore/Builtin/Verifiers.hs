@@ -158,8 +158,8 @@ data SymbolKey
       HookedSymbolKey !Text
     | -- | A builtin constructor identified by its @klabel@ attribute.
       KlabelSymbolKey !Text
-    deriving stock (Eq, Ord)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
 
 instance Hashable SymbolKey
 

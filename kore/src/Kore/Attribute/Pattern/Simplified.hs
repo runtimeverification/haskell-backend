@@ -1,5 +1,4 @@
 {-# LANGUAGE NoStrict #-}
-{-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
@@ -74,8 +73,8 @@ data Type
       -- simplified. Normally all the leaves in a partly simplified
       -- subterm tree are fully simplified.
       Partly
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -100,8 +99,8 @@ data Condition
       Condition SideCondition.Representation
     | -- | Parts of the term are simplified under different side conditions.
       Unknown
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -126,8 +125,8 @@ data SimplifiedData = SimplifiedData
     { sType :: Type
     , condition :: Condition
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -147,8 +146,8 @@ simplified status is reset by any substitution under the pattern.
 data Simplified
     = Simplified SimplifiedData
     | NotSimplified
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)

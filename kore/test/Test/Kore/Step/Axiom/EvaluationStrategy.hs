@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Axiom.EvaluationStrategy (
     test_definitionEvaluation,
     test_firstFullEvaluation,

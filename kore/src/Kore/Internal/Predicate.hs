@@ -174,9 +174,9 @@ data PredicateF variable child
     | NotF !(Not () child)
     | OrF !(Or () child)
     | TopF !(Top () child)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -217,7 +217,7 @@ newtype Predicate variable = Predicate
     { getPredicate ::
         Cofree (PredicateF variable) (PredicatePattern variable)
     }
-    deriving stock (GHC.Generic, Show)
+    deriving (GHC.Generic, Show)
 
 instance SOP.Generic (Predicate variable)
 
@@ -465,7 +465,7 @@ fromPredicate_ = fromPredicate predicateSort
     needed when these functions are called while traversing the Predicate tree.
 -}
 data HasChanged = Changed | NotChanged
-    deriving stock (Show, Eq)
+    deriving (Show, Eq)
 
 instance Semigroup HasChanged where
     NotChanged <> x = x
@@ -808,7 +808,7 @@ getMultiOrPredicate = \case
 
 newtype NotPredicate variable
     = NotPredicate (TermLikeF variable (Predicate variable))
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
@@ -21,7 +23,7 @@ import qualified Pretty
 
 newtype WarnBoundedModelChecker
     = WarnBoundedModelChecker (ImplicationRule VariableName)
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty WarnBoundedModelChecker where
     pretty (WarnBoundedModelChecker claim) =

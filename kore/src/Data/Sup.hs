@@ -27,10 +27,10 @@ data Sup a
     = Element !a
     | -- | least upper bound (supremum)
       Sup
-    deriving stock (Read, Show)
-    deriving stock (Data, Typeable)
-    deriving stock (Functor)
-    deriving stock (GHC.Generic)
+    deriving (Read, Show)
+    deriving (Data, Typeable)
+    deriving (Functor)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 

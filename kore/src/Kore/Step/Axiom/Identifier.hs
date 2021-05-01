@@ -24,7 +24,7 @@ module Kore.Step.Axiom.Identifier (
 import Data.Functor.Const (
     Const (..),
  )
-import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Map.Strict as Map
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
@@ -74,8 +74,8 @@ data AxiomIdentifier
       Exists !AxiomIdentifier
     | -- | Any variable pattern.
       Variable
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -141,7 +141,7 @@ matchAxiomIdentifier = Recursive.fold matchWorker
         elementSymbol
         concatSymbol
         elementsWithVariables
-        (HashMap.toList concreteElements)
+        (Map.toList concreteElements)
         opaque
       where
         InternalAc{builtinAcChild} = internalMap
@@ -160,7 +160,7 @@ matchAxiomIdentifier = Recursive.fold matchWorker
         elementSymbol
         concatSymbol
         elementsWithVariables
-        (HashMap.toList concreteElements)
+        (Map.toList concreteElements)
         opaque
       where
         InternalAc{builtinAcChild} = internalSet

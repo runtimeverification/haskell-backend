@@ -21,8 +21,8 @@ import Prelude.Kore
 
 -- | @HasDomainValues@ represents the @hasDomainValues@ attribute for symbols.
 newtype HasDomainValues = HasDomainValues {getHasDomainValues :: Bool}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

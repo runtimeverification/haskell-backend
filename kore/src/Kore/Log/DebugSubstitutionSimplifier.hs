@@ -20,8 +20,8 @@ import qualified SQL
 data DebugSubstitutionSimplifier
     = WhileSimplifySubstitution
     | SubstitutionSimplifierResult
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
 
 instance SOP.Generic DebugSubstitutionSimplifier
 

@@ -168,7 +168,7 @@ instance ExpandSingleConstructors SomeClaim where
             $ rule
 
 newtype Expansion variable = Expansion {stale :: Set (ElementVariableName variable)}
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 type Expander variable = State (Expansion variable)
 

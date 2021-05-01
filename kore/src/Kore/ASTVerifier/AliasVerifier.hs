@@ -69,7 +69,7 @@ data AliasContext = AliasContext
     { aliases :: !(Map Id ParsedSentenceAlias)
     , verifying :: !(Set Id)
     }
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
 
 type VerifiedAlias = (Attribute.Symbol, SentenceAlias Verified.Pattern)
 

@@ -25,7 +25,7 @@ import qualified Pretty
 
 newtype WarnRetrySolverQuery = WarnRetrySolverQuery
     {predicates :: NonEmpty (Predicate VariableName)}
-    deriving stock (Show)
+    deriving (Show)
 
 instance Pretty WarnRetrySolverQuery where
     pretty WarnRetrySolverQuery{predicates} =

@@ -247,9 +247,9 @@ unparseTest astInput expected =
 -- Generic unparsing tests
 
 -- Three simple symbols
-data A = A deriving stock (GHC.Generic)
-data B = B deriving stock (GHC.Generic)
-data C = C deriving stock (GHC.Generic)
+data A = A deriving (GHC.Generic)
+data B = B deriving (GHC.Generic)
+data C = C deriving (GHC.Generic)
 
 instance Unparse A where
     unparse A = "A"
@@ -265,17 +265,17 @@ instance Unparse C where
 
 -- A sum type with three different symbols
 data S = SA A | SB B | SC C
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic)
 
 -- A product type with three different symbols
 data P = P A B C
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic)
 
 -- A complex algebraic type with sums and products
 data D = D0 | D1 A | D2 A B | D3 A B C
-    deriving stock (GHC.Generic)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic)
 
 test_unparseGeneric :: [TestTree]

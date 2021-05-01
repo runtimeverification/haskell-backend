@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Step.Function.Evaluator
 Description : Evaluates functions in a pattern.

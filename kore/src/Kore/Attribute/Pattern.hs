@@ -93,8 +93,8 @@ data Pattern variable = Pattern
     , simplified :: !Simplified
     , constructorLike :: !ConstructorLike
     }
-    deriving stock (Eq, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 

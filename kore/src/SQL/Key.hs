@@ -18,8 +18,8 @@ import Prelude.Kore
 
 -- | A foreign key into the table for type @a@.
 newtype Key a = Key {getKey :: Int64}
-    deriving stock (Eq, Ord, Read, Show)
-    deriving stock (Functor, Foldable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Read, Show)
+    deriving (Functor, Foldable)
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

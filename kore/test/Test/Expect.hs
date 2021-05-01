@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Expect (
     expectRight,
     expectLeft,

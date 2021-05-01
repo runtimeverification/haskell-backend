@@ -39,8 +39,8 @@ import Prelude.Kore hiding (
  )
 
 newtype FreeVariables variable = FreeVariables {getFreeVariables :: Map (SomeVariableName variable) Sort}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

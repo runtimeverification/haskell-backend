@@ -24,12 +24,12 @@ Section 9.1.4 (Patterns).
 -}
 data Implies sort child = Implies
     { impliesSort :: !sort
-    , impliesFirst :: !child
-    , impliesSecond :: !child
+    , impliesFirst :: child
+    , impliesSecond :: child
     }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (Functor, Foldable, Traversable)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

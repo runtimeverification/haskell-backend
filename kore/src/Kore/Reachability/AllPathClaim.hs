@@ -65,8 +65,8 @@ import Prelude.Kore
 
 -- | All-Path-Claim claim pattern.
 newtype AllPathClaim = AllPathClaim {getAllPathClaim :: ClaimPattern}
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -132,8 +132,8 @@ instance From AllPathClaim (AxiomPattern RewritingVariableName) where
 instance Claim AllPathClaim where
     newtype Rule AllPathClaim = AllPathRewriteRule
         {unRuleAllPath :: RewriteRule RewritingVariableName}
-        deriving stock (Eq, Ord, Show)
-        deriving stock (GHC.Generic)
+        deriving (Eq, Ord, Show)
+        deriving (GHC.Generic)
         deriving anyclass (NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)

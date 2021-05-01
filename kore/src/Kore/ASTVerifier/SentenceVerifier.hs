@@ -111,7 +111,7 @@ data UnparameterizedId = UnparameterizedId
     { unparameterizedIdName :: Text
     , unparameterizedIdLocation :: AstLocation
     }
-    deriving stock (Show)
+    deriving (Show)
 
 toUnparameterizedId :: Id -> UnparameterizedId
 toUnparameterizedId Id{getId = name, idLocation = location} =

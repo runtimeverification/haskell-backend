@@ -18,10 +18,6 @@
         pipes-sqlite-simple = ./.stack-to-nix.cache.3;
         };
       };
-  resolver = "lts-17.7";
-  modules = [
-    ({ lib, ... }:
-      { packages = {}; })
-    { packages = { "$everything" = { ghcOptions = [ "-haddock" ]; }; }; }
-    ];
+  resolver = "lts-17.4";
+  modules = [ ({ lib, ... }: { packages = {}; }) { packages = {}; } ];
   }

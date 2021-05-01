@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.List (
     test_getUnit,
     test_getFirstElement,
