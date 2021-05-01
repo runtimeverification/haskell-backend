@@ -77,12 +77,12 @@ patterns.
 
 -}
 newtype MultiOr child = MultiOr {getMultiOr :: [child]}
-    deriving (Eq, Ord, Show)
-    deriving (Foldable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving newtype (IsList)
+    deriving newtype (Foldable)
 
 instance Debug child => Debug (MultiOr child)
 

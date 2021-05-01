@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Builtin.InternalBytes (
     test_update,
     test_get,

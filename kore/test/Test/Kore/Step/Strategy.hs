@@ -52,7 +52,7 @@ data Prim
     = Const Natural
     | Succ
     | Throw
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 instance Arbitrary Prim where
     arbitrary = do
@@ -66,10 +66,10 @@ instance Arbitrary Prim where
 
 instance Arbitrary prim => Arbitrary (Strategy prim) where
     arbitrary = do
-        s <- Strategy.seq <$> arbitrary <*> arbitrary
-        a <- Strategy.and <$> arbitrary <*> arbitrary
-        o <- Strategy.or <$> arbitrary <*> arbitrary
-        p <- Strategy.apply <$> arbitrary
+        ~s <- Strategy.seq <$> arbitrary <*> arbitrary
+        ~a <- Strategy.and <$> arbitrary <*> arbitrary
+        ~o <- Strategy.or <$> arbitrary <*> arbitrary
+        ~p <- Strategy.apply <$> arbitrary
         elements [s, a, o, p, Strategy.stuck, Strategy.continue]
 
     shrink =
@@ -213,17 +213,17 @@ prop_depthLimit :: Integer -> Property
 prop_depthLimit i =
     (i >= 0) ==> (expect === actual)
   where
-    n = fromInteger i
-    expect =
+    ~n = fromInteger i
+    ~expect =
         Graph.mkGraph nodes edges
       where
-        nodes = do
+        ~nodes = do
             j <- [0 .. n]
             return (fromIntegral j, j)
         edges = do
             (j, _) <- init nodes
             return (j, j + 1, Seq.singleton Succ)
-    actual = Strategy.graph $ enumerate n
+    ~actual = Strategy.graph $ enumerate n
 
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate ::
@@ -236,38 +236,38 @@ prop_pickLongest :: Integer -> Property
 prop_pickLongest i =
     (i >= 0) ==> (expect === actual)
   where
-    n = fromInteger i
-    expect = n
-    actual = Strategy.pickLongest (enumerate n)
+    ~n = fromInteger i
+    ~expect = n
+    ~actual = Strategy.pickLongest (enumerate n)
 
 prop_pickFinal :: Integer -> Property
 prop_pickFinal i =
     (i >= 0) ==> (expect === actual)
   where
-    n = fromInteger i
-    expect = [n]
-    actual = Strategy.pickFinal (enumerate n)
+    ~n = fromInteger i
+    ~expect = [n]
+    ~actual = Strategy.pickFinal (enumerate n)
 
 prop_pickOne :: Integer -> Property
 prop_pickOne i =
     (i >= 1) ==> (expect == actual)
   where
-    n = fromInteger i
+    ~n = fromInteger i
     expect = [1]
-    actual = Strategy.pickOne (enumerate n)
+    ~actual = Strategy.pickOne (enumerate n)
 
 prop_pickStar :: Integer -> Property
 prop_pickStar i =
     (i >= 0) ==> (expect == actual)
   where
-    n = fromInteger i
-    expect = [0 .. n]
-    actual = Strategy.pickStar (enumerate n)
+    ~n = fromInteger i
+    ~expect = [0 .. n]
+    ~actual = Strategy.pickStar (enumerate n)
 
 prop_pickPlus :: Integer -> Property
 prop_pickPlus i =
     (i >= 1) ==> (expect == actual)
   where
-    n = fromInteger i
-    expect = [1 .. n]
-    actual = Strategy.pickPlus (enumerate n)
+    ~n = fromInteger i
+    ~expect = [1 .. n]
+    ~actual = Strategy.pickPlus (enumerate n)

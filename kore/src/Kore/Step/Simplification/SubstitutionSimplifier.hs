@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -402,7 +400,7 @@ data Private variable = Private
     , -- | The current number of denormalized substitutions.
       count :: !Int
     }
-    deriving (GHC.Generic)
+    deriving stock (GHC.Generic)
 
 {- | The 'Impl'ementation of the generic 'SubstitutionSimplifier'.
 

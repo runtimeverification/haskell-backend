@@ -100,9 +100,10 @@ newtype
         (variable :: Type)
         (annotation :: Type) = Pattern
     {getPattern :: Cofree (PatternF variable) annotation}
-    deriving (Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
+    deriving stock (Traversable)
+    deriving newtype (Functor, Foldable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

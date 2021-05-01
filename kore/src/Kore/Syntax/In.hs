@@ -27,12 +27,12 @@ Section 9.1.4 (Patterns).
 data In sort child = In
     { inOperandSort :: !sort
     , inResultSort :: !sort
-    , inContainedChild :: child
-    , inContainingChild :: child
+    , inContainedChild :: !child
+    , inContainingChild :: !child
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

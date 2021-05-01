@@ -76,8 +76,8 @@ attributeVariable v = (asAttributePattern . VariableF . Const) v
 It is parameterized by the types of Patterns, @pat@.
 -}
 newtype Attributes = Attributes {getAttributes :: [AttributePattern]}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

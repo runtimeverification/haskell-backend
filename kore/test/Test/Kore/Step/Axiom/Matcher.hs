@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Axiom.Matcher (
     test_matcherEqualHeads,
     test_matcherVariableFunction,
@@ -872,12 +870,18 @@ test_matching_Set =
         [ (inject xInt, mkInt 0)
         , (sSet, mkSet [] [])
         ]
-    , matches
+    , matchesMulti
         "[x:Int] s:Set matches [0, 1]"
         (mkSet [mkElemVar xInt] [mkVar sSet])
         (mkSet [mkInt 0, mkInt 1] [])
-        [ (inject xInt, mkInt 0)
-        , (sSet, mkSet [mkInt 1] [])
+        [
+            [ (inject xInt, mkInt 0)
+            , (sSet, mkSet [mkInt 1] [])
+            ]
+        ,
+            [ (inject xInt, mkInt 1)
+            , (sSet, mkSet [mkInt 0] [])
+            ]
         ]
     ]
 
@@ -1057,9 +1061,9 @@ test_matching_Map =
         "x:Int |-> y:Int  m:Map matches 0 |-> 1  2 |-> 3"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 2, mkInt 3)] [])
-        [ (inject xInt, mkInt 0)
-        , (inject yInt, mkInt 1)
-        , (inject mMap, mkMap [(mkInt 2, mkInt 3)] [])
+        [ (inject xInt, mkInt 2)
+        , (inject yInt, mkInt 3)
+        , (inject mMap, mkMap [(mkInt 0, mkInt 1)] [])
         ]
     ]
 
@@ -1186,12 +1190,15 @@ doesn'tMatch ::
     TestTree
 doesn'tMatch = withMatch (assertBool "" . isNothing)
 
+type MatchSubstitution =
+    [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)]
+
 matches ::
     HasCallStack =>
     TestName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
+    MatchSubstitution ->
     TestTree
 matches comment term1 term2 substs =
     matchesAux
@@ -1200,13 +1207,31 @@ matches comment term1 term2 substs =
         term2
         (mkMatchResult (makeTruePredicate, Map.fromList substs))
 
+-- Matches one of the expected results
+matchesMulti ::
+    HasCallStack =>
+    TestName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    [MatchSubstitution] ->
+    TestTree
+matchesMulti comment term1 term2 substs =
+    matchesAuxMulti
+        comment
+        term1
+        term2
+        (mkMatchResult' <$> substs)
+  where
+    mkMatchResult' subst =
+        mkMatchResult (makeTruePredicate, Map.fromList subst)
+
 matchesP ::
     HasCallStack =>
     TestName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Predicate RewritingVariableName ->
-    [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
+    MatchSubstitution ->
     TestTree
 matchesP comment term1 term2 predicate substs =
     matchesAux
@@ -1226,3 +1251,18 @@ matchesAux comment term1 term2 expect =
     withMatch check comment term1 term2
   where
     check actual = assertEqual "" expect actual
+
+matchesAuxMulti ::
+    HasCallStack =>
+    TestName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    [MatchResult] ->
+    TestTree
+matchesAuxMulti comment term1 term2 expect =
+    withMatch check comment term1 term2
+  where
+    check actual =
+        assertBool
+            "Is one of expected results."
+            (actual `elem` expect)

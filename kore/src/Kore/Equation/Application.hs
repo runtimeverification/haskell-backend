@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
@@ -94,7 +92,6 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
-    withoutEquationVariables,
  )
 import Kore.Step.Axiom.Matcher (
     MatchResult,
@@ -155,15 +152,13 @@ attemptEquation ::
     Equation RewritingVariableName ->
     simplifier (AttemptEquationResult RewritingVariableName)
 attemptEquation sideCondition termLike equation =
-    assertNoEquationVar (freeVariables termLike) $
-        whileDebugAttemptEquation' $
-            runExceptT $ do
-                let Equation{left, argument, antiLeft} = equationRenamed
-                (equation', predicate) <- matchAndApplyResults left argument antiLeft
-                let Equation{requires} = equation'
-                checkRequires sideCondition predicate requires & whileCheckRequires
-                let Equation{right, ensures} = equation'
-                return $ Pattern.withCondition right $ from @(Predicate _) ensures
+    whileDebugAttemptEquation' . runExceptT $ do
+        let Equation{left, argument, antiLeft} = equationRenamed
+        (equation', predicate) <- matchAndApplyResults left argument antiLeft
+        let Equation{requires} = equation'
+        checkRequires sideCondition predicate requires & whileCheckRequires
+        let Equation{right, ensures} = equation'
+        return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
     equationRenamed = refreshVariables sideCondition termLike equation
     matchError =
@@ -194,12 +189,10 @@ attemptEquation sideCondition termLike equation =
                     & whileMatch
             (equation', predicate) <-
                 applyAndSelectMatchResult matchResults
-            assertNoEquationVar (freeVariables equation' <> freeVariables predicate) $
-                return
-                    ( equation'
-                    , makeAndPredicate predicate matchPredicate
-                    )
-    assertNoEquationVar = assert . withoutEquationVariables
+            return
+                ( equation'
+                , makeAndPredicate predicate matchPredicate
+                )
 
     applyAndSelectMatchResult ::
         [MatchResult RewritingVariableName] ->
@@ -427,8 +420,8 @@ data AttemptEquationError variable
     = WhileMatch !(MatchError variable)
     | WhileApplyMatchResult !(ApplyMatchResultErrors variable)
     | WhileCheckRequires !(CheckRequiresError variable)
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -463,8 +456,8 @@ data MatchError variable = MatchError
     { matchTerm :: !(TermLike variable)
     , matchEquation :: !(Equation variable)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -480,8 +473,8 @@ data ApplyMatchResultErrors variable = ApplyMatchResultErrors
     { matchResult :: !(MatchResult variable)
     , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -505,8 +498,8 @@ data ApplyMatchResultError variable
       NotMatched (SomeVariableName variable)
     | -- | The variable is not part of the matching solution.
       NonMatchingSubstitution (SomeVariableName variable)
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -538,8 +531,8 @@ data CheckRequiresError variable = CheckRequiresError
     , equationRequires :: !(Predicate variable)
     , sideCondition :: !(SideCondition variable)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -569,8 +562,8 @@ data DebugAttemptEquation
       DebugAttemptEquationResult
         (Equation RewritingVariableName)
         (AttemptEquationResult RewritingVariableName)
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
     pretty (DebugAttemptEquation equation termLike) =
@@ -624,8 +617,8 @@ data DebugApplyEquation
       DebugApplyEquation
         (Equation RewritingVariableName)
         (Pattern RewritingVariableName)
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
 
 instance Pretty DebugApplyEquation where
     pretty (DebugApplyEquation equation result) =

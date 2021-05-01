@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Copyright : (c) Runtime Verification, 2021
 License   : NCSA
@@ -45,26 +43,27 @@ type MapElement = Element NormalizedMap
 
 -- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
 newtype NormalizedMap key child = NormalizedMap {getNormalizedMap :: NormalizedAc NormalizedMap key child}
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
+    deriving newtype (Foldable, Functor)
+    deriving stock (Traversable)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 instance AcWrapper NormalizedMap where
     newtype Value NormalizedMap child = MapValue {getMapValue :: child}
-        deriving (Eq, Ord, Show)
-        deriving (Foldable, Functor, Traversable)
-        deriving (GHC.Generic)
+        deriving stock (Eq, Ord, Show)
+        deriving stock (Foldable, Functor, Traversable)
+        deriving stock (GHC.Generic)
         deriving anyclass (Hashable, NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 
     newtype Element NormalizedMap child = MapElement {getMapElement :: (child, child)}
-        deriving (Eq, Ord, Show)
-        deriving (Foldable, Functor, Traversable)
-        deriving (GHC.Generic)
+        deriving stock (Eq, Ord, Show)
+        deriving stock (Foldable, Functor, Traversable)
+        deriving stock (GHC.Generic)
         deriving anyclass (Hashable, NFData)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)

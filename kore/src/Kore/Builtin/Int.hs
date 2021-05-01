@@ -1,5 +1,4 @@
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE Strict #-}
 
 {- |
 Module      : Kore.Builtin.Int

@@ -29,8 +29,8 @@ data Stats = Stats
     , gc_cpu_ns, gc_elapsed_ns :: !GHC.RtsTime
     , cpu_ns, elapsed_ns :: !GHC.RtsTime
     }
-    deriving (Eq, Read, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Read, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (FromJSON, ToJSON)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

@@ -116,9 +116,9 @@ data Binder variable child = Binder
     { binderVariable :: variable
     , binderChild :: !child
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 

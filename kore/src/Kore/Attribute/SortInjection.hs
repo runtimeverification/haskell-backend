@@ -21,8 +21,8 @@ import Prelude.Kore
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
 newtype SortInjection = SortInjection {isSortInjection :: Bool}
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

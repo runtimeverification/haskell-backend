@@ -11,7 +11,6 @@ import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern (
     RewriteRule,
     rewriteRuleToTerm,
@@ -25,7 +24,7 @@ import Prelude.Kore
  or claim as a Matching Logic pattern.
 -}
 newtype AxiomPattern variable = AxiomPattern {getAxiomPattern :: TermLike variable}
-    deriving (Show, Eq)
+    deriving stock (Show, Eq)
 
 instance Unparse (AxiomPattern VariableName) where
     unparse = unparse . getAxiomPattern

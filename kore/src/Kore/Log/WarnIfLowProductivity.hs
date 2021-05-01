@@ -17,7 +17,7 @@ import qualified Pretty
 import Stats
 
 newtype WarnIfLowProductivity = WarnIfLowProductivity {productivityPercent :: Natural}
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty WarnIfLowProductivity where
     pretty (WarnIfLowProductivity productivityPercent) =

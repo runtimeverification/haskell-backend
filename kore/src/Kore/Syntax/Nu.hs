@@ -24,11 +24,11 @@ The sort of the variable is the same as the sort of the result.
 -}
 data Nu variable child = Nu
     { nuVariable :: !(SetVariable variable)
-    , nuChild :: child
+    , nuChild :: !child
     }
-    deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic)
+    deriving stock (Eq, Ord, Show)
+    deriving stock (Functor, Foldable, Traversable)
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

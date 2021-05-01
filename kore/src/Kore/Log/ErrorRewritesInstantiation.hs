@@ -64,7 +64,7 @@ data ErrorRewritesInstantiation = ErrorRewritesInstantiation
     , configuration :: !(Pattern RewritingVariableName)
     , errorCallStack :: !CallStack
     }
-    deriving (Show, GHC.Generic)
+    deriving stock (Show, GHC.Generic)
 
 data SubstitutionCoverageError = SubstitutionCoverageError
     { solution ::
@@ -75,8 +75,8 @@ data SubstitutionCoverageError = SubstitutionCoverageError
     , location :: !SourceLocation
     , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
     }
-    deriving (Show)
-    deriving (GHC.Generic)
+    deriving stock (Show)
+    deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRewritesInstantiation where
@@ -153,11 +153,14 @@ checkSubstitutionCoverage configuration unifiedRule
                 , errorCallStack = callStack
                 }
   where
-    substitutionCoverageError =
+    ~substitutionCoverageError =
         SubstitutionCoverageError{solution, location, missingVariables}
 
     missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables
     location = from @_ @SourceLocation . term $ unifiedRule
-    solution = from @rule @(AxiomPattern _) <$> unifiedRule
+    {- This is lazy because it may call allPathRuleToTerm or onePathRuleToTerm,
+       which may end up calling illSorted
+    -}
+    ~solution = from @rule @(AxiomPattern _) <$> unifiedRule
     isSymbolic = (not . isConstructorLike) (term configuration)

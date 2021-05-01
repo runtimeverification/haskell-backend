@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 {- |
 Module      : Kore.Step.Simplification.Not
 Description : Tools for Not pattern simplification.
