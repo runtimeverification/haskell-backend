@@ -323,11 +323,11 @@ test_string2Base =
     , Test.Int.testInt
         "string2Base bad base"
         string2BaseStringSymbol
-        [asInternal "1", Test.Int.asInternal 17]
+        [asInternal "1", Test.Int.asInternal 37]
         ( Pattern.fromTermLike $
             mkApplySymbol
                 string2BaseStringSymbol
-                [asInternal "1", Test.Int.asInternal 17]
+                [asInternal "1", Test.Int.asInternal 37]
         )
     ]
 
