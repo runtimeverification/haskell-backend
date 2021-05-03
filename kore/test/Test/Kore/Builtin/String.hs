@@ -265,10 +265,10 @@ test_string2Base =
         [asInternal "42", Test.Int.asInternal 8]
         (Test.Int.asPattern 34)
     , Test.Int.testInt
-        "string2Base octal negative is bottom"
+        "string2Base octal negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 8]
-        bottom
+        (Test.Int.asPattern (-34))
     , Test.Int.testInt
         "string2Base octal is bottom"
         string2BaseStringSymbol
