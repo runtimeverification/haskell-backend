@@ -152,6 +152,7 @@ validateAxiom attrs verified =
             TermLike.InternalString_ _ -> Nothing
             TermLike.DV_ _ (TermLike.StringLiteral_ _) -> Nothing
             TermLike.And_ _ _ _ -> descend
+            TermLike.Or_ _ _ _ -> descend
             TermLike.Var_ _ -> Nothing
             TermLike.Inj_ _ -> descend
             _ -> Just term
