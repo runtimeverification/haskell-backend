@@ -101,7 +101,6 @@ import Kore.Unification.Unify as Unify
 import Numeric (
     readSigned,
     readInt,
---    readOct,
  )
 import Prelude.Kore
 import qualified Text.Megaparsec as Parsec
@@ -312,7 +311,6 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             _str <- expectBuiltinString string2BaseKey _strTerm
             _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
             packedResult <-
-              
               if 2 <= _base && _base <= 36
                 then let digitToIntM ch = findIndex (ch ==) $ take (fromIntegral _base) "0123456789abcdefghijklmnopqrstuvwxyz"
                          validDigit = isJust . digitToIntM
@@ -323,48 +321,12 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
                                    [(result, "")] -> Right (result, "")
                                    _ -> Left ("" :: String)
                 else warnNotImplemented app >> empty
-
-{-              
-                case _base of
-                    -- no builtin reader for number in octal notation
-                    8 -> return $ case readOct $ Text.unpack _str of
-                        [(result, "")] -> Right (result, "")
-                        _ -> Left ""
-                    10 -> return $ Text.signed Text.decimal _str
-                    16 -> return $ Text.signed Text.hexadecimal _str
-                    _ -> warnNotImplemented app >> empty
--}
             case packedResult of
                 Right (result, Text.unpack -> "") ->
                     return (Int.asPattern resultSort result)
                 _ -> return (Pattern.bottomOf resultSort)
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
-{-
-readWithBase :: Int -> String -> Either String (Int, String)
-readWithBase base = foldl' sumWithBase 0 . zipWith toValue numerals
-  where
-    numerals :: [(Int, String)]
-    numerals = zip [0..base] "0123456789abcdefghijklmnopqrstuvwxyz"
 
-    charToValueM :: Char -> Maybe Int
-    charToValueM ch = fmap fst . find ((ch ==).snd) numerals
-
-    _ :: String -> Maybe Int
-    _ = fmap toBase10 . mapM charToValueM
-      where
-        toBase10 :: [Int] -> Int
-        toBase10 = let positions = reverse [0..]
-                       power pos dec = dec * base ^ pos
-                   in sum . zipWith power positions
-        
-    fromNumeral :: Int -> Char -> Maybe Int
-    fromNumeral base ch = 
-    fromDigit :: Int -> Char -> Either String Int
-    fromDigit base ch | isValid ch = _
-                      | otherwise = Left ""
-    go pos (d:ds) | validDigit d = 
-                  | othewrise = _
--}
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
