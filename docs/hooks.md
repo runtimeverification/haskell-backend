@@ -408,7 +408,7 @@ Convert an integer value to its base10 string representation.
 
 Takes a string and a base and converts the string from `base` to its integer
 value.
-Currently only works for base 8, 10, and 16.
+Supports bases 2 to 36 inclusive.
 
 ~~~
     hooked-symbol string2base{}(String{}, Int{}) : Int{}
