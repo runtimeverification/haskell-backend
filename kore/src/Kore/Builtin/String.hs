@@ -99,6 +99,8 @@ import Kore.Step.Simplification.Simplify (
  )
 import Kore.Unification.Unify as Unify
 import Numeric (
+    showIntAtBase,
+    showSigned,
     readSigned,
     readInt,
  )
@@ -338,6 +340,22 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
             _ -> return (Pattern.bottomOf resultSort)
     evalString2Int0 _ _ _ = Builtin.wrongArity string2IntKey
 
+evalBase2String :: BuiltinAndAxiomSimplifier
+evalBase2String = Builtin.functionEvaluator evalBase2String0
+  where
+    evalBase2String0 _ resultSort [_int, _base] = do
+      _int <- Int.expectBuiltinInt base2StringKey _int
+      _base <- Int.expectBuiltinInt base2StringKey _base
+      if 2 <= _base && _base <= 36
+        then do
+          let charRep = ("0123456789abcdefghijklmnopqrstuvwxyz" !!)
+              showWithBase = showSigned (showIntAtBase _base charRep) 0 -- TODO check precedence
+          Text.pack (showWithBase _int "")
+              & asPattern resultSort
+              & return
+        else return $ Pattern.bottomOf resultSort -- TODO check with Tom
+    evalBase2String0 _ _ _ = Builtin.wrongArity base2StringKey
+
 evalInt2String :: BuiltinAndAxiomSimplifier
 evalInt2String = Builtin.functionEvaluator evalInt2String0
   where
@@ -403,6 +421,7 @@ builtinFunctions =
         , (findKey, evalFind)
         , (string2BaseKey, evalString2Base)
         , (string2IntKey, evalString2Int)
+        , (base2StringKey, evalBase2String)
         , (int2StringKey, evalInt2String)
         , (chrKey, evalChr)
         , (ordKey, evalOrd)
