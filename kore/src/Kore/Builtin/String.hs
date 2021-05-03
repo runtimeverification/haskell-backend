@@ -99,7 +99,9 @@ import Kore.Step.Simplification.Simplify (
  )
 import Kore.Unification.Unify as Unify
 import Numeric (
-    readOct,
+    readSigned,
+    readInt,
+--    readOct,
  )
 import Prelude.Kore
 import qualified Text.Megaparsec as Parsec
@@ -310,11 +312,18 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             _str <- expectBuiltinString string2BaseKey _strTerm
             _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
             packedResult <-
+              
               if 2 <= _base && _base <= 36
-                then case readSigned $ readInt _base validDigit digitToInt $ Text.unpack _str of
-                  [(result, "")] -> Right (result, "")
-                  _ -> Left ""
+                then let digitToIntM ch = findIndex (ch ==) $ take (fromIntegral _base) "0123456789abcdefghijklmnopqrstuvwxzy"
+                         validDigit = isJust . digitToIntM
+                         digitToInt = fromMaybe 0 . digitToIntM
+                         lowerCaseStr = Text.unpack $ Text.toLower _str
+                         readWithBase = readSigned $ readInt _base validDigit digitToInt
+                     in return $ case readWithBase lowerCaseStr of
+                                   [(result, "")] -> Right (result, "")
+                                   _ -> Left ("" :: String)
                 else warnNotImplemented app >> empty
+
 {-              
                 case _base of
                     -- no builtin reader for number in octal notation
@@ -323,10 +332,6 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
                         _ -> Left ""
                     10 -> return $ Text.signed Text.decimal _str
                     16 -> return $ Text.signed Text.hexadecimal _str
---                    b | 2 >= b && b <= 36 -> return $ readWithBase b $ Text.unpack _str of
---                          [(result, "")] -> Right (result, "")
---                          _ -> Left ""
-                          
                     _ -> warnNotImplemented app >> empty
 -}
             case packedResult of
