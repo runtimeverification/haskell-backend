@@ -314,7 +314,7 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             packedResult <-
               
               if 2 <= _base && _base <= 36
-                then let digitToIntM ch = findIndex (ch ==) $ take (fromIntegral _base) "0123456789abcdefghijklmnopqrstuvwxzy"
+                then let digitToIntM ch = findIndex (ch ==) $ take (fromIntegral _base) "0123456789abcdefghijklmnopqrstuvwxyz"
                          validDigit = isJust . digitToIntM
                          digitToInt = fromMaybe 0 . digitToIntM
                          lowerCaseStr = Text.unpack $ Text.toLower _str

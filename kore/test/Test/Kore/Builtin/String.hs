@@ -321,6 +321,11 @@ test_string2Base =
         [asInternal "baad", Test.Int.asInternal 16]
         (Test.Int.asPattern 47789)
     , Test.Int.testInt
+        "string2Base base-36 from base-36"
+        string2BaseStringSymbol
+        [asInternal "zZ", Test.Int.asInternal 36]
+        (Test.Int.asPattern 1295)
+    , Test.Int.testInt
         "string2Base bad base"
         string2BaseStringSymbol
         [asInternal "1", Test.Int.asInternal 37]
