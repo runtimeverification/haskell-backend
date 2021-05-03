@@ -7,6 +7,6 @@ new=${1:?}; shift
 # 1. Join the statistics files by row according to name.
 #    Give the columns from each file a unique prefix.
 # 2. Add a column for the (relative) difference between old and new values.
-mlr --json join -j name --lp old_ --rp new_ -f "$old" "$new" \
-  | mlr --json put '$diff_allocated_bytes = ($new_allocated_bytes - $old_allocated_bytes) / $old_allocated_bytes' \
-  | mlr --json put '$diff_max_live_bytes = ($new_max_live_bytes - $old_max_live_bytes) / $old_max_live_bytes'
+mlr --ijson --ocsv join -j name --lp old_ --rp new_ -f "$old" "$new" \
+  | mlr --csv put '$diff_allocated_bytes = ($new_allocated_bytes - $old_allocated_bytes) / $old_allocated_bytes' \
+  | mlr --csv put '$diff_max_live_bytes = ($new_max_live_bytes - $old_max_live_bytes) / $old_max_live_bytes'
