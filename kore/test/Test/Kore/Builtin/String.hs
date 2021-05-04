@@ -9,6 +9,7 @@ module Test.Kore.Builtin.String (
     test_find,
     test_string2Base,
     test_string2Int,
+    test_base2String,
     test_int2String,
     test_token2String,
     test_string2Token,
@@ -369,6 +370,25 @@ test_string2Int =
         [asInternal "baad"]
         bottom
     ]
+
+test_base2String :: [TestTree]
+test_base2String =
+    [ testString
+        "base2String basic decimal example"
+        base2StringStringSymbol
+        [Test.Int.asInternal 42, Test.Int.asInternal 10]
+        (asPattern "42")
+    , testString
+        "base2String decimal negative"
+        base2StringStringSymbol
+        [Test.Int.asInternal (-42), Test.Int.asInternal 10]
+        (asPattern "-42")
+    , testString
+        "base2String hexadecimal example"
+        base2StringStringSymbol
+        [Test.Int.asInternal 51966, Test.Int.asInternal 16]
+        (asPattern "cafe")
+    ] 
 
 test_int2String :: [TestTree]
 test_int2String =

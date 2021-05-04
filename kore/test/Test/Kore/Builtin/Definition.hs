@@ -696,6 +696,10 @@ string2IntStringSymbol :: Internal.Symbol
 string2IntStringSymbol =
     builtinSymbol "string2intString" intSort [stringSort]
         & hook "STRING.string2int"
+base2StringStringSymbol :: Internal.Symbol
+base2StringStringSymbol =
+    builtinSymbol "base2stringString" stringSort [intSort, intSort]
+        & hook "STRING.base2string"
 int2StringStringSymbol :: Internal.Symbol
 int2StringStringSymbol =
     builtinSymbol "int2stringString" stringSort [intSort]
