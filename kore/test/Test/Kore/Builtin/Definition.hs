@@ -1653,6 +1653,7 @@ stringModule =
             , hookedSymbolDecl findStringSymbol
             , hookedSymbolDecl string2BaseStringSymbol
             , hookedSymbolDecl string2IntStringSymbol
+            , hookedSymbolDecl base2StringStringSymbol
             , hookedSymbolDecl int2StringStringSymbol
             , hookedSymbolDecl token2StringStringSymbol
             , hookedSymbolDecl string2TokenStringSymbol
