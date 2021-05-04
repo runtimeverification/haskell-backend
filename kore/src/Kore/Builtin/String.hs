@@ -55,6 +55,7 @@ import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.List (
     findIndex,
+    elemIndex,
  )
 import Data.Map.Strict (
     Map,
@@ -314,7 +315,7 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
             packedResult <-
               if 2 <= _base && _base <= 36
-                then let digitToIntM ch = findIndex (ch ==) $ take (fromIntegral _base) "0123456789abcdefghijklmnopqrstuvwxyz"
+                then let digitToIntM ch = elemIndex ch $ take (fromIntegral _base) "0123456789abcdefghijklmnopqrstuvwxyz"
                          validDigit = isJust . digitToIntM
                          digitToInt = fromMaybe 0 . digitToIntM
                          lowerCaseStr = Text.unpack $ Text.toLower _str
