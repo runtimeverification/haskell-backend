@@ -21,8 +21,8 @@ import Prelude.Kore
 import qualified Pretty
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Builtin.Int as Int
 import Test.Kore.Builtin.External
+import qualified Test.Kore.Builtin.Int as Int
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -23,8 +23,8 @@ import Test.Kore hiding (
     sortVariable,
     sortVariableSort,
  )
-import Test.Kore.Parser
 import Test.Kore.Builtin.External
+import Test.Kore.Parser
 import Test.Tasty (
     TestTree,
     testGroup,

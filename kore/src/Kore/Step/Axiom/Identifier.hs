@@ -24,23 +24,23 @@ module Kore.Step.Axiom.Identifier (
 import Data.Functor.Const (
     Const (..),
  )
-import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import qualified Kore.Builtin.Endianness.Endianness as Endianness
+import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import Kore.Debug
 import qualified Kore.Internal.Alias as Alias
-import qualified Kore.Internal.Symbol as Symbol
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.TermLike (
-    TermLikeF (..),
-    TermLike,
- )
 import Kore.Internal.InternalList
 import Kore.Internal.InternalSet
+import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.TermLike (
+    TermLike,
+    TermLikeF (..),
+ )
 import qualified Kore.Syntax.Application as Syntax
 import qualified Kore.Syntax.Ceil as Syntax
 import qualified Kore.Syntax.Equals as Syntax
@@ -104,9 +104,12 @@ matchAxiomIdentifier = Recursive.fold matchWorker
   where
     matchWorker (_ :< termLikeF) =
         case termLikeF of
-            ApplyAliasF application -> pure $ Application $
-               Syntax.symbolOrAliasConstructor $ Alias.toSymbolOrAlias $
-               Syntax.applicationSymbolOrAlias application
+            ApplyAliasF application ->
+                pure $
+                    Application $
+                        Syntax.symbolOrAliasConstructor $
+                            Alias.toSymbolOrAlias $
+                                Syntax.applicationSymbolOrAlias application
             ApplySymbolF application -> mkAppId application
             CeilF ceil -> Ceil <$> Syntax.ceilChild ceil
             EqualsF equals ->
@@ -116,10 +119,12 @@ matchAxiomIdentifier = Recursive.fold matchWorker
             ExistsF exists -> Exists <$> Syntax.existsChild exists
             VariableF _ ->
                 pure Variable
-            EndiannessF endiannessF -> mkAppId $
-                Endianness.toApplication $ getConst endiannessF
-            SignednessF signednessF -> mkAppId $
-                Signedness.toApplication $ getConst signednessF
+            EndiannessF endiannessF ->
+                mkAppId $
+                    Endianness.toApplication $ getConst endiannessF
+            SignednessF signednessF ->
+                mkAppId $
+                    Signedness.toApplication $ getConst signednessF
             InjF inj -> mkAppId $ Inj.toApplication inj
             InternalListF internalList -> listToId internalList
             InternalSetF internalSet -> mapToId internalSet
@@ -127,22 +132,23 @@ matchAxiomIdentifier = Recursive.fold matchWorker
             _ -> empty
 
     listToId internalList
-      | Seq.null list        = pure $ Application $ symbolToId unitSymbol
-      | Seq.length list == 1 = pure $ Application $ symbolToId elementSymbol
-      | otherwise            = pure $ Application $ symbolToId concatSymbol
+        | Seq.null list = pure $ Application $ symbolToId unitSymbol
+        | Seq.length list == 1 = pure $ Application $ symbolToId elementSymbol
+        | otherwise = pure $ Application $ symbolToId concatSymbol
       where
         InternalList{internalListChild = list} = internalList
         InternalList{internalListUnit = unitSymbol} = internalList
         InternalList{internalListElement = elementSymbol} = internalList
         InternalList{internalListConcat = concatSymbol} = internalList
-    
-    mapToId internalMap = acToId
-        unitSymbol
-        elementSymbol
-        concatSymbol
-        elementsWithVariables
-        (HashMap.toList concreteElements)
-        opaque
+
+    mapToId internalMap =
+        acToId
+            unitSymbol
+            elementSymbol
+            concatSymbol
+            elementsWithVariables
+            (HashMap.toList concreteElements)
+            opaque
       where
         InternalAc{builtinAcChild} = internalMap
         InternalAc{builtinAcUnit = unitSymbol} = internalMap
@@ -154,14 +160,15 @@ matchAxiomIdentifier = Recursive.fold matchWorker
         NormalizedAc{elementsWithVariables} = normalizedAc
         NormalizedAc{concreteElements} = normalizedAc
         NormalizedAc{opaque} = normalizedAc
-    
-    setToId internalSet = acToId
-        unitSymbol
-        elementSymbol
-        concatSymbol
-        elementsWithVariables
-        (HashMap.toList concreteElements)
-        opaque
+
+    setToId internalSet =
+        acToId
+            unitSymbol
+            elementSymbol
+            concatSymbol
+            elementsWithVariables
+            (HashMap.toList concreteElements)
+            opaque
       where
         InternalAc{builtinAcChild} = internalSet
         InternalAc{builtinAcUnit = unitSymbol} = internalSet
@@ -173,7 +180,7 @@ matchAxiomIdentifier = Recursive.fold matchWorker
         NormalizedAc{elementsWithVariables} = normalizedAc
         NormalizedAc{concreteElements} = normalizedAc
         NormalizedAc{opaque} = normalizedAc
-    
+
     acToId unitSymbol _ _ [] [] [] = pure $ Application $ symbolToId unitSymbol
     acToId _ elementSymbol _ [_] [] [] = pure $ Application $ symbolToId elementSymbol
     acToId _ elementSymbol _ [] [_] [] = pure $ Application $ symbolToId elementSymbol
