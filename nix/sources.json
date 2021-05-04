@@ -84,18 +84,5 @@
         "type": "tarball",
         "url": "https://github.com/nixos/nixpkgs/archive/fc37cc679f168159a234f45a3861b1b7a414e304.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "stylish-haskell": {
-        "branch": "v0.11.0.3",
-        "description": "Haskell code prettifier",
-        "homepage": "",
-        "owner": "jaspervdj",
-        "repo": "stylish-haskell",
-        "rev": "771b82f3c4af465a2f2b675ca9a28d18d3a27c1b",
-        "sha256": "02hphd5yxyml5hnz53y78cl9fp9d7rf8ag88m3n3kyrgk8hqmixf",
-        "type": "tarball",
-        "url": "https://github.com/jaspervdj/stylish-haskell/archive/771b82f3c4af465a2f2b675ca9a28d18d3a27c1b.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
-        "version": "v0.11.0.3"
     }
 }

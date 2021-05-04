@@ -26,13 +26,6 @@ let
   };
   inherit (hlint-project.hlint.components.exes) hlint;
 
-  stylish-haskell-project = default.pkgs.haskell-nix.cabalProject {
-    src = sources."stylish-haskell";
-    inherit checkMaterialization compiler-nix-name index-state;
-    materialized = ./nix/stylish-haskell.nix.d;
-  };
-  inherit (stylish-haskell-project.stylish-haskell.components.exes) stylish-haskell;
-
   fourmolu = import ./nix/fourmolu.nix { inherit default checkMaterialization; };
 
 in
@@ -42,13 +35,12 @@ shellFor {
     [
       gnumake fd z3
       hls-renamed
-      ghcid hlint stylish-haskell fourmolu
+      ghcid hlint fourmolu
       cabal-install stack
     ];
   passthru.rematerialize = pkgs.writeScript "rematerialize-shell.sh" ''
     #!/bin/sh
     ${hlint-project.plan-nix.passthru.updateMaterialized}
-    ${stylish-haskell-project.plan-nix.passthru.updateMaterialized}
     ${fourmolu.passthru.updateMaterialized}
   '';
 }

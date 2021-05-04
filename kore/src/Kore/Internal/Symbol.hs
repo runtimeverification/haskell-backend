@@ -14,7 +14,6 @@ module Kore.Internal.Symbol (
     isTotal,
     isInjective,
     isMemo,
-    isAnywhere,
     noEvaluators,
     symbolHook,
     constructor,
@@ -170,9 +169,6 @@ isTotal = Attribute.isTotal . symbolAttributes
 
 isMemo :: Symbol -> Bool
 isMemo = Attribute.isMemo . Attribute.memo . symbolAttributes
-
-isAnywhere :: Symbol -> Bool
-isAnywhere = Attribute.isAnywhere . Attribute.anywhere . symbolAttributes
 
 noEvaluators :: Symbol -> Bool
 noEvaluators =
