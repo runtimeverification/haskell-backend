@@ -182,7 +182,7 @@ matchAxiomIdentifier = Recursive.fold matchWorker
     acToId _ _ _ [] [] [opaque] = opaque
     acToId _ _ concatSymbol _ _ _ = pure $ Application $ symbolToId concatSymbol
 
-    mkAppId   = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
-    mkAliasId = pure . Application . aliasToId  . Syntax.applicationSymbolOrAlias
+    mkAppId = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
+    mkAliasId = pure . Application . aliasToId . Syntax.applicationSymbolOrAlias
     symbolToId = Syntax.symbolOrAliasConstructor . Symbol.toSymbolOrAlias
-    aliasToId  = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias
+    aliasToId = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias
