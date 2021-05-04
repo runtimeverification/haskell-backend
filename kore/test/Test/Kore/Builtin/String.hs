@@ -397,7 +397,7 @@ test_base2String =
                 base2StringStringSymbol
                 [Test.Int.asInternal 1, Test.Int.asInternal 37]
         )
-    ] 
+    ]
 
 test_int2String :: [TestTree]
 test_int2String =
