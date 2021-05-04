@@ -401,18 +401,26 @@ Convert an integer value to its base10 string representation.
 
 ~~~
     hooked-symbol int2string{}(Int{}) : String{}
-        [hook{}("STRING.string2int")]
+        [hook{}("STRING.int2string")]
 ~~~
 
 ### STRING.string2base
 
-Takes a string and a base and converts the string from `base` to its integer
-value.
+Converts a string from `base` to its integer value.
 Supports bases 2 to 36 inclusive.
 
 ~~~
     hooked-symbol string2base{}(String{}, Int{}) : Int{}
         [hook{}("STRING.string2base")]
+~~~
+
+### STRING.base2string
+
+Convert an integer value to its `base` string representation.
+
+~~~
+    hooked-symbol base2string{}(Int{}, Int{}) : String{}
+        [hook{}("STRING.base2string")]
 ~~~
 
 ### STRING.substr
