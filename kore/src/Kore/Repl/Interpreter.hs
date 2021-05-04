@@ -139,6 +139,7 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
+import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
 import Kore.Reachability (
     ClaimState (..),
     ClaimStateTransformer (..),
@@ -305,8 +306,12 @@ replInterpreter0 printAux printKore replCmd = do
             output
     case shouldContinue of
         Continue -> pure Continue
-        SuccessStop -> liftIO exitSuccess
-        FailStop -> liftIO . exitWith $ ExitFailure 2
+        SuccessStop -> do
+            warnIfLowProductivity
+            liftIO exitSuccess
+        FailStop -> do
+            warnIfLowProductivity
+            liftIO . exitWith $ ExitFailure 2
   where
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
