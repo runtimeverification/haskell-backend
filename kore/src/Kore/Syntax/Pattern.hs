@@ -4,7 +4,6 @@ License     : NCSA
 -}
 module Kore.Syntax.Pattern (
     Pattern (..),
-    FutuPattern,
     asPattern,
     fromPattern,
     eraseAnnotations,
@@ -106,11 +105,6 @@ newtype
     deriving newtype (Functor, Foldable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-
-type FutuPattern variable t =
-    Recursive.Base
-        (Pattern variable Attribute.Null)
-        (Free (Recursive.Base (Pattern variable Attribute.Null)) t)
 
 instance Eq variable => Eq (Pattern variable annotation) where
     (==) = eqWorker

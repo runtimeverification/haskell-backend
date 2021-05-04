@@ -1,7 +1,5 @@
-{-# LANGUAGE Strict #-}
-
 {- |
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
 module Test.Kore.Builtin.External (
@@ -37,6 +35,11 @@ import Kore.Internal.TermLike as TermLike
 import qualified Kore.Syntax.Pattern as Syntax
 import Prelude.Kore
 
+type FutuPattern variable t =
+    Recursive.Base
+        (Syntax.Pattern variable Attribute.Null)
+        (Free (Recursive.Base (Syntax.Pattern variable Attribute.Null)) t)
+
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
 All builtins will be rendered using their concrete Kore syntax.
@@ -51,7 +54,7 @@ externalize ::
 externalize = Recursive.futu externalize1
   where
     externalize1 ::
-        TermLike variable -> Syntax.FutuPattern variable (TermLike variable)
+        TermLike variable -> FutuPattern variable (TermLike variable)
     externalize1 termLike =
         -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
@@ -109,12 +112,12 @@ externalize = Recursive.futu externalize1
 externalizeAc ::
     UnitSymbol ->
     ConcatSymbol ->
-    [Syntax.FutuPattern variable (TermLike variable)] ->
-    [Syntax.FutuPattern variable (TermLike variable)] ->
+    [FutuPattern variable (TermLike variable)] ->
+    [FutuPattern variable (TermLike variable)] ->
     [TermLike variable] ->
     Either
         (TermLike variable)
-        (Syntax.FutuPattern variable (TermLike variable))
+        (FutuPattern variable (TermLike variable))
 externalizeAc
     (UnitSymbol unitSymbol)
     (ConcatSymbol concatSymbol) = worker
@@ -147,7 +150,7 @@ externalizeMap ::
     InternalMap Key (TermLike variable) ->
     Either
         (TermLike variable)
-        (Syntax.FutuPattern variable (TermLike variable))
+        (FutuPattern variable (TermLike variable))
 externalizeMap builtin =
     externalizeAc
         (UnitSymbol unitSymbol)
@@ -185,7 +188,7 @@ externalizeSet ::
     InternalSet Key (TermLike variable) ->
     Either
         (TermLike variable)
-        (Syntax.FutuPattern variable (TermLike variable))
+        (FutuPattern variable (TermLike variable))
 externalizeSet builtin =
     externalizeAc
         (UnitSymbol unitSymbol)
@@ -220,7 +223,7 @@ externalizeSet builtin =
 externalizeList ::
     InternalVariable variable =>
     InternalList (TermLike variable) ->
-    Syntax.FutuPattern variable (TermLike variable)
+    FutuPattern variable (TermLike variable)
 externalizeList builtin
     | Seq.null list = unit
     | otherwise = foldr1 concat' (element <$> list)
@@ -252,7 +255,7 @@ externalizeList builtin
 -}
 externalizeBool ::
     InternalBool ->
-    Syntax.FutuPattern variable (TermLike variable)
+    FutuPattern variable (TermLike variable)
 externalizeBool builtin =
     Attribute.Null
         :< Syntax.DomainValueF
@@ -279,7 +282,7 @@ externalizeBool builtin =
 -}
 externalizeString ::
     InternalString ->
-    Syntax.FutuPattern variable (TermLike variable)
+    FutuPattern variable (TermLike variable)
 externalizeString builtin =
     Attribute.Null
         :< Syntax.DomainValueF
@@ -303,7 +306,7 @@ See also: 'sort'.
 -}
 externalizeBytes ::
     InternalBytes ->
-    Syntax.FutuPattern variable (TermLike variable)
+    FutuPattern variable (TermLike variable)
 externalizeBytes builtin =
     Attribute.Null
         :< Syntax.DomainValueF
@@ -327,7 +330,7 @@ externalizeBytes builtin =
 -}
 externalizeInt ::
     InternalInt ->
-    Syntax.FutuPattern variable (TermLike variable)
+    FutuPattern variable (TermLike variable)
 externalizeInt builtin =
     Attribute.Null
         :< Syntax.DomainValueF

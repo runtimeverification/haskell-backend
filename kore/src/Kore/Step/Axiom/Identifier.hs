@@ -104,12 +104,7 @@ matchAxiomIdentifier = Recursive.fold matchWorker
   where
     matchWorker (_ :< termLikeF) =
         case termLikeF of
-            ApplyAliasF application ->
-                pure $
-                    Application $
-                        Syntax.symbolOrAliasConstructor $
-                            Alias.toSymbolOrAlias $
-                                Syntax.applicationSymbolOrAlias application
+            ApplyAliasF application -> mkAliasId application
             ApplySymbolF application -> mkAppId application
             CeilF ceil -> Ceil <$> Syntax.ceilChild ceil
             EqualsF equals ->
@@ -187,5 +182,7 @@ matchAxiomIdentifier = Recursive.fold matchWorker
     acToId _ _ _ [] [] [opaque] = opaque
     acToId _ _ concatSymbol _ _ _ = pure $ Application $ symbolToId concatSymbol
 
-    mkAppId = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
+    mkAppId   = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
+    mkAliasId = pure . Application . aliasToId  . Syntax.applicationSymbolOrAlias
     symbolToId = Syntax.symbolOrAliasConstructor . Symbol.toSymbolOrAlias
+    aliasToId  = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias
