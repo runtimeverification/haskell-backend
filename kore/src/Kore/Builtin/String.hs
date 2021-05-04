@@ -346,14 +346,11 @@ evalBase2String = Builtin.functionEvaluator evalBase2String0
     evalBase2String0 _ resultSort [_int, _base] = do
       _int <- Int.expectBuiltinInt base2StringKey _int
       _base <- Int.expectBuiltinInt base2StringKey _base
-      if 2 <= _base && _base <= 36
-        then do
-          let charRep = ("0123456789abcdefghijklmnopqrstuvwxyz" !!)
-              showWithBase = showSigned (showIntAtBase _base charRep) 0 -- TODO check precedence
-          Text.pack (showWithBase _int "")
-              & asPattern resultSort
-              & return
-        else return $ Pattern.bottomOf resultSort -- TODO check with Tom
+      return $ if 2 <= _base && _base <= 36
+        then let charRep = ("0123456789abcdefghijklmnopqrstuvwxyz" !!)
+                 showWithBase = showSigned (showIntAtBase _base charRep) 0
+             in asPattern resultSort $ Text.pack $ showWithBase _int ""
+        else Pattern.bottomOf resultSort
     evalBase2String0 _ _ _ = Builtin.wrongArity base2StringKey
 
 evalInt2String :: BuiltinAndAxiomSimplifier
