@@ -363,8 +363,9 @@ evalBase2String = Builtin.applicationEvaluator evalBase2String0
 showWithBase :: Integer -> Integer -> String
 showWithBase int base = showSigned (showIntAtBase base toChar) 0 int ""
   where
-    toChar digit | 0 <= digit && digit <= 9 = chr $ digit + 48  -- chr 48 == '0'
-                 | otherwise = chr $ digit + 87  -- chr 97 == 'a'
+    -- chr 48 == '0', chr 97 == 'a'
+    toChar digit | 0 <= digit && digit <= 9 = chr $ digit + 48
+                 | otherwise = chr $ digit + 87
 
 evalInt2String :: BuiltinAndAxiomSimplifier
 evalInt2String = Builtin.functionEvaluator evalInt2String0
