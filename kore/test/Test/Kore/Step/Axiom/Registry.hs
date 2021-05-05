@@ -142,12 +142,14 @@ testDef =
         , updateAttributes
             ( Attributes
                 [ Attribute.functionAttribute
+                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
             ( Attributes
                 [ Attribute.functionAttribute
+                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "g") (SortName "S"))
@@ -172,27 +174,13 @@ testDef =
                 , sentenceAxiomPattern =
                     Builtin.externalize $
                         mkImplies
-                            ( mkAnd
-                                (mkTop sortVarS)
-                                ( mkAnd
-                                    ( mkIn
-                                        sortVarS
-                                        ( mkElemVar $
-                                            mkElementVariable (testId "tVar") sortS
-                                        )
-                                        (mkApplySymbol tHead [])
-                                    )
-                                    (mkTop sortVarS)
-                                )
-                            )
+                            (mkTop sortVarS)
                             ( mkAnd
                                 ( mkEquals
                                     sortVarS
                                     ( mkApplySymbol
                                         (injHead sortS sortS)
-                                        [ mkElemVar $
-                                            mkElementVariable (testId "tVar") sortS
-                                        ]
+                                        [mkApplySymbol tHead []]
                                     )
                                     (mkApplySymbol sHead [])
                                 )
@@ -227,8 +215,8 @@ testDef =
                             ( mkAnd
                                 ( mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
                                     (mkTop sortS)
+                                    (mkApplySymbol fHead [])
                                 )
                                 (mkTop sortVarS)
                             )
@@ -525,7 +513,7 @@ test_functionRegistry =
                     Just PartitionedEquations{functionRules} ->
                         assertEqual
                             ""
-                            [1, 2, 3, defaultPriority, defaultPriority, owisePriority]
+                            [1, 2, 3, defaultPriority, owisePriority]
                             (fmap Equation.equationPriority functionRules)
                     _ -> assertFailure "Should find function rules for f"
               )
