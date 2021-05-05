@@ -307,10 +307,12 @@ replInterpreter0 printAux printKore replCmd = do
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> do
-            warnIfLowProductivity
+            ReplState { kFileLocations } <- get
+            warnIfLowProductivity kFileLocations
             liftIO exitSuccess
         FailStop -> do
-            warnIfLowProductivity
+            ReplState { kFileLocations } <- get
+            warnIfLowProductivity kFileLocations
             liftIO . exitWith $ ExitFailure 2
   where
     -- Extracts the Writer out of the RWST monad using the current state
