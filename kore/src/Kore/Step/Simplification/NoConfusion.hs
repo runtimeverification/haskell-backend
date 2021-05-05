@@ -7,6 +7,10 @@ License     : NCSA
 module Kore.Step.Simplification.NoConfusion
     ( equalInjectiveHeadsAndEquals
     , constructorAndEqualsAssumesDifferentHeads
+    , matchEqualInjectiveHeadsAndEquals
+    , matchConstructorAndEqualsAssumesDifferentHeads
+    , UnifyEqualInjectiveHeadsAndEquals (..)
+    , ConstructorAndEqualsAssumesDifferentHeads (..)
     ) where
 
 import Prelude.Kore hiding
@@ -16,7 +20,6 @@ import Prelude.Kore hiding
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 
 import Kore.Internal.Pattern
@@ -31,6 +34,30 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 
+data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals {
+    firstHead :: Symbol
+    , firstChildren :: [TermLike RewritingVariableName]
+    , secondChildren :: [TermLike RewritingVariableName]
+}
+
+matchEqualInjectiveHeadsAndEquals
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyEqualInjectiveHeadsAndEquals
+matchEqualInjectiveHeadsAndEquals first second
+    | App_ firstHead firstChildren <- first
+    , App_ secondHead secondChildren <- second
+    , Symbol.isInjective firstHead
+    , Symbol.isInjective secondHead
+    , firstHead == secondHead --is one of the above redundant in light of this?
+        = Just $
+            UnifyEqualInjectiveHeadsAndEquals
+            firstHead
+            firstChildren
+            secondChildren
+    | otherwise = Nothing
+{-# INLINE matchEqualInjectiveHeadsAndEquals #-}
+
 {- | Unify two application patterns with equal, injective heads.
 
 This includes constructors and sort injections.
@@ -44,19 +71,12 @@ equalInjectiveHeadsAndEquals
     => HasCallStack
     => TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> Symbol
-    -> [TermLike RewritingVariableName]
+    -> UnifyEqualInjectiveHeadsAndEquals
     -> MaybeT unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
-    firstHead
-    firstChildren
-    secondHead
-    secondChildren
-  | isFirstInjective && isSecondInjective && firstHead == secondHead =
-    lift $ do
+    unifyData
+    =  lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = foldMap Pattern.withoutTerm children
             -- TODO (thomas.tuegel): This is tricky!
@@ -67,10 +87,30 @@ equalInjectiveHeadsAndEquals
                 (markSimplified . mkApplySymbol firstHead)
                     (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
-  | otherwise = Error.nothing
+
   where
-    isFirstInjective = Symbol.isInjective firstHead
-    isSecondInjective = Symbol.isInjective secondHead
+    UnifyEqualInjectiveHeadsAndEquals
+        {   firstHead
+          , firstChildren
+          , secondChildren
+        } = unifyData
+
+data ConstructorAndEqualsAssumesDifferentHeads =
+     ConstructorAndEqualsAssumesDifferentHeads {
+         firstHead, secondHead :: Symbol
+     }
+
+matchConstructorAndEqualsAssumesDifferentHeads
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe ConstructorAndEqualsAssumesDifferentHeads
+matchConstructorAndEqualsAssumesDifferentHeads
+    first second
+    | App_ firstHead _ <- first
+    , App_ secondHead _ <- second
+        = Just $ ConstructorAndEqualsAssumesDifferentHeads firstHead secondHead
+    | otherwise = Nothing
+{-# INLINE matchConstructorAndEqualsAssumesDifferentHeads #-}
 
 {-| Unify two constructor application patterns.
 
@@ -83,14 +123,12 @@ constructorAndEqualsAssumesDifferentHeads
     => HasCallStack
     => TermLike RewritingVariableName
     -> TermLike RewritingVariableName
-    -> Symbol
-    -> Symbol
+    -> ConstructorAndEqualsAssumesDifferentHeads
     -> MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
     first
     second
-    firstHead
-    secondHead
+    unifyData
   = do
     Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
     Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
@@ -101,3 +139,7 @@ constructorAndEqualsAssumesDifferentHeads
             first
             second
         empty
+
+  where
+    ConstructorAndEqualsAssumesDifferentHeads
+        { firstHead, secondHead } = unifyData

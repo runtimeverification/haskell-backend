@@ -36,7 +36,6 @@ import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     )
 import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Simplification.Unify as Unify
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
@@ -219,11 +218,18 @@ runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
     . evalEnvUnifierT Not.notSimplifier
     . runMaybeT
-    $ case Unify.matchUnifyKequalsEq term1 term2 of
-        Just (Unify.UnifyKequalsEq (Unify.UnifyKequalsEqArgs eqTerm term)) ->
+    $ case KEqual.matchUnifyKequalsEq term1 of
+        Just eqTerm ->
             KEqual.unifyKequalsEq
                 (termUnification Not.notSimplifier)
                 Not.notSimplifier
+                term2
                 eqTerm
-                term
-        _ -> empty
+        _ -> case KEqual.matchUnifyKequalsEq term2 of
+            Just eqTerm ->
+                KEqual.unifyKequalsEq
+                (termUnification Not.notSimplifier)
+                Not.notSimplifier
+                term1
+                eqTerm
+            _ -> empty

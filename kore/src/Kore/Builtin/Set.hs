@@ -30,10 +30,9 @@ module Kore.Builtin.Set
     , evalElement
     , evalUnit
     , evalDifference
+    , matchUnifyEqualsSet
       -- * Unification
-    , unifyEquals1
-    , unifyEquals2
-    , unifyEquals3
+    , unifyEquals
     ) where
 
 import Prelude.Kore
@@ -44,6 +43,7 @@ import Control.Error
     )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
+import qualified Data.List as List
 import Data.Map.Strict
     ( Map
     )
@@ -109,6 +109,7 @@ import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
     )
 import Kore.Unification.Unify
     ( MonadUnify
+    , explainAndReturnBottom
     )
 
 {- | Builtin name of the @Set@ sort.
@@ -507,138 +508,222 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
-unifyEquals1
+data UnifySetEqualsArgs = UnifySetEqualsArgs {
+    preElts1, preElts2 :: [Element NormalizedSet (TermLike RewritingVariableName)]
+    , concreteElts1, concreteElts2 :: Map.Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    , opaque1, opaque2 :: [TermLike RewritingVariableName]
+}
+
+data UnifySetEqualsVarArgs = UnifySetEqualsVarArgs {
+    preElts1, preElts2 :: [Element NormalizedSet (TermLike RewritingVariableName)]
+    , concreteElts1, concreteElts2 :: Map.Map Key (Value NormalizedSet (TermLike RewritingVariableName))
+    , opaque1, opaque2 :: [TermLike RewritingVariableName]
+    , var :: TermLike.ElementVariable RewritingVariableName
+}
+
+data UnifyEqualsSet
+    = UnifyEqualsSet1 !UnifySetEqualsArgs
+    | UnifyEqualsSet2 !UnifySetEqualsVarArgs
+    | UnifyEqualsSet3 !UnifySetEqualsVarArgs
+    | UnifySetBottom
+
+unifySetEqualsMatch ::
+    Ac.TermNormalizedAc NormalizedSet RewritingVariableName ->
+    Ac.TermNormalizedAc NormalizedSet RewritingVariableName ->
+    Maybe UnifyEqualsSet
+unifySetEqualsMatch
+    norm1
+    norm2 = case (opaqueDifference1, opaqueDifference2) of
+        ([],[]) -> Just $ UnifyEqualsSet1 $ UnifySetEqualsArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2
+        ([TermLike.ElemVar_ v1], _) -> Just $ UnifyEqualsSet2 $ UnifySetEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2 v1
+        (_, [TermLike.ElemVar_ v2]) -> Just $ UnifyEqualsSet3 $ UnifySetEqualsVarArgs preElementsWithVariables1 preElementsWithVariables2 concreteElements1 concreteElements2 opaque1 opaque2 v2
+        _ -> Nothing
+
+      where
+        listToMap :: Ord a => [a] -> Map.Map a Int
+        listToMap = List.foldl' (\m k -> Map.insertWith (+) k 1 m) Map.empty
+        mapToList :: Map.Map a Int -> [a]
+        mapToList =
+            Map.foldrWithKey
+                (\key count' result -> List.replicate count' key ++ result)
+                []
+
+        NormalizedAc
+            { elementsWithVariables = preElementsWithVariables1
+            , concreteElements = concreteElements1
+            , opaque = opaque1
+            } =
+                unwrapAc norm1
+        NormalizedAc
+            { elementsWithVariables = preElementsWithVariables2
+            , concreteElements = concreteElements2
+            , opaque = opaque2
+            } =
+                unwrapAc norm2
+
+        --opaque1Map :: M.Map (TermLike RewritingVariableName) Int
+        opaque1Map = listToMap opaque1
+        opaque2Map = listToMap opaque2
+
+        -- Duplicates must be kept in case any of the opaque terms turns out to be
+        -- non-empty, in which case one of the terms is bottom, which
+        -- means that the unification result is bottom.
+        commonOpaqueMap = Map.intersectionWith max opaque1Map opaque2Map
+
+        commonOpaqueKeys = Map.keysSet commonOpaqueMap
+
+        opaqueDifference1 =
+            mapToList (Map.withoutKeys opaque1Map commonOpaqueKeys)
+        opaqueDifference2 =
+            mapToList (Map.withoutKeys opaque2Map commonOpaqueKeys)
+
+matchUnifyEqualsSet
+    :: SmtMetadataTools Attribute.Symbol
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyEqualsSet
+matchUnifyEqualsSet tools first second
+    | Just True <- isSetSort tools sort1
+    = case unifyEquals0 first second of
+        Just (norm1, norm2) ->
+            let InternalAc{builtinAcChild = firstNormalized} =
+                    norm1 in
+            let InternalAc{builtinAcChild = secondNormalized} =
+                    norm2 in
+            unifySetEqualsMatch firstNormalized secondNormalized
+        Nothing -> return UnifySetBottom
+    | otherwise = Nothing
+
+      where
+
+        unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2)
+          = return (normalized1, normalized2)
+        unifyEquals0 first' second'
+          = do
+              firstDomain <- asDomain first'
+              secondDomain <- asDomain second'
+              unifyEquals0 firstDomain secondDomain
+
+        sort1 = termLikeSort first
+
+        asDomain ::
+            TermLike RewritingVariableName ->
+            Maybe (TermLike RewritingVariableName)
+        asDomain patt =
+            case normalizedOrBottom of
+                Ac.Normalized normalized -> Just $
+                    --tools <- Simplifier.askMetadataTools
+                    Ac.asInternal tools sort1 normalized
+                Ac.Bottom -> Nothing
+
+          where
+            normalizedOrBottom ::
+                Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
+            normalizedOrBottom = Ac.toNormalized patt
+
+unifyEquals
     :: forall unifier
-    .  MonadUnify unifier
+     . MonadUnify unifier
     => SmtMetadataTools Attribute.Symbol
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
     -> ( TermLike RewritingVariableName ->
          TermLike RewritingVariableName ->
          unifier (Pattern RewritingVariableName)
        )
-    -> [Element NormalizedSet (TermLike RewritingVariableName)]
-    -> [Element NormalizedSet (TermLike RewritingVariableName)]
-    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
-    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
-    -> [TermLike RewritingVariableName]
-    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> UnifyEqualsSet
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals1 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 =
-    Ac.unifyEqualsNormalized tools first second $
-            Ac.unifyEqualsNormalizedAc
-                first
-                second
-                childTransformers
-                preElt1
-                preElt2
-                concreteElt1
-                concreteElt2
-                opaque1
-                opaque2 $ lift $
-                    Ac.unifyEqualsElementLists
-                        tools
+unifyEquals tools childTransformers first second unifyData
+    = case unifyData of
+        UnifyEqualsSet1 unifyData' ->
+            Ac.unifyEqualsNormalized tools first second $
+                    Ac.unifyEqualsNormalizedAc
                         first
                         second
                         childTransformers
-                        (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
-                        (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
-                        Nothing
+                        preElts1
+                        preElts2
+                        concreteElts1
+                        concreteElts2
+                        opaque1
+                        opaque2 $ lift $
+                            Ac.unifyEqualsElementLists
+                                tools
+                                first
+                                second
+                                childTransformers
+                                (Ac.allElements1 preElts1 preElts2 concreteElts1 concreteElts2)
+                                (Ac.allElements2 preElts1 preElts2 concreteElts1 concreteElts2)
+                                Nothing
+          where
+            UnifySetEqualsArgs { preElts1, preElts2, concreteElts1, concreteElts2, opaque1, opaque2 } = unifyData'
 
-unifyEquals2
-    :: forall unifier
-    .  MonadUnify unifier
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> ( TermLike RewritingVariableName ->
-         TermLike RewritingVariableName ->
-         unifier (Pattern RewritingVariableName)
-       )
-    -> [Element NormalizedSet (TermLike RewritingVariableName)]
-    -> [Element NormalizedSet (TermLike RewritingVariableName)]
-    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
-    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
-    -> [TermLike RewritingVariableName]
-    -> [TermLike RewritingVariableName]
-    -> TermLike.ElementVariable RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals2 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var =
-    Ac.unifyEqualsNormalized tools first second $
-            Ac.unifyEqualsNormalizedAc
-                first
-                second
-                childTransformers
-                preElt1
-                preElt2
-                concreteElt1
-                concreteElt2
-                opaque1
-                opaque2 $
-                    if null $ Ac.opaqueDifference2 opaque1 opaque2 then
-                        lift $ Ac.unifyEqualsElementLists
-                            tools
-                            first
-                            second
-                            childTransformers
-                            (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
-                            (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
-                            (Just var)
-                    else if null $ Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2 then
-                        Ac.unifyOpaqueVariable
-                            tools
-                            undefined
-                            childTransformers
-                            var
-                            (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
-                            (Ac.opaqueDifference2 opaque1 opaque2)
-                    else empty
+        UnifyEqualsSet2 unifyData' ->
+            Ac.unifyEqualsNormalized tools first second $
+                    Ac.unifyEqualsNormalizedAc
+                        first
+                        second
+                        childTransformers
+                        preElts1
+                        preElts2
+                        concreteElts1
+                        concreteElts2
+                        opaque1
+                        opaque2 $
+                            if null $ Ac.opaqueDifference2 opaque1 opaque2 then
+                                lift $ Ac.unifyEqualsElementLists
+                                    tools
+                                    first
+                                    second
+                                    childTransformers
+                                    (Ac.allElements1 preElts1 preElts2 concreteElts1 concreteElts2)
+                                    (Ac.allElements2 preElts1 preElts2 concreteElts1 concreteElts2)
+                                    (Just var)
+                            else if null $ Ac.allElements1 preElts1 preElts2 concreteElts1 concreteElts2 then
+                                Ac.unifyOpaqueVariable
+                                    tools
+                                    undefined
+                                    childTransformers
+                                    var
+                                    (Ac.allElements2 preElts1 preElts2 concreteElts1 concreteElts2)
+                                    (Ac.opaqueDifference2 opaque1 opaque2)
+                            else empty
+          where
+            UnifySetEqualsVarArgs { preElts1, preElts2, concreteElts1, concreteElts2, opaque1, opaque2, var } = unifyData'
 
-unifyEquals3
-    :: forall unifier
-    .  MonadUnify unifier
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> ( TermLike RewritingVariableName ->
-         TermLike RewritingVariableName ->
-         unifier (Pattern RewritingVariableName)
-       )
-    -> [Element NormalizedSet (TermLike RewritingVariableName)]
-    -> [Element NormalizedSet (TermLike RewritingVariableName)]
-    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
-    -> Map Key (Value NormalizedSet (TermLike RewritingVariableName))
-    -> [TermLike RewritingVariableName]
-    -> [TermLike RewritingVariableName]
-    -> TermLike.ElementVariable RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals3 tools first second childTransformers preElt1 preElt2 concreteElt1 concreteElt2 opaque1 opaque2 var =
-    Ac.unifyEqualsNormalized tools first second $
-            Ac.unifyEqualsNormalizedAc
-                first
-                second
-                childTransformers
-                preElt1
-                preElt2
-                concreteElt1
-                concreteElt2
-                opaque1
-                opaque2 $
-                    if null $ Ac.opaqueDifference1 opaque1 opaque2 then
-                        lift $ Ac.unifyEqualsElementLists
-                            tools
-                            first
-                            second
-                            childTransformers
-                            (Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2)
-                            (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
-                            (Just var)
-                    else if null $ Ac.allElements2 preElt1 preElt2 concreteElt1 concreteElt2 then
-                        Ac.unifyOpaqueVariable
-                            tools
-                            undefined
-                            childTransformers
-                            var
-                            (Ac.allElements1 preElt1 preElt2 concreteElt1 concreteElt2)
-                            (Ac.opaqueDifference1 opaque1 opaque2)
-                    else empty
+        UnifyEqualsSet3 unifyData' ->
+            Ac.unifyEqualsNormalized tools first second $
+                    Ac.unifyEqualsNormalizedAc
+                        first
+                        second
+                        childTransformers
+                        preElts1
+                        preElts2
+                        concreteElts1
+                        concreteElts2
+                        opaque1
+                        opaque2 $
+                            if null $ Ac.opaqueDifference1 opaque1 opaque2 then
+                                lift $ Ac.unifyEqualsElementLists
+                                    tools
+                                    first
+                                    second
+                                    childTransformers
+                                    (Ac.allElements2 preElts1 preElts2 concreteElts1 concreteElts2)
+                                    (Ac.allElements1 preElts1 preElts2 concreteElts1 concreteElts2)
+                                    (Just var)
+                            else if null $ Ac.allElements2 preElts1 preElts2 concreteElts1 concreteElts2 then
+                                Ac.unifyOpaqueVariable
+                                    tools
+                                    undefined
+                                    childTransformers
+                                    var
+                                    (Ac.allElements1 preElts1 preElts2 concreteElts1 concreteElts2)
+                                    (Ac.opaqueDifference1 opaque1 opaque2)
+                            else empty
+          where
+            UnifySetEqualsVarArgs { preElts1, preElts2, concreteElts1, concreteElts2, opaque1, opaque2, var } = unifyData'
+
+        UnifySetBottom ->
+            lift $ explainAndReturnBottom
+            "Duplicated elements in normalization." first second

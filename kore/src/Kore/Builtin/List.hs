@@ -28,16 +28,13 @@ module Kore.Builtin.List
     , asTermLike
     , internalize
     , normalize
+    , matchUnifyEqualsList
       -- * Symbols
     , lookupSymbolGet
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
-    , unify1
-    , unify2
-    , unify3
-    , unify4
-    , unify5
+    , unifyEquals
       -- * keys
     , concatKey
     , elementKey
@@ -96,10 +93,12 @@ import Kore.Internal.TermLike
     , Sort
     , TermLike
     , pattern Var_
+    , pattern ElemVar_
     , mkApplySymbol
     , mkInternalList
     , mkSort
     , retractKey
+    , isFunctionPattern
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( Symbol (..)
@@ -377,80 +376,56 @@ builtinFunctions =
     reject the definition.
  -}
 
-unify1
-    :: MonadUnify unifier
-    => (   TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> unifier (Pattern RewritingVariableName)
-       )
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unify1 simplifyChild first second
-  = lift $ simplifyChild first second
+data UnifyEqualsList3Data = UnifyEqualsList3Data {
+    symbol :: Symbol
+    , args1, args2 :: [TermLike RewritingVariableName]
+}
 
-unify2
-    :: MonadUnify unifier
-    => (   TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> unifier (Pattern RewritingVariableName)
-       )
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unify2 = unify1
+data UnifyEqualsList4Data = UnifyEqualsList4Data {
+    builtin1, builtin2 :: InternalList (TermLike RewritingVariableName)
+}
 
-unify3
-    :: MonadUnify unifier
-    => (   TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> unifier (Pattern RewritingVariableName)
-       )
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> [TermLike RewritingVariableName]
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unify3 simplifyChild first second symbol2 args1 args2
-  = lift $ case (args1, args2) of
-            (     [ InternalList_ builtin1, x1@(Var_ _) ]
-                , [ InternalList_ builtin2, x2@(Var_ _) ] ) ->
-                    unifyEqualsFramedRightRight
-                        simplifyChild
-                        first second
-                        symbol2
-                        builtin1
-                        x1
-                        builtin2
-                        x2
-            (     [ x1@(Var_ _), InternalList_ builtin1]
-                , [ x2@(Var_ _), InternalList_ builtin2] ) ->
-                    unifyEqualsFramedLeftLeft
-                        simplifyChild
-                        first second
-                        symbol2
-                        x1
-                        builtin1
-                        x2
-                        builtin2
-            _ -> empty
+data UnifyEqualsList5Data = UnifyEqualsList5Data {
+    builtin :: InternalList (TermLike RewritingVariableName)
+    , args :: [TermLike RewritingVariableName]
+}
 
-unify4
-    :: MonadUnify unifier
-    => (   TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> unifier (Pattern RewritingVariableName)
-       )
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> InternalList (TermLike RewritingVariableName)
-    -> InternalList (TermLike RewritingVariableName)
-    -> MaybeT unifier (Pattern RewritingVariableName)
-unify4 simplifyChildren first second builtin1 builtin2
-  = lift $ unifyEqualsConcrete simplifyChildren first second builtin1 builtin2
+data UnifyEqualsList
+    = UnifyEqualsList1
+    | UnifyEqualsList2
+    | UnifyEqualsList3 !UnifyEqualsList3Data
+    | UnifyEqualsList4 !UnifyEqualsList4Data
+    | UnifyEqualsList5 !UnifyEqualsList5Data
 
-unify5
+matchUnifyEqualsList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyEqualsList 
+matchUnifyEqualsList first second
+    | ElemVar_ _ <- first
+    = if isFunctionPattern second then Just UnifyEqualsList1 else Nothing
+    | ElemVar_ _ <- second
+    = if isFunctionPattern first then Just UnifyEqualsList2 else Nothing
+    | App_ symbol1 args1 <- first
+    , App_ symbol2 args2 <- second
+    , isSymbolConcat symbol1
+    , isSymbolConcat symbol2
+    = Just $ UnifyEqualsList3 $ UnifyEqualsList3Data symbol2 args1 args2
+    | InternalList_ builtIn1 <- first
+    , InternalList_ builtIn2 <- second
+    = Just $ UnifyEqualsList4 $ UnifyEqualsList4Data builtIn1 builtIn2
+    | InternalList_ builtIn1 <- first
+    , App_ symbol2 args2 <- second
+    , isSymbolConcat symbol2 --
+    = Just $ UnifyEqualsList5 $ UnifyEqualsList5Data builtIn1 args2
+    | InternalList_ _ <- first
+    = Nothing
+    | InternalList_ _ <- second
+    = matchUnifyEqualsList second first
+    | otherwise
+    = Nothing
+
+unifyEquals
     :: MonadUnify unifier
     => SimplificationType
     -> (   TermLike RewritingVariableName
@@ -459,21 +434,155 @@ unify5
        )
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
-    -> [TermLike RewritingVariableName]
-    -> InternalList (TermLike RewritingVariableName)
+    -> UnifyEqualsList
     -> MaybeT unifier (Pattern RewritingVariableName)
-unify5 simplificationType simplifyChildren first second args2 builtin1
-  = lift $ case args2 of
-                    [ InternalList_ builtin2, x@(Var_ _) ] ->
-                        unifyEqualsFramedRight simplifyChildren first second builtin1 builtin2 x
-                    [ x@(Var_ _), InternalList_ builtin2 ] ->
-                        unifyEqualsFramedLeft simplifyChildren first second builtin1 x builtin2
+unifyEquals simplificationType simplifyChildren first second unifyData
+    = case unifyData of
+        UnifyEqualsList1 ->
+            lift $ simplifyChildren first second
+        UnifyEqualsList2 ->
+            lift $ simplifyChildren first second
+        UnifyEqualsList3 unifyData' ->
+            lift $ case (args1, args2) of
+            (     [ InternalList_ builtin1, x1@(Var_ _) ]
+                , [ InternalList_ builtin2, x2@(Var_ _) ] ) ->
+                    unifyEqualsFramedRightRight
+                        simplifyChildren
+                        first second
+                        symbol
+                        builtin1
+                        x1
+                        builtin2
+                        x2
+            (     [ x1@(Var_ _), InternalList_ builtin1]
+                , [ x2@(Var_ _), InternalList_ builtin2] ) ->
+                    unifyEqualsFramedLeftLeft
+                        simplifyChildren
+                        first second
+                        symbol
+                        x1
+                        builtin1
+                        x2
+                        builtin2
+            _ -> empty
+          where
+            UnifyEqualsList3Data { symbol, args1, args2 } = unifyData'
+        UnifyEqualsList4 unifyData' ->
+            lift $ unifyEqualsConcrete simplifyChildren first second builtin1 builtin2
+          where
+            UnifyEqualsList4Data { builtin1, builtin2 } = unifyData'
+        UnifyEqualsList5 unifyData' ->
+            lift $ case args of
+                    [ InternalList_ builtin', x@(Var_ _) ] ->
+                        unifyEqualsFramedRight simplifyChildren first second builtin builtin' x
+                    [ x@(Var_ _), InternalList_ builtin' ] ->
+                        unifyEqualsFramedLeft simplifyChildren first second builtin x builtin'
                     [ _, _ ] ->
                         Builtin.unifyEqualsUnsolved
                             simplificationType
                             first
                             second
                     _ -> Builtin.wrongArity concatKey
+          where
+            UnifyEqualsList5Data { builtin, args } = unifyData'
+
+-- unify1
+--     :: MonadUnify unifier
+--     => (   TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--        )
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unify1 simplifyChild first second
+--   = lift $ simplifyChild first second
+
+-- unify2
+--     :: MonadUnify unifier
+--     => (   TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--        )
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unify2 = unify1
+
+-- unify3
+--     :: MonadUnify unifier
+--     => (   TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--        )
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> Symbol
+--     -> [TermLike RewritingVariableName]
+--     -> [TermLike RewritingVariableName]
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unify3 simplifyChild first second symbol2 args1 args2
+--   = lift $ case (args1, args2) of
+--             (     [ InternalList_ builtin1, x1@(Var_ _) ]
+--                 , [ InternalList_ builtin2, x2@(Var_ _) ] ) ->
+--                     unifyEqualsFramedRightRight
+--                         simplifyChild
+--                         first second
+--                         symbol2
+--                         builtin1
+--                         x1
+--                         builtin2
+--                         x2
+--             (     [ x1@(Var_ _), InternalList_ builtin1]
+--                 , [ x2@(Var_ _), InternalList_ builtin2] ) ->
+--                     unifyEqualsFramedLeftLeft
+--                         simplifyChild
+--                         first second
+--                         symbol2
+--                         x1
+--                         builtin1
+--                         x2
+--                         builtin2
+--             _ -> empty
+
+-- unify4
+--     :: MonadUnify unifier
+--     => (   TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--        )
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> InternalList (TermLike RewritingVariableName)
+--     -> InternalList (TermLike RewritingVariableName)
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unify4 simplifyChildren first second builtin1 builtin2
+--   = lift $ unifyEqualsConcrete simplifyChildren first second builtin1 builtin2
+
+-- unify5
+--     :: MonadUnify unifier
+--     => SimplificationType
+--     -> (   TermLike RewritingVariableName
+--         -> TermLike RewritingVariableName
+--         -> unifier (Pattern RewritingVariableName)
+--        )
+--     -> TermLike RewritingVariableName
+--     -> TermLike RewritingVariableName
+--     -> [TermLike RewritingVariableName]
+--     -> InternalList (TermLike RewritingVariableName)
+--     -> MaybeT unifier (Pattern RewritingVariableName)
+-- unify5 simplificationType simplifyChildren first second args2 builtin1
+--   = lift $ case args2 of
+--                     [ InternalList_ builtin2, x@(Var_ _) ] ->
+--                         unifyEqualsFramedRight simplifyChildren first second builtin1 builtin2 x
+--                     [ x@(Var_ _), InternalList_ builtin2 ] ->
+--                         unifyEqualsFramedLeft simplifyChildren first second builtin1 x builtin2
+--                     [ _, _ ] ->
+--                         Builtin.unifyEqualsUnsolved
+--                             simplificationType
+--                             first
+--                             second
+--                     _ -> Builtin.wrongArity concatKey
 
 unifyEqualsFramedLeftLeft
   :: MonadUnify unifier

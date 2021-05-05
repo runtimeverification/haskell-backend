@@ -28,9 +28,11 @@ module Kore.Builtin.String
     , asTermLike
     , asPartialPattern
     , parse
+    , matchString
     , unifyString
     , unifyStringEq
     , matchStringEqual
+    , matchUnifyStringEq
       -- * keys
     , ltKey
     , plusKey
@@ -415,26 +417,52 @@ matchStringEqual =
             Monad.guard (hook2 == eqKey)
         & isJust
 
+data UnifyString = UnifyString {
+    string1, string2 :: InternalString
+}
+
+matchString
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyString
+matchString first second
+    | InternalString_ string1 <- first
+    , InternalString_ string2 <- second
+        = Just $ UnifyString string1 string2
+    | otherwise = Nothing
+{-# INLINE matchString #-}
+
 {- | Unification of String values.
  -}
 unifyString
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
+    :: forall unifier
+     . MonadUnify unifier
     => HasCallStack
-    => InternalString
-    -> InternalString
-    -> MaybeT unifier (Pattern variable)
-unifyString int1 int2 =
-    assert (on (==) internalStringSort int1 int2) $ lift worker
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> UnifyString
+    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyString term1 term2 unifyData =
+    assert (on (==) internalStringSort string1 string2) $ lift worker
   where
-    worker :: unifier (Pattern variable)
+    worker :: unifier (Pattern RewritingVariableName)
     worker
-      | on (==) internalStringValue int1 int2 =
+      | on (==) internalStringValue string1 string2 =
         return $ Pattern.fromTermLike term1
       | otherwise = explainAndReturnBottom "distinct strings" term1 term2
-    term1 = mkInternalString int1
-    term2 = mkInternalString int2
+    
+    UnifyString { string1, string2 } = unifyData
+
+matchUnifyStringEq
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe (EqTerm (TermLike RewritingVariableName))
+matchUnifyStringEq first second
+    | Just eqTerm <- matchStringEqual second
+    , isFunctionPattern first
+    = Just eqTerm
+    | otherwise = Nothing
+
 {- | Unification of the @STRING.eq@ symbol
 
 This function is suitable only for equality simplification.
@@ -446,13 +474,7 @@ unifyStringEq
     => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
     -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+    -> EqTerm (TermLike RewritingVariableName)
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyStringEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
-  where
-    worker termLike1 termLike2
-      | Just eqTerm <- matchStringEqual termLike1
-      , isFunctionPattern termLike1
-      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-      | otherwise = empty
+unifyStringEq unifyChildren notSimplifier term eqTerm
+    = unifyEqTerm unifyChildren notSimplifier eqTerm term

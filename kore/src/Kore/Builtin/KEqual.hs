@@ -23,6 +23,7 @@ module Kore.Builtin.KEqual
     , unifyIfThenElse
     , matchKequalEq
     , matchIfThenElse
+    , matchUnifyKequalsEq
     , IfThenElse (..)
       -- * keys
     , eqKey
@@ -220,16 +221,25 @@ matchKequalEq =
             Monad.guard (hook2 == eqKey)
         & isJust
 
+matchUnifyKequalsEq
+    :: TermLike RewritingVariableName
+    -> Maybe (EqTerm (TermLike RewritingVariableName))
+matchUnifyKequalsEq first
+    | Just eqTerm <- matchKequalEq first
+    , isFunctionPattern first
+    = Just eqTerm
+    | otherwise = Nothing
+
 unifyKequalsEq
     :: forall unifier
     .  MonadUnify unifier
     => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> EqTerm (TermLike RewritingVariableName)
     -> TermLike RewritingVariableName
+    -> EqTerm (TermLike RewritingVariableName)
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren notSimplifier eqTerm termLike2
-    = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
+unifyKequalsEq unifyChildren notSimplifier term eqTerm
+    = unifyEqTerm unifyChildren notSimplifier eqTerm term
     --TODO: remove
 
 {- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.

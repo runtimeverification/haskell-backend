@@ -31,9 +31,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Builtin.Bool.Bool as Bool.Bool
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.InternalBool
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
@@ -52,7 +50,6 @@ import Kore.Step.Simplification.Data
     , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Unify
 import Kore.Unification.UnifierT
     ( UnifierT
     , runUnifierT
@@ -147,28 +144,31 @@ test_unifyBoolValues =
         (term1, value1) <- literals
         (term2, value2) <- literals
         let result
-              | value1 == value2 = [Just (Pattern.fromTermLike $ mkInternalBool term1)]
+              | value1 == value2 = [Just (Pattern.fromTermLike term1)]
               | otherwise        = []
         [test "" term1 term2 result]
     ]
   where
-    literals = [(internalTrue, True), (internalFalse, False)]
+    literals = [(_True, True), (_False, False)]
 
     test
         :: HasCallStack
         => TestName
-        -> InternalBool
-        -> InternalBool
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> [Maybe (Pattern RewritingVariableName)]
         -> TestTree
-    test testName bool1 bool2 expected =
+    test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify bool1 bool2
-            assertEqual "" expected actual
+            case Bool.matchBools term1 term2 of
+                Just unifyData -> do
+                    actual <- unify term1 term2 unifyData
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify bool1 bool2 =
-        run (Bool.unifyBool bool1 bool2)
-
+    unify term1 term2 unifyData =
+        run (Bool.unifyBool term1 term2 unifyData)
+ 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
     [
@@ -197,18 +197,18 @@ test_unifyBoolAnd =
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            case matchUnifyBoolAnd1 term1 term2 of
-                Just (UnifyBoolAnd op1 op2) -> do
-                    actual <- unify term1 term2 op1 op2
+            case Bool.matchUnifyBoolAnd term1 term2 of
+                Just boolAnd -> do
+                    actual <- unify term1 boolAnd
                     assertEqual "" expected actual
-                _ -> case matchUnifyBoolAnd2 term1 term2 of
-                    Just (UnifyBoolAnd op1 op2) -> do
-                        actual <- unify term2 term1 op1 op2
+                _ -> case Bool.matchUnifyBoolAnd term2 term1 of
+                    Just boolAnd -> do
+                        actual <- unify term2 boolAnd
                         assertEqual "" expected actual
                     _ -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 op1 op2 =
-        run (Bool.unifyBoolAnd termSimplifier term1 term2 op1 op2)
+    unify term boolAnd =
+        run (Bool.unifyBoolAnd termSimplifier term boolAnd)
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -237,18 +237,18 @@ test_unifyBoolOr =
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            case matchUnifyBoolOr1 term1 term2 of
-                Just (UnifyBoolOr (UnifyBoolOrArgs term op1 op2)) -> do
-                    actual <- unify term op1 op2
+            case Bool.matchUnifyBoolOr term1 term2 of
+                Just boolOr -> do
+                    actual <- unify term1 boolOr
                     assertEqual "" expected actual
-                _ -> case matchUnifyBoolOr2 term1 term2 of
-                    Just (UnifyBoolOr (UnifyBoolOrArgs term op1 op2)) -> do
-                        actual <- unify term op1 op2
+                _ -> case Bool.matchUnifyBoolOr term2 term1 of
+                    Just boolOr -> do
+                        actual <- unify term2 boolOr
                         assertEqual "" expected actual
                     _ -> assertEqual "" expected [Nothing]
 
-    unify term op1 op2 =
-        run (Bool.unifyBoolOr termSimplifier term op1 op2)
+    unify term boolOr =
+        run (Bool.unifyBoolOr termSimplifier term boolOr)
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =
@@ -278,10 +278,6 @@ termSimplifier = \term1 term2 ->
 _True, _False :: TermLike RewritingVariableName
 _True = asInternal True
 _False = asInternal False
-
-internalTrue, internalFalse :: InternalBool
-internalTrue  = Bool.Bool.asBuiltin boolSort True
-internalFalse = Bool.Bool.asBuiltin boolSort False
 
 x, y :: SomeVariable RewritingVariableName
 x = inject (configElementVariableFromId "x" boolSort)

@@ -7,19 +7,22 @@ License     : NCSA
 
 module Kore.Step.Simplification.Overloading
     ( matchOverloading
+    , matchOverloadedConstructorSortInjectionAndEquals
+    , getUnifyResult
     -- for testing purposes
     , unifyOverloading
-    , unifyOverloading1
-    , unifyOverloading2
-    , unifyOverloading3
-    , unifyOverloading4
-    , unifyOverloading5
-    , unifyOverloading6
+    -- , unifyOverloading1
+    -- , unifyOverloading2
+    -- , unifyOverloading3
+    -- , unifyOverloading4
+    -- , unifyOverloading5
+    -- , unifyOverloading6
     , UnifyOverloadingResult
     , MatchOverloadingResult
     , UnifyOverloadingError (..)
     , Narrowing (..)
     , OverloadingResolution (..)
+    , OverloadedConstructorSortInjectionAndEquals (..)
     ) where
 
 import Prelude.Kore hiding
@@ -156,129 +159,150 @@ matchOverloading termPair
 
 flipPairBack :: Pair a -> Pair a
 flipPairBack (Pair x y) = Pair y x
+data UnifyOverload1 = UnifyOverload1 {
+    firstHead, secondHead :: Symbol
+    , firstChildren :: [TermLike RewritingVariableName]
+    , inj :: Inj (TermLike RewritingVariableName)
+}
 
-unifyOverloading1
-    :: forall unifier
-     . MonadSimplify unifier
-    => Symbol
-    -> [TermLike RewritingVariableName]
-    -> Symbol
+data UnifyOverload2 = UnifyOverload2 {
+    firstHead, secondHead :: Symbol
+    , secondChildren :: [TermLike RewritingVariableName]
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+data UnifyOverload3 = UnifyOverload3 {
+    firstHead, secondHead :: Symbol
+    , firstChildren, secondChildren :: [TermLike RewritingVariableName]
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+data UnifyOverload4 = UnifyOverload4 {
+    firstHead :: Symbol
+    , secondVar :: ElementVariable RewritingVariableName
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+data UnifyOverload5 = UnifyOverload5 {
+    firstHead :: Symbol
+    , firstChildren :: [TermLike RewritingVariableName]
+    , secondVar :: ElementVariable RewritingVariableName
+    , inj :: Inj (TermLike RewritingVariableName)
+}
+
+data UnifyOverload6 = UnifyOverload6 {
+    firstHead :: Symbol
+    , injChild :: TermLike RewritingVariableName
+}
+
+data OverloadedConstructorSortInjectionAndEquals =
+      Overload1 UnifyOverload1
+    | Overload2 UnifyOverload2
+    | Overload3 UnifyOverload3
+    | Overload4 UnifyOverload4
+    | Overload5 UnifyOverload5
+    | Overload6 UnifyOverload6
+
+matchOverloadedConstructorSortInjectionAndEquals
+    :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
-    -> Inj (TermLike RewritingVariableName)
-    -> UnifyOverloadingResult unifier RewritingVariableName
-unifyOverloading1
-    firstHead
-    firstChildren
-    secondHead
-    secondTerm
-    inj
-    = Simple . flipPairBack <$> unifyOverloadingVsOverloaded
-            secondHead
-            secondTerm
-            (Application firstHead firstChildren)
-            inj { injChild = () }
+    -> Maybe OverloadedConstructorSortInjectionAndEquals
+matchOverloadedConstructorSortInjectionAndEquals
+    first second
+    | Inj_ inj@Inj { injChild = App_ firstHead firstChildren } <- first
+    , App_ secondHead _ <- second
+    = Just $ Overload1 $ UnifyOverload1 firstHead secondHead firstChildren inj
+    | App_ firstHead _ <- first
+    , Inj_ inj@Inj { injChild = App_ secondHead secondChildren } <- second
+    = Just $ Overload2 $ UnifyOverload2 firstHead secondHead secondChildren inj
+    | Inj_ inj@Inj { injChild = App_ firstHead firstChildren } <- first
+    , Inj_ inj'@Inj { injChild = App_ secondHead secondChildren } <- second
+    , injFrom inj /= injFrom inj'
+    = Just $ Overload3 $ UnifyOverload3 firstHead secondHead firstChildren secondChildren inj
+    | App_ firstHead _ <- first
+    , Inj_ inj@Inj { injChild = ElemVar_ secondVar } <- second
+    = Just $ Overload4 $ UnifyOverload4 firstHead secondVar inj
+    | App_ secondHead _ <- second
+    , Inj_ inj@Inj { injChild = ElemVar_ firstVar } <- first
+    = Just $ Overload4 $ UnifyOverload4 secondHead firstVar inj
+    | Inj_ Inj { injChild = (App_ firstHead firstChildren) } <- first
+    , Inj_ inj@Inj { injChild = ElemVar_ secondVar } <- second
+    = Just $ Overload5 $ UnifyOverload5 firstHead firstChildren secondVar inj
+    | Inj_ Inj { injChild = (App_ secondHead secondChildren) } <- second
+    , Inj_ inj@Inj { injChild = ElemVar_ firstVar } <- first
+    = Just $ Overload5 $ UnifyOverload5 secondHead secondChildren firstVar inj
+    | App_ firstHead _ <- first
+    , Inj_ Inj { injChild } <- second
+    = Just $ Overload6 $ UnifyOverload6 firstHead injChild
+    | otherwise
+    = Nothing
 
-unifyOverloading2
-    :: forall unifier
-     . MonadSimplify unifier
-    => Symbol
-    -> TermLike RewritingVariableName
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> Inj (TermLike RewritingVariableName)
-    -> UnifyOverloadingResult unifier RewritingVariableName
-unifyOverloading2
-    firstHead
-    firstTerm
-    secondHead
-    secondChildren
-    inj
-    = Simple <$> unifyOverloadingVsOverloaded
-            firstHead
-            firstTerm
-            (Application secondHead secondChildren)
-            inj { injChild = () }
-
-unifyOverloading3
-    :: forall unifier
-     . MonadSimplify unifier
-    => Symbol
-    -> [TermLike RewritingVariableName]
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> Inj (TermLike RewritingVariableName)
-    -> UnifyOverloadingResult unifier RewritingVariableName
-unifyOverloading3
-    firstHead
-    firstChildren
-    secondHead
-    secondChildren
-    inj
-    = Simple <$> unifyOverloadingCommonOverload
-            (Application firstHead firstChildren)
-            (Application secondHead secondChildren)
-            inj { injChild = () }
-
-unifyOverloading4
-    :: forall unifier
-     . MonadSimplify unifier
+getUnifyResult
+    :: MonadSimplify unifier
     => TermLike RewritingVariableName
-    -> Symbol
-    -> ElementVariable RewritingVariableName
-    -> Inj (TermLike RewritingVariableName)
-    -> UnifyOverloadingResult unifier RewritingVariableName
-unifyOverloading4
-    first
-    firstHead
-    secondVar
-    inj
-    = catchE (
-        unifyOverloadingVsOverloadedVariable
-        firstHead
-        first
-        secondVar
-        inj { injChild = () }
-        )
-        throwE
-
-
-unifyOverloading5
-    :: forall unifier
-     . MonadSimplify unifier
-    => TermLike RewritingVariableName
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> ElementVariable RewritingVariableName
-    -> Inj (TermLike RewritingVariableName)
-    -> UnifyOverloadingResult unifier RewritingVariableName
-unifyOverloading5
-    firstTerm
-    firstHead
-    firstChildren
-    secondVar
-    inj
-    = catchE (
-        unifyOverloadingInjVsVariable
-        (Application firstHead firstChildren)
-        secondVar
-        (Attribute.freeVariables firstTerm)
-        inj { injChild = () }
-        )
-        throwE
-
-unifyOverloading6
-    :: forall unifier
-     . MonadSimplify unifier
-    => Symbol
     -> TermLike RewritingVariableName
+    -> OverloadedConstructorSortInjectionAndEquals
     -> UnifyOverloadingResult unifier RewritingVariableName
-unifyOverloading6
-    firstHead
-    injChild
-    = catchE (
-        notUnifiableTest firstHead injChild
-        )
-        throwE
+getUnifyResult firstTerm secondTerm unifyData =
+    case unifyData of
+        Overload1 unifyData' ->
+            Simple . flipPairBack <$> unifyOverloadingVsOverloaded
+                secondHead
+                secondTerm
+                (Application firstHead firstChildren)
+                (inj :: Inj (TermLike RewritingVariableName)) { injChild = () }
+            
+          where
+            UnifyOverload1 { firstHead, secondHead, firstChildren, inj } = unifyData'
+            
+        Overload2 unifyData' ->
+            Simple <$> unifyOverloadingVsOverloaded
+                firstHead
+                firstTerm
+                (Application secondHead secondChildren)
+                (inj :: Inj (TermLike RewritingVariableName)) { injChild = () }
+          where
+            UnifyOverload2 { firstHead, secondHead, secondChildren, inj } = unifyData'
+
+        Overload3 unifyData' ->
+            Simple <$> unifyOverloadingCommonOverload
+                (Application firstHead firstChildren)
+                (Application secondHead secondChildren)
+                (inj :: Inj (TermLike RewritingVariableName)) { injChild = () }
+          where
+            UnifyOverload3 { firstHead, secondHead, firstChildren, secondChildren, inj } = unifyData'
+
+        Overload4 unifyData' ->
+            catchE (
+                unifyOverloadingVsOverloadedVariable
+                firstHead
+                firstTerm
+                secondVar
+                (inj :: Inj (TermLike RewritingVariableName)) { injChild = () }
+                )
+                throwE
+          where
+              UnifyOverload4 { firstHead, secondVar, inj } = unifyData'
+
+        Overload5 unifyData' ->
+            catchE (
+                unifyOverloadingInjVsVariable
+                (Application firstHead firstChildren)
+                secondVar
+                (Attribute.freeVariables firstTerm)
+                (inj :: Inj (TermLike RewritingVariableName)) { injChild = () }
+                )
+                throwE
+          where
+              UnifyOverload5 { firstHead, firstChildren, secondVar, inj } = unifyData'
+
+        Overload6 unifyData' ->
+            catchE (
+                notUnifiableTest firstHead injChild
+                )
+                throwE
+          where
+              UnifyOverload6 { firstHead, injChild } = unifyData'
 
 unifyOverloading
     :: forall unifier
@@ -317,8 +341,6 @@ unifyOverloading termPair = case termPair of
                 NotApplicable -> unifyWorker secondTerm firstTerm
                 clash -> throwE clash
             )
-
-
 
 unifyWorker
     :: forall unifier
@@ -589,7 +611,7 @@ mkInj
     :: Inj ()
     -> TermLike RewritingVariableName
     -> TermLike RewritingVariableName
-mkInj inj injChild = (synthesize . InjF) inj { injChild }
+mkInj inj injChild = (synthesize . InjF) (inj :: Inj ())  { injChild }
 
 maybeMkInj
     :: Maybe (Inj ())

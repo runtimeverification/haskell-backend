@@ -32,7 +32,10 @@ module Kore.Builtin.Int
     , parse
     , unifyIntEq
     , unifyInt
+    , matchInt
     , matchIntEqual
+    , matchUnifyIntEq
+    , UnifyInt (..)
       -- * keys
     , randKey
     , srandKey
@@ -407,6 +410,23 @@ matchIntEqual =
             Monad.guard (hook2 == eqKey)
         & isJust
 
+data UnifyInt = UnifyInt {
+    int1 :: !InternalInt
+    , int2 :: !InternalInt 
+}
+
+matchInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyInt
+matchInt first second
+    | InternalInt_ int1 <- first
+    , InternalInt_ int2 <- second
+        = Just $ UnifyInt int1 int2
+    | otherwise = Nothing
+{-# INLINE matchInt #-}
+
+
 {- | Unification of Int values.
  -}
 unifyInt
@@ -414,10 +434,9 @@ unifyInt
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => InternalInt
-    -> InternalInt
+    => UnifyInt
     -> MaybeT unifier (Pattern variable)
-unifyInt int1 int2 =
+unifyInt unifyData =
     assert (on (==) internalIntSort int1 int2) $ lift worker
   where
     worker :: unifier (Pattern variable)
@@ -427,7 +446,18 @@ unifyInt int1 int2 =
       | otherwise = explainAndReturnBottom "distinct integers" term1 term2
     term1 = mkInternalInt int1
     term2 = mkInternalInt int2
---unifyInt _ = empty
+
+    UnifyInt{ int1, int2 } = unifyData
+
+matchUnifyIntEq
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe (EqTerm (TermLike RewritingVariableName))
+matchUnifyIntEq first second
+    | Just eqTerm <- matchIntEqual second
+    , isFunctionPattern first
+    = Just eqTerm
+    | otherwise = Nothing
 
 {- | Unification of the @INT.eq@ symbol.
 
@@ -440,14 +470,8 @@ unifyIntEq
     => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
     -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+    -> EqTerm (TermLike RewritingVariableName)
     -> MaybeT unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
-  where
-    worker termLike1 termLike2
-      | Just eqTerm <- matchIntEqual termLike1
-      , isFunctionPattern termLike1
-      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-      | otherwise = empty
+unifyIntEq unifyChildren notSimplifier term eqTerm
+   = unifyEqTerm unifyChildren notSimplifier eqTerm term
     --TODO remove
