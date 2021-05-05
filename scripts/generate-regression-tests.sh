@@ -83,17 +83,13 @@ generate-wasm() {
     for spec in \
         simple-arithmetic \
         locals \
-        loops
+        loops \
+        memory \
+        wrc20
     do
         kollect "test-$spec" \
             make tests/proofs/"$spec"-spec.k.prove -e
     done
-    
-    kollect "test-memory" \
-        make tests/proofs/memory-spec.k.prove -e
-    
-    kollect "test-wrc20" \
-        make tests/proofs/wrc20-spec.k.prove -e
 }
 
 replace-tests() {
