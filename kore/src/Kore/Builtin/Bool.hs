@@ -220,7 +220,7 @@ unifyBool first second unifyData =
                     "different Bool domain values"
                     first
                     second
-    
+
     UnifyBool { bool1, bool2 } = unifyData
 
 matchUnifyBoolAnd

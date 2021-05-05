@@ -412,7 +412,7 @@ matchIntEqual =
 
 data UnifyInt = UnifyInt {
     int1 :: !InternalInt
-    , int2 :: !InternalInt 
+    , int2 :: !InternalInt
 }
 
 matchInt

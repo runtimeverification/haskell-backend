@@ -87,18 +87,18 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
+    , pattern ElemVar_
     , pattern InternalList_
     , pattern InternalList_
     , Key
     , Sort
     , TermLike
     , pattern Var_
-    , pattern ElemVar_
+    , isFunctionPattern
     , mkApplySymbol
     , mkInternalList
     , mkSort
     , retractKey
-    , isFunctionPattern
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( Symbol (..)
@@ -400,7 +400,7 @@ data UnifyEqualsList
 matchUnifyEqualsList
     :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
-    -> Maybe UnifyEqualsList 
+    -> Maybe UnifyEqualsList
 matchUnifyEqualsList first second
     | ElemVar_ _ <- first
     = if isFunctionPattern second then Just UnifyEqualsList1 else Nothing

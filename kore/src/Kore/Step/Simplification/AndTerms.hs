@@ -327,7 +327,7 @@ maybeTermAnd notSimplifier childTransformers tools first second
         = sortInjectionAndEquals childTransformers first second unifyData
     -- constructorSortInj
   | Just () <- matchConstructorSortInjectionAndEquals first second
-        = constructorSortInjectionAndEquals first second 
+        = constructorSortInjectionAndEquals first second
   | Just () <- matchConstructorSortInjectionAndEquals second first
         = constructorSortInjectionAndEquals second first
     -- constructorAndEqualsAssumes...
@@ -924,7 +924,7 @@ matchBytesDifferent
 matchBytesDifferent first second
     | _ :< InternalBytesF (Const bytesFirst) <- Recursive.project first
     , _ :< InternalBytesF (Const bytesSecond) <- Recursive.project second
-    , bytesFirst /= bytesSecond 
+    , bytesFirst /= bytesSecond
         =  Just ()
     | otherwise = Nothing
 {-# INLINE matchBytesDifferent #-}

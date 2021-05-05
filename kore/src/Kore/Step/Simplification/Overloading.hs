@@ -251,10 +251,10 @@ getUnifyResult firstTerm secondTerm unifyData =
                 secondTerm
                 (Application firstHead firstChildren)
                 (inj :: Inj (TermLike RewritingVariableName)) { injChild = () }
-            
+
           where
             UnifyOverload1 { firstHead, secondHead, firstChildren, inj } = unifyData'
-            
+
         Overload2 unifyData' ->
             Simple <$> unifyOverloadingVsOverloaded
                 firstHead

@@ -450,7 +450,7 @@ unifyString term1 term2 unifyData =
       | on (==) internalStringValue string1 string2 =
         return $ Pattern.fromTermLike term1
       | otherwise = explainAndReturnBottom "distinct strings" term1 term2
-    
+
     UnifyString { string1, string2 } = unifyData
 
 matchUnifyStringEq
