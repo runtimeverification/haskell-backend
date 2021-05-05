@@ -100,10 +100,10 @@ import Kore.Step.Simplification.Simplify (
  )
 import Kore.Unification.Unify as Unify
 import Numeric (
+    readInt,
+    readSigned,
     showIntAtBase,
     showSigned,
-    readSigned,
-    readInt,
  )
 import Prelude.Kore
 import qualified Text.Megaparsec as Parsec
@@ -316,8 +316,8 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
             let lowerCaseStr = Text.unpack $ Text.toLower _str
                 packedResult = case readWithBase lowerCaseStr _base of
-                  [(result, "")] -> Right (result, "")
-                  _ -> Left ("" :: String)
+                    [(result, "")] -> Right (result, "")
+                    _ -> Left ("" :: String)
             case packedResult of
                 Right (result, Text.unpack -> "") ->
                     return (Int.asPattern resultSort result)
@@ -325,12 +325,12 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 readWithBase :: String -> Integer -> [(Integer, String)]
-readWithBase str base = readSigned (readInt base (validInt.toInt) toInt) str
+readWithBase str base = readSigned (readInt base (validInt . toInt) toInt) str
   where
     validInt int = 0 <= int && int < base
     toInt char
-      | isDigit char = int - 48
-      | otherwise = int - 87
+        | isDigit char = int - 48
+        | otherwise = int - 87
       where
         int = fromIntegral $ ord char
 
@@ -349,23 +349,24 @@ evalBase2String :: BuiltinAndAxiomSimplifier
 evalBase2String = Builtin.applicationEvaluator evalBase2String0
   where
     evalBase2String0 _ app
-      | [_intTerm, _baseTerm] <- applicationChildren app = do
-          let Application{applicationSymbolOrAlias = symbol} = app
-              resultSort = symbolSorts symbol & applicationSortsResult
-          _int <- Int.expectBuiltinInt base2StringKey _intTerm
-          _base <- Int.expectBuiltinInt base2StringKey _baseTerm
-          unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
-          Text.pack (showWithBase _int _base)
-              & asPattern resultSort
-              & return
+        | [_intTerm, _baseTerm] <- applicationChildren app = do
+            let Application{applicationSymbolOrAlias = symbol} = app
+                resultSort = symbolSorts symbol & applicationSortsResult
+            _int <- Int.expectBuiltinInt base2StringKey _intTerm
+            _base <- Int.expectBuiltinInt base2StringKey _baseTerm
+            unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
+            Text.pack (showWithBase _int _base)
+                & asPattern resultSort
+                & return
     evalBase2String0 _ _ = Builtin.wrongArity base2StringKey
 
 showWithBase :: Integer -> Integer -> String
 showWithBase int base = showSigned (showIntAtBase base toChar) 0 int ""
   where
     -- chr 48 == '0', chr 97 == 'a'
-    toChar digit | 0 <= digit && digit <= 9 = chr $ digit + 48
-                 | otherwise = chr $ digit + 87
+    toChar digit
+        | 0 <= digit && digit <= 9 = chr $ digit + 48
+        | otherwise = chr $ digit + 87
 
 evalInt2String :: BuiltinAndAxiomSimplifier
 evalInt2String = Builtin.functionEvaluator evalInt2String0
