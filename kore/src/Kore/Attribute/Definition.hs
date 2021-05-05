@@ -1,22 +1,21 @@
 module Kore.Attribute.Definition (
     parseKFileAttributes,
-    KFileLocations (..)
- ) where
+    KFileLocations (..),
+) where
 
-import Prelude.Kore
-import Kore.Attribute.Attributes ( Attributes(..) )
-import Kore.Attribute.SourceLocation ( SourceLocation )
-import qualified Data.Default as Default
-import Kore.Attribute.Parser ( ParseAttributes(..) )
-import Data.Generics.Product ( typed )
-import Kore.Log.ErrorParse
-import Kore.Error ( printError )
 import Control.Monad.Catch (MonadThrow)
+import qualified Data.Default as Default
+import Data.Generics.Product (typed)
+import Kore.Attribute.Attributes (Attributes (..))
+import Kore.Attribute.Parser (ParseAttributes (..))
+import Kore.Attribute.SourceLocation (SourceLocation)
+import Kore.Error (printError)
+import Kore.Log.ErrorParse
+import Prelude.Kore
 
-newtype KFileLocations =
-    KFileLocations
-        { locations :: [SourceLocation] }
-    deriving stock Show
+newtype KFileLocations = KFileLocations
+    {locations :: [SourceLocation]}
+    deriving stock (Show)
 
 parseKFileAttributes :: MonadThrow m => Attributes -> m SourceLocation
 parseKFileAttributes (Attributes attrs) =

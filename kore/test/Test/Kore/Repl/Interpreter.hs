@@ -3,7 +3,6 @@ module Test.Kore.Repl.Interpreter (
 ) where
 
 import Control.Concurrent.MVar
-import Kore.Attribute.Definition
 import qualified Control.Lens as Lens
 import Control.Monad.Reader (
     runReaderT,
@@ -30,6 +29,7 @@ import Data.Text (
     pack,
  )
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Definition
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Condition (
     Condition,

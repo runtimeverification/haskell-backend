@@ -7,6 +7,7 @@ module Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
 ) where
 
+import Kore.Attribute.Definition (KFileLocations (..))
 import Log
 import Numeric.Natural
 import Prelude.Kore
@@ -15,13 +16,11 @@ import Pretty (
  )
 import qualified Pretty
 import Stats
-import Kore.Attribute.Definition (KFileLocations (..))
 
-data WarnIfLowProductivity =
-    WarnIfLowProductivity
-        { productivityPercent :: Natural
-        , kFileLocations :: KFileLocations
-        }
+data WarnIfLowProductivity = WarnIfLowProductivity
+    { productivityPercent :: Natural
+    , kFileLocations :: KFileLocations
+    }
     deriving stock (Show)
 
 instance Pretty WarnIfLowProductivity where
@@ -29,27 +28,25 @@ instance Pretty WarnIfLowProductivity where
         WarnIfLowProductivity
             { productivityPercent
             , kFileLocations = KFileLocations locations
-            }
-         =
-        Pretty.vsep $
-            [ Pretty.hsep
-                [ "Productivity dropped to:"
-                , Pretty.pretty productivityPercent <> "%"
+            } =
+            Pretty.vsep $
+                [ Pretty.hsep
+                    [ "Productivity dropped to:"
+                    , Pretty.pretty productivityPercent <> "%"
+                    ]
                 ]
-            ]
-            <> kFiles
-            <>
-                [ "Poor productivity may indicate a performance bug."
-                , "Please file a bug report: https://github.com/kframework/kore/issues"
-                ]
-      where
-        kFiles
-          | not . null $ locations =
-            [ Pretty.nest 4 $
-                Pretty.vsep
-                    ("Relevant K files include:" : fmap Pretty.pretty locations)
-            ]
-          | otherwise  = []
+                    <> kFiles
+                    <> [ "Poor productivity may indicate a performance bug."
+                       , "Please file a bug report: https://github.com/kframework/kore/issues"
+                       ]
+          where
+            kFiles
+                | not . null $ locations =
+                    [ Pretty.nest 4 $
+                        Pretty.vsep
+                            ("Relevant K files include:" : fmap Pretty.pretty locations)
+                    ]
+                | otherwise = []
 instance Entry WarnIfLowProductivity where
     entrySeverity _ = Warning
     helpDoc _ = "warn when productivty (MUT time / Total time) drops below 90%"

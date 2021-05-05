@@ -9,9 +9,6 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
-import Kore.Attribute.Definition
-    ( KFileLocations (..)
-    )
 import Data.Default (
     def,
  )
@@ -43,6 +40,9 @@ import qualified Data.Text.IO as Text (
  )
 import qualified GHC.Generics as GHC
 import GlobalMain
+import Kore.Attribute.Definition (
+    KFileLocations (..),
+ )
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -594,8 +594,7 @@ mainWithOptions execOptions = do
                         (kFileLocations, exitCode) <- mainDispatch execOptions'
                         warnIfLowProductivity kFileLocations
                         return exitCode
-                  in 
-                    run & handle handleWithConfiguration
+                 in run & handle handleWithConfiguration
                         & handle handleSomeException
                         & runKoreLog tmpDir koreLogOptions
             case outputFileName of

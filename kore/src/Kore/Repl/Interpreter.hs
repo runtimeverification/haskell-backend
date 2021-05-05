@@ -307,11 +307,11 @@ replInterpreter0 printAux printKore replCmd = do
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> do
-            ReplState { kFileLocations } <- get
+            ReplState{kFileLocations} <- get
             warnIfLowProductivity kFileLocations
             liftIO exitSuccess
         FailStop -> do
-            ReplState { kFileLocations } <- get
+            ReplState{kFileLocations} <- get
             warnIfLowProductivity kFileLocations
             liftIO . exitWith $ ExitFailure 2
   where

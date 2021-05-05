@@ -27,12 +27,6 @@ module GlobalMain (
 import Control.Exception (
     evaluate,
  )
-import Kore.Attribute.SourceLocation
-    ( notDefault )
-import Kore.Attribute.Definition
-    ( KFileLocations (..)
-    , parseKFileAttributes
-    )
 import Control.Lens (
     (%~),
  )
@@ -62,6 +56,13 @@ import Kore.ASTVerifier.DefinitionVerifier (
     verifyAndIndexDefinitionWithBase,
  )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.Attribute.Definition (
+    KFileLocations (..),
+    parseKFileAttributes,
+ )
+import Kore.Attribute.SourceLocation (
+    notDefault,
+ )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -91,8 +92,8 @@ import Kore.Syntax
 import Kore.Syntax.Definition (
     ModuleName (..),
     ParsedDefinition,
-    getModuleNameForError,
     definitionAttributes,
+    getModuleNameForError,
  )
 import qualified Kore.Verified as Verified
 import Kore.VersionInfo
@@ -484,9 +485,10 @@ type LoadedModule = VerifiedModule Attribute.Symbol
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main (KFileLocations, LoadedDefinition)
-loadDefinitions filePaths = do
-    loadedDefinitions
-    & (fmap . fmap) sortClaims
+loadDefinitions filePaths =
+    do
+        loadedDefinitions
+        & (fmap . fmap) sortClaims
   where
     loadedDefinitions = do
         parsedDefinitions <- traverse parseDefinition filePaths
