@@ -80,6 +80,7 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
+import Kore.Attribute.Definition
 import Kore.Internal.Condition (
     Condition,
  )
@@ -126,7 +127,6 @@ import qualified Pretty
 import SMT (
     MonadSMT,
  )
-import Kore.Attribute.Definition
 
 {- | Represents an optional file name which contains a sequence of
  repl commands.

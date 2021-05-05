@@ -40,6 +40,7 @@ import Data.List (
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import Kore.Attribute.Definition
 import Kore.Attribute.RuleIndex (
     RuleIndex (..),
  )
@@ -96,7 +97,6 @@ import System.IO (
 import Text.Megaparsec (
     parseMaybe,
  )
-import Kore.Attribute.Definition
 
 {- | Runs the repl for proof mode. It requires all the tooling and simplifiers
  that would otherwise be required in the proof and allows for step-by-step
@@ -140,7 +140,7 @@ runRepl
     scriptModeOutput
     outputFile
     mainModuleName
-    logOptions 
+    logOptions
     kFileLocations =
         do
             startTime <- liftIO $ getTime Monotonic

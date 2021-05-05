@@ -56,6 +56,7 @@ import Data.Text (
     Text,
  )
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
@@ -190,7 +191,6 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
-import Kore.Attribute.Definition
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
