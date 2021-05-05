@@ -43,25 +43,36 @@ build-wasm() {
 generate-evm() {
     cd $KORE/evm-semantics
 
-    kollect-file test-pop1 tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.haskell-out \
-        make tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive -e TEST_CONCRETE_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" KEEP_OUTPUTS=true
+    export \
+        TEST_CONCRETE_BACKEND=haskell \
+        TEST_SYMBOLIC_BACKEND=haskell \
+        TEST_OPTIONS="--dry-run --save-temps" \
+        CHECK=true \
+        KEEP_OUTPUTS=true
+
+    local testpop1=tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
+    local testadd0=tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json
+    local testsumTo10=tests/interactive/sumTo10.evm
+
+    kollect-file test-pop1 "$testpop1.haskell-out" \
+        make "$testpop1.run-interactive" -e
     
-    kollect-file test-add0 tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.haskell-out \
-        make tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive -e TEST_CONCRETE_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" KEEP_OUTPUTS=true
+    kollect-file test-add0 "$testadd0.haskell-out" \
+        make "$testadd0.run-interactive" -e
     
-    kollect-file test-sumTo10 tests/interactive/sumTo10.evm.haskell-out \
-        make tests/interactive/sumTo10.evm.run-interactive -e TEST_CONCRETE_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" KEEP_OUTPUTS=true
-    
+    kollect-file test-sumTo10 $testsumTo10.haskell-out \
+        make "$testsumTo10.run-interactive" -e
+
     for search in \
         branching-no-invalid straight-line-no-invalid \
         branching-invalid straight-line
     do
         kollect-file "test-$search" "tests/interactive/search/$search.evm.search-out" \
-            make tests/interactive/search/$search.evm.search -e TEST_SYMBOLIC_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps" CHECK=true KEEP_OUTPUTS=true
+            make "tests/interactive/search/$search.evm.search" -e
     done
             
     kollect test-sum-to-n \
-        make tests/specs/examples/sum-to-n-spec.k.prove -e TEST_SYMBOLIC_BACKEND=haskell TEST_OPTIONS="--dry-run --save-temps"
+        make tests/specs/examples/sum-to-n-spec.k.prove -e
 }
 
 generate-wasm() {
