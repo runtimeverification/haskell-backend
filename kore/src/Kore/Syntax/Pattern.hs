@@ -26,7 +26,6 @@ import Control.Comonad.Trans.Cofree (
     ComonadCofree (..),
  )
 import qualified Control.Comonad.Trans.Env as Env
-import Control.Monad.Free (Free (..))
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Compose (
     Compose (..),
