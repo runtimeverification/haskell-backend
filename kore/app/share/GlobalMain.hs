@@ -18,7 +18,7 @@ module GlobalMain (
     verifyDefinitionWithBase,
     mainParse,
     lookupMainModule,
-    LoadedDefinition,
+    LoadedDefinition (..),
     LoadedModule,
     loadDefinitions,
     loadModule,
@@ -482,24 +482,35 @@ mainParse parser fileName = do
 
 type LoadedModule = VerifiedModule Attribute.Symbol
 
-type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
+data LoadedDefinition =
+    LoadedDefinition
+        { indexedModules :: Map ModuleName LoadedModule
+        , definedNames :: Map Text AstLocation
+        , kFileLocations :: KFileLocations
+        }
 
-loadDefinitions :: [FilePath] -> Main (KFileLocations, LoadedDefinition)
+loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
     do
-        loadedDefinitions
-        & (fmap . fmap) sortClaims
+        loadedDefinitions & fmap sortClaims
   where
     loadedDefinitions = do
         parsedDefinitions <- traverse parseDefinition filePaths
         let attributes = fmap definitionAttributes parsedDefinitions
         sources <- traverse parseKFileAttributes attributes
         let sources' = filter notDefault (nub sources)
-        def <- Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
-        return (KFileLocations sources', def)
+        (indexedModules, definedNames)
+            <- Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
+        return
+            $ LoadedDefinition
+                indexedModules
+                definedNames
+                (KFileLocations sources')
 
     sortClaims :: LoadedDefinition -> LoadedDefinition
-    sortClaims = Lens._1 . Lens.traversed %~ sortModuleClaims
+    sortClaims def@LoadedDefinition { indexedModules } =
+        let indexedModules' = indexedModules & Lens.traversed %~ sortModuleClaims
+        in def {indexedModules = indexedModules'}
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
-loadModule moduleName = lookupMainModule moduleName . fst
+loadModule moduleName = lookupMainModule moduleName . indexedModules

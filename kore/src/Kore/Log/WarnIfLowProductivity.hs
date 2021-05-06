@@ -29,22 +29,22 @@ instance Pretty WarnIfLowProductivity where
             { productivityPercent
             , kFileLocations = KFileLocations locations
             } =
-            Pretty.vsep $
-                [ Pretty.hsep
-                    [ "Productivity dropped to:"
-                    , Pretty.pretty productivityPercent <> "%"
+            (Pretty.vsep . concat)
+                [   [ Pretty.hsep
+                        [ "Productivity dropped to:"
+                        , Pretty.pretty productivityPercent <> "%"
+                        ]
+                    ]
+                ,   kFiles
+                ,   [ "Poor productivity may indicate a performance bug."
+                    , "Please file a bug report: https://github.com/kframework/kore/issues"
                     ]
                 ]
-                    <> kFiles
-                    <> [ "Poor productivity may indicate a performance bug."
-                       , "Please file a bug report: https://github.com/kframework/kore/issues"
-                       ]
           where
             kFiles
                 | not . null $ locations =
-                    [ Pretty.nest 4 $
-                        Pretty.vsep
-                            ("Relevant K files include:" : fmap Pretty.pretty locations)
+                    [ (Pretty.nest 4 . Pretty.vsep)
+                        ("Relevant K files include:" : fmap Pretty.pretty locations)
                     ]
                 | otherwise = []
 instance Entry WarnIfLowProductivity where
