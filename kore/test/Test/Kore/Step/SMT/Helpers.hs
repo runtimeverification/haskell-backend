@@ -37,7 +37,6 @@ import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -74,6 +73,7 @@ import Test.Kore (
 import Test.Kore.Builtin.Builtin (
     runSMTWithConfig,
  )
+import Test.Kore.Builtin.External
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Kore.Step.SMT.Builders (
     noJunk,
@@ -233,7 +233,7 @@ constructorAxiom sortName constructors =
         SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalize $
+                externalize $
                     foldr mkOr (mkBottom sort) constructorAssertions
             , sentenceAxiomAttributes = Attributes []
             }

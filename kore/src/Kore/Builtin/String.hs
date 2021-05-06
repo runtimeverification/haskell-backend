@@ -22,7 +22,6 @@ module Kore.Builtin.String (
     expectBuiltinString,
     asInternal,
     asPattern,
-    asTermLike,
     asPartialPattern,
     parse,
     unifyString,

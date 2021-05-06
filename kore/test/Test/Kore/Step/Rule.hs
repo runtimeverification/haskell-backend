@@ -38,6 +38,7 @@ import Test.Kore (
     testId,
  )
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -114,7 +115,7 @@ axiomPatternsUnitTests =
                     { moduleName = ModuleName "TEST"
                     , moduleSentences =
                         (fmap . fmap)
-                            Builtin.externalize
+                            externalize
                             [ axiom1
                             , axiom2
                             , sortSentenceAInt

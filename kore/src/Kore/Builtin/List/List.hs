@@ -7,7 +7,6 @@ module Kore.Builtin.List.List (
     asBuiltin,
     asPattern,
     asInternal,
-    asTermLike,
     internalize,
 
     -- * Symbols
@@ -62,24 +61,6 @@ import Prelude.Kore
 -- | Builtin variable name of the @List@ sort.
 sort :: Text
 sort = "LIST.List"
-
--- | Render an 'Domain.InternalList' as a 'TermLike' domain value pattern.
-asTermLike ::
-    InternalVariable variable =>
-    InternalList (TermLike variable) ->
-    TermLike variable
-asTermLike builtin
-    | Seq.null list = unit
-    | otherwise = foldr1 concat' (element <$> list)
-  where
-    InternalList{internalListChild = list} = builtin
-    InternalList{internalListUnit = unitSymbol} = builtin
-    InternalList{internalListElement = elementSymbol} = builtin
-    InternalList{internalListConcat = concatSymbol} = builtin
-
-    unit = mkApplySymbol unitSymbol []
-    element elem' = mkApplySymbol elementSymbol [elem']
-    concat' list1 list2 = mkApplySymbol concatSymbol [list1, list2]
 
 -- | Render a 'Seq' as an expanded internal list pattern.
 asInternal ::

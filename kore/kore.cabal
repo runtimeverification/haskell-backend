@@ -261,7 +261,6 @@ library
     Kore.Builtin.Endianness.Endianness
     Kore.Builtin.EqTerm
     Kore.Builtin.Error
-    Kore.Builtin.External
     Kore.Builtin.Inj
     Kore.Builtin.Int
     Kore.Builtin.Int.Int
@@ -651,6 +650,7 @@ test-suite kore-test
     Test.Kore.Builtin.Definition
     Test.Kore.Builtin.Encoding
     Test.Kore.Builtin.Endianness
+    Test.Kore.Builtin.External
     Test.Kore.Builtin.Inj
     Test.Kore.Builtin.Int
     Test.Kore.Builtin.InternalBytes
