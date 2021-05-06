@@ -4,7 +4,6 @@ License     : NCSA
 -}
 module Kore.Builtin.Int.Int (
     sort,
-    asTermLike,
     asBuiltin,
     asInternal,
     asPattern,
@@ -46,10 +45,12 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
 import Kore.Internal.InternalInt
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike hiding (
+    DomainValueF,
+    StringLiteralF,
+ )
 import Prelude.Kore
 
 -- | Builtin name of the @Int@ sort.
@@ -82,27 +83,6 @@ asBuiltin ::
     InternalInt
 asBuiltin internalIntSort internalIntValue =
     InternalInt{internalIntSort, internalIntValue}
-
-{- | Render an 'Integer' as a domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @Int@ sort, but this is not
-  checked.
-
-  See also: 'sort'
--}
-asTermLike ::
-    InternalVariable variable =>
-    -- | builtin value to render
-    InternalInt ->
-    TermLike variable
-asTermLike builtin =
-    mkDomainValue
-        DomainValue
-            { domainValueSort = internalIntSort
-            , domainValueChild = mkStringLiteral . Text.pack $ show internalIntValue
-            }
-  where
-    InternalInt{internalIntSort, internalIntValue} = builtin
 
 asPattern ::
     InternalVariable variable =>

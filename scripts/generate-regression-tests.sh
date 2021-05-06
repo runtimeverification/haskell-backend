@@ -70,9 +70,11 @@ generate-evm() {
         kollect-file "test-$search" "tests/interactive/search/$search.evm.search-out" \
             make "tests/interactive/search/$search.evm.search" -e
     done
-            
+
     kollect test-sum-to-n \
         make tests/specs/examples/sum-to-n-spec.k.prove -e
+    
+    $KORE/scripts/trim-source-paths.sh *.kore
 }
 
 generate-wasm() {
@@ -90,6 +92,8 @@ generate-wasm() {
         kollect "test-$spec" \
             make tests/proofs/"$spec"-spec.k.prove -e
     done
+
+    $KORE/scripts/trim-source-paths.sh *.kore
 }
 
 replace-tests() {

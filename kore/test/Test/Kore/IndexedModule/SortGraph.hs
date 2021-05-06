@@ -27,6 +27,7 @@ import Kore.Sort
 import Kore.Syntax.Definition
 import Prelude.Kore
 import Test.Kore
+import Test.Kore.Builtin.External
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -110,7 +111,7 @@ test_fromIndexedModule =
         SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [sortVariable "R"]
-                , sentenceAxiomPattern = Builtin.externalize (mkTop sortVarR)
+                , sentenceAxiomPattern = externalize (mkTop sortVarR)
                 , sentenceAxiomAttributes =
                     Attributes
                         [subsortAttribute subSort superSort]

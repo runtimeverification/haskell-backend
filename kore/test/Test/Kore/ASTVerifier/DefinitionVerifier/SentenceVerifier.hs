@@ -8,9 +8,6 @@ import Data.Generics.Product
 import Kore.Attribute.Null (
     Null (..),
  )
-import Kore.Builtin.External (
-    externalize,
- )
 import Kore.Error
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
@@ -40,6 +37,9 @@ import Test.Kore (
     testId,
  )
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External (
+    externalize,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty (
     TestTree,
