@@ -9,17 +9,17 @@ module Kore.Internal.Key (
     -- simplifiedAttribute,
 ) where
 
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -28,9 +28,9 @@ import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
@@ -38,29 +38,28 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Symbol
-    ( Symbol
-    )
-import Kore.Sort
-    ( Sort
-    )
-import Kore.Syntax.Application
-    ( Application (..)
-    )
-import Kore.Syntax.DomainValue
-    ( DomainValue (..)
-    )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
+import Kore.Sort (
+    Sort,
+ )
+import Kore.Syntax.Application (
+    Application (..),
+ )
+import Kore.Syntax.DomainValue (
+    DomainValue (..),
+ )
 import Kore.Syntax.StringLiteral
-import Kore.Syntax.Variable
-    ( Concrete
-    )
+import Kore.Syntax.Variable (
+    Concrete,
+ )
 import Kore.Unparser
 import Prelude.Kore
 
-newtype KeyAttributes =
-    KeyAttributes
-        { keySort :: Sort
-        }
+newtype KeyAttributes = KeyAttributes
+    { keySort :: Sort
+    }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
