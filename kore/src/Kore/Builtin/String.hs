@@ -49,7 +49,6 @@ import Control.Error (
 import qualified Control.Monad as Monad
 import Data.Char (
     chr,
-    isDigit,
     ord,
  )
 import Data.Functor.Const
@@ -101,7 +100,6 @@ import Kore.Step.Simplification.Simplify (
 import Kore.Unification.Unify as Unify
 import Numeric (
     readInt,
-    readSigned,
     showIntAtBase,
     showSigned,
  )
@@ -314,25 +312,26 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             _str <- expectBuiltinString string2BaseKey _strTerm
             _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
             unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
-            let lowerCaseStr = Text.unpack $ Text.toLower _str
-                packedResult = case readWithBase lowerCaseStr _base of
-                    [(result, "")] -> Right (result, "")
-                    _ -> Left ("" :: String)
-            case packedResult of
-                Right (result, Text.unpack -> "") ->
-                    return (Int.asPattern resultSort result)
-                _ -> return (Pattern.bottomOf resultSort)
+            return $ case readWithBase _base (Text.unpack _str) of
+                [(result, "")] -> Int.asPattern resultSort result
+                _ -> Pattern.bottomOf resultSort
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
-readWithBase :: String -> Integer -> [(Integer, String)]
-readWithBase str base = readSigned (readInt base (validInt . toInt) toInt) str
+readWithBase :: Integer -> ReadS Integer
+readWithBase base = sign $ readInt base isDigit valDigit
   where
-    validInt int = 0 <= int && int < base
-    toInt char
-        | isDigit char = int - 48
-        | otherwise = int - 87
-      where
-        int = fromIntegral $ ord char
+    sign p ('-' : cs) = do
+        (a, str') <- p cs
+        return (negate a, str')
+    sign p ('+' : cs) = p cs
+    sign p cs = p cs
+    isDigit = maybe False (< base) . valDig
+    valDigit = fromMaybe 0 . valDig
+    valDig c
+        | '0' <= c && c <= '9' = Just $ fromIntegral $ ord c - ord '0'
+        | 'a' <= c && c <= 'z' = Just $ fromIntegral $ ord c - ord 'a' + 10
+        | 'A' <= c && c <= 'Z' = Just $ fromIntegral $ ord c - ord 'A' + 10
+        | otherwise = Nothing
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
