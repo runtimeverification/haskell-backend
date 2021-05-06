@@ -23,7 +23,6 @@ module Kore.Builtin.Int (
     builtinFunctions,
     expectBuiltinInt,
     extractIntDomainValue,
-    asTermLike,
     asInternal,
     asPattern,
     asPartialPattern,

@@ -3,8 +3,6 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.Builtin.Set.Set (
-    asTermLike,
-
     -- * Symbols
     isSymbolConcat,
     isSymbolElement,
@@ -29,14 +27,12 @@ module Kore.Builtin.Set.Set (
     inclusionKey,
 ) where
 
-import qualified Data.HashMap.Strict as HashMap
 import Data.String (
     IsString,
  )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Error as Kore (
     Error,
@@ -44,7 +40,6 @@ import qualified Kore.Error as Kore (
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import Kore.Internal.InternalSet
 import Kore.Internal.TermLike as TermLike
 import Prelude.Kore
 
@@ -125,53 +120,3 @@ isSymbolList2set = Builtin.isSymbol list2setKey
 -- | Check if the given symbol is hooked to @SET.inclusion@.
 isSymbolInclusion :: Symbol -> Bool
 isSymbolInclusion = Builtin.isSymbol inclusionKey
-
--- TODO (thomas.tuegel): Rename this function.
-
--- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
-asTermLike ::
-    forall variable.
-    InternalVariable variable =>
-    InternalSet Key (TermLike variable) ->
-    TermLike variable
-asTermLike builtin =
-    AssocComm.asTermLike
-        (AssocComm.UnitSymbol unitSymbol)
-        (AssocComm.ConcatSymbol concatSymbol)
-        ( AssocComm.ConcreteElements
-            (map concreteElement (HashMap.toList concreteElements))
-        )
-        ( AssocComm.VariableElements
-            (element . unwrapElement <$> elementsWithVariables)
-        )
-        (AssocComm.Opaque filteredSets)
-  where
-    filteredSets :: [TermLike variable]
-    filteredSets = filter (not . isEmptySet) opaque
-
-    isEmptySet :: TermLike variable -> Bool
-    isEmptySet (InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
-        unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptySet (App_ symbol _) = unitSymbol == symbol
-    isEmptySet _ = False
-
-    InternalAc{builtinAcChild} = builtin
-    InternalAc{builtinAcUnit = unitSymbol} = builtin
-    InternalAc{builtinAcElement = elementSymbol} = builtin
-    InternalAc{builtinAcConcat = concatSymbol} = builtin
-
-    normalizedAc = unwrapAc builtinAcChild
-
-    NormalizedAc{elementsWithVariables} = normalizedAc
-    NormalizedAc{concreteElements} = normalizedAc
-    NormalizedAc{opaque} = normalizedAc
-
-    concreteElement ::
-        (Key, SetValue (TermLike variable)) ->
-        TermLike variable
-    concreteElement (key, value) = element (from @Key key, value)
-
-    element ::
-        (TermLike variable, SetValue (TermLike variable)) ->
-        TermLike variable
-    element (key, SetValue) = mkApplySymbol elementSymbol [key]

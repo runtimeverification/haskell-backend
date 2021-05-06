@@ -6,7 +6,6 @@ module Kore.Builtin.InternalBytes.InternalBytes (
     sort,
     asInternal,
     internalize,
-    asTermLike,
     asPattern,
 
     -- * Keys
@@ -36,7 +35,6 @@ import Data.Text (
  )
 import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Symbols as Builtin
-import Kore.Internal.InternalBytes
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -45,13 +43,10 @@ import qualified Kore.Internal.Pattern as Pattern (
  )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike (
-    DomainValue (..),
     InternalVariable,
     Sort,
     TermLike,
-    mkDomainValue,
     mkInternalBytes,
-    mkStringLiteral,
  )
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
@@ -80,25 +75,6 @@ asInternal ::
     TermLike variable
 asInternal bytesSort bytesValue =
     TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
-
-{- | Render a 'Bytes' as a domain value pattern of the given sort.
-
-The result sort should be hooked to the builtin @Bytes@ sort, but this is
-not checked.
-
-See also: 'sort'.
--}
-asTermLike ::
-    InternalVariable variable =>
-    -- | builtin value to render
-    InternalBytes ->
-    TermLike variable
-asTermLike InternalBytes{internalBytesSort, internalBytesValue} =
-    mkDomainValue
-        DomainValue
-            { domainValueSort = internalBytesSort
-            , domainValueChild = mkStringLiteral $ Encoding.decode8Bit internalBytesValue
-            }
 
 internalize ::
     InternalVariable variable =>

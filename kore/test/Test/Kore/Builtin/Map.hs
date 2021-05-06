@@ -78,7 +78,6 @@ import Hedgehog (
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
 import Kore.Internal.InternalMap
@@ -536,7 +535,7 @@ test_values =
             map1 <- forAll (genConcreteMap genIntegerPattern)
             let values = HashMap.elems map1
                 patConcreteValues =
-                    Builtin.List.asTermLike $ builtinList values
+                    Test.List.asTermLike $ builtinList values
                 patMap = asTermLike map1
                 patValues = valuesMap patMap
                 predicate = mkEquals_ patConcreteValues patValues
@@ -1484,10 +1483,7 @@ asTermLike ::
     InternalVariable variable =>
     HashMap Key (TermLike variable) ->
     TermLike variable
-asTermLike =
-    Reflection.give testMetadataTools Map.asTermLike
-        . builtinMap
-        . HashMap.toList
+asTermLike = asInternal . fmap (Bifunctor.first from) . HashMap.toList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern ::

@@ -21,6 +21,7 @@ import Prelude.Kore
 import qualified Pretty
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.External
 import qualified Test.Kore.Builtin.Int as Int
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -43,7 +44,7 @@ test_patternVerifierHook =
                 assertRight
                     . runPatternVerifier context
                     . verifyStandalonePattern (Just kItemSort)
-                    $ Builtin.externalize original
+                    $ externalize original
         assertEqual (message actual) expect actual
     ]
   where
