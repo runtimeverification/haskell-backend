@@ -5,24 +5,21 @@ License     : NCSA
 module Kore.Internal.Key (
     Key (..),
     KeyF (..),
-    simplifiedAttribute,
+    KeyAttributes (..),
+    -- simplifiedAttribute,
 ) where
 
-import Data.Functor.Const (
-    Const (..),
- )
-import Data.Functor.Foldable (
-    Base,
-    Corecursive,
-    Recursive,
- )
+import Data.Functor.Const
+    ( Const (..)
+    )
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern as Attribute (
-    Pattern,
-    simplifiedAttribute,
- )
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -31,9 +28,9 @@ import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Inj (
-    Inj,
- )
+import Kore.Internal.Inj
+    ( Inj
+    )
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
@@ -41,33 +38,54 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Symbol (
-    Symbol,
- )
-import Kore.Sort (
-    Sort,
- )
-import Kore.Syntax.Application (
-    Application (..),
- )
-import Kore.Syntax.DomainValue (
-    DomainValue (..),
- )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Syntax.Application
+    ( Application (..)
+    )
+import Kore.Syntax.DomainValue
+    ( DomainValue (..)
+    )
 import Kore.Syntax.StringLiteral
-import Kore.Syntax.Variable (
-    Concrete,
- )
+import Kore.Syntax.Variable
+    ( Concrete
+    )
 import Kore.Unparser
 import Prelude.Kore
 
+newtype KeyAttributes =
+    KeyAttributes
+        { keySort :: Sort
+        }
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+
+instance (Synthetic Sort base, Functor base) => Synthetic KeyAttributes base where
+    synthetic base =
+        KeyAttributes
+            { keySort = synthetic (keySort <$> base)
+            }
+
+instance HasConstructorLike KeyAttributes where
+    extractConstructorLike _ =
+        ConstructorLike . Just $ ConstructorLikeHead
+    {-# INLINE extractConstructorLike #-}
+
 -- | @Key@ is the type of patterns that may be concrete keys of maps and sets.
-newtype Key = Key {getKey :: CofreeF KeyF (Attribute.Pattern Concrete) Key}
+newtype Key = Key {getKey :: CofreeF KeyF KeyAttributes Key}
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
-type instance Base Key = CofreeF KeyF (Attribute.Pattern Concrete)
+type instance Base Key = CofreeF KeyF KeyAttributes
 
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
@@ -179,76 +197,6 @@ instance Synthetic Sort KeyF where
         InternalStringF internalString -> synthetic internalString
         StringLiteralF stringLiteral -> synthetic stringLiteral
 
-instance Synthetic Functional KeyF where
-    synthetic = \case
-        ApplySymbolF application -> synthetic application
-        InjF inj -> synthetic inj
-        DomainValueF domainValue -> synthetic domainValue
-        InternalBoolF internalBool -> synthetic internalBool
-        InternalBytesF internalBytes -> synthetic internalBytes
-        InternalIntF internalInt -> synthetic internalInt
-        InternalListF internalList -> synthetic internalList
-        InternalMapF internalMap -> synthetic internalMap
-        InternalSetF internalSet -> synthetic internalSet
-        InternalStringF internalString -> synthetic internalString
-        StringLiteralF stringLiteral -> synthetic stringLiteral
-
-instance Synthetic Function KeyF where
-    synthetic = \case
-        ApplySymbolF application -> synthetic application
-        InjF inj -> synthetic inj
-        DomainValueF domainValue -> synthetic domainValue
-        InternalBoolF internalBool -> synthetic internalBool
-        InternalBytesF internalBytes -> synthetic internalBytes
-        InternalIntF internalInt -> synthetic internalInt
-        InternalListF internalList -> synthetic internalList
-        InternalMapF internalMap -> synthetic internalMap
-        InternalSetF internalSet -> synthetic internalSet
-        InternalStringF internalString -> synthetic internalString
-        StringLiteralF stringLiteral -> synthetic stringLiteral
-
-instance Synthetic Defined KeyF where
-    synthetic = \case
-        ApplySymbolF application -> synthetic application
-        InjF inj -> synthetic inj
-        DomainValueF domainValue -> synthetic domainValue
-        InternalBoolF internalBool -> synthetic internalBool
-        InternalBytesF internalBytes -> synthetic internalBytes
-        InternalIntF internalInt -> synthetic internalInt
-        InternalListF internalList -> synthetic internalList
-        InternalMapF internalMap -> synthetic internalMap
-        InternalSetF internalSet -> synthetic internalSet
-        InternalStringF internalString -> synthetic internalString
-        StringLiteralF stringLiteral -> synthetic stringLiteral
-
-instance Synthetic ConstructorLike KeyF where
-    synthetic = \case
-        ApplySymbolF application -> synthetic application
-        InjF inj -> synthetic inj
-        DomainValueF domainValue -> synthetic domainValue
-        InternalBoolF internalBool -> synthetic internalBool
-        InternalBytesF internalBytes -> synthetic internalBytes
-        InternalIntF internalInt -> synthetic internalInt
-        InternalListF internalList -> synthetic internalList
-        InternalMapF internalMap -> synthetic internalMap
-        InternalSetF internalSet -> synthetic internalSet
-        InternalStringF internalString -> synthetic internalString
-        StringLiteralF stringLiteral -> synthetic stringLiteral
-
-instance Synthetic Simplified KeyF where
-    synthetic = \case
-        ApplySymbolF application -> synthetic application
-        InjF inj -> synthetic inj
-        DomainValueF domainValue -> synthetic domainValue
-        InternalBoolF internalBool -> synthetic internalBool
-        InternalBytesF internalBytes -> synthetic internalBytes
-        InternalIntF internalInt -> synthetic internalInt
-        InternalListF internalList -> synthetic internalList
-        InternalMapF internalMap -> synthetic internalMap
-        InternalSetF internalSet -> synthetic internalSet
-        InternalStringF internalString -> synthetic internalString
-        StringLiteralF stringLiteral -> synthetic stringLiteral
-
 instance From InternalBool (KeyF child) where
     from = InternalBoolF . Const
     {-# INLINE from #-}
@@ -264,7 +212,3 @@ instance From InternalInt (KeyF child) where
 instance From InternalString (KeyF child) where
     from = InternalStringF . Const
     {-# INLINE from #-}
-
-simplifiedAttribute :: Key -> Simplified
-simplifiedAttribute (Recursive.project -> attrs :< _) =
-    Attribute.simplifiedAttribute attrs
