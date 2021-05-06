@@ -6,7 +6,6 @@ module Kore.Step.Simplification.Predicate (
     simplify,
 ) where
 
-
 import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (MultiAnd)
@@ -17,9 +16,8 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
-    PredicateF (..)
+    PredicateF (..),
  )
-import Kore.Syntax (And)
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -28,6 +26,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Step.Simplification.Simplify
+import Kore.Syntax (And, Or)
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -80,6 +79,9 @@ simplify sideCondition =
             AndF andF -> do
                 let andF' = worker <$> andF
                 distributeAnd andF'
+            OrF orF -> do
+                let orF' = worker <$> orF
+                distributeOr orF'
             _ -> simplifyPredicateTODO sideCondition predicate
       where
         _ :< predicateF = Recursive.project predicate
@@ -88,3 +90,8 @@ distributeAnd ::
     And sort (LogicT simplifier (MultiAnd (Predicate RewritingVariableName))) ->
     LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
 distributeAnd andF = fold <$> sequence andF
+
+distributeOr ::
+    Or sort (LogicT simplifier conjunction) ->
+    LogicT simplifier conjunction
+distributeOr = foldr1 (<|>)
