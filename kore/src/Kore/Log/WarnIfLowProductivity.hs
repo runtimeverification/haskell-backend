@@ -30,13 +30,15 @@ instance Pretty WarnIfLowProductivity where
             , kFileLocations = KFileLocations locations
             } =
             (Pretty.vsep . concat)
-                [   [ Pretty.hsep
+                [
+                    [ Pretty.hsep
                         [ "Productivity dropped to:"
                         , Pretty.pretty productivityPercent <> "%"
                         ]
                     ]
-                ,   kFiles
-                ,   [ "Poor productivity may indicate a performance bug."
+                , kFiles
+                ,
+                    [ "Poor productivity may indicate a performance bug."
                     , "Please file a bug report: https://github.com/kframework/kore/issues"
                     ]
                 ]

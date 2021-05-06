@@ -482,12 +482,11 @@ mainParse parser fileName = do
 
 type LoadedModule = VerifiedModule Attribute.Symbol
 
-data LoadedDefinition =
-    LoadedDefinition
-        { indexedModules :: Map ModuleName LoadedModule
-        , definedNames :: Map Text AstLocation
-        , kFileLocations :: KFileLocations
-        }
+data LoadedDefinition = LoadedDefinition
+    { indexedModules :: Map ModuleName LoadedModule
+    , definedNames :: Map Text AstLocation
+    , kFileLocations :: KFileLocations
+    }
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
@@ -499,18 +498,18 @@ loadDefinitions filePaths =
         let attributes = fmap definitionAttributes parsedDefinitions
         sources <- traverse parseKFileAttributes attributes
         let sources' = filter notDefault (nub sources)
-        (indexedModules, definedNames)
-            <- Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
-        return
-            $ LoadedDefinition
+        (indexedModules, definedNames) <-
+            Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
+        return $
+            LoadedDefinition
                 indexedModules
                 definedNames
                 (KFileLocations sources')
 
     sortClaims :: LoadedDefinition -> LoadedDefinition
-    sortClaims def@LoadedDefinition { indexedModules } =
+    sortClaims def@LoadedDefinition{indexedModules} =
         let indexedModules' = indexedModules & Lens.traversed %~ sortModuleClaims
-        in def {indexedModules = indexedModules'}
+         in def{indexedModules = indexedModules'}
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules

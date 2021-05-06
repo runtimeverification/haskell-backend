@@ -89,7 +89,7 @@ import Kore.Log.WarnBoundedModelChecker (
     warnBoundedModelChecker,
  )
 import Kore.Log.WarnIfLowProductivity (
-    warnIfLowProductivity
+    warnIfLowProductivity,
  )
 import qualified Kore.ModelChecker.Bounded as Bounded (
     CheckResult (..),
@@ -170,7 +170,7 @@ import Prof (
     MonadProf,
  )
 import SMT (
-    MonadSMT
+    MonadSMT,
  )
 import qualified SMT
 import Stats
