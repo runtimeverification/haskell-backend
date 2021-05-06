@@ -29,6 +29,7 @@ module Kore.Builtin.Int (
     parse,
     unifyIntEq,
     unifyInt,
+    matchInt,
 
     -- * keys
     randKey,
@@ -424,24 +425,41 @@ matchIntEqual =
             Monad.guard (hook2 == eqKey)
             & isJust
 
+data UnifyInt = UnifyInt {
+    int1 :: !InternalInt
+    , int2 :: !InternalInt 
+}
+
+matchInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyInt
+matchInt first second
+    | InternalInt_ int1 <- first
+    , InternalInt_ int2 <- second
+        = Just $ UnifyInt int1 int2
+    | otherwise = Nothing
+{-# INLINE matchInt #-}
+
 -- | Unification of Int values.
 unifyInt ::
-    forall unifier variable.
-    InternalVariable variable =>
+    forall unifier.
     MonadUnify unifier =>
     HasCallStack =>
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    UnifyInt ->
+    MaybeT unifier (Pattern RewritingVariableName)
+unifyInt term1 term2 unifyData =
     assert (on (==) internalIntSort int1 int2) $ lift worker
   where
-    worker :: unifier (Pattern variable)
+    worker :: unifier (Pattern RewritingVariableName)
     worker
         | on (==) internalIntValue int1 int2 =
             return $ Pattern.fromTermLike term1
         | otherwise = explainAndReturnBottom "distinct integers" term1 term2
-unifyInt _ _ = empty
+
+    UnifyInt{ int1, int2 } = unifyData
 
 {- | Unification of the @INT.eq@ symbol.
 

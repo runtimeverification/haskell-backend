@@ -5,12 +5,12 @@ License     : NCSA
 module Kore.Step.Simplification.NoConfusion (
     equalInjectiveHeadsAndEquals,
     constructorAndEqualsAssumesDifferentHeads,
+    matchEqualInjectiveHeadsAndEquals,
 ) where
 
 import Control.Error (
     MaybeT (..),
  )
-import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import Kore.Internal.Pattern (
     Pattern,
@@ -27,6 +27,30 @@ import Prelude.Kore hiding (
     concat,
  )
 
+data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals {
+    firstHead :: Symbol
+    , firstChildren :: [TermLike RewritingVariableName]
+    , secondChildren :: [TermLike RewritingVariableName]
+}
+
+matchEqualInjectiveHeadsAndEquals
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyEqualInjectiveHeadsAndEquals
+matchEqualInjectiveHeadsAndEquals first second
+    | App_ firstHead firstChildren <- first
+    , App_ secondHead secondChildren <- second
+    , Symbol.isInjective firstHead
+    , Symbol.isInjective secondHead
+    , firstHead == secondHead --is one of the above redundant in light of this?
+        = Just $
+            UnifyEqualInjectiveHeadsAndEquals
+            firstHead
+            firstChildren
+            secondChildren
+    | otherwise = Nothing
+{-# INLINE matchEqualInjectiveHeadsAndEquals #-}
+
 {- | Unify two application patterns with equal, injective heads.
 
 This includes constructors and sort injections.
@@ -39,14 +63,12 @@ equalInjectiveHeadsAndEquals ::
     HasCallStack =>
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
+    UnifyEqualInjectiveHeadsAndEquals ->
     MaybeT unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
-    (App_ firstHead firstChildren)
-    (App_ secondHead secondChildren)
-        | isFirstInjective && isSecondInjective && firstHead == secondHead =
+    unifyData
+        =
             lift $ do
                 children <- Monad.zipWithM termMerger firstChildren secondChildren
                 let merged = foldMap Pattern.withoutTerm children
@@ -59,9 +81,12 @@ equalInjectiveHeadsAndEquals
                             (Pattern.term <$> children)
                 return (Pattern.withCondition term merged)
       where
-        isFirstInjective = Symbol.isInjective firstHead
-        isSecondInjective = Symbol.isInjective secondHead
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
+
+        UnifyEqualInjectiveHeadsAndEquals
+            {   firstHead
+            , firstChildren
+            , secondChildren
+            } = unifyData
 
 {- | Unify two constructor application patterns.
 
