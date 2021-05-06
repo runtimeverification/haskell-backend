@@ -179,14 +179,14 @@ re-simplify the result.
 
 See also: 'simplify'
 -}
-simplifyPredicate ::
+simplifyPredicateTODO ::
     ( HasCallStack
     , MonadSimplify simplifier
     ) =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
     LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicate sideCondition predicate = do
+simplifyPredicateTODO sideCondition predicate = do
     patternOr <-
         simplifyTermLike sideCondition (Predicate.fromPredicate_ predicate)
             & lift
@@ -202,6 +202,16 @@ simplifyPredicate sideCondition predicate = do
                 [ "Expecting a \\top term, but found:"
                 , unparse conditional
                 ]
+
+simplifyPredicate ::
+    ( HasCallStack
+    , MonadSimplify simplifier
+    ) =>
+    SideCondition RewritingVariableName ->
+    Predicate RewritingVariableName ->
+    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
+simplifyPredicate sideCondition predicate =
+    simplifyPredicateTODO sideCondition predicate
 
 simplifyConjunctions ::
     Predicate RewritingVariableName ->
