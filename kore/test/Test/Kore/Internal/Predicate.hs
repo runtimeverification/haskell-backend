@@ -10,18 +10,18 @@ module Test.Kore.Internal.Predicate (
 import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    toRepresentation,
+    top,
+ )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
 import Prelude.Kore
 import Test.Expect
 import Test.Kore

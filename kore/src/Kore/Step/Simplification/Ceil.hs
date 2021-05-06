@@ -10,67 +10,67 @@ module Kore.Step.Simplification.Ceil (
     Ceil (..),
 ) where
 
-import Control.Error
-    ( MaybeT
-    , maybeT
-    )
-import Control.Monad.Reader
-    ( MonadReader
-    )
+import Control.Error (
+    MaybeT,
+    maybeT,
+ )
+import Control.Monad.Reader (
+    MonadReader,
+ )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
-    ( isTotal
-    )
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol (
+    isTotal,
+ )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
 import qualified Kore.Builtin.AssocComm.CeilSimplifier as AssocComm
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Sort as Sort
-import qualified Kore.Step.Function.Evaluator as Axiom
-    ( evaluatePattern
-    )
+import qualified Kore.Step.Function.Evaluator as Axiom (
+    evaluatePattern,
+ )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import Kore.Step.Simplification.CeilSimplifier
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
-import Kore.Unparser
-    ( unparseToString
-    )
+import Kore.Unparser (
+    unparseToString,
+ )
 import Prelude.Kore
 
 {- | Simplify a 'Ceil' of 'OrPattern'.

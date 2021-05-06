@@ -7,160 +7,160 @@ module Kore.Step.Simplification.TermLike (
 ) where
 
 import qualified Control.Lens.Combinators as Lens
-import Control.Monad.Catch
-    ( MonadThrow
-    )
+import Control.Monad.Catch (
+    MonadThrow,
+ )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import Kore.Attribute.Pattern.FreeVariables
-    ( freeVariables
-    )
-import Kore.Internal.Condition
-    ( Condition
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    freeVariables,
+ )
+import Kore.Internal.Condition (
+    Condition,
+ )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Conditional as Conditional
-    ( andCondition
-    )
+import Kore.Internal.Conditional (
+    Conditional (Conditional),
+ )
+import qualified Kore.Internal.Conditional as Conditional (
+    andCondition,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( cannotReplaceTerm
-    , replaceTerm
-    , toRepresentation
-    )
-import qualified Kore.Internal.Substitution as Substitution
-    ( toMap
-    )
-import Kore.Internal.TermLike
-    ( SideConditionRepr
-    , TermLike
-    , TermLikeF (..)
-    , termLikeSort
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    cannotReplaceTerm,
+    replaceTerm,
+    toRepresentation,
+ )
+import qualified Kore.Internal.Substitution as Substitution (
+    toMap,
+ )
+import Kore.Internal.TermLike (
+    SideConditionRepr,
+    TermLike,
+    TermLikeF (..),
+    termLikeSort,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import qualified Kore.Step.Simplification.And as And
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Application as Application
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Bottom as Bottom
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.DomainValue as DomainValue
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Equals as Equals
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Exists as Exists
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Floor as Floor
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Forall as Forall
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Iff as Iff
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Implies as Implies
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.In as In
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Inj as Inj
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalBool as InternalBool
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalInt as InternalInt
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalList as InternalList
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalMap as InternalMap
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalSet as InternalSet
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.InternalString as InternalString
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Mu as Mu
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Next as Next
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Not as Not
-    ( notSimplifier
-    , simplify
-    )
-import qualified Kore.Step.Simplification.Nu as Nu
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Or as Or
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Rewrites as Rewrites
-    ( simplify
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import qualified Kore.Step.Simplification.And as And (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Application as Application (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Bottom as Bottom (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Ceil as Ceil (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.DomainValue as DomainValue (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Equals as Equals (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Exists as Exists (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Floor as Floor (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Forall as Forall (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Iff as Iff (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Implies as Implies (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.In as In (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Inhabitant as Inhabitant (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Inj as Inj (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalBool as InternalBool (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalBytes as InternalBytes (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalInt as InternalInt (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalList as InternalList (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalMap as InternalMap (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalSet as InternalSet (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.InternalString as InternalString (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Mu as Mu (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Next as Next (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Not as Not (
+    notSimplifier,
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Nu as Nu (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Or as Or (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Rewrites as Rewrites (
+    simplify,
+ )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Top as Top
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Variable as Variable
-    ( simplify
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Kore.Unparser
-    ( unparse
-    )
+import qualified Kore.Step.Simplification.StringLiteral as StringLiteral (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Top as Top (
+    simplify,
+ )
+import qualified Kore.Step.Simplification.Variable as Variable (
+    simplify,
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Kore.Unparser (
+    unparse,
+ )
 import qualified Kore.Variables.Binding as Binding
 import qualified Logic
 import Prelude.Kore
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types

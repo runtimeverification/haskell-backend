@@ -50,50 +50,50 @@ module Kore.Internal.Substitution (
 ) where
 
 import qualified Data.List as List
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
 import ErrorContext
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Attribute.Pattern.Simplified
-    ( SideConditionRepr
-    )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
-    ( Simplified (..)
-    )
+import Kore.Attribute.Pattern.Simplified (
+    SideConditionRepr,
+ )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+    Simplified (..),
+ )
 import Kore.Debug
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-    ( TermLike
-    , pattern Var_
-    , mkVar
-    )
+import Kore.Internal.TermLike (
+    TermLike,
+    mkVar,
+    pattern Var_,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Kore.Unparser
-    ( Unparse
-    , unparse
-    , unparseToString
-    )
-import Prelude.Kore hiding
-    ( null
-    )
-import Pretty
-    ( Pretty
-    )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Kore.Unparser (
+    Unparse,
+    unparse,
+    unparseToString,
+ )
+import Prelude.Kore hiding (
+    null,
+ )
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 import qualified SQL
 

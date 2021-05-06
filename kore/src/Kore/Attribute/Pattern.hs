@@ -28,55 +28,54 @@ module Kore.Attribute.Pattern (
 
 import qualified Control.Lens as Lens
 import Data.Generics.Product
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.ConstructorLike
-import Kore.Attribute.Pattern.Created
-    ( Created (..)
-    , hasKnownCreator
-    )
-import Kore.Attribute.Pattern.Defined
-    ( Defined (..)
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , HasFreeVariables
-    , bindVariable
-    , bindVariables
-    , emptyFreeVariables
-    , freeVariable
-    , getFreeElementVariables
-    , isFreeVariable
-    , mapFreeVariables
-    , nullFreeVariables
-    , toList
-    , toNames
-    , toSet
-    , traverseFreeVariables
-    )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-    ( freeVariables
-    )
+import Kore.Attribute.Pattern.Created (
+    Created (..),
+    hasKnownCreator,
+ )
+import Kore.Attribute.Pattern.Defined (
+    Defined (..),
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    HasFreeVariables,
+    bindVariable,
+    bindVariables,
+    emptyFreeVariables,
+    freeVariable,
+    getFreeElementVariables,
+    isFreeVariable,
+    mapFreeVariables,
+    nullFreeVariables,
+    toList,
+    toNames,
+    toSet,
+    traverseFreeVariables,
+ )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables (
+    freeVariables,
+ )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Pattern.Simplified hiding
-    ( isSimplified
-    , isSimplifiedAnyCondition
-    , isSimplifiedSomeCondition
-    )
-import qualified Kore.Attribute.Pattern.Simplified as Simplified
-    ( isSimplified
-    , isSimplifiedAnyCondition
-    , isSimplifiedSomeCondition
-    )
+import Kore.Attribute.Pattern.Simplified hiding (
+    isSimplified,
+    isSimplifiedAnyCondition,
+    isSimplifiedSomeCondition,
+ )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified (
+    isSimplified,
+    isSimplifiedAnyCondition,
+    isSimplifiedSomeCondition,
+ )
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Sort
-    ( Sort
-    )
+import Kore.Sort (
+    Sort,
+ )
 import Kore.Syntax.Variable
 import Prelude.Kore
-
 
 -- | @Pattern@ are the attributes of a pattern collected during verification.
 data Pattern variable = Pattern
