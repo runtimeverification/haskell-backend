@@ -462,7 +462,7 @@ test_updateAll =
                 updateAllList original (mkInt 1) (elementList $ mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
         assertEqual' "" (Pattern.fromTermLike expect) result
-    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4] === \\bottom" $
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4]) === \\bottom" $
         do
             let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
             result <-
@@ -479,10 +479,7 @@ asTermLike ::
     Foldable f =>
     f (TermLike variable) ->
     TermLike variable
-asTermLike =
-    Reflection.give testMetadataTools List.asTermLike
-        . builtinList
-        . toList
+asTermLike = asInternal
 
 -- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
 asInternal ::

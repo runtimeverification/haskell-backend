@@ -19,7 +19,6 @@ module Kore.Builtin.Set (
     verifiers,
     builtinFunctions,
     returnConcreteSet,
-    Set.asTermLike,
     internalize,
     expectBuiltinSet,
     expectConcreteBuiltinSet,

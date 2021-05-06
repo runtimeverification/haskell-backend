@@ -5,7 +5,6 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.Builtin.AssocComm.AssocComm (
-    asTermLike,
     UnitSymbol (..),
     ConcatSymbol (..),
     ConcreteElements (..),
@@ -13,15 +12,12 @@ module Kore.Builtin.AssocComm.AssocComm (
     Opaque (..),
 ) where
 
-import qualified Data.List as List
 import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Internal.TermLike (
     Concrete,
-    InternalVariable,
     TermLike,
-    mkApplySymbol,
  )
 import Prelude.Kore
 
@@ -62,44 +58,3 @@ newtype VariableElements variable = VariableElements {getVariableElements :: [Te
 
 -- | Wrapper for giving names to arguments.
 newtype Opaque variable = Opaque {getOpaque :: [TermLike variable]}
-
--- | Externalizes a 'Domain.InternalAc' as a 'TermLike'.
-asTermLike ::
-    forall variable.
-    InternalVariable variable =>
-    UnitSymbol ->
-    ConcatSymbol ->
-    ConcreteElements variable ->
-    VariableElements variable ->
-    Opaque variable ->
-    TermLike variable
-asTermLike
-    (UnitSymbol unitSymbol)
-    (ConcatSymbol concatSymbol)
-    (ConcreteElements concreteElements)
-    (VariableElements variableElements)
-    (Opaque opaque) =
-        case splitLastInit concreteElements of
-            Nothing -> case splitLastInit opaque of
-                Nothing -> case splitLastInit variableElements of
-                    Nothing -> mkApplySymbol unitSymbol []
-                    Just (ves, ve) -> addTerms ves ve
-                Just (opaqs, opaq) ->
-                    addTerms variableElements (addTerms opaqs opaq)
-            Just (concretes, concrete) ->
-                addTerms variableElements $
-                    addTerms opaque $
-                        addTerms concretes concrete
-      where
-        addTerms :: [TermLike variable] -> TermLike variable -> TermLike variable
-        addTerms terms term = List.foldr concat' term terms
-
-        concat' :: TermLike variable -> TermLike variable -> TermLike variable
-        concat' map1 map2 = mkApplySymbol concatSymbol [map1, map2]
-
-splitLastInit :: [a] -> Maybe ([a], a)
-splitLastInit [] = Nothing
-splitLastInit [a] = Just ([], a)
-splitLastInit (a : as) = do
-    (initA, lastA) <- splitLastInit as
-    return (a : initA, lastA)
