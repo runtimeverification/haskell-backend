@@ -27,27 +27,28 @@ import Prelude.Kore hiding (
     concat,
  )
 
-data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals {
-    firstHead :: Symbol
+data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals
+    { firstHead :: Symbol
     , firstChildren :: [TermLike RewritingVariableName]
     , secondChildren :: [TermLike RewritingVariableName]
-}
+    }
 
-matchEqualInjectiveHeadsAndEquals
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyEqualInjectiveHeadsAndEquals
+matchEqualInjectiveHeadsAndEquals ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualInjectiveHeadsAndEquals
 matchEqualInjectiveHeadsAndEquals first second
     | App_ firstHead firstChildren <- first
-    , App_ secondHead secondChildren <- second
-    , Symbol.isInjective firstHead
-    , Symbol.isInjective secondHead
-    , firstHead == secondHead --is one of the above redundant in light of this?
-        = Just $
+      , App_ secondHead secondChildren <- second
+      , Symbol.isInjective firstHead
+      , Symbol.isInjective secondHead
+      , firstHead == secondHead --is one of the above redundant in light of this?
+        =
+        Just $
             UnifyEqualInjectiveHeadsAndEquals
-            firstHead
-            firstChildren
-            secondChildren
+                firstHead
+                firstChildren
+                secondChildren
     | otherwise = Nothing
 {-# INLINE matchEqualInjectiveHeadsAndEquals #-}
 
@@ -67,23 +68,21 @@ equalInjectiveHeadsAndEquals ::
     MaybeT unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
-    unifyData
-        =
-            lift $ do
-                children <- Monad.zipWithM termMerger firstChildren secondChildren
-                let merged = foldMap Pattern.withoutTerm children
-                    -- TODO (thomas.tuegel): This is tricky!
-                    -- Unifying the symbol's children may have produced new patterns
-                    -- which allow evaluating the symbol. It is possible this pattern
-                    -- is not actually fully simplified!
-                    term =
-                        (markSimplified . mkApplySymbol firstHead)
-                            (Pattern.term <$> children)
-                return (Pattern.withCondition term merged)
+    unifyData =
+        lift $ do
+            children <- Monad.zipWithM termMerger firstChildren secondChildren
+            let merged = foldMap Pattern.withoutTerm children
+                -- TODO (thomas.tuegel): This is tricky!
+                -- Unifying the symbol's children may have produced new patterns
+                -- which allow evaluating the symbol. It is possible this pattern
+                -- is not actually fully simplified!
+                term =
+                    (markSimplified . mkApplySymbol firstHead)
+                        (Pattern.term <$> children)
+            return (Pattern.withCondition term merged)
       where
-
         UnifyEqualInjectiveHeadsAndEquals
-            {   firstHead
+            { firstHead
             , firstChildren
             , secondChildren
             } = unifyData

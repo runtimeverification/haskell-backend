@@ -425,19 +425,19 @@ matchIntEqual =
             Monad.guard (hook2 == eqKey)
             & isJust
 
-data UnifyInt = UnifyInt {
-    int1 :: !InternalInt
-    , int2 :: !InternalInt 
-}
+data UnifyInt = UnifyInt
+    { int1 :: !InternalInt
+    , int2 :: !InternalInt
+    }
 
-matchInt
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyInt
+matchInt ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyInt
 matchInt first second
     | InternalInt_ int1 <- first
-    , InternalInt_ int2 <- second
-        = Just $ UnifyInt int1 int2
+      , InternalInt_ int2 <- second =
+        Just $ UnifyInt int1 int2
     | otherwise = Nothing
 {-# INLINE matchInt #-}
 
@@ -459,7 +459,7 @@ unifyInt term1 term2 unifyData =
             return $ Pattern.fromTermLike term1
         | otherwise = explainAndReturnBottom "distinct integers" term1 term2
 
-    UnifyInt{ int1, int2 } = unifyData
+    UnifyInt{int1, int2} = unifyData
 
 {- | Unification of the @INT.eq@ symbol.
 

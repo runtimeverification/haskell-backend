@@ -472,18 +472,18 @@ matchStringEqual =
             Monad.guard (hook2 == eqKey)
             & isJust
 
-data UnifyString = UnifyString {
-    string1, string2 :: InternalString
-}
+data UnifyString = UnifyString
+    { string1, string2 :: InternalString
+    }
 
-matchString
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyString
+matchString ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyString
 matchString first second
     | InternalString_ string1 <- first
-    , InternalString_ string2 <- second
-        = Just $ UnifyString string1 string2
+      , InternalString_ string2 <- second =
+        Just $ UnifyString string1 string2
     | otherwise = Nothing
 {-# INLINE matchString #-}
 
@@ -505,7 +505,7 @@ unifyString term1 term2 unifyData =
             return $ Pattern.fromTermLike term1
         | otherwise = explainAndReturnBottom "distinct strings" term1 term2
 
-    UnifyString { string1, string2 } = unifyData
+    UnifyString{string1, string2} = unifyData
 
 {- | Unification of the @STRING.eq@ symbol
 
