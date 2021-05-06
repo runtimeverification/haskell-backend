@@ -1,4 +1,4 @@
-{-# LANGUAGE NoStrict     #-}
+{-# LANGUAGE NoStrict #-}
 {-# LANGUAGE NoStrictData #-}
 
 {- |
@@ -24,59 +24,58 @@ module Kore.Attribute.Pattern.Simplified (
     unparseTag,
 ) where
 
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
-import Kore.Internal.Representation
-    ( Representation
-    , mkRepresentation
-    )
-import Kore.Syntax
-    ( And
-    , Application
-    , Bottom
-    , Ceil
-    , Const
-    , DomainValue
-    , Equals
-    , Exists
-    , Floor
-    , Forall
-    , Iff
-    , Implies
-    , In
-    , Inhabitant
-    , Mu
-    , Next
-    , Not
-    , Nu
-    , Or
-    , Rewrites
-    , StringLiteral
-    , Top
-    )
+import Kore.Internal.InternalBytes (
+    InternalBytes,
+ )
+import Kore.Internal.Representation (
+    Representation,
+    mkRepresentation,
+ )
+import Kore.Syntax (
+    And,
+    Application,
+    Bottom,
+    Ceil,
+    Const,
+    DomainValue,
+    Equals,
+    Exists,
+    Floor,
+    Forall,
+    Iff,
+    Implies,
+    In,
+    Inhabitant,
+    Mu,
+    Next,
+    Not,
+    Nu,
+    Or,
+    Rewrites,
+    StringLiteral,
+    Top,
+ )
 import Kore.Syntax.Variable
 import Prelude.Kore
-import Pretty
-    ( Pretty
-    )
+import Pretty (
+    Pretty,
+ )
 
 -- | Wrapper for 'Representation's which are 'SideCondition's.
-newtype SideConditionRepr =
-    SideConditionRepr
-        { sideConditionRepr :: Representation
-        }
+newtype SideConditionRepr = SideConditionRepr
+    { sideConditionRepr :: Representation
+    }
     deriving stock (Show)
     deriving newtype (Eq, Ord)
     deriving newtype (Hashable, NFData)
@@ -86,9 +85,10 @@ newtype SideConditionRepr =
 {- | Creates a 'SideConditionRepr'. Should not be used directly.
  See 'Kore.Internal.SideCondition.toRepresentation'.
 -}
-mkSideConditionRepr
-    :: (Ord a, Hashable a, Typeable a, Pretty a)
-    => a -> SideConditionRepr
+mkSideConditionRepr ::
+    (Ord a, Hashable a, Typeable a, Pretty a) =>
+    a ->
+    SideConditionRepr
 mkSideConditionRepr = SideConditionRepr . mkRepresentation
 
 -- | How well simplified is a pattern.
