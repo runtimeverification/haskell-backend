@@ -58,7 +58,7 @@ import Kore.Internal.TermLike (
     InternalVariable,
     Sort,
     TermLike,
-    mkBottom_,
+    mkBottom,
     mkOr,
  )
 import Kore.Syntax.Variable
@@ -201,11 +201,12 @@ isPredicate = all Pattern.isPredicate
 -- | Transforms a 'Pattern' into a 'TermLike'.
 toTermLike ::
     InternalVariable variable =>
+    Sort ->
     OrPattern variable ->
     TermLike variable
-toTermLike multiOr =
+toTermLike sort multiOr =
     case toList multiOr of
-        [] -> mkBottom_
+        [] -> mkBottom sort
         [patt] -> Pattern.toTermLike patt
         patts -> foldr1 mkOr (Pattern.toTermLike <$> patts)
 

@@ -42,6 +42,9 @@ import GHC.Exts (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
 import Kore.Debug
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -110,6 +113,13 @@ instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
 
 instance From (MultiOr child) [child] where
     from = getMultiOr
+
+instance
+    (Ord variable, HasFreeVariables child variable) =>
+    HasFreeVariables (MultiOr child) variable
+    where
+    freeVariables = foldMap freeVariables . getMultiOr
+    {-# INLINE freeVariables #-}
 
 bottom :: MultiOr term
 bottom = MultiOr []

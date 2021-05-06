@@ -123,7 +123,7 @@ instance Pretty (Implication modality) where
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
-            , Pretty.indent 4 (unparse $ OrPattern.toTermLike right)
+            , Pretty.indent 4 (unparse $ OrPattern.toTermLike sort right)
             ]
       where
         Implication
@@ -131,6 +131,7 @@ instance Pretty (Implication modality) where
             , right
             , existentials
             } = implication'
+        sort = TermLike.termLikeSort (Pattern.term left)
 
 instance TopBottom (Implication modality) where
     isTop _ = False
@@ -143,13 +144,11 @@ freeVariablesRight ::
     Implication modality ->
     FreeVariables RewritingVariableName
 freeVariablesRight implication'@(Implication _ _ _ _ _) =
-    freeVariables
-        ( TermLike.mkExistsN
-            existentials
-            (OrPattern.toTermLike right)
-        )
+    freeVariables right
+        & FreeVariables.bindVariables boundVariables
   where
     Implication{right, existentials} = implication'
+    boundVariables = inject @(SomeVariable _) <$> existentials
 
 freeVariablesLeft ::
     Implication modality ->
@@ -217,7 +216,7 @@ implicationToTerm representation@(Implication _ _ _ _ _) =
             & Predicate.fromPredicate sort
             & getRewritingTerm
     rightPattern =
-        TermLike.mkExistsN existentials (OrPattern.toTermLike right)
+        TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
             & getRewritingTerm
 
 substituteRight ::

@@ -313,8 +313,9 @@ test_Pattern_simplify_equalityterm =
                         )
                     ]
             first = Mock.cf
+            sort = termLikeSort first
             second =
-                OrPattern.toTermLike
+                OrPattern.toTermLike sort
                     . OrPattern.fromPatterns
                     $ [ Conditional
                             { term = Mock.cg

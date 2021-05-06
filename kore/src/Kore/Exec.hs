@@ -265,9 +265,10 @@ exec
                                 <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
-                    forceSort initialSort $
-                        OrPattern.toTermLike
-                            (MultiOr.map getRewritingPattern finalConfigs')
+                    OrPattern.toTermLike
+                        initialSort
+                        (MultiOr.map getRewritingPattern finalConfigs')
+                        & forceSort initialSort
             return (exitCode, finalTerm)
       where
         dropStrategy = snd

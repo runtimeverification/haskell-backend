@@ -161,11 +161,16 @@ simplify ::
     SideCondition RewritingVariableName ->
     Equals Sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
-simplify sideCondition Equals{equalsFirst = first, equalsSecond = second} =
+simplify sideCondition equals =
     simplifyEvaluated sideCondition first' second'
   where
-    (first', second') =
-        minMaxBy (on compareForEquals OrPattern.toTermLike) first second
+    Equals
+        { equalsOperandSort
+        , equalsFirst = first
+        , equalsSecond = second
+        } = equals
+    comparison = on compareForEquals (OrPattern.toTermLike equalsOperandSort)
+    (first', second') = minMaxBy comparison first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
