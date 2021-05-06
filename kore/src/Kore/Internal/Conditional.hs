@@ -24,50 +24,50 @@ module Kore.Internal.Conditional (
     setPredicateSimplified,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
-import qualified GHC.Generics as GHC
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Generics.SOP as SOP
-import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
- )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
-    Simplified,
- )
+import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
+import Kore.Attribute.Pattern.Simplified
+    ( SideConditionRepr
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
 import Kore.Debug
-import Kore.Internal.Predicate (
-    Predicate,
-    unparse2WithSort,
-    unparseWithSort,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    , unparse2WithSort
+    , unparseWithSort
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.Substitution (
-    Assignment,
-    Substitution,
- )
+import Kore.Internal.Substitution
+    ( Assignment
+    , Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike (
-    AdjSomeVariableName,
-    InternalVariable,
-    SomeVariable,
-    Sort,
-    SubstitutionOrd,
-    TermLike,
-    termLikeSort,
- )
-import Kore.TopBottom (
-    TopBottom (..),
- )
+import Kore.Internal.TermLike
+    ( AdjSomeVariableName
+    , InternalVariable
+    , SomeVariable
+    , Sort
+    , SubstitutionOrd
+    , TermLike
+    , termLikeSort
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unparser
 import Prelude.Kore
-import Pretty (
-    Doc,
-    Pretty (..),
- )
+import Pretty
+    ( Doc
+    , Pretty (..)
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -487,7 +487,7 @@ markPredicateSimplified conditional@Conditional{predicate} =
 
 markPredicateSimplifiedConditional ::
     (HasCallStack, InternalVariable variable) =>
-    SideCondition.Representation ->
+    SideConditionRepr ->
     Conditional variable term ->
     Conditional variable term
 markPredicateSimplifiedConditional

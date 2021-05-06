@@ -18,33 +18,30 @@ module Kore.Internal.OrCondition (
     toPredicate,
 ) where
 
-import Kore.Internal.Condition (
-    Condition,
- )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiOr (
-    MultiOr,
- )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.Predicate (
-    Predicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.TermLike hiding (
-    isSimplified,
- )
-import Kore.TopBottom (
-    TopBottom (..),
- )
+import Kore.Internal.TermLike hiding
+    ( isSimplified
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Prelude.Kore
 
 -- | The disjunction of 'Condition'.
 type OrCondition variable = MultiOr (Condition variable)
 
-isSimplified :: SideCondition.Representation -> OrCondition variable -> Bool
+isSimplified :: SideConditionRepr -> OrCondition variable -> Bool
 isSimplified sideCondition = all (Condition.isSimplified sideCondition)
 
 -- | A "disjunction" of one 'Condition'.

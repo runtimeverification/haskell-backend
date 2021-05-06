@@ -31,54 +31,52 @@ module Kore.Internal.OrPattern (
     MultiOr.traverse,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
-import Kore.Internal.Condition (
-    Condition,
- )
-import qualified Kore.Internal.Condition as Condition (
-    fromPredicate,
-    toPredicate,
- )
+import Data.Map.Strict
+    ( Map
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    , toPredicate
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiOr (
-    MultiOr,
- )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.TermLike (
-    InternalVariable,
-    Sort,
-    TermLike,
-    mkBottom_,
-    mkOr,
- )
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , SideConditionRepr
+    , Sort
+    , TermLike
+    , mkBottom_
+    , mkOr
+    )
 import Kore.Syntax.Variable
-import Kore.TopBottom (
-    TopBottom (..),
- )
-import Kore.Variables.Binding (
-    Binder (..),
- )
-import Kore.Variables.Target (
-    Target (..),
-    mkElementTarget,
-    targetIfEqual,
- )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Variables.Binding
+    ( Binder (..)
+    )
+import Kore.Variables.Target
+    ( Target (..)
+    , mkElementTarget
+    , targetIfEqual
+    )
 import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.
 type OrPattern variable = MultiOr (Pattern variable)
 
-isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
+isSimplified :: SideConditionRepr -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
 {- | Checks whether all patterns in the disjunction have simplified children.
@@ -87,7 +85,7 @@ See also: 'Pattern.hasSimplifiedChildren'
 -}
 hasSimplifiedChildren ::
     InternalVariable variable =>
-    SideCondition.Representation ->
+    SideConditionRepr ->
     OrPattern variable ->
     Bool
 hasSimplifiedChildren sideCondition =

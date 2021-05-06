@@ -45,52 +45,50 @@ module Kore.Internal.Pattern (
     Condition,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
-import Kore.Attribute.Pattern.FreeVariables (
-    freeVariables,
-    getFreeElementVariables,
- )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
-    Simplified,
- )
-import Kore.Internal.Condition (
-    Condition,
- )
+import Data.Map.Strict
+    ( Map
+    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    , getFreeElementVariables
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    Conditional (..),
- )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.Predicate (
-    Predicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike (
-    InternalVariable,
-    Sort,
-    TermLike,
-    mkAnd,
-    mkBottom,
-    mkBottom_,
-    mkTop,
-    mkTop_,
-    termLikeSort,
- )
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , SideConditionRepr
+    , Sort
+    , TermLike
+    , mkAnd
+    , mkBottom
+    , mkBottom_
+    , mkTop
+    , mkTop_
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Variable
-import Kore.TopBottom (
-    TopBottom (..),
- )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Prelude.Kore
 
 {- | The conjunction of a pattern, predicate, and substitution.
@@ -110,24 +108,28 @@ fromTermAndPredicate term predicate =
         , predicate
         , substitution = mempty
         }
+
 fromCondition_ ::
     InternalVariable variable =>
     Condition variable ->
     Pattern variable
 fromCondition_ = (<$) mkTop_
+
 fromCondition ::
     InternalVariable variable =>
     Sort ->
     Condition variable ->
     Pattern variable
 fromCondition sort = (<$) (mkTop sort)
+
 fromPredicateSorted ::
     InternalVariable variable =>
     Sort ->
     Predicate variable ->
     Pattern variable
 fromPredicateSorted sort = fromCondition sort . Condition.fromPredicate
-isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
+
+isSimplified :: SideConditionRepr -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =
     TermLike.isSimplified sideCondition t
         && Condition.isSimplified sideCondition p
@@ -144,7 +146,7 @@ simplified.
 -}
 hasSimplifiedChildren ::
     Ord variable =>
-    SideCondition.Representation ->
+    SideConditionRepr ->
     Pattern variable ->
     Bool
 hasSimplifiedChildren sideCondition patt =

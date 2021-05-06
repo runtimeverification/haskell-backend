@@ -12,51 +12,48 @@ module Kore.Step.Function.Evaluator (
     evaluatePattern,
 ) where
 
-import Control.Error (
-    ExceptT,
-    MaybeT (..),
-    exceptT,
-    maybeT,
-    throwE,
- )
-import Control.Monad.Catch (
-    MonadThrow,
- )
+import Control.Error
+    ( ExceptT
+    , MaybeT (..)
+    , exceptT
+    , maybeT
+    , throwE
+    )
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import qualified Kore.Internal.MultiOr as MultiOr (
-    flatten,
-    merge,
- )
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import qualified Kore.Internal.MultiOr as MultiOr
+    ( flatten
+    , merge
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Condition,
-    Conditional (..),
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Condition
+    , Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.ErrorBottomTotalFunction (
-    errorBottomTotalFunction,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Log.ErrorBottomTotalFunction
+    ( errorBottomTotalFunction
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Function.Memo as Memo
-import Kore.Step.Simplification.Simplify as AttemptedAxiom (
-    AttemptedAxiom (..),
- )
+import Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser
@@ -112,7 +109,7 @@ evaluateApplication
 
         unevaluated ::
             Monad m =>
-            Maybe SideCondition.Representation ->
+            Maybe SideConditionRepr ->
             m (OrPattern RewritingVariableName)
         unevaluated maybeSideCondition =
             return $
@@ -122,7 +119,7 @@ evaluateApplication
                         childrenCondition
 
         markSimplifiedIfChildren ::
-            Maybe SideCondition.Representation ->
+            Maybe SideConditionRepr ->
             TermLike RewritingVariableName ->
             TermLike RewritingVariableName
         markSimplifiedIfChildren Nothing =
@@ -182,7 +179,7 @@ evaluatePattern ::
     -- | The pattern to be evaluated
     TermLike RewritingVariableName ->
     -- | The default value
-    ( Maybe SideCondition.Representation ->
+    ( Maybe SideConditionRepr ->
       simplifier (OrPattern RewritingVariableName)
     ) ->
     simplifier (OrPattern RewritingVariableName)
@@ -210,7 +207,7 @@ maybeEvaluatePattern ::
     -- | The pattern to be evaluated
     TermLike RewritingVariableName ->
     -- | The default value
-    ( Maybe SideCondition.Representation ->
+    ( Maybe SideConditionRepr ->
       simplifier (OrPattern RewritingVariableName)
     ) ->
     SideCondition RewritingVariableName ->

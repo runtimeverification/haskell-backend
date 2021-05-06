@@ -317,8 +317,8 @@ library
     Kore.Internal.OrPattern
     Kore.Internal.Pattern
     Kore.Internal.Predicate
+    Kore.Internal.Representation
     Kore.Internal.SideCondition
-    Kore.Internal.SideCondition.SideCondition
     Kore.Internal.Substitution
     Kore.Internal.Symbol
     Kore.Internal.TermLike

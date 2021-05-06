@@ -32,31 +32,31 @@ module Kore.Internal.Condition (
 ) where
 
 import ErrorContext
-import Kore.Attribute.Pattern.FreeVariables (
-    freeVariables,
-    isFreeVariable,
- )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
-    Simplified,
- )
-import Kore.Internal.Conditional (
-    Conditional (..),
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    , isFreeVariable
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.Predicate (
-    Predicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.Substitution (
-    Normalization (..),
- )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    )
 import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.TermLike as TermLike (
-    simplifiedAttribute,
- )
+import Kore.Internal.TermLike
+    ( SideConditionRepr
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( simplifiedAttribute
+    )
 import Kore.Internal.Variable
 import Kore.Syntax
 import Prelude.Kore
@@ -64,7 +64,7 @@ import Prelude.Kore
 -- | A predicate and substitution without an accompanying term.
 type Condition variable = Conditional variable ()
 
-isSimplified :: SideCondition.Representation -> Condition variable -> Bool
+isSimplified :: SideConditionRepr -> Condition variable -> Bool
 isSimplified sideCondition Conditional{term = (), predicate, substitution} =
     Predicate.isSimplified sideCondition predicate
         && Substitution.isSimplified sideCondition substitution

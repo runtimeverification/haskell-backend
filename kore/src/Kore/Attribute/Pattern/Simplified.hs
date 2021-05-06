@@ -1,4 +1,4 @@
-{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrict     #-}
 {-# LANGUAGE NoStrictData #-}
 
 {- |
@@ -7,6 +7,8 @@ License     : NCSA
 -}
 module Kore.Attribute.Pattern.Simplified (
     Simplified (..),
+    SideConditionRepr,
+    mkSideConditionRepr,
     Condition (..),
     pattern Simplified_,
     Type (..),
@@ -22,49 +24,68 @@ module Kore.Attribute.Pattern.Simplified (
     unparseTag,
 ) where
 
-import Data.Text (
-    Text,
- )
-import qualified GHC.Generics as GHC
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Inj (
-    Inj,
- )
+import Kore.Internal.Inj
+    ( Inj
+    )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes (
-    InternalBytes,
- )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Syntax (
-    And,
-    Application,
-    Bottom,
-    Ceil,
-    Const,
-    DomainValue,
-    Equals,
-    Exists,
-    Floor,
-    Forall,
-    Iff,
-    Implies,
-    In,
-    Inhabitant,
-    Mu,
-    Next,
-    Not,
-    Nu,
-    Or,
-    Rewrites,
-    StringLiteral,
-    Top,
- )
+import Kore.Internal.InternalBytes
+    ( InternalBytes
+    )
+import Kore.Internal.Representation
+    ( Representation
+    , mkRepresentation
+    )
+import Kore.Syntax
+    ( And
+    , Application
+    , Bottom
+    , Ceil
+    , Const
+    , DomainValue
+    , Equals
+    , Exists
+    , Floor
+    , Forall
+    , Iff
+    , Implies
+    , In
+    , Inhabitant
+    , Mu
+    , Next
+    , Not
+    , Nu
+    , Or
+    , Rewrites
+    , StringLiteral
+    , Top
+    )
 import Kore.Syntax.Variable
 import Prelude.Kore
+import Pretty
+    ( Pretty
+    )
+
+newtype SideConditionRepr =
+    SideConditionRepr
+        { sideConditionRepr :: Representation
+        }
+    deriving stock (Show)
+    deriving newtype (Eq, Ord)
+    deriving newtype (Hashable, NFData)
+    deriving newtype (Debug, Diff)
+    deriving newtype (Pretty)
+
+mkSideConditionRepr
+    :: (Ord a, Hashable a, Typeable a, Pretty a)
+    => a -> SideConditionRepr
+mkSideConditionRepr = SideConditionRepr . mkRepresentation
 
 -- | How well simplified is a pattern.
 data Type
@@ -97,7 +118,7 @@ data Condition
       -- given side condition. When the side condition changes, e.g. by
       -- adding extra conditions, then we may be able to further simplify the
       -- term.
-      Condition SideCondition.Representation
+      Condition SideConditionRepr
     | -- | Parts of the term are simplified under different side conditions.
       Unknown
     deriving stock (Eq, Ord, Show)
@@ -214,7 +235,7 @@ s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 
 See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
 -}
-isSimplified :: SideCondition.Representation -> Simplified -> Bool
+isSimplified :: SideConditionRepr -> Simplified -> Bool
 isSimplified _ (Simplified_ Fully Any) = True
 isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
     currentCondition == condition
@@ -244,10 +265,10 @@ isSimplifiedSomeCondition _ = False
 fullySimplified :: Simplified
 fullySimplified = Simplified_ Fully Any
 
-simplifiedConditionally :: SideCondition.Representation -> Simplified
+simplifiedConditionally :: SideConditionRepr -> Simplified
 simplifiedConditionally c = Simplified_ Fully (Condition c)
 
-simplifiableConditionally :: SideCondition.Representation -> Simplified
+simplifiableConditionally :: SideConditionRepr -> Simplified
 simplifiableConditionally c = Simplified_ Partly (Condition c)
 
 alwaysSimplified :: a -> Simplified

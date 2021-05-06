@@ -1,37 +1,37 @@
-{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrict     #-}
 {-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-module Kore.Internal.SideCondition.SideCondition (
+module Kore.Internal.Representation (
     Representation,
     mkRepresentation,
 ) where
 
-import Data.Hashable (
-    Hashed,
-    hashed,
-    unhashed,
- )
-import Data.Type.Equality (
-    testEquality,
-    (:~:) (..),
- )
-import Kore.Debug (
-    Debug (..),
-    Diff (..),
- )
+import Data.Hashable
+    ( Hashed
+    , hashed
+    , unhashed
+    )
+import Data.Type.Equality
+    ( (:~:) (..)
+    , testEquality
+    )
+import Kore.Debug
+    ( Debug (..)
+    , Diff (..)
+    )
 import Prelude.Kore
-import Pretty (
-    Pretty (..),
- )
-import Type.Reflection (
-    SomeTypeRep (..),
-    TypeRep,
-    typeRep,
- )
+import Pretty
+    ( Pretty (..)
+    )
+import Type.Reflection
+    ( SomeTypeRep (..)
+    , TypeRep
+    , typeRep
+    )
 
 data Representation where
     Representation ::
