@@ -5,44 +5,44 @@ module Test.Kore.Step.Simplification.Ceil (
 import qualified Data.Map.Strict as Map
 import qualified Data.Sup as Sup
 import Kore.Internal.Condition as Condition
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeTruePredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    toRepresentation,
+    top,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( AxiomIdentifier (..)
-    )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluate
-    , simplify
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
+import qualified Kore.Step.Simplification.Ceil as Ceil (
+    makeEvaluate,
+    simplify,
+ )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
-    ( AttemptedAxiom (..)
-    )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
+    AttemptedAxiom (..),
+ )
 import Prelude.Kore
-import Test.Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Test.Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
-import Test.Kore.Step.MockSymbols
-    ( testSort
-    )
+import Test.Kore.Step.MockSymbols (
+    testSort,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty

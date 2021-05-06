@@ -32,31 +32,31 @@ module Kore.Internal.Condition (
 ) where
 
 import ErrorContext
-import Kore.Attribute.Pattern.FreeVariables
-    ( freeVariables
-    , isFreeVariable
-    )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
-    ( Simplified
-    )
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    freeVariables,
+    isFreeVariable,
+ )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+    Simplified,
+ )
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitution
-    ( Normalization (..)
-    )
+import Kore.Internal.Substitution (
+    Normalization (..),
+ )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( SideConditionRepr
-    )
-import qualified Kore.Internal.TermLike as TermLike
-    ( simplifiedAttribute
-    )
+import Kore.Internal.TermLike (
+    SideConditionRepr,
+ )
+import qualified Kore.Internal.TermLike as TermLike (
+    simplifiedAttribute,
+ )
 import Kore.Internal.Variable
 import Kore.Syntax
 import Prelude.Kore

@@ -64,96 +64,96 @@ import qualified Control.Comonad.Trans.Env as Env
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
-import Data.Functor.Compose
-    ( Compose (..)
-    )
-import Data.Functor.Const
-    ( Const (Const)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Compose (
+    Compose (..),
+ )
+import Data.Functor.Const (
+    Const (Const),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
-import Data.List.Extra
-    ( nubOrd
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Functor.Identity (
+    Identity (..),
+ )
+import Data.List.Extra (
+    nubOrd,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Pattern as APattern
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-    ( FreeVariables
-    , HasFreeVariables (..)
-    , getFreeElementVariables
-    , isFreeVariable
-    , toNames
-    , toSet
-    )
-import Kore.Attribute.Pattern.Simplified
-    ( Simplified (NotSimplified)
-    )
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables (
+    FreeVariables,
+    HasFreeVariables (..),
+    getFreeElementVariables,
+    isFreeVariable,
+    toNames,
+    toSet,
+ )
+import Kore.Attribute.Pattern.Simplified (
+    Simplified (NotSimplified),
+ )
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
-import Kore.Attribute.PredicatePattern
-    ( PredicatePattern
-    )
+import Kore.Attribute.PredicatePattern (
+    PredicatePattern,
+ )
 import qualified Kore.Attribute.PredicatePattern as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.TermLike hiding
-    ( AndF
-    , BottomF
-    , CeilF
-    , EqualsF
-    , ExistsF
-    , FloorF
-    , ForallF
-    , IffF
-    , ImpliesF
-    , InF
-    , NotF
-    , OrF
-    , TopF
-    , depth
-    , extractAttributes
-    , forgetSimplified
-    , hasFreeVariable
-    , isSimplified
-    , isSimplifiedSomeCondition
-    , mapVariables
-    , markSimplified
-    , markSimplifiedConditional
-    , markSimplifiedMaybeConditional
-    , setSimplified
-    , simplifiedAttribute
-    , substitute
-    )
+import Kore.Internal.TermLike hiding (
+    AndF,
+    BottomF,
+    CeilF,
+    EqualsF,
+    ExistsF,
+    FloorF,
+    ForallF,
+    IffF,
+    ImpliesF,
+    InF,
+    NotF,
+    OrF,
+    TopF,
+    depth,
+    extractAttributes,
+    forgetSimplified,
+    hasFreeVariable,
+    isSimplified,
+    isSimplifiedSomeCondition,
+    mapVariables,
+    markSimplified,
+    markSimplifiedConditional,
+    markSimplifiedMaybeConditional,
+    setSimplified,
+    simplifiedAttribute,
+    substitute,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort
-    ( predicateSort
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import Kore.Sort (
+    predicateSort,
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( refreshElementVariable
-    )
+import Kore.Variables.Fresh (
+    refreshElementVariable,
+ )
 import Prelude.Kore
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 import qualified SQL
 
