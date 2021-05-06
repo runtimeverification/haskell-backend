@@ -18,51 +18,51 @@ module Kore.Internal.TermLike.TermLike (
     depth,
 ) where
 
-import Control.Comonad.Trans.Cofree
-    ( tailF
-    )
-import Control.Lens
-    ( Lens'
-    )
+import Control.Comonad.Trans.Cofree (
+    tailF,
+ )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
+import Data.Functor.Identity (
+    Identity (..),
+ )
 import qualified Data.Generics.Product as Lens.Product
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
+import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern as Pattern
-import Kore.Attribute.Pattern.ConstructorLike
-    ( HasConstructorLike (extractConstructorLike)
-    )
+import Kore.Attribute.Pattern.ConstructorLike (
+    HasConstructorLike (extractConstructorLike),
+ )
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Simplified
-    ( unparseTag
-    )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified (
+    unparseTag,
+ )
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness
-    ( Endianness
-    )
-import Kore.Builtin.Signedness.Signedness
-    ( Signedness
-    )
+import Kore.Builtin.Endianness.Endianness (
+    Endianness,
+ )
+import Kore.Builtin.Signedness.Signedness (
+    Signedness,
+ )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -73,16 +73,16 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key
-    ( Key
-    , KeyAttributes (KeyAttributes)
-    , KeyF
-    )
+import Kore.Internal.Key (
+    Key,
+    KeyAttributes (KeyAttributes),
+    KeyF,
+ )
 import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+ )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
@@ -108,9 +108,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Prelude.Kore
@@ -630,10 +630,10 @@ instance Ord variable => From Key (TermLike variable) where
             attrs :< keyF = Recursive.project key
             attrs' = fromKeyAttributes attrs
 
-fromKeyAttributes
-    :: Ord variable
-    => KeyAttributes
-    -> Attribute.Pattern variable
+fromKeyAttributes ::
+    Ord variable =>
+    KeyAttributes ->
+    Attribute.Pattern variable
 fromKeyAttributes attrs =
     Attribute.Pattern
         { Attribute.patternSort = Attribute.keySort attrs

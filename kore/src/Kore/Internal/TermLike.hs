@@ -190,30 +190,30 @@ module Kore.Internal.TermLike (
 ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import Data.Align
-    ( alignWith
-    )
-import Data.ByteString
-    ( ByteString
-    )
+import Data.Align (
+    alignWith,
+ )
+import Data.ByteString (
+    ByteString,
+ )
 import qualified Data.Default as Default
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+ )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
-import Data.Monoid
-    ( Endo (..)
-    )
-import Data.Set
-    ( Set
-    )
-import Data.Text
-    ( Text
-    )
+import Data.Monoid (
+    Endo (..),
+ )
+import Data.Set (
+    Set,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 import Data.These
 import qualified Kore.Attribute.Pattern as Attribute
@@ -224,12 +224,12 @@ import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness
-    ( Endianness
-    )
-import Kore.Builtin.Signedness.Signedness
-    ( Signedness
-    )
+import Kore.Builtin.Endianness.Endianness (
+    Endianness,
+ )
+import Kore.Builtin.Signedness.Signedness (
+    Signedness,
+ )
 import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -240,15 +240,15 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key
-    ( Key
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    )
+import Kore.Internal.Key (
+    Key,
+ )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+ )
 import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
@@ -257,11 +257,11 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
-import Kore.Syntax.Definition hiding
-    ( Alias
-    , Symbol
-    , symbolConstructor
-    )
+import Kore.Syntax.Definition hiding (
+    Alias,
+    Symbol,
+    symbolConstructor,
+ )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.DomainValue
 import Kore.Syntax.Equals
@@ -282,15 +282,15 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable as Variable
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
-import Kore.Variables.Fresh
-    ( refreshElementVariable
-    , refreshSetVariable
-    )
+import Kore.Variables.Fresh (
+    refreshElementVariable,
+    refreshSetVariable,
+ )
 import qualified Kore.Variables.Fresh as Fresh
 import Prelude.Kore
 import qualified Pretty
