@@ -5,7 +5,6 @@ License     : NCSA
 module Kore.Step.Simplification.Condition (
     create,
     simplify,
-    simplifyPredicate,
     simplifyCondition,
     -- For testing
     simplifyPredicates,
@@ -26,12 +25,10 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Condition,
     Conditional (..),
  )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -47,15 +44,14 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unparser
 import Logic
 import Prelude.Kore
-import qualified Pretty
 
 -- | Create a 'ConditionSimplifier' using 'simplify'.
 create ::
@@ -90,7 +86,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
             predicate' = Predicate.substitute substitution' predicate
 
         simplified <-
-            simplifyPredicate sideCondition predicate'
+            Predicate.simplify sideCondition predicate'
                 >>= simplifyPredicates sideCondition
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
@@ -155,7 +151,7 @@ simplifyPredicates initialSideCondition predicates = do
             (MultiAnd (Predicate RewritingVariableName))
     worker (predicate, unsimplified) = do
         sideCondition <- SideCondition.addAssumptions unsimplified <$> State.get
-        results <- simplifyPredicate sideCondition predicate & lift
+        results <- Predicate.simplify sideCondition predicate & lift
         State.modify (SideCondition.addAssumptions results)
         return results
 
@@ -171,47 +167,6 @@ mkCondition predicate =
         (from @(Predicate _) predicate)
         (from @(Assignment _))
         (Substitution.retractAssignment predicate)
-
-{- | Simplify the 'Predicate' once.
-
-@simplifyPredicate@ does not attempt to apply the resulting substitution and
-re-simplify the result.
-
-See also: 'simplify'
--}
-simplifyPredicateTODO ::
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
-    SideCondition RewritingVariableName ->
-    Predicate RewritingVariableName ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicateTODO sideCondition predicate = do
-    patternOr <-
-        simplifyTermLike sideCondition (Predicate.fromPredicate_ predicate)
-            & lift
-    -- Despite using lift above, we do not need to
-    -- explicitly check for \bottom because patternOr is an OrPattern.
-    from @(Condition _) @(MultiAnd (Predicate _)) <$> scatter (OrPattern.map eraseTerm patternOr)
-  where
-    eraseTerm conditional
-        | TopBottom.isTop (Pattern.term conditional) =
-            Conditional.withoutTerm conditional
-        | otherwise =
-            (error . show . Pretty.vsep)
-                [ "Expecting a \\top term, but found:"
-                , unparse conditional
-                ]
-
-simplifyPredicate ::
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
-    SideCondition RewritingVariableName ->
-    Predicate RewritingVariableName ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicate sideCondition predicate =
-    simplifyPredicateTODO sideCondition predicate
 
 simplifyConjunctions ::
     Predicate RewritingVariableName ->
