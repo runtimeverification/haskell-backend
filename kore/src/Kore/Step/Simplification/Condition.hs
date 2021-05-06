@@ -121,8 +121,8 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
     normalize conditional@Conditional{substitution} = do
         let conditional' = conditional{substitution = mempty}
         predicates' <-
-            lift $
-                simplifySubstitution sideCondition substitution
+            simplifySubstitution sideCondition substitution
+                & lift
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 
@@ -132,72 +132,45 @@ others are true.
 This procedure is applied until the conjunction stabilizes.
 -}
 simplifyPredicates ::
+    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (Predicate RewritingVariableName) ->
     LogicT simplifier (Condition RewritingVariableName)
-simplifyPredicates sideCondition original = do
-    let predicates =
-            SideCondition.simplifyConjunctionByAssumption original
-                & fst . extract
-    simplifiedPredicates <-
-        simplifyPredicatesWithAssumptions
-            sideCondition
-            (toList predicates)
-    let simplified = foldMap mkCondition simplifiedPredicates
-    if original == simplifiedPredicates
-        then return (Condition.markSimplified simplified)
-        else simplifyPredicates sideCondition simplifiedPredicates
+simplifyPredicates initialSideCondition predicates = do
+    let predicatesList = toList predicates
+        unsimplifieds = scanr ((<>) . MultiAnd.singleton) MultiAnd.top predicatesList
+    simplifieds <-
+        traverse worker (zip predicatesList unsimplifieds)
+            & flip State.evalStateT initialSideCondition
+    markConjunctionSimplified (foldMap mkCondition $ mconcat simplifieds)
+  where
+    worker ::
+        ( Predicate RewritingVariableName
+        , MultiAnd (Predicate RewritingVariableName)
+        ) ->
+        StateT
+            (SideCondition RewritingVariableName)
+            (LogicT simplifier)
+            (MultiAnd (Predicate RewritingVariableName))
+    worker (predicate, unsimplified) = do
+        sideCondition <- SideCondition.addAssumptions unsimplified <$> State.get
+        results <- simplifyPredicate sideCondition predicate & lift
+        State.modify (SideCondition.addAssumptions results)
+        return results
+
+    markConjunctionSimplified =
+        return . Lens.over (field @"predicate") Predicate.markSimplified
 
 mkCondition ::
     InternalVariable variable =>
     Predicate variable ->
     Condition variable
-mkCondition predicate
-    | Just assignment <- Substitution.retractAssignment predicate =
-        from @(Assignment _) assignment
-    | otherwise =
-        from @(Predicate _) predicate
-
-{- | Simplify a conjunction of predicates by simplifying each one
-under the assumption that the others are true.
--}
-simplifyPredicatesWithAssumptions ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    [Predicate RewritingVariableName] ->
-    LogicT
-        simplifier
-        (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
-simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
-    let predicatesWithUnsimplified =
-            zip predicates $
-                scanr ((<>) . MultiAnd.singleton) MultiAnd.top rest
-    State.execStateT
-        ( traverse_
-            simplifyWithAssumptions
-            predicatesWithUnsimplified
-        )
-        MultiAnd.top
-  where
-    simplifyWithAssumptions ::
-        ( Predicate RewritingVariableName
-        , MultiAnd (Predicate RewritingVariableName)
-        ) ->
-        StateT
-            (MultiAnd (Predicate RewritingVariableName))
-            (LogicT simplifier)
-            ()
-    simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
-        simplifiedSideCond <- State.get
-        let otherSideConds =
-                SideCondition.addAssumptions
-                    (simplifiedSideCond <> unsimplifiedSideCond)
-                    sideCondition
-        result <- lift $ simplifyPredicate otherSideConds predicate
-        State.put (simplifiedSideCond <> result)
+mkCondition predicate =
+    maybe
+        (from @(Predicate _) predicate)
+        (from @(Assignment _))
+        (Substitution.retractAssignment predicate)
 
 {- | Simplify the 'Predicate' once.
 
@@ -215,9 +188,8 @@ simplifyPredicate ::
     LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicate sideCondition predicate = do
     patternOr <-
-        lift $
-            simplifyTermLike sideCondition $
-                Predicate.fromPredicate_ predicate
+        simplifyTermLike sideCondition (Predicate.fromPredicate_ predicate)
+            & lift
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     from @(Condition _) @(MultiAnd (Predicate _)) <$> scatter (OrPattern.map eraseTerm patternOr)
