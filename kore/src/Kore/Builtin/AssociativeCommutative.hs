@@ -82,7 +82,6 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.Key as Key
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -746,7 +745,7 @@ unifyEqualsNormalized
                     (abstractKeys, abstractValues) =
                         (unzip . map unwrapElement)
                             (elementsWithVariables unwrapped)
-                    (concreteKeys, concreteValues) =
+                    (_, concreteValues) =
                         (unzip . HashMap.toList)
                             (concreteElements unwrapped)
 

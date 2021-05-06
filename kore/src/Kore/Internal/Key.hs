@@ -21,11 +21,7 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
-import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Inj
@@ -51,9 +47,6 @@ import Kore.Syntax.DomainValue
     ( DomainValue (..)
     )
 import Kore.Syntax.StringLiteral
-import Kore.Syntax.Variable
-    ( Concrete
-    )
 import Kore.Unparser
 import Prelude.Kore
 

@@ -27,9 +27,6 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Default
-    ( def
-    )
 import Data.Functor.Const
     ( Const (..)
     )
@@ -78,7 +75,7 @@ import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
 import Kore.Internal.Key
     ( Key
-    , KeyAttributes
+    , KeyAttributes (KeyAttributes)
     , KeyF
     )
 import qualified Kore.Internal.Key as Attribute
@@ -631,19 +628,27 @@ instance Ord variable => From Key (TermLike variable) where
             attrs' :< from @(KeyF _) keyF
           where
             attrs :< keyF = Recursive.project key
-            attrs' :: Attribute.Pattern variable
-            attrs' =
-                Attribute.Pattern
-                    { Attribute.patternSort = Key.keySort attrs
-                    , Attribute.freeVariables = mempty
-                    , Attribute.functional = Attribute.Functional True
-                    , Attribute.function = Attribute.Function True
-                    , Attribute.defined = Attribute.Defined True
-                    , Attribute.simplified = Attribute.fullySimplified
-                    , Attribute.constructorLike =
-                        Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
-                    , Attribute.created = Attribute.Created Nothing
-                    } -- from @KeyAttributes attrs
+            attrs' = fromKeyAttributes attrs
+
+fromKeyAttributes
+    :: Ord variable
+    => KeyAttributes
+    -> Attribute.Pattern variable
+fromKeyAttributes attrs =
+    Attribute.Pattern
+        { Attribute.patternSort = Attribute.keySort attrs
+        , Attribute.freeVariables = mempty
+        , Attribute.functional = Attribute.Functional True
+        , Attribute.function = Attribute.Function True
+        , Attribute.defined = Attribute.Defined True
+        , Attribute.simplified = Attribute.fullySimplified
+        , Attribute.constructorLike =
+            Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
+        , Attribute.created = Attribute.Created Nothing
+        }
+
+toKeyAttributes :: Attribute.Pattern variable -> KeyAttributes
+toKeyAttributes = KeyAttributes . Attribute.patternSort
 
 -- | Ensure that a 'TermLike' is a concrete, constructor-like term.
 retractKey :: TermLike variable -> Maybe Key
@@ -652,7 +657,7 @@ retractKey =
   where
     worker (attrs :< termLikeF) = do
         Monad.guard (Pattern.isConstructorLike attrs)
-        let attrs' = Key.KeyAttributes (Attribute.patternSort attrs) -- from @(Attribute.Pattern _) attrs
+        let attrs' = toKeyAttributes attrs
         keyF <-
             case termLikeF of
                 InternalBoolF internalBool ->
