@@ -16,7 +16,6 @@ module Kore.Builtin.Map (
     sort,
     verifiers,
     builtinFunctions,
-    Map.asTermLike,
     internalize,
 
     -- * Unification

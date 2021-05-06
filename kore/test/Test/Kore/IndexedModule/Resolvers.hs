@@ -35,6 +35,7 @@ import Kore.Syntax.PatternF (
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -51,10 +52,10 @@ objectA =
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAxiom_ $ TermLike.applySymbol_ objectA []
 axiomA' =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAxiom [sortVariableR] $
             TermLike.mkForall x $
                 TermLike.mkEquals sortR (TermLike.applySymbol_ objectA []) $
@@ -66,7 +67,7 @@ axiomA' =
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
 
 metaA :: SentenceSymbol
@@ -74,7 +75,7 @@ metaA = TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAlias_ (testId "#b") stringMetaSort [] $
             TermLike.mkTop stringMetaSort
 
@@ -334,7 +335,7 @@ test_resolvers =
         ( assertEqual
             ""
             (List.sortOn Data.Ord.Down [axiomA, axiomA'])
-            ( fmap Builtin.externalize . getIndexedSentence
+            ( fmap externalize . getIndexedSentence
                 <$> indexedModuleAxioms testIndexedObjectModule
             )
         )

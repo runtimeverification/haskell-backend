@@ -14,7 +14,6 @@ import Kore.Attribute.Simplification (
     simplificationAttribute,
  )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
-import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,
@@ -27,6 +26,7 @@ import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
  )
@@ -106,7 +106,7 @@ test_patternVerifier =
                 { existsSort = objectSort
                 , existsVariable = objectVariable'
                 , existsChild =
-                    Builtin.externalize $ Internal.mkElemVar anotherVariable
+                    externalize $ Internal.mkElemVar anotherVariable
                 }
         )
         (NamePrefix "dummy")
@@ -140,7 +140,7 @@ test_patternVerifier =
             Mu
                 { muVariable = objectSetVariable'
                 , muChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkSetVar anotherSetVariable
                 }
         )
@@ -172,7 +172,7 @@ test_patternVerifier =
             Nu
                 { nuVariable = objectSetVariable'
                 , nuChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkSetVar anotherSetVariable
                 }
         )
@@ -469,7 +469,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "abcd" -- Not a decimal integer
                 }
         )
@@ -485,7 +485,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "-256"
                 }
         )
@@ -501,7 +501,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "1024"
                 }
         )
@@ -517,7 +517,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "+128"
                 }
         )
@@ -547,7 +547,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "untrue" -- Not a BOOL.Bool
                 }
         )
@@ -563,7 +563,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "true"
                 }
         )
@@ -579,7 +579,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "false"
                 }
         )
@@ -603,7 +603,7 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Builtin.externalize $
+                    externalize $
                         Internal.mkStringLiteral "1" -- Not a decimal integer
                 }
         )
@@ -720,7 +720,7 @@ test_verifyBinder =
     context = PatternVerifier.verifiedModuleContext Builtin.verifiedModule
     testVerifyBinder name expect =
         testCase name $ do
-            let original = Builtin.externalize expect
+            let original = externalize expect
                 verifier = verifyStandalonePattern Nothing original
                 actual = assertRight $ runPatternVerifier context verifier
             assertEqual "" expect actual
@@ -890,7 +890,7 @@ genericPatternInAllContexts
                     { existsSort = testedSort
                     , existsVariable = anotherVariable
                     , existsChild =
-                        Builtin.externalize $ Internal.mkElemVar anotherVariable
+                        externalize $ Internal.mkElemVar anotherVariable
                     }
         anotherVariable =
             mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
@@ -940,7 +940,7 @@ objectPatternInAllContexts
                     { existsSort = testedSort
                     , existsVariable = anotherVariable
                     , existsChild =
-                        Builtin.externalize $
+                        externalize $
                             Internal.mkElemVar anotherVariable
                     }
         anotherVariable =
@@ -1014,7 +1014,7 @@ patternsInAllContexts
                                     [inject $ mkSetVariable (testId "x") symbolAliasSort]
                                 }
                         , sentenceAliasRightPattern =
-                            Builtin.externalize $ Internal.mkTop anotherSort
+                            externalize $ Internal.mkTop anotherSort
                         , sentenceAliasAttributes = Attributes []
                         }
 

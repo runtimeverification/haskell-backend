@@ -102,6 +102,7 @@ import SMT (
     NoSMT,
  )
 import Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.External
 import Test.SMT
 import Test.Tasty (
     TestTree,
@@ -180,7 +181,7 @@ indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
 indexedModule =
     verifiedModule
         & IndexedModule.eraseAxiomAttributes
-        & IndexedModule.mapPatterns Builtin.externalize
+        & IndexedModule.mapPatterns externalize
 
 verifyPattern ::
     -- | Expected sort
@@ -194,7 +195,7 @@ verifyPattern expectedSort termLike =
     context =
         PatternVerifier.verifiedModuleContext verifiedModule
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-    parsedPattern = Builtin.externalize termLike
+    parsedPattern = externalize termLike
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
@@ -294,5 +295,5 @@ hpropUnparse ::
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToText builtin
-        expected = Builtin.externalize builtin
+        expected = externalize builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

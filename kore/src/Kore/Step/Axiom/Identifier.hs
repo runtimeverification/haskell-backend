@@ -21,14 +21,25 @@ module Kore.Step.Axiom.Identifier (
     matchAxiomIdentifier,
 ) where
 
+import Data.Functor.Const (
+    Const (..),
+ )
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Builtin.External as Builtin
+import qualified Kore.Builtin.Endianness.Endianness as Endianness
+import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import Kore.Debug
+import qualified Kore.Internal.Alias as Alias
+import qualified Kore.Internal.Inj as Inj
+import Kore.Internal.InternalList
+import Kore.Internal.InternalSet
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike (
-    InternalVariable,
     TermLike,
+    TermLikeF (..),
  )
 import qualified Kore.Syntax.Application as Syntax
 import qualified Kore.Syntax.Ceil as Syntax
@@ -37,7 +48,6 @@ import qualified Kore.Syntax.Exists as Syntax
 import Kore.Syntax.Id (
     Id (..),
  )
-import Kore.Syntax.PatternF
 import Kore.Unparser (
     unparse,
  )
@@ -88,18 +98,14 @@ Returns 'Nothing' if the 'TermLike' does not conform to one of the structures we
 recognize.
 -}
 matchAxiomIdentifier ::
-    InternalVariable variable =>
     TermLike variable ->
     Maybe AxiomIdentifier
-matchAxiomIdentifier = Recursive.fold matchWorker . Builtin.externalize
+matchAxiomIdentifier = Recursive.fold matchWorker
   where
-    matchWorker (_ :< patternF) =
-        case patternF of
-            ApplicationF application ->
-                pure (Application symbolId)
-              where
-                symbol = Syntax.applicationSymbolOrAlias application
-                symbolId = Syntax.symbolOrAliasConstructor symbol
+    matchWorker (_ :< termLikeF) =
+        case termLikeF of
+            ApplyAliasF application -> mkAliasId application
+            ApplySymbolF application -> mkAppId application
             CeilF ceil -> Ceil <$> Syntax.ceilChild ceil
             EqualsF equals ->
                 Equals
@@ -108,4 +114,75 @@ matchAxiomIdentifier = Recursive.fold matchWorker . Builtin.externalize
             ExistsF exists -> Exists <$> Syntax.existsChild exists
             VariableF _ ->
                 pure Variable
+            EndiannessF endiannessF ->
+                mkAppId $
+                    Endianness.toApplication $ getConst endiannessF
+            SignednessF signednessF ->
+                mkAppId $
+                    Signedness.toApplication $ getConst signednessF
+            InjF inj -> mkAppId $ Inj.toApplication inj
+            InternalListF internalList -> listToId internalList
+            InternalSetF internalSet -> mapToId internalSet
+            InternalMapF internalMap -> setToId internalMap
             _ -> empty
+
+    listToId internalList
+        | Seq.null list = pure $ Application $ symbolToId unitSymbol
+        | Seq.length list == 1 = pure $ Application $ symbolToId elementSymbol
+        | otherwise = pure $ Application $ symbolToId concatSymbol
+      where
+        InternalList{internalListChild = list} = internalList
+        InternalList{internalListUnit = unitSymbol} = internalList
+        InternalList{internalListElement = elementSymbol} = internalList
+        InternalList{internalListConcat = concatSymbol} = internalList
+
+    mapToId internalMap =
+        acToId
+            unitSymbol
+            elementSymbol
+            concatSymbol
+            elementsWithVariables
+            (HashMap.toList concreteElements)
+            opaque
+      where
+        InternalAc{builtinAcChild} = internalMap
+        InternalAc{builtinAcUnit = unitSymbol} = internalMap
+        InternalAc{builtinAcElement = elementSymbol} = internalMap
+        InternalAc{builtinAcConcat = concatSymbol} = internalMap
+
+        normalizedAc = unwrapAc builtinAcChild
+
+        NormalizedAc{elementsWithVariables} = normalizedAc
+        NormalizedAc{concreteElements} = normalizedAc
+        NormalizedAc{opaque} = normalizedAc
+
+    setToId internalSet =
+        acToId
+            unitSymbol
+            elementSymbol
+            concatSymbol
+            elementsWithVariables
+            (HashMap.toList concreteElements)
+            opaque
+      where
+        InternalAc{builtinAcChild} = internalSet
+        InternalAc{builtinAcUnit = unitSymbol} = internalSet
+        InternalAc{builtinAcElement = elementSymbol} = internalSet
+        InternalAc{builtinAcConcat = concatSymbol} = internalSet
+
+        normalizedAc = unwrapAc builtinAcChild
+
+        NormalizedAc{elementsWithVariables} = normalizedAc
+        NormalizedAc{concreteElements} = normalizedAc
+        NormalizedAc{opaque} = normalizedAc
+
+    acToId unitSymbol _ _ [] [] [] = pure $ Application $ symbolToId unitSymbol
+    acToId _ elementSymbol _ [_] [] [] = pure $ Application $ symbolToId elementSymbol
+    acToId _ elementSymbol _ [] [_] [] = pure $ Application $ symbolToId elementSymbol
+    acToId _ _ _ [] [] [opaque] = opaque
+    acToId _ _ concatSymbol _ _ _ = pure $ Application $ symbolToId concatSymbol
+
+    mkAppId = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
+    mkAliasId = pure . Application . aliasToId . Syntax.applicationSymbolOrAlias
+    symbolToId = Syntax.symbolOrAliasConstructor . Symbol.toSymbolOrAlias
+    aliasToId = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias

@@ -7,7 +7,6 @@ import qualified Data.Text as Text
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
-import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,
@@ -28,6 +27,7 @@ import Kore.Syntax.Definition (
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -605,7 +605,7 @@ unfilteredTestExamplesForSort
                                     aliasName
                                     sort
                                     sortVariables
-                                    (Builtin.externalize $ mkTop sort)
+                                    (externalize $ mkTop sort)
                                 ) :
                               additionalSentences
                             )
@@ -633,7 +633,7 @@ unfilteredTestExamplesForSort
                                     sort
                                     additionalSort
                                     sortVariables
-                                    (Builtin.externalize $ mkTop additionalSort)
+                                    (externalize $ mkTop additionalSort)
                                 ) :
                               additionalSentences
                             )

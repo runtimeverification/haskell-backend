@@ -81,6 +81,7 @@ import Kore.Unparser (
  )
 import Prelude.Kore
 import Test.Kore
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -218,7 +219,7 @@ simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
 simpleAliasSentence alias sort =
     asSentence @ParsedSentenceAlias (simpleAliasSentenceAux alias sort r)
   where
-    r = Builtin.externalize $ Internal.mkTop (simpleSort sort)
+    r = externalize $ Internal.mkTop (simpleSort sort)
 simpleAliasSentenceAux ::
     AliasName ->
     SortName ->
@@ -324,7 +325,7 @@ metaAliasSentenceWithSortParameters
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    Builtin.externalize $ Internal.mkTop sort
+                    externalize $ Internal.mkTop sort
                 , sentenceAliasAttributes = Attributes []
                 }
 
@@ -589,7 +590,7 @@ objectAliasSentenceWithArguments a b c =
         a
         b
         c
-        (Builtin.externalize $ Internal.mkTop b)
+        (externalize $ Internal.mkTop b)
 
 aliasSentenceWithArguments ::
     AliasName ->
@@ -639,7 +640,7 @@ namedSortVariable (SortVariableName name) = sortVariable name
 
 stringParsedPattern :: Text -> ParsedPattern
 stringParsedPattern =
-    Builtin.externalize . Internal.mkStringLiteral
+    externalize . Internal.mkStringLiteral
 
 variable :: Text -> Sort -> ElementVariable VariableName
 variable name sort = mkElementVariable (testId name) sort
@@ -652,7 +653,7 @@ variableTermLike name sort = Internal.mkElemVar (variable name sort)
 
 variableParsedPattern :: Text -> Sort -> ParsedPattern
 variableParsedPattern name sort =
-    Builtin.externalize $ variableTermLike name sort
+    externalize $ variableTermLike name sort
 
 simpleExistsPattern ::
     ElementVariable VariableName ->
@@ -664,7 +665,7 @@ simpleExistsPattern quantifiedVariable resultSort =
             { existsSort = resultSort
             , existsVariable = quantifiedVariable
             , existsChild =
-                Builtin.externalize $ Internal.mkElemVar quantifiedVariable
+                externalize $ Internal.mkElemVar quantifiedVariable
             }
 
 simpleMuPattern ::
@@ -675,7 +676,7 @@ simpleMuPattern quantifiedVariable =
         Mu
             { muVariable = quantifiedVariable
             , muChild =
-                Builtin.externalize $ Internal.mkSetVar quantifiedVariable
+                externalize $ Internal.mkSetVar quantifiedVariable
             }
 
 simpleNuPattern ::
@@ -686,7 +687,7 @@ simpleNuPattern quantifiedVariable =
         Nu
             { nuVariable = quantifiedVariable
             , nuChild =
-                Builtin.externalize $ Internal.mkSetVar quantifiedVariable
+                externalize $ Internal.mkSetVar quantifiedVariable
             }
 
 simpleExistsUnifiedPattern ::
@@ -698,7 +699,7 @@ simpleExistsUnifiedPattern name sort =
 
 simpleExistsParsedPattern :: Text -> Sort -> ParsedPattern
 simpleExistsParsedPattern name sort =
-    Builtin.externalize $ simpleExistsUnifiedPattern name sort
+    externalize $ simpleExistsUnifiedPattern name sort
 
 simpleExistsEqualsParsedPattern ::
     Text ->
@@ -706,7 +707,7 @@ simpleExistsEqualsParsedPattern ::
     ResultSort ->
     ParsedPattern
 simpleExistsEqualsParsedPattern name operandSort resultSort =
-    Builtin.externalize $
+    externalize $
         simpleExistsEqualsTermLike name operandSort resultSort
 
 simpleExistsEqualsTermLike ::
@@ -745,7 +746,7 @@ applicationParsedPatternWithParams ::
     [Sort] ->
     ParsedPattern
 applicationParsedPatternWithParams resultSort name params =
-    Builtin.externalize $
+    externalize $
         applicationUnifiedPatternWithParams resultSort name params
 
 applicationUnifiedPatternWithParams ::

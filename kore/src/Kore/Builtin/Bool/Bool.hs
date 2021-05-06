@@ -6,7 +6,6 @@ module Kore.Builtin.Bool.Bool (
     sort,
     asBuiltin,
     asInternal,
-    asTermLike,
     asPattern,
 
     -- * Keys
@@ -35,18 +34,14 @@ import qualified Kore.Internal.Pattern as Pattern (
     fromTermLike,
  )
 import Kore.Internal.TermLike (
-    DomainValue (DomainValue),
     InternalVariable,
     Sort,
     TermLike,
-    mkDomainValue,
     mkInternalBool,
-    mkStringLiteral,
  )
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Prelude.Kore
 
 -- | Builtin name of the @Bool@ sort.
@@ -78,31 +73,6 @@ asBuiltin ::
     Bool ->
     InternalBool
 asBuiltin = InternalBool
-
-{- | Render a 'Bool' as a domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @Bool@ sort, but this is not
-  checked.
-
-  See also: 'sort'
--}
-asTermLike ::
-    InternalVariable variable =>
-    -- | builtin value to render
-    InternalBool ->
-    TermLike variable
-asTermLike builtin =
-    mkDomainValue
-        DomainValue
-            { domainValueSort = internalBoolSort
-            , domainValueChild = mkStringLiteral literal
-            }
-  where
-    InternalBool{internalBoolSort} = builtin
-    InternalBool{internalBoolValue = bool} = builtin
-    literal
-        | bool = "true"
-        | otherwise = "false"
 
 asPattern ::
     InternalVariable variable =>

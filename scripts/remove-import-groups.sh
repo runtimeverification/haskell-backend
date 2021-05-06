@@ -6,8 +6,8 @@
 temp=$(mktemp)
 for each in $(fd '.*\.hs$')
 do
-    tac "$each" > "$temp"
-    sed -i '/^import/,/^module/{/^[[:space:]]*$/d}' -i "$temp"
+    ( cat "$each"; echo ) | tac - > "$temp"
+    sed -e '/^import/,/^module/{/^[[:space:]]*$/d}' -i "$temp"
     tac "$temp" > "$each"
 done
 rm "$temp"
