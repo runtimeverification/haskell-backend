@@ -50,10 +50,9 @@ import Kore.Syntax.StringLiteral
 import Kore.Unparser
 import Prelude.Kore
 
-newtype KeyAttributes =
-    KeyAttributes
-        { keySort :: Sort
-        }
+newtype KeyAttributes = KeyAttributes
+    { keySort :: Sort
+    }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)

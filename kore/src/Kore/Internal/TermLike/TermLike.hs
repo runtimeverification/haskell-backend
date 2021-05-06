@@ -49,8 +49,8 @@ import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.ConstructorLike
     ( HasConstructorLike (extractConstructorLike)
     )
-import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
+import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
