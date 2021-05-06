@@ -14,8 +14,7 @@ kollect() {
 kollect-file() {
     local name="$1"
     local path="$2"
-    shift
-    shift
+    shift 2
     echo '#!/bin/sh' > "$name.sh"
     "$@"
     cat $path | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
