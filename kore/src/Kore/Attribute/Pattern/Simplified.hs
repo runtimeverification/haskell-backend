@@ -72,6 +72,7 @@ import Pretty
     ( Pretty
     )
 
+-- | Wrapper for 'Representation's which are 'SideCondition's.
 newtype SideConditionRepr =
     SideConditionRepr
         { sideConditionRepr :: Representation
@@ -82,6 +83,9 @@ newtype SideConditionRepr =
     deriving newtype (Debug, Diff)
     deriving newtype (Pretty)
 
+{- | Creates a 'SideConditionRepr'. Should not be used directly.
+ See 'Kore.Internal.SideCondition.toRepresentation'.
+-}
 mkSideConditionRepr
     :: (Ord a, Hashable a, Typeable a, Pretty a)
     => a -> SideConditionRepr

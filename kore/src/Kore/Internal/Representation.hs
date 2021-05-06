@@ -74,10 +74,13 @@ instance NFData Representation where
 instance Pretty Representation where
     pretty (Representation _ h) = pretty (unhashed h)
 
-{- | Creates a 'Representation'. Should not be used directly.
- See 'Kore.Internal.SideCondition.toRepresentation'.
+{- | Creates a 'Representation'. Should only be used when
+adding new representation types.
+See 'Kore.Attribute.Pattern.Simplified.mkSideConditionRepr'.
 -}
-mkRepresentation :: (Ord a, Hashable a, Typeable a, Pretty a) => a -> Representation
+mkRepresentation
+    :: (Ord a, Hashable a, Typeable a, Pretty a)
+    => a -> Representation
 mkRepresentation = Representation typeRep . hashed
 
 instance Debug Representation where
