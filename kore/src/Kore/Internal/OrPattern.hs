@@ -164,11 +164,12 @@ isTrue = isTop
 toPattern ::
     forall variable.
     InternalVariable variable =>
+    Sort ->
     OrPattern variable ->
     Pattern variable
-toPattern multiOr =
+toPattern sort multiOr =
     case toList multiOr of
-        [] -> Pattern.bottom
+        [] -> Pattern.bottomOf sort
         [patt] -> patt
         patts -> foldr1 mergeWithOr patts
   where

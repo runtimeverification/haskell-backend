@@ -37,14 +37,15 @@ Right now this does not do any actual simplification.
 simplify ::
     Next Sort (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
-simplify Next{nextChild = child} = simplifyEvaluated child
+simplify Next{nextChild = child, nextSort = sort} = simplifyEvaluated sort child
 
 simplifyEvaluated ::
+    Sort ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
-simplifyEvaluated simplified =
-    OrPattern.fromTermLike $
-        TermLike.markSimplified $
-            mkNext $
-                Pattern.toTermLike $
-                    OrPattern.toPattern simplified
+simplifyEvaluated sort simplified =
+    OrPattern.toPattern sort simplified
+        & Pattern.toTermLike
+        & mkNext
+        & TermLike.markSimplified
+        & OrPattern.fromTermLike

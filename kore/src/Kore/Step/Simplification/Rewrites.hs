@@ -38,8 +38,9 @@ simplify
     Rewrites
         { rewritesFirst = first
         , rewritesSecond = second
+        , rewritesSort = sort
         } =
-        simplifyEvaluatedRewrites first second
+        simplifyEvaluatedRewrites sort first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -55,21 +56,22 @@ will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites ::
+    Sort ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
-simplifyEvaluatedRewrites first second =
+simplifyEvaluatedRewrites sort first second =
     makeEvaluateRewrites
-        (OrPattern.toPattern first)
-        (OrPattern.toPattern second)
+        (OrPattern.toPattern sort first)
+        (OrPattern.toPattern sort second)
 
 makeEvaluateRewrites ::
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
     OrPattern RewritingVariableName
 makeEvaluateRewrites first second =
-    OrPattern.fromTermLike $
-        TermLike.markSimplified $
-            mkRewrites
-                (Pattern.toTermLike first)
-                (Pattern.toTermLike second)
+    mkRewrites
+        (Pattern.toTermLike first)
+        (Pattern.toTermLike second)
+        & TermLike.markSimplified
+        & OrPattern.fromTermLike
