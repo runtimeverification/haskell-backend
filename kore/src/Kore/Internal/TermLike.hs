@@ -91,7 +91,6 @@ module Kore.Internal.TermLike (
     mkSignedness,
 
     -- * Predicate constructors
-    mkBottom_,
     mkCeil_,
     mkEquals_,
     mkFloor_,
@@ -974,19 +973,6 @@ mkBottom ::
     TermLike variable
 mkBottom bottomSort =
     updateCallStack $ synthesize (BottomF Bottom{bottomSort})
-
-{- | Construct a 'Bottom' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use
-'mkBottom' instead.
-
-See also: 'mkBottom'
--}
-mkBottom_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable
-mkBottom_ = updateCallStack $ mkBottom predicateSort
 
 {- | Construct a 'Ceil' pattern in the given sort.
 
