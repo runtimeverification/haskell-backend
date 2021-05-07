@@ -13,7 +13,6 @@ module Kore.Internal.Pattern (
     fromCondition_,
     fromTermAndPredicate,
     fromPredicateSorted,
-    bottom,
     bottomOf,
     isBottom,
     isTop,
@@ -81,7 +80,6 @@ import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
     mkBottom,
-    mkBottom_,
     mkTop,
     mkTop_,
     termLikeSort,
@@ -238,17 +236,6 @@ toTermLike Conditional{term, predicate, substitution} =
       where
         predicateTermLike = Predicate.fromPredicate sort predicate'
         sort = termLikeSort pattern'
-
-{- |'bottom' is an expanded pattern that has a bottom condition and that
-should become Bottom when transformed to a ML pattern.
--}
-bottom :: InternalVariable variable => Pattern variable
-bottom =
-    Conditional
-        { term = mkBottom_
-        , predicate = Predicate.makeFalsePredicate
-        , substitution = mempty
-        }
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
