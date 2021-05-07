@@ -590,12 +590,10 @@ mainWithOptions execOptions = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                let run = do
-                        exitCode <- mainDispatch execOptions'
-                        return exitCode
-                 in run & handle handleWithConfiguration
-                        & handle handleSomeException
-                        & runKoreLog tmpDir koreLogOptions
+                mainDispatch execOptions'
+                    & handle handleWithConfiguration
+                    & handle handleSomeException
+                    & runKoreLog tmpDir koreLogOptions
             case outputFileName of
                 Nothing -> readFile (tmpDir </> "result.kore") >>= putStr
                 Just fileName -> copyFile (tmpDir </> "result.kore") fileName
@@ -626,25 +624,29 @@ mainWithOptions execOptions = do
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
 mainDispatch :: KoreExecOptions -> Main ExitCode
-mainDispatch execOptions
-    | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
-        if bmc
-            then koreBmc execOptions proveOptions & warnProductivity
-            else koreProve execOptions proveOptions & warnProductivity
-    | Just searchOptions <- koreSearchOptions =
-        koreSearch execOptions searchOptions & warnProductivity
-    | Just mergeOptions <- koreMergeOptions =
-        koreMerge execOptions mergeOptions & warnProductivity
-    | otherwise =
-        koreRun execOptions & warnProductivity
+mainDispatch = warnProductivity . mainDispatchWorker
   where
-    KoreExecOptions{koreProveOptions} = execOptions
-    KoreExecOptions{koreSearchOptions} = execOptions
-    KoreExecOptions{koreMergeOptions} = execOptions
+    warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
     warnProductivity action = do
         (kFileLocations, exitCode) <- action
         warnIfLowProductivity kFileLocations
         return exitCode
+    mainDispatchWorker :: KoreExecOptions -> Main (KFileLocations, ExitCode)
+    mainDispatchWorker execOptions
+        | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
+            if bmc
+                then koreBmc execOptions proveOptions
+                else koreProve execOptions proveOptions
+        | Just searchOptions <- koreSearchOptions =
+            koreSearch execOptions searchOptions
+        | Just mergeOptions <- koreMergeOptions =
+            koreMerge execOptions mergeOptions
+        | otherwise =
+            koreRun execOptions
+      where
+        KoreExecOptions{koreProveOptions} = execOptions
+        KoreExecOptions{koreSearchOptions} = execOptions
+        KoreExecOptions{koreMergeOptions} = execOptions
 
 koreSearch ::
     KoreExecOptions ->

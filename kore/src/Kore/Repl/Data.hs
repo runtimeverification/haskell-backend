@@ -578,7 +578,6 @@ data ReplState = ReplState
     , -- | The log level, log scopes and log type decide what gets logged and
       -- where.
       koreLogOptions :: !Log.KoreLogOptions
-    , kFileLocations :: KFileLocations
     }
     deriving stock (GHC.Generic)
 
@@ -604,6 +603,7 @@ data Config m = Config
     , -- | Output resulting pattern to this file.
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
+    , kFileLocations :: KFileLocations
     }
     deriving stock (GHC.Generic)
 

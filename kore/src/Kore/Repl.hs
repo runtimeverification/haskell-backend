@@ -201,7 +201,6 @@ runRepl
                         { Log.exeName = Log.ExeName "kore-repl"
                         , Log.startTime = startTime
                         }
-                , kFileLocations
                 }
 
         config :: Config m
@@ -212,6 +211,7 @@ runRepl
                 , logger
                 , outputFile
                 , mainModuleName
+                , kFileLocations
                 }
 
         firstClaimIndex :: ClaimIndex

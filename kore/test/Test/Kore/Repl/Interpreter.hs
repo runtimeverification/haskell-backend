@@ -795,7 +795,6 @@ mkState startTime axioms claims claim =
         , aliases = Map.empty
         , koreLogOptions =
             Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime
-        , kFileLocations = KFileLocations []
         }
   where
     graph' = emptyExecutionGraph claim
@@ -810,6 +809,7 @@ mkConfig logger =
         , logger
         , outputFile = OutputFile Nothing
         , mainModuleName = ModuleName "TEST"
+        , kFileLocations = KFileLocations []
         }
   where
     stepper0 ::
