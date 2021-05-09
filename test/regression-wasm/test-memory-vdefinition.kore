@@ -1,62 +1,67 @@
 [topCellInitializer{}(LblinitGeneratedTopCell{}())]
 
 module BASIC-K
-  sort SortK{} []
-  sort SortKItem{} []
-endmodule []
-
+    sort SortK{} []
+    sort SortKItem{} []
+endmodule
+[]
 module KSEQ
-  import BASIC-K []
-
-  // TODO: Provide constructor and functional axioms for `kseq` and `dotk`.
-  symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [constructor{}(),functional{}()]
-  symbol dotk{}() : SortK{} [constructor{}(),functional{}()]
-
-  symbol append{}(SortK{}, SortK{}) : SortK{} [function{}()]
-
-  axiom{R}
-    \equals{SortK{},R}(
-      append{}(dotk{}(),K2:SortK{}),
-      K2:SortK{})
-  []
-
-  axiom{R}
-    \equals{SortK{},R}(
-      append{}(kseq{}(K1:SortKItem{},K2:SortK{}),K3:SortK{}),
-      kseq{}(K1:SortKItem{},append{}(K2:SortK{},K3:SortK{})))
-  []
-
-endmodule []
-
+    import BASIC-K []
+    symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [
+        constructor{}(),
+        functional{}()
+    ]
+    symbol dotk{}() : SortK{} [constructor{}(), functional{}()]
+    symbol append{}(SortK{}, SortK{}) : SortK{} [function{}()]
+    axiom {R} \implies{R}(
+        \and{R}(
+            \top{R}(),
+            \and{R}(\in{SortK{}, R}(DotK:SortK{}, dotk{}()), \top{R}())
+        ),
+        \and{R}(
+            \equals{SortK{}, R}(append{}(DotK:SortK{}, K2:SortK{}), K2:SortK{}),
+            \top{R}()
+        )
+    ) []
+    axiom {R} \implies{R}(
+        \and{R}(
+            \top{R}(),
+            \and{R}(
+                \in{SortK{}, R}(
+                    KseqK1K2:SortK{},
+                    kseq{}(K1:SortKItem{}, K2:SortK{})
+                ),
+                \top{R}()
+            )
+        ),
+        \and{R}(
+            \equals{SortK{}, R}(
+                append{}(KseqK1K2:SortK{}, K3:SortK{}),
+                kseq{}(K1:SortKItem{}, append{}(K2:SortK{}, K3:SortK{}))
+            ),
+            \top{R}()
+        )
+    ) []
+endmodule
+[]
 module INJ
-  symbol inj{From,To}(From) : To [sortInjection{}()]
-
-  axiom{S1,S2,S3,R}
-    \equals{S3,R}(
-      inj{S2,S3}(inj{S1,S2}(T:S1)),
-      inj{S1,S3}(T:S1))
-  []
-
-endmodule []
-
+    symbol inj{From, To}(From) : To [sortInjection{}()]
+    axiom {S1, S2, S3, R} \equals{S3, R}(
+        inj{S2, S3}(inj{S1, S2}(T:S1)),
+        inj{S1, S3}(T:S1)
+    ) [simplification{}()]
+endmodule
+[]
 module K
-  import KSEQ []
-  import INJ []
-
-  // Defnitions for reachability aliases
-  // Until we will have `mu` we resort to dummy definitions
-  alias weakExistsFinally{A}(A) : A
-  where weakExistsFinally{A}(@X:A) := @X:A []
-
-  alias weakAlwaysFinally{A}(A) : A
-  where weakAlwaysFinally{A}(@X:A) := @X:A []
-
-  // Definitions for CTL aliases
-  // Until we will have `mu` we resort to dummy definitions
-  alias allPathGlobally{A}(A) : A
-  where allPathGlobally{A}(@X:A) := @X:A []
-
-endmodule []
+    import KSEQ []
+    import INJ []
+    alias weakExistsFinally{A}(A) : A where weakExistsFinally{A}(@X:A) := @X:A
+    []
+    alias weakAlwaysFinally{A}(A) : A where weakAlwaysFinally{A}(@X:A) := @X:A
+    []
+    alias allPathGlobally{A}(A) : A where allPathGlobally{A}(@X:A) := @X:A []
+endmodule
+[]
 
 module KWASM-LEMMAS
 
