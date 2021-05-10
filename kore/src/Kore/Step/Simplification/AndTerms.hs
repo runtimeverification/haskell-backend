@@ -250,14 +250,15 @@ maybeTermAnd notSimplifier childTransformers first second
         = variableFunctionAnd first unifyData
     | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second
         = equalInjectiveHeadsAndEquals childTransformers unifyData
-    --  | Just unifyData <- matchSortInjectionAndEquals first second
-    --     = sortInjectionAndEquals childTransformers first second unifyData
+    | Just unifyData <- matchSortInjectionAndEquals first second
+        = sortInjectionAndEquals childTransformers first second unifyData
     | otherwise =
         asum
-            [ do
+            [ {- do
                 unifyData <- Error.hoistMaybe $ matchSortInjectionAndEquals first second
                 sortInjectionAndEquals childTransformers first second unifyData
-            , do
+            , -}
+              do
                 () <- Error.hoistMaybe $ matchConstructorSortInjectionAndEquals first second
                 constructorSortInjectionAndEquals first second
             , do
