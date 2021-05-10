@@ -11,6 +11,7 @@ module Test.Kore.Builtin.InternalBytes (
     test_reverse_length,
     test_update_get,
     test_bytes2string_string2bytes,
+    test_utf8_decodeBytes_encodeBytes,
     test_int2bytes,
     test_bytes2int,
     test_InternalBytes,
@@ -516,6 +517,24 @@ test_bytes2string_string2bytes =
                     [ mkApplySymbol
                         string2bytesBytesSymbol
                         [ Test.String.asInternal str
+                        ]
+                    ]
+        (===) expect actual
+
+test_utf8_decodeBytes_encodeBytes :: TestTree
+test_utf8_decodeBytes_encodeBytes =
+    testPropertyWithSolver "∀ s. decodeBytes (encodeBytes s) = s" $ do
+        str <- forAll genString
+        let expect = Test.String.asPattern str
+        actual <-
+            evaluateT $
+                mkApplySymbol
+                    decodeBytesBytesSymbol
+                    [ Test.String.asInternal "UTF-8"
+                    , mkApplySymbol
+                        encodeBytesBytesSymbol
+                        [ Test.String.asInternal "UTF-8"
+                        , Test.String.asInternal str
                         ]
                     ]
         (===) expect actual

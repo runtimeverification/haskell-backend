@@ -756,6 +756,14 @@ string2bytesBytesSymbol :: Internal.Symbol
 string2bytesBytesSymbol =
     builtinSymbol "string2bytesBytes" bytesSort [stringSort]
         & hook "BYTES.string2bytes"
+decodeBytesBytesSymbol :: Internal.Symbol
+decodeBytesBytesSymbol =
+    builtinSymbol "decodeBytesBytes" stringSort [stringSort, bytesSort]
+        & hook "BYTES.decodeBytes"
+encodeBytesBytesSymbol :: Internal.Symbol
+encodeBytesBytesSymbol =
+    builtinSymbol "encodeBytesBytes" bytesSort [stringSort, stringSort]
+        & hook "BYTES.encodeBytes"
 updateBytesSymbol :: Internal.Symbol
 updateBytesSymbol =
     builtinSymbol "updateBytes" bytesSort [bytesSort, intSort, intSort]
@@ -1672,6 +1680,8 @@ bytesModule =
             , bytesSortDecl
             , hookedSymbolDecl bytes2stringBytesSymbol
             , hookedSymbolDecl string2bytesBytesSymbol
+            , hookedSymbolDecl decodeBytesBytesSymbol
+            , hookedSymbolDecl encodeBytesBytesSymbol
             , hookedSymbolDecl updateBytesSymbol
             , hookedSymbolDecl getBytesSymbol
             , hookedSymbolDecl substrBytesSymbol
