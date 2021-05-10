@@ -36,6 +36,7 @@ module Kore.Builtin.String (
     lengthKey,
     findKey,
     string2BaseKey,
+    base2StringKey,
     chrKey,
     ordKey,
     token2StringKey,
@@ -167,6 +168,12 @@ symbolVerifiers =
             , Builtin.verifySymbol
                 Int.assertSort
                 [assertSort, Int.assertSort]
+            )
+        ,
+            ( base2StringKey
+            , Builtin.verifySymbol
+                assertSort
+                [Int.assertSort, Int.assertSort]
             )
         ,
             ( string2IntKey
