@@ -106,6 +106,14 @@ symbolVerifiers =
             , Builtin.verifySymbol bytes [string]
             )
         ,
+            ( decodeBytesKey
+            , Builtin.verifySymbol string [string, bytes]
+            )
+        ,
+            ( encodeBytesKey
+            , Builtin.verifySymbol bytes [string, string]
+            )
+        ,
             ( updateKey
             , Builtin.verifySymbol bytes [bytes, int, int]
             )
