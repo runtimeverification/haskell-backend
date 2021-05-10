@@ -12,6 +12,8 @@ module Test.Kore.Builtin.InternalBytes (
     test_update_get,
     test_bytes2string_string2bytes,
     test_utf8_decodeBytes_encodeBytes,
+    test_decodeBytes,
+    test_encodeBytes,
     test_int2bytes,
     test_bytes2int,
     test_InternalBytes,
@@ -538,6 +540,34 @@ test_utf8_decodeBytes_encodeBytes =
                         ]
                     ]
         (===) expect actual
+
+test_decodeBytes :: TestTree
+test_decodeBytes =
+    testBytes
+        "test bad decoding"
+        decodeBytesBytesSymbol
+        [ Test.String.asInternal "bad"
+        , asInternal ""
+        ]
+        ( Pattern.fromTermLike $
+            mkApplySymbol
+                decodeBytesBytesSymbol
+                [Test.String.asInternal "bad", asInternal ""]
+        )
+
+test_encodeBytes :: TestTree
+test_encodeBytes =
+    testBytes
+        "test bad encoding"
+        encodeBytesBytesSymbol
+        [ Test.String.asInternal "bad"
+        , Test.String.asInternal ""
+        ]
+        ( Pattern.fromTermLike $
+            mkApplySymbol
+                encodeBytesBytesSymbol
+                [Test.String.asInternal "bad", Test.String.asInternal ""]
+        )
 
 int2bytesData ::
     -- | (integer, big endian?, bytes)
