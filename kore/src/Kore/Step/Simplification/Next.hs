@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Next (
     simplify,
+    mkNextDistributeOr,
 ) where
 
 import Kore.Internal.OrPattern (
@@ -45,6 +46,20 @@ simplifyEvaluated ::
 simplifyEvaluated simplified =
     OrPattern.fromTermLike $
         TermLike.markSimplified $
-            mkNext $
+            mkNextDistributeOr $
                 Pattern.toTermLike $
                     OrPattern.toPattern simplified
+
+mkNextDistributeOr ::
+    TermLike RewritingVariableName -> TermLike RewritingVariableName
+mkNextDistributeOr (TermLike (attrs :< OrF Or{orSort, orFirst, orSecond})) =
+    TermLike
+        ( attrs :<
+            OrF
+                ( Or
+                    orSort
+                    (mkNextDistributeOr orFirst)
+                    (mkNextDistributeOr orSecond)
+                )
+        )
+mkNextDistributeOr term = mkNext term
