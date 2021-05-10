@@ -68,10 +68,11 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
+import Kore.Equation.Validate
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.TermLike (
     freeVariables,
  )
@@ -356,6 +357,7 @@ verifyAxiomSentence sentence =
                 verifiedModule'
                 (freeVariables sentence)
                 (sentenceAxiomAttributes sentence)
+        validateAxiom attrs verified
         State.modify $ addAxiom verified attrs
   where
     addAxiom verified attrs =
@@ -483,7 +485,7 @@ parseAndVerifyAxiomAttributes ::
     IndexedModule Verified.Pattern Attribute.Symbol attrs ->
     FreeVariables VariableName ->
     Attributes ->
-    error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
+    error (Attribute.Axiom Symbol.Symbol VariableName)
 parseAndVerifyAxiomAttributes indexModule freeVars attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where

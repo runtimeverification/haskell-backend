@@ -55,6 +55,7 @@ import Kore.Syntax.Definition hiding (
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty (
@@ -142,14 +143,12 @@ testDef =
         , updateAttributes
             ( Attributes
                 [ Attribute.functionAttribute
-                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
             ( Attributes
                 [ Attribute.functionAttribute
-                , Attribute.constructorAttribute
                 ]
             )
             (simpleSymbolSentence (SymbolName "g") (SortName "S"))
@@ -172,15 +171,29 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
-                            (mkTop sortVarS)
+                            ( mkAnd
+                                (mkTop sortVarS)
+                                ( mkAnd
+                                    ( mkIn
+                                        sortVarS
+                                        ( mkElemVar $
+                                            mkElementVariable (testId "tVar") sortS
+                                        )
+                                        (mkApplySymbol tHead [])
+                                    )
+                                    (mkTop sortVarS)
+                                )
+                            )
                             ( mkAnd
                                 ( mkEquals
                                     sortVarS
                                     ( mkApplySymbol
                                         (injHead sortS sortS)
-                                        [mkApplySymbol tHead []]
+                                        [ mkElemVar $
+                                            mkElementVariable (testId "tVar") sortS
+                                        ]
                                     )
                                     (mkApplySymbol sHead [])
                                 )
@@ -192,7 +205,7 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -209,14 +222,14 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
                                 ( mkEquals
                                     sortVarS
-                                    (mkTop sortS)
                                     (mkApplySymbol fHead [])
+                                    (mkTop sortS)
                                 )
                                 (mkTop sortVarS)
                             )
@@ -227,7 +240,7 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.priorityAttribute 2]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -245,7 +258,7 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.priorityAttribute 3]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -263,7 +276,7 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.owiseAttribute]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -281,7 +294,7 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.priorityAttribute 1]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -298,7 +311,7 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -315,7 +328,7 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -335,7 +348,7 @@ testDef =
                         [ simplificationAttribute (Just 3)
                         ]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -355,7 +368,7 @@ testDef =
                         [ simplificationAttribute (Just 1)
                         ]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -375,7 +388,7 @@ testDef =
                         [ simplificationAttribute (Just 2)
                         ]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -392,7 +405,7 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkRewrites
                             (mkAnd mkTop_ (mkApplySymbol fHead []))
                             (mkAnd mkTop_ (mkApplySymbol tHead []))
@@ -402,7 +415,7 @@ testDef =
                 { sentenceAxiomParameters = [sortVar, sortVar1]
                 , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkImplies
                             (mkTop sortVarS)
                             ( mkAnd
@@ -513,7 +526,7 @@ test_functionRegistry =
                     Just PartitionedEquations{functionRules} ->
                         assertEqual
                             ""
-                            [1, 2, 3, defaultPriority, owisePriority]
+                            [1, 2, 3, defaultPriority, defaultPriority, owisePriority]
                             (fmap Equation.equationPriority functionRules)
                     _ -> assertFailure "Should find function rules for f"
               )

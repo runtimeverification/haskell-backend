@@ -7,7 +7,6 @@ module Kore.Builtin.String.String (
     asBuiltin,
     asInternal,
     asPattern,
-    asTermLike,
     asPartialPattern,
 
     -- * keys
@@ -38,7 +37,10 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike hiding (
+    DomainValueF,
+    StringLiteralF,
+ )
 import Prelude.Kore
 
 -- | Builtin name of the @String@ sort.
@@ -70,28 +72,6 @@ asBuiltin ::
     Text ->
     InternalString
 asBuiltin = InternalString
-
-{- | Render an 'String' as a domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @String@ sort, but this is not
-  checked.
-
-  See also: 'sort'
--}
-asTermLike ::
-    InternalVariable variable =>
-    -- | builtin value to render
-    InternalString ->
-    TermLike variable
-asTermLike internal =
-    mkDomainValue
-        DomainValue
-            { domainValueSort = internalStringSort
-            , domainValueChild = mkStringLiteral internalStringValue
-            }
-  where
-    InternalString{internalStringSort} = internal
-    InternalString{internalStringValue} = internal
 
 asPattern ::
     InternalVariable variable =>

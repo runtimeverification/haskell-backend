@@ -3,7 +3,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.Imports (
 ) where
 
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,
@@ -19,6 +18,7 @@ import Kore.Syntax.Definition
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -362,7 +362,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkTop sortReferenceInSort
+                    externalize $ mkTop sortReferenceInSort
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInSortSupportingSentences =
@@ -378,7 +378,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize topSortPattern
+                    externalize topSortPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaSortReferenceInTopPatternSentence =
@@ -386,7 +386,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize metaTopSortPattern
+                    externalize metaTopSortPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInExistsPatternSentence =
@@ -394,7 +394,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkExists existsVariable (mkElemVar existsVariable)
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -405,7 +405,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkAnd (mkTop sort) mkTop_
+                    externalize $ mkAnd (mkTop sort) mkTop_
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInNextPatternSentence =
@@ -413,7 +413,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkNext (mkTop sort)
+                    externalize $ mkNext (mkTop sort)
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInPatternInPatternSentence =
@@ -421,7 +421,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkNext $
                             mkEquals
                                 anotherSort
@@ -477,7 +477,7 @@ sortVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    Builtin.externalize $ mkTop sort :: ParsedPattern
+                    externalize $ mkTop sort :: ParsedPattern
                 , sentenceAliasAttributes = Attributes []
                 }
     sortReferenceInSentenceAliasSortsSentence =
@@ -502,7 +502,7 @@ sortVisibilityTests =
                             ]
                         }
                 , sentenceAliasRightPattern =
-                    Builtin.externalize $ mkTop anotherSort :: ParsedPattern
+                    externalize $ mkTop anotherSort :: ParsedPattern
                 , sentenceAliasAttributes = Attributes []
                 }
     sortReferenceInSentenceAliasSortsSupportSentences =
@@ -512,7 +512,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkApplySymbol
                             Internal.Symbol
                                 { symbolConstructor = testId "symbol2"
@@ -662,7 +662,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize symbolPattern
+                    externalize symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaSymbolReferenceInAxiomSentence =
@@ -670,7 +670,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize metaSymbolPattern
+                    externalize metaSymbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInAndPatternSentence =
@@ -678,7 +678,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkAnd symbolPattern mkTop_
+                    externalize $ mkAnd symbolPattern mkTop_
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInExistsPatternSentence =
@@ -689,7 +689,7 @@ symbolVisibilityTests =
                     mkExists
                         (mkElementVariable (testId "var") defaultSort)
                         symbolPattern
-                        & Builtin.externalize
+                        & externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInNextPatternSentence =
@@ -697,7 +697,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkNext symbolPattern
+                    externalize $ mkNext symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInSymbolOrAliasSentence =
@@ -705,7 +705,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkApplySymbol
                             Internal.Symbol
                                 { symbolConstructor = testId "symbol2"
@@ -841,7 +841,7 @@ aliasVisibilityTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        Builtin.externalize $ mkTop sentenceAliasResultSort
+                        externalize $ mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
                     }
     defaultAliasSupportSentences = [defaultSortDeclaration]
@@ -877,7 +877,7 @@ aliasVisibilityTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        Builtin.externalize $ mkTop sentenceAliasResultSort
+                        externalize $ mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
                     }
     aliasReferenceInAxiomSentence =
@@ -885,7 +885,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize aliasPattern
+                    externalize aliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaAliasReferenceInAxiomSentence =
@@ -893,7 +893,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize metaAliasPattern
+                    externalize metaAliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAndPatternSentence =
@@ -901,7 +901,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkAnd aliasPattern mkTop_
+                    externalize $ mkAnd aliasPattern mkTop_
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInExistsPatternSentence =
@@ -912,7 +912,7 @@ aliasVisibilityTests =
                     mkExists
                         (mkElementVariable (testId "var") defaultSort)
                         aliasPattern
-                        & Builtin.externalize
+                        & externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInNextPatternSentence =
@@ -920,7 +920,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkNext aliasPattern
+                    externalize $ mkNext aliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAliasOrAliasSentence =
@@ -928,7 +928,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $
+                    externalize $
                         mkApplyAlias
                             Internal.Alias
                                 { aliasConstructor = testId "alias2"
@@ -975,7 +975,7 @@ aliasVisibilityTests =
                                 ]
                             }
                     , sentenceAliasRightPattern =
-                        Builtin.externalize $ mkTop sentenceAliasResultSort
+                        externalize $ mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
                     } :
             defaultAliasSupportSentences
@@ -1342,7 +1342,7 @@ nameDuplicationTests =
                                     , applicationChildren = []
                                     }
                             , sentenceAliasRightPattern =
-                                Builtin.externalize $
+                                externalize $
                                     mkTop (SortVariableSort sv1)
                             , sentenceAliasAttributes = Attributes []
                             }

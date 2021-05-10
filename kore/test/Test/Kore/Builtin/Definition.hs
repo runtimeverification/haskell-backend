@@ -38,7 +38,6 @@ import Kore.Attribute.Subsort (
 import Kore.Attribute.Synthetic (
     synthesize,
  )
-import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Internal.ApplicationSorts
@@ -74,6 +73,7 @@ import Kore.Syntax.Definition as Syntax
 import qualified Kore.Syntax.PatternF as PatternF
 import Prelude.Kore
 import Test.Kore
+import Test.Kore.Builtin.External
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 -- -------------------------------------------------------------
@@ -1445,7 +1445,7 @@ subsortDecl subsort supersort =
         SentenceAxiom
             { sentenceAxiomParameters = [sortVariableR]
             , sentenceAxiomPattern =
-                Builtin.externalize
+                externalize
                     . mkExists x
                     $ mkEquals
                         sortR
@@ -1758,7 +1758,7 @@ testModuleWithTwoClaims =
                 ( SentenceAxiom
                     { sentenceAxiomParameters = [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
-                        Builtin.externalize (mkStringLiteral "a")
+                        externalize (mkStringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
@@ -1772,7 +1772,7 @@ testModuleWithTwoClaims =
                 ( SentenceAxiom
                     { sentenceAxiomParameters = [SortVariable (testId "sv2")]
                     , sentenceAxiomPattern =
-                        Builtin.externalize (mkStringLiteral "c")
+                        externalize (mkStringLiteral "c")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
