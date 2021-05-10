@@ -327,6 +327,11 @@ test_string2Base =
         [asInternal "zZ", Test.Int.asInternal 36]
         (Test.Int.asPattern 1295)
     , Test.Int.testInt
+        "string2Base base-36 negative"
+        string2BaseStringSymbol
+        [asInternal "-3k", Test.Int.asInternal 36]
+        (Test.Int.asPattern (-128))
+    , Test.Int.testInt
         "string2Base bad base"
         string2BaseStringSymbol
         [asInternal "1", Test.Int.asInternal 37]
