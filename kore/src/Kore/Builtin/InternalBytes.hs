@@ -44,6 +44,8 @@ import Data.String (
 import Data.Text (
     Text,
  )
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 import Data.Word (
     Word8,
  )
@@ -60,6 +62,7 @@ import Kore.Internal.ApplicationSorts (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Log.WarnNotImplemented
 import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier,
  )
@@ -213,6 +216,38 @@ evalString2Bytes =
             & asPattern resultSort
             & return
     evalString2Bytes0 _ _ _ = Builtin.wrongArity string2BytesKey
+
+evalDecodeBytes :: BuiltinAndAxiomSimplifier
+evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
+  where
+    evalDecodeBytes0 _ app
+      | [_strTerm, _bytesTerm] <- applicationChildren app = do
+          let Application{applicationSymbolOrAlias = symbol} = app
+              resultSort = symbolSorts symbol & applicationSortsResult
+          _str <- String.expectBuiltinString decodeBytesKey _strTerm
+          _bytes <- matchBuiltinBytes _bytesTerm
+          case Text.unpack _str of
+            "UTF-8" -> case Text.decodeUtf8' _bytes of
+              Right str -> return $ String.asPattern resultSort str
+              Left _ -> return (Pattern.bottomOf resultSort)  -- UnicodeException
+            _ -> warnNotImplemented app >> empty
+    evalDecodeBytes0 _ _ = Builtin.wrongArity decodeBytesKey
+
+evalEncodeBytes :: BuiltinAndAxiomSimplifier
+evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
+  where
+    evalEncodeBytes0 _ app
+      | [_encodingTerm, _contentsTerm] <- applicationChildren app = do
+          let Application{applicationSymbolOrAlias = symbol} = app
+              resultSort = symbolSorts symbol & applicationSortsResult
+          _encoding <- String.expectBuiltinString encodeBytesKey _encodingTerm
+          _contents <- String.expectBuiltinString encodeBytesKey _contentsTerm
+          case Text.unpack _encoding of
+            "UTF-8" -> Text.encodeUtf8 _contents
+                         & asPattern resultSort
+                         & return
+            _ -> warnNotImplemented app >> empty
+    evalEncodeBytes0 _ _ = Builtin.wrongArity encodeBytesKey
 
 evalUpdate :: BuiltinAndAxiomSimplifier
 evalUpdate =
@@ -450,6 +485,8 @@ builtinFunctions =
     Map.fromList
         [ (bytes2StringKey, evalBytes2String)
         , (string2BytesKey, evalString2Bytes)
+        , (decodeBytesKey, evalDecodeBytes)
+        , (encodeBytesKey, evalEncodeBytes)
         , (updateKey, evalUpdate)
         , (getKey, evalGet)
         , (substrKey, evalSubstr)
