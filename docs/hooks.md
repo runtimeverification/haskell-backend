@@ -989,3 +989,17 @@ using the provided value.
     hooked-symbol bytes2int{}(Bytes{}, Endianness{}, Signedness{}) : Int{}
         [hook{}("BYTES.bytes2int")]
 ~~~
+
+### BYTES.decodeBytes
+
+~~~
+    hooked-symbol decodeBytes{}(String{}, Bytes{}) : String{}
+        [hook{}("BYTES.decodeBytes")]
+~~~
+
+### BYTES.encodeBytes
+
+~~~
+    hooked-symbol encodeBytes{}(/* encoding */ String{}, /* contents */ String{}) : Bytes{}
+        [hook{}("BYTES.encodeBytes")]
+~~~
