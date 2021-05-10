@@ -53,6 +53,9 @@ import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
@@ -601,7 +604,7 @@ deleteFreeVariable variable =
         (field @"freeVariables")
         (Attribute.FreeVariables.bindVariable variable)
 
-instance Attribute.HasFreeVariables (TermAttributes variable) variable where
+instance HasFreeVariables (TermAttributes variable) variable where
     freeVariables = freeVariables
 
 {- | @TermLike@ is a term-like Kore pattern.
@@ -978,7 +981,7 @@ traverseVariablesF adj =
 extractAttributes :: TermLike variable -> TermAttributes variable
 extractAttributes (TermLike (attrs :< _)) = attrs
 
-instance Attribute.HasFreeVariables (TermLike variable) variable where
+instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.

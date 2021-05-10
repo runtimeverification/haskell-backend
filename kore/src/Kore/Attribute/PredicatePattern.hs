@@ -15,7 +15,7 @@ module Kore.Attribute.PredicatePattern (
     mapVariables,
     traverseVariables,
     deleteFreeVariable,
-    fromPattern,
+    -- fromPattern,
 
     -- * Re-exports
     module Kore.Attribute.Pattern.FreeVariables,
@@ -23,33 +23,29 @@ module Kore.Attribute.PredicatePattern (
 
 import qualified Control.Lens as Lens
 import Data.Generics.Product
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Kore.Attribute.Pattern (
-    Pattern,
- )
-import qualified Kore.Attribute.Pattern as Pattern
-import Kore.Attribute.Pattern.FreeVariables hiding (
-    freeVariables,
- )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables (
-    freeVariables,
- )
-import Kore.Attribute.Pattern.Simplified hiding (
-    isSimplified,
-    isSimplifiedAnyCondition,
-    isSimplifiedSomeCondition,
- )
-import qualified Kore.Attribute.Pattern.Simplified as Simplified (
-    isSimplified,
-    isSimplifiedAnyCondition,
-    isSimplifiedSomeCondition,
- )
+import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.FreeVariables hiding
+    ( freeVariables
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+    ( freeVariables
+    )
+import Kore.Attribute.Pattern.Simplified hiding
+    ( isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified
+    ( isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Syntax.Variable
 import Prelude.Kore
 
@@ -150,7 +146,7 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (PredicatePattern variable) variable where
     freeVariables = freeVariables
-
-fromPattern :: Pattern variable -> PredicatePattern variable
-fromPattern p =
-    PredicatePattern (Pattern.freeVariables p) (Pattern.simplifiedAttribute p)
+--
+-- fromPattern :: Pattern variable -> PredicatePattern variable
+-- fromPattern p =
+--     PredicatePattern (Pattern.freeVariables p) (Pattern.simplifiedAttribute p)
