@@ -992,12 +992,16 @@ using the provided value.
 
 ### BYTES.decodeBytes
 
+`BYTES.decodeBytes` supports `"UTF-8"`, `"UTF-16LE"`, `"UTF-16BE"`, `"UTF-32LE"`, and `"UTF-32BE"` as the first argument.
+
 ~~~
-    hooked-symbol decodeBytes{}(String{}, Bytes{}) : String{}
+    hooked-symbol decodeBytes{}(/* decoding */ String{}, /* contents */ Bytes{}) : String{}
         [hook{}("BYTES.decodeBytes")]
 ~~~
 
 ### BYTES.encodeBytes
+
+`BYTES.encodeBytes` supports `"UTF-8"`, `"UTF-16LE"`, `"UTF-16BE"`, `"UTF-32LE"`, and `"UTF-32BE"` as the first argument.
 
 ~~~
     hooked-symbol encodeBytes{}(/* encoding */ String{}, /* contents */ String{}) : Bytes{}
