@@ -20,23 +20,23 @@ module Kore.Attribute.Pattern.FreeVariables (
 ) where
 
 import Data.Functor.Const
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
-import Prelude.Kore hiding
-    ( toList
-    )
+import Prelude.Kore hiding (
+    toList,
+ )
 
 newtype FreeVariables variable = FreeVariables {getFreeVariables :: Map (SomeVariableName variable) Sort}
     deriving stock (Eq, Ord, Show)

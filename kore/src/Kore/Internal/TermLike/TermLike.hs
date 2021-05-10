@@ -53,9 +53,9 @@ import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
