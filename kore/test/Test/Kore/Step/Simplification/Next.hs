@@ -16,8 +16,10 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Next
-    ( simplify, mkNextDistributeOr )
+import Kore.Step.Simplification.Next (
+    mkNextDistributeOr,
+    simplify,
+ )
 import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty

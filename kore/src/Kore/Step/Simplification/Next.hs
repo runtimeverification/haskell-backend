@@ -54,8 +54,8 @@ mkNextDistributeOr ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 mkNextDistributeOr (TermLike (attrs :< OrF Or{orSort, orFirst, orSecond})) =
     TermLike
-        ( attrs :<
-            OrF
+        ( attrs
+            :< OrF
                 ( Or
                     orSort
                     (mkNextDistributeOr orFirst)
