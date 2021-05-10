@@ -23,32 +23,32 @@ module Kore.Internal.TermLike.TermLike (
     setAttributeSimplified,
 ) where
 
-import Control.Comonad.Trans.Cofree
-    ( tailF
-    )
-import Control.Lens
-    ( Lens'
-    )
+import Control.Comonad.Trans.Cofree (
+    tailF,
+ )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
+import Data.Functor.Identity (
+    Identity (..),
+ )
 import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
+import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
@@ -63,12 +63,12 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness
-    ( Endianness
-    )
-import Kore.Builtin.Signedness.Signedness
-    ( Signedness
-    )
+import Kore.Builtin.Endianness.Endianness (
+    Endianness,
+ )
+import Kore.Builtin.Signedness.Signedness (
+    Signedness,
+ )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -79,19 +79,19 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key
-    ( Key
-    , KeyAttributes (KeyAttributes)
-    , KeyF
-    )
+import Kore.Internal.Key (
+    Key,
+    KeyAttributes (KeyAttributes),
+    KeyF,
+ )
 import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Internal.Symbol
-    ( Symbol
-    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
@@ -118,9 +118,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Prelude.Kore
@@ -175,9 +175,9 @@ instance (Unparse variable, Unparse child) => Unparse (TermLikeF variable child)
     unparse2 = Unparser.unparse2Generic
 
 instance
-    Ord variable
-    => Synthetic (Attribute.FreeVariables variable) (TermLikeF variable)
-  where
+    Ord variable =>
+    Synthetic (Attribute.FreeVariables variable) (TermLikeF variable)
+    where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -450,7 +450,6 @@ instance From (KeyF child) (TermLikeF variable child) where
     from (Key.StringLiteralF stringLiteral) = StringLiteralF stringLiteral
     {-# INLINE from #-}
 
-
 -- | @TermAttributes@ are the attributes of a pattern collected during verification.
 data TermAttributes variable = TermAttributes
     { -- | The sort determined by the verifier.
@@ -508,16 +507,16 @@ instance Attribute.HasConstructorLike (TermAttributes variable) where
         TermAttributes{constructorLike} =
             constructorLike
 
-attributeSimplifiedAttribute
-    :: HasCallStack
-    => TermAttributes variable
-    -> Attribute.Simplified
+attributeSimplifiedAttribute ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Attribute.Simplified
 attributeSimplifiedAttribute patt@TermAttributes{simplified} =
     assertSimplifiedConsistency patt simplified
 
-constructorLikeAttribute
-    :: TermAttributes variable
-    -> Attribute.ConstructorLike
+constructorLikeAttribute ::
+    TermAttributes variable ->
+    Attribute.ConstructorLike
 constructorLikeAttribute TermAttributes{constructorLike} = constructorLike
 
 {- Checks whether the pattern is simplified relative to the given side
@@ -544,10 +543,10 @@ isAttributeSimplifiedSomeCondition patt@TermAttributes{simplified} =
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
-isAttributeSimplifiedAnyCondition
-    :: HasCallStack
-    => TermAttributes variable
-    -> Bool
+isAttributeSimplifiedAnyCondition ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Bool
 isAttributeSimplifiedAnyCondition patt@TermAttributes{simplified} =
     assertSimplifiedConsistency patt $
         Attribute.isSimplifiedAnyCondition simplified
@@ -559,10 +558,10 @@ assertSimplifiedConsistency TermAttributes{constructorLike, simplified}
         error "Inconsistent attributes, constructorLike implies fully simplified."
     | otherwise = id
 
-setAttributeSimplified
-    :: Attribute.Simplified
-    -> TermAttributes variable
-    -> TermAttributes variable
+setAttributeSimplified ::
+    Attribute.Simplified ->
+    TermAttributes variable ->
+    TermAttributes variable
 setAttributeSimplified simplified patt = patt{simplified}
 
 {- | Use the provided mapping to replace all variables in a 'TermAttributes'.
@@ -1072,10 +1071,10 @@ updateCallStack = Lens.set created callstack
     created = _attributes . Lens.Product.field @"created"
     callstack =
         Attribute.Created
-        . Just
-        . GHC.popCallStack
-        . GHC.popCallStack
-        $ GHC.callStack
+            . Just
+            . GHC.popCallStack
+            . GHC.popCallStack
+            $ GHC.callStack
 
     _attributes :: Lens' (TermLike variable) (TermAttributes variable)
     _attributes =
