@@ -3,22 +3,15 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.Step.Simplification.ExpandAlias (
-    expandAlias,
+    expandSingleAlias,
+    matchExpandAlias,
     substituteInAlias,
+    UnifyExpandAlias (..),
 ) where
 
-import Control.Error (
-    MaybeT,
- )
-import Control.Error.Util (
-    nothing,
- )
 import qualified Data.Map.Strict as Map
 import Kore.Internal.Alias (
     Alias (..),
- )
-import Kore.Internal.Pattern (
-    Pattern,
  )
 import Kore.Internal.TermLike (
     InternalVariable,
@@ -34,25 +27,22 @@ import Kore.Internal.TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+
 import Prelude.Kore
 
-expandAlias ::
-    forall unifier.
-    MonadUnify unifier =>
-    ( TermLike RewritingVariableName ->
-      TermLike RewritingVariableName ->
-      MaybeT unifier (Pattern RewritingVariableName)
-    ) ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-expandAlias recurse t1 t2 =
-    case (expandSingleAlias t1, expandSingleAlias t2) of
-        (Nothing, Nothing) -> nothing
-        (t1', t2') -> recurse (fromMaybe t1 t1') (fromMaybe t2 t2')
+data UnifyExpandAlias = UnifyExpandAlias {
+    term1, term2 :: !(TermLike RewritingVariableName)
+}
+
+matchExpandAlias
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyExpandAlias
+matchExpandAlias t1 t2
+    = case (expandSingleAlias t1, expandSingleAlias t2) of
+        (Nothing, Nothing) -> Nothing
+        (t1', t2') -> Just $ UnifyExpandAlias (fromMaybe t1 t1') (fromMaybe t2 t2')
+{-# INLINE matchExpandAlias #-}
 
 expandSingleAlias ::
     TermLike RewritingVariableName ->

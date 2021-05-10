@@ -6,6 +6,7 @@ module Kore.Step.Simplification.NoConfusion (
     equalInjectiveHeadsAndEquals,
     constructorAndEqualsAssumesDifferentHeads,
     matchEqualInjectiveHeadsAndEquals,
+    matchConstructorAndEqualsAssumesDifferentHeads,
 ) where
 
 import Control.Error (
@@ -87,29 +88,71 @@ equalInjectiveHeadsAndEquals
             , secondChildren
             } = unifyData
 
+data ConstructorAndEqualsAssumesDifferentHeads =
+     ConstructorAndEqualsAssumesDifferentHeads {
+         firstHead, secondHead :: Symbol
+     }
+
+matchConstructorAndEqualsAssumesDifferentHeads
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe ConstructorAndEqualsAssumesDifferentHeads
+matchConstructorAndEqualsAssumesDifferentHeads
+    first second
+    | App_ firstHead _ <- first
+    , App_ secondHead _ <- second
+    , firstHead /= secondHead
+    = Just $ ConstructorAndEqualsAssumesDifferentHeads firstHead secondHead
+    | otherwise = empty
+{-# INLINE matchConstructorAndEqualsAssumesDifferentHeads #-}
+
 {- | Unify two constructor application patterns.
 
 Assumes that the two patterns were already tested for equality and were found
 to be different; therefore their conjunction is @\\bottom@.
 -}
+-- constructorAndEqualsAssumesDifferentHeads ::
+--     MonadUnify unifier =>
+--     HasCallStack =>
+--     TermLike RewritingVariableName ->
+--     TermLike RewritingVariableName ->
+--     MaybeT unifier a
+-- constructorAndEqualsAssumesDifferentHeads
+--     first@(App_ firstHead _)
+--     second@(App_ secondHead _) =
+--         do
+--             Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
+--             Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
+--             assert (firstHead /= secondHead) $
+--                 lift $ do
+--                     explainBottom
+--                         "Cannot unify different constructors or incompatible \
+--                         \sort injections."
+--                         first
+--                         second
+--                     empty
+-- constructorAndEqualsAssumesDifferentHeads _ _ = empty
+
 constructorAndEqualsAssumesDifferentHeads ::
     MonadUnify unifier =>
-    HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
+    ConstructorAndEqualsAssumesDifferentHeads ->
     MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
-    first@(App_ firstHead _)
-    second@(App_ secondHead _) =
+    first second unifyData =
         do
+            -- should these two guards be pushed to the match?
             Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
             Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
-            assert (firstHead /= secondHead) $
-                lift $ do
+            lift $ do
                     explainBottom
                         "Cannot unify different constructors or incompatible \
                         \sort injections."
                         first
                         second
                     empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty
+
+  where
+    ConstructorAndEqualsAssumesDifferentHeads
+        { firstHead, secondHead } = unifyData
