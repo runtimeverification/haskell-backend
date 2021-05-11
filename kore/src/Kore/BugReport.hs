@@ -39,7 +39,7 @@ import Options.Applicative
 import Prelude.Kore
 import System.Directory (
     listDirectory,
-    removePathForcibly,
+    removePathForcibly, doesFileExist, copyFile, removeFile
  )
 import System.Exit (
     ExitCode (..),
@@ -56,6 +56,7 @@ import System.IO.Temp (
     createTempDirectory,
     getCanonicalTemporaryDirectory,
  )
+import qualified Control.Monad.Extra as Monad
 
 newtype BugReport = BugReport {toReport :: FilePath}
     deriving stock (Eq, Show)
@@ -102,6 +103,12 @@ writeBugReportArchive ::
     FilePath ->
     IO ()
 writeBugReportArchive base tar = do
+    let sessionCommands = ".sessionCommands"
+    Monad.whenM
+        (doesFileExist ".sessionCommands")
+        $ do
+            copyFile sessionCommands (base </> tail sessionCommands)
+            removeFile sessionCommands
     contents <- listDirectory base
     let filename = tar <.> "tar" <.> "gz"
     ByteString.Lazy.writeFile filename . GZip.compress . Tar.write
