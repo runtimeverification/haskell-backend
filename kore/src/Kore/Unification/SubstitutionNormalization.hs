@@ -15,30 +15,30 @@ module Kore.Unification.SubstitutionNormalization (
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.State.Strict as State
-import Data.Functor (
-    (<&>),
- )
+import Data.Functor
+    ( (<&>)
+    )
 import Data.Functor.Const
-import Data.Functor.Foldable (
-    Base,
- )
+import Data.Functor.Foldable
+    ( Base
+    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Graph.TopologicalSort
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import Data.Set (
-    Set,
- )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Substitution (
-    Assignment,
-    Normalization (..),
-    UnwrappedSubstitution,
-    pattern Assignment,
- )
+import Kore.Internal.Substitution
+    ( Assignment
+    , pattern Assignment
+    , Normalization (..)
+    , UnwrappedSubstitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike

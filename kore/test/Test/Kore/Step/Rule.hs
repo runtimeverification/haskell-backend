@@ -4,39 +4,38 @@ module Test.Kore.Step.Rule (
     test_rewritePatternToRewriteRuleAndBack,
 ) where
 
-import Control.DeepSeq (
-    force,
- )
-import Control.Exception (
-    evaluate,
- )
+import Control.DeepSeq
+    ( force
+    )
+import Control.Exception
+    ( evaluate
+    )
 import Data.Default
 import qualified Data.Map.Strict as Map
-import Data.Text (
-    Text,
- )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
-import Kore.Internal.ApplicationSorts (
-    ApplicationSorts (..),
- )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Rule
 import Kore.Step.RulePattern
-import Kore.Syntax.Definition hiding (
-    Alias (..),
- )
+import Kore.Syntax.Definition hiding
+    ( Alias (..)
+    )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
-import Test.Kore (
-    testId,
- )
+import Test.Kore
+    ( testId
+    )
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -311,7 +310,7 @@ applyInj ::
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    Attribute.Pattern{patternSort = sortFrom} = extractAttributes child
+    TermAttributes{termSort = sortFrom} = extractAttributes child
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")

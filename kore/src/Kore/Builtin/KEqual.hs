@@ -26,54 +26,53 @@ module Kore.Builtin.KEqual (
     iteKey,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
+import Control.Error
+    ( MaybeT
+    )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import Data.String (
-    IsString,
- )
-import Data.Text (
-    Text,
- )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
-import qualified Kore.Attribute.Pattern as Attribute
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin (
-    acceptAnySort,
- )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
- )
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Definition (
-    SentenceSymbol (..),
- )
+import Kore.Syntax.Definition
+    ( SentenceSymbol (..)
+    )
 import Kore.Unification.Unify as Unify
 import qualified Logic
 import Prelude.Kore
@@ -152,7 +151,7 @@ evalKEq ::
     SideCondition variable ->
     CofreeF
         (Application Symbol)
-        (Attribute.Pattern variable)
+        (TermAttributes variable)
         (TermLike variable) ->
     simplifier (AttemptedAxiom variable)
 evalKEq true _ (valid :< app) =
@@ -160,7 +159,7 @@ evalKEq true _ (valid :< app) =
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
-    sort = Attribute.patternSort valid
+    sort = termSort valid
     Application{applicationChildren} = app
     comparison x y
         | true = x == y
@@ -185,7 +184,7 @@ evalKIte ::
     SideCondition RewritingVariableName ->
     CofreeF
         (Application Symbol)
-        (Attribute.Pattern RewritingVariableName)
+        (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
     simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte _ (_ :< app) =

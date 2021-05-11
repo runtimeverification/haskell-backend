@@ -9,94 +9,93 @@ module Kore.Step.Axiom.Matcher (
 ) where
 
 import qualified Control.Error as Error
-import Control.Lens (
-    (%=),
-    (.=),
-    (<>=),
- )
+import Control.Lens
+    ( (%=)
+    , (.=)
+    , (<>=)
+    )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import Control.Monad.RWS.Strict (
-    MonadReader,
-    MonadState,
-    RWST (..),
-    ask,
-    evalRWST,
- )
+import Control.Monad.RWS.Strict
+    ( MonadReader
+    , MonadState
+    , RWST (..)
+    , ask
+    , evalRWST
+    )
 import qualified Control.Monad.State.Strict as Monad.State
-import Control.Monad.Trans.Maybe (
-    MaybeT (..),
- )
-import qualified Data.Align as Align (
-    align,
- )
+import Control.Monad.Trans.Maybe
+    ( MaybeT (..)
+    )
+import qualified Data.Align as Align
+    ( align
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import Data.Sequence (
-    Seq,
-    pattern (:|>),
- )
+import Data.Sequence
+    ( pattern (:|>)
+    , Seq
+    )
 import qualified Data.Sequence as Seq
-import Data.Set (
-    Set,
- )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import Data.These (
-    These (..),
- )
+import Data.These
+    ( These (..)
+    )
 import qualified GHC.Generics as GHC
-import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
 import Kore.Internal.InternalList
-import Kore.Internal.InternalMap hiding (
-    Element,
-    NormalizedAc,
-    Value,
- )
-import Kore.Internal.InternalSet hiding (
-    Element,
-    NormalizedAc,
-    Value,
- )
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
+import Kore.Internal.InternalMap hiding
+    ( Element
+    , NormalizedAc
+    , Value
+    )
+import Kore.Internal.InternalSet hiding
+    ( Element
+    , NormalizedAc
+    , Value
+    )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.NormalizedAc as Builtin (
-    Element,
-    NormalizedAc,
-    Value,
- )
-import Kore.Internal.Predicate (
-    Predicate,
-    makeCeilPredicate,
- )
+import qualified Kore.Internal.NormalizedAc as Builtin
+    ( Element
+    , NormalizedAc
+    , Value
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeCeilPredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike hiding (
-    substitute,
- )
+import Kore.Internal.TermLike hiding
+    ( substitute
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
-import Kore.Step.Simplification.Overloading (
-    matchOverloading,
- )
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
+import Kore.Step.Simplification.Overloading
+    ( matchOverloading
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Variables
@@ -929,7 +928,7 @@ renormalizeBuiltins ::
     TermLike variable
 renormalizeBuiltins =
     Recursive.fold $ \base@(attrs :< termLikeF) ->
-        let bottom' = mkBottom (Attribute.Pattern.patternSort attrs)
+        let bottom' = mkBottom (termSort attrs)
          in case termLikeF of
                 InternalMapF internalMap ->
                     Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap

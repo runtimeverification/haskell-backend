@@ -43,13 +43,13 @@ module Kore.Step.Simplification.Simplify (
 
 import qualified Control.Monad as Monad
 import Control.Monad.Counter
-import Control.Monad.Morph (
-    MFunctor,
- )
+import Control.Monad.Morph
+    ( MFunctor
+    )
 import qualified Control.Monad.Morph as Monad.Morph
-import Control.Monad.RWS.Strict (
-    RWST,
- )
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import qualified Control.Monad.State.Strict as Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
@@ -58,79 +58,79 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
-import Data.Text (
-    Text,
- )
-import qualified GHC.Generics as GHC
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern as Attribute
+import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    Conditional,
- )
+import Kore.Internal.Conditional
+    ( Conditional
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike (
-    TermLike,
-    TermLikeF (..),
-    pattern App_,
- )
-import Kore.Internal.Variable (
-    InternalVariable,
- )
-import Kore.Log.WarnFunctionWithoutEvaluators (
-    warnFunctionWithoutEvaluators,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.Axiom.Identifier (
-    AxiomIdentifier,
- )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , TermAttributes
+    , TermLike
+    , TermLikeF (..)
+    )
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
+import Kore.Log.WarnFunctionWithoutEvaluators
+    ( warnFunctionWithoutEvaluators
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Memo as Memo
-import Kore.Step.Simplification.InjSimplifier (
-    InjSimplifier,
- )
-import Kore.Step.Simplification.OverloadSimplifier (
-    OverloadSimplifier (..),
- )
+import Kore.Step.Simplification.InjSimplifier
+    ( InjSimplifier
+    )
+import Kore.Step.Simplification.OverloadSimplifier
+    ( OverloadSimplifier (..)
+    )
 import Kore.Syntax.Application
 import Kore.Unparser
 import Log
 import Logic
 import Prelude.Kore
-import Pretty (
-    (<+>),
- )
+import Pretty
+    ( (<+>)
+    )
 import qualified Pretty
-import SMT (
-    MonadSMT (..),
- )
+import SMT
+    ( MonadSMT (..)
+    )
 
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
@@ -512,7 +512,7 @@ applicationAxiomSimplifier ::
       SideCondition RewritingVariableName ->
       CofreeF
         (Application Symbol)
-        (Attribute.Pattern RewritingVariableName)
+        (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
       simplifier (AttemptedAxiom RewritingVariableName)
     ) ->

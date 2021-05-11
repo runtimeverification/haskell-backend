@@ -43,87 +43,86 @@ module Kore.Builtin.Builtin (
     module Kore.Builtin.Verifiers,
 ) where
 
-import Control.Error (
-    MaybeT (..),
- )
-import Data.Text (
-    Text,
- )
+import Control.Error
+    ( MaybeT (..)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import Kore.Attribute.Hook (
-    Hook (..),
- )
-import qualified Kore.Attribute.Pattern as Attribute
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import qualified Kore.Attribute.Symbol as Attribute (
-    Symbol (..),
- )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol (..)
+    )
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
-import Kore.Error (
-    Error,
- )
+import Kore.Error
+    ( Error
+    )
 import qualified Kore.Error
-import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
- )
-import Kore.IndexedModule.MetadataTools (
-    MetadataTools (MetadataTools),
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (MetadataTools)
+    , SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Conditional (..),
-    Pattern,
- )
-import Kore.Internal.Pattern as Pattern (
-    fromTermLike,
-    top,
-    withCondition,
- )
-import Kore.Internal.Predicate (
-    makeEqualsPredicate,
- )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
+import Kore.Internal.Pattern as Pattern
+    ( fromTermLike
+    , top
+    , withCondition
+    )
+import Kore.Internal.Predicate
+    ( makeEqualsPredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    topTODO,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    predicateSort,
- )
-import Kore.Step.Simplification.SimplificationType as SimplificationType (
-    SimplificationType (..),
- )
-import Kore.Step.Simplification.Simplify (
-    AttemptedAxiom (..),
-    AttemptedAxiomResults (AttemptedAxiomResults),
-    BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-    MonadSimplify,
-    applicationAxiomSimplifier,
-    makeEvaluateTermCeil,
- )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults (
-    AttemptedAxiomResults (..),
- )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
-import qualified Kore.Unification.Unify as Monad.Unify (
-    scatter,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Sort
+    ( predicateSort
+    )
+import Kore.Step.Simplification.SimplificationType as SimplificationType
+    ( SimplificationType (..)
+    )
+import Kore.Step.Simplification.Simplify
+    ( AttemptedAxiom (..)
+    , AttemptedAxiomResults (AttemptedAxiomResults)
+    , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
+    , MonadSimplify
+    , applicationAxiomSimplifier
+    , makeEvaluateTermCeil
+    )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+    ( AttemptedAxiomResults (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
+import qualified Kore.Unification.Unify as Monad.Unify
+    ( scatter
+    )
 import Kore.Unparser
 import Prelude.Kore
 
@@ -312,7 +311,7 @@ applicationEvaluator impl =
         SideCondition variable ->
         CofreeF
             (Application Symbol)
-            (Attribute.Pattern variable)
+            (TermAttributes variable)
             (TermLike variable) ->
         simplifier (AttemptedAxiom variable)
     evaluator sideCondition (_ :< app) = do
