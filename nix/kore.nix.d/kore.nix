@@ -130,7 +130,6 @@
           "Kore/Attribute/Overload"
           "Kore/Attribute/Owise"
           "Kore/Attribute/Parser"
-          "Kore/Attribute/Pattern"
           "Kore/Attribute/Pattern/ConstructorLike"
           "Kore/Attribute/Pattern/Created"
           "Kore/Attribute/Pattern/Defined"
