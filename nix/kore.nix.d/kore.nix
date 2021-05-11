@@ -223,6 +223,7 @@
           "Kore/Internal/ApplicationSorts"
           "Kore/Internal/Condition"
           "Kore/Internal/Conditional"
+          "Kore/Internal/From"
           "Kore/Internal/Inj"
           "Kore/Internal/InternalBool"
           "Kore/Internal/InternalBytes"
