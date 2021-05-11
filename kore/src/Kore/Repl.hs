@@ -40,6 +40,7 @@ import Data.List (
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import Kore.Attribute.Definition
 import Kore.Attribute.RuleIndex (
     RuleIndex (..),
  )
@@ -122,8 +123,9 @@ runRepl ::
     OutputFile ->
     ModuleName ->
     Log.KoreLogOptions ->
+    KFileLocations ->
     m ()
-runRepl _ [] _ _ _ _ outputFile _ _ =
+runRepl _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -138,7 +140,8 @@ runRepl
     scriptModeOutput
     outputFile
     mainModuleName
-    logOptions =
+    logOptions
+    kFileLocations =
         do
             startTime <- liftIO $ getTime Monotonic
             (newState, _) <-
@@ -208,6 +211,7 @@ runRepl
                 , logger
                 , outputFile
                 , mainModuleName
+                , kFileLocations
                 }
 
         firstClaimIndex :: ClaimIndex

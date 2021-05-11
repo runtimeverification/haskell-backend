@@ -29,6 +29,7 @@ import Data.Text (
     pack,
  )
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Definition
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Condition (
     Condition,
@@ -808,6 +809,7 @@ mkConfig logger =
         , logger
         , outputFile = OutputFile Nothing
         , mainModuleName = ModuleName "TEST"
+        , kFileLocations = KFileLocations []
         }
   where
     stepper0 ::

@@ -80,6 +80,7 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
+import Kore.Attribute.Definition
 import Kore.Internal.Condition (
     Condition,
  )
@@ -602,6 +603,7 @@ data Config m = Config
     , -- | Output resulting pattern to this file.
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
+    , kFileLocations :: KFileLocations
     }
     deriving stock (GHC.Generic)
 
