@@ -14,6 +14,18 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.45.0.0] - 2021-05-10
+
+### Fixed
+
+- The hook `STRING.string2base` remains unevaluated where it is not implemented.
+  (#2546)
+- The backend no longer crashes when it unparses internal representations of
+  certain terms. (#2494)
+- The backend no longer crashes when it rewrites with a rule where the
+  right-hand side is `\bottom`. (#2561)
+- The backend accepts groups of equations containing `owise` rules. (#2523)
+
 ## [0.44.0.0] - 2021-04-22
 
 ### Fixed
