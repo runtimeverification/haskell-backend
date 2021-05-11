@@ -418,8 +418,8 @@ matchInj ::
     Pair (TermLike variable) ->
     MaybeT (MatcherT variable simplifier) ()
 matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
-    InjSimplifier{unifyInj} <- Simplifier.askInjSimplifier
-    unifyInj inj1 inj2 & either (const empty) (push . injChild)
+    injSimplifier <- Simplifier.askInjSimplifier
+    unifyInj injSimplifier inj1 inj2 & either (const empty) (push . injChild)
 matchInj _ = empty
 
 matchOverload ::

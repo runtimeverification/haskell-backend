@@ -495,9 +495,9 @@ unifyString ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     UnifyString ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    unifier (Pattern RewritingVariableName)
 unifyString term1 term2 unifyData =
-    assert (on (==) internalStringSort string1 string2) $ lift worker
+    assert (on (==) internalStringSort string1 string2) worker
   where
     worker :: unifier (Pattern RewritingVariableName)
     worker

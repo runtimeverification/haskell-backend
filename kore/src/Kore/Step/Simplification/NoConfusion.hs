@@ -66,11 +66,11 @@ equalInjectiveHeadsAndEquals ::
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     UnifyEqualInjectiveHeadsAndEquals ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
     unifyData =
-        lift $ do
+        do
             children <- Monad.zipWithM termMerger firstChildren secondChildren
             let merged = foldMap Pattern.withoutTerm children
                 -- TODO (thomas.tuegel): This is tricky!

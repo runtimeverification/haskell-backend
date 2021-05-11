@@ -167,7 +167,7 @@ test_unifyBoolValues =
                 Nothing -> assertEqual "" expected [Nothing]
 
     unify term1 term2 unifyData =
-        run (Bool.unifyBool term1 term2 unifyData)
+        run (lift $ Bool.unifyBool term1 term2 unifyData)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =

@@ -449,9 +449,9 @@ unifyInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     UnifyInt ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    unifier (Pattern RewritingVariableName)
 unifyInt term1 term2 unifyData =
-    assert (on (==) internalIntSort int1 int2) $ lift worker
+    assert (on (==) internalIntSort int1 int2) worker -- should this be part of match?
   where
     worker :: unifier (Pattern RewritingVariableName)
     worker

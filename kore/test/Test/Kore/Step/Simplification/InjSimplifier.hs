@@ -162,8 +162,7 @@ test_unifyInj =
         Either Distinct (Inj (Pair (TermLike RewritingVariableName))) ->
         TestTree
     test testName inj1 inj2 expect =
-        testCase testName (assertEqual "" expect (unifyInj inj1 inj2))
-    InjSimplifier{unifyInj} = injSimplifier
+        testCase testName (assertEqual "" expect (unifyInj injSimplifier inj1 inj2))
 
 test_normalize :: [TestTree]
 test_normalize =

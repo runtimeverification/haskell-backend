@@ -188,20 +188,16 @@ unifyBool ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     UnifyBool ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    unifier (Pattern RewritingVariableName)
 unifyBool termLike1 termLike2 unifyData =
-    worker bool1 bool2 <|> worker bool2 bool1
+    if bool1 == bool2
+        then return (Pattern.fromTermLike termLike1)
+        else
+            Unify.explainAndReturnBottom
+                "different Bool domain values"
+                termLike1
+                termLike2
   where
-    worker a b =
-        lift $
-            if a == b
-                then return (Pattern.fromTermLike termLike1)
-                else
-                    Unify.explainAndReturnBottom
-                        "different Bool domain values"
-                        termLike1
-                        termLike2
-
     UnifyBool{bool1, bool2} = unifyData
 
 matchUnifyBoolAnd ::
