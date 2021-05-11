@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.44.0.0
+version:        0.45.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -288,6 +288,7 @@ library
     Kore.Equation.Registry
     Kore.Equation.Sentence
     Kore.Equation.Simplification
+    Kore.Equation.Validate
     Kore.Error
     Kore.Exec
     Kore.IndexedModule.Error

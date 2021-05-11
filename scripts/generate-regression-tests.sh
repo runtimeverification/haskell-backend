@@ -71,7 +71,7 @@ generate-evm() {
     done
 
     kollect test-sum-to-n \
-        make tests/specs/examples/sum-to-n-spec.k.prove -e
+        make tests/specs/examples/sum-to-n-spec.k.prove -s -e
     
     $KORE/scripts/trim-source-paths.sh *.kore
 }
@@ -89,7 +89,7 @@ generate-wasm() {
         wrc20
     do
         kollect "test-$spec" \
-            make tests/proofs/"$spec"-spec.k.prove -e
+            make tests/proofs/"$spec"-spec.k.prove -s -e
     done
 
     $KORE/scripts/trim-source-paths.sh *.kore
