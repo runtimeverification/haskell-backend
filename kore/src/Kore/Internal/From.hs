@@ -1,4 +1,5 @@
 module Kore.Internal.From (
+    SynthesizeFrom,
     fromAnd,
     fromOr,
     fromNot,
@@ -35,67 +36,98 @@ import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Prelude.Kore
 
+{- | Constraint that the pattern type @p@ can be created from syntax type @s@.
+
+* @s :: Type -> Type@ is the syntax type at the top level of the pattern, for
+  example: @'And' 'Sort'@ or @'Or' 'Sort'@.
+* @a :: Type@ is the type of attribute attached to the syntax tree. We should
+  always quantify over @a@; it is only visible here to avoid a quantified
+  constraint.
+* @v :: Type@ is the type of variable names in the pattern, for example:
+  'VariableName' or 'Kore.Rewriting.RewritingVariable.RewritingVariableName'.
+  @v@ should not appear by itself, but only as the argument of another type. It
+  is visible here to aid type inference.
+* @p :: Type -> Type@ is the pattern type, for example: 'Predicate' or
+  'TermLike'. @p@ should always appear with @v@, i.e. @p v :: Type@.
+* @t :: Type -> Type@ is the term type, for example: 'TermLike'. Some syntax
+  types ('Ceil', 'Floor', 'Equals', 'In') can contain a different type of
+  pattern than @p@; @t@ represents that type. For all other syntax types, @t@
+  will be fixed to @p@.
+* @f :: Type -> Type -> Type@ is the base functor describing the shape of @p@;
+  that is, @Data.Functor.Foldable.Base (p v) ~ CofreeF (f v) a@.
+-}
 type SynthesizeFrom
-    (syntax :: Type)
+    (s :: Type -> Type)
     (a :: Type)
-    (f :: Type -> Type)
-    (p :: Type) =
-    ( From syntax (f p)
-    , Synthesize a f p
+    (f :: Type -> Type -> Type)
+    (v :: Type)
+    (t :: Type -> Type)
+    (p :: Type -> Type) =
+    ( From (s (t v)) (f v (p v))
+    , Synthesize a (f v) (p v)
     )
 
 synthesizeFrom ::
-    forall syntax a f p. SynthesizeFrom syntax a f p => syntax -> p
-synthesizeFrom = synthesize . into @(f p)
+    forall s a f v t p. SynthesizeFrom s a f v t p => s (t v) -> p v
+synthesizeFrom = synthesize . into @(f v (p v))
 {-# INLINE synthesizeFrom #-}
 
-fromAnd :: forall a f p. SynthesizeFrom (And () p) a f p => p -> p -> p
+fromAnd ::
+    forall a f v p.
+    SynthesizeFrom (And ()) a f v p p =>
+    p v ->
+    p v ->
+    p v
 fromAnd andFirst andSecond =
     synthesizeFrom And{andFirst, andSecond, andSort = ()}
 
-fromOr :: forall a f p. SynthesizeFrom (Or () p) a f p => p -> p -> p
+fromOr :: forall a f v p. SynthesizeFrom (Or ()) a f v p p => p v -> p v -> p v
 fromOr orFirst orSecond = synthesizeFrom Or{orFirst, orSecond, orSort = ()}
 
-fromNot :: forall a f p. SynthesizeFrom (Not () p) a f p => p -> p
+fromNot :: forall a f v p. SynthesizeFrom (Not ()) a f v p p => p v -> p v
 fromNot notChild = synthesizeFrom Not{notChild, notSort = ()}
 
-fromImplies :: forall a f p. SynthesizeFrom (Implies () p) a f p => p -> p -> p
+fromImplies :: forall a f v p. SynthesizeFrom (Implies ()) a f v p p => p v -> p v -> p v
 fromImplies impliesFirst impliesSecond =
     synthesizeFrom Implies{impliesFirst, impliesSecond, impliesSort = ()}
 
-fromIff :: forall a f p. SynthesizeFrom (Iff () p) a f p => p -> p -> p
+fromIff :: forall a f v p. SynthesizeFrom (Iff ()) a f v p p => p v -> p v -> p v
 fromIff iffFirst iffSecond =
     synthesizeFrom Iff{iffFirst, iffSecond, iffSort = ()}
 
 fromExists ::
-    forall a f p v.
-    SynthesizeFrom (Exists () v p) a f p =>
+    forall a f v p.
+    SynthesizeFrom (Exists () v) a f v p p =>
     ElementVariable v ->
-    p ->
-    p
+    p v ->
+    p v
 fromExists existsVariable existsChild =
     synthesizeFrom Exists{existsVariable, existsChild, existsSort = ()}
 
 fromForall ::
-    forall a f p v.
-    SynthesizeFrom (Forall () v p) a f p =>
+    forall a f v p.
+    SynthesizeFrom (Forall () v) a f v p p =>
     ElementVariable v ->
-    p ->
-    p
+    p v ->
+    p v
 fromForall forallVariable forallChild =
     synthesizeFrom Forall{forallVariable, forallChild, forallSort = ()}
 
-fromBottom_ :: forall a f p. SynthesizeFrom (Bottom () p) a f p => p
-fromBottom_ = synthesizeFrom @(Bottom _ p) Bottom{bottomSort = ()}
+fromBottom_ :: forall a f v p. SynthesizeFrom (Bottom ()) a f v p p => p v
+fromBottom_ = synthesizeFrom @_ @a @f @v @p @p Bottom{bottomSort = ()}
 
-fromTop_ :: forall a f p. SynthesizeFrom (Top () p) a f p => p
-fromTop_ = synthesizeFrom @(Top _ p) Top{topSort = ()}
+fromTop_ :: forall a f v p. SynthesizeFrom (Top ()) a f v p p => p v
+fromTop_ = synthesizeFrom @_ @a @f @v @p @p Top{topSort = ()}
 
-fromCeil_ :: forall a f t p. SynthesizeFrom (Ceil () t) a f p => t -> p
+fromCeil_ :: forall a f v t p. SynthesizeFrom (Ceil ()) a f v t p => t v -> p v
 fromCeil_ ceilChild =
     synthesizeFrom Ceil{ceilChild, ceilOperandSort = (), ceilResultSort = ()}
 
-fromFloor_ :: forall a f t p. SynthesizeFrom (Floor () t) a f p => t -> p
+fromFloor_ ::
+    forall a f v t p.
+    SynthesizeFrom (Floor ()) a f v t p =>
+    t v ->
+    p v
 fromFloor_ floorChild =
     synthesizeFrom
         Floor
@@ -104,7 +136,12 @@ fromFloor_ floorChild =
             , floorResultSort = ()
             }
 
-fromEquals_ :: forall a f t p. SynthesizeFrom (Equals () t) a f p => t -> t -> p
+fromEquals_ ::
+    forall a f v t p.
+    SynthesizeFrom (Equals ()) a f v t p =>
+    t v ->
+    t v ->
+    p v
 fromEquals_ equalsFirst equalsSecond =
     synthesizeFrom
         Equals
@@ -114,7 +151,12 @@ fromEquals_ equalsFirst equalsSecond =
             , equalsResultSort = ()
             }
 
-fromIn_ :: forall a f t p. SynthesizeFrom (In () t) a f p => t -> t -> p
+fromIn_ ::
+    forall a f v t p.
+    SynthesizeFrom (In ()) a f v t p =>
+    t v ->
+    t v ->
+    p v
 fromIn_ inContainedChild inContainingChild =
     synthesizeFrom
         In
