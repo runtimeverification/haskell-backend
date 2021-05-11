@@ -9,6 +9,7 @@ module Kore.Attribute.SourceLocation (
     SourceLocation (..),
     Source (..),
     Location (..),
+    notDefault,
 ) where
 
 import Control.Monad (
@@ -52,6 +53,8 @@ data SourceLocation = SourceLocation
 instance Default SourceLocation where
     def = SourceLocation def def
 
+notDefault :: SourceLocation -> Bool
+notDefault = (/=) def
 instance ParseAttributes SourceLocation where
     parseAttribute attr =
         typed @Location (parseAttribute attr)
