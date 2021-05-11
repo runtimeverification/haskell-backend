@@ -17,6 +17,12 @@ import Pretty (
 import qualified Pretty
 import Stats
 
+{- | @WarnIfLowProductivity@ is emitted when productuvity drops below a certain
+point.
+
+The warning message also displays the locations of the original K files used if
+they are provided as attributes in the kore file.
+-}
 data WarnIfLowProductivity = WarnIfLowProductivity
     { productivityPercent :: Natural
     , kFileLocations :: KFileLocations

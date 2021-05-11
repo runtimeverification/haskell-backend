@@ -17,6 +17,9 @@ import Kore.Error (printError)
 import Kore.Log.ErrorParse
 import Prelude.Kore
 
+{- | Location attribute for some of the K files used during execution, displayed
+by the 'WarnIfLowProductivity' warning.
+-}
 newtype KFileLocations = KFileLocations
     {locations :: [SourceLocation]}
     deriving stock (Show)
