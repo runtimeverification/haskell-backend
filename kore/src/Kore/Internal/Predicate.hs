@@ -1109,12 +1109,6 @@ hasFreeVariable variableName =
     PredicatePattern.isFreeVariable variableName
         . Attribute.freeVariables
 
-{- | Traverse the predicate from the top down and apply substitutions.
-
-The 'freeVariables' annotation is used to avoid traversing subterms that
-contain none of the targeted variables.
--}
-
 -- !!  TODO The following is just a temporary solution and  !!
 -- !!  the code using wrapPredicate should be refactored    !!
 
@@ -1128,6 +1122,11 @@ wrapPredicate =
         id
         . makePredicate
 
+{- | Traverse the predicate from the top down and apply substitutions.
+
+The 'freeVariables' annotation is used to avoid traversing subterms that
+contain none of the targeted variables.
+-}
 substitute ::
     InternalVariable variable =>
     Map (SomeVariableName variable) (TermLike variable) ->

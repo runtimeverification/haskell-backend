@@ -23,39 +23,39 @@ module Kore.Internal.TermLike.TermLike (
     setAttributeSimplified,
 ) where
 
-import Control.Comonad.Trans.Cofree (
-    tailF,
- )
-import Control.Lens (
-    Lens',
- )
+import Control.Comonad.Trans.Cofree
+    ( tailF
+    )
+import Control.Lens
+    ( Lens'
+    )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const (
-    Const (..),
- )
-import Data.Functor.Foldable (
-    Base,
-    Corecursive,
-    Recursive,
- )
+import Data.Functor.Const
+    ( Const (..)
+    )
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity (
-    Identity (..),
- )
+import Data.Functor.Identity
+    ( Identity (..)
+    )
 import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
-import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
-import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
@@ -63,12 +63,12 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness (
-    Endianness,
- )
-import Kore.Builtin.Signedness.Signedness (
-    Signedness,
- )
+import Kore.Builtin.Endianness.Endianness
+    ( Endianness
+    )
+import Kore.Builtin.Signedness.Signedness
+    ( Signedness
+    )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -79,19 +79,19 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key (
-    Key,
-    KeyAttributes (KeyAttributes),
-    KeyF,
- )
+import Kore.Internal.Key
+    ( Key
+    , KeyAttributes (KeyAttributes)
+    , KeyF
+    )
 import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.Symbol (
-    Symbol,
- )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
@@ -118,9 +118,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser (
-    Unparse (..),
- )
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Prelude.Kore
@@ -816,8 +816,25 @@ fromKeyAttributes attrs =
         , created = Attribute.Created Nothing
         }
 
-toKeyAttributes :: TermAttributes variable -> KeyAttributes
-toKeyAttributes = KeyAttributes . patternSort
+toKeyAttributes :: Attribute.Pattern variable -> Maybe KeyAttributes
+toKeyAttributes attrs@(Attribute.Pattern _ _ _ _ _ _ _ _)
+    | Attribute.nullFreeVariables freeVariablesAttr
+      , Attribute.isFunctional functionalAttr
+      , Attribute.isFunction functionAttr
+      , Attribute.isDefined definedAttr
+      , Attribute.isSimplifiedAnyCondition attrs
+      , Attribute.isConstructorLike constructorLikeAttr =
+        Just $ KeyAttributes sortAttr
+    | otherwise = Nothing
+  where
+    Attribute.Pattern
+        { Attribute.patternSort = sortAttr
+        , Attribute.freeVariables = freeVariablesAttr
+        , Attribute.functional = functionalAttr
+        , Attribute.function = functionAttr
+        , Attribute.defined = definedAttr
+        , Attribute.constructorLike = constructorLikeAttr
+        } = attrs
 
 -- | Ensure that a 'TermLike' is a concrete, constructor-like term.
 retractKey :: TermLike variable -> Maybe Key
@@ -825,8 +842,8 @@ retractKey =
     Recursive.fold worker
   where
     worker (attrs :< termLikeF) = do
-        Monad.guard (Attribute.isConstructorLike attrs)
-        let attrs' = toKeyAttributes attrs
+        Monad.guard (Pattern.isConstructorLike attrs)
+        attrs' <- toKeyAttributes attrs
         keyF <-
             case termLikeF of
                 InternalBoolF internalBool ->

@@ -209,6 +209,7 @@
           "Kore/Equation/Registry"
           "Kore/Equation/Sentence"
           "Kore/Equation/Simplification"
+          "Kore/Equation/Validate"
           "Kore/Error"
           "Kore/Exec"
           "Kore/IndexedModule/Error"
