@@ -180,7 +180,6 @@ runRepl
             saveSessionWithMessage silent ".sessionCommands"
             void $ replInterpreter printIfNotEmpty command
 
-
         state :: TimeSpec -> ReplState
         state startTime =
             ReplState
