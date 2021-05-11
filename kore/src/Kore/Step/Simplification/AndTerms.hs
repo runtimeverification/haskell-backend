@@ -69,6 +69,7 @@ import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Overloading as Overloading
+import Kore.Step.Simplification.OverloadSimplifier as OverloadSimplifier
 import qualified Kore.Step.Simplification.SimplificationType as SimplificationType (
     SimplificationType (..),
  )
@@ -113,10 +114,11 @@ termUnification notSimplifier = \term1 term2 ->
         unifier (Pattern RewritingVariableName)
     termUnificationWorker pat1 pat2 = do
         injSimplifier <- Simplifier.askInjSimplifier
+        OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
         let maybeTermUnification ::
                 MaybeT unifier (Pattern RewritingVariableName)
             maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker injSimplifier pat1 pat2
+                maybeTermAnd notSimplifier termUnificationWorker injSimplifier isOverloaded pat1 pat2
         Error.maybeT
             (incompleteUnificationPattern pat1 pat2)
             pure
@@ -139,10 +141,11 @@ maybeTermEquals ::
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     InjSimplifier ->
+    (Symbol -> Bool) ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermEquals notSimplifier childTransformers injSimplifier first second
+maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first second
     | Just unifyData <- Builtin.Int.matchInt first second =
         lift $ Builtin.Int.unifyInt first second unifyData
     | Just unifyData <- Builtin.Bool.matchBools first second =
@@ -170,9 +173,9 @@ maybeTermEquals notSimplifier childTransformers injSimplifier first second
     | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
         lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
     | Just () <- matchConstructorSortInjectionAndEquals first second =
-        constructorSortInjectionAndEquals first second
-    | Just unifyData <- matchConstructorAndEqualsAssumesDifferentHeads first second =
-        constructorAndEqualsAssumesDifferentHeads first second unifyData
+        lift $ constructorSortInjectionAndEquals first second
+    | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
+        lift $ constructorAndEqualsAssumesDifferentHeads first second
     | otherwise =
         asum
             [ overloadedConstructorSortInjectionAndEquals
@@ -218,16 +221,18 @@ maybeTermAnd ::
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     InjSimplifier ->
+    (Symbol -> Bool) ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermAnd notSimplifier childTransformers injSimplifier first second
+maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first second
     | Just unifyData <- matchExpandAlias first second =
         let UnifyExpandAlias{term1, term2} = unifyData
          in maybeTermAnd
                 notSimplifier
                 childTransformers
                 injSimplifier
+                isOverloaded
                 term1
                 term2
     | Just unifyData <- matchBoolAnd first =
@@ -256,15 +261,13 @@ maybeTermAnd notSimplifier childTransformers injSimplifier first second
         lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
     | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
         lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
+    | Just () <- matchConstructorSortInjectionAndEquals first second =
+        lift $ constructorSortInjectionAndEquals first second
+    | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
+        lift $ constructorAndEqualsAssumesDifferentHeads first second
     | otherwise =
         asum
-            [ do
-                () <- Error.hoistMaybe $ matchConstructorSortInjectionAndEquals first second
-                constructorSortInjectionAndEquals first second
-            , do
-                unifyData <- Error.hoistMaybe $ matchConstructorAndEqualsAssumesDifferentHeads first second
-                constructorAndEqualsAssumesDifferentHeads first second unifyData
-            , overloadedConstructorSortInjectionAndEquals
+            [ overloadedConstructorSortInjectionAndEquals
                 childTransformers
                 first
                 second
@@ -598,9 +601,9 @@ constructorSortInjectionAndEquals ::
     MonadUnify unifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier a
+    unifier a
 constructorSortInjectionAndEquals first second =
-    lift $ noConfusionInjectionConstructor first second
+    noConfusionInjectionConstructor first second
 
 noConfusionInjectionConstructor ::
     MonadUnify unifier =>
