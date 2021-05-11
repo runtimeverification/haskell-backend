@@ -62,7 +62,6 @@ data InjSimplifier = InjSimplifier
         InternalVariable variable =>
         Inj (TermLike variable) ->
         TermLike variable
-    
     , matchInjs ::
         forall variable.
         HasCallStack =>
@@ -70,7 +69,6 @@ data InjSimplifier = InjSimplifier
         Inj (TermLike variable) ->
         Inj (TermLike variable) ->
         Either Distinct InjUnify
-
     , -- | Push down the conjunction of 'Inj':
       --
       --        @
@@ -223,7 +221,7 @@ mkInjSimplifier sortGraph =
     unifyInjs inj1 inj2 unify =
         case unify of
             Left d -> Left d
-            Right InjFromEqual -> 
+            Right InjFromEqual ->
                 assert (injTo1 == injTo2) $ do
                     let child1 = injChild inj1
                         child2 = injChild inj2
@@ -238,7 +236,6 @@ mkInjSimplifier sortGraph =
                     let child1' = evaluateInj inj1{injTo = injFrom2}
                         child2' = injChild inj2
                     pure (Pair child1' child2' <$ inj2)
-
       where
         Inj{injFrom = injFrom1, injTo = injTo1} = inj1
         Inj{injFrom = injFrom2, injTo = injTo2} = inj2

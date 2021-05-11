@@ -27,19 +27,18 @@ import Kore.Internal.TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-
 import Prelude.Kore
 
-data UnifyExpandAlias = UnifyExpandAlias {
-    term1, term2 :: !(TermLike RewritingVariableName)
-}
+data UnifyExpandAlias = UnifyExpandAlias
+    { term1, term2 :: !(TermLike RewritingVariableName)
+    }
 
-matchExpandAlias
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyExpandAlias
-matchExpandAlias t1 t2
-    = case (expandSingleAlias t1, expandSingleAlias t2) of
+matchExpandAlias ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyExpandAlias
+matchExpandAlias t1 t2 =
+    case (expandSingleAlias t1, expandSingleAlias t2) of
         (Nothing, Nothing) -> Nothing
         (t1', t2') -> Just $ UnifyExpandAlias (fromMaybe t1 t1') (fromMaybe t2 t2')
 {-# INLINE matchExpandAlias #-}

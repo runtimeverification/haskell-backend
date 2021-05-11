@@ -88,22 +88,22 @@ equalInjectiveHeadsAndEquals
             , secondChildren
             } = unifyData
 
-data ConstructorAndEqualsAssumesDifferentHeads =
-     ConstructorAndEqualsAssumesDifferentHeads {
-         firstHead, secondHead :: Symbol
-     }
+data ConstructorAndEqualsAssumesDifferentHeads = ConstructorAndEqualsAssumesDifferentHeads
+    { firstHead, secondHead :: Symbol
+    }
 
+matchConstructorAndEqualsAssumesDifferentHeads ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe ConstructorAndEqualsAssumesDifferentHeads
 matchConstructorAndEqualsAssumesDifferentHeads
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe ConstructorAndEqualsAssumesDifferentHeads
-matchConstructorAndEqualsAssumesDifferentHeads
-    first second
-    | App_ firstHead _ <- first
-    , App_ secondHead _ <- second
-    , firstHead /= secondHead
-    = Just $ ConstructorAndEqualsAssumesDifferentHeads firstHead secondHead
-    | otherwise = empty
+    first
+    second
+        | App_ firstHead _ <- first
+          , App_ secondHead _ <- second
+          , firstHead /= secondHead =
+            Just $ ConstructorAndEqualsAssumesDifferentHeads firstHead secondHead
+        | otherwise = empty
 {-# INLINE matchConstructorAndEqualsAssumesDifferentHeads #-}
 
 {- | Unify two constructor application patterns.
@@ -111,6 +111,7 @@ matchConstructorAndEqualsAssumesDifferentHeads
 Assumes that the two patterns were already tested for equality and were found
 to be different; therefore their conjunction is @\\bottom@.
 -}
+
 -- constructorAndEqualsAssumesDifferentHeads ::
 --     MonadUnify unifier =>
 --     HasCallStack =>
@@ -140,19 +141,22 @@ constructorAndEqualsAssumesDifferentHeads ::
     ConstructorAndEqualsAssumesDifferentHeads ->
     MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
-    first second unifyData =
+    first
+    second
+    unifyData =
         do
             -- should these two guards be pushed to the match?
             Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
             Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
             lift $ do
-                    explainBottom
-                        "Cannot unify different constructors or incompatible \
-                        \sort injections."
-                        first
-                        second
-                    empty
-
-  where
-    ConstructorAndEqualsAssumesDifferentHeads
-        { firstHead, secondHead } = unifyData
+                explainBottom
+                    "Cannot unify different constructors or incompatible \
+                    \sort injections."
+                    first
+                    second
+                empty
+      where
+        ConstructorAndEqualsAssumesDifferentHeads
+            { firstHead
+            , secondHead
+            } = unifyData

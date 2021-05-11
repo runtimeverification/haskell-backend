@@ -617,7 +617,7 @@ mkInj ::
     Inj () ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
-mkInj inj injChild = (synthesize . InjF) (inj :: Inj ()) {injChild}
+mkInj inj injChild = (synthesize . InjF) (inj :: Inj ()){injChild}
 
 maybeMkInj ::
     Maybe (Inj ()) ->
