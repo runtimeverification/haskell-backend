@@ -1,4 +1,4 @@
-[]
+[org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(wasm-semantics/././tests/proofs/memory-spec.k)")]
 module MEMORY-SPEC
 
 // imports
