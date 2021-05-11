@@ -611,7 +611,7 @@ deleteFreeVariable variable =
         (Attribute.FreeVariables.bindVariable variable)
 
 instance HasFreeVariables (TermAttributes variable) variable where
-    freeVariables = freeVariables
+    freeVariables = termFreeVariables
 
 {- | @TermLike@ is a term-like Kore pattern.
 
