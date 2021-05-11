@@ -724,6 +724,7 @@
             "Test/Kore/IndexedModule/SortGraph"
             "Test/Kore/Internal/ApplicationSorts"
             "Test/Kore/Internal/Condition"
+            "Test/Kore/Internal/From"
             "Test/Kore/Internal/Key"
             "Test/Kore/Internal/MultiAnd"
             "Test/Kore/Internal/OrCondition"
