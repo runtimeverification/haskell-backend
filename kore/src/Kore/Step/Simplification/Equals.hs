@@ -425,8 +425,9 @@ termEqualsAnd p1 p2 =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         MaybeT unifier (Pattern RewritingVariableName)
-    maybeTermEqualsWorker =
-        maybeTermEquals Not.notSimplifier termEqualsAndWorker
+    maybeTermEqualsWorker term1 term2 = do
+        injSimplifier <- askInjSimplifier
+        maybeTermEquals Not.notSimplifier termEqualsAndWorker injSimplifier term1 term2
 
     termEqualsAndWorker ::
         forall unifier.

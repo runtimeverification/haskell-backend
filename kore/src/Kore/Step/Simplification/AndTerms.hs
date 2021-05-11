@@ -112,10 +112,11 @@ termUnification notSimplifier = \term1 term2 ->
         TermLike RewritingVariableName ->
         unifier (Pattern RewritingVariableName)
     termUnificationWorker pat1 pat2 = do
+        injSimplifier <- Simplifier.askInjSimplifier
         let maybeTermUnification ::
                 MaybeT unifier (Pattern RewritingVariableName)
             maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
+                maybeTermAnd notSimplifier termUnificationWorker injSimplifier pat1 pat2
         Error.maybeT
             (incompleteUnificationPattern pat1 pat2)
             pure
@@ -137,10 +138,11 @@ maybeTermEquals ::
     NotSimplifier unifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
+    InjSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermEquals notSimplifier childTransformers first second
+maybeTermEquals notSimplifier childTransformers injSimplifier first second
     | Just unifyData <- Builtin.Int.matchInt first second =
         lift $ Builtin.Int.unifyInt first second unifyData
     | Just unifyData <- Builtin.Bool.matchBools first second =
@@ -165,8 +167,8 @@ maybeTermEquals notSimplifier childTransformers first second
         lift $ variableFunctionEquals second first var
     | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
         lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-    | Just unifyData <- matchSortInjectionAndEquals first second =
-        sortInjectionAndEquals childTransformers first second unifyData
+    | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
+        lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
     | Just () <- matchConstructorSortInjectionAndEquals first second =
         constructorSortInjectionAndEquals first second
     | Just unifyData <- matchConstructorAndEqualsAssumesDifferentHeads first second =
@@ -215,15 +217,17 @@ maybeTermAnd ::
     NotSimplifier unifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
+    InjSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermAnd notSimplifier childTransformers first second
+maybeTermAnd notSimplifier childTransformers injSimplifier first second
     | Just unifyData <- matchExpandAlias first second
         = let UnifyExpandAlias { term1, term2 } = unifyData in
             maybeTermAnd
                 notSimplifier
                 childTransformers
+                injSimplifier
                 term1
                 term2
     | Just unifyData <- matchBoolAnd first
@@ -250,15 +254,11 @@ maybeTermAnd notSimplifier childTransformers first second
         = lift $ variableFunctionAnd first unifyData
     | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second
         = lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-    --  | Just unifyData <- matchSortInjectionAndEquals first second
-    --     = sortInjectionAndEquals childTransformers first second unifyData
+    | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second
+        = lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
     | otherwise =
         asum
             [ do
-                unifyData <- Error.hoistMaybe $ matchSortInjectionAndEquals first second
-                sortInjectionAndEquals childTransformers first second unifyData
-            ,
-              do
                 () <- Error.hoistMaybe $ matchConstructorSortInjectionAndEquals first second
                 constructorSortInjectionAndEquals first second
             , do
@@ -515,16 +515,20 @@ variableFunctionEquals
 
 data SortInjectionAndEquals = SortInjectionAndEquals
     { inj1, inj2 :: Inj (TermLike RewritingVariableName)
+        , matchData :: Either Distinct InjUnify
     }
 
 matchSortInjectionAndEquals ::
+    InjSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe SortInjectionAndEquals
-matchSortInjectionAndEquals first second
+matchSortInjectionAndEquals injSimplifier first second
     | Inj_ inj1 <- first
       , Inj_ inj2 <- second =
-        Just $ SortInjectionAndEquals inj1 inj2
+          case matchInjs injSimplifier inj1 inj2 of
+              Left Unknown -> Nothing
+              matchData -> Just $ SortInjectionAndEquals inj1 inj2 matchData
     | otherwise = Nothing
 {-# INLINE sortInjectionAndEquals #-}
 
@@ -548,25 +552,26 @@ sortInjectionAndEquals ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
+    InjSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     SortInjectionAndEquals ->
-    MaybeT unifier (Pattern RewritingVariableName)
-sortInjectionAndEquals termMerger first second unifyData = do
-    injSimplifier <- Simplifier.askInjSimplifier
-    unifyInj injSimplifier inj1 inj2 & either distinct merge
+    unifier (Pattern RewritingVariableName)
+sortInjectionAndEquals termMerger injSimplifier first second unifyData = do
+    -- injSimplifier <- Simplifier.askInjSimplifier
+    unifyInjs injSimplifier inj1 inj2 matchData & either distinct merge
   where
     emptyIntersection = explainAndReturnBottom "Empty sort intersection"
-    distinct Distinct = lift $ emptyIntersection first second
-    distinct Unknown = empty
-    merge inj@Inj{injChild = Pair child1 child2} = lift $ do
+    distinct Distinct = emptyIntersection first second
+    distinct Unknown = undefined -- should be handled
+    merge inj@Inj{injChild = Pair child1 child2} = do
         childPattern <- termMerger child1 child2
         InjSimplifier{evaluateInj} <- askInjSimplifier
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
             inj' = evaluateInj inj{injChild = childTerm}
         return $ Pattern.withCondition inj' childCondition
 
-    SortInjectionAndEquals{inj1, inj2} = unifyData
+    SortInjectionAndEquals{inj1, inj2, matchData} = unifyData
 
 matchConstructorSortInjectionAndEquals
     :: TermLike RewritingVariableName

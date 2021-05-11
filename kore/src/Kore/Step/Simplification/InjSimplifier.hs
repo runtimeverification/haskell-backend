@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Step.Simplification.InjSimplifier (
     Distinct (..),
     InjSimplifier (..),
+    InjUnify (..),
     mkInjSimplifier,
     normalize,
     unifyInj,

@@ -228,7 +228,8 @@ termAnd notSimplifier p1 p2 =
         TermLike RewritingVariableName ->
         UnifierT simplifier (Pattern RewritingVariableName)
     termAndWorker first second = do
-        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
+        injSimplifier <- askInjSimplifier
+        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker injSimplifier first second
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where
