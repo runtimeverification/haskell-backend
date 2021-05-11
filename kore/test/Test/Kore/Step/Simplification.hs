@@ -20,61 +20,61 @@ module Test.Kore.Step.Simplification (
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
-import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern
-    ( setSimplified
-    )
-import Kore.Internal.Condition
-    ( Condition
-    )
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
+import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern (
+    setSimplified,
+ )
+import Kore.Internal.Condition (
+    Condition,
+ )
+import Kore.Internal.Conditional (
+    Conditional (Conditional),
+ )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( splitTerm
-    , withCondition
-    )
-import Kore.Internal.Predicate
-    ( Predicate
-    , PredicateF (..)
-    )
-import Kore.Internal.Substitution
-    ( Substitution
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
+import qualified Kore.Internal.Pattern as Pattern (
+    splitTerm,
+    withCondition,
+ )
+import Kore.Internal.Predicate (
+    Predicate,
+    PredicateF (..),
+ )
+import Kore.Internal.Substitution (
+    Substitution,
+ )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( TermLike
-    )
+import Kore.Internal.TermLike (
+    TermLike,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , Simplifier
-    , SimplifierT
-    )
+import Kore.Internal.Variable (
+    InternalVariable,
+ )
+import Kore.Step.SMT.Declaration.All as SMT.AST (
+    declare,
+ )
+import Kore.Step.Simplification.Data (
+    Env (..),
+    Simplifier,
+    SimplifierT,
+ )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Step.SMT.Declaration.All as SMT.AST
-    ( declare
-    )
-import Logic
-    ( LogicT
-    )
+import Logic (
+    LogicT,
+ )
 import Prelude.Kore
-import SMT
-    ( NoSMT
-    )
+import SMT (
+    NoSMT,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT as Test
 

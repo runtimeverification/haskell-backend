@@ -26,53 +26,53 @@ module Kore.Builtin.KEqual (
     iteKey,
 ) where
 
-import Control.Error
-    ( MaybeT
-    )
+import Control.Error (
+    MaybeT,
+ )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin
-    ( acceptAnySort
-    )
+import Kore.Builtin.Builtin (
+    acceptAnySort,
+ )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Definition
-    ( SentenceSymbol (..)
-    )
+import Kore.Syntax.Definition (
+    SentenceSymbol (..),
+ )
 import Kore.Unification.Unify as Unify
 import qualified Logic
 import Prelude.Kore
