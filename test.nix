@@ -21,7 +21,7 @@ let
     in import src { inherit pkgs; };
 
   default = import ./. {};
-  inherit (default) kore;
+  inherit (default) kore prelude-kore;
 
   kframework =
     let
@@ -33,6 +33,7 @@ let
 
   k = kframework.k.override {
     haskell-backend = kore;
+    inherit prelude-kore;
   };
 
 in

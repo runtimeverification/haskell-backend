@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.44.0.0"; };
+      identifier = { name = "kore"; version = "0.45.0.0"; };
       license = "NCSA";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -209,6 +209,7 @@
           "Kore/Equation/Registry"
           "Kore/Equation/Sentence"
           "Kore/Equation/Simplification"
+          "Kore/Equation/Validate"
           "Kore/Error"
           "Kore/Exec"
           "Kore/IndexedModule/Error"
