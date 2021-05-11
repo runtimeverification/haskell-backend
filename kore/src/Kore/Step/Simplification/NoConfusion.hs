@@ -24,6 +24,7 @@ import Kore.Unification.Unify as Unify
 import Prelude.Kore hiding (
     concat,
  )
+
 data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals
     { firstHead :: Symbol
     , firstChildren :: [TermLike RewritingVariableName]
@@ -101,8 +102,7 @@ matchConstructorAndEqualsAssumesDifferentHeads
           , App_ secondHead _ <- second
           , firstHead /= secondHead
           , Symbol.isConstructor firstHead || isOverloaded firstHead
-          , Symbol.isConstructor secondHead || isOverloaded secondHead
-           =
+          , Symbol.isConstructor secondHead || isOverloaded secondHead =
             Just ()
         | otherwise = empty
 {-# INLINE matchConstructorAndEqualsAssumesDifferentHeads #-}
@@ -112,7 +112,6 @@ matchConstructorAndEqualsAssumesDifferentHeads
 Assumes that the two patterns were already tested for equality and were found
 to be different; therefore their conjunction is @\\bottom@.
 -}
-
 constructorAndEqualsAssumesDifferentHeads ::
     MonadUnify unifier =>
     TermLike RewritingVariableName ->
@@ -120,12 +119,11 @@ constructorAndEqualsAssumesDifferentHeads ::
     unifier a
 constructorAndEqualsAssumesDifferentHeads
     first
-    second
-    = do
-        explainBottom
-            "Cannot unify different constructors or incompatible \
-            \sort injections."
-            first
-            second
-        empty
-                
+    second =
+        do
+            explainBottom
+                "Cannot unify different constructors or incompatible \
+                \sort injections."
+                first
+                second
+            empty

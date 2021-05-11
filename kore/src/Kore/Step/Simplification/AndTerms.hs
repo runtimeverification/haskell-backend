@@ -68,8 +68,8 @@ import Kore.Step.Simplification.ExpandAlias
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Overloading as Overloading
 import Kore.Step.Simplification.OverloadSimplifier as OverloadSimplifier
+import Kore.Step.Simplification.Overloading as Overloading
 import qualified Kore.Step.Simplification.SimplificationType as SimplificationType (
     SimplificationType (..),
  )

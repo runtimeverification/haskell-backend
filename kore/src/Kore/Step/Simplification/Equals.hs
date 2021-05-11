@@ -428,7 +428,7 @@ termEqualsAnd p1 p2 =
         MaybeT unifier (Pattern RewritingVariableName)
     maybeTermEqualsWorker term1 term2 = do
         injSimplifier <- askInjSimplifier
-        OverloadSimplifier{isOverloaded} <- askOverloadSimplifier 
+        OverloadSimplifier{isOverloaded} <- askOverloadSimplifier
         maybeTermEquals Not.notSimplifier termEqualsAndWorker injSimplifier isOverloaded term1 term2
 
     termEqualsAndWorker ::
