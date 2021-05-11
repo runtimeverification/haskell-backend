@@ -175,8 +175,11 @@ runRepl
             str <- prompt
             let command =
                     fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
+                silent = pure ()
             when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
+            saveSessionWithMessage silent ".sessionCommands"
             void $ replInterpreter printIfNotEmpty command
+
 
         state :: TimeSpec -> ReplState
         state startTime =

@@ -16,6 +16,7 @@ module Kore.Repl.Interpreter (
     showRewriteRule,
     parseEvalScript,
     showAliasError,
+    saveSessionWithMessage,
     formatUnificationMessage,
     allProofs,
     ReplStatus (..),
@@ -1089,7 +1090,7 @@ clear maybeNode = do
         let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
          in length childrenOfParent /= 1
 
--- | Save this sessions' commands to the specified file.
+-- | Save this sessions' commands to the specified file and tell "Done." after that.
 saveSession ::
     forall m.
     MonadState ReplState m =>
@@ -1098,14 +1099,27 @@ saveSession ::
     -- | path to file
     FilePath ->
     m ()
-saveSession path =
+saveSession path = saveSessionWithMessage notifySuccess path
+  where
+    notifySuccess = putStrLn' "Done."
+
+-- | Save this sessions' commands to the specified file and tell a message after that.
+saveSessionWithMessage ::
+    forall m.
+    MonadState ReplState m =>
+    MonadIO m =>
+    -- | path to file
+    m () ->
+    FilePath ->
+    m ()
+saveSessionWithMessage notifySuccess path =
     withExistingDirectory path saveToFile
   where
     saveToFile :: FilePath -> m ()
     saveToFile file = do
         content <- seqUnlines <$> Lens.use (field @"commands")
         liftIO $ writeFile file content
-        putStrLn' "Done."
+        notifySuccess
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
 
