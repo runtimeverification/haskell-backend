@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.44.0.0"; };
+      identifier = { name = "kore"; version = "0.45.0.0"; };
       license = "NCSA";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -183,7 +183,6 @@
           "Kore/Builtin/Endianness/Endianness"
           "Kore/Builtin/EqTerm"
           "Kore/Builtin/Error"
-          "Kore/Builtin/External"
           "Kore/Builtin/Inj"
           "Kore/Builtin/Int"
           "Kore/Builtin/Int/Int"
@@ -211,6 +210,7 @@
           "Kore/Equation/Registry"
           "Kore/Equation/Sentence"
           "Kore/Equation/Simplification"
+          "Kore/Equation/Validate"
           "Kore/Error"
           "Kore/Exec"
           "Kore/IndexedModule/Error"
@@ -699,6 +699,7 @@
             "Test/Kore/Builtin/Definition"
             "Test/Kore/Builtin/Encoding"
             "Test/Kore/Builtin/Endianness"
+            "Test/Kore/Builtin/External"
             "Test/Kore/Builtin/Inj"
             "Test/Kore/Builtin/Int"
             "Test/Kore/Builtin/InternalBytes"

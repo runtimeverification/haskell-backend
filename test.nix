@@ -9,7 +9,7 @@ in
 
 let
   inherit (pkgs) stdenv lib;
-  inherit (pkgs) bison diffutils ncurses z3;
+  inherit (pkgs) bison diffutils jq miller ncurses z3;
 
   ttuegel =
     let
@@ -21,7 +21,7 @@ let
     in import src { inherit pkgs; };
 
   default = import ./. {};
-  inherit (default) kore;
+  inherit (default) kore prelude-kore;
 
   kframework =
     let
@@ -33,6 +33,7 @@ let
 
   k = kframework.k.override {
     haskell-backend = kore;
+    inherit prelude-kore;
   };
 
 in
@@ -44,11 +45,13 @@ stdenv.mkDerivation {
   buildInputs = [
     k kore  # some tests use kore-exec directly, others run through the frontend
     ncurses  # TODO: .../lib/kframework/setenv: line 31: tput: command not found
+    jq miller # processing test statistics
     z3
   ];
   configurePhase = ''
     export TOP=$(pwd)
   '';
+  KORE_EXEC = "${lib.getBin kore}/bin/kore-exec";
   buildFlags =
     [
       "KORE_PARSER=kore-parser"

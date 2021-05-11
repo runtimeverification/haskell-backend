@@ -34,6 +34,7 @@ import Kore.Syntax.Definition (
 import Prelude.Kore
 import Test.Kore
 import qualified Test.Kore.Builtin.Definition as Definition
+import Test.Kore.Builtin.External
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -160,7 +161,7 @@ test_fromIndexedModule =
             SentenceAxiomSentence
                 SentenceAxiom
                     { sentenceAxiomParameters = [sortVariable "R"]
-                    , sentenceAxiomPattern = Builtin.externalize (mkTop sortVarR)
+                    , sentenceAxiomPattern = externalize (mkTop sortVarR)
                     , sentenceAxiomAttributes =
                         Attributes
                             [overloadAttribute overloading overloaded]

@@ -11,7 +11,13 @@ import Data.Map.Strict (
 import qualified Data.Map.Strict as Map
 import qualified Data.Ord
 import Kore.ASTVerifier.DefinitionVerifier
+import Kore.Attribute.Function (
+    Function (..),
+ )
 import qualified Kore.Attribute.Sort as Attribute
+import Kore.Attribute.Symbol (
+    Symbol (..),
+ )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -29,6 +35,7 @@ import Kore.Syntax.PatternF (
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -36,19 +43,23 @@ objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol
-objectA = TermLike.mkSymbol_ (testId "a") [] objectS1
+objectA =
+    (TermLike.mkSymbol_ (testId "a") [] objectS1)
+        { sentenceSymbolAttributes =
+            Attributes [Attribute.functionAttribute]
+        }
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAxiom_ $ TermLike.applySymbol_ objectA []
 axiomA' =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAxiom [sortVariableR] $
             TermLike.mkForall x $
-                TermLike.mkEquals sortR (TermLike.mkElemVar x) $
-                    TermLike.applySymbol_ objectA []
+                TermLike.mkEquals sortR (TermLike.applySymbol_ objectA []) $
+                    TermLike.mkElemVar x
   where
     x = TermLike.mkElementVariable "x" objectS1
     sortVariableR = SortVariable (testId "R")
@@ -56,7 +67,7 @@ axiomA' =
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
 
 metaA :: SentenceSymbol
@@ -64,7 +75,7 @@ metaA = TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
-    fmap Builtin.externalize $
+    fmap externalize $
         TermLike.mkAlias_ (testId "#b") stringMetaSort [] $
             TermLike.mkTop stringMetaSort
 
@@ -199,9 +210,10 @@ test_resolvers =
         ( assertEqual
             ""
             ( Right
-                ( def :: Attribute.Symbol
+                ( def{function = Function True}
                 , SentenceSymbol
-                    { sentenceSymbolAttributes = Attributes []
+                    { sentenceSymbolAttributes =
+                        Attributes [Attribute.functionAttribute]
                     , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
                     , sentenceSymbolSorts = []
                     , sentenceSymbolResultSort = objectS1
@@ -323,7 +335,7 @@ test_resolvers =
         ( assertEqual
             ""
             (List.sortOn Data.Ord.Down [axiomA, axiomA'])
-            ( fmap Builtin.externalize . getIndexedSentence
+            ( fmap externalize . getIndexedSentence
                 <$> indexedModuleAxioms testIndexedObjectModule
             )
         )

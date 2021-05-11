@@ -2,7 +2,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables (
     test_uniqueSortVariables,
 ) where
 
-import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Internal.TermLike
 import Kore.Syntax.Definition (
@@ -13,6 +12,7 @@ import Kore.Syntax.Definition (
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
  )
@@ -489,5 +489,5 @@ test_uniqueSortVariables =
         )
     ]
   where
-    topS = Builtin.externalize $ mkTop $ simpleSort $ SortName "s"
-    topS1 = Builtin.externalize $ mkTop $ simpleSort $ SortName "s1"
+    topS = externalize $ mkTop $ simpleSort $ SortName "s"
+    topS1 = externalize $ mkTop $ simpleSort $ SortName "s1"

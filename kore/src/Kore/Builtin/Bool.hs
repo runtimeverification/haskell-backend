@@ -8,7 +8,6 @@ module Kore.Builtin.Bool (
     verifiers,
     builtinFunctions,
     asInternal,
-    asTermLike,
     asPattern,
     extractBoolDomainValue,
     parse,

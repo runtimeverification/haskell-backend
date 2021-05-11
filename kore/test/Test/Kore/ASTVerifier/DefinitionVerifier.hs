@@ -30,10 +30,10 @@ module Test.Kore.ASTVerifier.DefinitionVerifier (
     symbolSentenceWithParametersAndArguments,
     symbolSentenceWithSortParametersAux,
     sentenceSymbolWithAttributes,
+    symbolSentenceWithParamsArgsAndAttrs,
     importSentence,
     SymbolName (..),
     objectSymbolSentenceWithArguments,
-    symbolSentenceWithResultSort,
     symbolSentenceWithSortParameters,
     AliasName (..),
     simpleAliasSentence,
@@ -47,6 +47,7 @@ module Test.Kore.ASTVerifier.DefinitionVerifier (
     successTestDataGroup,
     failureTestData,
     failureTestDataGroup,
+    axiomSentenceWithParamsAndAttrs,
     axiomSentenceWithSortParameters,
     expectFailureWithError,
     objectVariableSort,
@@ -80,6 +81,7 @@ import Kore.Unparser (
  )
 import Prelude.Kore
 import Test.Kore
+import Test.Kore.Builtin.External
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -217,7 +219,7 @@ simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
 simpleAliasSentence alias sort =
     asSentence @ParsedSentenceAlias (simpleAliasSentenceAux alias sort r)
   where
-    r = Builtin.externalize $ Internal.mkTop (simpleSort sort)
+    r = externalize $ Internal.mkTop (simpleSort sort)
 simpleAliasSentenceAux ::
     AliasName ->
     SortName ->
@@ -323,7 +325,7 @@ metaAliasSentenceWithSortParameters
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    Builtin.externalize $ Internal.mkTop sort
+                    externalize $ Internal.mkTop sort
                 , sentenceAliasAttributes = Attributes []
                 }
 
@@ -472,15 +474,26 @@ symbolSentenceWithSortParametersAux (SymbolName name) sort parameters =
         , sentenceSymbolAttributes = Attributes []
         }
 
+axiomSentenceWithParamsAndAttrs ::
+    patternType ->
+    [SortVariable] ->
+    [AttributePattern] ->
+    Sentence patternType
+axiomSentenceWithParamsAndAttrs
+    pattern'
+    parameters
+    attrs =
+        SentenceAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = parameters
+                , sentenceAxiomPattern = pattern'
+                , sentenceAxiomAttributes = Attributes attrs
+                }
+
 axiomSentenceWithSortParameters ::
     patternType -> [SortVariable] -> Sentence patternType
 axiomSentenceWithSortParameters pattern' parameters =
-    SentenceAxiomSentence
-        SentenceAxiom
-            { sentenceAxiomParameters = parameters
-            , sentenceAxiomPattern = pattern'
-            , sentenceAxiomAttributes = Attributes []
-            }
+    axiomSentenceWithParamsAndAttrs pattern' parameters []
 
 sentenceAliasWithResultSort ::
     AliasName ->
@@ -510,25 +523,6 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
-
-symbolSentenceWithResultSort ::
-    SymbolName -> Sort -> [SortVariable] -> ParsedSentence
-symbolSentenceWithResultSort
-    (SymbolName name)
-    sort
-    parameters =
-        SentenceSymbolSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId name
-                        , symbolParams = parameters
-                        }
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort = sort
-                , sentenceSymbolAttributes =
-                    Attributes [] :: Attributes
-                }
 
 objectSymbolSentenceWithArguments ::
     SymbolName -> Sort -> [Sort] -> ParsedSentence
@@ -563,6 +557,32 @@ symbolSentenceWithParametersAndArguments
                     Attributes [] :: Attributes
                 }
 
+symbolSentenceWithParamsArgsAndAttrs ::
+    SymbolName ->
+    [SortVariable] ->
+    Sort ->
+    [Sort] ->
+    [ParsedPattern] ->
+    Sentence patternType
+symbolSentenceWithParamsArgsAndAttrs
+    (SymbolName name)
+    params
+    sort
+    operandSorts
+    attrs =
+        SentenceSymbolSentence
+            SentenceSymbol
+                { sentenceSymbolSymbol =
+                    Symbol
+                        { symbolConstructor = testId name
+                        , symbolParams = params
+                        }
+                , sentenceSymbolSorts = operandSorts
+                , sentenceSymbolResultSort = sort
+                , sentenceSymbolAttributes =
+                    Attributes attrs
+                }
+
 objectAliasSentenceWithArguments ::
     AliasName -> Sort -> [SomeVariable VariableName] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
@@ -570,7 +590,7 @@ objectAliasSentenceWithArguments a b c =
         a
         b
         c
-        (Builtin.externalize $ Internal.mkTop b)
+        (externalize $ Internal.mkTop b)
 
 aliasSentenceWithArguments ::
     AliasName ->
@@ -620,7 +640,7 @@ namedSortVariable (SortVariableName name) = sortVariable name
 
 stringParsedPattern :: Text -> ParsedPattern
 stringParsedPattern =
-    Builtin.externalize . Internal.mkStringLiteral
+    externalize . Internal.mkStringLiteral
 
 variable :: Text -> Sort -> ElementVariable VariableName
 variable name sort = mkElementVariable (testId name) sort
@@ -633,7 +653,7 @@ variableTermLike name sort = Internal.mkElemVar (variable name sort)
 
 variableParsedPattern :: Text -> Sort -> ParsedPattern
 variableParsedPattern name sort =
-    Builtin.externalize $ variableTermLike name sort
+    externalize $ variableTermLike name sort
 
 simpleExistsPattern ::
     ElementVariable VariableName ->
@@ -645,7 +665,7 @@ simpleExistsPattern quantifiedVariable resultSort =
             { existsSort = resultSort
             , existsVariable = quantifiedVariable
             , existsChild =
-                Builtin.externalize $ Internal.mkElemVar quantifiedVariable
+                externalize $ Internal.mkElemVar quantifiedVariable
             }
 
 simpleMuPattern ::
@@ -656,7 +676,7 @@ simpleMuPattern quantifiedVariable =
         Mu
             { muVariable = quantifiedVariable
             , muChild =
-                Builtin.externalize $ Internal.mkSetVar quantifiedVariable
+                externalize $ Internal.mkSetVar quantifiedVariable
             }
 
 simpleNuPattern ::
@@ -667,7 +687,7 @@ simpleNuPattern quantifiedVariable =
         Nu
             { nuVariable = quantifiedVariable
             , nuChild =
-                Builtin.externalize $ Internal.mkSetVar quantifiedVariable
+                externalize $ Internal.mkSetVar quantifiedVariable
             }
 
 simpleExistsUnifiedPattern ::
@@ -679,7 +699,7 @@ simpleExistsUnifiedPattern name sort =
 
 simpleExistsParsedPattern :: Text -> Sort -> ParsedPattern
 simpleExistsParsedPattern name sort =
-    Builtin.externalize $ simpleExistsUnifiedPattern name sort
+    externalize $ simpleExistsUnifiedPattern name sort
 
 simpleExistsEqualsParsedPattern ::
     Text ->
@@ -687,7 +707,7 @@ simpleExistsEqualsParsedPattern ::
     ResultSort ->
     ParsedPattern
 simpleExistsEqualsParsedPattern name operandSort resultSort =
-    Builtin.externalize $
+    externalize $
         simpleExistsEqualsTermLike name operandSort resultSort
 
 simpleExistsEqualsTermLike ::
@@ -726,7 +746,7 @@ applicationParsedPatternWithParams ::
     [Sort] ->
     ParsedPattern
 applicationParsedPatternWithParams resultSort name params =
-    Builtin.externalize $
+    externalize $
         applicationUnifiedPatternWithParams resultSort name params
 
 applicationUnifiedPatternWithParams ::
