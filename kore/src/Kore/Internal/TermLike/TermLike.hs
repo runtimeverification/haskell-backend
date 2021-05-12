@@ -26,43 +26,43 @@ module Kore.Internal.TermLike.TermLike (
     deleteFreeVariable,
 ) where
 
-import Control.Comonad.Trans.Cofree
-    ( tailF
-    )
-import Control.Lens
-    ( Lens'
-    )
+import Control.Comonad.Trans.Cofree (
+    tailF,
+ )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
+import Data.Functor.Identity (
+    Identity (..),
+ )
 import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
-import Data.HashSet
-    ( HashSet
-    )
+import Data.HashSet (
+    HashSet,
+ )
 import qualified Data.HashSet as HashSet
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
+import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
@@ -70,12 +70,12 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness
-    ( Endianness
-    )
-import Kore.Builtin.Signedness.Signedness
-    ( Signedness
-    )
+import Kore.Builtin.Endianness.Endianness (
+    Endianness,
+ )
+import Kore.Builtin.Signedness.Signedness (
+    Signedness,
+ )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -86,19 +86,19 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key
-    ( Key
-    , KeyAttributes (KeyAttributes)
-    , KeyF
-    )
+import Kore.Internal.Key (
+    Key,
+    KeyAttributes (KeyAttributes),
+    KeyF,
+ )
 import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Internal.Symbol
-    ( Symbol
-    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
@@ -124,9 +124,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Prelude.Kore
@@ -654,15 +654,15 @@ traverseAttributeVariables
     termAttributes@TermAttributes
         { termFreeVariables
         , termSubterms
-        }
-  = do
-    freeVariables' <- Attribute.traverseFreeVariables adj termFreeVariables
-    subterms' <- traverseSubterms adj termSubterms
-    return
-        termAttributes
-            { termFreeVariables = freeVariables'
-            , termSubterms = subterms'
-            }
+        } =
+        do
+            freeVariables' <- Attribute.traverseFreeVariables adj termFreeVariables
+            subterms' <- traverseSubterms adj termSubterms
+            return
+                termAttributes
+                    { termFreeVariables = freeVariables'
+                    , termSubterms = subterms'
+                    }
 
 -- TODO: should we remove this? it isn't used anywhere
 
@@ -1192,18 +1192,18 @@ depth = Recursive.fold levelDepth
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
 
 -- | An attribute type for caching the sub-terms of a term.
-newtype Subterms variable =
-    Subterms
-        { getSubterms :: HashSet (TermLike variable)
-        }
+newtype Subterms variable = Subterms
+    { getSubterms :: HashSet (TermLike variable)
+    }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (Debug, Diff)
 
-instance Ord variable
-    => Synthetic (Subterms variable) (And sort)
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (And sort)
     where
     synthetic = undefined
     {-# INLINE synthetic #-}
@@ -1234,7 +1234,8 @@ instance Synthetic (Subterms variable) (DomainValue sort) where
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) (Equals sort)
     where
     synthetic = undefined
@@ -1260,19 +1261,22 @@ instance
         undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) (Iff sort)
     where
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) (Implies sort)
     where
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) (In sort)
     where
     synthetic = undefined
@@ -1302,13 +1306,15 @@ instance
         undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) (Or sort)
     where
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) (Rewrites sort)
     where
     synthetic = undefined
@@ -1342,7 +1348,8 @@ instance Synthetic (Subterms variable) (Const InternalString) where
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-instance Ord variable =>
+instance
+    Ord variable =>
     Synthetic (Subterms variable) InternalList
     where
     synthetic = undefined
@@ -1362,8 +1369,7 @@ instance
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-instance Synthetic (Subterms variable) (Const (SomeVariable variable))
-    where
+instance Synthetic (Subterms variable) (Const (SomeVariable variable)) where
     synthetic (Const var) = undefined
     {-# INLINE synthetic #-}
 
@@ -1379,25 +1385,25 @@ instance Synthetic (Subterms variable) Inj where
     synthetic = undefined
     {-# INLINE synthetic #-}
 
-mapSubterms
-    :: InternalVariable variable1
-    => InternalVariable variable2
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> Subterms variable1
-    -> Subterms variable2
+mapSubterms ::
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    Subterms variable1 ->
+    Subterms variable2
 mapSubterms adj (Subterms subterms) =
     HashSet.map (mapVariables adj) subterms
-    & Subterms
+        & Subterms
 
-traverseSubterms
-    :: Monad m
-    => InternalVariable variable1
-    => InternalVariable variable2
-    => AdjSomeVariableName (variable1 -> m variable2)
-    -> Subterms variable1
-    -> m (Subterms variable2)
+traverseSubterms ::
+    Monad m =>
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    Subterms variable1 ->
+    m (Subterms variable2)
 traverseSubterms adj (Subterms subterms) =
     fmap (Subterms . HashSet.fromList)
-    . traverse (traverseVariables adj)
-    . HashSet.toList
-    $ subterms
+        . traverse (traverseVariables adj)
+        . HashSet.toList
+        $ subterms
