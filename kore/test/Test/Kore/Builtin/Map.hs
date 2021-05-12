@@ -639,7 +639,7 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+            (===) (Test.Bool.asOrPattern False)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )

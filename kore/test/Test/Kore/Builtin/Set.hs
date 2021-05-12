@@ -147,7 +147,6 @@ import Test.SMT hiding (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import SMT (SMT)
 
 genKeys :: Gen [TermLike RewritingVariableName]
 genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)

@@ -69,7 +69,7 @@ test_update =
         val <- forAll Gen.unicode
         let val' = toInteger $ ord val
             bytes = BS.pack [val]
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -117,7 +117,7 @@ test_update =
         , Test.Int.asInternal 0
         , Test.Int.asInternal (toInteger $ ord 'x')
         ]
-        (MultiOr.singleton $ asPattern "xbcd")
+        (asOrPattern "xbcd")
     , testBytes
         "update 'abcd' 3 'x' = 'abcx"
         updateBytesSymbol
@@ -125,7 +125,7 @@ test_update =
         , Test.Int.asInternal 3
         , Test.Int.asInternal (toInteger $ ord 'x')
         ]
-        (MultiOr.singleton $ asPattern "abcx")
+        (asOrPattern "abcx")
     ]
 
 test_get :: [TestTree]
@@ -172,14 +172,14 @@ test_get =
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         ]
-        (MultiOr.singleton $ Test.Int.asPattern $ toInteger $ ord 'a')
+        (Test.Int.asOrPattern $ toInteger $ ord 'a')
     , testBytes
         "get 'abcd' 3 = 'd'"
         getBytesSymbol
         [ asInternal "abcd"
         , Test.Int.asInternal 3
         ]
-        (MultiOr.singleton $ Test.Int.asPattern $ toInteger $ ord 'd')
+        (Test.Int.asOrPattern $ toInteger $ ord 'd')
     ]
 
 test_substr :: [TestTree]
@@ -234,28 +234,28 @@ test_substr =
         , Test.Int.asInternal 0
         , Test.Int.asInternal 0
         ]
-        (MultiOr.singleton $ asPattern "")
+        (asOrPattern "")
     , testSubstrBytes
         "substr 'abcd' 0 1 = 'a'"
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         , Test.Int.asInternal 1
         ]
-        (MultiOr.singleton $ asPattern "a")
+        (asOrPattern "a")
     , testSubstrBytes
         "substr 'abcd' 1 3 = 'bc'"
         [ asInternal "abcd"
         , Test.Int.asInternal 1
         , Test.Int.asInternal 3
         ]
-        (MultiOr.singleton $ asPattern "bc")
+        (asOrPattern "bc")
     , testSubstrBytes
         "substr 'abcd' 0 4 = 'abcd'"
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         , Test.Int.asInternal 4
         ]
-        (MultiOr.singleton $ asPattern "abcd")
+        (asOrPattern "abcd")
     ]
   where
     testSubstrBytes ::
@@ -274,7 +274,7 @@ test_replaceAt =
         str <- forAll genString
         idx <- forAll $ Gen.int (Range.linear 0 256)
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -322,7 +322,7 @@ test_replaceAt =
         , Test.Int.asInternal 0
         , asInternal "12"
         ]
-        (MultiOr.singleton $ asPattern "12cd")
+        (asOrPattern "12cd")
     , testBytes
         "replaceAt 'abcd' 1 '12' = 'a12d'"
         replaceAtBytesSymbol
@@ -330,7 +330,7 @@ test_replaceAt =
         , Test.Int.asInternal 1
         , asInternal "12"
         ]
-        (MultiOr.singleton $ asPattern "a12d")
+        (asOrPattern "a12d")
     , testBytes
         "replaceAt 'abcd' 3 '12' = 'abc12'"
         replaceAtBytesSymbol
@@ -338,7 +338,7 @@ test_replaceAt =
         , Test.Int.asInternal 3
         , asInternal "12"
         ]
-        (MultiOr.singleton $ asPattern "abc12")
+        (asOrPattern "abc12")
     ]
 
 test_padRight :: [TestTree]
@@ -347,7 +347,7 @@ test_padRight =
         str <- forAll genString
         val <- forAll Gen.alphaNum
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -364,7 +364,7 @@ test_padRight =
         , Test.Int.asInternal 5
         , Test.Int.asInternal (toInteger $ ord 'e')
         ]
-        (MultiOr.singleton $ asPattern "abcde")
+        (asOrPattern "abcde")
     ]
 
 test_padLeft :: [TestTree]
@@ -373,7 +373,7 @@ test_padLeft =
         str <- forAll genString
         val <- forAll Gen.alphaNum
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -390,7 +390,7 @@ test_padLeft =
         , Test.Int.asInternal 5
         , Test.Int.asInternal (toInteger $ ord 'e')
         ]
-        (MultiOr.singleton $ asPattern "eabcd")
+        (asOrPattern "eabcd")
     ]
 
 test_reverse :: [TestTree]
@@ -398,7 +398,7 @@ test_reverse =
     [ testPropertyWithSolver "∀ b. reverse (reverse b) = b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -414,7 +414,7 @@ test_reverse =
         reverseBytesSymbol
         [ asInternal "abcd"
         ]
-        (MultiOr.singleton $ asPattern "dcba")
+        (asOrPattern "dcba")
     ]
 
 test_length :: [TestTree]
@@ -424,13 +424,13 @@ test_length =
         lengthBytesSymbol
         [ asInternal "abcd"
         ]
-        (MultiOr.singleton $ Test.Int.asPattern 4)
+        (Test.Int.asOrPattern 4)
     , testBytes
         "length '' = 0"
         lengthBytesSymbol
         [ asInternal ""
         ]
-        (MultiOr.singleton $ Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     ]
 
 test_concat :: [TestTree]
@@ -438,7 +438,7 @@ test_concat =
     [ testPropertyWithSolver "∀ b. concat b '' = b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -450,7 +450,7 @@ test_concat =
     , testPropertyWithSolver "∀ b. concat '' b = b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -465,7 +465,7 @@ test_concat =
         [ asInternal "abcd"
         , asInternal "efgh"
         ]
-        (MultiOr.singleton $ asPattern "abcdefgh")
+        (asOrPattern "abcdefgh")
     ]
 
 test_reverse_length :: TestTree
@@ -473,9 +473,7 @@ test_reverse_length =
     testPropertyWithSolver "∀ b. length (reverse b) = length b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect =
-                MultiOr.singleton $
-                Test.Int.asPattern $ toInteger $ BS.length bytes
+            expect = Test.Int.asOrPattern $ toInteger $ BS.length bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -493,7 +491,7 @@ test_update_get =
         str <- forAll $ Gen.text (Range.linear 1 256) Gen.alphaNum
         idx <- forAll $ Gen.int (Range.linear 0 (T.length str - 1))
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton $ asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -649,6 +647,9 @@ asInternal = InternalBytes.asInternal bytesSort
 
 asPattern :: InternalVariable variable => ByteString -> Pattern variable
 asPattern = InternalBytes.asPattern bytesSort
+
+asOrPattern :: InternalVariable variable => ByteString -> OrPattern variable
+asOrPattern = MultiOr.singleton . asPattern
 
 testBytes ::
     HasCallStack =>

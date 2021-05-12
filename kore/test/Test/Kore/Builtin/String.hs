@@ -16,6 +16,7 @@ module Test.Kore.Builtin.String (
     test_contradiction,
     --
     asPattern,
+    asOrPattern,
     asInternal,
 ) where
 
@@ -99,17 +100,17 @@ test_concat =
         "concat simple"
         concatStringSymbol
         (asInternal <$> ["foo", "bar"])
-        (MultiOr.singleton $ asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "concat left identity"
         concatStringSymbol
         (asInternal <$> ["", "bar"])
-        (MultiOr.singleton $ asPattern "bar")
+        (asOrPattern "bar")
     , testString
         "concat right identity"
         concatStringSymbol
         (asInternal <$> ["foo", ""])
-        (MultiOr.singleton $ asPattern "foo")
+        (asOrPattern "foo")
     ]
 
 test_substr :: [TestTree]
@@ -118,27 +119,27 @@ test_substr =
         "substr simple"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal 6]
-        (MultiOr.singleton $ asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "substr out of bounds"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal 10]
-        (MultiOr.singleton $asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "substr negative start"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal (-10), Test.Int.asInternal 6]
-        (MultiOr.singleton $asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "substr negative end"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal (-1)]
-        (MultiOr.singleton $asPattern "")
+        (asOrPattern "")
     , testString
         "substr actual substring"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal 3]
-        (MultiOr.singleton $asPattern "foo")
+        (asOrPattern "foo")
     ]
 
 test_length :: [TestTree]
@@ -147,12 +148,12 @@ test_length =
         "length simple"
         lengthStringSymbol
         [asInternal "foobar"]
-        (MultiOr.singleton $ Test.Int.asPattern 6)
+        (Test.Int.asOrPattern 6)
     , Test.Int.testInt
         "length zero"
         lengthStringSymbol
         [asInternal ""]
-        (MultiOr.singleton $ Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     ]
 
 test_chr :: [TestTree]
@@ -161,12 +162,12 @@ test_chr =
         "STRING.chr(48) is '0'"
         chrStringSymbol
         [Test.Int.asInternal 48]
-        (MultiOr.singleton $asPattern "0")
+        (asOrPattern "0")
     , testString
         "STRING.chr(100) is 'd'"
         chrStringSymbol
         [Test.Int.asInternal 100]
-        (MultiOr.singleton $asPattern "d")
+        (asOrPattern "d")
     ]
 
 test_ord :: [TestTree]
@@ -175,12 +176,12 @@ test_ord =
         "STRING.ord('0') is 48"
         ordStringSymbol
         [asInternal "0"]
-        (MultiOr.singleton $ Test.Int.asPattern 48)
+        (Test.Int.asOrPattern 48)
     , Test.Int.testInt
         "STRING.ord('d') is 100"
         ordStringSymbol
         [asInternal "d"]
-        (MultiOr.singleton $ Test.Int.asPattern 100)
+        (Test.Int.asOrPattern 100)
     , Test.Int.testInt
         "STRING.ord('') is bottom"
         ordStringSymbol
@@ -199,32 +200,32 @@ test_find =
         "find simple"
         findStringSymbol
         [asInternal "foobar", asInternal "foobar", Test.Int.asInternal 0]
-        (MultiOr.singleton $ Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     , Test.Int.testInt
         "find subpattern"
         findStringSymbol
         [asInternal "foobar", asInternal "bar", Test.Int.asInternal 0]
-        (MultiOr.singleton $ Test.Int.asPattern 3)
+        (Test.Int.asOrPattern 3)
     , Test.Int.testInt
         "find empty pattern"
         findStringSymbol
         [asInternal "foobar", asInternal "", Test.Int.asInternal 0]
-        (MultiOr.singleton $ Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     , Test.Int.testInt
         "find negative index"
         findStringSymbol
         [asInternal "foobar", asInternal "foobar", Test.Int.asInternal (-1)]
-        (MultiOr.singleton $ Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     , Test.Int.testInt
         "find after end of string"
         findStringSymbol
         [asInternal "foobar", asInternal "bar", Test.Int.asInternal 10]
-        (MultiOr.singleton $ Test.Int.asPattern (-1))
+        (Test.Int.asOrPattern (-1))
     , Test.Int.testInt
         "find pattern that does not exist"
         findStringSymbol
         [asInternal "foobar", asInternal "nope", Test.Int.asInternal 0]
-        (MultiOr.singleton $ Test.Int.asPattern (-1))
+        (Test.Int.asOrPattern (-1))
     ]
 
 test_string2Base :: [TestTree]
@@ -234,12 +235,12 @@ test_string2Base =
         "string2Base decimal simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 10]
-        (MultiOr.singleton $ Test.Int.asPattern 42)
+        (Test.Int.asOrPattern 42)
     , Test.Int.testInt
         "string2Base decimal negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 10]
-        (MultiOr.singleton $ Test.Int.asPattern (-42))
+        (Test.Int.asOrPattern (-42))
     , Test.Int.testInt
         "string2Base decimal is bottom"
         string2BaseStringSymbol
@@ -265,7 +266,7 @@ test_string2Base =
         "string2Base octal simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 8]
-        (MultiOr.singleton $ Test.Int.asPattern 34)
+        (Test.Int.asOrPattern 34)
     , Test.Int.testInt
         "string2Base octal negative is bottom"
         string2BaseStringSymbol
@@ -296,12 +297,12 @@ test_string2Base =
         "string2Base hex simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 16]
-        (MultiOr.singleton $ Test.Int.asPattern 66)
+        (Test.Int.asOrPattern 66)
     , Test.Int.testInt
         "string2Base hex negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 16]
-        (MultiOr.singleton $ Test.Int.asPattern (-66))
+        (Test.Int.asOrPattern (-66))
     , Test.Int.testInt
         "string2Base hex is bottom"
         string2BaseStringSymbol
@@ -321,7 +322,7 @@ test_string2Base =
         "string2Base hex from hex"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 16]
-        (MultiOr.singleton $ Test.Int.asPattern 47789)
+        (Test.Int.asOrPattern 47789)
     , Test.Int.testInt
         "string2Base bad base"
         string2BaseStringSymbol
@@ -340,12 +341,12 @@ test_string2Int =
         "string2Base decimal simple"
         string2IntStringSymbol
         [asInternal "42"]
-        (MultiOr.singleton $ Test.Int.asPattern 42)
+        (Test.Int.asOrPattern 42)
     , Test.Int.testInt
         "string2Int decimal negative"
         string2IntStringSymbol
         [asInternal "-42"]
-        (MultiOr.singleton $ Test.Int.asPattern (-42))
+        (Test.Int.asOrPattern (-42))
     , Test.Int.testInt
         "string2Int decimal is bottom"
         string2IntStringSymbol
@@ -374,12 +375,12 @@ test_int2String =
         "int2String basic example"
         int2StringStringSymbol
         [Test.Int.asInternal 42]
-        (MultiOr.singleton $asPattern "42")
+        (asOrPattern "42")
     , testString
         "int2String decimal negative"
         int2StringStringSymbol
         [Test.Int.asInternal (-42)]
-        (MultiOr.singleton $asPattern "-42")
+        (asOrPattern "-42")
     ]
 
 test_token2String :: [TestTree]
@@ -388,7 +389,7 @@ test_token2String =
         "STRING.token2string(\\dv{userTokenSortId{}}('test')) is 'test'"
         token2StringStringSymbol
         [Builtin.makeDomainValueTerm userTokenSort "test"]
-        (MultiOr.singleton $asPattern "test")
+        (asOrPattern "test")
     ]
 
 test_string2Token :: [TestTree]
@@ -409,6 +410,9 @@ asInternal = String.asInternal stringSort
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
 asPattern :: Text -> Pattern RewritingVariableName
 asPattern = String.asPattern stringSort
+
+asOrPattern :: Text -> OrPattern RewritingVariableName
+asOrPattern = MultiOr.singleton . asPattern
 
 testString ::
     HasCallStack =>

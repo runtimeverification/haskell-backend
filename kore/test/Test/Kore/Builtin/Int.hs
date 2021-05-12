@@ -45,6 +45,7 @@ module Test.Kore.Builtin.Int (
     --
     asInternal,
     asPattern,
+    asOrPattern,
     asConcretePattern,
     asKey,
     asPartialPattern,
@@ -143,7 +144,7 @@ testUnary ::
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
-        let expect = MultiOr.singleton . asPattern $ impl a
+        let expect = asOrPattern (impl a)
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -160,7 +161,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = MultiOr.singleton . asPattern $ impl a b
+        let expect = asOrPattern (impl a b)
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -193,7 +194,7 @@ testPartialUnary ::
 testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
-        let expect = MultiOr.singleton . asPartialPattern $ impl a
+        let expect = asPartialOrPattern $ impl a
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -210,7 +211,7 @@ testPartialBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = MultiOr.singleton . asPartialPattern $ impl a b
+        let expect = asPartialOrPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -228,7 +229,7 @@ testPartialBinaryZero ::
 testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
-        let expect = MultiOr.singleton . asPartialPattern $ impl a 0
+        let expect = asPartialOrPattern $ impl a 0
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, 0])
         (===) expect actual
   where
@@ -246,7 +247,7 @@ testPartialTernary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         c <- forAll genInteger
-        let expect = MultiOr.singleton . asPartialPattern $ impl a b c
+        let expect = asPartialOrPattern $ impl a b c
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
@@ -322,22 +323,22 @@ test_ediv =
         "ediv normal"
         edivIntSymbol
         (asInternal <$> [193, 12])
-        (MultiOr.singleton $ asPattern 16)
+        (asOrPattern 16)
     , testInt
         "ediv negative lhs"
         edivIntSymbol
         (asInternal <$> [-193, 12])
-        (MultiOr.singleton $ asPattern (-17))
+        (asOrPattern (-17))
     , testInt
         "ediv negative rhs"
         edivIntSymbol
         (asInternal <$> [193, -12])
-        (MultiOr.singleton $ asPattern (-16))
+        (asOrPattern (-16))
     , testInt
         "ediv both negative"
         edivIntSymbol
         (asInternal <$> [-193, -12])
-        (MultiOr.singleton $ asPattern 17)
+        (asOrPattern 17)
     , testInt
         "ediv bottom"
         edivIntSymbol
@@ -351,22 +352,22 @@ test_emod =
         "emod normal"
         emodIntSymbol
         (asInternal <$> [193, 12])
-        (MultiOr.singleton $ asPattern 1)
+        (asOrPattern 1)
     , testInt
         "emod negative lhs"
         emodIntSymbol
         (asInternal <$> [-193, 12])
-        (MultiOr.singleton $ asPattern 11)
+        (asOrPattern 11)
     , testInt
         "emod negative rhs"
         emodIntSymbol
         (asInternal <$> [193, -12])
-        (MultiOr.singleton $ asPattern 1)
+        (asOrPattern 1)
     , testInt
         "emod both negative"
         emodIntSymbol
         (asInternal <$> [-193, -12])
-        (MultiOr.singleton $ asPattern 11)
+        (asOrPattern 11)
     , testInt
         "emod bottom"
         emodIntSymbol
@@ -458,10 +459,17 @@ asConcretePattern = asInternal
 asPattern :: InternalVariable variable => Integer -> Pattern variable
 asPattern = Int.asPattern intSort
 
+asOrPattern :: InternalVariable variable => Integer -> OrPattern variable
+asOrPattern = MultiOr.singleton . asPattern
+
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
 asPartialPattern ::
     InternalVariable variable => Maybe Integer -> Pattern variable
 asPartialPattern = Int.asPartialPattern intSort
+
+asPartialOrPattern ::
+    InternalVariable variable => Maybe Integer -> OrPattern variable
+asPartialOrPattern = MultiOr.singleton . asPartialPattern
 
 testInt ::
     String ->

@@ -170,7 +170,7 @@ test_inUnit =
             patIn = inList patValue unitList
             patFalse = Test.Bool.asInternal False
             predicate = mkEquals_ patFalse patIn
-        (===) (MultiOr.singleton $ Test.Bool.asPattern False) =<< evaluateT patIn
+        (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
         (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_inElement :: TestTree
@@ -186,7 +186,7 @@ test_inElement =
             patIn = inList patValue patElement
             patTrue = Test.Bool.asInternal True
             predicate = mkEquals_ patIn patTrue
-        (===) (MultiOr.singleton $ Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
         (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_inConcat :: TestTree
@@ -205,7 +205,7 @@ test_inConcat =
             patIn = inList patValue patConcat
             patTrue = Test.Bool.asInternal True
             predicate = mkEquals_ patIn patTrue
-        (===) (MultiOr.singleton $ Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
         (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_concatUnit :: TestTree
