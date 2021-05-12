@@ -41,6 +41,7 @@ import Kore.IndexedModule.MetadataTools (
  )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -118,7 +119,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Kore.Internal.MultiOr as MultiOr
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
