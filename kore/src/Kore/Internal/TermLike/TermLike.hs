@@ -26,39 +26,43 @@ module Kore.Internal.TermLike.TermLike (
     deleteFreeVariable,
 ) where
 
-import Control.Comonad.Trans.Cofree (
-    tailF,
- )
-import Control.Lens (
-    Lens',
- )
+import Control.Comonad.Trans.Cofree
+    ( tailF
+    )
+import Control.Lens
+    ( Lens'
+    )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const (
-    Const (..),
- )
-import Data.Functor.Foldable (
-    Base,
-    Corecursive,
-    Recursive,
- )
+import Data.Functor.Const
+    ( Const (..)
+    )
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity (
-    Identity (..),
- )
+import Data.Functor.Identity
+    ( Identity (..)
+    )
 import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
+import Data.HashSet
+    ( HashSet
+    )
+import qualified Data.HashSet as HashSet
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
-import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
-import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
@@ -66,12 +70,12 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness (
-    Endianness,
- )
-import Kore.Builtin.Signedness.Signedness (
-    Signedness,
- )
+import Kore.Builtin.Endianness.Endianness
+    ( Endianness
+    )
+import Kore.Builtin.Signedness.Signedness
+    ( Signedness
+    )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -82,19 +86,19 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key (
-    Key,
-    KeyAttributes (KeyAttributes),
-    KeyF,
- )
+import Kore.Internal.Key
+    ( Key
+    , KeyAttributes (KeyAttributes)
+    , KeyF
+    )
 import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.Symbol (
-    Symbol,
- )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
@@ -120,9 +124,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser (
-    Unparse (..),
- )
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Prelude.Kore
@@ -438,6 +442,46 @@ instance Synthetic Attribute.ConstructorLike (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (TermLikeF variable)
+    where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
+            InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+
 instance From (KeyF child) (TermLikeF variable child) where
     from (Key.ApplySymbolF app) = ApplySymbolF app
     from (Key.InjF inj) = InjF inj
@@ -462,6 +506,7 @@ data TermAttributes variable = TermAttributes
     , termCreated :: !Attribute.Created
     , termSimplified :: !Attribute.Simplified
     , termConstructorLike :: !Attribute.ConstructorLike
+    , termSubterms :: !(Subterms variable)
     }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
@@ -481,6 +526,7 @@ instance
     , Synthetic Attribute.Defined base
     , Synthetic Attribute.Simplified base
     , Synthetic Attribute.ConstructorLike base
+    , Synthetic (Subterms variable) base
     ) =>
     Synthetic (TermAttributes variable) base
     where
@@ -497,6 +543,7 @@ instance
                     then Attribute.fullySimplified
                     else synthetic (termSimplified <$> base)
             , termConstructorLike = constructorLikeAttr
+            , termSubterms = synthetic (termSubterms <$> base)
             }
       where
         constructorLikeAttr :: Attribute.ConstructorLike
@@ -577,14 +624,18 @@ setAttributeSimplified termSimplified attrs =
 See also: 'traverseVariables'
 -}
 mapAttributeVariables ::
-    Ord variable2 =>
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
     AdjSomeVariableName (variable1 -> variable2) ->
     TermAttributes variable1 ->
     TermAttributes variable2
-mapAttributeVariables adj =
-    Lens.over
-        (field @"termFreeVariables")
-        (Attribute.mapFreeVariables adj)
+mapAttributeVariables adj termAttributes =
+    termAttributes
+        { termFreeVariables =
+            Attribute.mapFreeVariables adj (termFreeVariables termAttributes)
+        , termSubterms =
+            mapSubterms adj (termSubterms termAttributes)
+        }
 
 {- | Use the provided traversal to replace the free variables in a 'TermAttributes'.
 
@@ -593,12 +644,25 @@ See also: 'mapVariables'
 traverseAttributeVariables ::
     forall m variable1 variable2.
     Monad m =>
-    Ord variable2 =>
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
     AdjSomeVariableName (variable1 -> m variable2) ->
     TermAttributes variable1 ->
     m (TermAttributes variable2)
-traverseAttributeVariables adj =
-    field @"termFreeVariables" (Attribute.traverseFreeVariables adj)
+traverseAttributeVariables
+    adj
+    termAttributes@TermAttributes
+        { termFreeVariables
+        , termSubterms
+        }
+  = do
+    freeVariables' <- Attribute.traverseFreeVariables adj termFreeVariables
+    subterms' <- traverseSubterms adj termSubterms
+    return
+        termAttributes
+            { termFreeVariables = freeVariables'
+            , termSubterms = subterms'
+            }
 
 -- TODO: should we remove this? it isn't used anywhere
 
@@ -691,7 +755,7 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                 TermAttributes{termCreated} = attrs
 
                 attributeRepresentation = case attrs of
-                    (TermAttributes _ _ _ _ _ _ _ _) ->
+                    (TermAttributes _ _ _ _ _ _ _ _ _) ->
                         Pretty.surround
                             (Pretty.hsep $ map Pretty.pretty representation)
                             "/* "
@@ -794,7 +858,7 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance
-    (FreshPartialOrd variable) =>
+    (InternalVariable variable) =>
     From (TermLike Concrete) (TermLike variable)
     where
     from = mapVariables (pure $ from @Concrete)
@@ -825,10 +889,11 @@ fromKeyAttributes attrs =
         , termConstructorLike =
             Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
         , termCreated = Attribute.Created Nothing
+        , termSubterms = undefined
         }
 
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
-toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
+toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _ _)
     | Attribute.nullFreeVariables termFreeVariables
       , Attribute.isFunctional termFunctional
       , Attribute.isFunction termFunction
@@ -1022,8 +1087,8 @@ See also: 'traverseVariables'
 -}
 mapVariables ::
     forall variable1 variable2.
-    Ord variable1 =>
-    FreshPartialOrd variable2 =>
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
     AdjSomeVariableName (variable1 -> variable2) ->
     TermLike variable1 ->
     TermLike variable2
@@ -1042,8 +1107,8 @@ See also: 'mapVariables'
 -}
 traverseVariables ::
     forall variable1 variable2 m.
-    Ord variable1 =>
-    FreshPartialOrd variable2 =>
+    InternalVariable variable1 =>
+    InternalVariable variable2 =>
     Monad m =>
     AdjSomeVariableName (variable1 -> m variable2) ->
     TermLike variable1 ->
@@ -1125,3 +1190,214 @@ depth :: TermLike variable -> Int
 depth = Recursive.fold levelDepth
   where
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
+
+-- | An attribute type for caching the sub-terms of a term.
+newtype Subterms variable =
+    Subterms
+        { getSubterms :: HashSet (TermLike variable)
+        }
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Debug, Diff)
+
+instance Ord variable
+    => Synthetic (Subterms variable) (And sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (Application Symbol)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (Application (Alias patternType))
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Bottom sort) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Ceil sort) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (DomainValue sort) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) (Equals sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (Exists sort variable)
+    where
+    synthetic Exists{existsVariable, existsChild} =
+        undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Floor sort) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (Forall sort variable)
+    where
+    synthetic Forall{forallVariable, forallChild} =
+        undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) (Iff sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) (Implies sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) (In sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (Mu variable)
+    where
+    synthetic Mu{muVariable, muChild} =
+        undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Next sort) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Not child) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (Nu variable)
+    where
+    synthetic Nu{nuVariable, nuChild} =
+        undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) (Or sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) (Rewrites sort)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Top sort) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) Inhabitant where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const StringLiteral) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const InternalBool) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const InternalBytes) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const InternalInt) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const InternalString) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Ord variable =>
+    Synthetic (Subterms variable) InternalList
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (InternalMap key)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Subterms variable) (InternalSet key)
+    where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const (SomeVariable variable))
+    where
+    synthetic (Const var) = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const Endianness) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) (Const Signedness) where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Subterms variable) Inj where
+    synthetic = undefined
+    {-# INLINE synthetic #-}
+
+mapSubterms
+    :: InternalVariable variable1
+    => InternalVariable variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Subterms variable1
+    -> Subterms variable2
+mapSubterms adj (Subterms subterms) =
+    HashSet.map (mapVariables adj) subterms
+    & Subterms
+
+traverseSubterms
+    :: Monad m
+    => InternalVariable variable1
+    => InternalVariable variable2
+    => AdjSomeVariableName (variable1 -> m variable2)
+    -> Subterms variable1
+    -> m (Subterms variable2)
+traverseSubterms adj (Subterms subterms) =
+    fmap (Subterms . HashSet.fromList)
+    . traverse (traverseVariables adj)
+    . HashSet.toList
+    $ subterms
