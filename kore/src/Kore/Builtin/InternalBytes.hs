@@ -14,6 +14,8 @@ module Kore.Builtin.InternalBytes (
     -- * Keys
     bytes2StringKey,
     string2BytesKey,
+    decodeBytesKey,
+    encodeBytesKey,
     updateKey,
     getKey,
     substrKey,
@@ -44,6 +46,8 @@ import Data.String (
 import Data.Text (
     Text,
  )
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 import Data.Word (
     Word8,
  )
@@ -60,6 +64,7 @@ import Kore.Internal.ApplicationSorts (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Log.WarnNotImplemented
 import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier,
  )
@@ -99,6 +104,14 @@ symbolVerifiers =
         ,
             ( string2BytesKey
             , Builtin.verifySymbol bytes [string]
+            )
+        ,
+            ( decodeBytesKey
+            , Builtin.verifySymbol string [string, bytes]
+            )
+        ,
+            ( encodeBytesKey
+            , Builtin.verifySymbol bytes [string, string]
             )
         ,
             ( updateKey
@@ -213,6 +226,46 @@ evalString2Bytes =
             & asPattern resultSort
             & return
     evalString2Bytes0 _ _ _ = Builtin.wrongArity string2BytesKey
+
+evalDecodeBytes :: BuiltinAndAxiomSimplifier
+evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
+  where
+    evalDecodeBytes0 _ app
+      | [_strTerm, _bytesTerm] <- applicationChildren app = do
+          let Application{applicationSymbolOrAlias = symbol} = app
+              resultSort = symbolSorts symbol & applicationSortsResult
+              returnResult = return . String.asPattern resultSort
+          _str <- String.expectBuiltinString decodeBytesKey _strTerm
+          _bytes <- matchBuiltinBytes _bytesTerm
+          case Text.unpack _str of
+            "UTF-8" -> case Text.decodeUtf8' _bytes of
+              Right str -> returnResult str
+              Left _ -> return (Pattern.bottomOf resultSort) -- UnicodeException
+            "UTF-16LE" -> returnResult $ Text.decodeUtf16LE _bytes
+            "UTF-16BE" -> returnResult $ Text.decodeUtf16BE _bytes
+            "UTF-32LE" -> returnResult $ Text.decodeUtf32LE _bytes
+            "UTF-32BE" -> returnResult $ Text.decodeUtf32BE _bytes
+            _ -> warnNotImplemented app >> empty
+    evalDecodeBytes0 _ _ = Builtin.wrongArity decodeBytesKey
+
+evalEncodeBytes :: BuiltinAndAxiomSimplifier
+evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
+  where
+    evalEncodeBytes0 _ app
+      | [_encodingTerm, _contentsTerm] <- applicationChildren app = do
+          let Application{applicationSymbolOrAlias = symbol} = app
+              resultSort = symbolSorts symbol & applicationSortsResult
+              returnResult = return . asPattern resultSort
+          _encoding <- String.expectBuiltinString encodeBytesKey _encodingTerm
+          _contents <- String.expectBuiltinString encodeBytesKey _contentsTerm
+          case Text.unpack _encoding of
+            "UTF-8" -> returnResult $ Text.encodeUtf8 _contents
+            "UTF-16LE" -> returnResult $ Text.encodeUtf16LE _contents
+            "UTF-16BE" -> returnResult $ Text.encodeUtf16BE _contents
+            "UTF-32LE" -> returnResult $ Text.encodeUtf32LE _contents
+            "UTF-32BE" -> returnResult $ Text.encodeUtf32BE _contents
+            _ -> warnNotImplemented app >> empty
+    evalEncodeBytes0 _ _ = Builtin.wrongArity encodeBytesKey
 
 evalUpdate :: BuiltinAndAxiomSimplifier
 evalUpdate =
@@ -450,6 +503,8 @@ builtinFunctions =
     Map.fromList
         [ (bytes2StringKey, evalBytes2String)
         , (string2BytesKey, evalString2Bytes)
+        , (decodeBytesKey, evalDecodeBytes)
+        , (encodeBytesKey, evalEncodeBytes)
         , (updateKey, evalUpdate)
         , (getKey, evalGet)
         , (substrKey, evalSubstr)
