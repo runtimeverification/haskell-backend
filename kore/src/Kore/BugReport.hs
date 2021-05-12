@@ -105,7 +105,7 @@ writeBugReportArchive ::
 writeBugReportArchive base tar = do
     let sessionCommands = ".sessionCommands"
     Monad.whenM
-        (doesFileExist ".sessionCommands")
+        (doesFileExist sessionCommands)
         $ do
             copyFile sessionCommands (base </> tail sessionCommands)
             removeFile sessionCommands
