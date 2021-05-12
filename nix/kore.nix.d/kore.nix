@@ -119,6 +119,7 @@
           "Kore/Attribute/Axiom/Unit"
           "Kore/Attribute/Comm"
           "Kore/Attribute/Constructor"
+          "Kore/Attribute/Definition"
           "Kore/Attribute/Function"
           "Kore/Attribute/Functional"
           "Kore/Attribute/Hook"
