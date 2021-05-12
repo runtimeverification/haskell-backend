@@ -308,12 +308,16 @@ replInterpreter0 printAux printKore replCmd = do
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> do
-            warnIfLowProductivity
+            warnProductivity
             liftIO exitSuccess
         FailStop -> do
-            warnIfLowProductivity
+            warnProductivity
             liftIO . exitWith $ ExitFailure 2
   where
+    warnProductivity = do
+        Config{kFileLocations} <- ask
+        warnIfLowProductivity kFileLocations
+
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
     -- monadic result.

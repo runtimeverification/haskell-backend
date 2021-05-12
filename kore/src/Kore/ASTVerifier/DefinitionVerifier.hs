@@ -100,7 +100,7 @@ verifyAndIndexDefinition builtinVerifiers definition = do
 {- |Verifies a `ParsedDefinition` against a preverified definition, consisting of
 map of indexed modules and a map of defined names.
 
-If verification is successfull, it returns the updated maps op indexed modules
+If verification is successfull, it returns the updated maps of indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase ::
