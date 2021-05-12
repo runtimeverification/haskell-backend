@@ -5,8 +5,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
 module Kore.Attribute.Pattern (
-    Pattern (Pattern, patternSort, freeVariables, functional, function, defined, created),
-    -- 'simplified' and 'constructorLike' were intentionally left out above.
+    Pattern (..),
     mapVariables,
     traverseVariables,
     deleteFreeVariable,
