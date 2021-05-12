@@ -527,55 +527,56 @@ test_decodeBytes_encodeBytes :: [TestTree]
 test_decodeBytes_encodeBytes = map testProp encodings
   where
     testProp encoding =
-      testPropertyWithSolver "∀ s. decodeBytes (encodeBytes s) = s" $ do
-        str <- forAll genString
-        let expect = Test.String.asPattern str
-        actual <-
-          evaluateT $
-              mkApplySymbol
-                  decodeBytesBytesSymbol
-                  [ Test.String.asInternal encoding
-                  , mkApplySymbol
-                      encodeBytesBytesSymbol
-                      [ Test.String.asInternal encoding
-                      , Test.String.asInternal str
-                      ]
-                  ]
-        (===) expect actual
-    encodings = [ "UTF-8"
-                , "UTF-16LE"
-                , "UTF-16BE"
-                , "UTF-32LE"
-                , "UTF-32BE"
-                ]
+        testPropertyWithSolver "∀ s. decodeBytes (encodeBytes s) = s" $ do
+            str <- forAll genString
+            let expect = Test.String.asPattern str
+            actual <-
+                evaluateT $
+                    mkApplySymbol
+                        decodeBytesBytesSymbol
+                        [ Test.String.asInternal encoding
+                        , mkApplySymbol
+                            encodeBytesBytesSymbol
+                            [ Test.String.asInternal encoding
+                            , Test.String.asInternal str
+                            ]
+                        ]
+            (===) expect actual
+    encodings =
+        [ "UTF-8"
+        , "UTF-16LE"
+        , "UTF-16BE"
+        , "UTF-32LE"
+        , "UTF-32BE"
+        ]
 
 test_decodeBytes :: TestTree
 test_decodeBytes =
-  testBytes
-    "test bad decoding"
-    decodeBytesBytesSymbol
-    [ Test.String.asInternal "bad"
-    , asInternal ""
-    ]
-    ( Pattern.fromTermLike $
-        mkApplySymbol
-            decodeBytesBytesSymbol
-            [Test.String.asInternal "bad", asInternal ""]
-    )
+    testBytes
+        "test bad decoding"
+        decodeBytesBytesSymbol
+        [ Test.String.asInternal "bad"
+        , asInternal ""
+        ]
+        ( Pattern.fromTermLike $
+            mkApplySymbol
+                decodeBytesBytesSymbol
+                [Test.String.asInternal "bad", asInternal ""]
+        )
 
 test_encodeBytes :: TestTree
 test_encodeBytes =
-  testBytes
-    "test bad encoding"
-    encodeBytesBytesSymbol
-    [ Test.String.asInternal "bad"
-    , Test.String.asInternal ""
-    ]
-    ( Pattern.fromTermLike $
-        mkApplySymbol
-            encodeBytesBytesSymbol
-            [Test.String.asInternal "bad", Test.String.asInternal ""]
-    )
+    testBytes
+        "test bad encoding"
+        encodeBytesBytesSymbol
+        [ Test.String.asInternal "bad"
+        , Test.String.asInternal ""
+        ]
+        ( Pattern.fromTermLike $
+            mkApplySymbol
+                encodeBytesBytesSymbol
+                [Test.String.asInternal "bad", Test.String.asInternal ""]
+        )
 
 int2bytesData ::
     -- | (integer, big endian?, bytes)
