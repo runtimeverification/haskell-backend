@@ -424,22 +424,22 @@ assertEquivalentPatterns' expects actuals =
 
 assertEquivalent ::
     InternalVariable variable =>
-    (   NormalizedAndPattern variable ->
-        NormalizedAndPattern variable ->
-        m ()
-    )
-    -> Pattern variable
-    -> Pattern variable
-    -> m ()
+    ( NormalizedAndPattern variable ->
+      NormalizedAndPattern variable ->
+      m ()
+    ) ->
+    Pattern variable ->
+    Pattern variable ->
+    m ()
 assertEquivalent assertion expect actual =
     on assertion normalizeConj expect actual
 
 assertEquivalent' ::
     Functor f =>
     InternalVariable variable =>
-    (   f (NormalizedAndPattern variable) ->
-        f (NormalizedAndPattern variable) ->
-        m ()
+    ( f (NormalizedAndPattern variable) ->
+      f (NormalizedAndPattern variable) ->
+      m ()
     ) ->
     f (Pattern variable) ->
     f (Pattern variable) ->

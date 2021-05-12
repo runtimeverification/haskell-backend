@@ -35,6 +35,8 @@ import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -66,8 +68,6 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern (OrPattern)
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
@@ -327,11 +327,11 @@ test_string2Base =
         "string2Base bad base"
         string2BaseStringSymbol
         [asInternal "1", Test.Int.asInternal 17]
-        (   MultiOr.singleton $
+        ( MultiOr.singleton $
             Pattern.fromTermLike $
-            mkApplySymbol
-                string2BaseStringSymbol
-                [asInternal "1", Test.Int.asInternal 17]
+                mkApplySymbol
+                    string2BaseStringSymbol
+                    [asInternal "1", Test.Int.asInternal 17]
         )
     ]
 

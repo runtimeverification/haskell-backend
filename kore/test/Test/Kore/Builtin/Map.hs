@@ -171,7 +171,7 @@ test_lookupUnit =
         let patLookup = lookupOrDefaultMap unitMap key def
             predicate = mkEquals_ def patLookup
         (===) (MultiOr.singleton $ Pattern.fromTermLike def)
-                =<< evaluateT patLookup
+            =<< evaluateT patLookup
         (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     ]
 
@@ -421,7 +421,7 @@ test_inKeysUnit =
                 patInKeys = inKeysMap patKey patUnit
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInKeys
             (===) (MultiOr.singleton $ Test.Bool.asPattern False)
-                    =<< evaluateT patInKeys
+                =<< evaluateT patInKeys
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
@@ -528,7 +528,7 @@ test_inKeysElement =
                 patInKeys = inKeysMap patKey patMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInKeys
             (===) (MultiOr.singleton $ Test.Bool.asPattern True)
-                    =<< evaluateT patInKeys
+                =<< evaluateT patInKeys
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
@@ -567,7 +567,7 @@ test_inclusion =
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
             (===) (MultiOr.singleton $ Test.Bool.asPattern True)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
@@ -576,7 +576,7 @@ test_inclusion =
             let patInclusion = inclusionMap unitMap unitMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
             (===) (MultiOr.singleton $ Test.Bool.asPattern True)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
@@ -586,7 +586,7 @@ test_inclusion =
             let patInclusion = inclusionMap unitMap patSomeMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
             (===) (MultiOr.singleton $ Test.Bool.asPattern True)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
@@ -598,7 +598,7 @@ test_inclusion =
                 patInclusion = inclusionMap patSomeMap unitMap
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
             (===) (MultiOr.singleton $ Test.Bool.asPattern False)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
@@ -617,7 +617,7 @@ test_inclusion =
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
             (===) (MultiOr.singleton $ Test.Bool.asPattern False)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
@@ -640,7 +640,7 @@ test_inclusion =
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
             (===) (Test.Bool.asOrPattern False)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     ]
@@ -1233,7 +1233,7 @@ test_concretizeKeys =
             , substitution =
                 Substitution.unsafeWrap [(inject v, val), (inject x, key)]
             }
-        & MultiOr.singleton
+            & MultiOr.singleton
 
 {- | Unify a concrete map with symbolic-keyed map in an axiom
 
