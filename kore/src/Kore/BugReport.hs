@@ -24,6 +24,7 @@ import Control.Monad.Catch (
     generalBracket,
     handleAll,
  )
+import qualified Control.Monad.Extra as Monad
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Debug
 import qualified GHC.Generics as GHC
@@ -38,8 +39,11 @@ import Kore.Log.KoreLogOptions (
 import Options.Applicative
 import Prelude.Kore
 import System.Directory (
+    copyFile,
+    doesFileExist,
     listDirectory,
-    removePathForcibly, doesFileExist, copyFile, removeFile
+    removeFile,
+    removePathForcibly,
  )
 import System.Exit (
     ExitCode (..),
@@ -56,7 +60,6 @@ import System.IO.Temp (
     createTempDirectory,
     getCanonicalTemporaryDirectory,
  )
-import qualified Control.Monad.Extra as Monad
 
 newtype BugReport = BugReport {toReport :: FilePath}
     deriving stock (Eq, Show)
