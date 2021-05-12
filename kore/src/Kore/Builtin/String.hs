@@ -318,39 +318,39 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
             _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
             unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
             return $ case readWithBase _base (Text.unpack _str) of
-              [(result, "")] -> Int.asPattern resultSort result
-              _ -> Pattern.bottomOf resultSort
+                [(result, "")] -> Int.asPattern resultSort result
+                _ -> Pattern.bottomOf resultSort
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 readWithBase :: Integer -> ReadS Integer
 readWithBase base = sign $ readInt base isDigit valDigit
   where
-    sign p ('-':cs) = do
-      (a, str') <- p cs
-      return (negate a, str')
-    sign p ('+':cs) = p cs
+    sign p ('-' : cs) = do
+        (a, str') <- p cs
+        return (negate a, str')
+    sign p ('+' : cs) = p cs
     sign p cs = p cs
     isDigit = maybe False (< base) . valDig
     valDigit = fromMaybe 0 . valDig
     valDig c
-      | '0' <= c && c <= '9' = Just $ fromIntegral $ ord c - ord '0'
-      | 'a' <= c && c <= 'z' = Just $ fromIntegral $ ord c - ord 'a' + 10
-      | 'A' <= c && c <= 'Z' = Just $ fromIntegral $ ord c - ord 'A' + 10
-      | otherwise = Nothing
+        | '0' <= c && c <= '9' = Just $ fromIntegral $ ord c - ord '0'
+        | 'a' <= c && c <= 'z' = Just $ fromIntegral $ ord c - ord 'a' + 10
+        | 'A' <= c && c <= 'Z' = Just $ fromIntegral $ ord c - ord 'A' + 10
+        | otherwise = Nothing
 
 evalBase2String :: BuiltinAndAxiomSimplifier
 evalBase2String = Builtin.applicationEvaluator evalBase2String0
   where
     evalBase2String0 _ app
-      | [_intTerm, _baseTerm] <- applicationChildren app = do
-          let Application{applicationSymbolOrAlias = symbol} = app
-              resultSort = symbolSorts symbol & applicationSortsResult
-          _int <- Int.expectBuiltinInt base2StringKey _intTerm
-          _base <- Int.expectBuiltinInt base2StringKey _baseTerm
-          unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
-          Text.pack (showWithBase _int _base)
-              & asPattern resultSort
-              & return
+        | [_intTerm, _baseTerm] <- applicationChildren app = do
+            let Application{applicationSymbolOrAlias = symbol} = app
+                resultSort = symbolSorts symbol & applicationSortsResult
+            _int <- Int.expectBuiltinInt base2StringKey _intTerm
+            _base <- Int.expectBuiltinInt base2StringKey _baseTerm
+            unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
+            Text.pack (showWithBase _int _base)
+                & asPattern resultSort
+                & return
     evalBase2String0 _ _ = Builtin.wrongArity base2StringKey
 
 showWithBase :: Integer -> Integer -> String
@@ -358,8 +358,8 @@ showWithBase int base = showSigned (showIntAtBase base toChar) 0 int ""
   where
     -- chr 48 == '0', chr 97 == 'a'
     toChar digit
-      | 0 <= digit && digit <= 9 = chr $ digit + 48
-      | otherwise = chr $ digit + 87
+        | 0 <= digit && digit <= 9 = chr $ digit + 48
+        | otherwise = chr $ digit + 87
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
