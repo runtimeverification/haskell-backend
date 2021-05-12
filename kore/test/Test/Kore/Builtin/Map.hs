@@ -163,15 +163,16 @@ test_lookupUnit =
         key <- forAll genIntegerPattern
         let patLookup = lookupMap unitMap key
             predicate = mkEquals_ mkBottom_ patLookup
-        (===) Pattern.bottom =<< evaluateT patLookup
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT patLookup
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     , testPropertyWithoutSolver "lookupOrDefault{}(unit{}(), key, default) === default" $ do
         key <- forAll genIntegerPattern
         def <- forAll genIntegerPattern
         let patLookup = lookupOrDefaultMap unitMap key def
             predicate = mkEquals_ def patLookup
-        (===) (Pattern.fromTermLike def) =<< evaluateT patLookup
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton $ Pattern.fromTermLike def)
+                =<< evaluateT patLookup
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     ]
 
 test_lookupUpdate :: [TestTree]
@@ -182,9 +183,9 @@ test_lookupUpdate =
         patMap <- forAll genMapPattern
         let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
             predicate = mkEquals_ patLookup patVal
-            expect = Pattern.fromTermLike patVal
+            expect = MultiOr.singleton $ Pattern.fromTermLike patVal
         (===) expect =<< evaluateT patLookup
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     , testPropertyWithoutSolver "lookupOrDefault{}(update{}(map, key, val), key, def) === val" $ do
         patKey <- forAll genIntegerPattern
         patDef <- forAll genIntegerPattern
@@ -193,9 +194,9 @@ test_lookupUpdate =
         let patUpdate = updateMap patMap patKey patVal
             patLookup = lookupOrDefaultMap patUpdate patKey patDef
             predicate = mkEquals_ patLookup patVal
-            expect = Pattern.fromTermLike patVal
+            expect = MultiOr.singleton $ Pattern.fromTermLike patVal
         (===) expect =<< evaluateT patLookup
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     ]
 
 test_removeUnit :: TestTree
@@ -208,7 +209,7 @@ test_removeUnit =
                 predicate = mkEquals_ unitMap patRemove
             expect <- evaluateT unitMap
             (===) expect =<< evaluateT patRemove
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_sizeUnit :: TestTree
@@ -226,7 +227,7 @@ test_sizeUnit =
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluateT patExpected
             (===) expect =<< evaluateT patActual
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_removeKeyNotIn :: TestTree
@@ -237,12 +238,12 @@ test_removeKeyNotIn =
             key <- forAll genIntegerPattern
             map' <- forAll genMapPattern
             isInMap <- evaluateT $ lookupMap map' key
-            unless (Pattern.bottom == isInMap) discard
+            unless (MultiOr.singleton Pattern.bottom == isInMap) discard
             let patRemove = removeMap map' key
                 predicate = mkEquals_ map' patRemove
             expect <- evaluateT map'
             (===) expect =<< evaluateT patRemove
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_removeKeyIn :: TestTree
@@ -254,12 +255,12 @@ test_removeKeyIn =
             val <- forAll genIntegerPattern
             map' <- forAll genMapPattern
             isInMap <- evaluateT $ lookupMap map' key
-            unless (Pattern.bottom == isInMap) discard
+            unless (MultiOr.singleton Pattern.bottom == isInMap) discard
             let patRemove = removeMap (updateMap map' key val) key
                 predicate = mkEquals_ patRemove map'
             expect <- evaluateT map'
             (===) expect =<< evaluateT patRemove
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_removeAllMapUnit :: TestTree
@@ -272,7 +273,7 @@ test_removeAllMapUnit =
                 predicate = mkEquals_ unitMap patRemoveAll
             expect <- evaluateT unitMap
             (===) expect =<< evaluateT patRemoveAll
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_removeAllSetUnit :: TestTree
@@ -285,7 +286,7 @@ test_removeAllSetUnit =
                 predicate = mkEquals_ map' patRemoveAll
             expect <- evaluateT map'
             (===) expect =<< evaluateT patRemoveAll
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_removeAll :: TestTree
@@ -309,7 +310,7 @@ test_removeAll =
                 predicate = mkEquals_ patRemoveAll1 patRemoveAll2
             expect <- evaluateT patRemoveAll2
             (===) expect =<< evaluateT patRemoveAll1
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_concatUnit :: TestTree
@@ -326,8 +327,8 @@ test_concatUnit =
             expect <- evaluateT patMap
             (===) expect =<< evaluateT patConcat1
             (===) expect =<< evaluateT patConcat2
-            (===) Pattern.top =<< evaluateT predicate1
-            (===) Pattern.top =<< evaluateT predicate2
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate1
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate2
         )
 
 test_lookupConcatUniqueKeys :: TestTree
@@ -352,11 +353,11 @@ test_lookupConcatUniqueKeys =
                             (mkEquals_ patLookup1 patVal1)
                             (mkEquals_ patLookup2 patVal2)
                         )
-                expect1 = Pattern.fromTermLike patVal1
-                expect2 = Pattern.fromTermLike patVal2
+                expect1 = MultiOr.singleton $ Pattern.fromTermLike patVal1
+                expect2 = MultiOr.singleton $ Pattern.fromTermLike patVal2
             (===) expect1 =<< evaluateT patLookup1
             (===) expect2 =<< evaluateT patLookup2
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_concatDuplicateKeys :: TestTree
@@ -371,8 +372,8 @@ test_concatDuplicateKeys =
                 patMap2 = elementMap patKey patVal2
                 patConcat = concatMap patMap1 patMap2
                 predicate = mkEquals_ mkBottom_ patConcat
-            (===) Pattern.bottom =<< evaluateT patConcat
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT patConcat
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_concatCommutes :: TestTree
@@ -388,7 +389,7 @@ test_concatCommutes =
             actual1 <- evaluateT patConcat1
             actual2 <- evaluateT patConcat2
             (===) actual1 actual2
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_concatAssociates :: TestTree
@@ -407,7 +408,7 @@ test_concatAssociates =
             actual12_3 <- evaluateT patConcat12_3
             actual1_23 <- evaluateT patConcat1_23
             (===) actual12_3 actual1_23
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_inKeysUnit :: TestTree
@@ -419,8 +420,9 @@ test_inKeysUnit =
             let patUnit = unitMap
                 patInKeys = inKeysMap patKey patUnit
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInKeys
-            (===) (Test.Bool.asPattern False) =<< evaluateT patInKeys
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+                    =<< evaluateT patInKeys
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_keysUnit :: TestTree
@@ -434,7 +436,8 @@ test_keysUnit =
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
-            assertEqual "" Pattern.top =<< evaluate predicate
+            assertEqual "" (MultiOr.singleton Pattern.top)
+                =<< evaluate predicate
 
 test_keysElement :: TestTree
 test_keysElement =
@@ -449,7 +452,7 @@ test_keysElement =
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
             (===) expect =<< evaluateT patSymbolic
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_keys :: TestTree
@@ -465,7 +468,7 @@ test_keys =
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys
             expect <- evaluateT patConcreteKeys
             (===) expect =<< evaluateT patSymbolicKeys
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_keysListUnit :: TestTree
@@ -479,7 +482,8 @@ test_keysListUnit =
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
-            assertEqual "" Pattern.top =<< evaluate predicate
+            assertEqual "" (MultiOr.singleton Pattern.top)
+                =<< evaluate predicate
 
 test_keysListElement :: TestTree
 test_keysListElement =
@@ -494,7 +498,7 @@ test_keysListElement =
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
             (===) expect =<< evaluateT patSymbolic
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_keysList :: TestTree
@@ -510,7 +514,7 @@ test_keysList =
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys
             expect <- evaluateT patConcreteKeys
             (===) expect =<< evaluateT patSymbolicKeys
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_inKeysElement :: TestTree
@@ -523,8 +527,9 @@ test_inKeysElement =
             let patMap = elementMap patKey patVal
                 patInKeys = inKeysMap patKey patMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInKeys
-            (===) (Test.Bool.asPattern True) =<< evaluateT patInKeys
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+                    =<< evaluateT patInKeys
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_values :: TestTree
@@ -541,7 +546,7 @@ test_values =
                 predicate = mkEquals_ patConcreteValues patValues
             expect <- evaluateT patValues
             (===) expect =<< evaluateT patConcreteValues
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 test_inclusion :: [TestTree]
@@ -561,16 +566,18 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
-            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+                    =<< evaluateT patInclusion
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "MAP.inclusion success: empty map <= empty map"
         ( do
             let patInclusion = inclusionMap unitMap unitMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+                    =<< evaluateT patInclusion
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "MAP.inclusion success: empty map <= any map"
@@ -578,8 +585,9 @@ test_inclusion =
             patSomeMap <- forAll genMapPattern
             let patInclusion = inclusionMap unitMap patSomeMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+                    =<< evaluateT patInclusion
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "MAP.inclusion failure: !(some map <= empty map)"
@@ -589,8 +597,9 @@ test_inclusion =
             let patSomeMap = elementMap patKey1 patVal1
                 patInclusion = inclusionMap patSomeMap unitMap
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
-            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+                    =<< evaluateT patInclusion
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "MAP.inclusion failure: lhs key not included in rhs map"
@@ -607,8 +616,9 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
-            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+                    =<< evaluateT patInclusion
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "MAP.inclusion failure: lhs key maps differently in rhs map"
@@ -629,8 +639,9 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
-            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+                    =<< evaluateT patInclusion
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     ]
 
@@ -641,7 +652,8 @@ test_simplify =
         let x = mkIntConfigVar (testId "x")
             key = Test.Int.asKey 1
             original = asTermLike $ HashMap.fromList [(key, mkAnd x mkTop_)]
-            expected = asPattern $ HashMap.fromList [(key, x)]
+            expected =
+                MultiOr.singleton . asPattern $ HashMap.fromList [(key, x)]
         actual <- evaluate original
         assertEqual "expected simplified Map" expected actual
 
@@ -654,7 +666,7 @@ test_symbolic =
             elements <- forAll $ genMapSortedVariable intSort genIntegerPattern
             let varMap = mapKeys mkElemVar elements
                 patMap = asSymbolicPattern varMap
-                expect = asVariablePattern varMap
+                expect = MultiOr.singleton $ asVariablePattern varMap
             if HashMap.null elements
                 then discard
                 else (===) expect =<< evaluateT patMap
@@ -699,7 +711,7 @@ test_unifyConcrete =
             expect <- evaluateT patExpect
             actual <- evaluateT patActual
             (===) expect actual
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
 -- Given a function to scramble the arguments to concat, i.e.,
@@ -828,7 +840,7 @@ test_unifySelectFromEmpty =
   where
     emptyMap = asTermLike HashMap.empty
     doesNotUnifyWith pat1 pat2 =
-        (===) Pattern.bottom =<< evaluateT (mkAnd pat1 pat2)
+        (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
@@ -1221,6 +1233,7 @@ test_concretizeKeys =
             , substitution =
                 Substitution.unsafeWrap [(inject v, val), (inject x, key)]
             }
+        & MultiOr.singleton
 
 {- | Unify a concrete map with symbolic-keyed map in an axiom
 
@@ -1245,8 +1258,8 @@ test_concretizeKeysAxiom =
         $ do
             let concreteMap = asTermLike $ HashMap.fromList [(key, val)]
             config <- evaluate $ pair symbolicKey concreteMap
-            actual <- runStep config axiom
-            assertEqual "expected MAP.lookup" expected actual
+            actual <- MultiOr.traverse (flip runStep axiom) config
+            assertEqual "expected MAP.lookup" expected (MultiOr.flatten actual)
   where
     x = mkIntRuleVar (testId "x")
     v = mkIntRuleVar (testId "v")

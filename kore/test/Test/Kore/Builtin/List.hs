@@ -60,6 +60,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit
+import qualified Kore.Internal.MultiOr as MultiOr
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -81,8 +82,8 @@ test_getUnit =
                     , Test.Int.asInternal k
                     ]
             predicate = mkEquals_ mkBottom_ patGet
-        (===) Pattern.bottom =<< evaluateT patGet
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT patGet
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_getFirstElement :: TestTree
 test_getFirstElement =
@@ -103,8 +104,8 @@ test_getFirstElement =
             patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialPattern value
-        (===) expectGet =<< evaluateT patGet
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton expectGet) =<< evaluateT patGet
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_getLastElement :: TestTree
 test_getLastElement =
@@ -126,8 +127,8 @@ test_getLastElement =
             patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialPattern value
-        (===) expectGet =<< evaluateT patGet
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton expectGet) =<< evaluateT patGet
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_GetUpdate :: TestTree
 test_GetUpdate =
@@ -150,12 +151,12 @@ test_GetUpdate =
                             patGet
                             value
                     expect = Pattern.fromTermLike value
-                (===) Pattern.top =<< evaluateT predicate
-                (===) expect =<< evaluateT patGet
+                (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+                (===) (MultiOr.singleton expect) =<< evaluateT patGet
             else do
                 let predicate = mkEquals_ mkBottom_ patUpdated
-                (===) Pattern.bottom =<< evaluateT patUpdated
-                (===) Pattern.top =<< evaluateT predicate
+                (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT patUpdated
+                (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_inUnit :: TestTree
 test_inUnit =
@@ -169,8 +170,8 @@ test_inUnit =
             patIn = inList patValue unitList
             patFalse = Test.Bool.asInternal False
             predicate = mkEquals_ patFalse patIn
-        (===) (Test.Bool.asPattern False) =<< evaluateT patIn
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton $ Test.Bool.asPattern False) =<< evaluateT patIn
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_inElement :: TestTree
 test_inElement =
@@ -185,8 +186,8 @@ test_inElement =
             patIn = inList patValue patElement
             patTrue = Test.Bool.asInternal True
             predicate = mkEquals_ patIn patTrue
-        (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton $ Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_inConcat :: TestTree
 test_inConcat =
@@ -204,8 +205,8 @@ test_inConcat =
             patIn = inList patValue patConcat
             patTrue = Test.Bool.asInternal True
             predicate = mkEquals_ patIn patTrue
-        (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton $ Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =
@@ -224,8 +225,8 @@ test_concatUnit =
         expectValues <- evaluateT patValues
         (===) expectValues =<< evaluateT patConcat1
         (===) expectValues =<< evaluateT patConcat2
-        (===) Pattern.top =<< evaluateT predicate1
-        (===) Pattern.top =<< evaluateT predicate2
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate1
+        (===) (MultiOr.singleton Pattern.top)  =<< evaluateT predicate2
 
 test_concatUnitSymbolic :: TestTree
 test_concatUnitSymbolic =
@@ -244,8 +245,8 @@ test_concatUnitSymbolic =
         expectSymbolic <- evaluateT patSymbolic
         (===) expectSymbolic =<< evaluateT patConcat1
         (===) expectSymbolic =<< evaluateT patConcat2
-        (===) Pattern.top =<< evaluateT predicate1
-        (===) Pattern.top =<< evaluateT predicate2
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate1
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate2
 
 test_concatAssociates :: TestTree
 test_concatAssociates =
@@ -270,7 +271,7 @@ test_concatAssociates =
         evalConcat12_3 <- evaluateT patConcat12_3
         evalConcat1_23 <- evaluateT patConcat1_23
         (===) evalConcat12_3 evalConcat1_23
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
 
 test_concatSymbolic :: TestTree
 test_concatSymbolic =
@@ -307,6 +308,7 @@ test_concatSymbolic =
                                 ]
                             )
                     }
+                & MultiOr.singleton
         unified <- evaluateT patUnifiedXY
         expect === unified
 
@@ -326,6 +328,7 @@ test_concatSymbolic =
                                 ]
                             )
                     }
+                & MultiOr.singleton
         unified' <- evaluateT patUnifiedXY'
         expect' === unified'
 
@@ -371,6 +374,7 @@ test_concatSymbolicDifferentLengths =
                                 ]
                             )
                     }
+                & MultiOr.singleton
         unified <- evaluateT patUnifiedXY
         expect === unified
 
@@ -384,7 +388,7 @@ test_simplify =
     testPropertyWithSolver "simplify elements" $ do
         let x = mkElemVar (configElementVariableFromId (testId "x") intSort)
             original = asInternal [mkAnd x mkTop_]
-            expected = asPattern [x]
+            expected = MultiOr.singleton $ asPattern [x]
         (===) expected =<< evaluateT original
 
 test_isBuiltin :: [TestTree]
@@ -409,15 +413,15 @@ test_size =
         let original = sizeList unitList
             zero = mkInt 0
             predicate = mkEquals_ zero original
-        (===) (Pattern.fromTermLike zero) =<< evaluateT original
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton $ Pattern.fromTermLike zero) =<< evaluateT original
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     , testPropertyWithSolver "size(element(_)) = 1" $ do
         k <- forAll genInteger
         let original = sizeList (elementList $ mkInt k)
             one = mkInt 1
             predicate = mkEquals_ one original
-        (===) (Pattern.fromTermLike one) =<< evaluateT original
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton $ Pattern.fromTermLike one) =<< evaluateT original
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     , testPropertyWithSolver "size(a + b) = size(a) + size(b)" $ do
         as <- asInternal . fmap mkInt <$> forAll genSeqInteger
         bs <- asInternal . fmap mkInt <$> forAll genSeqInteger
@@ -427,21 +431,23 @@ test_size =
         expect1 <- evaluateT sizeConcat
         expect2 <- evaluateT addSize
         (===) expect1 expect2
-        (===) Pattern.top =<< evaluateT predicate
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
     ]
 
 test_make :: [TestTree]
 test_make =
     [ testCaseWithoutSMT "make(-1, 5) === \\bottom" $ do
         result <- evaluate $ makeList (mkInt (-1)) (mkInt 5)
-        assertEqual' "" Pattern.bottom result
+        assertEqual' "" (MultiOr.singleton Pattern.bottom) result
     , testCaseWithoutSMT "make(0, 5) === []" $ do
         result <- evaluate $ makeList (mkInt 0) (mkInt 5)
-        assertEqual' "" (Pattern.fromTermLike (asInternal [])) result
+        assertEqual' ""
+            (MultiOr.singleton . Pattern.fromTermLike $ asInternal [])
+            result
     , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do
         result <- evaluate $ makeList (mkInt 3) (mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [5, 5, 5]
-        assertEqual' "" (Pattern.fromTermLike expect) result
+        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike expect) result
     ]
 
 test_updateAll :: [TestTree]
@@ -450,25 +456,25 @@ test_updateAll =
         result <-
             evaluate $
                 updateAllList original (mkInt (-1)) (elementList $ mkInt 5)
-        assertEqual' "" Pattern.bottom result
+        assertEqual' "" (MultiOr.singleton Pattern.bottom) result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 10, []) === [1, 2, 3]" $ do
         result <-
             evaluate $
                 updateAllList original (mkInt 10) unitList
-        assertEqual' "" (Pattern.fromTermLike original) result
+        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike original) result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 1, [5]) === [1, 5, 3]" $ do
         result <-
             evaluate $
                 updateAllList original (mkInt 1) (elementList $ mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
-        assertEqual' "" (Pattern.fromTermLike expect) result
+        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike expect) result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4]) === \\bottom" $
         do
             let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
             result <-
                 evaluate $
                     updateAllList original (mkInt 0) new
-            assertEqual' "" Pattern.bottom result
+            assertEqual' "" (MultiOr.singleton Pattern.bottom) result
     ]
   where
     original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]

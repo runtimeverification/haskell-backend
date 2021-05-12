@@ -55,6 +55,7 @@ import Test.Kore.Builtin.Definition
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Kore.Internal.MultiOr as MultiOr
 
 test_or :: TestTree
 test_or = testBinary orBoolSymbol (||)
@@ -108,7 +109,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = asPattern $ impl a b
+        let expect = MultiOr.singleton . asPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -124,7 +125,7 @@ testUnary ::
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
-        let expect = asPattern $ impl a
+        let expect = MultiOr.singleton . asPattern $ impl a
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where

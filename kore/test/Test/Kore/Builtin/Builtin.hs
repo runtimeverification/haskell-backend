@@ -60,7 +60,6 @@ import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -128,7 +127,7 @@ testSymbolWithoutSolver ::
     forall p expanded.
     ( HasCallStack
     , p ~ TermLike RewritingVariableName
-    , expanded ~ Pattern RewritingVariableName
+    , expanded ~ OrPattern RewritingVariableName
     ) =>
     -- | evaluator function for the builtin
     (p -> NoSMT expanded) ->
@@ -244,17 +243,16 @@ simplify =
 evaluate ::
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    smt (Pattern RewritingVariableName)
+    smt (OrPattern RewritingVariableName)
 evaluate termLike =
     runSimplifier testEnv $ do
-        patterns <- TermLike.simplify SideCondition.top termLike
-        pure (OrPattern.toPattern patterns)
+        TermLike.simplify SideCondition.top termLike
 
 evaluateT ::
     MonadTrans t =>
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    t smt (Pattern RewritingVariableName)
+    t smt (OrPattern RewritingVariableName)
 evaluateT = lift . evaluate
 
 evaluateToList ::

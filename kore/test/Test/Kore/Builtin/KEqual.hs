@@ -44,6 +44,7 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
 import Test.Tasty
+import qualified Kore.Internal.MultiOr as MultiOr
 
 test_kneq :: TestTree
 test_kneq = testBinary kneqBoolSymbol (/=)
@@ -62,7 +63,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = Test.Bool.asPattern (impl a b)
+        let expect = MultiOr.singleton . Test.Bool.asPattern $ impl a b
         actual <-
             evaluateT
                 . mkApplySymbol symb
@@ -74,12 +75,14 @@ testBinary symb impl =
 test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithoutSMT "dotk equals dotk" $ do
-        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
+        let expect =
+                MultiOr.singleton . Pattern.fromTermLike $
+                    Test.Bool.asInternal True
             original = keqBool dotk dotk
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
-        let expect = Pattern.top
+        let expect = MultiOr.singleton Pattern.top
             xConfigElemVarKItemSort =
                 configElementVariableFromId "x" kItemSort
             original =
@@ -92,7 +95,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = Pattern.top
+        let expect = MultiOr.singleton Pattern.top
             xConfigElemVarIdSort =
                 configElementVariableFromId "x" idSort
             original =
@@ -105,7 +108,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct constructor-like terms" $ do
-        let expect = Pattern.top
+        let expect = MultiOr.singleton Pattern.top
             original =
                 mkEquals_
                     (Test.Bool.asInternal False)
@@ -116,12 +119,15 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain values" $ do
-        let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
+        let expect =
+                MultiOr.singleton . Pattern.fromTermLike $
+                    Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain value K lists" $ do
         let expect =
+                MultiOr.singleton $
                 Pattern.fromTermLike $
                     Test.Bool.asInternal False
             original =
@@ -131,7 +137,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "Bottom ==K Top" $ do
-        let expect = Pattern.bottom
+        let expect = MultiOr.singleton Pattern.bottom
             original = keqBool (mkBottom kSort) (mkTop kSort)
         actual <- evaluate original
         assertEqual' "" expect actual
@@ -141,6 +147,7 @@ test_KIte :: [TestTree]
 test_KIte =
     [ testCaseWithoutSMT "true" $ do
         let expect =
+                MultiOr.singleton $
                 Pattern.fromTermLike $
                     inj kSort $ Test.Bool.asInternal False
             original =
@@ -152,6 +159,7 @@ test_KIte =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "false" $ do
         let expect =
+                MultiOr.singleton $
                 Pattern.fromTermLike $
                     inj kSort $ Test.Bool.asInternal True
             original =
@@ -163,7 +171,7 @@ test_KIte =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "abstract" $ do
         let original = kiteK x y z
-            expect = Pattern.fromTermLike original
+            expect = MultiOr.singleton . Pattern.fromTermLike $ original
             x = mkElemVar $ configElementVariableFromId (testId "x") boolSort
             y = mkElemVar $ configElementVariableFromId (testId "y") kSort
             z = mkElemVar $ configElementVariableFromId (testId "z") kSort
