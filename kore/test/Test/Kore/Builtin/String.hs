@@ -8,6 +8,7 @@ module Test.Kore.Builtin.String (
     test_ord,
     test_find,
     test_string2Base,
+    test_base2String,
     test_string2Int,
     test_int2String,
     test_token2String,
@@ -265,10 +266,10 @@ test_string2Base =
         [asInternal "42", Test.Int.asInternal 8]
         (Test.Int.asPattern 34)
     , Test.Int.testInt
-        "string2Base octal negative is bottom"
+        "string2Base octal negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 8]
-        bottom
+        (Test.Int.asPattern (-34))
     , Test.Int.testInt
         "string2Base octal is bottom"
         string2BaseStringSymbol
@@ -321,13 +322,51 @@ test_string2Base =
         [asInternal "baad", Test.Int.asInternal 16]
         (Test.Int.asPattern 47789)
     , Test.Int.testInt
+        "string2Base base-36 from base-36"
+        string2BaseStringSymbol
+        [asInternal "zZ", Test.Int.asInternal 36]
+        (Test.Int.asPattern 1295)
+    , Test.Int.testInt
+        "string2Base base-36 negative"
+        string2BaseStringSymbol
+        [asInternal "-3k", Test.Int.asInternal 36]
+        (Test.Int.asPattern (-128))
+    , Test.Int.testInt
         "string2Base bad base"
         string2BaseStringSymbol
-        [asInternal "1", Test.Int.asInternal 17]
+        [asInternal "1", Test.Int.asInternal 37]
         ( Pattern.fromTermLike $
             mkApplySymbol
                 string2BaseStringSymbol
-                [asInternal "1", Test.Int.asInternal 17]
+                [asInternal "1", Test.Int.asInternal 37]
+        )
+    ]
+
+test_base2String :: [TestTree]
+test_base2String =
+    [ testString
+        "base2String basic decimal example"
+        base2StringStringSymbol
+        [Test.Int.asInternal 42, Test.Int.asInternal 10]
+        (asPattern "42")
+    , testString
+        "base2String decimal negative"
+        base2StringStringSymbol
+        [Test.Int.asInternal (-42), Test.Int.asInternal 10]
+        (asPattern "-42")
+    , testString
+        "base2String hexadecimal example"
+        base2StringStringSymbol
+        [Test.Int.asInternal 51966, Test.Int.asInternal 16]
+        (asPattern "cafe")
+    , testString
+        "base2String bad base"
+        base2StringStringSymbol
+        [Test.Int.asInternal 1, Test.Int.asInternal 37]
+        ( Pattern.fromTermLike $
+            mkApplySymbol
+                base2StringStringSymbol
+                [Test.Int.asInternal 1, Test.Int.asInternal 37]
         )
     ]
 
