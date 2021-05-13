@@ -176,13 +176,11 @@ maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first
         lift $ constructorSortInjectionAndEquals first second
     | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
+    | Just unifyData <- matchOverloadedConstructorSortInjectionAndEquals first second =
+        overloadedConstructorSortInjectionAndEquals childTransformers first second unifyData
     | otherwise =
         asum
-            [ overloadedConstructorSortInjectionAndEquals
-                childTransformers
-                first
-                second
-            , do
+            [ do
                 boolAndData <- Error.hoistMaybe $ Builtin.Bool.matchUnifyBoolAnd first second
                 Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
             , do
@@ -265,13 +263,11 @@ maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first se
         lift $ constructorSortInjectionAndEquals first second
     | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
+    | Just unifyData <- matchOverloadedConstructorSortInjectionAndEquals first second =
+        overloadedConstructorSortInjectionAndEquals childTransformers first second unifyData
     | otherwise =
         asum
-            [ overloadedConstructorSortInjectionAndEquals
-                childTransformers
-                first
-                second
-            , do
+            [ do
                 boolAndData <- Error.hoistMaybe $ Builtin.Bool.matchUnifyBoolAnd first second
                 Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
             , do
@@ -624,12 +620,13 @@ overloadedConstructorSortInjectionAndEquals ::
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
+    OverloadedConstructorSortInjectionAndEquals ->
     MaybeT unifier (Pattern RewritingVariableName)
-overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
+overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm unifyData =
     do
         eunifier <-
             lift . Error.runExceptT $
-                unifyOverloading (Pair firstTerm secondTerm)
+                getUnifyResult firstTerm secondTerm unifyData
         case eunifier of
             Right (Simple (Pair firstTerm' secondTerm')) ->
                 lift $
