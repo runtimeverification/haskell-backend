@@ -65,10 +65,10 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
