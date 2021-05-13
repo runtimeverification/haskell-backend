@@ -505,7 +505,7 @@ instance
                     }
             term' = Recursive.embed (attrs :< (term . termSubterms <$> base))
             subterms' = HashSet.insert term' (foldMap (subterms . termSubterms) base)
-        in attrs
+         in attrs
       where
         constructorLikeAttr :: Attribute.ConstructorLike
         constructorLikeAttr = synthetic (termConstructorLike <$> base)
@@ -1155,7 +1155,7 @@ mapSubterms adj subtermsAttr =
     let subterms' =
             HashSet.map (mapVariables adj) (subterms subtermsAttr)
         term' = mapVariables adj (term subtermsAttr)
-     in subtermsAttr { term = term', subterms = subterms' }
+     in subtermsAttr{term = term', subterms = subterms'}
 
 traverseSubterms ::
     Monad m =>
@@ -1168,7 +1168,7 @@ traverseSubterms adj subtermsAttr = do
     let subtermsList = HashSet.toList (subterms subtermsAttr)
     subterms' <-
         traverse (traverseVariables adj) subtermsList
-        & fmap HashSet.fromList
+            & fmap HashSet.fromList
     term' <-
-       traverseVariables adj (term subtermsAttr)
-    return subtermsAttr { term = term', subterms = subterms' }
+        traverseVariables adj (term subtermsAttr)
+    return subtermsAttr{term = term', subterms = subterms'}
