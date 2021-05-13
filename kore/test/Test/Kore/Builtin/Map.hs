@@ -436,8 +436,7 @@ test_keysUnit =
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
-            assertEqual "" OrPattern.top
-                =<< evaluate predicate
+            assertEqual "" OrPattern.top =<< evaluate predicate
 
 test_keysElement :: TestTree
 test_keysElement =
@@ -482,8 +481,7 @@ test_keysListUnit =
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
-            assertEqual "" OrPattern.top
-                =<< evaluate predicate
+            assertEqual "" OrPattern.top =<< evaluate predicate
 
 test_keysListElement :: TestTree
 test_keysListElement =
@@ -582,8 +580,7 @@ test_inclusion =
             patSomeMap <- forAll genMapPattern
             let patInclusion = inclusionMap unitMap patSomeMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (Test.Bool.asOrPattern True)
-                =<< evaluateT patInclusion
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patInclusion
             (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver

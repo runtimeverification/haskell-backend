@@ -305,8 +305,8 @@ test_inConcatSymbolic =
             actual <- evaluateT patIn
             Pattern.assertEquivalent'
                 (===)
-                (from expected :: [Pattern RewritingVariableName])
-                (from actual :: [Pattern RewritingVariableName])
+                    (from expected :: [Pattern RewritingVariableName])
+                    (from actual :: [Pattern RewritingVariableName])
         )
 
 test_inConcat :: TestTree
@@ -575,8 +575,7 @@ test_intersection_unit =
                 MultiOr.singleton . Pattern.fromTermLike $
                     asInternal HashSet.empty
         (===) expect =<< evaluateT original
-        (===) OrPattern.top
-            =<< evaluateT (mkEquals_ original unitSet)
+        (===) OrPattern.top =<< evaluateT (mkEquals_ original unitSet)
 
 test_intersection_idem :: TestTree
 test_intersection_idem =
