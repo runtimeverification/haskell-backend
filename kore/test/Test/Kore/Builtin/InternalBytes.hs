@@ -510,7 +510,7 @@ test_bytes2string_string2bytes :: TestTree
 test_bytes2string_string2bytes =
     testPropertyWithSolver "∀ s. bytes2string (string2bytes s) = s" $ do
         str <- forAll genString
-        let expect = MultiOr.singleton $ Test.String.asPattern str
+        let expect = Test.String.asOrPattern str
         actual <-
             evaluateT $
                 mkApplySymbol

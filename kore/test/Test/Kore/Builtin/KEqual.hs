@@ -63,7 +63,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = MultiOr.singleton . Test.Bool.asPattern $ impl a b
+        let expect = Test.Bool.asOrPattern $ impl a b
         actual <-
             evaluateT
                 . mkApplySymbol symb

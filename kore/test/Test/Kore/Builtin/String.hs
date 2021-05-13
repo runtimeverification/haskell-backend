@@ -84,7 +84,7 @@ testComparison name impl symb =
     testPropertyWithSolver name $ do
         a <- forAll genString
         b <- forAll genString
-        let expect = MultiOr.singleton . Test.Bool.asPattern $ impl a b
+        let expect = Test.Bool.asOrPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
 

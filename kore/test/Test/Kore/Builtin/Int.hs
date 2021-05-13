@@ -178,7 +178,7 @@ testComparison symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = MultiOr.singleton . Test.Bool.asPattern $ impl a b
+        let expect = Test.Bool.asOrPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -494,7 +494,7 @@ test_unifyEqual_Equal =
     testCaseWithoutSMT "unifyEqual BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkEquals_ dv1 dv1
-        assertEqual' "" (MultiOr.singleton top) actual
+        assertEqual' "" OrPattern.top actual
 
 -- | "\and"ed internal Integers that are not equal
 test_unifyAnd_NotEqual :: TestTree
@@ -519,7 +519,7 @@ test_unifyAndEqual_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
         actual <- evaluate $ mkEquals_ dv $ mkAnd dv dv
-        assertEqual' "" (MultiOr.singleton top) actual
+        assertEqual' "" OrPattern.top actual
 
 -- | Internal Integer "\and"ed with builtin function applied to variable
 test_unifyAnd_Fn :: TestTree
@@ -543,7 +543,7 @@ test_reflexivity_symbolic :: TestTree
 test_reflexivity_symbolic =
     testCaseWithoutSMT "evaluate symbolic reflexivity for equality" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
-            expect = MultiOr.singleton $ Test.Bool.asPattern True
+            expect = Test.Bool.asOrPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
         assertEqual' "" expect actual
 

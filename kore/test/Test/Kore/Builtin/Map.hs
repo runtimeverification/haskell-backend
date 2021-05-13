@@ -420,7 +420,7 @@ test_inKeysUnit =
             let patUnit = unitMap
                 patInKeys = inKeysMap patKey patUnit
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInKeys
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+            (===) (Test.Bool.asOrPattern False)
                     =<< evaluateT patInKeys
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -527,7 +527,7 @@ test_inKeysElement =
             let patMap = elementMap patKey patVal
                 patInKeys = inKeysMap patKey patMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInKeys
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patInKeys
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -566,7 +566,7 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -575,7 +575,7 @@ test_inclusion =
         ( do
             let patInclusion = inclusionMap unitMap unitMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -585,7 +585,7 @@ test_inclusion =
             patSomeMap <- forAll genMapPattern
             let patInclusion = inclusionMap unitMap patSomeMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -597,7 +597,7 @@ test_inclusion =
             let patSomeMap = elementMap patKey1 patVal1
                 patInclusion = inclusionMap patSomeMap unitMap
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+            (===) (Test.Bool.asOrPattern False)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -616,7 +616,7 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False)
+            (===) (Test.Bool.asOrPattern False)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )

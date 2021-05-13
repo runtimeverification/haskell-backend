@@ -228,7 +228,7 @@ test_getUnit =
                         ]
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False) =<< evaluateT patIn
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
@@ -242,7 +242,7 @@ test_inElement =
                 patElement = mkApplySymbol elementSetSymbol [patKey]
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True) =<< evaluateT patIn
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
@@ -260,7 +260,7 @@ test_inUnitSymbolic =
                         ]
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False) =<< evaluateT patIn
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
 
@@ -319,7 +319,7 @@ test_inConcat =
                 patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patIn
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -617,7 +617,7 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -627,7 +627,7 @@ test_inclusion =
             patSomeSet <- forAll genSetPattern
             let patInclusion = inclusionSet unitSet patSomeSet
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (MultiOr.singleton $ Test.Bool.asPattern True)
+            (===) (Test.Bool.asOrPattern True)
                     =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
@@ -638,7 +638,7 @@ test_inclusion =
             let patSomeSet = elementSet patKey
                 patInclusion = inclusionSet patSomeSet unitSet
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False) =<< evaluateT patInclusion
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     , testPropertyWithSolver
@@ -654,7 +654,7 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
-            (===) (MultiOr.singleton $ Test.Bool.asPattern False) =<< evaluateT patInclusion
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patInclusion
             (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
         )
     ]
