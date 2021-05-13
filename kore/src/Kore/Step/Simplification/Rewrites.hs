@@ -15,7 +15,6 @@ import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
@@ -60,16 +59,16 @@ simplifyEvaluatedRewrites ::
     OrPattern RewritingVariableName
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
-        (OrPattern.toPattern first)
-        (OrPattern.toPattern second)
+        first
+        second
 
 makeEvaluateRewrites ::
-    Pattern RewritingVariableName ->
-    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike $
         TermLike.markSimplified $
             mkRewrites
-                (Pattern.toTermLike first)
-                (Pattern.toTermLike second)
+                (OrPattern.toTermLike first)
+                (OrPattern.toTermLike second)
