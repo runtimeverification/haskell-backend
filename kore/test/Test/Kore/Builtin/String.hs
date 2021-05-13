@@ -68,6 +68,7 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
@@ -186,12 +187,12 @@ test_ord =
         "STRING.ord('') is bottom"
         ordStringSymbol
         [asInternal ""]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "STRING.ord('foo') is bottom"
         ordStringSymbol
         [asInternal "foo"]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     ]
 
 test_find :: [TestTree]
@@ -245,22 +246,22 @@ test_string2Base =
         "string2Base decimal is bottom"
         string2BaseStringSymbol
         [asInternal "-42.3", Test.Int.asInternal 10]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base decimal empty string is bottom"
         string2BaseStringSymbol
         [asInternal "", Test.Int.asInternal 10]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base decimal non-number is bottom"
         string2BaseStringSymbol
         [asInternal "foobar", Test.Int.asInternal 10]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base decimal from hex is bottom"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 10]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , -- Octal
       Test.Int.testInt
         "string2Base octal simple"
@@ -271,27 +272,27 @@ test_string2Base =
         "string2Base octal negative is bottom"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 8]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal is bottom"
         string2BaseStringSymbol
         [asInternal "-42.3", Test.Int.asInternal 8]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal empty string is bottom"
         string2BaseStringSymbol
         [asInternal "", Test.Int.asInternal 8]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal non-number is bottom"
         string2BaseStringSymbol
         [asInternal "foobar", Test.Int.asInternal 8]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal from hex is bottom"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 8]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , -- Hexadecimal
       Test.Int.testInt
         "string2Base hex simple"
@@ -307,17 +308,17 @@ test_string2Base =
         "string2Base hex is bottom"
         string2BaseStringSymbol
         [asInternal "-42.3", Test.Int.asInternal 16]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base hex empty string is bottom"
         string2BaseStringSymbol
         [asInternal "", Test.Int.asInternal 16]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base hex non-number is bottom"
         string2BaseStringSymbol
         [asInternal "foobar", Test.Int.asInternal 16]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base hex from hex"
         string2BaseStringSymbol
@@ -351,22 +352,22 @@ test_string2Int =
         "string2Int decimal is bottom"
         string2IntStringSymbol
         [asInternal "-42.3"]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Int decimal empty string is bottom"
         string2IntStringSymbol
         [asInternal ""]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Int decimal non-number is bottom"
         string2IntStringSymbol
         [asInternal "foobar"]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Int decimal from hex is bottom"
         string2IntStringSymbol
         [asInternal "baad"]
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     ]
 
 test_int2String :: [TestTree]

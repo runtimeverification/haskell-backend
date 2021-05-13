@@ -56,6 +56,7 @@ import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Kore.Internal.OrPattern as OrPattern
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -85,7 +86,7 @@ test_update =
         idx <- forAll $ Gen.int (Range.linear (-256) (-1))
         let bytes = E.encode8Bit str
             val' = toInteger $ ord val
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -100,7 +101,7 @@ test_update =
         val <- forAll Gen.unicode
         let bytes = E.encode8Bit str
             val' = toInteger $ ord val
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -134,7 +135,7 @@ test_get =
         str <- forAll genString
         idx <- forAll $ Gen.int (Range.linear (-256) (-1))
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -146,7 +147,7 @@ test_get =
     , testPropertyWithSolver "∀ b i (i > len b). get b i = ⊥" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -157,7 +158,7 @@ test_get =
         (===) expect actual
     , testPropertyWithSolver "∀ i. get empty i = ⊥" $ do
         idx <- forAll $ Gen.int (Range.linear 0 256)
-        let expect = MultiOr.singleton bottom
+        let expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -189,7 +190,7 @@ test_substr =
         delta <- forAll $ Gen.int (Range.linear 1 10)
         end <- forAll $ Gen.int (Range.linear 0 (T.length str - delta))
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -203,7 +204,7 @@ test_substr =
         str <- forAll $ genString' 20
         end <- forAll $ Gen.int (Range.linear 21 30)
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -218,7 +219,7 @@ test_substr =
         begin <- forAll $ Gen.int (Range.linear (-256) (-1))
         end <- forAll $ Gen.int (Range.linear 0 256)
         let bytes = E.encode8Bit str
-            expect = MultiOr.singleton bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -287,7 +288,7 @@ test_replaceAt =
     , testPropertyWithSolver "∀ b i (b /= ''). replaceAt '' i b = ⊥" $ do
         str <- forAll $ Gen.text (Range.linear 1 256) Gen.alphaNum
         idx <- forAll $ Gen.int (Range.linear 0 256)
-        let expect = MultiOr.singleton bottom
+        let expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -305,7 +306,7 @@ test_replaceAt =
             new <- forAll $ Gen.text (Range.linear 1 256) Gen.alphaNum
             let bytes = E.encode8Bit str
                 bytes' = E.encode8Bit new
-                expect = MultiOr.singleton bottom
+                expect = OrPattern.bottom
             actual <-
                 evaluateT $
                     mkApplySymbol

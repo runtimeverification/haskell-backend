@@ -343,7 +343,7 @@ test_ediv =
         "ediv bottom"
         edivIntSymbol
         (asInternal <$> [193, 0])
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     ]
 
 test_emod :: [TestTree]
@@ -372,7 +372,7 @@ test_emod =
         "emod bottom"
         emodIntSymbol
         (asInternal <$> [193, 0])
-        (MultiOr.singleton bottom)
+        OrPattern.bottom
     ]
 
 test_euclidian_division_theorem :: TestTree
@@ -486,7 +486,7 @@ test_unifyEqual_NotEqual =
         let dv1 = asInternal 1
             dv2 = asInternal 2
         actual <- evaluate $ mkEquals_ dv1 dv2
-        assertEqual' "" (MultiOr.singleton bottom) actual
+        assertEqual' "" OrPattern.bottom actual
 
 -- | "\equal"ed internal Integers that are equal
 test_unifyEqual_Equal :: TestTree
@@ -503,7 +503,7 @@ test_unifyAnd_NotEqual =
         let dv1 = asInternal 1
             dv2 = asInternal 2
         actual <- evaluate $ mkAnd dv1 dv2
-        assertEqual' "" (MultiOr.singleton bottom) actual
+        assertEqual' "" OrPattern.bottom actual
 
 -- | "\and"ed internal Integers that are equal
 test_unifyAnd_Equal :: TestTree

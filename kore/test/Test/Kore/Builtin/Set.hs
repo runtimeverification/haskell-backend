@@ -147,6 +147,7 @@ import Test.SMT hiding (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 genKeys :: Gen [TermLike RewritingVariableName]
 genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
@@ -230,7 +231,7 @@ test_getUnit =
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
             (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_inElement :: TestTree
@@ -244,7 +245,7 @@ test_inElement =
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_inUnitSymbolic :: TestTree
@@ -262,7 +263,7 @@ test_inUnitSymbolic =
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
             (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_inElementSymbolic :: TestTree
@@ -321,9 +322,8 @@ test_inConcat =
                 patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
-            (===) (Test.Bool.asOrPattern True)
-                    =<< evaluateT patIn
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_concatUnit :: TestTree
@@ -342,8 +342,8 @@ test_concatUnit =
             expect <- evaluateT patValues
             (===) expect =<< evaluateT patConcat1
             (===) expect =<< evaluateT patConcat2
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate1
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate2
+            (===) OrPattern.top =<< evaluateT predicate1
+            (===) OrPattern.top =<< evaluateT predicate2
         )
 
 test_concatAssociates :: TestTree
@@ -370,7 +370,7 @@ test_concatAssociates =
             concat12_3 <- evaluateT patConcat12_3
             concat1_23 <- evaluateT patConcat1_23
             (===) concat12_3 concat1_23
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_concatNormalizes :: TestTree
@@ -430,7 +430,7 @@ test_concatNormalizes =
             evalConcat <- evaluateT patConcat
             evalNormalized <- evaluateT patNormalized
             (===) evalConcat evalNormalized
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_difference :: TestTree
@@ -449,7 +449,7 @@ test_difference =
                 predicate = mkEquals_ patSet3 patDifference
             expect <- evaluateT patSet3
             (===) expect =<< evaluateT patDifference
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_difference_symbolic :: [TestTree]
@@ -539,7 +539,7 @@ test_toList =
                 predicate = mkEquals_ expectedList actualList
             expect <- evaluateT expectedList
             (===) expect =<< evaluateT actualList
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
   where
     implToList =
@@ -563,7 +563,7 @@ test_size =
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluateT patExpected
             (===) expect =<< evaluateT patActual
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_intersection_unit :: TestTree
@@ -575,7 +575,7 @@ test_intersection_unit =
                 MultiOr.singleton . Pattern.fromTermLike $
                     asInternal HashSet.empty
         (===) expect =<< evaluateT original
-        (===) (MultiOr.singleton Pattern.top)
+        (===) OrPattern.top
             =<< evaluateT (mkEquals_ original unitSet)
 
 test_intersection_idem :: TestTree
@@ -586,7 +586,7 @@ test_intersection_idem =
             original = intersectionSet termLike termLike
             expect = MultiOr.singleton . Pattern.fromTermLike $ asInternal as
         (===) expect =<< evaluateT original
-        (===) (MultiOr.singleton Pattern.top) =<< evaluateT (mkEquals_ original termLike)
+        (===) OrPattern.top =<< evaluateT (mkEquals_ original termLike)
 
 test_list2set :: TestTree
 test_list2set =
@@ -601,7 +601,7 @@ test_list2set =
             original = list2setSet input
             expect = MultiOr.singleton . Pattern.fromTermLike $ asInternal set
         (===) expect =<< evaluateT original
-        (===) (MultiOr.singleton Pattern.top)
+        (===) OrPattern.top
             =<< evaluateT (mkEquals_ original termLike)
 
 test_inclusion :: [TestTree]
@@ -619,9 +619,8 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
-            (===) (Test.Bool.asOrPattern True)
-                    =<< evaluateT patInclusion
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patInclusion
+            (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion success: empty set <= any set"
@@ -629,9 +628,8 @@ test_inclusion =
             patSomeSet <- forAll genSetPattern
             let patInclusion = inclusionSet unitSet patSomeSet
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (Test.Bool.asOrPattern True)
-                    =<< evaluateT patInclusion
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patInclusion
+            (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: not (some nonempty set <= empty set)"
@@ -641,7 +639,7 @@ test_inclusion =
                 patInclusion = inclusionSet patSomeSet unitSet
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
             (===) (Test.Bool.asOrPattern False) =<< evaluateT patInclusion
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: lhs key not included in rhs set"
@@ -657,7 +655,7 @@ test_inclusion =
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
             (===) (Test.Bool.asOrPattern False) =<< evaluateT patInclusion
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
     ]
 
@@ -715,7 +713,7 @@ test_unifyConcreteIdem =
                 predicate = mkEquals_ patSet patAnd
             expect <- evaluateT patSet
             (===) expect =<< evaluateT patAnd
-            (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_unifyConcreteDistinct :: TestTree
@@ -731,8 +729,8 @@ test_unifyConcreteDistinct =
                 patSet2 = mkSet_ set2 & fromConcrete
                 conjunction = mkAnd patSet1 patSet2
                 predicate = mkEquals_ patSet1 conjunction
-            (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT conjunction
-            (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT predicate
+            (===) OrPattern.bottom =<< evaluateT conjunction
+            (===) OrPattern.bottom =<< evaluateT predicate
         )
 
 test_unifyFramingVariable :: TestTree
@@ -861,7 +859,7 @@ test_unifySelectFromEmpty =
     doesNotUnifyWith pat1 pat2 = do
         annotateShow pat1
         annotateShow pat2
-        (===) (MultiOr.singleton Pattern.bottom) =<< evaluateT (mkAnd pat1 pat2)
+        (===) OrPattern.bottom =<< evaluateT (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
