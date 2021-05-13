@@ -543,10 +543,13 @@ instance
                     then Attribute.fullySimplified
                     else synthetic (termSimplified <$> base)
             , termConstructorLike = constructorLikeAttr
-            , termSubterms = subterms
+            , termSubterms = Subterms {
+                term = term'
+                subterms = subterms'
+                }
             }
-            self = Recursive.embed (attrs :< base)
-            subterms = HashSet.insert self (foldMap termSubterms base)
+            term' = Recursive.embed (attrs :< (term . termSubterms <$> base))
+            subterms' = HashSet.insert term (foldMap (subterms . termSubterms) base)
       where
         constructorLikeAttr :: Attribute.ConstructorLike
         constructorLikeAttr = synthetic (termConstructorLike <$> base)
@@ -1194,8 +1197,9 @@ depth = Recursive.fold levelDepth
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
 
 -- | An attribute type for caching the sub-terms of a term.
-newtype Subterms variable = Subterms
-    { getSubterms :: HashSet (TermLike variable)
+data Subterms variable = Subterms
+    { subterms :: HashSet (TermLike variable)
+    , term :: TermLike variable
     }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
