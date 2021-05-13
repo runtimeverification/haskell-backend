@@ -91,7 +91,6 @@ import Kore.Internal.Key
     , KeyAttributes (KeyAttributes)
     , KeyF
     )
-import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -516,9 +515,6 @@ instance Attribute.HasConstructorLike (TermAttributes variable) where
         TermAttributes{termConstructorLike} =
             termConstructorLike
 
-instance (Ord variable) => From KeyAttributes (TermAttributes variable) where
-    from = fromKeyAttributes
-
 attributeSimplifiedAttribute ::
     HasCallStack =>
     TermAttributes variable ->
@@ -826,33 +822,17 @@ instance
     from = mapVariables (pure $ from @Concrete)
     {-# INLINE from #-}
 
-instance Ord variable => From Key (TermLike variable) where
-    from = Recursive.unfold worker
+instance
+    ( Ord variable
+    , Hashable variable
+    )
+    => From Key (TermLike variable)
+    where
+    from = Recursive.fold worker
       where
-        worker key =
-            attrs' :< from @(KeyF _) keyF
-          where
-            attrs :< keyF = Recursive.project key
-            attrs' = fromKeyAttributes attrs
-
--- TODO: make From isntance
-fromKeyAttributes ::
-    Ord variable =>
-    KeyAttributes ->
-    TermAttributes variable
-fromKeyAttributes attrs =
-    TermAttributes
-        { termSort = Attribute.keySort attrs
-        , termFreeVariables = mempty
-        , termFunctional = Attribute.Functional True
-        , termFunction = Attribute.Function True
-        , termDefined = Attribute.Defined True
-        , termSimplified = Attribute.fullySimplified
-        , termConstructorLike =
-            Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
-        , termCreated = Attribute.Created Nothing
-        , termSubterms = undefined
-        }
+        worker (_ :< keyF) =
+            from @(KeyF _) @(TermLikeF _ _) keyF
+            & synthesize
 
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
 toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _ _)
