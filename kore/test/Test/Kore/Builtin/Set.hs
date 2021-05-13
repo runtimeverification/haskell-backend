@@ -210,7 +210,8 @@ test_unit =
     becomes original expect name =
         testCase name $ do
             actual <- runNoSMT $ evaluate original
-            assertEqual ""
+            assertEqual
+                ""
                 (MultiOr.singleton $ Pattern.fromTermLike expect)
                 actual
 
@@ -297,11 +298,12 @@ test_inConcatSymbolic =
             let expected =
                     MultiOr.map
                         ( Condition.andCondition patTrue
-                        . Conditional.withoutTerm
+                            . Conditional.withoutTerm
                         )
                         condition
             actual <- evaluateT patIn
-            Pattern.assertEquivalent' (===)
+            Pattern.assertEquivalent'
+                (===)
                 (from expected :: [Pattern RewritingVariableName])
                 (from actual :: [Pattern RewritingVariableName])
         )
@@ -574,7 +576,7 @@ test_intersection_unit =
                     asInternal HashSet.empty
         (===) expect =<< evaluateT original
         (===) (MultiOr.singleton Pattern.top)
-                =<< evaluateT (mkEquals_ original unitSet)
+            =<< evaluateT (mkEquals_ original unitSet)
 
 test_intersection_idem :: TestTree
 test_intersection_idem =
@@ -600,7 +602,7 @@ test_list2set =
             expect = MultiOr.singleton . Pattern.fromTermLike $ asInternal set
         (===) expect =<< evaluateT original
         (===) (MultiOr.singleton Pattern.top)
-                =<< evaluateT (mkEquals_ original termLike)
+            =<< evaluateT (mkEquals_ original termLike)
 
 test_inclusion :: [TestTree]
 test_inclusion =
@@ -1920,7 +1922,7 @@ test_concretizeKeys =
                 Substitution.unsafeWrap
                     [(inject x, symbolicKey)]
             }
-        & MultiOr.singleton
+            & MultiOr.singleton
 
 {- | Unify a concrete Set with symbolic-keyed Set in an axiom
 

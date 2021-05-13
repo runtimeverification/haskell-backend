@@ -27,6 +27,8 @@ import Hedgehog hiding (
 import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -56,8 +58,6 @@ import Test.Kore.Builtin.Definition
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern (OrPattern)
 
 test_or :: TestTree
 test_or = testBinary orBoolSymbol (||)

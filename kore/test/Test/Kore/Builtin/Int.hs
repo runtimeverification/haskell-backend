@@ -86,6 +86,9 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
 import Kore.Internal.Key as Key
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -118,9 +121,6 @@ import Test.Kore.Builtin.Definition
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern (OrPattern)
-import qualified Kore.Internal.OrPattern as OrPattern
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -535,7 +535,7 @@ test_unifyAnd_Fn =
                     , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty
                     }
-                & MultiOr.singleton
+                    & MultiOr.singleton
         actual <- evaluateT $ mkAnd dv fnPat
         (===) expect actual
 

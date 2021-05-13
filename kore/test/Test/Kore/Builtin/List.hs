@@ -39,6 +39,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.List as List
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeTruePredicate,
@@ -60,7 +61,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit
-import qualified Kore.Internal.MultiOr as MultiOr
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -226,7 +226,7 @@ test_concatUnit =
         (===) expectValues =<< evaluateT patConcat1
         (===) expectValues =<< evaluateT patConcat2
         (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate1
-        (===) (MultiOr.singleton Pattern.top)  =<< evaluateT predicate2
+        (===) (MultiOr.singleton Pattern.top) =<< evaluateT predicate2
 
 test_concatUnitSymbolic :: TestTree
 test_concatUnitSymbolic =
@@ -308,7 +308,7 @@ test_concatSymbolic =
                                 ]
                             )
                     }
-                & MultiOr.singleton
+                    & MultiOr.singleton
         unified <- evaluateT patUnifiedXY
         expect === unified
 
@@ -328,7 +328,7 @@ test_concatSymbolic =
                                 ]
                             )
                     }
-                & MultiOr.singleton
+                    & MultiOr.singleton
         unified' <- evaluateT patUnifiedXY'
         expect' === unified'
 
@@ -374,7 +374,7 @@ test_concatSymbolicDifferentLengths =
                                 ]
                             )
                     }
-                & MultiOr.singleton
+                    & MultiOr.singleton
         unified <- evaluateT patUnifiedXY
         expect === unified
 
@@ -441,7 +441,8 @@ test_make =
         assertEqual' "" (MultiOr.singleton Pattern.bottom) result
     , testCaseWithoutSMT "make(0, 5) === []" $ do
         result <- evaluate $ makeList (mkInt 0) (mkInt 5)
-        assertEqual' ""
+        assertEqual'
+            ""
             (MultiOr.singleton . Pattern.fromTermLike $ asInternal [])
             result
     , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do

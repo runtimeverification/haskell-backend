@@ -13,6 +13,7 @@ import qualified Data.Text as Text
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.KEqual as KEqual
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -44,7 +45,6 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
 import Test.Tasty
-import qualified Kore.Internal.MultiOr as MultiOr
 
 test_kneq :: TestTree
 test_kneq = testBinary kneqBoolSymbol (/=)
@@ -128,8 +128,8 @@ test_KEqual =
     , testCaseWithoutSMT "distinct domain value K lists" $ do
         let expect =
                 MultiOr.singleton $
-                Pattern.fromTermLike $
-                    Test.Bool.asInternal False
+                    Pattern.fromTermLike $
+                        Test.Bool.asInternal False
             original =
                 keqBool
                     (kseq (inj kItemSort dvT) dotk)
@@ -148,8 +148,8 @@ test_KIte =
     [ testCaseWithoutSMT "true" $ do
         let expect =
                 MultiOr.singleton $
-                Pattern.fromTermLike $
-                    inj kSort $ Test.Bool.asInternal False
+                    Pattern.fromTermLike $
+                        inj kSort $ Test.Bool.asInternal False
             original =
                 kiteK
                     (Test.Bool.asInternal True)
@@ -160,8 +160,8 @@ test_KIte =
     , testCaseWithoutSMT "false" $ do
         let expect =
                 MultiOr.singleton $
-                Pattern.fromTermLike $
-                    inj kSort $ Test.Bool.asInternal True
+                    Pattern.fromTermLike $
+                        inj kSort $ Test.Bool.asInternal True
             original =
                 kiteK
                     (Test.Bool.asInternal False)
