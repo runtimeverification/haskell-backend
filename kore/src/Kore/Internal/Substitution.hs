@@ -50,50 +50,50 @@ module Kore.Internal.Substitution (
 ) where
 
 import qualified Data.List as List
-import Data.Map.Strict (
-    Map,
- )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import Data.Set (
-    Set,
- )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import ErrorContext
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
-    Simplified (..),
- )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified (..)
+    )
 import Kore.Debug
-import Kore.Internal.Predicate (
-    Predicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Internal.TermLike (
-    TermLike,
-    mkVar,
-    pattern Var_,
- )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , pattern Var_
+    , mkVar
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-import Kore.TopBottom (
-    TopBottom (..),
- )
-import Kore.Unparser (
-    Unparse,
-    unparse,
-    unparseToString,
- )
-import Prelude.Kore hiding (
-    null,
- )
-import Pretty (
-    Pretty,
- )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
+    ( Unparse
+    , unparse
+    , unparseToString
+    )
+import Prelude.Kore hiding
+    ( null
+    )
+import Pretty
+    ( Pretty
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -120,7 +120,10 @@ instance (Ord variable, Unparse variable) => Pretty (Assignment variable) where
  left of the substitution.
 -}
 assign ::
-    (Ord variable, SubstitutionOrd variable) =>
+    ( Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
     SomeVariable variable ->
     TermLike variable ->
     Assignment variable
@@ -150,7 +153,10 @@ mapAssignedTerm f (Assignment variable term) =
     assign variable (f term)
 
 mkUnwrappedSubstitution ::
-    (Ord variable, SubstitutionOrd variable) =>
+    ( Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
     [(SomeVariable variable, TermLike variable)] ->
     [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
@@ -182,15 +188,32 @@ data Substitution variable
     deriving anyclass (Debug)
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
-instance (Ord variable, SubstitutionOrd variable) => Eq (Substitution variable) where
+instance
+    ( Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
+    Eq (Substitution variable)
+    where
     (==) = on (==) unwrap
 
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
-instance (Ord variable, SubstitutionOrd variable) => Ord (Substitution variable) where
+instance
+    ( Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
+    Ord (Substitution variable)
+    where
     compare = on compare unwrap
 
 instance
-    (Debug variable, Diff variable, Ord variable, SubstitutionOrd variable) =>
+    ( Debug variable
+    , Diff variable
+    , Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
     Diff (Substitution variable)
     where
     diffPrec a b =
@@ -287,7 +310,10 @@ type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap ::
-    (Ord variable, SubstitutionOrd variable) =>
+    ( Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
     Substitution variable ->
     [Assignment variable]
 unwrap (Substitution xs) =
@@ -355,7 +381,10 @@ cycles.
 -}
 normalOrder ::
     forall variable.
-    (Ord variable, SubstitutionOrd variable) =>
+    ( Ord variable
+    , SubstitutionOrd variable
+    , Hashable variable
+    ) =>
     (SomeVariable variable, TermLike variable) ->
     (SomeVariable variable, TermLike variable)
 normalOrder (uVar1, Var_ uVar2)
