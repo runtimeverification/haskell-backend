@@ -531,7 +531,7 @@ instance
     Synthetic (TermAttributes variable) base
     where
     synthetic base =
-        TermAttributes
+        let ~attrs = TermAttributes
             { termSort = synthetic (termSort <$> base)
             , termFreeVariables = synthetic (termFreeVariables <$> base)
             , termFunctional = synthetic (termFunctional <$> base)
@@ -543,8 +543,10 @@ instance
                     then Attribute.fullySimplified
                     else synthetic (termSimplified <$> base)
             , termConstructorLike = constructorLikeAttr
-            , termSubterms = synthetic (termSubterms <$> base)
+            , termSubterms = subterms
             }
+            self = Recursive.embed (attrs :< base)
+            subterms = HashSet.insert self (foldMap termSubterms base)
       where
         constructorLikeAttr :: Attribute.ConstructorLike
         constructorLikeAttr = synthetic (termConstructorLike <$> base)
