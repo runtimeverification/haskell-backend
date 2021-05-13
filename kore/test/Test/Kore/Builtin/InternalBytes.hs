@@ -39,6 +39,7 @@ import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
@@ -56,7 +57,6 @@ import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Kore.Internal.OrPattern as OrPattern
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1

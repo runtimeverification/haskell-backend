@@ -138,6 +138,7 @@ import Test.Kore.Builtin.Int (
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -147,7 +148,6 @@ import Test.SMT hiding (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 genKeys :: Gen [TermLike RewritingVariableName]
 genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)

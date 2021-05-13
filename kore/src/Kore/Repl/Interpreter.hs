@@ -123,6 +123,8 @@ import Kore.Attribute.RuleIndex (
 import Kore.Internal.Condition (
     Condition,
  )
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern, fromPattern)
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -215,8 +217,6 @@ import Text.Megaparsec (
     parseMaybe,
     runParser,
  )
-import Kore.Internal.OrPattern (OrPattern, fromPattern)
-import qualified Kore.Internal.MultiOr as MultiOr
 
 {- | Warning: you should never use WriterT or RWST. It is used here with
  _great care_ of evaluating the RWST to a StateT immediately, and thus getting

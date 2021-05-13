@@ -126,6 +126,7 @@ import Test.Kore.Builtin.Int (
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification (
     runSimplifier,
@@ -133,7 +134,6 @@ import Test.Kore.Step.Simplification (
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 genMapInteger :: Gen a -> Gen (HashMap Integer a)
 genMapInteger genElement =
@@ -583,7 +583,7 @@ test_inclusion =
             let patInclusion = inclusionMap unitMap patSomeMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
             (===) (Test.Bool.asOrPattern True)
-                    =<< evaluateT patInclusion
+                =<< evaluateT patInclusion
             (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver

@@ -57,11 +57,11 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit
-import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)

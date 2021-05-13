@@ -43,9 +43,9 @@ import Test.Kore (
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.SMT
 import Test.Tasty
-import qualified Test.Kore.Internal.OrPattern as OrPattern
 
 test_kneq :: TestTree
 test_kneq = testBinary kneqBoolSymbol (/=)
