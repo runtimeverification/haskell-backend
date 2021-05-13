@@ -49,6 +49,7 @@ import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.ConstructorLike (
     HasConstructorLike (extractConstructorLike),
  )
+import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -74,8 +75,10 @@ import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
 import Kore.Internal.Key (
     Key,
+    KeyAttributes (KeyAttributes),
     KeyF,
  )
+import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
 import Kore.Internal.Symbol hiding (
     isConstructorLike,
@@ -625,9 +628,44 @@ instance Ord variable => From Key (TermLike variable) where
             attrs' :< from @(KeyF _) keyF
           where
             attrs :< keyF = Recursive.project key
-            attrs' :: Attribute.Pattern variable
-            attrs' = Attribute.mapVariables (pure coerceVariable) attrs
-            coerceVariable = from @Concrete @variable
+            attrs' = fromKeyAttributes attrs
+
+fromKeyAttributes ::
+    Ord variable =>
+    KeyAttributes ->
+    Attribute.Pattern variable
+fromKeyAttributes attrs =
+    Attribute.Pattern
+        { Attribute.patternSort = Attribute.keySort attrs
+        , Attribute.freeVariables = mempty
+        , Attribute.functional = Attribute.Functional True
+        , Attribute.function = Attribute.Function True
+        , Attribute.defined = Attribute.Defined True
+        , Attribute.simplified = Attribute.fullySimplified
+        , Attribute.constructorLike =
+            Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
+        , Attribute.created = Attribute.Created Nothing
+        }
+
+toKeyAttributes :: Attribute.Pattern variable -> Maybe KeyAttributes
+toKeyAttributes attrs@(Attribute.Pattern _ _ _ _ _ _ _ _)
+    | Attribute.nullFreeVariables freeVariablesAttr
+      , Attribute.isFunctional functionalAttr
+      , Attribute.isFunction functionAttr
+      , Attribute.isDefined definedAttr
+      , Attribute.isSimplifiedAnyCondition attrs
+      , Attribute.isConstructorLike constructorLikeAttr =
+        Just $ KeyAttributes sortAttr
+    | otherwise = Nothing
+  where
+    Attribute.Pattern
+        { Attribute.patternSort = sortAttr
+        , Attribute.freeVariables = freeVariablesAttr
+        , Attribute.functional = functionalAttr
+        , Attribute.function = functionAttr
+        , Attribute.defined = definedAttr
+        , Attribute.constructorLike = constructorLikeAttr
+        } = attrs
 
 -- | Ensure that a 'TermLike' is a concrete, constructor-like term.
 retractKey :: TermLike variable -> Maybe Key
@@ -636,7 +674,7 @@ retractKey =
   where
     worker (attrs :< termLikeF) = do
         Monad.guard (Pattern.isConstructorLike attrs)
-        attrs' <- Pattern.traverseVariables (pure toConcrete) attrs
+        attrs' <- toKeyAttributes attrs
         keyF <-
             case termLikeF of
                 InternalBoolF internalBool ->
