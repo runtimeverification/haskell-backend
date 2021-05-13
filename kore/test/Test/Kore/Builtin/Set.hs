@@ -305,8 +305,8 @@ test_inConcatSymbolic =
             actual <- evaluateT patIn
             Pattern.assertEquivalent'
                 (===)
-                    (from expected :: [Pattern RewritingVariableName])
-                    (from actual :: [Pattern RewritingVariableName])
+                (from expected :: [Pattern RewritingVariableName])
+                (from actual :: [Pattern RewritingVariableName])
         )
 
 test_inConcat :: TestTree
