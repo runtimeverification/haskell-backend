@@ -9,6 +9,7 @@ module Kore.Attribute.Synthetic (
     Synthetic (..),
     resynthesize,
     resynthesizeAux,
+    Synthesize,
     synthesize,
     synthesizeAux,
 ) where
@@ -87,6 +88,13 @@ resynthesizeAux synth =
   where
     worker (_ :< ft) = synthesizeAux synth ft
 {-# INLINE resynthesizeAux #-}
+
+type Synthesize a f t =
+    ( Synthetic a f
+    , Corecursive t
+    , Recursive t
+    , Base t ~ CofreeF f a
+    )
 
 -- | @/synthesize/@ an attribute @a@ from one level of a tree @s@.
 synthesize ::
