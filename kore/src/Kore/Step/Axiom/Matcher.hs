@@ -51,7 +51,6 @@ import Data.These (
     These (..),
  )
 import qualified GHC.Generics as GHC
-import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
@@ -929,7 +928,7 @@ renormalizeBuiltins ::
     TermLike variable
 renormalizeBuiltins =
     Recursive.fold $ \base@(attrs :< termLikeF) ->
-        let bottom' = mkBottom (Attribute.Pattern.patternSort attrs)
+        let bottom' = mkBottom (termSort attrs)
          in case termLikeF of
                 InternalMapF internalMap ->
                     Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap

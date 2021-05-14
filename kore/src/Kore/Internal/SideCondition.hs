@@ -49,8 +49,7 @@ import Data.List (
 import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Attribute.Pattern.Defined as Pattern
+import qualified Kore.Attribute.Pattern.Defined as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
@@ -100,7 +99,6 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     Key,
     TermLike,
-    extractAttributes,
     pattern App_,
     pattern Equals_,
     pattern Exists_,
@@ -855,4 +853,4 @@ generateNormalizedAcs internalAc =
 -}
 isDefinedInternal :: TermLike variable -> Bool
 isDefinedInternal =
-    Pattern.isDefined . Attribute.defined . extractAttributes
+    Attribute.isDefined . TermLike.termDefined . TermLike.extractAttributes

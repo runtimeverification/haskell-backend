@@ -210,7 +210,6 @@ library
     Kore.Attribute.Overload
     Kore.Attribute.Owise
     Kore.Attribute.Parser
-    Kore.Attribute.Pattern
     Kore.Attribute.Pattern.ConstructorLike
     Kore.Attribute.Pattern.Created
     Kore.Attribute.Pattern.Defined
@@ -303,6 +302,7 @@ library
     Kore.Internal.ApplicationSorts
     Kore.Internal.Condition
     Kore.Internal.Conditional
+    Kore.Internal.From
     Kore.Internal.Inj
     Kore.Internal.InternalBool
     Kore.Internal.InternalBytes
@@ -677,6 +677,7 @@ test-suite kore-test
     Test.Kore.IndexedModule.SortGraph
     Test.Kore.Internal.ApplicationSorts
     Test.Kore.Internal.Condition
+    Test.Kore.Internal.From
     Test.Kore.Internal.Key
     Test.Kore.Internal.MultiAnd
     Test.Kore.Internal.OrCondition

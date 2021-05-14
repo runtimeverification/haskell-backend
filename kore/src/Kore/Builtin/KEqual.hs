@@ -44,7 +44,6 @@ import Data.Text (
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
     acceptAnySort,
@@ -152,7 +151,7 @@ evalKEq ::
     SideCondition variable ->
     CofreeF
         (Application Symbol)
-        (Attribute.Pattern variable)
+        (TermAttributes variable)
         (TermLike variable) ->
     simplifier (AttemptedAxiom variable)
 evalKEq true _ (valid :< app) =
@@ -160,7 +159,7 @@ evalKEq true _ (valid :< app) =
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
-    sort = Attribute.patternSort valid
+    sort = termSort valid
     Application{applicationChildren} = app
     comparison x y
         | true = x == y
@@ -185,7 +184,7 @@ evalKIte ::
     SideCondition RewritingVariableName ->
     CofreeF
         (Application Symbol)
-        (Attribute.Pattern RewritingVariableName)
+        (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
     simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte _ (_ :< app) =
