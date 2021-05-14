@@ -15,6 +15,7 @@ import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
@@ -23,7 +24,6 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore
-import Kore.Internal.Pattern as Pattern
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
