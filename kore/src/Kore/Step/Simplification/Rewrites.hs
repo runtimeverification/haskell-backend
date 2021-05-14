@@ -23,6 +23,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore
+import Kore.Internal.Pattern as Pattern
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
@@ -59,16 +60,16 @@ simplifyEvaluatedRewrites ::
     OrPattern RewritingVariableName
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
-        first
-        second
+        (OrPattern.toPattern first)
+        (OrPattern.toPattern second)
 
 makeEvaluateRewrites ::
-    OrPattern RewritingVariableName ->
-    OrPattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
     OrPattern RewritingVariableName
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike $
         TermLike.markSimplified $
             mkRewrites
-                (OrPattern.toTermLike first)
-                (OrPattern.toTermLike second)
+                (Pattern.toTermLike first)
+                (Pattern.toTermLike second)
