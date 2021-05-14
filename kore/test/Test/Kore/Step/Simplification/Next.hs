@@ -1,6 +1,5 @@
 module Test.Kore.Step.Simplification.Next (
     test_nextSimplification,
-    test_nextOrDistribution,
 ) where
 
 import Kore.Internal.OrPattern (
@@ -17,7 +16,6 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Step.Simplification.Next (
-    mkNextDistributeOr,
     simplify,
  )
 import Prelude.Kore
@@ -51,19 +49,21 @@ test_nextSimplification =
             )
         )
     , testCase
-        "Next collapses or"
+        "Next distributes over or"
         ( assertEqual
             ""
             ( OrPattern.fromPatterns
                 [ Conditional
-                    { term =
-                        mkOr
-                            (mkNext Mock.a)
-                            (mkNext (mkAnd Mock.b (mkEquals_ Mock.a Mock.b)))
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
+                        { term = mkNext Mock.a
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkNext Mock.b
+                        , predicate = makeEqualsPredicate Mock.a Mock.b
+                        , substitution = mempty
+                        }
+                    ]
             )
             ( evaluate
                 ( makeNext
@@ -80,24 +80,6 @@ test_nextSimplification =
                     ]
                 )
             )
-        )
-    ]
-
-test_nextOrDistribution :: [TestTree]
-test_nextOrDistribution =
-    [ testCase
-        "Right association"
-        ( assertEqual
-            ""
-            (mkOr (mkNext Mock.b) (mkOr (mkNext Mock.a) (mkNext Mock.b)))
-            (mkNextDistributeOr $ mkOr Mock.b (mkOr Mock.a Mock.b))
-        )
-    , testCase
-        "Left association"
-        ( assertEqual
-            ""
-            (mkOr (mkOr (mkNext Mock.b) (mkNext Mock.a)) (mkNext Mock.b))
-            (mkNextDistributeOr $ mkOr (mkOr Mock.b Mock.a) Mock.b)
         )
     ]
 
