@@ -7,15 +7,23 @@ License     : NCSA
 module Kore.Internal.TermLike.TermLike (
     TermLike (..),
     TermLikeF (..),
+    TermAttributes (..),
+    freeVariables,
     retractKey,
     extractAttributes,
-    freeVariables,
     mapVariables,
     traverseVariables,
     mkVar,
     traverseVariablesF,
     updateCallStack,
     depth,
+    isAttributeSimplified,
+    isAttributeSimplifiedAnyCondition,
+    isAttributeSimplifiedSomeCondition,
+    attributeSimplifiedAttribute,
+    setAttributeSimplified,
+    mapAttributeVariables,
+    deleteFreeVariable,
 ) where
 
 import Control.Comonad.Trans.Cofree (
@@ -39,23 +47,24 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity (
     Identity (..),
  )
+import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
-import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Attribute.Pattern as Pattern
-import Kore.Attribute.Pattern.ConstructorLike (
-    HasConstructorLike (extractConstructorLike),
- )
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
-import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
-import Kore.Attribute.Pattern.Created
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Simplified (
-    unparseTag,
+import qualified Kore.Attribute.Pattern.Created as Attribute
+import qualified Kore.Attribute.Pattern.Defined as Attribute
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
  )
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
+import qualified Kore.Attribute.Pattern.Function as Attribute
+import qualified Kore.Attribute.Pattern.Functional as Attribute
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -80,8 +89,11 @@ import Kore.Internal.Key (
  )
 import qualified Kore.Internal.Key as Attribute
 import qualified Kore.Internal.Key as Key
-import Kore.Internal.Symbol hiding (
-    isConstructorLike,
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Symbol (
+    Symbol,
  )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
@@ -164,7 +176,10 @@ instance (Unparse variable, Unparse child) => Unparse (TermLikeF variable child)
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
 
-instance Ord variable => Synthetic (FreeVariables variable) (TermLikeF variable) where
+instance
+    Ord variable =>
+    Synthetic (Attribute.FreeVariables variable) (TermLikeF variable)
+    where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -238,7 +253,7 @@ instance Synthetic Sort (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Pattern.Functional (TermLikeF variable) where
+instance Synthetic Attribute.Functional (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -275,7 +290,7 @@ instance Synthetic Pattern.Functional (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Pattern.Function (TermLikeF variable) where
+instance Synthetic Attribute.Function (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -312,7 +327,7 @@ instance Synthetic Pattern.Function (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Pattern.Defined (TermLikeF variable) where
+instance Synthetic Attribute.Defined (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -349,7 +364,7 @@ instance Synthetic Pattern.Defined (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Pattern.Simplified (TermLikeF variable) where
+instance Synthetic Attribute.Simplified (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -386,7 +401,7 @@ instance Synthetic Pattern.Simplified (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
+instance Synthetic Attribute.ConstructorLike (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -437,6 +452,170 @@ instance From (KeyF child) (TermLikeF variable child) where
     from (Key.StringLiteralF stringLiteral) = StringLiteralF stringLiteral
     {-# INLINE from #-}
 
+-- | @TermAttributes@ are the attributes of a pattern collected during verification.
+data TermAttributes variable = TermAttributes
+    { termSort :: !Sort
+    , termFreeVariables :: !(Attribute.FreeVariables variable)
+    , termFunctional :: !Attribute.Functional
+    , termFunction :: !Attribute.Function
+    , termDefined :: !Attribute.Defined
+    , termCreated :: !Attribute.Created
+    , termSimplified :: !Attribute.Simplified
+    , termConstructorLike :: !Attribute.ConstructorLike
+    }
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Debug variable => Debug (TermAttributes variable) where
+    debugPrecBrief _ _ = "_"
+
+instance (Debug variable, Diff variable) => Diff (TermAttributes variable)
+
+instance
+    ( Synthetic Sort base
+    , Synthetic (Attribute.FreeVariables variable) base
+    , Synthetic Attribute.Functional base
+    , Synthetic Attribute.Function base
+    , Synthetic Attribute.Defined base
+    , Synthetic Attribute.Simplified base
+    , Synthetic Attribute.ConstructorLike base
+    ) =>
+    Synthetic (TermAttributes variable) base
+    where
+    synthetic base =
+        TermAttributes
+            { termSort = synthetic (termSort <$> base)
+            , termFreeVariables = synthetic (termFreeVariables <$> base)
+            , termFunctional = synthetic (termFunctional <$> base)
+            , termFunction = synthetic (termFunction <$> base)
+            , termDefined = synthetic (termDefined <$> base)
+            , termCreated = synthetic (termCreated <$> base)
+            , termSimplified =
+                if Attribute.isConstructorLike constructorLikeAttr
+                    then Attribute.fullySimplified
+                    else synthetic (termSimplified <$> base)
+            , termConstructorLike = constructorLikeAttr
+            }
+      where
+        constructorLikeAttr :: Attribute.ConstructorLike
+        constructorLikeAttr = synthetic (termConstructorLike <$> base)
+
+instance Attribute.HasConstructorLike (TermAttributes variable) where
+    extractConstructorLike
+        TermAttributes{termConstructorLike} =
+            termConstructorLike
+
+instance (Ord variable) => From KeyAttributes (TermAttributes variable) where
+    from = fromKeyAttributes
+
+attributeSimplifiedAttribute ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Attribute.Simplified
+attributeSimplifiedAttribute patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt termSimplified
+
+constructorLikeAttribute ::
+    TermAttributes variable ->
+    Attribute.ConstructorLike
+constructorLikeAttribute TermAttributes{termConstructorLike} =
+    termConstructorLike
+
+{- Checks whether the pattern is simplified relative to the given side
+condition.
+-}
+isAttributeSimplified ::
+    HasCallStack =>
+    SideCondition.Representation ->
+    TermAttributes variable ->
+    Bool
+isAttributeSimplified sideCondition patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplified sideCondition termSimplified
+
+{- Checks whether the pattern is simplified relative to some side condition.
+-}
+isAttributeSimplifiedSomeCondition ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Bool
+isAttributeSimplifiedSomeCondition patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplifiedSomeCondition termSimplified
+
+{- Checks whether the pattern is simplified relative to any side condition.
+-}
+isAttributeSimplifiedAnyCondition ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Bool
+isAttributeSimplifiedAnyCondition patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplifiedAnyCondition termSimplified
+
+assertSimplifiedConsistency :: HasCallStack => TermAttributes variable -> a -> a
+assertSimplifiedConsistency
+    TermAttributes{termConstructorLike, termSimplified}
+        | Attribute.isConstructorLike termConstructorLike
+          , not (Attribute.isSimplifiedAnyCondition termSimplified) =
+            error "Inconsistent attributes, constructorLike implies fully simplified."
+        | otherwise = id
+
+setAttributeSimplified ::
+    Attribute.Simplified ->
+    TermAttributes variable ->
+    TermAttributes variable
+setAttributeSimplified termSimplified attrs =
+    attrs{termSimplified}
+
+-- TODO: should we remove this? it isn't used anywhere
+
+{- | Use the provided mapping to replace all variables in a 'TermAttributes'.
+
+See also: 'traverseVariables'
+-}
+mapAttributeVariables ::
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    TermAttributes variable1 ->
+    TermAttributes variable2
+mapAttributeVariables adj =
+    Lens.over
+        (field @"termFreeVariables")
+        (Attribute.mapFreeVariables adj)
+
+{- | Use the provided traversal to replace the free variables in a 'TermAttributes'.
+
+See also: 'mapVariables'
+-}
+traverseAttributeVariables ::
+    forall m variable1 variable2.
+    Monad m =>
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    TermAttributes variable1 ->
+    m (TermAttributes variable2)
+traverseAttributeVariables adj =
+    field @"termFreeVariables" (Attribute.traverseFreeVariables adj)
+
+-- TODO: should we remove this? it isn't used anywhere
+
+-- | Delete the given variable from the set of free variables.
+deleteFreeVariable ::
+    Ord variable =>
+    SomeVariable variable ->
+    TermAttributes variable ->
+    TermAttributes variable
+deleteFreeVariable variable =
+    Lens.over
+        (field @"termFreeVariables")
+        (Attribute.FreeVariables.bindVariable variable)
+
+instance HasFreeVariables (TermAttributes variable) variable where
+    freeVariables = termFreeVariables
+
 {- | @TermLike@ is a term-like Kore pattern.
 
 @TermLike@ is the common internal representation of patterns, especially terms.
@@ -451,7 +630,7 @@ newtype TermLike variable = TermLike
     { getTermLike ::
         CofreeF
             (TermLikeF variable)
-            (Attribute.Pattern variable)
+            (TermAttributes variable)
             (TermLike variable)
     }
     deriving stock (Show)
@@ -500,19 +679,19 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project term of
             (attrs :< termLikeF)
-                | hasKnownCreator created ->
+                | Attribute.hasKnownCreator termCreated ->
                     Pretty.sep
-                        [ Pretty.pretty created
+                        [ Pretty.pretty termCreated
                         , attributeRepresentation
                         , unparse termLikeF
                         ]
                 | otherwise ->
                     Pretty.sep [attributeRepresentation, unparse termLikeF]
               where
-                Attribute.Pattern{created} = attrs
+                TermAttributes{termCreated} = attrs
 
                 attributeRepresentation = case attrs of
-                    (Attribute.Pattern _ _ _ _ _ _ _ _) ->
+                    (TermAttributes _ _ _ _ _ _ _ _) ->
                         Pretty.surround
                             (Pretty.hsep $ map Pretty.pretty representation)
                             "/* "
@@ -525,13 +704,13 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                                     addSimplifiedRepresentation $
                                         addConstructorLikeRepresentation []
                 addFunctionalRepresentation
-                    | Pattern.isFunctional $ Attribute.functional attrs = ("Fl" :)
+                    | Attribute.isFunctional $ termFunctional attrs = ("Fl" :)
                     | otherwise = id
                 addFunctionRepresentation
-                    | Pattern.isFunction $ Attribute.function attrs = ("Fn" :)
+                    | Attribute.isFunction $ termFunction attrs = ("Fn" :)
                     | otherwise = id
                 addDefinedRepresentation
-                    | Pattern.isDefined $ Attribute.defined attrs = ("D" :)
+                    | Attribute.isDefined $ termDefined attrs = ("D" :)
                     | otherwise = id
                 addSimplifiedRepresentation =
                     case simplifiedTag of
@@ -539,17 +718,17 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                         Nothing -> id
                   where
                     simplifiedTag =
-                        Simplified.unparseTag
-                            (Attribute.simplifiedAttribute attrs)
+                        Attribute.Simplified.unparseTag
+                            (attributeSimplifiedAttribute attrs)
                 addConstructorLikeRepresentation =
                     case constructorLike of
-                        Just Pattern.ConstructorLikeHead -> ("Cl" :)
-                        Just Pattern.SortInjectionHead -> ("Cli" :)
+                        Just Attribute.ConstructorLikeHead -> ("Cl" :)
+                        Just Attribute.SortInjectionHead -> ("Cli" :)
                         Nothing -> id
                   where
                     constructorLike =
-                        Pattern.getConstructorLike
-                            (Attribute.constructorLikeAttribute attrs)
+                        Attribute.getConstructorLike
+                            (constructorLikeAttribute attrs)
 
     unparse2 term =
         case Recursive.project term of
@@ -557,7 +736,7 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
 
 type instance
     Base (TermLike variable) =
-        CofreeF (TermLikeF variable) (Attribute.Pattern variable)
+        CofreeF (TermLikeF variable) (TermAttributes variable)
 
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
@@ -606,9 +785,9 @@ instance InternalVariable variable => Binding (TermLike variable) where
       where
         _ :< termLikeF = Recursive.project termLike
 
-instance HasConstructorLike (TermLike variable) where
+instance Attribute.HasConstructorLike (TermLike variable) where
     extractConstructorLike (Recursive.project -> attrs :< _) =
-        extractConstructorLike attrs
+        Attribute.extractConstructorLike attrs
 
 instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     defineColumn = SQL.defineTextColumn
@@ -633,38 +812,39 @@ instance Ord variable => From Key (TermLike variable) where
 fromKeyAttributes ::
     Ord variable =>
     KeyAttributes ->
-    Attribute.Pattern variable
+    TermAttributes variable
 fromKeyAttributes attrs =
-    Attribute.Pattern
-        { Attribute.patternSort = Attribute.keySort attrs
-        , Attribute.freeVariables = mempty
-        , Attribute.functional = Attribute.Functional True
-        , Attribute.function = Attribute.Function True
-        , Attribute.defined = Attribute.Defined True
-        , Attribute.simplified = Attribute.fullySimplified
-        , Attribute.constructorLike =
+    TermAttributes
+        { termSort = Attribute.keySort attrs
+        , termFreeVariables = mempty
+        , termFunctional = Attribute.Functional True
+        , termFunction = Attribute.Function True
+        , termDefined = Attribute.Defined True
+        , termSimplified = Attribute.fullySimplified
+        , termConstructorLike =
             Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
-        , Attribute.created = Attribute.Created Nothing
+        , termCreated = Attribute.Created Nothing
         }
 
-toKeyAttributes :: Attribute.Pattern variable -> Maybe KeyAttributes
-toKeyAttributes attrs@(Attribute.Pattern _ _ _ _ _ _ _ _)
-    | Attribute.nullFreeVariables freeVariablesAttr
-      , Attribute.isFunctional functionalAttr
-      , Attribute.isFunction functionAttr
-      , Attribute.isDefined definedAttr
-      , Attribute.isSimplifiedAnyCondition attrs
-      , Attribute.isConstructorLike constructorLikeAttr =
-        Just $ KeyAttributes sortAttr
+toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
+toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
+    | Attribute.nullFreeVariables termFreeVariables
+      , Attribute.isFunctional termFunctional
+      , Attribute.isFunction termFunction
+      , Attribute.isDefined termDefined
+      , Attribute.isSimplifiedAnyCondition termSimplified
+      , Attribute.isConstructorLike termConstructorLike =
+        Just $ KeyAttributes termSort
     | otherwise = Nothing
   where
-    Attribute.Pattern
-        { Attribute.patternSort = sortAttr
-        , Attribute.freeVariables = freeVariablesAttr
-        , Attribute.functional = functionalAttr
-        , Attribute.function = functionAttr
-        , Attribute.defined = definedAttr
-        , Attribute.constructorLike = constructorLikeAttr
+    TermAttributes
+        { termSort
+        , termFreeVariables
+        , termFunctional
+        , termFunction
+        , termDefined
+        , termConstructorLike
+        , termSimplified
         } = attrs
 
 -- | Ensure that a 'TermLike' is a concrete, constructor-like term.
@@ -673,7 +853,7 @@ retractKey =
     Recursive.fold worker
   where
     worker (attrs :< termLikeF) = do
-        Monad.guard (Pattern.isConstructorLike attrs)
+        Monad.guard (Attribute.isConstructorLike attrs)
         attrs' <- toKeyAttributes attrs
         keyF <-
             case termLikeF of
@@ -825,7 +1005,7 @@ traverseVariablesF adj =
     traverseVariablesNu Nu{nuVariable, nuChild} =
         Nu <$> trSetVar nuVariable <*> pure nuChild
 
-extractAttributes :: TermLike variable -> Attribute.Pattern variable
+extractAttributes :: TermLike variable -> TermAttributes variable
 extractAttributes (TermLike (attrs :< _)) = attrs
 
 instance HasFreeVariables (TermLike variable) variable where
@@ -868,7 +1048,9 @@ traverseVariables ::
     TermLike variable1 ->
     m (TermLike variable2)
 traverseVariables adj termLike =
-    renameFreeVariables adj (freeVariables @_ @variable1 termLike)
+    renameFreeVariables
+        adj
+        (Attribute.freeVariables @_ @variable1 termLike)
         >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
     adjReader = (.) lift <$> adj
@@ -889,7 +1071,7 @@ traverseVariables adj termLike =
             (RenamingT variable1 variable2 m (TermLike variable2)) ->
         RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
-        ~attrs' <- Attribute.traverseVariables askSomeVariableName attrs
+        ~attrs' <- traverseAttributeVariables askSomeVariableName attrs
         let ~avoiding = freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
@@ -914,11 +1096,15 @@ updateCallStack ::
     TermLike variable
 updateCallStack = Lens.set created callstack
   where
-    created = _attributes . Lens.Product.field @"created"
+    created = _attributes . Lens.Product.field @"termCreated"
     callstack =
-        Created . Just . GHC.popCallStack . GHC.popCallStack $ GHC.callStack
+        Attribute.Created
+            . Just
+            . GHC.popCallStack
+            . GHC.popCallStack
+            $ GHC.callStack
 
-    _attributes :: Lens' (TermLike variable) (Attribute.Pattern variable)
+    _attributes :: Lens' (TermLike variable) (TermAttributes variable)
     _attributes =
         Lens.lens
             (\(TermLike (attrs :< _)) -> attrs)

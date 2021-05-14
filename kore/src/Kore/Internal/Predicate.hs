@@ -92,23 +92,16 @@ import Data.Set (
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern as APattern
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables (
-    FreeVariables,
-    HasFreeVariables (..),
-    getFreeElementVariables,
-    isFreeVariable,
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables (
     toNames,
     toSet,
  )
-import Kore.Attribute.Pattern.Simplified (
-    Simplified (NotSimplified),
- )
-import qualified Kore.Attribute.Pattern.Simplified as Simplified
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Attribute.PredicatePattern (
     PredicatePattern,
  )
-import qualified Kore.Attribute.PredicatePattern as Attribute
+import qualified Kore.Attribute.PredicatePattern as PredicatePattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
@@ -181,23 +174,23 @@ data PredicateF variable child
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Ord variable => Synthetic (FreeVariables variable) (PredicateF variable) where
+instance Ord variable => Synthetic (Attribute.FreeVariables variable) (PredicateF variable) where
     synthetic = \case
         AndF and' -> synthetic and'
         BottomF bottom -> synthetic bottom
-        CeilF ceil -> synthetic (freeVariables <$> ceil)
-        EqualsF equals -> synthetic (freeVariables <$> equals)
+        CeilF ceil -> synthetic (Attribute.freeVariables <$> ceil)
+        EqualsF equals -> synthetic (Attribute.freeVariables <$> equals)
         ExistsF exists -> synthetic exists
-        FloorF floor' -> synthetic (freeVariables <$> floor')
+        FloorF floor' -> synthetic (Attribute.freeVariables <$> floor')
         ForallF forall' -> synthetic forall'
         IffF iff -> synthetic iff
         ImpliesF implies -> synthetic implies
-        InF in' -> synthetic (freeVariables <$> in')
+        InF in' -> synthetic (Attribute.freeVariables <$> in')
         NotF not' -> synthetic not'
         OrF or' -> synthetic or'
         TopF top -> synthetic top
 
-instance Synthetic Simplified (PredicateF variable) where
+instance Synthetic Attribute.Simplified (PredicateF variable) where
     synthetic = \case
         AndF and' -> synthetic and'
         BottomF bottom -> synthetic bottom
@@ -485,22 +478,23 @@ fromPredicate ::
     TermLike variable
 fromPredicate sort = Recursive.fold worker
   where
-    worker (pat :< predF) = TermLike.setSimplified
-        (Attribute.simplifiedAttribute pat)
-        $ case predF of
-            AndF (And () t1 t2) -> TermLike.mkAnd t1 t2
-            BottomF _ -> TermLike.mkBottom sort
-            CeilF (Ceil () () t) -> TermLike.mkCeil sort t
-            EqualsF (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
-            ExistsF (Exists () v t) -> TermLike.mkExists v t
-            FloorF (Floor () () t) -> TermLike.mkFloor sort t
-            ForallF (Forall () v t) -> TermLike.mkForall v t
-            IffF (Iff () t1 t2) -> TermLike.mkIff t1 t2
-            ImpliesF (Implies () t1 t2) -> TermLike.mkImplies t1 t2
-            InF (In () () t1 t2) -> TermLike.mkIn sort t1 t2
-            NotF (Not () t) -> TermLike.mkNot t
-            OrF (Or () t1 t2) -> TermLike.mkOr t1 t2
-            TopF _ -> TermLike.mkTop sort
+    worker (pat :< predF) =
+        TermLike.setSimplified
+            (PredicatePattern.simplifiedAttribute pat)
+            $ case predF of
+                AndF (And () t1 t2) -> TermLike.mkAnd t1 t2
+                BottomF _ -> TermLike.mkBottom sort
+                CeilF (Ceil () () t) -> TermLike.mkCeil sort t
+                EqualsF (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
+                ExistsF (Exists () v t) -> TermLike.mkExists v t
+                FloorF (Floor () () t) -> TermLike.mkFloor sort t
+                ForallF (Forall () v t) -> TermLike.mkForall v t
+                IffF (Iff () t1 t2) -> TermLike.mkIff t1 t2
+                ImpliesF (Implies () t1 t2) -> TermLike.mkImplies t1 t2
+                InF (In () () t1 t2) -> TermLike.mkIn sort t1 t2
+                NotF (Not () t) -> TermLike.mkNot t
+                OrF (Or () t1 t2) -> TermLike.mkOr t1 t2
+                TopF _ -> TermLike.mkTop sort
 
 fromPredicate_ ::
     InternalVariable variable =>
@@ -902,7 +896,7 @@ makePredicate t = fst <$> makePredicateWorker t
             childChanged :: HasChanged
             childChanged = foldMap dropPredicate termWithChanged
 
-            oldSimplified = APattern.simplifiedAttribute att
+            oldSimplified = TermLike.attributeSimplifiedAttribute att
         (predicate, topChanged) <- case patE of
             TermLike.TopF _ -> return makeTruePredicate'
             TermLike.BottomF _ -> return makeFalsePredicate'
@@ -958,7 +952,7 @@ makePredicate t = fst <$> makePredicateWorker t
                 pure
                     (setSimplified oldSimplified p, NotChanged)
 
-        oldSimplified = APattern.simplifiedAttribute att
+        oldSimplified = TermLike.attributeSimplifiedAttribute att
 
 isPredicate :: InternalVariable variable => TermLike variable -> Bool
 isPredicate = Either.isRight . makePredicate
@@ -966,18 +960,18 @@ isPredicate = Either.isRight . makePredicate
 extractAttributes :: Predicate variable -> PredicatePattern variable
 extractAttributes (Recursive.project -> attr :< _) = attr
 
-instance HasFreeVariables (Predicate variable) variable where
-    freeVariables = freeVariables . extractAttributes
+instance Attribute.HasFreeVariables (Predicate variable) variable where
+    freeVariables = Attribute.freeVariables . extractAttributes
 
-simplifiedAttribute :: Predicate variable -> Simplified
-simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
+simplifiedAttribute :: Predicate variable -> Attribute.Simplified
+simplifiedAttribute = PredicatePattern.simplifiedAttribute . extractAttributes
 
 {- | Is the 'Predicate' fully simplified under the given side condition?
 
 See also: 'isSimplifiedSomeCondition'.
 -}
 isSimplified :: SideCondition.Representation -> Predicate variable -> Bool
-isSimplified condition = Attribute.isSimplified condition . extractAttributes
+isSimplified condition = PredicatePattern.isSimplified condition . extractAttributes
 
 {- | Is the 'Predicate' fully simplified under some side condition?
 
@@ -985,7 +979,7 @@ See also: 'isSimplified'.
 -}
 isSimplifiedSomeCondition :: Predicate variable -> Bool
 isSimplifiedSomeCondition =
-    Attribute.isSimplifiedSomeCondition . extractAttributes
+    PredicatePattern.isSimplifiedSomeCondition . extractAttributes
 
 cannotSimplifyNotSimplifiedError ::
     (HasCallStack, InternalVariable variable) =>
@@ -1004,11 +998,11 @@ cannotSimplifyNotSimplifiedError predF =
 simplifiedFromChildren ::
     HasCallStack =>
     PredicateF variable (Predicate variable) ->
-    Simplified
+    Attribute.Simplified
 simplifiedFromChildren predF =
     case mergedSimplified of
-        NotSimplified -> NotSimplified
-        _ -> mergedSimplified `Simplified.simplifiedTo` Simplified.fullySimplified
+        Attribute.NotSimplified -> Attribute.NotSimplified
+        _ -> mergedSimplified `Attribute.simplifiedTo` Attribute.fullySimplified
   where
     mergedSimplified = case predF of
         CeilF ceil' -> foldMap TermLike.simplifiedAttribute ceil'
@@ -1020,10 +1014,10 @@ simplifiedFromChildren predF =
 checkedSimplifiedFromChildren ::
     (HasCallStack, InternalVariable variable) =>
     PredicateF variable (Predicate variable) ->
-    Simplified
+    Attribute.Simplified
 checkedSimplifiedFromChildren predF =
     case simplifiedFromChildren predF of
-        NotSimplified -> cannotSimplifyNotSimplifiedError predF
+        Attribute.NotSimplified -> cannotSimplifyNotSimplifiedError predF
         simplified -> simplified
 
 markSimplified ::
@@ -1032,7 +1026,7 @@ markSimplified ::
     Predicate variable
 markSimplified (Recursive.project -> attrs :< predF) =
     Recursive.embed
-        ( Attribute.setSimplified
+        ( PredicatePattern.setSimplified
             (checkedSimplifiedFromChildren predF)
             attrs
             :< predF
@@ -1047,9 +1041,9 @@ markSimplifiedConditional
     condition
     (Recursive.project -> attrs :< predF) =
         Recursive.embed
-            ( Attribute.setSimplified
+            ( PredicatePattern.setSimplified
                 ( checkedSimplifiedFromChildren predF
-                    <> Simplified.simplifiedConditionally condition
+                    <> Attribute.simplifiedConditionally condition
                 )
                 attrs
                 :< predF
@@ -1066,22 +1060,25 @@ markSimplifiedMaybeConditional (Just condition) =
 
 setSimplified ::
     (HasCallStack, InternalVariable variable) =>
-    Simplified ->
+    Attribute.Simplified ->
     Predicate variable ->
     Predicate variable
 setSimplified
     simplified
     (Recursive.project -> attrs :< predF) =
         Recursive.embed
-            ( Attribute.setSimplified mergedSimplified attrs
+            ( PredicatePattern.setSimplified mergedSimplified attrs
                 :< predF
             )
       where
         childSimplified = simplifiedFromChildren predF
         mergedSimplified = case (childSimplified, simplified) of
-            (NotSimplified, NotSimplified) -> NotSimplified
-            (NotSimplified, _) -> cannotSimplifyNotSimplifiedError predF
-            (_, NotSimplified) -> NotSimplified
+            (Attribute.NotSimplified, Attribute.NotSimplified) ->
+                Attribute.NotSimplified
+            (Attribute.NotSimplified, _) ->
+                cannotSimplifyNotSimplifiedError predF
+            (_, Attribute.NotSimplified) ->
+                Attribute.NotSimplified
             _ -> childSimplified <> simplified
 
 forgetSimplified ::
@@ -1141,17 +1138,24 @@ isFreeOf ::
     Set (SomeVariable variable) ->
     Bool
 isFreeOf predicate =
-    Set.disjoint (FreeVariables.toSet $ freeVariables predicate)
+    Set.disjoint
+        ( Attribute.FreeVariables.toSet $
+            Attribute.freeVariables predicate
+        )
 
 freeElementVariables :: Predicate variable -> [ElementVariable variable]
-freeElementVariables = getFreeElementVariables . freeVariables
+freeElementVariables =
+    PredicatePattern.getFreeElementVariables
+        . Attribute.freeVariables
 
 hasFreeVariable ::
     Ord variable =>
     SomeVariableName variable ->
     Predicate variable ->
     Bool
-hasFreeVariable variableName = isFreeVariable variableName . freeVariables
+hasFreeVariable variableName =
+    PredicatePattern.isFreeVariable variableName
+        . Attribute.freeVariables
 
 -- !!  TODO The following is just a temporary solution and  !!
 -- !!  the code using wrapPredicate should be refactored    !!
@@ -1180,14 +1184,19 @@ substitute subst predicate =
     substituteNone <|> substituteBinder <|> substituteTermLike
         & fromMaybe substituteDefault
   where
-    freeVars = FreeVariables.toNames (freeVariables predicate)
+    freeVars =
+        Attribute.FreeVariables.toNames
+            (Attribute.freeVariables predicate)
     subst' = Map.intersection subst (Map.fromSet id freeVars)
     originalVariables = Set.difference freeVars (Map.keysSet subst')
     targetFreeVariables =
         Foldable.foldl'
             Set.union
             Set.empty
-            (FreeVariables.toNames . freeVariables <$> subst')
+            ( Attribute.FreeVariables.toNames
+                . Attribute.freeVariables
+                <$> subst'
+            )
     freeVariables' = Set.union originalVariables targetFreeVariables
     avoidCapture = refreshElementVariable freeVariables'
 

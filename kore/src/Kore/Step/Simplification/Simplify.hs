@@ -63,7 +63,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
 import Kore.IndexedModule.MetadataTools (
@@ -95,6 +94,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike (
+    TermAttributes,
     TermLike,
     TermLikeF (..),
     pattern App_,
@@ -512,7 +512,7 @@ applicationAxiomSimplifier ::
       SideCondition RewritingVariableName ->
       CofreeF
         (Application Symbol)
-        (Attribute.Pattern RewritingVariableName)
+        (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
       simplifier (AttemptedAxiom RewritingVariableName)
     ) ->
