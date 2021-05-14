@@ -222,10 +222,10 @@ matchKequalEq =
             Monad.guard (hook2 == eqKey)
             & isJust
 
-data UnifyKequalsEq = UnifyKequalsEq {
-    eqTerm :: EqTerm (TermLike RewritingVariableName)
+data UnifyKequalsEq = UnifyKequalsEq
+    { eqTerm :: EqTerm (TermLike RewritingVariableName)
     , value :: Bool
-}
+    }
 
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
@@ -233,9 +233,9 @@ matchUnifyKequalsEq ::
     Maybe UnifyKequalsEq
 matchUnifyKequalsEq first second
     | Just eqTerm <- matchKequalEq first
-    , isFunctionPattern first
-    , Just value <- Bool.matchBool second
-    = Just $ UnifyKequalsEq eqTerm value
+      , isFunctionPattern first
+      , Just value <- Bool.matchBool second =
+        Just $ UnifyKequalsEq eqTerm value
     | otherwise = Nothing
 
 unifyKequalsEq ::
@@ -245,15 +245,14 @@ unifyKequalsEq ::
     NotSimplifier unifier ->
     UnifyKequalsEq ->
     unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData
-    = do
+unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = MultiOr.map eraseTerm solution
         (if value then pure else notSimplifier SideCondition.top) solution'
             >>= Unify.scatter
-
   where
-    UnifyKequalsEq { eqTerm, value } = unifyData
+    UnifyKequalsEq{eqTerm, value} = unifyData
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
 

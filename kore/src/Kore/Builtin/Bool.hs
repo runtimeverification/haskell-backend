@@ -254,10 +254,10 @@ matchUnifyBoolOr ::
     Maybe (BoolOr (TermLike RewritingVariableName))
 matchUnifyBoolOr first second
     | Just value1 <- matchBool first
-    , not value1
-    , Just boolOr <- matchBoolOr second
-    , isFunctionPattern second
-    = Just boolOr
+      , not value1
+      , Just boolOr <- matchBoolOr second
+      , isFunctionPattern second =
+        Just boolOr
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolOr #-}
 
@@ -268,25 +268,25 @@ unifyBoolOr ::
     TermLike RewritingVariableName ->
     BoolOr (TermLike RewritingVariableName) ->
     unifier (Pattern RewritingVariableName)
-unifyBoolOr unifyChildren termLike boolOr
-      = unifyBothWith unifyChildren termLike operand1 operand2
+unifyBoolOr unifyChildren termLike boolOr =
+    unifyBothWith unifyChildren termLike operand1 operand2
   where
-    BoolOr { operand1, operand2 } = boolOr
+    BoolOr{operand1, operand2} = boolOr
 
-data UnifyBoolNot = UnifyBoolNot {
-    boolNot :: BoolNot (TermLike RewritingVariableName)
+data UnifyBoolNot = UnifyBoolNot
+    { boolNot :: BoolNot (TermLike RewritingVariableName)
     , value :: Bool
-}
+    }
 
-matchUnifyBoolNot
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyBoolNot
+matchUnifyBoolNot ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyBoolNot
 matchUnifyBoolNot first second
     | Just boolNot <- matchBoolNot first
-    , isFunctionPattern first
-    , Just value <- matchBool second
-    = Just $ UnifyBoolNot boolNot value
+      , isFunctionPattern first
+      , Just value <- matchBool second =
+        Just $ UnifyBoolNot boolNot value
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolNot #-}
 
@@ -297,11 +297,11 @@ unifyBoolNot ::
     UnifyBoolNot ->
     unifier (Pattern RewritingVariableName)
 unifyBoolNot unifyChildren term unifyData =
-    let notValue = asInternal (termLikeSort term) (not value) in
-        unifyChildren notValue operand
+    let notValue = asInternal (termLikeSort term) (not value)
+     in unifyChildren notValue operand
   where
-    UnifyBoolNot { boolNot, value } = unifyData
-    BoolNot { operand } = boolNot
+    UnifyBoolNot{boolNot, value} = unifyData
+    BoolNot{operand} = boolNot
 
 -- | Match a @BOOL.Bool@ builtin value.
 matchBool :: TermLike variable -> Maybe Bool

@@ -178,10 +178,9 @@ maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first
         lift $ constructorAndEqualsAssumesDifferentHeads first second
     | otherwise =
         overloadedConstructorSortInjectionAndEquals childTransformers first second
-        <|> rest
-    
+            <|> rest
   where
-    rest 
+    rest
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
@@ -223,7 +222,6 @@ maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first
                     second
                 , domainValueAndConstructorErrors first second
                 ]
-        
 
 maybeTermAnd ::
     MonadUnify unifier =>
@@ -276,9 +274,9 @@ maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first se
         lift $ constructorSortInjectionAndEquals first second
     | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
-    | otherwise = 
+    | otherwise =
         overloadedConstructorSortInjectionAndEquals childTransformers first second
-        <|> rest
+            <|> rest
   where
     rest
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
