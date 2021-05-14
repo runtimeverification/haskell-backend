@@ -176,41 +176,54 @@ maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first
         lift $ constructorSortInjectionAndEquals first second
     | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
-    | Just unifyData <- matchOverloadedConstructorSortInjectionAndEquals first second =
-        overloadedConstructorSortInjectionAndEquals childTransformers first second unifyData
     | otherwise =
-        asum
-            [ do
-                boolAndData <- Error.hoistMaybe $ Builtin.Bool.matchUnifyBoolAnd first second
-                Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
-            , do
-                boolAndData <- Error.hoistMaybe $ Builtin.Bool.matchUnifyBoolAnd second first
-                Builtin.Bool.unifyBoolAnd childTransformers second boolAndData
-            , Builtin.Bool.unifyBoolOr childTransformers first second
-            , Builtin.Bool.unifyBoolNot childTransformers first second
-            , Builtin.Int.unifyIntEq childTransformers notSimplifier first second
-            , Builtin.String.unifyStringEq
-                childTransformers
-                notSimplifier
-                first
-                second
-            , Builtin.KEqual.unifyKequalsEq
-                childTransformers
-                notSimplifier
-                first
-                second
-            , Builtin.Endianness.unifyEquals first second
-            , Builtin.Signedness.unifyEquals first second
-            , Builtin.Map.unifyEquals childTransformers first second
-            , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
-            , Builtin.Set.unifyEquals childTransformers first second
-            , Builtin.List.unifyEquals
-                SimplificationType.Equals
-                childTransformers
-                first
-                second
-            , domainValueAndConstructorErrors first second
-            ]
+        overloadedConstructorSortInjectionAndEquals childTransformers first second
+        <|> rest
+    
+  where
+    rest 
+        | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
+            lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
+        | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
+            lift $ Builtin.Bool.unifyBoolAnd childTransformers second boolAndData
+        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr first second =
+            lift $ Builtin.Bool.unifyBoolOr childTransformers second boolOrData
+        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr second first =
+            lift $ Builtin.Bool.unifyBoolOr childTransformers first boolOrData
+        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
+            lift $ Builtin.Bool.unifyBoolNot childTransformers second boolNotData
+        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot second first =
+            lift $ Builtin.Bool.unifyBoolNot childTransformers first boolNotData
+        | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
+            lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
+            lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | otherwise =
+            asum
+                [ Builtin.String.unifyStringEq
+                    childTransformers
+                    notSimplifier
+                    first
+                    second
+                , do
+                    unifyData <- Error.hoistMaybe $ Builtin.KEqual.matchUnifyKequalsEq first second
+                    lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+                , do
+                    unifyData <- Error.hoistMaybe $ Builtin.KEqual.matchUnifyKequalsEq second first
+                    lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+                , Builtin.Endianness.unifyEquals first second
+                , Builtin.Signedness.unifyEquals first second
+                , Builtin.Map.unifyEquals childTransformers first second
+                , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
+                , Builtin.Set.unifyEquals childTransformers first second
+                , Builtin.List.unifyEquals
+                    SimplificationType.Equals
+                    childTransformers
+                    first
+                    second
+                , domainValueAndConstructorErrors first second
+                ]
+        
 
 maybeTermAnd ::
     MonadUnify unifier =>
@@ -263,36 +276,42 @@ maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first se
         lift $ constructorSortInjectionAndEquals first second
     | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
-    | Just unifyData <- matchOverloadedConstructorSortInjectionAndEquals first second =
-        overloadedConstructorSortInjectionAndEquals childTransformers first second unifyData
-    | otherwise =
-        asum
-            [ do
-                boolAndData <- Error.hoistMaybe $ Builtin.Bool.matchUnifyBoolAnd first second
-                Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
-            , do
-                boolAndData <- Error.hoistMaybe $ Builtin.Bool.matchUnifyBoolAnd second first
-                Builtin.Bool.unifyBoolAnd childTransformers second boolAndData
-            , Builtin.Bool.unifyBoolOr childTransformers first second
-            , Builtin.Bool.unifyBoolNot childTransformers first second
-            , Builtin.KEqual.unifyKequalsEq
-                childTransformers
-                notSimplifier
-                first
-                second
-            , Builtin.KEqual.unifyIfThenElse childTransformers first second
-            , Builtin.Endianness.unifyEquals first second
-            , Builtin.Signedness.unifyEquals first second
-            , Builtin.Map.unifyEquals childTransformers first second
-            , Builtin.Set.unifyEquals childTransformers first second
-            , Builtin.List.unifyEquals
-                SimplificationType.And
-                childTransformers
-                first
-                second
-            , domainValueAndConstructorErrors first second
-            , Error.hoistMaybe (functionAnd first second)
-            ]
+    | otherwise = 
+        overloadedConstructorSortInjectionAndEquals childTransformers first second
+        <|> rest
+  where
+    rest
+        | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
+            lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
+        | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
+            lift $ Builtin.Bool.unifyBoolAnd childTransformers second boolAndData
+        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr first second =
+            lift $ Builtin.Bool.unifyBoolOr childTransformers second boolOrData
+        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr second first =
+            lift $ Builtin.Bool.unifyBoolOr childTransformers first boolOrData
+        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
+            lift $ Builtin.Bool.unifyBoolNot childTransformers second boolNotData
+        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot second first =
+            lift $ Builtin.Bool.unifyBoolNot childTransformers first boolNotData
+        | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
+            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq second first =
+            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+        | otherwise =
+            asum
+                [ Builtin.KEqual.unifyIfThenElse childTransformers first second
+                , Builtin.Endianness.unifyEquals first second
+                , Builtin.Signedness.unifyEquals first second
+                , Builtin.Map.unifyEquals childTransformers first second
+                , Builtin.Set.unifyEquals childTransformers first second
+                , Builtin.List.unifyEquals
+                    SimplificationType.And
+                    childTransformers
+                    first
+                    second
+                , domainValueAndConstructorErrors first second
+                , Error.hoistMaybe (functionAnd first second)
+                ]
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -620,13 +639,12 @@ overloadedConstructorSortInjectionAndEquals ::
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    OverloadedConstructorSortInjectionAndEquals ->
     MaybeT unifier (Pattern RewritingVariableName)
-overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm unifyData =
+overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
     do
         eunifier <-
             lift . Error.runExceptT $
-                getUnifyResult firstTerm secondTerm unifyData
+                unifyOverloading (Pair firstTerm secondTerm)
         case eunifier of
             Right (Simple (Pair firstTerm' secondTerm')) ->
                 lift $

@@ -18,6 +18,8 @@ module Kore.Builtin.Bool (
     matchBool,
     matchBools,
     matchUnifyBoolAnd,
+    matchUnifyBoolOr,
+    matchUnifyBoolNot,
 
     -- * Keys
     orKey,
@@ -31,9 +33,6 @@ module Kore.Builtin.Bool (
     orElseKey,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
 import qualified Control.Monad as Monad
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
@@ -218,7 +217,7 @@ unifyBoolAnd ::
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     BoolAnd (TermLike RewritingVariableName) ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    unifier (Pattern RewritingVariableName)
 unifyBoolAnd unifyChildren term boolAnd =
     unifyBothWith unifyChildren term operand1 operand2
   where
@@ -239,8 +238,8 @@ unifyBothWith ::
     TermLike variable ->
     -- | first term to be unified with the base term
     TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyBothWith unify termLike1 operand1 operand2 = lift $ do
+    unifier (Pattern variable)
+unifyBothWith unify termLike1 operand1 operand2 = do
     unification1 <- unify' termLike1 operand1
     unification2 <- unify' termLike1 operand2
     let conditions = unification1 <> unification2
@@ -249,44 +248,60 @@ unifyBothWith unify termLike1 operand1 operand2 = lift $ do
     unify' term1 term2 =
         Pattern.withoutTerm <$> unify term1 term2
 
+matchUnifyBoolOr ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe (BoolOr (TermLike RewritingVariableName))
+matchUnifyBoolOr first second
+    | Just value1 <- matchBool first
+    , not value1
+    , Just boolOr <- matchBoolOr second
+    , isFunctionPattern second
+    = Just boolOr
+    | otherwise = Nothing
+{-# INLINE matchUnifyBoolOr #-}
+
 unifyBoolOr ::
-    forall variable unifier.
-    InternalVariable variable =>
+    forall unifier.
     MonadUnify unifier =>
-    TermSimplifier variable unifier ->
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyBoolOr unifyChildren a b =
-    worker a b <|> worker b a
+    TermSimplifier RewritingVariableName unifier ->
+    TermLike RewritingVariableName ->
+    BoolOr (TermLike RewritingVariableName) ->
+    unifier (Pattern RewritingVariableName)
+unifyBoolOr unifyChildren termLike boolOr
+      = unifyBothWith unifyChildren termLike operand1 operand2
   where
-    worker termLike1 termLike2
-        | Just value1 <- matchBool termLike1
-          , not value1
-          , Just BoolOr{operand1, operand2} <- matchBoolOr termLike2
-          , isFunctionPattern termLike2 =
-            unifyBothWith unifyChildren termLike1 operand1 operand2
-    worker _ _ = empty
+    BoolOr { operand1, operand2 } = boolOr
+
+data UnifyBoolNot = UnifyBoolNot {
+    boolNot :: BoolNot (TermLike RewritingVariableName)
+    , value :: Bool
+}
+
+matchUnifyBoolNot
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyBoolNot
+matchUnifyBoolNot first second
+    | Just boolNot <- matchBoolNot first
+    , isFunctionPattern first
+    , Just value <- matchBool second
+    = Just $ UnifyBoolNot boolNot value
+    | otherwise = Nothing
+{-# INLINE matchUnifyBoolNot #-}
 
 unifyBoolNot ::
-    forall variable unifier.
-    InternalVariable variable =>
-    MonadUnify unifier =>
-    TermSimplifier variable unifier ->
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyBoolNot unifyChildren a b =
-    worker a b <|> worker b a
+    forall unifier.
+    TermSimplifier RewritingVariableName unifier ->
+    TermLike RewritingVariableName ->
+    UnifyBoolNot ->
+    unifier (Pattern RewritingVariableName)
+unifyBoolNot unifyChildren term unifyData =
+    let notValue = asInternal (termLikeSort term) (not value) in
+        unifyChildren notValue operand
   where
-    worker termLike1 boolTerm
-        | Just BoolNot{operand} <- matchBoolNot termLike1
-          , isFunctionPattern termLike1
-          , Just value <- matchBool boolTerm =
-            lift $ do
-                let notValue = asInternal (termLikeSort boolTerm) (not value)
-                unifyChildren notValue operand
-    worker _ _ = empty
+    UnifyBoolNot { boolNot, value } = unifyData
+    BoolNot { operand } = boolNot
 
 -- | Match a @BOOL.Bool@ builtin value.
 matchBool :: TermLike variable -> Maybe Bool

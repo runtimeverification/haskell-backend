@@ -200,7 +200,7 @@ test_unifyBoolAnd =
                 Nothing -> assertEqual "" expected [Nothing]
 
     unify term boolAnd =
-        run (Bool.unifyBoolAnd termSimplifier term boolAnd)
+        run (lift $ Bool.unifyBoolAnd termSimplifier term boolAnd)
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -226,11 +226,14 @@ test_unifyBoolOr =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchUnifyBoolOr term1 term2 of
+                Just boolOr -> do
+                    actual <- unify term1 boolOr
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBoolOr termSimplifier term1 term2)
+    unify term boolOr =
+        run (lift $ Bool.unifyBoolOr termSimplifier term boolOr)
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =

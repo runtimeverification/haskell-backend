@@ -30,6 +30,7 @@ module Kore.Builtin.Int (
     unifyIntEq,
     unifyInt,
     matchInt,
+    matchUnifyIntEq,
 
     -- * keys
     randKey,
@@ -110,6 +111,8 @@ import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -461,6 +464,22 @@ unifyInt term1 term2 unifyData =
 
     UnifyInt{int1, int2} = unifyData
 
+data UnifyIntEq = UnifyIntEq {
+    eqTerm :: EqTerm (TermLike RewritingVariableName)
+    , value :: Bool
+}
+
+matchUnifyIntEq
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyIntEq
+matchUnifyIntEq first second
+    | Just eqTerm <- matchIntEqual first
+    , isFunctionPattern first
+    , Just value <- Bool.matchBool second
+    = Just $ UnifyIntEq eqTerm value
+    | otherwise = Nothing
+
 {- | Unification of the @INT.eq@ symbol.
 
 This function is suitable only for equality simplification.
@@ -470,14 +489,15 @@ unifyIntEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyIntEq ->
+    unifier (Pattern RewritingVariableName)
+unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData
+    = do
+        solution <- unifyChildren operand1 operand2 & OrPattern.gather
+        let solution' = MultiOr.map eraseTerm solution
+        (if value then pure else notSimplifier SideCondition.top) solution'
+            >>= Unify.scatter
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchIntEqual termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyIntEq { eqTerm, value } = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
