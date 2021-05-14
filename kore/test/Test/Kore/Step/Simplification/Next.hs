@@ -54,16 +54,16 @@ test_nextSimplification =
             ""
             ( OrPattern.fromPatterns
                 [ Conditional
-                        { term = mkNext Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = mkNext Mock.b
-                        , predicate = makeEqualsPredicate Mock.a Mock.b
-                        , substitution = mempty
-                        }
-                    ]
+                    { term = mkNext Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                , Conditional
+                    { term = mkNext Mock.b
+                    , predicate = makeEqualsPredicate Mock.a Mock.b
+                    , substitution = mempty
+                    }
+                ]
             )
             ( evaluate
                 ( makeNext

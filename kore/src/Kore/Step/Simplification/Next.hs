@@ -11,16 +11,16 @@ module Kore.Step.Simplification.Next (
     simplify,
 ) where
 
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.Pattern as Pattern
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -40,4 +40,3 @@ simplifyEvaluated ::
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
 simplifyEvaluated = MultiOr.map (Pattern.markSimplified . fmap mkNext)
-
