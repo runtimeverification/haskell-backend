@@ -511,7 +511,7 @@ test_unifyAnd_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkAnd dv1 dv1
-        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike dv1) actual
+        assertEqual' "" (OrPattern.fromTermLike dv1) actual
 
 -- | "\and"ed then "\equal"ed internal Integers that are equal
 test_unifyAndEqual_Equal :: TestTree

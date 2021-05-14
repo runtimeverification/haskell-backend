@@ -77,7 +77,7 @@ test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithoutSMT "dotk equals dotk" $ do
         let expect =
-                MultiOr.singleton . Pattern.fromTermLike $
+                OrPattern.fromTermLike $
                     Test.Bool.asInternal True
             original = keqBool dotk dotk
         actual <- evaluate original
@@ -121,7 +121,7 @@ test_KEqual =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain values" $ do
         let expect =
-                MultiOr.singleton . Pattern.fromTermLike $
+                OrPattern.fromTermLike $
                     Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
         actual <- evaluate original
@@ -172,7 +172,7 @@ test_KIte =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "abstract" $ do
         let original = kiteK x y z
-            expect = MultiOr.singleton . Pattern.fromTermLike $ original
+            expect = OrPattern.fromTermLike original
             x = mkElemVar $ configElementVariableFromId (testId "x") boolSort
             y = mkElemVar $ configElementVariableFromId (testId "y") kSort
             z = mkElemVar $ configElementVariableFromId (testId "z") kSort

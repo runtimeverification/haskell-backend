@@ -125,7 +125,9 @@ import Kore.Internal.Condition (
     Condition,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern (OrPattern, fromPattern)
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -596,7 +598,7 @@ showConfig ::
     Maybe ReplNode ->
     ReplM m ()
 showConfig =
-    showClaimStateComponent "Config" (fromPattern . getConfiguration)
+    showClaimStateComponent "Config" (from @_ @(OrPattern _) . getConfiguration)
 
 -- | Shows destination at node 'n', or current node if 'Nothing' is passed.
 showDest ::

@@ -213,7 +213,7 @@ test_unit =
             actual <- runNoSMT $ evaluate original
             assertEqual
                 ""
-                (MultiOr.singleton $ Pattern.fromTermLike expect)
+                (OrPattern.fromTermLike expect)
                 actual
 
 test_getUnit :: TestTree
@@ -571,9 +571,7 @@ test_intersection_unit =
     testPropertyWithSolver "intersection(as, unit()) === unit()" $ do
         as <- forAll genSetPattern
         let original = intersectionSet as unitSet
-            expect =
-                MultiOr.singleton . Pattern.fromTermLike $
-                    asInternal HashSet.empty
+            expect = OrPattern.fromTermLike $ asInternal HashSet.empty
         (===) expect =<< evaluateT original
         (===) OrPattern.top =<< evaluateT (mkEquals_ original unitSet)
 
@@ -583,7 +581,7 @@ test_intersection_idem =
         as <- forAll genConcreteSet
         let termLike = mkSet_ as & fromConcrete
             original = intersectionSet termLike termLike
-            expect = MultiOr.singleton . Pattern.fromTermLike $ asInternal as
+            expect = OrPattern.fromTermLike $ asInternal as
         (===) expect =<< evaluateT original
         (===) OrPattern.top =<< evaluateT (mkEquals_ original termLike)
 
@@ -598,7 +596,7 @@ test_list2set =
             termLike = mkSet_ set & fromConcrete
             input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
             original = list2setSet input
-            expect = MultiOr.singleton . Pattern.fromTermLike $ asInternal set
+            expect = OrPattern.fromTermLike $ asInternal set
         (===) expect =<< evaluateT original
         (===) OrPattern.top
             =<< evaluateT (mkEquals_ original termLike)

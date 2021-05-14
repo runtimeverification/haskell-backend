@@ -414,14 +414,14 @@ test_size =
         let original = sizeList unitList
             zero = mkInt 0
             predicate = mkEquals_ zero original
-        (===) (MultiOr.singleton $ Pattern.fromTermLike zero) =<< evaluateT original
+        (===) (OrPattern.fromTermLike zero) =<< evaluateT original
         (===) OrPattern.top =<< evaluateT predicate
     , testPropertyWithSolver "size(element(_)) = 1" $ do
         k <- forAll genInteger
         let original = sizeList (elementList $ mkInt k)
             one = mkInt 1
             predicate = mkEquals_ one original
-        (===) (MultiOr.singleton $ Pattern.fromTermLike one) =<< evaluateT original
+        (===) (OrPattern.fromTermLike one) =<< evaluateT original
         (===) OrPattern.top =<< evaluateT predicate
     , testPropertyWithSolver "size(a + b) = size(a) + size(b)" $ do
         as <- asInternal . fmap mkInt <$> forAll genSeqInteger
@@ -444,12 +444,12 @@ test_make =
         result <- evaluate $ makeList (mkInt 0) (mkInt 5)
         assertEqual'
             ""
-            (MultiOr.singleton . Pattern.fromTermLike $ asInternal [])
+            (OrPattern.fromTermLike $ asInternal [])
             result
     , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do
         result <- evaluate $ makeList (mkInt 3) (mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [5, 5, 5]
-        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike expect) result
+        assertEqual' "" (OrPattern.fromTermLike expect) result
     ]
 
 test_updateAll :: [TestTree]
@@ -463,13 +463,13 @@ test_updateAll =
         result <-
             evaluate $
                 updateAllList original (mkInt 10) unitList
-        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike original) result
+        assertEqual' "" (OrPattern.fromTermLike original) result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 1, [5]) === [1, 5, 3]" $ do
         result <-
             evaluate $
                 updateAllList original (mkInt 1) (elementList $ mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
-        assertEqual' "" (MultiOr.singleton $ Pattern.fromTermLike expect) result
+        assertEqual' "" (OrPattern.fromTermLike expect) result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4]) === \\bottom" $
         do
             let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]

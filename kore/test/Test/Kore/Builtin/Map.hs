@@ -83,7 +83,6 @@ import qualified Kore.Builtin.Map.Map as Map
 import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeMultipleAndPredicate,
@@ -171,8 +170,7 @@ test_lookupUnit =
         def <- forAll genIntegerPattern
         let patLookup = lookupOrDefaultMap unitMap key def
             predicate = mkEquals_ def patLookup
-        (===) (MultiOr.singleton $ Pattern.fromTermLike def)
-            =<< evaluateT patLookup
+        (===) (OrPattern.fromTermLike def) =<< evaluateT patLookup
         (===) OrPattern.top =<< evaluateT predicate
     ]
 
@@ -184,7 +182,7 @@ test_lookupUpdate =
         patMap <- forAll genMapPattern
         let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
             predicate = mkEquals_ patLookup patVal
-            expect = MultiOr.singleton $ Pattern.fromTermLike patVal
+            expect = OrPattern.fromTermLike patVal
         (===) expect =<< evaluateT patLookup
         (===) OrPattern.top =<< evaluateT predicate
     , testPropertyWithoutSolver "lookupOrDefault{}(update{}(map, key, val), key, def) === val" $ do
@@ -195,7 +193,7 @@ test_lookupUpdate =
         let patUpdate = updateMap patMap patKey patVal
             patLookup = lookupOrDefaultMap patUpdate patKey patDef
             predicate = mkEquals_ patLookup patVal
-            expect = MultiOr.singleton $ Pattern.fromTermLike patVal
+            expect = OrPattern.fromTermLike patVal
         (===) expect =<< evaluateT patLookup
         (===) OrPattern.top =<< evaluateT predicate
     ]
@@ -354,8 +352,8 @@ test_lookupConcatUniqueKeys =
                             (mkEquals_ patLookup1 patVal1)
                             (mkEquals_ patLookup2 patVal2)
                         )
-                expect1 = MultiOr.singleton $ Pattern.fromTermLike patVal1
-                expect2 = MultiOr.singleton $ Pattern.fromTermLike patVal2
+                expect1 = OrPattern.fromTermLike patVal1
+                expect2 = OrPattern.fromTermLike patVal2
             (===) expect1 =<< evaluateT patLookup1
             (===) expect2 =<< evaluateT patLookup2
             (===) OrPattern.top =<< evaluateT predicate
