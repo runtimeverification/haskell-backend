@@ -2,6 +2,7 @@ module Test.Kore.Step.Simplification.Predicate (
     test_simplify,
 ) where
 
+import Kore.Internal.From
 import Kore.Internal.MultiAnd (MultiAnd)
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
@@ -19,27 +20,27 @@ test_simplify :: [TestTree]
 test_simplify =
     [ test
         "\\and(_, _)"
-        (makeAndPredicate faCeil fbCeil)
+        (fromAnd faCeil fbCeil)
         [MultiAnd.make [faCeil, fbCeil]]
     , test
         "\\and(\\top, _)"
-        (makeAndPredicate makeTruePredicate faCeil)
+        (fromAnd fromTop_ faCeil)
         [MultiAnd.make [faCeil]]
     , test
         "\\and(\\bottom, _)"
-        (makeAndPredicate makeFalsePredicate faCeil)
+        (fromAnd fromBottom_ faCeil)
         []
     , test
         "\\or(_, _)"
-        (makeOrPredicate faCeil fbCeil)
+        (fromOr faCeil fbCeil)
         [MultiAnd.singleton faCeil, MultiAnd.singleton fbCeil]
     , test
         "\\or(\\bottom, _)"
-        (makeOrPredicate makeFalsePredicate faCeil)
+        (fromOr fromBottom_ faCeil)
         [MultiAnd.singleton faCeil]
     , test
         "\\or(\\top, _)"
-        (makeOrPredicate makeTruePredicate faCeil)
+        (fromOr fromTop_ faCeil)
         [MultiAnd.top]
     ]
   where
@@ -60,5 +61,5 @@ test_simplify =
     fb = Mock.f Mock.b
 
     faCeil, fbCeil :: Predicate RewritingVariableName
-    faCeil = makeCeilPredicate fa
-    fbCeil = makeCeilPredicate fb
+    faCeil = fromCeil_ fa
+    fbCeil = fromCeil_ fb
