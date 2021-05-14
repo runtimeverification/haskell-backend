@@ -120,9 +120,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain values" $ do
-        let expect =
-                OrPattern.fromTermLike $
-                    Test.Bool.asInternal False
+        let expect = OrPattern.fromTermLike $ Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
         actual <- evaluate original
         assertEqual' "" expect actual
@@ -156,8 +154,7 @@ test_KIte =
     , testCaseWithoutSMT "false" $ do
         let expect =
                 MultiOr.singleton $
-                    Pattern.fromTermLike $
-                        inj kSort $ Test.Bool.asInternal True
+                    Pattern.fromTermLike $ inj kSort $ Test.Bool.asInternal True
             original =
                 kiteK
                     (Test.Bool.asInternal False)
