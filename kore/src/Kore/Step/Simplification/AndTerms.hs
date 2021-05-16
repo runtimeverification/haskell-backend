@@ -130,10 +130,6 @@ termUnification notSimplifier = \term1 term2 ->
             & Pattern.fromTermLike
             & return
 
--- maybeTermEquals notSimplifier childTransformers first second =
---     asum
---         [ do { matched <- hoistMaybe $ matchInt first second; lift $ unifyInt matched }
-
 maybeTermEquals ::
     MonadUnify unifier =>
     HasCallStack =>
@@ -544,7 +540,7 @@ matchSortInjectionAndEquals injSimplifier first second
       , Inj_ inj2 <- second =
         case matchInjs injSimplifier inj1 inj2 of
             Left Unknown -> Nothing
-            matchData -> Just $ SortInjectionAndEquals inj1 inj2 matchData
+            matchData -> Just SortInjectionAndEquals{inj1, inj2, matchData}
     | otherwise = Nothing
 {-# INLINE sortInjectionAndEquals #-}
 
@@ -725,7 +721,7 @@ matchDomainValue ::
 matchDomainValue first second
     | DV_ sort1 val1 <- first
       , DV_ sort2 val2 <- second =
-        Just $ UnifyDomainValue sort1 val1 sort2 val2
+        Just UnifyDomainValue{sort1, val1, sort2, val2}
     | otherwise = Nothing
 {-# INLINE matchDomainValue #-}
 
@@ -777,9 +773,9 @@ matchStringLiteral ::
     TermLike RewritingVariableName ->
     Maybe UnifyStringLiteral
 matchStringLiteral first second
-    | StringLiteral_ string1 <- first
-      , StringLiteral_ string2 <- second =
-        Just $ UnifyStringLiteral string1 string2
+    | StringLiteral_ txt1 <- first
+      , StringLiteral_ txt2 <- second =
+        Just UnifyStringLiteral{txt1, txt2}
     | otherwise = Nothing
 {-# INLINE matchStringLiteral #-}
 

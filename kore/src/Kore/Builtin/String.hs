@@ -483,7 +483,7 @@ matchString ::
 matchString first second
     | InternalString_ string1 <- first
       , InternalString_ string2 <- second =
-        Just $ UnifyString string1 string2
+        Just UnifyString{string1, string2}
     | otherwise = Nothing
 {-# INLINE matchString #-}
 

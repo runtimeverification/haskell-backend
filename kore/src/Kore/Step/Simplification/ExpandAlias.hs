@@ -40,7 +40,10 @@ matchExpandAlias ::
 matchExpandAlias t1 t2 =
     case (expandSingleAlias t1, expandSingleAlias t2) of
         (Nothing, Nothing) -> Nothing
-        (t1', t2') -> Just $ UnifyExpandAlias (fromMaybe t1 t1') (fromMaybe t2 t2')
+        (t1', t2') ->
+            let term1 = fromMaybe t1 t1' in
+            let term2 = fromMaybe t2 t2' in
+                Just UnifyExpandAlias{term1, term2}
 {-# INLINE matchExpandAlias #-}
 
 expandSingleAlias ::

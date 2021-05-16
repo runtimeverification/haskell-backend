@@ -440,7 +440,7 @@ matchInt ::
 matchInt first second
     | InternalInt_ int1 <- first
       , InternalInt_ int2 <- second =
-        Just $ UnifyInt int1 int2
+        Just UnifyInt{int1, int2}
     | otherwise = Nothing
 {-# INLINE matchInt #-}
 
@@ -477,7 +477,7 @@ matchUnifyIntEq first second
     | Just eqTerm <- matchIntEqual first
       , isFunctionPattern first
       , Just value <- Bool.matchBool second =
-        Just $ UnifyIntEq eqTerm value
+        Just UnifyIntEq{eqTerm, value}
     | otherwise = Nothing
 
 {- | Unification of the @INT.eq@ symbol.

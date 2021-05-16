@@ -235,7 +235,7 @@ matchUnifyKequalsEq first second
     | Just eqTerm <- matchKequalEq first
       , isFunctionPattern first
       , Just value <- Bool.matchBool second =
-        Just $ UnifyKequalsEq eqTerm value
+        Just UnifyKequalsEq{eqTerm, value}
     | otherwise = Nothing
 
 unifyKequalsEq ::

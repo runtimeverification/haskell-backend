@@ -176,7 +176,7 @@ matchBools ::
 matchBools first second
     | InternalBool_ bool1 <- first
       , InternalBool_ bool2 <- second =
-        Just $ UnifyBool bool1 bool2
+        Just UnifyBool{bool1, bool2}
     | otherwise = Nothing
 {-# INLINE matchBools #-}
 

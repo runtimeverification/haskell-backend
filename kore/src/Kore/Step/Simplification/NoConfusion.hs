@@ -42,11 +42,11 @@ matchEqualInjectiveHeadsAndEquals first second
       , Symbol.isInjective secondHead
       , firstHead == secondHead --is one of the above redundant in light of this?
         =
-        Just $
-            UnifyEqualInjectiveHeadsAndEquals
-                firstHead
-                firstChildren
-                secondChildren
+        Just
+            UnifyEqualInjectiveHeadsAndEquals{
+                firstHead,
+                firstChildren,
+                secondChildren}
     | otherwise = Nothing
 {-# INLINE matchEqualInjectiveHeadsAndEquals #-}
 
