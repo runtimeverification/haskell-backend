@@ -188,21 +188,21 @@ unifyBool ::
     TermLike RewritingVariableName ->
     UnifyBool ->
     unifier (Pattern RewritingVariableName)
-unifyBool termLike1 termLike2 unifyData =
-    if bool1 == bool2
-        then return (Pattern.fromTermLike termLike1)
-        else
-            Unify.explainAndReturnBottom
-                "different Bool domain values"
-                termLike1
-                termLike2
+unifyBool termLike1 termLike2 unifyData
+    | bool1 == bool2
+    = return (Pattern.fromTermLike termLike1)
+    | otherwise
+    = Unify.explainAndReturnBottom
+        "different Bool domain values"
+        termLike1
+        termLike2
   where
     UnifyBool{bool1, bool2} = unifyData
 
 matchUnifyBoolAnd ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe (BoolAnd (TermLike RewritingVariableName))
+    Maybe BoolAnd
 matchUnifyBoolAnd first second
     | Just True <- matchBool first
       , Just boolAnd <- matchBoolAnd second
@@ -216,7 +216,7 @@ unifyBoolAnd ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
-    BoolAnd (TermLike RewritingVariableName) ->
+    BoolAnd ->
     unifier (Pattern RewritingVariableName)
 unifyBoolAnd unifyChildren term boolAnd =
     unifyBothWith unifyChildren term operand1 operand2
@@ -251,7 +251,7 @@ unifyBothWith unify termLike1 operand1 operand2 = do
 matchUnifyBoolOr ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe (BoolOr (TermLike RewritingVariableName))
+    Maybe BoolOr
 matchUnifyBoolOr first second
     | Just value1 <- matchBool first
       , not value1
@@ -266,7 +266,7 @@ unifyBoolOr ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
-    BoolOr (TermLike RewritingVariableName) ->
+    BoolOr ->
     unifier (Pattern RewritingVariableName)
 unifyBoolOr unifyChildren termLike boolOr =
     unifyBothWith unifyChildren termLike operand1 operand2
@@ -274,7 +274,7 @@ unifyBoolOr unifyChildren termLike boolOr =
     BoolOr{operand1, operand2} = boolOr
 
 data UnifyBoolNot = UnifyBoolNot
-    { boolNot :: BoolNot (TermLike RewritingVariableName)
+    { boolNot :: BoolNot
     , value :: Bool
     }
 
@@ -310,13 +310,13 @@ matchBool (InternalBool_ InternalBool{internalBoolValue}) =
 matchBool _ = Nothing
 
 -- | The @BOOL.and@ hooked symbol applied to @term@-type arguments.
-data BoolAnd term = BoolAnd
+data BoolAnd = BoolAnd
     { symbol :: !Symbol
-    , operand1, operand2 :: !term
+    , operand1, operand2 :: !(TermLike RewritingVariableName)
     }
 
 -- | Match the @BOOL.and@ hooked symbol.
-matchBoolAnd :: TermLike variable -> Maybe (BoolAnd (TermLike variable))
+matchBoolAnd :: TermLike RewritingVariableName -> Maybe BoolAnd
 matchBoolAnd (App_ symbol [operand1, operand2]) = do
     hook2 <- (getHook . symbolHook) symbol
     Monad.guard (hook2 == andKey)
@@ -324,13 +324,13 @@ matchBoolAnd (App_ symbol [operand1, operand2]) = do
 matchBoolAnd _ = Nothing
 
 -- | The @BOOL.or@ hooked symbol applied to @term@-type arguments.
-data BoolOr term = BoolOr
+data BoolOr = BoolOr
     { symbol :: !Symbol
-    , operand1, operand2 :: !term
+    , operand1, operand2 :: !(TermLike RewritingVariableName)
     }
 
 -- | Match the @BOOL.or@ hooked symbol.
-matchBoolOr :: TermLike variable -> Maybe (BoolOr (TermLike variable))
+matchBoolOr :: TermLike RewritingVariableName -> Maybe BoolOr
 matchBoolOr (App_ symbol [operand1, operand2]) = do
     hook2 <- (getHook . symbolHook) symbol
     Monad.guard (hook2 == orKey)
@@ -338,13 +338,13 @@ matchBoolOr (App_ symbol [operand1, operand2]) = do
 matchBoolOr _ = Nothing
 
 -- | The @BOOL.not@ hooked symbol applied to a @term@-type argument.
-data BoolNot term = BoolNot
+data BoolNot = BoolNot
     { symbol :: !Symbol
-    , operand :: !term
+    , operand :: !(TermLike RewritingVariableName)
     }
 
 -- | Match the @BOOL.not@ hooked symbol.
-matchBoolNot :: TermLike variable -> Maybe (BoolNot (TermLike variable))
+matchBoolNot :: TermLike RewritingVariableName -> Maybe BoolNot
 matchBoolNot (App_ symbol [operand]) = do
     hook2 <- (getHook . symbolHook) symbol
     Monad.guard (hook2 == notKey)

@@ -25,7 +25,7 @@ import Prelude.Kore hiding (
     concat,
  )
 
-data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals
+data UnifyEqualInjectiveHeads= UnifyEqualInjectiveHeads
     { firstHead :: Symbol
     , firstChildren :: [TermLike RewritingVariableName]
     , secondChildren :: [TermLike RewritingVariableName]
@@ -34,16 +34,16 @@ data UnifyEqualInjectiveHeadsAndEquals = UnifyEqualInjectiveHeadsAndEquals
 matchEqualInjectiveHeadsAndEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyEqualInjectiveHeadsAndEquals
+    Maybe UnifyEqualInjectiveHeads
 matchEqualInjectiveHeadsAndEquals first second
     | App_ firstHead firstChildren <- first
       , App_ secondHead secondChildren <- second
       , Symbol.isInjective firstHead
-      , Symbol.isInjective secondHead
-      , firstHead == secondHead --is one of the above redundant in light of this?
+      -- We do not need to check if secondHead is injective once we test for equality.
+      , firstHead == secondHead
         =
         Just
-            UnifyEqualInjectiveHeadsAndEquals
+            UnifyEqualInjectiveHeads
                 { firstHead
                 , firstChildren
                 , secondChildren
@@ -63,7 +63,7 @@ equalInjectiveHeadsAndEquals ::
     HasCallStack =>
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
-    UnifyEqualInjectiveHeadsAndEquals ->
+    UnifyEqualInjectiveHeads ->
     unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
@@ -80,15 +80,11 @@ equalInjectiveHeadsAndEquals
                         (Pattern.term <$> children)
             return (Pattern.withCondition term merged)
       where
-        UnifyEqualInjectiveHeadsAndEquals
+        UnifyEqualInjectiveHeads
             { firstHead
             , firstChildren
             , secondChildren
             } = unifyData
-
--- data ConstructorAndEqualsAssumesDifferentHeads = ConstructorAndEqualsAssumesDifferentHeads
---     { firstHead, secondHead :: Symbol
---     }
 
 matchConstructorAndEqualsAssumesDifferentHeads ::
     (Symbol -> Bool) ->

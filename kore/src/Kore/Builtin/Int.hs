@@ -439,7 +439,8 @@ matchInt ::
     Maybe UnifyInt
 matchInt first second
     | InternalInt_ int1 <- first
-      , InternalInt_ int2 <- second =
+      , InternalInt_ int2 <- second
+      , on (==) internalIntSort int1 int2 =
         Just UnifyInt{int1, int2}
     | otherwise = Nothing
 {-# INLINE matchInt #-}
@@ -448,20 +449,16 @@ matchInt first second
 unifyInt ::
     forall unifier.
     MonadUnify unifier =>
-    HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     UnifyInt ->
     unifier (Pattern RewritingVariableName)
-unifyInt term1 term2 unifyData =
-    assert (on (==) internalIntSort int1 int2) worker -- should this be part of match?
-  where
-    worker :: unifier (Pattern RewritingVariableName)
-    worker
-        | on (==) internalIntValue int1 int2 =
-            return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+unifyInt term1 term2 unifyData
+    | on (==) internalIntValue int1 int2 =
+        return $ Pattern.fromTermLike term1
+    | otherwise = explainAndReturnBottom "distinct integers" term1 term2
 
+  where
     UnifyInt{int1, int2} = unifyData
 
 data UnifyIntEq = UnifyIntEq
