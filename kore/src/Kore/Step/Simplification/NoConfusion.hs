@@ -43,10 +43,11 @@ matchEqualInjectiveHeadsAndEquals first second
       , firstHead == secondHead --is one of the above redundant in light of this?
         =
         Just
-            UnifyEqualInjectiveHeadsAndEquals{
-                firstHead,
-                firstChildren,
-                secondChildren}
+            UnifyEqualInjectiveHeadsAndEquals
+                { firstHead
+                , firstChildren
+                , secondChildren
+                }
     | otherwise = Nothing
 {-# INLINE matchEqualInjectiveHeadsAndEquals #-}
 
