@@ -25,7 +25,7 @@ import Prelude.Kore hiding (
     concat,
  )
 
-data UnifyEqualInjectiveHeads= UnifyEqualInjectiveHeads
+data UnifyEqualInjectiveHeads = UnifyEqualInjectiveHeads
     { firstHead :: Symbol
     , firstChildren :: [TermLike RewritingVariableName]
     , secondChildren :: [TermLike RewritingVariableName]
@@ -39,9 +39,8 @@ matchEqualInjectiveHeadsAndEquals first second
     | App_ firstHead firstChildren <- first
       , App_ secondHead secondChildren <- second
       , Symbol.isInjective firstHead
-      -- We do not need to check if secondHead is injective once we test for equality.
-      , firstHead == secondHead
-        =
+      , -- We do not need to check if secondHead is injective once we test for equality.
+        firstHead == secondHead =
         Just
             UnifyEqualInjectiveHeads
                 { firstHead

@@ -457,7 +457,6 @@ unifyInt term1 term2 unifyData
     | on (==) internalIntValue int1 int2 =
         return $ Pattern.fromTermLike term1
     | otherwise = explainAndReturnBottom "distinct integers" term1 term2
-
   where
     UnifyInt{int1, int2} = unifyData
 

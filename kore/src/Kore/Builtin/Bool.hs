@@ -189,13 +189,13 @@ unifyBool ::
     UnifyBool ->
     unifier (Pattern RewritingVariableName)
 unifyBool termLike1 termLike2 unifyData
-    | bool1 == bool2
-    = return (Pattern.fromTermLike termLike1)
-    | otherwise
-    = Unify.explainAndReturnBottom
-        "different Bool domain values"
-        termLike1
-        termLike2
+    | bool1 == bool2 =
+        return (Pattern.fromTermLike termLike1)
+    | otherwise =
+        Unify.explainAndReturnBottom
+            "different Bool domain values"
+            termLike1
+            termLike2
   where
     UnifyBool{bool1, bool2} = unifyData
 
