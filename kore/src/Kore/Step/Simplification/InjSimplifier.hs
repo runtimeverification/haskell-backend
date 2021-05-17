@@ -43,7 +43,7 @@ data Distinct = Distinct | Unknown
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-data InjPair variable = InjPair { inj1, inj2 :: Inj (TermLike variable) }
+data InjPair variable = InjPair {inj1, inj2 :: Inj (TermLike variable)}
 
 data InjUnify variable
     = InjFromEqual !(InjPair variable)
