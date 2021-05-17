@@ -223,8 +223,8 @@ matchKequalEq =
             & isJust
 
 data UnifyKequalsEq = UnifyKequalsEq
-    { eqTerm :: EqTerm (TermLike RewritingVariableName)
-    , value :: Bool
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , value :: !Bool
     }
 
 matchUnifyKequalsEq ::

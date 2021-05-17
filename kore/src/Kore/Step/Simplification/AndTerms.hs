@@ -427,8 +427,8 @@ bottomTermEquals
                             }
 
 data VariableFunctionAnd
-    = VariableFunctionAnd1 (ElementVariable RewritingVariableName)
-    | VariableFunctionAnd2 (ElementVariable RewritingVariableName)
+    = VariableFunctionAnd1 !(ElementVariable RewritingVariableName)
+    | VariableFunctionAnd2 !(ElementVariable RewritingVariableName)
 
 matchVariableFunctionAnd ::
     TermLike RewritingVariableName ->
@@ -684,10 +684,10 @@ domainValueAndConstructorErrors
 domainValueAndConstructorErrors _ _ = empty
 
 data UnifyDomainValue = UnifyDomainValue
-    { sort1 :: Sort
-    , val1 :: TermLike RewritingVariableName
-    , sort2 :: Sort
-    , val2 :: TermLike RewritingVariableName
+    { sort1 :: !Sort
+    , val1 :: !(TermLike RewritingVariableName)
+    , sort2 :: !Sort
+    , val2 :: !(TermLike RewritingVariableName)
     }
 
 matchDomainValue ::
@@ -741,7 +741,7 @@ cannotUnifyDomainValues ::
 cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
 
 data UnifyStringLiteral = UnifyStringLiteral
-    { txt1, txt2 :: Text
+    { txt1, txt2 :: !Text
     }
 
 matchStringLiteral ::

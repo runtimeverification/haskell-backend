@@ -166,7 +166,7 @@ builtinFunctions =
     implies a b = not a || b
 
 data UnifyBool = UnifyBool
-    { bool1, bool2 :: InternalBool
+    { bool1, bool2 :: !InternalBool
     }
 
 matchBools ::

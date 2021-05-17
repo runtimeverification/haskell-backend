@@ -473,7 +473,7 @@ matchStringEqual =
             & isJust
 
 data UnifyString = UnifyString
-    { string1, string2 :: InternalString
+    { string1, string2 :: !InternalString
     }
 
 matchString ::

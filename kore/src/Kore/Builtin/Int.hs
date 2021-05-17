@@ -429,8 +429,7 @@ matchIntEqual =
             & isJust
 
 data UnifyInt = UnifyInt
-    { int1 :: !InternalInt
-    , int2 :: !InternalInt
+    { int1, int2 :: !InternalInt
     }
 
 matchInt ::
@@ -461,8 +460,8 @@ unifyInt term1 term2 unifyData
     UnifyInt{int1, int2} = unifyData
 
 data UnifyIntEq = UnifyIntEq
-    { eqTerm :: EqTerm (TermLike RewritingVariableName)
-    , value :: Bool
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , value :: !Bool
     }
 
 matchUnifyIntEq ::

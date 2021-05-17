@@ -26,9 +26,9 @@ import Prelude.Kore hiding (
  )
 
 data UnifyEqualInjectiveHeads = UnifyEqualInjectiveHeads
-    { firstHead :: Symbol
-    , firstChildren :: [TermLike RewritingVariableName]
-    , secondChildren :: [TermLike RewritingVariableName]
+    { firstHead :: !Symbol
+    , firstChildren :: ![TermLike RewritingVariableName]
+    , secondChildren :: ![TermLike RewritingVariableName]
     }
 
 matchEqualInjectiveHeadsAndEquals ::
