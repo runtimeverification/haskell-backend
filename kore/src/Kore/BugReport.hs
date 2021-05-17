@@ -24,6 +24,7 @@ import Control.Monad.Catch (
     generalBracket,
     handleAll,
  )
+import qualified Control.Monad.Extra as Monad
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Debug
 import qualified GHC.Generics as GHC
@@ -38,7 +39,10 @@ import Kore.Log.KoreLogOptions (
 import Options.Applicative
 import Prelude.Kore
 import System.Directory (
+    copyFile,
+    doesFileExist,
     listDirectory,
+    removeFile,
     removePathForcibly,
  )
 import System.Exit (
@@ -102,6 +106,12 @@ writeBugReportArchive ::
     FilePath ->
     IO ()
 writeBugReportArchive base tar = do
+    let sessionCommands = ".sessionCommands"
+    Monad.whenM
+        (doesFileExist sessionCommands)
+        $ do
+            copyFile sessionCommands (base </> tail sessionCommands)
+            removeFile sessionCommands
     contents <- listDirectory base
     let filename = tar <.> "tar" <.> "gz"
     ByteString.Lazy.writeFile filename . GZip.compress . Tar.write

@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.44.0.0"; };
+      identifier = { name = "kore"; version = "0.45.0.0"; };
       license = "NCSA";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -119,6 +119,7 @@
           "Kore/Attribute/Axiom/Unit"
           "Kore/Attribute/Comm"
           "Kore/Attribute/Constructor"
+          "Kore/Attribute/Definition"
           "Kore/Attribute/Function"
           "Kore/Attribute/Functional"
           "Kore/Attribute/Hook"
@@ -222,6 +223,7 @@
           "Kore/Internal/ApplicationSorts"
           "Kore/Internal/Condition"
           "Kore/Internal/Conditional"
+          "Kore/Internal/From"
           "Kore/Internal/Inj"
           "Kore/Internal/InternalBool"
           "Kore/Internal/InternalBytes"
@@ -722,6 +724,7 @@
             "Test/Kore/IndexedModule/SortGraph"
             "Test/Kore/Internal/ApplicationSorts"
             "Test/Kore/Internal/Condition"
+            "Test/Kore/Internal/From"
             "Test/Kore/Internal/Key"
             "Test/Kore/Internal/MultiAnd"
             "Test/Kore/Internal/OrCondition"

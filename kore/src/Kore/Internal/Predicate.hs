@@ -206,6 +206,54 @@ instance Synthetic Attribute.Simplified (PredicateF variable) where
         OrF or' -> synthetic or'
         TopF top -> synthetic top
 
+instance From (Ceil () (TermLike variable)) (PredicateF variable child) where
+    from = CeilF
+    {-# INLINE from #-}
+
+instance From (Floor () (TermLike variable)) (PredicateF variable child) where
+    from = FloorF
+    {-# INLINE from #-}
+
+instance From (Top () child) (PredicateF variable child) where
+    from = TopF
+    {-# INLINE from #-}
+
+instance From (Bottom () child) (PredicateF variable child) where
+    from = BottomF
+    {-# INLINE from #-}
+
+instance From (Equals () (TermLike variable)) (PredicateF variable child) where
+    from = EqualsF
+    {-# INLINE from #-}
+
+instance From (In () (TermLike variable)) (PredicateF variable child) where
+    from = InF
+    {-# INLINE from #-}
+
+instance From (Exists () variable child) (PredicateF variable child) where
+    from = ExistsF
+    {-# INLINE from #-}
+
+instance From (Forall () variable child) (PredicateF variable child) where
+    from = ForallF
+    {-# INLINE from #-}
+
+instance From (And () child) (PredicateF variable child) where
+    from = AndF
+    {-# INLINE from #-}
+
+instance From (Or () child) (PredicateF variable child) where
+    from = OrF
+    {-# INLINE from #-}
+
+instance From (Implies () child) (PredicateF variable child) where
+    from = ImpliesF
+    {-# INLINE from #-}
+
+instance From (Iff () child) (PredicateF variable child) where
+    from = IffF
+    {-# INLINE from #-}
+
 newtype Predicate variable = Predicate
     { getPredicate ::
         Cofree (PredicateF variable) (PredicatePattern variable)
