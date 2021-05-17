@@ -26,43 +26,43 @@ module Kore.Internal.TermLike.TermLike (
     deleteFreeVariable,
 ) where
 
-import Control.Comonad.Trans.Cofree
-    ( tailF
-    )
-import Control.Lens
-    ( Lens'
-    )
+import Control.Comonad.Trans.Cofree (
+    tailF,
+ )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
+import Data.Functor.Identity (
+    Identity (..),
+ )
 import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
-import Data.HashSet
-    ( HashSet
-    )
+import Data.HashSet (
+    HashSet,
+ )
 import qualified Data.HashSet as HashSet
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
+import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
@@ -70,12 +70,12 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness
-    ( Endianness
-    )
-import Kore.Builtin.Signedness.Signedness
-    ( Signedness
-    )
+import Kore.Builtin.Endianness.Endianness (
+    Endianness,
+ )
+import Kore.Builtin.Signedness.Signedness (
+    Signedness,
+ )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -86,18 +86,18 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key
-    ( Key
-    , KeyAttributes (KeyAttributes)
-    , KeyF
-    )
+import Kore.Internal.Key (
+    Key,
+    KeyAttributes (KeyAttributes),
+    KeyF,
+ )
 import qualified Kore.Internal.Key as Key
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Internal.Symbol
-    ( Symbol
-    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
@@ -123,9 +123,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Prelude.Kore
@@ -825,14 +825,14 @@ instance
 instance
     ( Ord variable
     , Hashable variable
-    )
-    => From Key (TermLike variable)
+    ) =>
+    From Key (TermLike variable)
     where
     from = Recursive.fold worker
       where
         worker (_ :< keyF) =
             from @(KeyF _) @(TermLikeF _ _) keyF
-            & synthesize
+                & synthesize
 
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
 toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _ _)
