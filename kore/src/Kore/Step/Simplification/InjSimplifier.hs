@@ -43,10 +43,12 @@ data Distinct = Distinct | Unknown
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-data InjUnify
-    = InjFromEqual
-    | InjFrom1SubsortInjFrom2
-    | InjFrom2SubsortInjFrom1
+data InjPair variable = InjPair { inj1, inj2 :: Inj (TermLike variable) }
+
+data InjUnify variable
+    = InjFromEqual !(InjPair variable)
+    | InjFrom1SubsortInjFrom2 !(InjPair variable)
+    | InjFrom2SubsortInjFrom1 !(InjPair variable)
 
 data InjSimplifier = InjSimplifier
     { -- | Is 'injFrom' a proper subsort of 'injTo'?
@@ -68,7 +70,7 @@ data InjSimplifier = InjSimplifier
         InternalVariable variable =>
         Inj (TermLike variable) ->
         Inj (TermLike variable) ->
-        Either Distinct InjUnify
+        Either Distinct (InjUnify variable)
     , -- | Push down the conjunction of 'Inj':
       --
       --        @
@@ -83,9 +85,7 @@ data InjSimplifier = InjSimplifier
       unifyInjs ::
         forall variable.
         InternalVariable variable =>
-        Inj (TermLike variable) ->
-        Inj (TermLike variable) ->
-        Either Distinct InjUnify ->
+        Either Distinct (InjUnify variable) ->
         Either Distinct (Inj (Pair (TermLike variable)))
     , -- | Evaluate the 'Ceil' of 'Inj':
       --
@@ -176,12 +176,12 @@ mkInjSimplifier sortGraph =
         forall variable.
         Inj (TermLike variable) ->
         Inj (TermLike variable) ->
-        Either Distinct InjUnify
+        Either Distinct (InjUnify variable)
     matchInjs inj1 inj2
         | injTo1 /= injTo2 = Left Distinct
-        | injFrom1 == injFrom2 = Right InjFromEqual
-        | injFrom2 `isSubsortOf'` injFrom1 = Right InjFrom2SubsortInjFrom1
-        | injFrom1 `isSubsortOf'` injFrom2 = Right InjFrom1SubsortInjFrom2
+        | injFrom1 == injFrom2 = Right $ InjFromEqual InjPair{inj1, inj2}
+        | injFrom2 `isSubsortOf'` injFrom1 = Right $ InjFrom2SubsortInjFrom1 InjPair{inj1, inj2}
+        | injFrom1 `isSubsortOf'` injFrom2 = Right $ InjFrom1SubsortInjFrom2 InjPair{inj1, inj2}
         -- If the child patterns are simplifiable, then they could eventually be
         -- simplified to produce matching sort injections, but if they are
         -- non-simplifiable, then they will never match.
@@ -214,31 +214,38 @@ mkInjSimplifier sortGraph =
     unifyInjs ::
         forall variable.
         InternalVariable variable =>
-        Inj (TermLike variable) ->
-        Inj (TermLike variable) ->
-        Either Distinct InjUnify ->
+        Either Distinct (InjUnify variable) ->
         Either Distinct (Inj (Pair (TermLike variable)))
-    unifyInjs inj1 inj2 unify =
+    unifyInjs unify =
         case unify of
             Left d -> Left d
-            Right InjFromEqual ->
+            Right (InjFromEqual injPair) ->
                 assert (injTo1 == injTo2) $ do
                     let child1 = injChild inj1
                         child2 = injChild inj2
                     pure (Pair child1 child2 <$ inj1)
-            Right InjFrom2SubsortInjFrom1 ->
+              where
+                InjPair{inj1, inj2} = injPair
+                Inj{injTo = injTo1} = inj1
+                Inj{injTo = injTo2} = inj2
+            Right (InjFrom2SubsortInjFrom1 injPair) ->
                 assert (injTo1 == injTo2) $ do
                     let child1' = injChild inj1
                         child2' = evaluateInj inj2{injTo = injFrom1}
                     pure (Pair child1' child2' <$ inj1)
-            Right InjFrom1SubsortInjFrom2 ->
+              where
+                InjPair{inj1, inj2} = injPair
+                Inj{injFrom = injFrom1, injTo = injTo1} = inj1
+                Inj{injTo = injTo2} = inj2
+            Right (InjFrom1SubsortInjFrom2 injPair) ->
                 assert (injTo1 == injTo2) $ do
                     let child1' = evaluateInj inj1{injTo = injFrom2}
                         child2' = injChild inj2
                     pure (Pair child1' child2' <$ inj2)
-      where
-        Inj{injFrom = injFrom1, injTo = injTo1} = inj1
-        Inj{injFrom = injFrom2, injTo = injTo2} = inj2
+              where
+                InjPair{inj1, inj2} = injPair
+                Inj{injTo = injTo1} = inj1
+                Inj{injFrom = injFrom2, injTo = injTo2} = inj2
 
     injectTermTo injProto injChild injTo =
         evaluateInj injProto{injFrom, injTo, injChild}
@@ -252,7 +259,7 @@ unifyInj ::
     Inj (TermLike variable) ->
     Inj (TermLike variable) ->
     Either Distinct (Inj (Pair (TermLike variable)))
-unifyInj injSimplifier inj1 inj2 = unifyInjs injSimplifier inj1 inj2 (matchInjs injSimplifier inj1 inj2)
+unifyInj injSimplifier inj1 inj2 = unifyInjs injSimplifier (matchInjs injSimplifier inj1 inj2)
 
 normalize ::
     InjSimplifier ->

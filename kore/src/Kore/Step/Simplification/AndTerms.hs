@@ -503,9 +503,8 @@ variableFunctionEquals
                             (Substitution.assign (inject var) second)
             return (Pattern.withCondition second result)
 
-data SortInjectionAndEquals = SortInjectionAndEquals
-    { inj1, inj2 :: Inj (TermLike RewritingVariableName)
-    , matchData :: Either Distinct InjUnify
+newtype SortInjectionAndEquals = SortInjectionAndEquals
+    { matchData :: Either Distinct (InjUnify RewritingVariableName)
     }
 
 matchSortInjectionAndEquals ::
@@ -518,7 +517,7 @@ matchSortInjectionAndEquals injSimplifier first second
       , Inj_ inj2 <- second =
         case matchInjs injSimplifier inj1 inj2 of
             Left Unknown -> Nothing
-            matchData -> Just SortInjectionAndEquals{inj1, inj2, matchData}
+            matchData -> Just SortInjectionAndEquals{matchData}
     | otherwise = Nothing
 {-# INLINE matchSortInjectionAndEquals #-}
 
@@ -548,8 +547,7 @@ sortInjectionAndEquals ::
     SortInjectionAndEquals ->
     unifier (Pattern RewritingVariableName)
 sortInjectionAndEquals termMerger injSimplifier first second unifyData = do
-    -- injSimplifier <- Simplifier.askInjSimplifier
-    unifyInjs injSimplifier inj1 inj2 matchData & either distinct merge
+    unifyInjs injSimplifier matchData & either distinct merge
   where
     emptyIntersection = explainAndReturnBottom "Empty sort intersection"
     distinct Distinct = emptyIntersection first second
@@ -561,7 +559,7 @@ sortInjectionAndEquals termMerger injSimplifier first second unifyData = do
             inj' = evaluateInj inj{injChild = childTerm}
         return $ Pattern.withCondition inj' childCondition
 
-    SortInjectionAndEquals{inj1, inj2, matchData} = unifyData
+    SortInjectionAndEquals{matchData} = unifyData
 
 matchConstructorSortInjectionAndEquals ::
     TermLike RewritingVariableName ->
