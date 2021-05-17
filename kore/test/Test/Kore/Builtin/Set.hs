@@ -138,6 +138,7 @@ import Test.Kore.Builtin.Int (
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -210,7 +211,10 @@ test_unit =
     becomes original expect name =
         testCase name $ do
             actual <- runNoSMT $ evaluate original
-            assertEqual "" (Pattern.fromTermLike expect) actual
+            assertEqual
+                ""
+                (OrPattern.fromTermLike expect)
+                actual
 
 test_getUnit :: TestTree
 test_getUnit =
@@ -226,8 +230,8 @@ test_getUnit =
                         ]
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
-            (===) (Test.Bool.asPattern False) =<< evaluateT patIn
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_inElement :: TestTree
@@ -240,8 +244,8 @@ test_inElement =
                 patElement = mkApplySymbol elementSetSymbol [patKey]
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
-            (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_inUnitSymbolic :: TestTree
@@ -258,8 +262,8 @@ test_inUnitSymbolic =
                         ]
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
-            (===) (Test.Bool.asPattern False) =<< evaluateT patIn
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patIn
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_inElementSymbolic :: TestTree
@@ -293,11 +297,16 @@ test_inConcatSymbolic =
                 conditionTerm = mkCeil boolSort patSet
             condition <- evaluateT conditionTerm
             let expected =
-                    Condition.andCondition
-                        patTrue
-                        (Conditional.withoutTerm condition)
+                    MultiOr.map
+                        ( Condition.andCondition patTrue
+                            . Conditional.withoutTerm
+                        )
+                        condition
             actual <- evaluateT patIn
-            Pattern.assertEquivalent (===) expected actual
+            Pattern.assertEquivalent'
+                (===)
+                (from expected :: [Pattern RewritingVariableName])
+                (from actual :: [Pattern RewritingVariableName])
         )
 
 test_inConcat :: TestTree
@@ -313,8 +322,8 @@ test_inConcat =
                 patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
-            (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patIn
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_concatUnit :: TestTree
@@ -333,8 +342,8 @@ test_concatUnit =
             expect <- evaluateT patValues
             (===) expect =<< evaluateT patConcat1
             (===) expect =<< evaluateT patConcat2
-            (===) Pattern.top =<< evaluateT predicate1
-            (===) Pattern.top =<< evaluateT predicate2
+            (===) OrPattern.top =<< evaluateT predicate1
+            (===) OrPattern.top =<< evaluateT predicate2
         )
 
 test_concatAssociates :: TestTree
@@ -361,7 +370,7 @@ test_concatAssociates =
             concat12_3 <- evaluateT patConcat12_3
             concat1_23 <- evaluateT patConcat1_23
             (===) concat12_3 concat1_23
-            (===) Pattern.top =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_concatNormalizes :: TestTree
@@ -421,7 +430,7 @@ test_concatNormalizes =
             evalConcat <- evaluateT patConcat
             evalNormalized <- evaluateT patNormalized
             (===) evalConcat evalNormalized
-            (===) Pattern.top =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_difference :: TestTree
@@ -440,7 +449,7 @@ test_difference =
                 predicate = mkEquals_ patSet3 patDifference
             expect <- evaluateT patSet3
             (===) expect =<< evaluateT patDifference
-            (===) Pattern.top =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_difference_symbolic :: [TestTree]
@@ -530,7 +539,7 @@ test_toList =
                 predicate = mkEquals_ expectedList actualList
             expect <- evaluateT expectedList
             (===) expect =<< evaluateT actualList
-            (===) Pattern.top =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
   where
     implToList =
@@ -554,7 +563,7 @@ test_size =
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluateT patExpected
             (===) expect =<< evaluateT patActual
-            (===) Pattern.top =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_intersection_unit :: TestTree
@@ -562,9 +571,9 @@ test_intersection_unit =
     testPropertyWithSolver "intersection(as, unit()) === unit()" $ do
         as <- forAll genSetPattern
         let original = intersectionSet as unitSet
-            expect = Pattern.fromTermLike (asInternal HashSet.empty)
+            expect = OrPattern.fromTermLike $ asInternal HashSet.empty
         (===) expect =<< evaluateT original
-        (===) Pattern.top =<< evaluateT (mkEquals_ original unitSet)
+        (===) OrPattern.top =<< evaluateT (mkEquals_ original unitSet)
 
 test_intersection_idem :: TestTree
 test_intersection_idem =
@@ -572,9 +581,9 @@ test_intersection_idem =
         as <- forAll genConcreteSet
         let termLike = mkSet_ as & fromConcrete
             original = intersectionSet termLike termLike
-            expect = Pattern.fromTermLike (asInternal as)
+            expect = OrPattern.fromTermLike $ asInternal as
         (===) expect =<< evaluateT original
-        (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
+        (===) OrPattern.top =<< evaluateT (mkEquals_ original termLike)
 
 test_list2set :: TestTree
 test_list2set =
@@ -587,9 +596,10 @@ test_list2set =
             termLike = mkSet_ set & fromConcrete
             input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
             original = list2setSet input
-            expect = Pattern.fromTermLike (asInternal set)
+            expect = OrPattern.fromTermLike $ asInternal set
         (===) expect =<< evaluateT original
-        (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
+        (===) OrPattern.top
+            =<< evaluateT (mkEquals_ original termLike)
 
 test_inclusion :: [TestTree]
 test_inclusion =
@@ -606,8 +616,8 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal True) patInclusion)
-            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patInclusion
+            (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion success: empty set <= any set"
@@ -615,8 +625,8 @@ test_inclusion =
             patSomeSet <- forAll genSetPattern
             let patInclusion = inclusionSet unitSet patSomeSet
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
-            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern True) =<< evaluateT patInclusion
+            (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: not (some nonempty set <= empty set)"
@@ -625,8 +635,8 @@ test_inclusion =
             let patSomeSet = elementSet patKey
                 patInclusion = inclusionSet patSomeSet unitSet
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
-            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patInclusion
+            (===) OrPattern.top =<< evaluateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: lhs key not included in rhs set"
@@ -641,8 +651,8 @@ test_inclusion =
                     mkImplies
                         (mkNot (mkEquals_ patKey1 patKey2))
                         (mkEquals_ (Test.Bool.asInternal False) patInclusion)
-            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
-            (===) Pattern.top =<< evaluateT predicate
+            (===) (Test.Bool.asOrPattern False) =<< evaluateT patInclusion
+            (===) OrPattern.top =<< evaluateT predicate
         )
     ]
 
@@ -672,7 +682,7 @@ test_symbolic =
                         )
             if HashSet.null values
                 then discard
-                else (===) expect =<< evaluateT patMap
+                else (===) (MultiOr.singleton expect) =<< evaluateT patMap
         )
 
 -- | Construct a pattern for a map which may have symbolic keys.
@@ -700,7 +710,7 @@ test_unifyConcreteIdem =
                 predicate = mkEquals_ patSet patAnd
             expect <- evaluateT patSet
             (===) expect =<< evaluateT patAnd
-            (===) Pattern.top =<< evaluateT predicate
+            (===) OrPattern.top =<< evaluateT predicate
         )
 
 test_unifyConcreteDistinct :: TestTree
@@ -716,8 +726,8 @@ test_unifyConcreteDistinct =
                 patSet2 = mkSet_ set2 & fromConcrete
                 conjunction = mkAnd patSet1 patSet2
                 predicate = mkEquals_ patSet1 conjunction
-            (===) Pattern.bottom =<< evaluateT conjunction
-            (===) Pattern.bottom =<< evaluateT predicate
+            (===) OrPattern.bottom =<< evaluateT conjunction
+            (===) OrPattern.bottom =<< evaluateT predicate
         )
 
 test_unifyFramingVariable :: TestTree
@@ -846,7 +856,7 @@ test_unifySelectFromEmpty =
     doesNotUnifyWith pat1 pat2 = do
         annotateShow pat1
         annotateShow pat2
-        (===) Pattern.bottom =<< evaluateT (mkAnd pat1 pat2)
+        (===) OrPattern.bottom =<< evaluateT (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
@@ -1907,6 +1917,7 @@ test_concretizeKeys =
                 Substitution.unsafeWrap
                     [(inject x, symbolicKey)]
             }
+            & MultiOr.singleton
 
 {- | Unify a concrete Set with symbolic-keyed Set in an axiom
 
@@ -1928,8 +1939,8 @@ test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
     testCaseWithoutSMT "unify Set with symbolic keys in axiom" $ do
         config <- evaluate $ pair symbolicKey concreteSet
-        actual <- runStep config axiom
-        assertEqual "" expected actual
+        actual <- MultiOr.traverse (flip runStep axiom) config
+        assertEqual "" expected (MultiOr.flatten actual)
   where
     x = mkIntVar (testId "x") & TermLike.mapVariables (pure mkRuleVariable)
     key = 1

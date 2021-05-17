@@ -124,6 +124,10 @@ import Kore.Attribute.RuleIndex (
 import Kore.Internal.Condition (
     Condition,
  )
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -594,7 +598,7 @@ showConfig ::
     Maybe ReplNode ->
     ReplM m ()
 showConfig =
-    showClaimStateComponent "Config" getConfiguration
+    showClaimStateComponent "Config" (from @_ @(OrPattern _) . getConfiguration)
 
 -- | Shows destination at node 'n', or current node if 'Nothing' is passed.
 showDest ::
@@ -605,13 +609,13 @@ showDest ::
 showDest =
     showClaimStateComponent
         "Destination"
-        (OrPattern.toPattern . getDestination)
+        getDestination
 
 showClaimStateComponent ::
     Monad m =>
     -- | component name
     String ->
-    (SomeClaim -> Pattern RewritingVariableName) ->
+    (SomeClaim -> OrPattern RewritingVariableName) ->
     Maybe ReplNode ->
     ReplM m ()
 showClaimStateComponent name transformer maybeNode = do
@@ -1366,7 +1370,7 @@ showRewriteRule rule =
 
 -- | Pretty prints a strategy node, using an omit list to hide specified children.
 prettyClaimStateComponent ::
-    (SomeClaim -> Pattern RewritingVariableName) ->
+    (SomeClaim -> OrPattern RewritingVariableName) ->
     -- | omit list
     Set String ->
     -- | pattern
@@ -1388,7 +1392,8 @@ prettyClaimStateComponent transformation omitList =
             }
   where
     prettyComponent =
-        unparseToString . fmap hide . getRewritingPattern
+        unparseToString . OrPattern.toTermLike
+            . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::
         TermLike VariableName ->

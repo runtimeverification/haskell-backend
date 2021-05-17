@@ -9,18 +9,14 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Next (
     simplify,
-    mkNextDistributeOr,
 ) where
 
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike (
-    markSimplified,
- )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -43,23 +39,4 @@ simplify Next{nextChild = child} = simplifyEvaluated child
 simplifyEvaluated ::
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
-simplifyEvaluated simplified =
-    OrPattern.fromTermLike $
-        TermLike.markSimplified $
-            mkNextDistributeOr $
-                Pattern.toTermLike $
-                    OrPattern.toPattern simplified
-
-mkNextDistributeOr ::
-    TermLike RewritingVariableName -> TermLike RewritingVariableName
-mkNextDistributeOr (TermLike (attrs :< OrF Or{orSort, orFirst, orSecond})) =
-    TermLike
-        ( attrs
-            :< OrF
-                ( Or
-                    orSort
-                    (mkNextDistributeOr orFirst)
-                    (mkNextDistributeOr orSecond)
-                )
-        )
-mkNextDistributeOr term = mkNext term
+simplifyEvaluated = MultiOr.map (Pattern.markSimplified . fmap mkNext)

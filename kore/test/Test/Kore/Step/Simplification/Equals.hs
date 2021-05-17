@@ -1027,7 +1027,7 @@ assertBidirectionalEqualityResult
                                 [ firstName ++ " vs " ++ secondName ++ ":"
                                 , "Expected " <> name
                                 , unparseToString
-                                    (OrPattern.toPattern <$> orderedEquality)
+                                    (OrPattern.toTermLike <$> orderedEquality)
                                 , "would simplify to:"
                                 , unlines (unparseToString <$> toList expect)
                                 , "but instead found:"

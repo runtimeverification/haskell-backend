@@ -37,6 +37,9 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
@@ -67,7 +70,7 @@ test_update =
         val <- forAll Gen.unicode
         let val' = toInteger $ ord val
             bytes = BS.pack [val]
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -83,7 +86,7 @@ test_update =
         idx <- forAll $ Gen.int (Range.linear (-256) (-1))
         let bytes = E.encode8Bit str
             val' = toInteger $ ord val
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -98,7 +101,7 @@ test_update =
         val <- forAll Gen.unicode
         let bytes = E.encode8Bit str
             val' = toInteger $ ord val
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -115,7 +118,7 @@ test_update =
         , Test.Int.asInternal 0
         , Test.Int.asInternal (toInteger $ ord 'x')
         ]
-        (asPattern "xbcd")
+        (asOrPattern "xbcd")
     , testBytes
         "update 'abcd' 3 'x' = 'abcx"
         updateBytesSymbol
@@ -123,7 +126,7 @@ test_update =
         , Test.Int.asInternal 3
         , Test.Int.asInternal (toInteger $ ord 'x')
         ]
-        (asPattern "abcx")
+        (asOrPattern "abcx")
     ]
 
 test_get :: [TestTree]
@@ -132,7 +135,7 @@ test_get =
         str <- forAll genString
         idx <- forAll $ Gen.int (Range.linear (-256) (-1))
         let bytes = E.encode8Bit str
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -144,7 +147,7 @@ test_get =
     , testPropertyWithSolver "∀ b i (i > len b). get b i = ⊥" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -155,7 +158,7 @@ test_get =
         (===) expect actual
     , testPropertyWithSolver "∀ i. get empty i = ⊥" $ do
         idx <- forAll $ Gen.int (Range.linear 0 256)
-        let expect = bottom
+        let expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -170,14 +173,14 @@ test_get =
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         ]
-        (Test.Int.asPattern $ toInteger $ ord 'a')
+        (Test.Int.asOrPattern $ toInteger $ ord 'a')
     , testBytes
         "get 'abcd' 3 = 'd'"
         getBytesSymbol
         [ asInternal "abcd"
         , Test.Int.asInternal 3
         ]
-        (Test.Int.asPattern $ toInteger $ ord 'd')
+        (Test.Int.asOrPattern $ toInteger $ ord 'd')
     ]
 
 test_substr :: [TestTree]
@@ -187,7 +190,7 @@ test_substr =
         delta <- forAll $ Gen.int (Range.linear 1 10)
         end <- forAll $ Gen.int (Range.linear 0 (T.length str - delta))
         let bytes = E.encode8Bit str
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -201,7 +204,7 @@ test_substr =
         str <- forAll $ genString' 20
         end <- forAll $ Gen.int (Range.linear 21 30)
         let bytes = E.encode8Bit str
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -216,7 +219,7 @@ test_substr =
         begin <- forAll $ Gen.int (Range.linear (-256) (-1))
         end <- forAll $ Gen.int (Range.linear 0 256)
         let bytes = E.encode8Bit str
-            expect = bottom
+            expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -232,28 +235,28 @@ test_substr =
         , Test.Int.asInternal 0
         , Test.Int.asInternal 0
         ]
-        (asPattern "")
+        (asOrPattern "")
     , testSubstrBytes
         "substr 'abcd' 0 1 = 'a'"
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         , Test.Int.asInternal 1
         ]
-        (asPattern "a")
+        (asOrPattern "a")
     , testSubstrBytes
         "substr 'abcd' 1 3 = 'bc'"
         [ asInternal "abcd"
         , Test.Int.asInternal 1
         , Test.Int.asInternal 3
         ]
-        (asPattern "bc")
+        (asOrPattern "bc")
     , testSubstrBytes
         "substr 'abcd' 0 4 = 'abcd'"
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         , Test.Int.asInternal 4
         ]
-        (asPattern "abcd")
+        (asOrPattern "abcd")
     ]
   where
     testSubstrBytes ::
@@ -262,7 +265,7 @@ test_substr =
         -- | arguments of @substrBytes@ symbol
         [TermLike RewritingVariableName] ->
         -- | expected result
-        Pattern RewritingVariableName ->
+        OrPattern RewritingVariableName ->
         TestTree
     testSubstrBytes testName = testBytes testName substrBytesSymbol
 
@@ -272,7 +275,7 @@ test_replaceAt =
         str <- forAll genString
         idx <- forAll $ Gen.int (Range.linear 0 256)
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -285,7 +288,7 @@ test_replaceAt =
     , testPropertyWithSolver "∀ b i (b /= ''). replaceAt '' i b = ⊥" $ do
         str <- forAll $ Gen.text (Range.linear 1 256) Gen.alphaNum
         idx <- forAll $ Gen.int (Range.linear 0 256)
-        let expect = bottom
+        let expect = OrPattern.bottom
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -303,7 +306,7 @@ test_replaceAt =
             new <- forAll $ Gen.text (Range.linear 1 256) Gen.alphaNum
             let bytes = E.encode8Bit str
                 bytes' = E.encode8Bit new
-                expect = bottom
+                expect = OrPattern.bottom
             actual <-
                 evaluateT $
                     mkApplySymbol
@@ -320,7 +323,7 @@ test_replaceAt =
         , Test.Int.asInternal 0
         , asInternal "12"
         ]
-        (asPattern "12cd")
+        (asOrPattern "12cd")
     , testBytes
         "replaceAt 'abcd' 1 '12' = 'a12d'"
         replaceAtBytesSymbol
@@ -328,7 +331,7 @@ test_replaceAt =
         , Test.Int.asInternal 1
         , asInternal "12"
         ]
-        (asPattern "a12d")
+        (asOrPattern "a12d")
     , testBytes
         "replaceAt 'abcd' 3 '12' = 'abc12'"
         replaceAtBytesSymbol
@@ -336,7 +339,7 @@ test_replaceAt =
         , Test.Int.asInternal 3
         , asInternal "12"
         ]
-        (asPattern "abc12")
+        (asOrPattern "abc12")
     ]
 
 test_padRight :: [TestTree]
@@ -345,7 +348,7 @@ test_padRight =
         str <- forAll genString
         val <- forAll Gen.alphaNum
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -362,7 +365,7 @@ test_padRight =
         , Test.Int.asInternal 5
         , Test.Int.asInternal (toInteger $ ord 'e')
         ]
-        (asPattern "abcde")
+        (asOrPattern "abcde")
     ]
 
 test_padLeft :: [TestTree]
@@ -371,7 +374,7 @@ test_padLeft =
         str <- forAll genString
         val <- forAll Gen.alphaNum
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -388,7 +391,7 @@ test_padLeft =
         , Test.Int.asInternal 5
         , Test.Int.asInternal (toInteger $ ord 'e')
         ]
-        (asPattern "eabcd")
+        (asOrPattern "eabcd")
     ]
 
 test_reverse :: [TestTree]
@@ -396,7 +399,7 @@ test_reverse =
     [ testPropertyWithSolver "∀ b. reverse (reverse b) = b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -412,7 +415,7 @@ test_reverse =
         reverseBytesSymbol
         [ asInternal "abcd"
         ]
-        (asPattern "dcba")
+        (asOrPattern "dcba")
     ]
 
 test_length :: [TestTree]
@@ -422,13 +425,13 @@ test_length =
         lengthBytesSymbol
         [ asInternal "abcd"
         ]
-        (Test.Int.asPattern 4)
+        (Test.Int.asOrPattern 4)
     , testBytes
         "length '' = 0"
         lengthBytesSymbol
         [ asInternal ""
         ]
-        (Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     ]
 
 test_concat :: [TestTree]
@@ -436,7 +439,7 @@ test_concat =
     [ testPropertyWithSolver "∀ b. concat b '' = b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -448,7 +451,7 @@ test_concat =
     , testPropertyWithSolver "∀ b. concat '' b = b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -463,7 +466,7 @@ test_concat =
         [ asInternal "abcd"
         , asInternal "efgh"
         ]
-        (asPattern "abcdefgh")
+        (asOrPattern "abcdefgh")
     ]
 
 test_reverse_length :: TestTree
@@ -471,7 +474,7 @@ test_reverse_length =
     testPropertyWithSolver "∀ b. length (reverse b) = length b" $ do
         str <- forAll genString
         let bytes = E.encode8Bit str
-            expect = Test.Int.asPattern $ toInteger $ BS.length bytes
+            expect = Test.Int.asOrPattern $ toInteger $ BS.length bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -489,7 +492,7 @@ test_update_get =
         str <- forAll $ Gen.text (Range.linear 1 256) Gen.alphaNum
         idx <- forAll $ Gen.int (Range.linear 0 (T.length str - 1))
         let bytes = E.encode8Bit str
-            expect = asPattern bytes
+            expect = asOrPattern bytes
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -508,7 +511,7 @@ test_bytes2string_string2bytes :: TestTree
 test_bytes2string_string2bytes =
     testPropertyWithSolver "∀ s. bytes2string (string2bytes s) = s" $ do
         str <- forAll genString
-        let expect = Test.String.asPattern str
+        let expect = Test.String.asOrPattern str
         actual <-
             evaluateT $
                 mkApplySymbol
@@ -646,11 +649,14 @@ asInternal = InternalBytes.asInternal bytesSort
 asPattern :: InternalVariable variable => ByteString -> Pattern variable
 asPattern = InternalBytes.asPattern bytesSort
 
+asOrPattern :: InternalVariable variable => ByteString -> OrPattern variable
+asOrPattern = MultiOr.singleton . asPattern
+
 testBytes ::
     HasCallStack =>
     String ->
     Symbol ->
     [TermLike RewritingVariableName] ->
-    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
     TestTree
 testBytes name = testSymbolWithoutSolver evaluate name

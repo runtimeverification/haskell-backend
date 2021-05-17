@@ -15,6 +15,7 @@ module Test.Kore.Builtin.Bool (
     test_contradiction,
     --
     asPattern,
+    asOrPattern,
     asInternal,
 ) where
 
@@ -26,6 +27,8 @@ import Hedgehog hiding (
 import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -93,9 +96,11 @@ asInternal ::
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern ::
-    InternalVariable variable => Bool -> Pattern variable
+asPattern :: InternalVariable variable => Bool -> Pattern variable
 asPattern = Bool.asPattern boolSort
+
+asOrPattern :: InternalVariable variable => Bool -> OrPattern variable
+asOrPattern = MultiOr.singleton . asPattern
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary ::
@@ -108,7 +113,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = asPattern $ impl a b
+        let expect = asOrPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -124,7 +129,7 @@ testUnary ::
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
-        let expect = asPattern $ impl a
+        let expect = asOrPattern $ impl a
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where

@@ -17,6 +17,7 @@ module Test.Kore.Builtin.String (
     test_contradiction,
     --
     asPattern,
+    asOrPattern,
     asInternal,
 ) where
 
@@ -35,6 +36,8 @@ import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -63,6 +66,7 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -82,7 +86,7 @@ testComparison name impl symb =
     testPropertyWithSolver name $ do
         a <- forAll genString
         b <- forAll genString
-        let expect = Test.Bool.asPattern (impl a b)
+        let expect = Test.Bool.asOrPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
 
@@ -98,17 +102,17 @@ test_concat =
         "concat simple"
         concatStringSymbol
         (asInternal <$> ["foo", "bar"])
-        (asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "concat left identity"
         concatStringSymbol
         (asInternal <$> ["", "bar"])
-        (asPattern "bar")
+        (asOrPattern "bar")
     , testString
         "concat right identity"
         concatStringSymbol
         (asInternal <$> ["foo", ""])
-        (asPattern "foo")
+        (asOrPattern "foo")
     ]
 
 test_substr :: [TestTree]
@@ -117,27 +121,27 @@ test_substr =
         "substr simple"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal 6]
-        (asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "substr out of bounds"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal 10]
-        (asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "substr negative start"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal (-10), Test.Int.asInternal 6]
-        (asPattern "foobar")
+        (asOrPattern "foobar")
     , testString
         "substr negative end"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal (-1)]
-        (asPattern "")
+        (asOrPattern "")
     , testString
         "substr actual substring"
         substrStringSymbol
         [asInternal "foobar", Test.Int.asInternal 0, Test.Int.asInternal 3]
-        (asPattern "foo")
+        (asOrPattern "foo")
     ]
 
 test_length :: [TestTree]
@@ -146,12 +150,12 @@ test_length =
         "length simple"
         lengthStringSymbol
         [asInternal "foobar"]
-        (Test.Int.asPattern 6)
+        (Test.Int.asOrPattern 6)
     , Test.Int.testInt
         "length zero"
         lengthStringSymbol
         [asInternal ""]
-        (Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     ]
 
 test_chr :: [TestTree]
@@ -160,12 +164,12 @@ test_chr =
         "STRING.chr(48) is '0'"
         chrStringSymbol
         [Test.Int.asInternal 48]
-        (asPattern "0")
+        (asOrPattern "0")
     , testString
         "STRING.chr(100) is 'd'"
         chrStringSymbol
         [Test.Int.asInternal 100]
-        (asPattern "d")
+        (asOrPattern "d")
     ]
 
 test_ord :: [TestTree]
@@ -174,22 +178,22 @@ test_ord =
         "STRING.ord('0') is 48"
         ordStringSymbol
         [asInternal "0"]
-        (Test.Int.asPattern 48)
+        (Test.Int.asOrPattern 48)
     , Test.Int.testInt
         "STRING.ord('d') is 100"
         ordStringSymbol
         [asInternal "d"]
-        (Test.Int.asPattern 100)
+        (Test.Int.asOrPattern 100)
     , Test.Int.testInt
         "STRING.ord('') is bottom"
         ordStringSymbol
         [asInternal ""]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "STRING.ord('foo') is bottom"
         ordStringSymbol
         [asInternal "foo"]
-        bottom
+        OrPattern.bottom
     ]
 
 test_find :: [TestTree]
@@ -198,32 +202,32 @@ test_find =
         "find simple"
         findStringSymbol
         [asInternal "foobar", asInternal "foobar", Test.Int.asInternal 0]
-        (Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     , Test.Int.testInt
         "find subpattern"
         findStringSymbol
         [asInternal "foobar", asInternal "bar", Test.Int.asInternal 0]
-        (Test.Int.asPattern 3)
+        (Test.Int.asOrPattern 3)
     , Test.Int.testInt
         "find empty pattern"
         findStringSymbol
         [asInternal "foobar", asInternal "", Test.Int.asInternal 0]
-        (Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     , Test.Int.testInt
         "find negative index"
         findStringSymbol
         [asInternal "foobar", asInternal "foobar", Test.Int.asInternal (-1)]
-        (Test.Int.asPattern 0)
+        (Test.Int.asOrPattern 0)
     , Test.Int.testInt
         "find after end of string"
         findStringSymbol
         [asInternal "foobar", asInternal "bar", Test.Int.asInternal 10]
-        (Test.Int.asPattern (-1))
+        (Test.Int.asOrPattern (-1))
     , Test.Int.testInt
         "find pattern that does not exist"
         findStringSymbol
         [asInternal "foobar", asInternal "nope", Test.Int.asInternal 0]
-        (Test.Int.asPattern (-1))
+        (Test.Int.asOrPattern (-1))
     ]
 
 test_string2Base :: [TestTree]
@@ -233,109 +237,109 @@ test_string2Base =
         "string2Base decimal simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 10]
-        (Test.Int.asPattern 42)
+        (Test.Int.asOrPattern 42)
     , Test.Int.testInt
         "string2Base decimal negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 10]
-        (Test.Int.asPattern (-42))
+        (Test.Int.asOrPattern (-42))
     , Test.Int.testInt
         "string2Base decimal is bottom"
         string2BaseStringSymbol
         [asInternal "-42.3", Test.Int.asInternal 10]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base decimal empty string is bottom"
         string2BaseStringSymbol
         [asInternal "", Test.Int.asInternal 10]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base decimal non-number is bottom"
         string2BaseStringSymbol
         [asInternal "foobar", Test.Int.asInternal 10]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base decimal from hex is bottom"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 10]
-        bottom
+        OrPattern.bottom
     , -- Octal
       Test.Int.testInt
         "string2Base octal simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 8]
-        (Test.Int.asPattern 34)
+        (Test.Int.asOrPattern 34)
     , Test.Int.testInt
         "string2Base octal negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 8]
-        (Test.Int.asPattern (-34))
+        (Test.Int.asOrPattern (-34))
     , Test.Int.testInt
         "string2Base octal is bottom"
         string2BaseStringSymbol
         [asInternal "-42.3", Test.Int.asInternal 8]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal empty string is bottom"
         string2BaseStringSymbol
         [asInternal "", Test.Int.asInternal 8]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal non-number is bottom"
         string2BaseStringSymbol
         [asInternal "foobar", Test.Int.asInternal 8]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base octal from hex is bottom"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 8]
-        bottom
+        OrPattern.bottom
     , -- Hexadecimal
       Test.Int.testInt
         "string2Base hex simple"
         string2BaseStringSymbol
         [asInternal "42", Test.Int.asInternal 16]
-        (Test.Int.asPattern 66)
+        (Test.Int.asOrPattern 66)
     , Test.Int.testInt
         "string2Base hex negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 16]
-        (Test.Int.asPattern (-66))
+        (Test.Int.asOrPattern (-66))
     , Test.Int.testInt
         "string2Base hex is bottom"
         string2BaseStringSymbol
         [asInternal "-42.3", Test.Int.asInternal 16]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base hex empty string is bottom"
         string2BaseStringSymbol
         [asInternal "", Test.Int.asInternal 16]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base hex non-number is bottom"
         string2BaseStringSymbol
         [asInternal "foobar", Test.Int.asInternal 16]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Base hex from hex"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 16]
-        (Test.Int.asPattern 47789)
+        (Test.Int.asOrPattern 47789)
     , Test.Int.testInt
         "string2Base base-36 from base-36"
         string2BaseStringSymbol
         [asInternal "zZ", Test.Int.asInternal 36]
-        (Test.Int.asPattern 1295)
+        (Test.Int.asOrPattern 1295)
     , Test.Int.testInt
         "string2Base base-36 negative"
         string2BaseStringSymbol
         [asInternal "-3k", Test.Int.asInternal 36]
-        (Test.Int.asPattern (-128))
+        (Test.Int.asOrPattern (-128))
     , Test.Int.testInt
         "string2Base bad base"
         string2BaseStringSymbol
         [asInternal "1", Test.Int.asInternal 37]
-        ( Pattern.fromTermLike $
+        ( OrPattern.fromTermLike $
             mkApplySymbol
                 string2BaseStringSymbol
                 [asInternal "1", Test.Int.asInternal 37]
@@ -348,22 +352,22 @@ test_base2String =
         "base2String basic decimal example"
         base2StringStringSymbol
         [Test.Int.asInternal 42, Test.Int.asInternal 10]
-        (asPattern "42")
+        (asOrPattern "42")
     , testString
         "base2String decimal negative"
         base2StringStringSymbol
         [Test.Int.asInternal (-42), Test.Int.asInternal 10]
-        (asPattern "-42")
+        (asOrPattern "-42")
     , testString
         "base2String hexadecimal example"
         base2StringStringSymbol
         [Test.Int.asInternal 51966, Test.Int.asInternal 16]
-        (asPattern "cafe")
+        (asOrPattern "cafe")
     , testString
         "base2String bad base"
         base2StringStringSymbol
         [Test.Int.asInternal 1, Test.Int.asInternal 37]
-        ( Pattern.fromTermLike $
+        ( OrPattern.fromTermLike $
             mkApplySymbol
                 base2StringStringSymbol
                 [Test.Int.asInternal 1, Test.Int.asInternal 37]
@@ -376,32 +380,32 @@ test_string2Int =
         "string2Base decimal simple"
         string2IntStringSymbol
         [asInternal "42"]
-        (Test.Int.asPattern 42)
+        (Test.Int.asOrPattern 42)
     , Test.Int.testInt
         "string2Int decimal negative"
         string2IntStringSymbol
         [asInternal "-42"]
-        (Test.Int.asPattern (-42))
+        (Test.Int.asOrPattern (-42))
     , Test.Int.testInt
         "string2Int decimal is bottom"
         string2IntStringSymbol
         [asInternal "-42.3"]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Int decimal empty string is bottom"
         string2IntStringSymbol
         [asInternal ""]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Int decimal non-number is bottom"
         string2IntStringSymbol
         [asInternal "foobar"]
-        bottom
+        OrPattern.bottom
     , Test.Int.testInt
         "string2Int decimal from hex is bottom"
         string2IntStringSymbol
         [asInternal "baad"]
-        bottom
+        OrPattern.bottom
     ]
 
 test_int2String :: [TestTree]
@@ -410,12 +414,12 @@ test_int2String =
         "int2String basic example"
         int2StringStringSymbol
         [Test.Int.asInternal 42]
-        (asPattern "42")
+        (asOrPattern "42")
     , testString
         "int2String decimal negative"
         int2StringStringSymbol
         [Test.Int.asInternal (-42)]
-        (asPattern "-42")
+        (asOrPattern "-42")
     ]
 
 test_token2String :: [TestTree]
@@ -424,7 +428,7 @@ test_token2String =
         "STRING.token2string(\\dv{userTokenSortId{}}('test')) is 'test'"
         token2StringStringSymbol
         [Builtin.makeDomainValueTerm userTokenSort "test"]
-        (asPattern "test")
+        (asOrPattern "test")
     ]
 
 test_string2Token :: [TestTree]
@@ -433,7 +437,9 @@ test_string2Token =
         "STRING.string2token('test') is \\dv{userTokenSortId{}}('test')"
         string2TokenStringSymbol
         [asInternal "test"]
-        (Builtin.makeDomainValuePattern userTokenSort "test")
+        ( MultiOr.singleton $
+            Builtin.makeDomainValuePattern userTokenSort "test"
+        )
     ]
 
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
@@ -444,12 +450,15 @@ asInternal = String.asInternal stringSort
 asPattern :: Text -> Pattern RewritingVariableName
 asPattern = String.asPattern stringSort
 
+asOrPattern :: Text -> OrPattern RewritingVariableName
+asOrPattern = MultiOr.singleton . asPattern
+
 testString ::
     HasCallStack =>
     String ->
     Symbol ->
     [TermLike RewritingVariableName] ->
-    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
     TestTree
 testString name = testSymbolWithoutSolver evaluate name
 
