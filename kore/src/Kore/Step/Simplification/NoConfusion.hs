@@ -6,7 +6,7 @@ module Kore.Step.Simplification.NoConfusion (
     equalInjectiveHeadsAndEquals,
     constructorAndEqualsAssumesDifferentHeads,
     matchEqualInjectiveHeadsAndEquals,
-    matchConstructorAndEqualsAssumesDifferentHeads,
+    matchDifferentConstructors,
 ) where
 
 import qualified Control.Monad as Monad
@@ -85,12 +85,12 @@ equalInjectiveHeadsAndEquals
             , secondChildren
             } = unifyData
 
-matchConstructorAndEqualsAssumesDifferentHeads ::
+matchDifferentConstructors ::
     (Symbol -> Bool) ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe ()
-matchConstructorAndEqualsAssumesDifferentHeads
+matchDifferentConstructors
     isOverloaded
     first
     second
@@ -101,7 +101,7 @@ matchConstructorAndEqualsAssumesDifferentHeads
           , Symbol.isConstructor secondHead || isOverloaded secondHead =
             Just ()
         | otherwise = empty
-{-# INLINE matchConstructorAndEqualsAssumesDifferentHeads #-}
+{-# INLINE matchDifferentConstructors #-}
 
 {- | Unify two constructor application patterns.
 

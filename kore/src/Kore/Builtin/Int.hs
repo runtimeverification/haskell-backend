@@ -475,6 +475,7 @@ matchUnifyIntEq first second
       , Just value <- Bool.matchBool second =
         Just UnifyIntEq{eqTerm, value}
     | otherwise = Nothing
+{-# INLINE matchUnifyIntEq #-}
 
 {- | Unification of the @INT.eq@ symbol.
 

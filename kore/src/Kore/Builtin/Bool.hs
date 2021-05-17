@@ -210,6 +210,7 @@ matchUnifyBoolAnd first second
         Just boolAnd
     | otherwise =
         Nothing
+{-# INLINE matchUnifyBoolAnd #-}
 
 unifyBoolAnd ::
     forall unifier.

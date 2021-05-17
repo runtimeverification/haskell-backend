@@ -170,7 +170,7 @@ maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first
         lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
     | Just () <- matchConstructorSortInjectionAndEquals first second =
         lift $ constructorSortInjectionAndEquals first second
-    | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
+    | Just () <- matchDifferentConstructors isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
     | otherwise =
         overloadedConstructorSortInjectionAndEquals childTransformers first second
@@ -268,7 +268,7 @@ maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first se
         lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
     | Just () <- matchConstructorSortInjectionAndEquals first second =
         lift $ constructorSortInjectionAndEquals first second
-    | Just () <- matchConstructorAndEqualsAssumesDifferentHeads isOverloaded first second =
+    | Just () <- matchDifferentConstructors isOverloaded first second =
         lift $ constructorAndEqualsAssumesDifferentHeads first second
     | otherwise =
         overloadedConstructorSortInjectionAndEquals childTransformers first second
@@ -339,6 +339,7 @@ matchBoolAnd term
         Just UnifyBoolAndTop
     | otherwise =
         Nothing
+{-# INLINE matchBoolAnd #-}
 
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd ::
@@ -442,6 +443,7 @@ matchVariableFunctionAnd first second
         Just $ VariableFunctionAnd2 v
     | otherwise =
         Nothing
+{-# INLINE matchVariableFunctionAnd #-}
 
 variableFunctionAnd ::
     MonadUnify unifier =>
@@ -456,30 +458,6 @@ variableFunctionAnd second unifyData =
             result =
                 Condition.fromSingleSubstitution
                     (Substitution.assign (inject v) second)
-
--- variableFunctionAnd ::
---     InternalVariable variable =>
---     MonadUnify unifier =>
---     TermLike variable ->
---     TermLike variable ->
---     MaybeT unifier (Pattern variable)
--- variableFunctionAnd
---     (ElemVar_ v1)
---     second@(ElemVar_ _) =
---         return $ Pattern.assign (inject v1) second
--- variableFunctionAnd
---     (ElemVar_ v)
---     second
---         | isFunctionPattern second =
---             -- Ceil predicate not needed since 'second' being bottom
---             -- will make the entire term bottom. However, one must
---             -- be careful to not just drop the term.
---             lift $ return (Pattern.withCondition second result)
---       where
---         result =
---             Condition.fromSingleSubstitution
---                 (Substitution.assign (inject v) second)
--- variableFunctionAnd _ _ = empty
 
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
@@ -542,7 +520,7 @@ matchSortInjectionAndEquals injSimplifier first second
             Left Unknown -> Nothing
             matchData -> Just SortInjectionAndEquals{inj1, inj2, matchData}
     | otherwise = Nothing
-{-# INLINE sortInjectionAndEquals #-}
+{-# INLINE matchSortInjectionAndEquals #-}
 
 {- | Simplify the conjunction of two sort injections.
 

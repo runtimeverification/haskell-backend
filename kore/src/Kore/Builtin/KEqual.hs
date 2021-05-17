@@ -237,6 +237,7 @@ matchUnifyKequalsEq first second
       , Just value <- Bool.matchBool second =
         Just UnifyKequalsEq{eqTerm, value}
     | otherwise = Nothing
+{-# INLINE matchUnifyKequalsEq #-}
 
 unifyKequalsEq ::
     forall unifier.
