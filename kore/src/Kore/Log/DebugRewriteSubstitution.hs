@@ -41,12 +41,15 @@ import Kore.Step.Step (
     UnifiedRule,
  )
 import Kore.Unparser (
-    unparseToCompactString,
+    Unparse,
+    unparse,
  )
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
+    renderString,
+    layoutOneLine,
  )
 import qualified Pretty
 
@@ -57,16 +60,19 @@ data DebugRewriteSubstitution = DebugRewriteSubstitution
     deriving stock (Show)
 
 instance Pretty DebugRewriteSubstitution where
-    pretty (DebugRewriteSubstitution{configuration, appliedRules}) =
+    pretty DebugRewriteSubstitution {configuration, appliedRules} =
         Pretty.vsep $ unparseRule <$> appliedRules
       where
+        unparseOneLine :: Unparse p => p -> String
+        unparseOneLine = renderString . layoutOneLine . unparse
+
         ruleInfo :: Maybe String -> [Pretty.Doc ann]
         ruleInfo uid =
             pretty
                 <$> [ "- type: rewriting" :: String
                     , "  from: >"
-                    , "    " ++ unparseToCompactString (Conditional.term configuration)
-                    , "  rule-id: " ++ maybe "null" id uid
+                    , "    " ++ unparseOneLine (Conditional.term configuration)
+                    , "  rule-id: " ++ fromMaybe "null" uid
                     , "  substitution:"
                     ]
 
@@ -74,15 +80,15 @@ instance Pretty DebugRewriteSubstitution where
         unparseRule Conditional.Conditional{term, substitution} =
             Pretty.vsep $ ruleInfo uid ++ map (Pretty.indent 2) subst
           where
-            uid = unpack <$> (getUniqueId $ uniqueId $ attributes term)
+            uid = unpack <$> getUniqueId (uniqueId $ attributes term)
             subst = getKV <$> unwrap substitution
             getKV assignment =
                 Pretty.vsep $
                     pretty
                         <$> [ "- key: >" :: String
-                            , "    " ++ unparseToCompactString (assignedVariable assignment)
+                            , "    " ++ unparseOneLine (assignedVariable assignment)
                             , "  value: >"
-                            , "    " ++ unparseToCompactString (assignedTerm assignment)
+                            , "    " ++ unparseOneLine (assignedTerm assignment)
                             ]
 
 instance Entry DebugRewriteSubstitution where

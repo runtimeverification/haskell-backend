@@ -223,7 +223,7 @@ exec
     breadthLimit
     verifiedModule
     strategy
-    originalInitialTerm@(mkRewritingTerm -> initialTerm) =
+    (mkRewritingTerm -> initialTerm) =
         evalSimplifier verifiedModule' $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
