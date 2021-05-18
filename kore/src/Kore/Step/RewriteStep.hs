@@ -288,13 +288,27 @@ applyWithFinalizer ::
     simplifier (Results rule)
 applyWithFinalizer finalize rules initial = do
     results <- unifyRules initial rules
-    debugRewriteSubstitution initial results
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
     finalize initialVariables initial results
   where
     locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
+
+applyRuleWithFinalizer ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    Finalizer (RulePattern RewritingVariableName) simplifier ->
+    -- | Rewrite rules
+    [RulePattern RewritingVariableName] ->
+    -- | Configuration being rewritten
+    Pattern RewritingVariableName ->
+    simplifier (Results (RulePattern RewritingVariableName))
+applyRuleWithFinalizer finalize rules initial = do
+    results <- applyWithFinalizer finalize rules initial
+    debugRewriteSubstitution initial results
+    return results
+{-# INLINE applyRuleWithFinalizer #-}
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -308,7 +322,7 @@ applyRulesParallel ::
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     simplifier (Results (RulePattern RewritingVariableName))
-applyRulesParallel = applyWithFinalizer (finalizeRulesParallel RewriteRule finalizeAppliedRule)
+applyRulesParallel = applyRuleWithFinalizer (finalizeRulesParallel RewriteRule finalizeAppliedRule)
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -342,7 +356,7 @@ applyRulesSequence ::
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     simplifier (Results (RulePattern RewritingVariableName))
-applyRulesSequence = applyWithFinalizer (finalizeSequence RewriteRule finalizeAppliedRule)
+applyRulesSequence = applyRuleWithFinalizer (finalizeSequence RewriteRule finalizeAppliedRule)
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 

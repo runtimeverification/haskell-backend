@@ -35,10 +35,16 @@ import Kore.Internal.Variable
 import Kore.Step.RulePattern
     ( RulePattern (..)
     )
+import Kore.Step.Result
+    ( Result (..)
+    , Results (..)
+    )
 import Kore.Step.Step
     ( UnifiedRule
-    , mapRuleVariables
     )
+import Kore.Step.RulePattern (
+    mapRuleVariables
+ )
 import Kore.Rewriting.RewritingVariable
 import Kore.Unparser
     ( unparseToCompactString
@@ -52,9 +58,9 @@ import qualified Pretty
 data DebugRewriteSubstitution =
     DebugRewriteSubstitution {
         configuration :: Pattern VariableName,
-        appliedRules :: [UnifiedRule RulePattern VariableName]
+        appliedRules :: [UnifiedRule (RulePattern VariableName)]
     }
-    deriving (Show)
+    deriving stock (Show)
 
 instance Pretty DebugRewriteSubstitution where
     pretty (DebugRewriteSubstitution { configuration, appliedRules }) =
@@ -70,7 +76,7 @@ instance Pretty DebugRewriteSubstitution where
                     "  substitution:"
                 ]
 
-            unparseRule :: UnifiedRule RulePattern VariableName -> Pretty.Doc ann
+            unparseRule :: UnifiedRule (RulePattern VariableName) -> Pretty.Doc ann
             unparseRule Conditional.Conditional { term, substitution } =
                 Pretty.vsep $ ruleInfo uid ++ map (Pretty.indent 2) subst
                 where
@@ -91,12 +97,13 @@ instance Entry DebugRewriteSubstitution where
 debugRewriteSubstitution
     :: MonadLog log
     => Pattern RewritingVariableName
-    -> [UnifiedRule RulePattern RewritingVariableName]
+    -- -> [UnifiedRule (RulePattern RewritingVariableName)]
+    -> Results (UnifiedRule (RulePattern RewritingVariableName)) (Pattern RewritingVariableName)
     -> log ()
-debugRewriteSubstitution initial rules =
+debugRewriteSubstitution initial Results { results } =
     logEntry (DebugRewriteSubstitution configuration appliedRules)
     where
         mapConditionalVariables mapTermVariables =
             Conditional.mapVariables mapTermVariables (pure toVariableName)
         configuration = mapConditionalVariables TermLike.mapVariables initial
-        appliedRules = mapConditionalVariables mapRuleVariables <$> rules
+        appliedRules = mapConditionalVariables mapRuleVariables <$> appliedRule <$> toList results

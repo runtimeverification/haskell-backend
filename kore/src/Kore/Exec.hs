@@ -226,7 +226,7 @@ exec
     breadthLimit
     verifiedModule
     strategy
-    (mkRewritingTerm -> initialTerm) =
+    originalInitialTerm@(mkRewritingTerm -> initialTerm) =
         evalSimplifier verifiedModule' $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
@@ -272,7 +272,7 @@ exec
                     forceSort initialSort $
                         OrPattern.toTermLike
                             (MultiOr.map getRewritingPattern finalConfigs')
-            debugExecGoal initialTerm finalTerm
+            debugExecGoal originalInitialTerm finalTerm
             return (exitCode, finalTerm)
       where
         dropStrategy = snd
