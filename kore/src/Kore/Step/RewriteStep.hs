@@ -39,7 +39,7 @@ import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
 import Kore.Log.DebugRewriteSubstitution (
-    debugRewriteSubstitution
+    debugRewriteSubstitution,
  )
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,

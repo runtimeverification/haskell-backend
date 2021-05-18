@@ -41,20 +41,20 @@ import Kore.Equation.Application (
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
-import Kore.Log.DebugRewriteSubstitution (
-    DebugRewriteSubstitution
- )
-import Kore.Log.DebugExecGoal (
-    DebugExecGoal
- )
 import Kore.Log.DebugClaimState (
     DebugClaimState,
  )
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
  )
+import Kore.Log.DebugExecGoal (
+    DebugExecGoal,
+ )
 import Kore.Log.DebugProven (
     DebugProven,
+ )
+import Kore.Log.DebugRewriteSubstitution (
+    DebugRewriteSubstitution,
  )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,

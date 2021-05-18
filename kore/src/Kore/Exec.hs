@@ -91,6 +91,9 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.DebugExecGoal (
+    debugExecGoal,
+ )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
@@ -172,9 +175,6 @@ import Kore.Syntax.Module (
 import Kore.Unparser (
     unparseToText,
     unparseToText2,
- )
-import Kore.Log.DebugExecGoal (
-    debugExecGoal
  )
 import Log (
     MonadLog,
