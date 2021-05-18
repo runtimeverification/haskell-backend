@@ -48,8 +48,8 @@ import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
-    renderString,
     layoutOneLine,
+    renderString,
  )
 import qualified Pretty
 
@@ -60,7 +60,7 @@ data DebugRewriteSubstitution = DebugRewriteSubstitution
     deriving stock (Show)
 
 instance Pretty DebugRewriteSubstitution where
-    pretty DebugRewriteSubstitution {configuration, appliedRules} =
+    pretty DebugRewriteSubstitution{configuration, appliedRules} =
         Pretty.vsep $ unparseRule <$> appliedRules
       where
         unparseOneLine :: Unparse p => p -> String
