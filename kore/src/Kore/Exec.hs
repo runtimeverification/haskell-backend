@@ -91,9 +91,6 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Log.DebugExecGoal (
-    debugExecGoal,
- )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
@@ -272,7 +269,6 @@ exec
                     forceSort initialSort $
                         OrPattern.toTermLike
                             (MultiOr.map getRewritingPattern finalConfigs')
-            debugExecGoal originalInitialTerm finalTerm
             return (exitCode, finalTerm)
       where
         dropStrategy = snd

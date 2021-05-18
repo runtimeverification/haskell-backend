@@ -101,4 +101,4 @@ debugRewriteSubstitution initial Results{results} =
     mapConditionalVariables mapTermVariables =
         Conditional.mapVariables mapTermVariables (pure toVariableName)
     configuration = mapConditionalVariables TermLike.mapVariables initial
-    appliedRules = mapConditionalVariables mapRuleVariables <$> appliedRule <$> toList results
+    appliedRules = mapConditionalVariables mapRuleVariables . appliedRule <$> toList results
