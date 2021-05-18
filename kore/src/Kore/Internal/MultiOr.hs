@@ -65,14 +65,6 @@ import Prelude.Kore hiding (
  )
 
 -- | 'MultiOr' is a Matching logic or of its children
-
-{-
-
-An empty 'MultiOr' corresponding to 'Bottom' actually discards information about
-the sort of its child patterns! That is a problem for simplification, which
-should preserve pattern sorts.
-
--}
 newtype MultiOr child = MultiOr {getMultiOr :: [child]}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
