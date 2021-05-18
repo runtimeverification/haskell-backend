@@ -52,6 +52,13 @@ test_simplify =
             (fromOr fromTop_ faCeil)
             [[]]
         ]
+    , testGroup
+        "\\bottom"
+        [ test
+            "Normalization"
+            fromBottom_
+            []
+        ]
     ]
   where
     test ::

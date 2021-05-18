@@ -85,4 +85,8 @@ This one is not as useful as the rule for `\and`:
   = \or(P[1], P[2](P[1] = \bottom))
 ```
 
+## \bottom
+
+`\bottom` is already in disjunctive normal form.
+
 [disjunctive normal form]: https://en.wikipedia.org/wiki/Disjunctive_normal_form

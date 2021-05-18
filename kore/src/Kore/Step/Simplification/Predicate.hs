@@ -30,7 +30,11 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax (And, Or)
+import Kore.Syntax (
+    And,
+    Bottom,
+    Or,
+ )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -93,6 +97,9 @@ simplify sideCondition =
             OrF orF -> do
                 let orF' = worker <$> orF
                 normalizeOr =<< sequence orF'
+            BottomF bottomF -> do
+                let bottomF' = worker <$> bottomF
+                normalizeBottom =<< sequence bottomF'
             _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -114,3 +121,9 @@ normalizeOr ::
     Or sort DisjunctiveNormalForm ->
     simplifier DisjunctiveNormalForm
 normalizeOr = pure . fold
+
+normalizeBottom ::
+    Applicative simplifier =>
+    Bottom sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+normalizeBottom _ = pure MultiOr.bottom
