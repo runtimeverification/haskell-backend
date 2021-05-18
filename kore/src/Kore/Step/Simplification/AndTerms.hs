@@ -737,7 +737,6 @@ unifyDomainValue term1 term2 unifyData
     | val1 == val2 =
         return $ Pattern.fromTermLike term1
     | otherwise = cannotUnifyDomainValues term1 term2
-
   where
     UnifyDomainValue{val1, val2} = unifyData
 
@@ -754,7 +753,6 @@ cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
 data UnifyStringLiteral = UnifyStringLiteral
     { txt1, txt2 :: !Text
     }
-
 
 -- | Matches two string literal values.
 matchStringLiteral ::
@@ -785,7 +783,6 @@ unifyStringLiteral ::
 unifyStringLiteral term1 term2 unifyData
     | txt1 == txt2 = return $ Pattern.fromTermLike term1
     | otherwise = explainAndReturnBottom "distinct string literals" term1 term2
-
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 

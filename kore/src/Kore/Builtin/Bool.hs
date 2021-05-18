@@ -169,7 +169,6 @@ data UnifyBool = UnifyBool
     { bool1, bool2 :: !InternalBool
     }
 
-
 -- | Matches two Bool values.
 matchBools ::
     TermLike RewritingVariableName ->
