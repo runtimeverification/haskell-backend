@@ -432,6 +432,7 @@ data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
     }
 
+-- | Matches two Int values that have equals sorts.
 matchInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -444,7 +445,7 @@ matchInt first second
     | otherwise = Nothing
 {-# INLINE matchInt #-}
 
--- | Unification of Int values.
+-- | When int values are equal, returns first term; otherwise returns bottom.
 unifyInt ::
     forall unifier.
     MonadUnify unifier =>
@@ -464,6 +465,10 @@ data UnifyIntEq = UnifyIntEq
     , value :: !Bool
     }
 
+{- | Matches two terms when second is a bool term
+    and the first is a function pattern matching
+    the @INT.eq@ hooked symbol.
+-}
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

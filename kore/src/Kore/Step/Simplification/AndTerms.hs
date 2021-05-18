@@ -329,6 +329,7 @@ data UnifyBoolAnd
     = UnifyBoolAndBottom
     | UnifyBoolAndTop
 
+-- | Matches a term which is either top or bottom.
 matchBoolAnd ::
     TermLike RewritingVariableName ->
     Maybe UnifyBoolAnd
@@ -364,6 +365,7 @@ explainBoolAndBottom ::
 explainBoolAndBottom term1 term2 =
     explainBottom "Cannot unify bottom." term1 term2
 
+-- | Matches two syntactically identical values.
 matchEqualsAndEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -374,7 +376,7 @@ matchEqualsAndEquals first second
     | otherwise = Nothing
 {-# INLINE matchEqualsAndEquals #-}
 
--- | Unify two identical ('==') patterns.
+-- | Returns the term as a pattern.
 equalAndEquals ::
     Monad unifier =>
     TermLike RewritingVariableName ->
@@ -383,6 +385,7 @@ equalAndEquals first =
     -- TODO (thomas.tuegel): Preserve simplified flags.
     return (Pattern.fromTermLike first)
 
+-- | Matches a term which is Bottom.
 matchBottomTermEquals ::
     TermLike RewritingVariableName ->
     Maybe ()
@@ -430,6 +433,10 @@ data VariableFunctionAnd
     = VariableFunctionAnd1 !(ElementVariable RewritingVariableName)
     | VariableFunctionAnd2 !(ElementVariable RewritingVariableName)
 
+{- | Matches two terms which are either
+        * two variables.
+        * the first a variable and the second a function pattern.
+-}
 matchVariableFunctionAnd ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -459,6 +466,7 @@ variableFunctionAnd second unifyData =
                 Condition.fromSingleSubstitution
                     (Substitution.assign (inject v) second)
 
+-- | Matches two terms when the first is a variable and the second is a function pattern.
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -507,6 +515,13 @@ newtype SortInjectionAndEquals = SortInjectionAndEquals
     { matchData :: Either Distinct (InjUnify RewritingVariableName)
     }
 
+{- | Matches two sort injections when either
+        * they have distinct codomains.
+        * they have identical domains.
+        * one domain is a subsort of the other.
+        * the child of either satisfies @hasConstructorLikeTop@.
+        * the subsorts of the domains are disjoint.
+-}
 matchSortInjectionAndEquals ::
     InjSimplifier ->
     TermLike RewritingVariableName ->
@@ -561,6 +576,7 @@ sortInjectionAndEquals termMerger injSimplifier first second unifyData = do
 
     SortInjectionAndEquals{matchData} = unifyData
 
+-- | Matches a constructor application pattern with a sort injection pattern (symmetric in the two arguments)
 matchConstructorSortInjectionAndEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -684,20 +700,19 @@ domainValueAndConstructorErrors
 domainValueAndConstructorErrors _ _ = empty
 
 data UnifyDomainValue = UnifyDomainValue
-    { sort1 :: !Sort
-    , val1 :: !(TermLike RewritingVariableName)
-    , sort2 :: !Sort
-    , val2 :: !(TermLike RewritingVariableName)
+    { val1, val2 :: !(TermLike RewritingVariableName)
     }
 
+-- | Matches two domain values with equal sorts.
 matchDomainValue ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyDomainValue
 matchDomainValue first second
     | DV_ sort1 val1 <- first
-      , DV_ sort2 val2 <- second =
-        Just UnifyDomainValue{sort1, val1, sort2, val2}
+      , DV_ sort2 val2 <- second
+      , sort1 == sort2 =
+        Just UnifyDomainValue{val1, val2}
     | otherwise = Nothing
 {-# INLINE matchDomainValue #-}
 
@@ -713,22 +728,18 @@ See also: 'equalAndEquals'
 -- but it is not.
 unifyDomainValue ::
     forall unifier.
-    HasCallStack =>
     MonadUnify unifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     UnifyDomainValue ->
     unifier (Pattern RewritingVariableName)
-unifyDomainValue term1 term2 unifyData =
-    assert (sort1 == sort2) worker
-  where
-    worker :: unifier (Pattern RewritingVariableName)
-    worker
-        | val1 == val2 =
-            return $ Pattern.fromTermLike term1
-        | otherwise = cannotUnifyDomainValues term1 term2
+unifyDomainValue term1 term2 unifyData
+    | val1 == val2 =
+        return $ Pattern.fromTermLike term1
+    | otherwise = cannotUnifyDomainValues term1 term2
 
-    UnifyDomainValue{sort1, val1, sort2, val2} = unifyData
+  where
+    UnifyDomainValue{val1, val2} = unifyData
 
 cannotUnifyDistinctDomainValues :: Pretty.Doc ()
 cannotUnifyDistinctDomainValues = "distinct domain values"
@@ -744,6 +755,8 @@ data UnifyStringLiteral = UnifyStringLiteral
     { txt1, txt2 :: !Text
     }
 
+
+-- | Matches two string literal values.
 matchStringLiteral ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -769,14 +782,11 @@ unifyStringLiteral ::
     TermLike RewritingVariableName ->
     UnifyStringLiteral ->
     unifier (Pattern RewritingVariableName)
-unifyStringLiteral term1 term2 unifyData = worker
-  where
-    worker :: unifier (Pattern RewritingVariableName)
-    worker
-        | txt1 == txt2 =
-            return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct string literals" term1 term2
+unifyStringLiteral term1 term2 unifyData
+    | txt1 == txt2 = return $ Pattern.fromTermLike term1
+    | otherwise = explainAndReturnBottom "distinct string literals" term1 term2
 
+  where
     UnifyStringLiteral{txt1, txt2} = unifyData
 
 {- | Unify any two function patterns.
@@ -819,6 +829,7 @@ compareForEquals first second
     | isConstructorLike second = GT
     | otherwise = compare first second
 
+-- | Matches two constant byte values with distinct values.
 matchBytesDifferent ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

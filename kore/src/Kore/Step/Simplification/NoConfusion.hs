@@ -31,6 +31,8 @@ data UnifyEqualInjectiveHeads = UnifyEqualInjectiveHeads
     , secondChildren :: ![TermLike RewritingVariableName]
     }
 
+
+-- | Matches two application patterns with equal, injective heads.
 matchEqualInjectiveHeadsAndEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -85,6 +87,9 @@ equalInjectiveHeadsAndEquals
             , secondChildren
             } = unifyData
 
+{- | Matches two application patterns with distinct
+    heads which are either constructors or overloaded.
+-}
 matchDifferentConstructors ::
     (Symbol -> Bool) ->
     TermLike RewritingVariableName ->

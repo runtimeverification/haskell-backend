@@ -476,13 +476,15 @@ data UnifyString = UnifyString
     { string1, string2 :: !InternalString
     }
 
+-- | Matches two String values with equal sorts.
 matchString ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyString
 matchString first second
     | InternalString_ string1 <- first
-      , InternalString_ string2 <- second =
+      , InternalString_ string2 <- second
+      , on (==) internalStringSort string1 string1 =
         Just UnifyString{string1, string2}
     | otherwise = Nothing
 {-# INLINE matchString #-}
@@ -491,20 +493,16 @@ matchString first second
 unifyString ::
     forall unifier.
     MonadUnify unifier =>
-    HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     UnifyString ->
     unifier (Pattern RewritingVariableName)
-unifyString term1 term2 unifyData =
-    assert (on (==) internalStringSort string1 string2) worker
-  where
-    worker :: unifier (Pattern RewritingVariableName)
-    worker
-        | on (==) internalStringValue string1 string2 =
-            return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct strings" term1 term2
+unifyString term1 term2 unifyData
+    | on (==) internalStringValue string1 string2 =
+        return $ Pattern.fromTermLike term1
+    | otherwise = explainAndReturnBottom "distinct strings" term1 term2
 
+  where
     UnifyString{string1, string2} = unifyData
 
 {- | Unification of the @STRING.eq@ symbol

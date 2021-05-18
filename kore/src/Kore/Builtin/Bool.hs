@@ -169,6 +169,8 @@ data UnifyBool = UnifyBool
     { bool1, bool2 :: !InternalBool
     }
 
+
+-- | Matches two Bool values.
 matchBools ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -180,7 +182,7 @@ matchBools first second
     | otherwise = Nothing
 {-# INLINE matchBools #-}
 
--- | Unification of @BOOL.Bool@ values.
+-- | When bool values are equal, returns first term; otherwise returns bottom.
 unifyBool ::
     forall unifier.
     MonadUnify unifier =>
@@ -199,6 +201,10 @@ unifyBool termLike1 termLike2 unifyData
   where
     UnifyBool{bool1, bool2} = unifyData
 
+{- | Matches two terms when first is a true bool term
+    and the second is a function pattern matching
+    the @BOOL.and@ hooked symbol.
+-}
 matchUnifyBoolAnd ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -249,13 +255,16 @@ unifyBothWith unify termLike1 operand1 operand2 = do
     unify' term1 term2 =
         Pattern.withoutTerm <$> unify term1 term2
 
+{- | Matches two terms when first is a false bool term
+    and the second is a function pattern matching
+    the @BOOL.or@ hooked symbol.
+-}
 matchUnifyBoolOr ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe BoolOr
 matchUnifyBoolOr first second
-    | Just value1 <- matchBool first
-      , not value1
+    | Just False <- matchBool first
       , Just boolOr <- matchBoolOr second
       , isFunctionPattern second =
         Just boolOr
@@ -279,6 +288,10 @@ data UnifyBoolNot = UnifyBoolNot
     , value :: Bool
     }
 
+{- | Matches two terms when second is a bool term
+    and the first is a function pattern matching
+    the @BOOL.not@ hooked symbol.
+-}
 matchUnifyBoolNot ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
