@@ -78,20 +78,20 @@ simplify sideCondition =
         case predicateF of
             AndF andF -> do
                 let andF' = worker <$> andF
-                distributeAnd andF'
+                normalizeAnd andF'
             OrF orF -> do
                 let orF' = worker <$> orF
-                distributeOr orF'
+                normalizeOr orF'
             _ -> simplifyPredicateTODO sideCondition predicate
       where
         _ :< predicateF = Recursive.project predicate
 
-distributeAnd ::
+normalizeAnd ::
     And sort (LogicT simplifier (MultiAnd (Predicate RewritingVariableName))) ->
     LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-distributeAnd andF = fold <$> sequence andF
+normalizeAnd andF = fold <$> sequence andF
 
-distributeOr ::
+normalizeOr ::
     Or sort (LogicT simplifier conjunction) ->
     LogicT simplifier conjunction
-distributeOr = foldr1 (<|>)
+normalizeOr = foldr1 (<|>)
