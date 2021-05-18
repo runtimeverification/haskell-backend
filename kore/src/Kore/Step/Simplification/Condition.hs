@@ -87,6 +87,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
 
         simplified <-
             Predicate.simplify sideCondition predicate'
+                >>= Logic.scatter
                 >>= simplifyPredicates sideCondition
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
@@ -151,7 +152,9 @@ simplifyPredicates initialSideCondition predicates = do
             (MultiAnd (Predicate RewritingVariableName))
     worker (predicate, unsimplified) = do
         sideCondition <- SideCondition.addAssumptions unsimplified <$> State.get
-        results <- Predicate.simplify sideCondition predicate & lift
+        results <-
+            Predicate.simplify sideCondition predicate >>= Logic.scatter
+                & lift
         State.modify (SideCondition.addAssumptions results)
         return results
 

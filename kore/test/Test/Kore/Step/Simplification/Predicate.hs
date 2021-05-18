@@ -4,6 +4,7 @@ module Test.Kore.Step.Simplification.Predicate (
 
 import Kore.Internal.From
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (TermLike)
@@ -62,14 +63,16 @@ test_simplify =
         testCase testName $ do
             actual <-
                 simplify SideCondition.top input
-                    & Test.runSimplifierBranch Mock.env
-            assertEqual "" (MultiAnd.make <$> expect) actual
+                    & Test.runSimplifier Mock.env
+            assertEqual "" (mkDisjunctiveNormalForm expect) actual
 
     fa, fb, ga, gb :: TermLike RewritingVariableName
     fa = Mock.f Mock.a
     fb = Mock.f Mock.b
     ga = Mock.g Mock.a
     gb = Mock.g Mock.b
+
+    mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
 
     faCeil, fbCeil, gaCeil, gbCeil :: Predicate RewritingVariableName
     faCeil = fromCeil_ fa

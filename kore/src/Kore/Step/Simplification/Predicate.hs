@@ -9,6 +9,10 @@ module Kore.Step.Simplification.Predicate (
 import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (MultiAnd)
+import Kore.Internal.MultiOr (
+    MultiOr,
+ )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Condition,
@@ -64,34 +68,49 @@ simplifyPredicateTODO sideCondition predicate = do
                 , unparse conditional
                 ]
 
+type DisjunctiveNormalForm =
+    MultiOr (MultiAnd (Predicate RewritingVariableName))
+
 simplify ::
+    forall simplifier.
     ( HasCallStack
     , MonadSimplify simplifier
     ) =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
+    simplifier DisjunctiveNormalForm
 simplify sideCondition =
     worker
   where
+    worker ::
+        Predicate RewritingVariableName ->
+        simplifier DisjunctiveNormalForm
     worker predicate =
         case predicateF of
             AndF andF -> do
                 let andF' = worker <$> andF
-                normalizeAnd andF'
+                normalizeAnd =<< sequence andF'
             OrF orF -> do
                 let orF' = worker <$> orF
-                normalizeOr orF'
-            _ -> simplifyPredicateTODO sideCondition predicate
+                normalizeOr =<< sequence orF'
+            _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
 
 normalizeAnd ::
-    And sort (LogicT simplifier (MultiAnd (Predicate RewritingVariableName))) ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-normalizeAnd andF = fold <$> sequence andF
+    Applicative simplifier =>
+    And sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+normalizeAnd andOr =
+    pure . MultiOr.observeAll $ do
+        -- andOr: \and(\or(_, _), \or(_, _))
+        andAnd <- traverse Logic.scatter andOr
+        -- andAnd: \and(\and(_, _), \and(_, _))
+        let multiAnd = fold andAnd
+        pure multiAnd
 
 normalizeOr ::
-    Or sort (LogicT simplifier conjunction) ->
-    LogicT simplifier conjunction
-normalizeOr = foldr1 (<|>)
+    Applicative simplifier =>
+    Or sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+normalizeOr = pure . fold
