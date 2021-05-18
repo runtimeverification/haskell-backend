@@ -157,8 +157,8 @@ evalKEq ::
 evalKEq true _ (valid :< app) =
     case applicationChildren of
         [t1, t2]
-          | t1 == t2  -> Builtin.appliedFunction $ Bool.asPattern sort true
-          | otherwise -> Builtin.getAttemptedAxiom (evalEq t1 t2)
+            | t1 == t2 -> Builtin.appliedFunction $ Bool.asPattern sort true
+            | otherwise -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     sort = termSort valid
