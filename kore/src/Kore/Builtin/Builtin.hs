@@ -53,7 +53,6 @@ import qualified Data.Text as Text
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
@@ -312,7 +311,7 @@ applicationEvaluator impl =
         SideCondition variable ->
         CofreeF
             (Application Symbol)
-            (Attribute.Pattern variable)
+            (TermAttributes variable)
             (TermLike variable) ->
         simplifier (AttemptedAxiom variable)
     evaluator sideCondition (_ :< app) = do

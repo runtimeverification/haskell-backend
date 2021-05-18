@@ -41,6 +41,7 @@ import Kore.IndexedModule.MetadataTools (
  )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -122,7 +123,7 @@ import Test.Tasty.HUnit.Ext
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
     [ testCase "Simple evaluation" $ do
-        let expect = Pattern.fromTermLike (Mock.g Mock.c)
+        let expect = Mock.g Mock.c
         actual <-
             evaluate
                 ( Map.singleton
@@ -133,9 +134,9 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functional10 Mock.c)
-        assertEqual "" expect actual
+        assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Simple evaluation (builtin branch)" $ do
-        let expect = Pattern.fromTermLike (Mock.g Mock.c)
+        let expect = Mock.g Mock.c
         actual <-
             evaluate
                 ( Map.singleton
@@ -147,10 +148,10 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functional10 Mock.c)
-        assertEqual "" expect actual
+        assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)" $
         do
-            let expect = Pattern.fromTermLike (Mock.g Mock.c)
+            let expect = Mock.g Mock.c
             actual <-
                 evaluate
                     ( Map.singleton
@@ -168,10 +169,10 @@ test_functionIntegration =
                         )
                     )
                     (Mock.functional10 Mock.c)
-            assertEqual "" expect actual
+            assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)" $
         do
-            let expect = Pattern.fromTermLike (Mock.g Mock.c)
+            let expect = Mock.g Mock.c
             actual <-
                 evaluate
                     ( Map.singleton
@@ -188,9 +189,9 @@ test_functionIntegration =
                         )
                     )
                     (Mock.functional10 Mock.c)
-            assertEqual "" expect actual
+            assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Evaluates inside functions" $ do
-        let expect = Pattern.fromTermLike $ Mock.functional11 (Mock.functional11 Mock.c)
+        let expect = Mock.functional11 (Mock.functional11 Mock.c)
         actual <-
             evaluate
                 ( Map.singleton
@@ -201,13 +202,12 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functional10 (Mock.functional10 Mock.c))
-        assertEqual "" expect actual
+        assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Evaluates 'or'" $ do
         let expect =
-                Pattern.fromTermLike $
-                    mkOr
-                        (Mock.functional11 (Mock.functional11 Mock.c))
-                        (Mock.functional11 (Mock.functional11 Mock.d))
+                mkOr
+                    (Mock.functional11 (Mock.functional11 Mock.c))
+                    (Mock.functional11 (Mock.functional11 Mock.d))
         actual <-
             evaluate
                 ( Map.singleton
@@ -223,15 +223,14 @@ test_functionIntegration =
                         (Mock.functional10 Mock.d)
                     )
                 )
-        assertEqual "" expect actual
+        assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Evaluates on multiple branches" $ do
         let expect =
-                Pattern.fromTermLike $
-                    Mock.functional11
-                        ( Mock.functional20
-                            (Mock.functional11 Mock.c)
-                            (Mock.functional11 Mock.c)
-                        )
+                Mock.functional11
+                    ( Mock.functional20
+                        (Mock.functional11 Mock.c)
+                        (Mock.functional11 Mock.c)
+                    )
         actual <-
             evaluate
                 ( Map.singleton
@@ -247,7 +246,7 @@ test_functionIntegration =
                         (Mock.functional10 Mock.c)
                     )
                 )
-        assertEqual "" expect actual
+        assertEqual "" expect (OrPattern.toTermLike actual)
     , testCase "Returns conditions" $ do
         let expect =
                 Conditional
@@ -272,7 +271,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.f Mock.cf)
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Merges conditions" $ do
         let expect =
                 Conditional
@@ -313,7 +312,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.functional10 (Mock.functional20 Mock.cf Mock.cg))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Reevaluates user-defined function results." $ do
         let expect =
                 Conditional
@@ -344,7 +343,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f Mock.cf)
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Merges substitutions with reevaluation ones." $ do
         let expect =
                 Conditional
@@ -398,7 +397,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f Mock.cf)
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Simplifies substitution-predicate." $ do
         -- Mock.plain10 below prevents:
         -- 1. unification without substitution.
@@ -453,9 +452,9 @@ test_functionIntegration =
                     [ "Expected:"
                     , Pretty.indent 4 (unparse expect)
                     , "but found:"
-                    , Pretty.indent 4 (unparse actual)
+                    , Pretty.indent 4 (unparse $ OrPattern.toTermLike actual)
                     ]
-        assertEqual message expect actual
+        assertEqual message (MultiOr.singleton expect) actual
     , testCase "Evaluates only simplifications." $ do
         let expect =
                 Conditional
@@ -477,7 +476,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.xConfig))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Picks first matching simplification." $ do
         let expect =
                 Conditional
@@ -520,7 +519,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.xConfig))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Falls back to evaluating the definition." $ do
         let expect =
                 Conditional
@@ -549,7 +548,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.xConfig))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
         {-
             Uncomment this if we ever go back to allowing branches for function
             evaluation.
@@ -603,7 +602,7 @@ test_functionIntegrationUnification =
                     )
                 )
                 (Mock.functional10 Mock.c)
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Simple evaluation (builtin branch)" $ do
         let expect =
                 Conditional
@@ -623,7 +622,7 @@ test_functionIntegrationUnification =
                     )
                 )
                 (Mock.functional10 Mock.c)
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)" $
         do
             let expect =
@@ -651,7 +650,7 @@ test_functionIntegrationUnification =
                         )
                     )
                     (Mock.functional10 Mock.c)
-            assertEqual "" expect actual
+            assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)" $
         do
             let expect =
@@ -677,7 +676,7 @@ test_functionIntegrationUnification =
                         )
                     )
                     (Mock.functional10 Mock.c)
-            assertEqual "" expect actual
+            assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Evaluates inside functions" $ do
         let expect =
                 Conditional
@@ -696,17 +695,22 @@ test_functionIntegrationUnification =
                     )
                 )
                 (Mock.functional10 (Mock.functional10 Mock.c))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Evaluates 'or'" $ do
         let expect =
-                Conditional
-                    { term =
-                        mkOr
-                            (Mock.functional11 (Mock.functional11 Mock.c))
-                            (Mock.functional11 (Mock.functional11 Mock.d))
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+                MultiOr.make
+                    [ Conditional
+                        { term = Mock.functional11 (Mock.functional11 Mock.c)
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = Mock.functional11 (Mock.functional11 Mock.d)
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
+
         actual <-
             evaluate
                 ( Map.singleton
@@ -752,7 +756,7 @@ test_functionIntegrationUnification =
                         (Mock.functional10 Mock.c)
                     )
                 )
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Merges conditions" $ do
         let expect =
                 Conditional
@@ -794,7 +798,7 @@ test_functionIntegrationUnification =
                     ]
                 )
                 (Mock.functional10 (Mock.functional20 Mock.cf Mock.cg))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Reevaluates user-defined function results." $ do
         let expect =
                 Conditional
@@ -825,7 +829,7 @@ test_functionIntegrationUnification =
                     ]
                 )
                 (Mock.f Mock.cf)
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Evaluates only simplifications." $ do
         let expect =
                 Conditional
@@ -851,7 +855,7 @@ test_functionIntegrationUnification =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.xConfig))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Picks first matching simplification." $ do
         let expect =
                 Conditional
@@ -896,7 +900,7 @@ test_functionIntegrationUnification =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.xConfig))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Falls back to evaluating the definition." $ do
         let expect =
                 Conditional
@@ -927,7 +931,7 @@ test_functionIntegrationUnification =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.xConfig))
-        assertEqual "" expect actual
+        assertEqual "" (MultiOr.singleton expect) actual
     ]
 
 test_Nat :: [TestTree]
@@ -1074,11 +1078,10 @@ simplifyUnification = runSimplifier testEnvUnification . TermLike.simplify SideC
 evaluate ::
     BuiltinAndAxiomSimplifierMap ->
     TermLike RewritingVariableName ->
-    IO (Pattern RewritingVariableName)
+    IO (OrPattern RewritingVariableName)
 evaluate functionIdToEvaluator termLike =
-    runSimplifier Mock.env{simplifierAxioms = functionIdToEvaluator} $ do
-        patterns <- TermLike.simplify SideCondition.top termLike
-        pure (OrPattern.toPattern patterns)
+    runSimplifier Mock.env{simplifierAxioms = functionIdToEvaluator} $
+        TermLike.simplify SideCondition.top termLike
 
 evaluateWith ::
     BuiltinAndAxiomSimplifier ->

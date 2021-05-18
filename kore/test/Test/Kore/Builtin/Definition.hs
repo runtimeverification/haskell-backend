@@ -692,6 +692,10 @@ string2BaseStringSymbol :: Internal.Symbol
 string2BaseStringSymbol =
     builtinSymbol "string2baseString" intSort [stringSort, intSort]
         & hook "STRING.string2base"
+base2StringStringSymbol :: Internal.Symbol
+base2StringStringSymbol =
+    builtinSymbol "base2stringString" stringSort [intSort, intSort]
+        & hook "STRING.base2string"
 string2IntStringSymbol :: Internal.Symbol
 string2IntStringSymbol =
     builtinSymbol "string2intString" intSort [stringSort]
@@ -1656,6 +1660,7 @@ stringModule =
             , hookedSymbolDecl ordStringSymbol
             , hookedSymbolDecl findStringSymbol
             , hookedSymbolDecl string2BaseStringSymbol
+            , hookedSymbolDecl base2StringStringSymbol
             , hookedSymbolDecl string2IntStringSymbol
             , hookedSymbolDecl int2StringStringSymbol
             , hookedSymbolDecl token2StringStringSymbol

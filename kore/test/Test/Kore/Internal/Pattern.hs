@@ -3,8 +3,10 @@ module Test.Kore.Internal.Pattern (
     test_hasSimplifiedChildren,
     internalPatternGen,
     assertEquivalent,
+    assertEquivalent',
     assertEquivalentPatterns,
     assertEquivalentPatterns',
+    normalizeConj,
 
     -- * Re-exports
     TestPattern,
@@ -421,10 +423,11 @@ assertEquivalentPatterns' expects actuals =
         assertEquivalent' (assertEqual "") expect actual
 
 assertEquivalent ::
-    forall m variable.
     InternalVariable variable =>
-    Diff variable =>
-    (forall a. (Eq a, Show a, Diff a) => a -> a -> m ()) ->
+    ( NormalizedAndPattern variable ->
+      NormalizedAndPattern variable ->
+      m ()
+    ) ->
     Pattern variable ->
     Pattern variable ->
     m ()
@@ -432,11 +435,12 @@ assertEquivalent assertion expect actual =
     on assertion normalizeConj expect actual
 
 assertEquivalent' ::
-    forall m f variable.
     Functor f =>
     InternalVariable variable =>
-    Diff (f (NormalizedAndPattern variable)) =>
-    (forall a. Diff a => a -> a -> m ()) ->
+    ( f (NormalizedAndPattern variable) ->
+      f (NormalizedAndPattern variable) ->
+      m ()
+    ) ->
     f (Pattern variable) ->
     f (Pattern variable) ->
     m ()

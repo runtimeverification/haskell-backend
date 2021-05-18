@@ -19,10 +19,7 @@ module Test.Kore.Step.Simplification (
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
-import qualified Kore.Attribute.Pattern as Attribute.Pattern (
-    fullySimplified,
-    setSimplified,
- )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern (
     setSimplified,
  )
@@ -58,6 +55,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (
     TermLike,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
@@ -99,7 +97,7 @@ simplifiedTerm =
     Recursive.unfold (simplifiedWorker . Recursive.project)
   where
     simplifiedWorker (attrs :< patt) =
-        Attribute.Pattern.setSimplified Attribute.Pattern.fullySimplified attrs
+        TermLike.setAttributeSimplified Attribute.fullySimplified attrs
             :< patt
 
 simplifiedPredicate :: Predicate variable -> Predicate variable
@@ -107,7 +105,7 @@ simplifiedPredicate =
     Recursive.unfold (simplifiedWorker . Recursive.project)
   where
     simplifiedWorker (attrs :< patt) =
-        Attribute.PPattern.setSimplified Attribute.Pattern.fullySimplified attrs
+        Attribute.PPattern.setSimplified Attribute.fullySimplified attrs
             :< ( case patt of
                     CeilF ceil' -> CeilF (simplifiedTerm <$> ceil')
                     FloorF floor' -> FloorF (simplifiedTerm <$> floor')

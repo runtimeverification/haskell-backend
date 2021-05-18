@@ -13,6 +13,7 @@ import qualified Data.Text as Text
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.KEqual as KEqual
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -42,6 +43,7 @@ import Test.Kore (
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.SMT
 import Test.Tasty
 
@@ -62,7 +64,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = Test.Bool.asPattern (impl a b)
+        let expect = Test.Bool.asOrPattern (impl a b)
         actual <-
             evaluateT
                 . mkApplySymbol symb
@@ -74,12 +76,14 @@ testBinary symb impl =
 test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithoutSMT "dotk equals dotk" $ do
-        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
+        let expect =
+                OrPattern.fromTermLike $
+                    Test.Bool.asInternal True
             original = keqBool dotk dotk
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
-        let expect = Pattern.top
+        let expect = OrPattern.top
             xConfigElemVarKItemSort =
                 configElementVariableFromId "x" kItemSort
             original =
@@ -92,7 +96,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = Pattern.top
+        let expect = OrPattern.top
             xConfigElemVarIdSort =
                 configElementVariableFromId "x" idSort
             original =
@@ -105,7 +109,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct constructor-like terms" $ do
-        let expect = Pattern.top
+        let expect = OrPattern.top
             original =
                 mkEquals_
                     (Test.Bool.asInternal False)
@@ -116,14 +120,12 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain values" $ do
-        let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
+        let expect = OrPattern.fromTermLike $ Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain value K lists" $ do
-        let expect =
-                Pattern.fromTermLike $
-                    Test.Bool.asInternal False
+        let expect = Test.Bool.asOrPattern False
             original =
                 keqBool
                     (kseq (inj kItemSort dvT) dotk)
@@ -131,7 +133,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "Bottom ==K Top" $ do
-        let expect = Pattern.bottom
+        let expect = OrPattern.bottom
             original = keqBool (mkBottom kSort) (mkTop kSort)
         actual <- evaluate original
         assertEqual' "" expect actual
@@ -141,8 +143,7 @@ test_KIte :: [TestTree]
 test_KIte =
     [ testCaseWithoutSMT "true" $ do
         let expect =
-                Pattern.fromTermLike $
-                    inj kSort $ Test.Bool.asInternal False
+                OrPattern.fromTermLike $ inj kSort $ Test.Bool.asInternal False
             original =
                 kiteK
                     (Test.Bool.asInternal True)
@@ -152,8 +153,8 @@ test_KIte =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "false" $ do
         let expect =
-                Pattern.fromTermLike $
-                    inj kSort $ Test.Bool.asInternal True
+                MultiOr.singleton $
+                    Pattern.fromTermLike $ inj kSort $ Test.Bool.asInternal True
             original =
                 kiteK
                     (Test.Bool.asInternal False)
@@ -163,7 +164,7 @@ test_KIte =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "abstract" $ do
         let original = kiteK x y z
-            expect = Pattern.fromTermLike original
+            expect = OrPattern.fromTermLike original
             x = mkElemVar $ configElementVariableFromId (testId "x") boolSort
             y = mkElemVar $ configElementVariableFromId (testId "y") kSort
             z = mkElemVar $ configElementVariableFromId (testId "z") kSort

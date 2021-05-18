@@ -17,7 +17,6 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -311,7 +310,7 @@ applyInj ::
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    Attribute.Pattern{patternSort = sortFrom} = extractAttributes child
+    TermAttributes{termSort = sortFrom} = extractAttributes child
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
