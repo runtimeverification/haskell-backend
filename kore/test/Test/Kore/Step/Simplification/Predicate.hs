@@ -17,26 +17,33 @@ import Test.Tasty.HUnit
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ testGroup "\\and"
-        [ test "Normalization"
+    [ testGroup
+        "\\and"
+        [ test
+            "Normalization"
             (fromAnd (fromOr faCeil fbCeil) (fromOr gaCeil gbCeil))
             [ [faCeil, gaCeil]
             , [fbCeil, gaCeil]
             , [faCeil, gbCeil]
             , [fbCeil, gbCeil]
             ]
-        , test "Identity"
+        , test
+            "Identity"
             (fromAnd fromTop_ faCeil)
             [[faCeil]]
-        , test "Annihilation"
+        , test
+            "Annihilation"
             (fromAnd fromBottom_ faCeil)
             []
         ]
-    , testGroup "\\or"
-        [ test "Normalization"
+    , testGroup
+        "\\or"
+        [ test
+            "Normalization"
             (fromOr faCeil fbCeil)
             [[faCeil], [fbCeil]]
-        , test "Identity"
+        , test
+            "Identity"
             (fromOr fromBottom_ faCeil)
             [[faCeil]]
         , test
