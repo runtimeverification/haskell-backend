@@ -59,6 +59,13 @@ test_simplify =
             fromBottom_
             []
         ]
+    , testGroup
+        "\\top"
+        [ test
+            "Normalization"
+            fromTop_
+            [[]]
+        ]
     ]
   where
     test ::

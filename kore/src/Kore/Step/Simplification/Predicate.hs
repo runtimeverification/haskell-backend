@@ -8,7 +8,10 @@ module Kore.Step.Simplification.Predicate (
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiAnd (MultiAnd)
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -34,6 +37,7 @@ import Kore.Syntax (
     And,
     Bottom,
     Or,
+    Top,
  )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
@@ -100,6 +104,9 @@ simplify sideCondition =
             BottomF bottomF -> do
                 let bottomF' = worker <$> bottomF
                 normalizeBottom =<< sequence bottomF'
+            TopF topF -> do
+                let topF' = worker <$> topF
+                normalizeTop =<< sequence topF'
             _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -127,3 +134,9 @@ normalizeBottom ::
     Bottom sort DisjunctiveNormalForm ->
     simplifier DisjunctiveNormalForm
 normalizeBottom _ = pure MultiOr.bottom
+
+normalizeTop ::
+    Applicative simplifier =>
+    Top sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)

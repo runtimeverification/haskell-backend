@@ -89,4 +89,8 @@ This one is not as useful as the rule for `\and`:
 
 `\bottom` is already in disjunctive normal form.
 
+## \top
+
+`\top` is already in disjunctive normal form.
+
 [disjunctive normal form]: https://en.wikipedia.org/wiki/Disjunctive_normal_form
