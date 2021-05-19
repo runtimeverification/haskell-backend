@@ -21,6 +21,8 @@ module Kore.Internal.MultiAnd (
     map,
     traverse,
     distributeAnd,
+    traverseOr,
+    traverseOrAnd,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -267,3 +269,22 @@ distributeAnd multiAnd =
     MultiOr.observeAll $ traverse Logic.scatter multiAnd
 {-# INLINE distributeAnd #-}
 
+traverseOr ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr child2)) ->
+    MultiAnd child1 ->
+    f (MultiOr (MultiAnd child2))
+traverseOr f = fmap distributeAnd . traverse f
+{-# INLINE traverseOr #-}
+
+traverseOrAnd ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr (MultiAnd child2))) ->
+    MultiOr (MultiAnd child1) ->
+    f (MultiOr (MultiAnd child2))
+traverseOrAnd f = MultiOr.traverseOr (fmap (MultiOr.map fold) . traverseOr f)
+{-# INLINE traverseOrAnd #-}
