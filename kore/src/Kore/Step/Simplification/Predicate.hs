@@ -35,9 +35,10 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax (
     And,
-    Bottom,
+    Bottom (..),
+    Not (..),
     Or,
-    Top,
+    Top (..),
  )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
@@ -95,18 +96,11 @@ simplify sideCondition =
         simplifier DisjunctiveNormalForm
     worker predicate =
         case predicateF of
-            AndF andF -> do
-                let andF' = worker <$> andF
-                normalizeAnd =<< sequence andF'
-            OrF orF -> do
-                let orF' = worker <$> orF
-                normalizeOr =<< sequence orF'
-            BottomF bottomF -> do
-                let bottomF' = worker <$> bottomF
-                normalizeBottom =<< sequence bottomF'
-            TopF topF -> do
-                let topF' = worker <$> topF
-                normalizeTop =<< sequence topF'
+            AndF andF -> normalizeAnd =<< traverse worker andF
+            OrF orF -> normalizeOr =<< traverse worker orF
+            BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
+            TopF topF -> normalizeTop =<< traverse worker topF
+            NotF notF -> simplifyNot =<< traverse worker notF
             _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -140,3 +134,43 @@ normalizeTop ::
     Top sort DisjunctiveNormalForm ->
     simplifier DisjunctiveNormalForm
 normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
+
+simplifyNot ::
+    Monad simplifier =>
+    Not sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+simplifyNot notF@Not{notChild, notSort}
+    | TopBottom.isTop notChild = normalizeBottom Bottom{bottomSort = notSort}
+    | TopBottom.isBottom notChild = normalizeTop Top{topSort = notSort}
+    | otherwise = normalizeNot notF
+
+normalizeMultiAnd ::
+    Applicative simplifier =>
+    MultiAnd DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+normalizeMultiAnd andOr =
+    pure . MultiOr.observeAll $ do
+        -- andOr: \and(\or(_, _), \or(_, _))
+        andAnd <- MultiAnd.traverse Logic.scatter andOr
+        -- andAnd: \and(\and(_, _), \and(_, _))
+        pure (fold andAnd)
+
+normalizeNot ::
+    forall simplifier sort.
+    Monad simplifier =>
+    Not sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+normalizeNot = normalizeNotOr
+  where
+    normalizeNotOr Not{notChild = multiOr, notSort} = do
+        disjunctiveNormalForms <- Logic.observeAllT $ do
+            multiAnd <- Logic.scatter multiOr
+            normalizeNotAnd Not{notSort, notChild = multiAnd} & lift
+        normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
+    normalizeNotAnd ::
+        Not sort (MultiAnd (Predicate RewritingVariableName)) ->
+        simplifier DisjunctiveNormalForm
+    normalizeNotAnd Not{notChild} =
+        MultiOr.observeAllT $ do
+            predicate <- Logic.scatter notChild
+            pure (MultiAnd.singleton $ fromNot predicate)
