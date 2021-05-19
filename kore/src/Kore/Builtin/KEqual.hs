@@ -156,29 +156,25 @@ evalKEq ::
     simplifier (AttemptedAxiom variable)
 evalKEq true _ (valid :< app) =
     case applicationChildren of
-        [t1, t2]
-            | t1 == t2 -> Builtin.appliedFunction $ Bool.asPattern sort true
-            | otherwise -> Builtin.getAttemptedAxiom (evalEq t1 t2)
+        [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     sort = termSort valid
     Application{applicationChildren} = app
-    comparison x y
-        | true = x == y
-        | otherwise = x /= y
     evalEq ::
         TermLike variable ->
         TermLike variable ->
         MaybeT simplifier (AttemptedAxiom variable)
-    evalEq termLike1 termLike2 = do
-        -- Here we handle the case when both patterns are constructor-like
-        -- (so that equality is syntactic). If either pattern is not
-        -- constructor-like, we postpone evaluation until we know more.
-        Monad.guard (TermLike.isConstructorLike termLike1)
-        Monad.guard (TermLike.isConstructorLike termLike2)
-        Builtin.appliedFunction $
-            Bool.asPattern sort $
-                comparison termLike1 termLike2
+    evalEq termLike1 termLike2
+          | termLike1 == termLike2 =
+            Builtin.appliedFunction $ Bool.asPattern sort true
+          | otherwise = do
+            -- Here we handle the case when both patterns are constructor-like
+            -- (so that equality is syntactic). If either pattern is not
+            -- constructor-like, we postpone evaluation until we know more.
+            Monad.guard (TermLike.isConstructorLike termLike1)
+            Monad.guard (TermLike.isConstructorLike termLike2)
+            Builtin.appliedFunction $ Bool.asPattern sort (not true)
 
 evalKIte ::
     forall simplifier.
