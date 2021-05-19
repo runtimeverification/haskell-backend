@@ -13,38 +13,41 @@ module Kore.Step.Simplification.Condition (
 
 import Changed
 import qualified Control.Lens as Lens
-import Control.Monad.State.Strict (
-    StateT,
- )
+import Control.Monad.State.Strict
+    ( StateT
+    )
 import qualified Control.Monad.State.Strict as State
-import Data.Generics.Product (
-    field,
- )
+import Data.Generics.Product
+    ( field
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Condition,
-    Conditional (..),
- )
+import Kore.Internal.Pattern
+    ( Condition
+    , Conditional (..)
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    Predicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Simplification.SubstitutionSimplifier (
-    SubstitutionSimplifier (..),
- )
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( SubstitutionSimplifier (..)
+    )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -163,6 +166,36 @@ simplifyPredicates
 
         markConjunctionSimplified =
             return . Lens.over (field @"predicate") Predicate.markSimplified
+
+simplifyPredicates'
+    :: SideCondition RewritingVariableName
+    -> MultiAnd (Predicate RewritingVariableName)
+    -> simplifier (MultiAnd (Predicate RewritingVariableName))
+simplifyPredicates' sideCondition predicates = undefined
+
+simplifyPredicatesWithAssumptions
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> [Predicate RewritingVariableName]
+    -> simplifier
+        (MultiAnd (Predicate RewritingVariableName))
+simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
+simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
+    let predicatesWithUnsimplified =
+            zip predicates
+            $ scanr SideCondition.addPredicate SideCondition.top rest
+    result <-
+        foldM
+            simplifyWithAssumptions
+            sideCondition
+            predicatesWithUnsimplified
+    return (SideCondition.assumedTrue result)
+  where
+    simplifyWithAssumptions
+        :: SideCondition RewritingVariableName
+        -> (Predicate RewritingVariableName, SideCondition RewritingVariableName)
+        -> simplifier (SideCondition RewritingVariableName)
+    simplifyWithAssumptions simplifiedSideCond (predicate, unsimplifiedSideCond) = undefined
 
 {- | Simplify the 'Predicate' once.
 
