@@ -343,3 +343,14 @@ traverse ::
     f (MultiOr child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}
+
+-- | Traverse a @MultiOr@ using an action that returns a disjunction.
+traverseOr ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr child2)) ->
+    MultiOr child1 ->
+    f (MultiOr child2)
+traverseOr f = fmap fold . traverse f
+{-# INLINE traverseOr #-}
