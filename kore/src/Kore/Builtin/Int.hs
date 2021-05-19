@@ -432,15 +432,14 @@ data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
     }
 
--- | Matches two Int values that have equals sorts.
+-- | Matches two Int values.
 matchInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyInt
 matchInt first second
     | InternalInt_ int1 <- first
-      , InternalInt_ int2 <- second
-      , on (==) internalIntSort int1 int2 =
+      , InternalInt_ int2 <- second =
         Just UnifyInt{int1, int2}
     | otherwise = Nothing
 {-# INLINE matchInt #-}
@@ -453,12 +452,15 @@ unifyInt ::
     TermLike RewritingVariableName ->
     UnifyInt ->
     unifier (Pattern RewritingVariableName)
-unifyInt term1 term2 unifyData
-    | on (==) internalIntValue int1 int2 =
-        return $ Pattern.fromTermLike term1
-    | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+unifyInt term1 term2 unifyData =
+    assert (on (==) internalIntSort int1 int2) worker
   where
     UnifyInt{int1, int2} = unifyData
+    worker :: unifier (Pattern RewritingVariableName)
+    worker
+        | on (==) internalIntValue int1 int2 =
+            return $ Pattern.fromTermLike term1
+        | otherwise = explainAndReturnBottom "distinct integers" term1 term2
 
 data UnifyIntEq = UnifyIntEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))

@@ -483,8 +483,7 @@ matchString ::
     Maybe UnifyString
 matchString first second
     | InternalString_ string1 <- first
-      , InternalString_ string2 <- second
-      , on (==) internalStringSort string1 string1 =
+      , InternalString_ string2 <- second =
         Just UnifyString{string1, string2}
     | otherwise = Nothing
 {-# INLINE matchString #-}
@@ -497,11 +496,14 @@ unifyString ::
     TermLike RewritingVariableName ->
     UnifyString ->
     unifier (Pattern RewritingVariableName)
-unifyString term1 term2 unifyData
-    | on (==) internalStringValue string1 string2 =
-        return $ Pattern.fromTermLike term1
-    | otherwise = explainAndReturnBottom "distinct strings" term1 term2
+unifyString term1 term2 unifyData =
+    assert (on (==) internalStringSort string1 string2) worker
   where
+    worker :: unifier (Pattern RewritingVariableName)
+    worker
+        | on (==) internalStringValue string1 string2 =
+            return $ Pattern.fromTermLike term1
+        | otherwise = explainAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2} = unifyData
 
 {- | Unification of the @STRING.eq@ symbol
