@@ -532,7 +532,7 @@ test_decodeBytes_encodeBytes = map testProp encodings
     testProp encoding =
         testPropertyWithSolver "∀ s. decodeBytes (encodeBytes s) = s" $ do
             str <- forAll genString
-            let expect = Test.String.asPattern str
+            let expect = Test.String.asOrPattern str
             actual <-
                 evaluateT $
                     mkApplySymbol
@@ -561,7 +561,7 @@ test_decodeBytes =
         [ Test.String.asInternal "bad"
         , asInternal ""
         ]
-        ( Pattern.fromTermLike $
+        ( OrPattern.fromTermLike $
             mkApplySymbol
                 decodeBytesBytesSymbol
                 [Test.String.asInternal "bad", asInternal ""]
@@ -575,7 +575,7 @@ test_encodeBytes =
         [ Test.String.asInternal "bad"
         , Test.String.asInternal ""
         ]
-        ( Pattern.fromTermLike $
+        ( OrPattern.fromTermLike $
             mkApplySymbol
                 encodeBytesBytesSymbol
                 [Test.String.asInternal "bad", Test.String.asInternal ""]
