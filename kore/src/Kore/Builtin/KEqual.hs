@@ -166,9 +166,9 @@ evalKEq true _ (valid :< app) =
         TermLike variable ->
         MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2
-          | termLike1 == termLike2 =
+        | termLike1 == termLike2 =
             Builtin.appliedFunction $ Bool.asPattern sort true
-          | otherwise = do
+        | otherwise = do
             -- Here we handle the case when both patterns are constructor-like
             -- (so that equality is syntactic). If either pattern is not
             -- constructor-like, we postpone evaluation until we know more.
