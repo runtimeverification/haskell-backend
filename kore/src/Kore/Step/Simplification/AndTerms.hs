@@ -154,8 +154,8 @@ maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first
         lift $ unifyStringLiteral first second unifyData
     | Just () <- matchEqualsAndEquals first second =
         lift $ equalAndEquals first
-    | Just () <- matchBytesDifferent first second =
-        lift bytesDifferent
+    | Just unifyData <- matchBytes first second =
+        lift $ bytesDifferent unifyData
     | Just () <- matchBottomTermEquals first =
         lift $ bottomTermEquals SideCondition.topTODO first second
     | Just () <- matchBottomTermEquals second =
@@ -256,8 +256,8 @@ maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first se
         lift $ unifyStringLiteral first second unifyData
     | Just () <- matchEqualsAndEquals first second =
         lift $ equalAndEquals first
-    | Just () <- matchBytesDifferent first second =
-        lift bytesDifferent
+    | Just unifyData <- matchBytes first second =
+        lift $ bytesDifferent unifyData
     | Just unifyData <- matchVariableFunctionAnd first second =
         lift $ variableFunctionAnd second unifyData
     | Just unifyData <- matchVariableFunctionAnd second first =
@@ -920,6 +920,10 @@ compareForEquals first second
     | isConstructorLike second = GT
     | otherwise = compare first second
 
+data UnifyBytes = UnifyBytes {
+    bytes1, bytes2 :: InternalBytes
+}
+
 {- | Matches
 
 @
@@ -932,26 +936,24 @@ and
 \\and{_}(\\dv{Bytes}(bytes1), \\dv{Bytes}(bytes2))
 @
 
-when
-
-@
-bytes1 /= bytes2
-@
 -}
-matchBytesDifferent ::
+matchBytes ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe ()
-matchBytesDifferent first second
-    | _ :< InternalBytesF (Const bytesFirst) <- Recursive.project first
-      , _ :< InternalBytesF (Const bytesSecond) <- Recursive.project second
-      , bytesFirst /= bytesSecond =
-        Just ()
+    Maybe UnifyBytes
+matchBytes first second
+    | _ :< InternalBytesF (Const bytes1) <- Recursive.project first
+      , _ :< InternalBytesF (Const bytes2) <- Recursive.project second =
+        Just UnifyBytes{bytes1, bytes2}
     | otherwise = Nothing
-{-# INLINE matchBytesDifferent #-}
+{-# INLINE matchBytes #-}
 
 bytesDifferent ::
     MonadUnify unifier =>
+    UnifyBytes ->
     unifier (Pattern RewritingVariableName)
-bytesDifferent =
-    return Pattern.bottom
+bytesDifferent UnifyBytes{ bytes1, bytes2 }
+    | bytes1 == bytes2 =
+        return $ Pattern.fromTermLike $ mkInternalBytes' bytes1
+    | otherwise =
+        empty
