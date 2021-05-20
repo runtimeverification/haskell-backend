@@ -44,7 +44,6 @@ and
 @
 
 when @f@ is injective.
-
 -}
 matchEqualInjectiveHeadsAndEquals ::
     TermLike RewritingVariableName ->
@@ -99,7 +98,6 @@ equalInjectiveHeadsAndEquals
             , firstChildren
             , secondChildren
             } = unifyData
-
 
 {- | Matches
 

@@ -243,7 +243,6 @@ and
 @
 \\and{_}(eq(_,_), \\dv{Bool}(_))
 @
-
 -}
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->

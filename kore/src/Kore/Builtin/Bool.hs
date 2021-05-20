@@ -180,7 +180,6 @@ and
 @
 \\and{_}(\\dv{Bool}(_), \\dv{Bool}(_))
 @
-
 -}
 matchBools ::
     TermLike RewritingVariableName ->
@@ -223,7 +222,6 @@ and
 @
 \\and{_}(\\dv{Bool}("true"), andBool(_,_))
 @
-
 -}
 matchUnifyBoolAnd ::
     TermLike RewritingVariableName ->
@@ -286,7 +284,6 @@ and
 @
 \\and{_}(\\dv{Bool}("false"), boolOr(_,_))
 @
-
 -}
 matchUnifyBoolOr ::
     TermLike RewritingVariableName ->
@@ -328,7 +325,6 @@ and
 @
 \\and{_}(notBool(_), \\dv{Bool}(_))
 @
-
 -}
 matchUnifyBoolNot ::
     TermLike RewritingVariableName ->

@@ -487,7 +487,6 @@ and
 @
 \\and{_}(\\dv{String}(_), \\dv{String}}(_))
 @
-
 -}
 matchString ::
     TermLike RewritingVariableName ->

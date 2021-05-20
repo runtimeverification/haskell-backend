@@ -340,7 +340,6 @@ and
 @
 \\and{_}(\\top, _)
 @
-
 -}
 matchBoolAnd ::
     TermLike RewritingVariableName ->
@@ -388,7 +387,6 @@ and
 @
 \\and{_}(t, t)
 @
-
 -}
 matchEqualsAndEquals ::
     TermLike RewritingVariableName ->
@@ -414,7 +412,6 @@ equalAndEquals first =
 @
 \\equals{_, _}(\\bottom, _)
 @
-
 -}
 matchBottomTermEquals ::
     TermLike RewritingVariableName ->
@@ -507,7 +504,6 @@ and
 @
 \\and{_}(x, f(_))
 @
-
 -}
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
@@ -576,7 +572,6 @@ when either
 * @sub@ is a subsort of @sub'@ or vice-versa.
 * @children@ or @children'@ satisfies @hasConstructorLikeTop@.
 * the subsorts of @sub, sub'@ are disjoint.
-
 -}
 matchSortInjectionAndEquals ::
     InjSimplifier ->
@@ -653,7 +648,6 @@ and
 @
 
 when @f@ has the @constructor@ attribute.
-
 -}
 matchConstructorSortInjectionAndEquals ::
     TermLike RewritingVariableName ->
@@ -792,7 +786,6 @@ and
 @
 \\and{_}(\\dv{s}(_), \\dv{s}(_))
 @
-
 -}
 matchDomainValue ::
     TermLike RewritingVariableName ->
@@ -855,7 +848,6 @@ and
 @
 \\and{_}("str1", "str2")
 @
-
 -}
 matchStringLiteral ::
     TermLike RewritingVariableName ->
@@ -945,7 +937,6 @@ when
 @
 bytes1 /= bytes2
 @
-
 -}
 matchBytesDifferent ::
     TermLike RewritingVariableName ->

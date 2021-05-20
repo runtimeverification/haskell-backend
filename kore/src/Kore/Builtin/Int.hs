@@ -443,7 +443,6 @@ and
 @
 \\and{_}(\\dv{Int}(_), \\dv{Int}(_))
 @
-
 -}
 matchInt ::
     TermLike RewritingVariableName ->
