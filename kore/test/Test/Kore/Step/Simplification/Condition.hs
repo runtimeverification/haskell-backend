@@ -5,46 +5,46 @@ module Test.Kore.Step.Simplification.Condition (
 ) where
 
 import qualified Data.Map.Strict as Map
-import Kore.Internal.Condition
-    ( Condition
-    , Conditional (..)
-    )
+import Kore.Internal.Condition (
+    Condition,
+    Conditional (..),
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Condition as Conditional
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeFalsePredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeFalsePredicate,
+    makeTruePredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    top,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.Axiom.EvaluationStrategy
-    ( firstFullEvaluation
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( AxiomIdentifier (..)
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Step.Axiom.EvaluationStrategy (
+    firstFullEvaluation,
+ )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
@@ -363,21 +363,21 @@ test_simplifyPredicates =
     , testCase "\\bottom and _ => \\bottom" $ do
         let predicate =
                 MultiAnd.make
-                [ makeFalsePredicate
-                , makeEqualsPredicate
-                    (mkElemVar Mock.xConfig)
-                    Mock.a
-                ]
+                    [ makeFalsePredicate
+                    , makeEqualsPredicate
+                        (mkElemVar Mock.xConfig)
+                        Mock.a
+                    ]
         actual <- simplifyPredicates predicate
         assertEqual "" [] actual
     , testCase "_ and \\bottom => \\bottom" $ do
         let predicate =
                 MultiAnd.make
-                [ makeEqualsPredicate
-                    (mkElemVar Mock.xConfig)
-                    Mock.a
-                , makeFalsePredicate
-                ]
+                    [ makeEqualsPredicate
+                        (mkElemVar Mock.xConfig)
+                        Mock.a
+                    , makeFalsePredicate
+                    ]
         actual <- simplifyPredicates predicate
         assertEqual "" [] actual
     ]

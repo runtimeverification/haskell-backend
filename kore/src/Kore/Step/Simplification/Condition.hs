@@ -154,7 +154,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             zip predicates $
                 scanr ((<>) . MultiAnd.singleton) MultiAnd.top rest
     State.execStateT
-        (traverse
+        ( traverse
             simplifyWithAssumptions
             predicatesWithUnsimplified
         )
