@@ -8,6 +8,7 @@ module Kore.Step.Simplification.Predicate (
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -29,6 +30,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -89,8 +91,22 @@ simplify ::
     Predicate RewritingVariableName ->
     simplifier DisjunctiveNormalForm
 simplify sideCondition =
-    worker
+    loop . MultiOr.singleton . MultiAnd.singleton
   where
+    loop :: DisjunctiveNormalForm -> simplifier DisjunctiveNormalForm
+    loop input = do
+        output <- MultiAnd.traverseOrAnd worker input
+        if input == output
+            then return (mark output)
+            else loop output
+
+    mark :: DisjunctiveNormalForm -> DisjunctiveNormalForm
+    mark =
+        (MultiOr.map . MultiAnd.map)
+            (Predicate.markSimplifiedConditional reprSideCondition)
+
+    reprSideCondition = SideCondition.toRepresentation sideCondition
+
     worker ::
         Predicate RewritingVariableName ->
         simplifier DisjunctiveNormalForm
@@ -170,7 +186,11 @@ normalizeNot = normalizeNotOr
     normalizeNotAnd ::
         Not sort (MultiAnd (Predicate RewritingVariableName)) ->
         simplifier DisjunctiveNormalForm
-    normalizeNotAnd Not{notChild} =
-        MultiOr.observeAllT $ do
-            predicate <- Logic.scatter notChild
-            pure (MultiAnd.singleton $ fromNot predicate)
+    normalizeNotAnd Not{notChild = predicates}
+        | TopBottom.isTop predicates =
+            pure MultiOr.bottom
+        | TopBottom.isBottom predicates =
+            (pure . MultiOr.singleton) MultiAnd.top
+        | otherwise =
+            (pure . MultiOr.singleton . MultiAnd.singleton)
+                (fromNot $ MultiAnd.toPredicate predicates)
