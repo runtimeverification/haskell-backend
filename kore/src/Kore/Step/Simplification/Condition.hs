@@ -13,41 +13,41 @@ module Kore.Step.Simplification.Condition (
 
 import Changed
 import qualified Control.Lens as Lens
-import Control.Monad.State.Strict
-    ( StateT
-    )
+import Control.Monad.State.Strict (
+    StateT,
+ )
 import qualified Control.Monad.State.Strict as State
-import Data.Generics.Product
-    ( field
-    )
+import Data.Generics.Product (
+    field,
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Condition
-    , Conditional (..)
-    )
+import Kore.Internal.Pattern (
+    Condition,
+    Conditional (..),
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Simplification.SubstitutionSimplifier
-    ( SubstitutionSimplifier (..)
-    )
+import Kore.Step.Simplification.SubstitutionSimplifier (
+    SubstitutionSimplifier (..),
+ )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -156,7 +156,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             zip predicates $
                 scanr ((<>) . MultiAnd.singleton) MultiAnd.top rest
     State.execStateT
-        (traverse
+        ( traverse
             simplifyWithAssumptions
             predicatesWithUnsimplified
         )
@@ -179,13 +179,13 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
         result <- lift $ simplifyPredicate' otherSideConds predicate
         State.put (simplifiedSideCond <> result)
 
-    simplifyPredicate'
-        :: SideCondition RewritingVariableName
-        -> Predicate RewritingVariableName
-        -> LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
+    simplifyPredicate' ::
+        SideCondition RewritingVariableName ->
+        Predicate RewritingVariableName ->
+        LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
     simplifyPredicate' sideCondition' predicate =
         simplifyPredicate sideCondition' predicate
-        & fmap (from @(Condition _) @(MultiAnd _))
+            & fmap (from @(Condition _) @(MultiAnd _))
 
 {- | Simplify the 'Predicate' once.
 
