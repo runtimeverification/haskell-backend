@@ -920,9 +920,9 @@ compareForEquals first second
     | isConstructorLike second = GT
     | otherwise = compare first second
 
-data UnifyBytes = UnifyBytes {
-    bytes1, bytes2 :: InternalBytes
-}
+data UnifyBytes = UnifyBytes
+    { bytes1, bytes2 :: InternalBytes
+    }
 
 {- | Matches
 
@@ -935,7 +935,6 @@ and
 @
 \\and{_}(\\dv{Bytes}(bytes1), \\dv{Bytes}(bytes2))
 @
-
 -}
 matchBytes ::
     TermLike RewritingVariableName ->
@@ -952,7 +951,7 @@ bytesDifferent ::
     MonadUnify unifier =>
     UnifyBytes ->
     unifier (Pattern RewritingVariableName)
-bytesDifferent UnifyBytes{ bytes1, bytes2 }
+bytesDifferent UnifyBytes{bytes1, bytes2}
     | bytes1 == bytes2 =
         return $ Pattern.fromTermLike $ mkInternalBytes' bytes1
     | otherwise =
