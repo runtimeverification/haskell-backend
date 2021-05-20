@@ -33,7 +33,7 @@ data UnifyExpandAlias = UnifyExpandAlias
     { term1, term2 :: !(TermLike RewritingVariableName)
     }
 
--- | Matches two terms when either is an @ApplyAlias_@ pattern.
+-- | Matches two terms when either is an alias.
 matchExpandAlias ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

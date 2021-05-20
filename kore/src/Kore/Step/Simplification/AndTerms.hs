@@ -329,7 +329,19 @@ data UnifyBoolAnd
     = UnifyBoolAndBottom
     | UnifyBoolAndTop
 
--- | Matches a term which is either top or bottom.
+{- | Matches
+
+@
+\\and{_}(\\bottom, _)
+@
+
+and
+
+@
+\\and{_}(\\top, _)
+@
+
+-}
 matchBoolAnd ::
     TermLike RewritingVariableName ->
     Maybe UnifyBoolAnd
@@ -365,7 +377,19 @@ explainBoolAndBottom ::
 explainBoolAndBottom term1 term2 =
     explainBottom "Cannot unify bottom." term1 term2
 
--- | Matches two syntactically identical values.
+{- | Matches
+
+@
+\\equals{_, _}(t, t)
+@
+
+and
+
+@
+\\and{_}(t, t)
+@
+
+-}
 matchEqualsAndEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -385,7 +409,13 @@ equalAndEquals first =
     -- TODO (thomas.tuegel): Preserve simplified flags.
     return (Pattern.fromTermLike first)
 
--- | Matches a term which is Bottom.
+{- | Matches
+
+@
+\\equals{_, _}(\\bottom, _)
+@
+
+-}
 matchBottomTermEquals ::
     TermLike RewritingVariableName ->
     Maybe ()
@@ -466,7 +496,19 @@ variableFunctionAnd second unifyData =
                 Condition.fromSingleSubstitution
                     (Substitution.assign (inject v) second)
 
--- | Matches two terms when the first is a variable and the second is a function pattern.
+{- | Matches
+
+@
+\\equals{_, _}(x, f(_))
+@
+
+and
+
+@
+\\and{_}(x, f(_))
+@
+
+-}
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -515,12 +557,26 @@ newtype SortInjectionAndEquals = SortInjectionAndEquals
     { matchData :: Either Distinct (InjUnify RewritingVariableName)
     }
 
-{- | Matches two sort injections when either
-        * they have distinct codomains.
-        * they have identical domains.
-        * one domain is a subsort of the other.
-        * the child of either satisfies @hasConstructorLikeTop@.
-        * the subsorts of the domains are disjoint.
+{- | Matches
+
+@
+\\equals{_, _}(inj{sub, super}(children), inj{sub', super'}(children'))
+@
+
+and
+
+@
+\\and{_}(inj{sub, super}(children), inj{sub', super'}(children'))
+@
+
+when either
+
+* @super /= super'@
+* @sub == sub'@
+* @sub@ is a subsort of @sub'@ or vice-versa.
+* @children@ or @children'@ satisfies @hasConstructorLikeTop@.
+* the subsorts of @sub, sub'@ are disjoint.
+
 -}
 matchSortInjectionAndEquals ::
     InjSimplifier ->
@@ -576,7 +632,29 @@ sortInjectionAndEquals termMerger injSimplifier first second unifyData = do
 
     SortInjectionAndEquals{matchData} = unifyData
 
--- | Matches a constructor application pattern with a sort injection pattern (symmetric in the two arguments)
+{- | Matches
+
+@
+\\equals{_, _}(inj{_,_}(_), f(_))
+@
+
+@
+\\equals{_, _}(f(_), inj{_,_}(_))
+@
+
+and
+
+@
+\\and{_}(inj{_,_}(_), f(_))
+@
+
+@
+\\and{_}(f(_), inj{_,_}(_))
+@
+
+when @f@ has the @constructor@ attribute.
+
+-}
 matchConstructorSortInjectionAndEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -703,7 +781,19 @@ data UnifyDomainValue = UnifyDomainValue
     { val1, val2 :: !(TermLike RewritingVariableName)
     }
 
--- | Matches two domain values with equal sorts.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{s}(_), \\dv{s}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{s}(_), \\dv{s}(_))
+@
+
+-}
 matchDomainValue ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -754,7 +844,19 @@ data UnifyStringLiteral = UnifyStringLiteral
     { txt1, txt2 :: !Text
     }
 
--- | Matches two string literal values.
+{- | Matches
+
+@
+\\equals{_, _}("str1", "str1")
+@
+
+and
+
+@
+\\and{_}("str1", "str2")
+@
+
+-}
 matchStringLiteral ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -826,7 +928,25 @@ compareForEquals first second
     | isConstructorLike second = GT
     | otherwise = compare first second
 
--- | Matches two constant byte values with distinct values.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bytes}(bytes1), \\dv{Bytes}(bytes2))
+@
+
+and
+
+@
+\\and{_}(\\dv{Bytes}(bytes1), \\dv{Bytes}(bytes2))
+@
+
+when
+
+@
+bytes1 /= bytes2
+@
+
+-}
 matchBytesDifferent ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

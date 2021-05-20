@@ -231,6 +231,20 @@ data UnifyKequalsEq = UnifyKequalsEq
     and the first is a function pattern matching
     the @KEQUAL.eq@ hooked symbol.
 -}
+
+{- | Matches
+
+@
+\\equals{_, _}(eq(_,_), \\dv{Bool}(_))
+@
+
+and
+
+@
+\\and{_}(eq(_,_), \\dv{Bool}(_))
+@
+
+-}
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

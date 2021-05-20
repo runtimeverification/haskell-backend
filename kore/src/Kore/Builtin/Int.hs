@@ -432,7 +432,19 @@ data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
     }
 
--- | Matches two Int values.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Int}(_), \\dv{Int}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{Int}(_), \\dv{Int}(_))
+@
+
+-}
 matchInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -467,9 +479,10 @@ data UnifyIntEq = UnifyIntEq
     , value :: !Bool
     }
 
-{- | Matches two terms when second is a bool term
-    and the first is a function pattern matching
-    the @INT.eq@ hooked symbol.
+{- | Matches
+@
+\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_))
+@
 -}
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->

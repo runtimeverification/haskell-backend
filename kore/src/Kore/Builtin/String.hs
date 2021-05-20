@@ -476,7 +476,19 @@ data UnifyString = UnifyString
     { string1, string2 :: !InternalString
     }
 
--- | Matches two String values with equal sorts.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{String}(_), \\dv{String}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{String}(_), \\dv{String}}(_))
+@
+
+-}
 matchString ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

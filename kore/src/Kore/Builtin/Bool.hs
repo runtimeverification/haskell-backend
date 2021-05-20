@@ -169,7 +169,19 @@ data UnifyBool = UnifyBool
     { bool1, bool2 :: !InternalBool
     }
 
--- | Matches two Bool values.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}(_), \\dv{Bool}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{Bool}(_), \\dv{Bool}(_))
+@
+
+-}
 matchBools ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -200,9 +212,18 @@ unifyBool termLike1 termLike2 unifyData
   where
     UnifyBool{bool1, bool2} = unifyData
 
-{- | Matches two terms when first is a true bool term
-    and the second is a function pattern matching
-    the @BOOL.and@ hooked symbol.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}("true"), andBool(_,_))
+@
+
+and
+
+@
+\\and{_}(\\dv{Bool}("true"), andBool(_,_))
+@
+
 -}
 matchUnifyBoolAnd ::
     TermLike RewritingVariableName ->
@@ -254,9 +275,18 @@ unifyBothWith unify termLike1 operand1 operand2 = do
     unify' term1 term2 =
         Pattern.withoutTerm <$> unify term1 term2
 
-{- | Matches two terms when first is a false bool term
-    and the second is a function pattern matching
-    the @BOOL.or@ hooked symbol.
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}("false"), boolOr(_,_))
+@
+
+and
+
+@
+\\and{_}(\\dv{Bool}("false"), boolOr(_,_))
+@
+
 -}
 matchUnifyBoolOr ::
     TermLike RewritingVariableName ->
@@ -287,9 +317,18 @@ data UnifyBoolNot = UnifyBoolNot
     , value :: Bool
     }
 
-{- | Matches two terms when second is a bool term
-    and the first is a function pattern matching
-    the @BOOL.not@ hooked symbol.
+{- | Matches
+
+@
+\\equals{_, _}(notBool(_), \\dv{Bool}(_))
+@
+
+and
+
+@
+\\and{_}(notBool(_), \\dv{Bool}(_))
+@
+
 -}
 matchUnifyBoolNot ::
     TermLike RewritingVariableName ->
