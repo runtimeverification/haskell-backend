@@ -24,6 +24,7 @@ module Kore.Internal.SideCondition (
     addPredicate,
     addPredicates,
     assumeTrue,
+    constructReplacements,
 ) where
 
 import Changed

@@ -89,7 +89,6 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         simplified <-
             simplifyPredicate sideCondition predicate'
                 >>= simplifyPredicates sideCondition . from @_ @(MultiAnd _)
-                & fmap (from @_ @(Condition _) . MultiAnd.toPredicate)
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -128,19 +127,18 @@ simplifyPredicates ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (Predicate RewritingVariableName) ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
+    LogicT simplifier (Condition RewritingVariableName)
 simplifyPredicates sideCondition original = do
     let predicates =
-            case SideCondition.simplifyConjunctionByAssumption original of
-                Unchanged _ -> original
-                Changed (changed, _) -> changed
+            SideCondition.simplifyConjunctionByAssumption original
+            & fst . extract
     simplified <-
         simplifyPredicatesWithAssumptions
             sideCondition
             (toList predicates)
-    if original == simplified
-        then return original
-        else simplifyPredicates sideCondition simplified
+    if original == from simplified
+        then return (Condition.markSimplified simplified)
+        else simplifyPredicates sideCondition (from simplified)
 
 simplifyPredicatesWithAssumptions ::
     forall simplifier.
@@ -149,8 +147,8 @@ simplifyPredicatesWithAssumptions ::
     [Predicate RewritingVariableName] ->
     LogicT
         simplifier
-        (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
+        (Condition RewritingVariableName)
+simplifyPredicatesWithAssumptions _ [] = return Condition.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
     let predicatesWithUnsimplified =
             zip predicates $
@@ -160,32 +158,24 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             simplifyWithAssumptions
             predicatesWithUnsimplified
         )
-        MultiAnd.top
+        Condition.top
   where
     simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
         , MultiAnd (Predicate RewritingVariableName)
         ) ->
         StateT
-            (MultiAnd (Predicate RewritingVariableName))
+            (Condition RewritingVariableName)
             (LogicT simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         simplifiedSideCond <- State.get
         let otherSideConds =
                 SideCondition.addPredicates
-                    (simplifiedSideCond <> unsimplifiedSideCond)
+                    (from simplifiedSideCond <> unsimplifiedSideCond)
                     sideCondition
-        result <- lift $ simplifyPredicate' otherSideConds predicate
+        result <- lift $ simplifyPredicate otherSideConds predicate
         State.put (simplifiedSideCond <> result)
-
-    simplifyPredicate'
-        :: SideCondition RewritingVariableName
-        -> Predicate RewritingVariableName
-        -> LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-    simplifyPredicate' sideCondition' predicate =
-        simplifyPredicate sideCondition' predicate
-        & fmap (from @(Condition _) @(MultiAnd _))
 
 {- | Simplify the 'Predicate' once.
 

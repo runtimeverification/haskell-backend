@@ -359,7 +359,7 @@ test_simplifyPredicates :: [TestTree]
 test_simplifyPredicates =
     [ testCase "\\top => \\top" $ do
         [actual] <- simplifyPredicates MultiAnd.top
-        assertEqual "" MultiAnd.top actual
+        assertEqual "" Condition.top actual
     , testCase "\\bottom and _ => \\bottom" $ do
         let predicate =
                 MultiAnd.make
@@ -433,7 +433,7 @@ simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
 
 simplifyPredicates ::
     MultiAnd (Predicate RewritingVariableName) ->
-    IO [MultiAnd (Predicate RewritingVariableName)]
+    IO [Condition RewritingVariableName]
 simplifyPredicates predicate =
     Condition.simplifyPredicates SideCondition.top predicate
         & Test.runSimplifierBranch Mock.env
