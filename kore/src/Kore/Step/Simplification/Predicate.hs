@@ -186,11 +186,20 @@ normalizeNot = normalizeNotOr
     normalizeNotAnd ::
         Not sort (MultiAnd (Predicate RewritingVariableName)) ->
         simplifier DisjunctiveNormalForm
-    normalizeNotAnd Not{notChild = predicates}
-        | TopBottom.isTop predicates =
-            pure MultiOr.bottom
-        | TopBottom.isBottom predicates =
-            (pure . MultiOr.singleton) MultiAnd.top
-        | otherwise =
-            (pure . MultiOr.singleton . MultiAnd.singleton)
-                (fromNot $ MultiAnd.toPredicate predicates)
+    normalizeNotAnd Not{notChild = predicates} =
+        normalized
+            & MultiOr.singleton
+            & pure
+      where
+        fallback =
+            MultiAnd.singleton (fromNot $ MultiAnd.toPredicate predicates)
+        normalized =
+            case toList predicates of
+                [predicate] ->
+                    case predicateF of
+                        NotF Not{notChild = result} ->
+                            MultiAnd.fromPredicate result
+                        _ -> fallback
+                  where
+                    _ :< predicateF = Recursive.project predicate
+                _ -> fallback

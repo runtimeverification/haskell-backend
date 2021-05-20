@@ -115,4 +115,10 @@ This one is not as useful as the rule for `\and`:
 \not(\bottom) = \top
 ```
 
+#### \not
+
+``` kore
+\not(\not(P)) = P
+```
+
 [disjunctive normal form]: https://en.wikipedia.org/wiki/Disjunctive_normal_form

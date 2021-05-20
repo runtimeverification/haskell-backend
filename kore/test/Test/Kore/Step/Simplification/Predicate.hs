@@ -66,6 +66,25 @@ test_simplify =
             fromTop_
             [[]]
         ]
+    , testGroup
+        "\\not"
+        [ test
+            "Normalization"
+            (fromNot $ fromOr faCeil fbCeil)
+            [[fromNot faCeil, fromNot fbCeil]]
+        , test
+            "\\top"
+            (fromNot fromTop_)
+            []
+        , test
+            "\\bottom"
+            (fromNot fromBottom_)
+            [[]]
+        , test
+            "\\not"
+            (fromNot $ fromNot faCeil)
+            [[faCeil]]
+        ]
     ]
   where
     test ::
