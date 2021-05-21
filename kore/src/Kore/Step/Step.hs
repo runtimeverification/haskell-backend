@@ -29,9 +29,6 @@ module Kore.Step.Step (
     Step.results,
 ) where
 
-import Data.Functor (
-    (<&>),
- )
 import qualified Data.Map.Strict as Map
 import Data.Set (
     Set,

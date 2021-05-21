@@ -64,9 +64,6 @@ import Control.Error (
     runMaybeT,
  )
 import qualified Data.Default as Default
-import Data.Functor (
-    (<&>),
- )
 import qualified Data.HashMap.Strict as HashMap
 import Data.HashSet (
     HashSet,

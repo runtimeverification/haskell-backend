@@ -13,6 +13,7 @@ module Prelude.Kore (
     -- * Functions
     (&),
     on,
+    (<&>),
 
     -- * Maybe
     isJust,
@@ -139,6 +140,9 @@ import Data.Either (
     partitionEithers,
  )
 import Data.Foldable
+import Data.Functor (
+    (<&>)
+ )
 import Data.Function (
     on,
     (&),
