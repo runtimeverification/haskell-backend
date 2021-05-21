@@ -168,7 +168,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
             lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
         | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
-            lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
+            lift $ sortInjectionAndEquals childTransformers first second unifyData
         | Just () <- matchConstructorSortInjectionAndEquals first second =
             lift $ constructorSortInjectionAndEquals first second
         | Just () <- matchDifferentConstructors isOverloaded first second =
@@ -267,7 +267,7 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
             lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
         | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
-            lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
+            lift $ sortInjectionAndEquals childTransformers first second unifyData
         | Just () <- matchConstructorSortInjectionAndEquals first second =
             lift $ constructorSortInjectionAndEquals first second
         | Just () <- matchDifferentConstructors isOverloaded first second =
@@ -609,12 +609,12 @@ sortInjectionAndEquals ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
-    InjSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     SortInjectionAndEquals ->
     unifier (Pattern RewritingVariableName)
-sortInjectionAndEquals termMerger injSimplifier first second unifyData = do
+sortInjectionAndEquals termMerger first second unifyData = do
+    injSimplifier <- Simplifier.askInjSimplifier
     unifyInjs injSimplifier matchData & either distinct merge
   where
     emptyIntersection = explainAndReturnBottom "Empty sort intersection"
