@@ -71,10 +71,10 @@ import qualified Kore.Attribute.RuleIndex as Attribute (
 import qualified Kore.Attribute.SourceLocation as Attribute (
     SourceLocation,
  )
+import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import qualified Kore.Attribute.UniqueId as Attribute (
     UniqueId,
  )
-import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
     VerifiedModule,

@@ -15,10 +15,10 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Substitution (
+    Substitution,
     assignedTerm,
     assignedVariable,
     unwrap,
-    Substitution,
  )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
@@ -45,7 +45,7 @@ import qualified Pretty
 
 data DebugRewriteSubstitution = DebugRewriteSubstitution
     { configuration :: Pattern VariableName
-    , appliedRules  :: [(UniqueId, Substitution VariableName)]
+    , appliedRules :: [(UniqueId, Substitution VariableName)]
     }
     deriving stock (Show)
 
