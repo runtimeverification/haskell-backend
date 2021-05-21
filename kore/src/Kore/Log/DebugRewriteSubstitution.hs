@@ -7,10 +7,6 @@ module Kore.Log.DebugRewriteSubstitution (
     debugRewriteSubstitution,
 ) where
 
-import Data.Text (unpack)
-import Kore.Attribute.Axiom (
-    Axiom (..),
- )
 import Kore.Attribute.UniqueId (
     UniqueId (..),
  )
@@ -22,40 +18,34 @@ import Kore.Internal.Substitution (
     assignedTerm,
     assignedVariable,
     unwrap,
+    Substitution,
  )
+import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
     VariableName,
     toVariableName,
  )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.Result (
-    Result (..),
-    Results (..),
- )
 import Kore.Step.RulePattern (
-    RulePattern (..),
-    mapRuleVariables,
+    UnifyingRuleVariable,
  )
 import Kore.Step.Step (
     UnifiedRule,
  )
 import Kore.Unparser (
-    Unparse,
     unparse,
  )
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
-    layoutOneLine,
-    renderString,
  )
 import qualified Pretty
 
 data DebugRewriteSubstitution = DebugRewriteSubstitution
     { configuration :: Pattern VariableName
-    , appliedRules :: [UnifiedRule (RulePattern VariableName)]
+    , appliedRules  :: [(UniqueId, Substitution VariableName)]
     }
     deriving stock (Show)
 
@@ -63,33 +53,27 @@ instance Pretty DebugRewriteSubstitution where
     pretty DebugRewriteSubstitution{configuration, appliedRules} =
         Pretty.vsep $ unparseRule <$> appliedRules
       where
-        unparseOneLine :: Unparse p => p -> String
-        unparseOneLine = renderString . layoutOneLine . unparse
+        ruleInfo :: UniqueId -> [Pretty.Doc ann]
+        ruleInfo uniqueId =
+            [ "- type: rewriting"
+            , "  from: >"
+            , Pretty.indent 4 $ unparse $ Conditional.term configuration
+            , "  rule-id: " <> (pretty $ fromMaybe "null" $ getUniqueId uniqueId)
+            , "  substitution:"
+            ]
 
-        ruleInfo :: Maybe String -> [Pretty.Doc ann]
-        ruleInfo uid =
-            pretty
-                <$> [ "- type: rewriting" :: String
-                    , "  from: >"
-                    , "    " ++ unparseOneLine (Conditional.term configuration)
-                    , "  rule-id: " ++ fromMaybe "null" uid
-                    , "  substitution:"
-                    ]
-
-        unparseRule :: UnifiedRule (RulePattern VariableName) -> Pretty.Doc ann
-        unparseRule Conditional.Conditional{term, substitution} =
-            Pretty.vsep $ ruleInfo uid ++ map (Pretty.indent 2) subst
+        unparseRule :: (UniqueId, Substitution VariableName) -> Pretty.Doc ann
+        unparseRule (uniqueId, substitution) =
+            Pretty.vsep $ ruleInfo uniqueId ++ map (Pretty.indent 2) subst
           where
-            uid = unpack <$> getUniqueId (uniqueId $ attributes term)
             subst = getKV <$> unwrap substitution
             getKV assignment =
                 Pretty.vsep $
-                    pretty
-                        <$> [ "- key: >" :: String
-                            , "    " ++ unparseOneLine (assignedVariable assignment)
-                            , "  value: >"
-                            , "    " ++ unparseOneLine (assignedTerm assignment)
-                            ]
+                    [ "- key: >"
+                    , Pretty.indent 4 $ unparse $ assignedVariable assignment
+                    , "  value: >"
+                    , Pretty.indent 4 $ unparse $ assignedTerm assignment
+                    ]
 
 instance Entry DebugRewriteSubstitution where
     entrySeverity _ = Debug
@@ -97,14 +81,17 @@ instance Entry DebugRewriteSubstitution where
 
 debugRewriteSubstitution ::
     MonadLog log =>
+    UnifyingRuleVariable rule ~ RewritingVariableName =>
+    From rule UniqueId =>
     Pattern RewritingVariableName ->
-    -- -> [UnifiedRule (RulePattern RewritingVariableName)]
-    Results (UnifiedRule (RulePattern RewritingVariableName)) (Pattern RewritingVariableName) ->
+    [UnifiedRule rule] ->
     log ()
-debugRewriteSubstitution initial Results{results} =
+debugRewriteSubstitution initial unifiedRules =
     logEntry (DebugRewriteSubstitution configuration appliedRules)
   where
-    mapConditionalVariables mapTermVariables =
-        Conditional.mapVariables mapTermVariables (pure toVariableName)
-    configuration = mapConditionalVariables TermLike.mapVariables initial
-    appliedRules = mapConditionalVariables mapRuleVariables . appliedRule <$> toList results
+    configuration = Conditional.mapVariables TermLike.mapVariables (pure toVariableName) initial
+    appliedRules = uniqueIdAndSubstitution <$> unifiedRules
+
+    mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
+    uniqueIdAndSubstitution rule =
+        (from @_ @UniqueId (extract rule), mapSubstitutionVariables (Conditional.substitution rule))

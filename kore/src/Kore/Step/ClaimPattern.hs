@@ -113,6 +113,9 @@ instance From ClaimPattern Attribute.Label where
 instance From ClaimPattern Attribute.RuleIndex where
     from = Attribute.identifier . attributes
 
+instance From ClaimPattern Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes
+
 instance Pretty ClaimPattern where
     pretty claimPattern'@(ClaimPattern _ _ _ _) =
         Pretty.vsep

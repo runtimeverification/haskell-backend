@@ -107,6 +107,9 @@ instance From OnePathClaim Attribute.RuleIndex where
 instance From OnePathClaim Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathClaim
 
+instance From OnePathClaim Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes . getOnePathClaim
+
 instance UnifyingRule OnePathClaim where
     type UnifyingRuleVariable OnePathClaim = RewritingVariableName
 

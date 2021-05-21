@@ -101,6 +101,9 @@ instance From AllPathClaim Attribute.RuleIndex where
 instance From AllPathClaim Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathClaim
 
+instance From AllPathClaim Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes . getAllPathClaim
+
 {- | Converts an 'AllPathClaim' into its term representation.
  This is intended to be used only in unparsing situations,
  as some of the variable information related to the
