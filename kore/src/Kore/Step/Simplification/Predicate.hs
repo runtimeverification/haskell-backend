@@ -102,8 +102,13 @@ simplify sideCondition =
 
     mark :: DisjunctiveNormalForm -> DisjunctiveNormalForm
     mark =
-        (MultiOr.map . MultiAnd.map)
-            (Predicate.markSimplifiedConditional reprSideCondition)
+        (MultiOr.map . MultiAnd.map) mark1
+
+    mark1 ::
+        Predicate RewritingVariableName ->
+        Predicate RewritingVariableName
+    mark1 =
+        Recursive.fold $ Predicate.markSimplifiedConditional reprSideCondition . Recursive.embed
 
     reprSideCondition = SideCondition.toRepresentation sideCondition
 
