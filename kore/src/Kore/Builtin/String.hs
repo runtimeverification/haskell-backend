@@ -524,15 +524,15 @@ data UnifyStringEq = UnifyStringEq
     }
 
 --TODO: document
-matchUnifyStringEq
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyStringEq
+matchUnifyStringEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyStringEq
 matchUnifyStringEq first second
     | Just eqTerm <- matchStringEqual second
-    , isFunctionPattern first
-    , Just value <- Bool.matchBool first
-    = Just UnifyStringEq{eqTerm, value}
+      , isFunctionPattern first
+      , Just value <- Bool.matchBool first =
+        Just UnifyStringEq{eqTerm, value}
     | otherwise = Nothing
 
 {- | Unification of the @STRING.eq@ symbol
@@ -548,6 +548,5 @@ unifyStringEq ::
     unifier (Pattern RewritingVariableName)
 unifyStringEq unifyChildren notSimplifier unifyData =
     unifyEqTerm unifyChildren notSimplifier eqTerm value
-
   where
     UnifyStringEq{eqTerm, value} = unifyData

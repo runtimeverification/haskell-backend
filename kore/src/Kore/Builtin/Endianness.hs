@@ -74,19 +74,19 @@ littleEndianVerifier = endiannessVerifier LittleEndian
 bigEndianVerifier :: ApplicationVerifier Verified.Pattern
 bigEndianVerifier = endiannessVerifier BigEndian
 
-data UnifyEqualsEndianness = UnifyEqualsEndianness {
-    end1, end2 :: Endianness
-}
+data UnifyEqualsEndianness = UnifyEqualsEndianness
+    { end1, end2 :: Endianness
+    }
 
 --TODO:document
-matchUnifyEqualsEndianness
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyEqualsEndianness
+matchUnifyEqualsEndianness ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsEndianness
 matchUnifyEqualsEndianness first second
     | Endianness_ end1 <- first
-    , Endianness_ end2 <- second
-    = Just $ UnifyEqualsEndianness end1 end2
+      , Endianness_ end2 <- second =
+        Just $ UnifyEqualsEndianness end1 end2
     | otherwise = Nothing
 {-# INLINE matchUnifyEqualsEndianness #-}
 
@@ -100,8 +100,8 @@ unifyEquals first second unifyData
     | end1 == end2 = return (Pattern.fromTermLike first)
     | otherwise =
         explainAndReturnBottom
-                "Cannot unify distinct constructors."
-                first
-                second
+            "Cannot unify distinct constructors."
+            first
+            second
   where
-    UnifyEqualsEndianness { end1, end2 } = unifyData
+    UnifyEqualsEndianness{end1, end2} = unifyData

@@ -65,7 +65,6 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm value =
         let solution' = MultiOr.map eraseTerm solution
         (if value then pure else notSimplifier SideCondition.top) solution'
             >>= Unify.scatter
-
   where
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm

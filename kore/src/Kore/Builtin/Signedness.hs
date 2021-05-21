@@ -74,18 +74,18 @@ signedVerifier = signednessVerifier Signed
 unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
-data UnifyEqualsSignedness = UnifyEqualsSignedness {
-    sign1, sign2 :: Signedness
-}
+data UnifyEqualsSignedness = UnifyEqualsSignedness
+    { sign1, sign2 :: Signedness
+    }
 
-matchUnifyEqualsSignedness
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Maybe UnifyEqualsSignedness
+matchUnifyEqualsSignedness ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsSignedness
 matchUnifyEqualsSignedness first second
     | Signedness_ sign1 <- first
-    , Signedness_ sign2 <- second
-    = Just UnifyEqualsSignedness{sign1, sign2}
+      , Signedness_ sign2 <- second =
+        Just UnifyEqualsSignedness{sign1, sign2}
     | otherwise = Nothing
 {-# INLINE matchUnifyEqualsSignedness #-}
 
@@ -104,4 +104,4 @@ unifyEquals termLike1 termLike2 unifyData
             termLike1
             termLike2
   where
-    UnifyEqualsSignedness { sign1, sign2 } = unifyData
+    UnifyEqualsSignedness{sign1, sign2} = unifyData
