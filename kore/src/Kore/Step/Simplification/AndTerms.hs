@@ -577,7 +577,8 @@ matchInj ::
     TermLike RewritingVariableName ->
     Maybe (UnifyInj (InjPair RewritingVariableName))
 matchInj injSimplifier first second
-    | Inj_ inj1 <- first, Inj_ inj2 <- second =
+    | Inj_ inj1 <- first
+      , Inj_ inj2 <- second =
         matchInjs injSimplifier inj1 inj2
     | otherwise = Nothing
 {-# INLINE matchInj #-}
