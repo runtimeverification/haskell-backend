@@ -29,7 +29,6 @@ import Control.Lens (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
-    void,
     (<=<),
  )
 import Control.Monad.Extra (

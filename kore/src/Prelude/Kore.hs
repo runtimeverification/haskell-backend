@@ -63,6 +63,7 @@ module Prelude.Kore (
     MonadPlus (..),
     MonadIO (..),
     MonadTrans (..),
+    void,
     unless,
     when,
 
@@ -140,12 +141,13 @@ import Data.Either (
     partitionEithers,
  )
 import Data.Foldable
-import Data.Functor (
-    (<&>)
- )
 import Data.Function (
     on,
     (&),
+ )
+import Data.Functor (
+    void,
+    (<&>),
  )
 import Data.Hashable (
     Hashable (..),
