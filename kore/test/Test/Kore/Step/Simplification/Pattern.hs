@@ -165,9 +165,10 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( makeAndPredicate
-                        (makeEqualsPredicate fOfX gOfX)
-                        (makeNotPredicate $ makeCeilPredicate fOfX)
+                    ( (MultiAnd.toPredicate . MultiAnd.make)
+                        [ makeEqualsPredicate fOfX gOfX
+                        , makeNotPredicate $ makeCeilPredicate fOfX
+                        ]
                     )
         actual <-
             simplify $
@@ -211,9 +212,17 @@ test_Pattern_simplify_equalityterm =
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.cg
                             , makeEqualsPredicate Mock.cf Mock.cg
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.ch)
-                                (makeEqualsPredicate Mock.cf Mock.ch)
+                            , makeNotPredicate (makeCeilPredicate Mock.ch)
+                            ]
+                        )
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        ( MultiAnd.toPredicate . MultiAnd.make $
+                            [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.cg
+                            , makeCeilPredicate Mock.ch
+                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.ch
                             ]
                         )
                     , Pattern.fromTermAndPredicate
@@ -222,9 +231,17 @@ test_Pattern_simplify_equalityterm =
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.ch
                             , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate Mock.cf Mock.cg)
+                            , makeNotPredicate $ makeCeilPredicate Mock.cg
+                            ]
+                        )
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        ( MultiAnd.toPredicate . MultiAnd.make $
+                            [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.ch
+                            , makeCeilPredicate Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.ch
+                            , makeEqualsPredicate Mock.cf Mock.cg
                             ]
                         )
                     , Pattern.fromTermAndPredicate
@@ -284,9 +301,21 @@ test_Pattern_simplify_equalityterm =
                                 [ definedF
                                 , definedG
                                 , makeEqualsPredicate Mock.cf Mock.cg
-                                , makeImpliesPredicate
-                                    definedH
-                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                , makeNotPredicate definedH
+                                ]
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(inject Mock.xConfig, Mock.a)]
+                        }
+                    , Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                                [ definedF
+                                , definedG
+                                , definedH
+                                , makeEqualsPredicate Mock.cf Mock.cg
+                                , makeEqualsPredicate Mock.cf Mock.ch
                                 ]
                         , substitution =
                             Substitution.unsafeWrap
@@ -298,9 +327,7 @@ test_Pattern_simplify_equalityterm =
                             [ definedF
                             , definedH
                             , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeImpliesPredicate
-                                definedGWithSubstitution
-                                (makeEqualsPredicate Mock.cf Mock.cg)
+                            , makeNotPredicate definedGWithSubstitution
                             ]
                         )
                     , Pattern.fromTermAndPredicate

@@ -35,8 +35,9 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax (
-    And,
+    And (..),
     Bottom (..),
+    Implies (..),
     Not (..),
     Or,
     Top (..),
@@ -118,6 +119,7 @@ simplify sideCondition =
             BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
             TopF topF -> normalizeTop =<< traverse worker topF
             NotF notF -> simplifyNot =<< traverse worker notF
+            ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
             _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -204,3 +206,26 @@ normalizeNot = normalizeNotOr
                   where
                     _ :< predicateF = Recursive.project predicate
                 _ -> fallback
+
+simplifyImplies ::
+    Monad simplifier =>
+    Implies sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort}
+    | TopBottom.isTop impliesFirst = pure impliesSecond
+    | TopBottom.isBottom impliesFirst = normalizeTop Top{topSort = impliesSort}
+    | otherwise = do
+        impliesFirst' <-
+            simplifyNot
+                Not
+                    { notSort = impliesSort
+                    , notChild = impliesFirst
+                    }
+        impliesSecond' <-
+            normalizeAnd
+                And
+                    { andSort = impliesSort
+                    , andFirst = impliesFirst
+                    , andSecond = impliesSecond
+                    }
+        pure (impliesFirst' <> impliesSecond')

@@ -121,4 +121,28 @@ This one is not as useful as the rule for `\and`:
 \not(\not(P)) = P
 ```
 
+## \implies
+
+### Normalization
+
+``` kore
+normalize(\implies(L, R)) = \or(normalize(\not(L)), normalize(\and(L, R)))
+```
+
+Note: We carry `L` through to the right-hand side because this maximizes the
+information content of the second clause of the disjunction.
+
+### Simplification
+
+#### \top
+
+``` kore
+\implies(\top, P) = P
+```
+
+#### \bottom
+``` kore
+\implies(\bottom, _) = \top
+```
+
 [disjunctive normal form]: https://en.wikipedia.org/wiki/Disjunctive_normal_form

@@ -11,6 +11,7 @@ import Kore.Internal.TermLike (TermLike)
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Simplification.Predicate (simplify)
 import Prelude.Kore
+import qualified Pretty
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty
@@ -85,6 +86,29 @@ test_simplify =
             (fromNot $ fromNot faCeil)
             [[faCeil]]
         ]
+    , testGroup
+        "\\implies"
+        [ test
+            "Normalization"
+            ( fromImplies
+                (fromOr faCeil fbCeil)
+                (fromOr gaCeil gbCeil)
+            )
+            [ [fromNot faCeil, fromNot fbCeil]
+            , [faCeil, gaCeil]
+            , [fbCeil, gaCeil]
+            , [faCeil, gbCeil]
+            , [fbCeil, gbCeil]
+            ]
+        , test
+            "\\top"
+            (fromImplies fromTop_ faCeil)
+            [[faCeil]]
+        , test
+            "\\bottom"
+            (fromImplies fromBottom_ faCeil)
+            [[]]
+        ]
     ]
   where
     test ::
@@ -94,10 +118,18 @@ test_simplify =
         TestTree
     test testName input expect =
         testCase testName $ do
+            let expect' = mkDisjunctiveNormalForm expect
             actual <-
                 simplify SideCondition.top input
                     & Test.runSimplifier Mock.env
-            assertEqual "" (mkDisjunctiveNormalForm expect) actual
+            let message =
+                    (show . Pretty.vsep)
+                        [ "Expected:"
+                        , unparseDisjunctiveNormalForm expect'
+                        , "but found:"
+                        , unparseDisjunctiveNormalForm actual
+                        ]
+            assertEqual message expect' actual
 
     fa, fb, ga, gb :: TermLike RewritingVariableName
     fa = Mock.f Mock.a
@@ -106,6 +138,12 @@ test_simplify =
     gb = Mock.g Mock.b
 
     mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
+
+    unparseDisjunctiveNormalForm =
+        Pretty.indent 2
+            . Pretty.vsep
+            . map (Pretty.pretty . MultiAnd.toPredicate)
+            . toList
 
     faCeil, fbCeil, gaCeil, gbCeil :: Predicate RewritingVariableName
     faCeil = fromCeil_ fa
