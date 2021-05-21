@@ -194,22 +194,21 @@ maybeTermEquals notSimplifier childTransformers first second = do
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
+            lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq second first =
+            lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
+            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq second first =
+            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
+            lift $ Builtin.Endianness.unifyEquals first second unifyData
+        | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
+            lift $ Builtin.Signedness.unifyEquals first second unifyData
         | otherwise =
             asum
-                [ Builtin.String.unifyStringEq
-                    childTransformers
-                    notSimplifier
-                    first
-                    second
-                , do
-                    unifyData <- Error.hoistMaybe $ Builtin.KEqual.matchUnifyKequalsEq first second
-                    lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
-                , do
-                    unifyData <- Error.hoistMaybe $ Builtin.KEqual.matchUnifyKequalsEq second first
-                    lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
-                , Builtin.Endianness.unifyEquals first second
-                , Builtin.Signedness.unifyEquals first second
-                , Builtin.Map.unifyEquals childTransformers first second
+                [ Builtin.Map.unifyEquals childTransformers first second
                 , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
                 , Builtin.Set.unifyEquals childTransformers first second
                 , Builtin.List.unifyEquals
@@ -293,12 +292,17 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq second first =
             lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+        | Just ifThenElse <- Builtin.KEqual.matchIfThenElse first =
+            lift $ Builtin.KEqual.unifyIfThenElse childTransformers ifThenElse second
+        | Just ifThenElse <- Builtin.KEqual.matchIfThenElse second =
+            lift $ Builtin.KEqual.unifyIfThenElse childTransformers ifThenElse first
+        | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
+            lift $ Builtin.Endianness.unifyEquals first second unifyData
+        | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
+            lift $ Builtin.Signedness.unifyEquals first second unifyData
         | otherwise =
             asum
-                [ Builtin.KEqual.unifyIfThenElse childTransformers first second
-                , Builtin.Endianness.unifyEquals first second
-                , Builtin.Signedness.unifyEquals first second
-                , Builtin.Map.unifyEquals childTransformers first second
+                [ Builtin.Map.unifyEquals childTransformers first second
                 , Builtin.Set.unifyEquals childTransformers first second
                 , Builtin.List.unifyEquals
                     SimplificationType.And

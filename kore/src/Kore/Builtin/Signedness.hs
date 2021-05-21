@@ -7,12 +7,10 @@ module Kore.Builtin.Signedness (
     signedKey,
     unsignedKey,
     unifyEquals,
+    matchUnifyEqualsSignedness,
     module Kore.Builtin.Signedness.Signedness,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.String (
@@ -28,6 +26,7 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
     explainAndReturnBottom,
@@ -75,18 +74,34 @@ signedVerifier = signednessVerifier Signed
 unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
+data UnifyEqualsSignedness = UnifyEqualsSignedness {
+    sign1, sign2 :: Signedness
+}
+
+matchUnifyEqualsSignedness
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyEqualsSignedness
+matchUnifyEqualsSignedness first second
+    | Signedness_ sign1 <- first
+    , Signedness_ sign2 <- second
+    = Just UnifyEqualsSignedness{sign1, sign2}
+    | otherwise = Nothing
+{-# INLINE matchUnifyEqualsSignedness #-}
+
 unifyEquals ::
     InternalVariable variable =>
     MonadUnify unifier =>
     TermLike variable ->
     TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyEquals termLike1@(Signedness_ sign1) termLike2@(Signedness_ sign2)
+    UnifyEqualsSignedness ->
+    unifier (Pattern variable)
+unifyEquals termLike1 termLike2 unifyData
     | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
     | otherwise =
-        lift $
-            explainAndReturnBottom
-                "Cannot unify distinct constructors."
-                termLike1
-                termLike2
-unifyEquals _ _ = empty
+        explainAndReturnBottom
+            "Cannot unify distinct constructors."
+            termLike1
+            termLike2
+  where
+    UnifyEqualsSignedness { sign1, sign2 } = unifyData

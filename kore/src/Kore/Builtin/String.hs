@@ -27,6 +27,7 @@ module Kore.Builtin.String (
     unifyString,
     unifyStringEq,
     matchString,
+    matchUnifyStringEq,
 
     -- * keys
     ltKey,
@@ -517,6 +518,23 @@ unifyString term1 term2 unifyData =
         | otherwise = explainAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2} = unifyData
 
+data UnifyStringEq = UnifyStringEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , value :: !Bool
+    }
+
+--TODO: document
+matchUnifyStringEq
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe UnifyStringEq
+matchUnifyStringEq first second
+    | Just eqTerm <- matchStringEqual second
+    , isFunctionPattern first
+    , Just value <- Bool.matchBool first
+    = Just UnifyStringEq{eqTerm, value}
+    | otherwise = Nothing
+
 {- | Unification of the @STRING.eq@ symbol
 
 This function is suitable only for equality simplification.
@@ -526,14 +544,10 @@ unifyStringEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyStringEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyStringEq ->
+    unifier (Pattern RewritingVariableName)
+unifyStringEq unifyChildren notSimplifier unifyData =
+    unifyEqTerm unifyChildren notSimplifier eqTerm value
+
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchStringEqual termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyStringEq{eqTerm, value} = unifyData
