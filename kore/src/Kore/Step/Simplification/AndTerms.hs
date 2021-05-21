@@ -167,7 +167,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
             lift $ variableFunctionEquals second first var
         | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
             lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-        | Just unifyData <- matchSortInjection injSimplifier first second =
+        | Just unifyData <- matchInj injSimplifier first second =
             lift $ unifySortInjection childTransformers first second unifyData
         | Just () <- matchConstructorSortInjectionAndEquals first second =
             lift $ constructorSortInjectionAndEquals first second
@@ -266,7 +266,7 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ variableFunctionAnd first unifyData
         | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
             lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-        | Just unifyData <- matchSortInjection injSimplifier first second =
+        | Just unifyData <- matchInj injSimplifier first second =
             lift $ unifySortInjection childTransformers first second unifyData
         | Just () <- matchConstructorSortInjectionAndEquals first second =
             lift $ constructorSortInjectionAndEquals first second
@@ -551,10 +551,6 @@ variableFunctionEquals
                             (Substitution.assign (inject var) second)
             return (Pattern.withCondition second result)
 
-newtype UnifySortInjection = UnifySortInjection
-    { getUnifySortInjection :: Either Distinct (InjUnify RewritingVariableName)
-    }
-
 {- | Matches
 
 @
@@ -575,19 +571,16 @@ when either
 * @children@ or @children'@ satisfies @hasConstructorLikeTop@.
 * the subsorts of @sub, sub'@ are disjoint.
 -}
-matchSortInjection ::
+matchInj ::
     InjSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifySortInjection
-matchSortInjection injSimplifier first second
-    | Inj_ inj1 <- first
-      , Inj_ inj2 <- second =
-        case matchInjs injSimplifier inj1 inj2 of
-            Left Unknown -> Nothing
-            x -> Just UnifySortInjection{getUnifySortInjection = x}
+    Maybe (UnifyInj (InjPair RewritingVariableName))
+matchInj injSimplifier first second
+    | Inj_ inj1 <- first, Inj_ inj2 <- second =
+        matchInjs injSimplifier inj1 inj2
     | otherwise = Nothing
-{-# INLINE matchSortInjection #-}
+{-# INLINE matchInj #-}
 
 {- | Simplify the conjunction of two sort injections.
 
@@ -611,23 +604,19 @@ unifySortInjection ::
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    UnifySortInjection ->
+    UnifyInj (InjPair RewritingVariableName) ->
     unifier (Pattern RewritingVariableName)
-unifySortInjection termMerger first second unifyData = do
-    injSimplifier <- Simplifier.askInjSimplifier
-    either distinct (merge . unifyInjs injSimplifier) matchData
+unifySortInjection termMerger term1 term2 unifyInj = do
+    InjSimplifier{unifyInjs} <- Simplifier.askInjSimplifier
+    unifyInjs unifyInj & maybe distinct merge
   where
-    emptyIntersection = explainAndReturnBottom "Empty sort intersection"
-    distinct Distinct = emptyIntersection first second
-    distinct Unknown = undefined -- should be handled
+    distinct = explainAndReturnBottom "Distinct sort injections" term1 term2
     merge inj@Inj{injChild = Pair child1 child2} = do
         childPattern <- termMerger child1 child2
         InjSimplifier{evaluateInj} <- askInjSimplifier
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
             inj' = evaluateInj inj{injChild = childTerm}
         return $ Pattern.withCondition inj' childCondition
-
-    UnifySortInjection{getUnifySortInjection = matchData} = unifyData
 
 {- | Matches
 
