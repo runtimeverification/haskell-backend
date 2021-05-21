@@ -113,12 +113,10 @@ termUnification notSimplifier = \term1 term2 ->
         TermLike RewritingVariableName ->
         unifier (Pattern RewritingVariableName)
     termUnificationWorker pat1 pat2 = do
-        injSimplifier <- Simplifier.askInjSimplifier
-        OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
         let maybeTermUnification ::
                 MaybeT unifier (Pattern RewritingVariableName)
             maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker injSimplifier isOverloaded pat1 pat2
+                maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
         Error.maybeT
             (incompleteUnificationPattern pat1 pat2)
             pure
@@ -136,46 +134,49 @@ maybeTermEquals ::
     NotSimplifier unifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
-    InjSimplifier ->
-    (Symbol -> Bool) ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermEquals notSimplifier childTransformers injSimplifier isOverloaded first second
-    | Just unifyData <- Builtin.Int.matchInt first second =
-        lift $ Builtin.Int.unifyInt first second unifyData
-    | Just unifyData <- Builtin.Bool.matchBools first second =
-        lift $ Builtin.Bool.unifyBool first second unifyData
-    | Just unifyData <- Builtin.String.matchString first second =
-        lift $ Builtin.String.unifyString first second unifyData
-    | Just unifyData <- matchDomainValue first second =
-        lift $ unifyDomainValue first second unifyData
-    | Just unifyData <- matchStringLiteral first second =
-        lift $ unifyStringLiteral first second unifyData
-    | Just () <- matchEqualsAndEquals first second =
-        lift $ equalAndEquals first
-    | Just unifyData <- matchBytes first second =
-        lift $ bytesDifferent unifyData
-    | Just () <- matchBottomTermEquals first =
-        lift $ bottomTermEquals SideCondition.topTODO first second
-    | Just () <- matchBottomTermEquals second =
-        lift $ bottomTermEquals SideCondition.topTODO second first
-    | Just var <- matchVariableFunctionEquals first second =
-        lift $ variableFunctionEquals first second var
-    | Just var <- matchVariableFunctionEquals second first =
-        lift $ variableFunctionEquals second first var
-    | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
-        lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-    | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
-        lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
-    | Just () <- matchConstructorSortInjectionAndEquals first second =
-        lift $ constructorSortInjectionAndEquals first second
-    | Just () <- matchDifferentConstructors isOverloaded first second =
-        lift $ constructorAndEqualsAssumesDifferentHeads first second
-    | otherwise =
-        overloadedConstructorSortInjectionAndEquals childTransformers first second
-            <|> rest
+maybeTermEquals notSimplifier childTransformers first second = do
+    injSimplifier <- Simplifier.askInjSimplifier
+    OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
+    worker injSimplifier isOverloaded
   where
+    worker injSimplifier isOverloaded
+        | Just unifyData <- Builtin.Int.matchInt first second =
+            lift $ Builtin.Int.unifyInt first second unifyData
+        | Just unifyData <- Builtin.Bool.matchBools first second =
+            lift $ Builtin.Bool.unifyBool first second unifyData
+        | Just unifyData <- Builtin.String.matchString first second =
+            lift $ Builtin.String.unifyString first second unifyData
+        | Just unifyData <- matchDomainValue first second =
+            lift $ unifyDomainValue first second unifyData
+        | Just unifyData <- matchStringLiteral first second =
+            lift $ unifyStringLiteral first second unifyData
+        | Just () <- matchEqualsAndEquals first second =
+            lift $ equalAndEquals first
+        | Just unifyData <- matchBytes first second =
+            lift $ bytesDifferent unifyData
+        | Just () <- matchBottomTermEquals first =
+            lift $ bottomTermEquals SideCondition.topTODO first second
+        | Just () <- matchBottomTermEquals second =
+            lift $ bottomTermEquals SideCondition.topTODO second first
+        | Just var <- matchVariableFunctionEquals first second =
+            lift $ variableFunctionEquals first second var
+        | Just var <- matchVariableFunctionEquals second first =
+            lift $ variableFunctionEquals second first var
+        | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
+            lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
+        | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
+            lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
+        | Just () <- matchConstructorSortInjectionAndEquals first second =
+            lift $ constructorSortInjectionAndEquals first second
+        | Just () <- matchDifferentConstructors isOverloaded first second =
+            lift $ constructorAndEqualsAssumesDifferentHeads first second
+        | otherwise =
+            overloadedConstructorSortInjectionAndEquals childTransformers first second
+                <|> rest
+
     rest
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
@@ -225,55 +226,56 @@ maybeTermAnd ::
     NotSimplifier unifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
-    InjSimplifier ->
-    (Symbol -> Bool) ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermAnd notSimplifier childTransformers injSimplifier isOverloaded first second
-    | Just unifyData <- matchExpandAlias first second =
-        let UnifyExpandAlias{term1, term2} = unifyData
-         in maybeTermAnd
-                notSimplifier
-                childTransformers
-                injSimplifier
-                isOverloaded
-                term1
-                term2
-    | Just unifyData <- matchBoolAnd first =
-        lift $ boolAnd first second unifyData
-    | Just unifyData <- matchBoolAnd second =
-        lift $ boolAnd second first unifyData
-    | Just unifyData <- Builtin.Int.matchInt first second =
-        lift $ Builtin.Int.unifyInt first second unifyData
-    | Just unifyData <- Builtin.Bool.matchBools first second =
-        lift $ Builtin.Bool.unifyBool first second unifyData
-    | Just unifyData <- Builtin.String.matchString first second =
-        lift $ Builtin.String.unifyString first second unifyData
-    | Just unifyData <- matchDomainValue first second =
-        lift $ unifyDomainValue first second unifyData
-    | Just unifyData <- matchStringLiteral first second =
-        lift $ unifyStringLiteral first second unifyData
-    | Just () <- matchEqualsAndEquals first second =
-        lift $ equalAndEquals first
-    | Just unifyData <- matchBytes first second =
-        lift $ bytesDifferent unifyData
-    | Just unifyData <- matchVariableFunctionAnd first second =
-        lift $ variableFunctionAnd second unifyData
-    | Just unifyData <- matchVariableFunctionAnd second first =
-        lift $ variableFunctionAnd first unifyData
-    | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
-        lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-    | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
-        lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
-    | Just () <- matchConstructorSortInjectionAndEquals first second =
-        lift $ constructorSortInjectionAndEquals first second
-    | Just () <- matchDifferentConstructors isOverloaded first second =
-        lift $ constructorAndEqualsAssumesDifferentHeads first second
-    | otherwise =
-        overloadedConstructorSortInjectionAndEquals childTransformers first second
-            <|> rest
+maybeTermAnd notSimplifier childTransformers first second = do
+    injSimplifier <- Simplifier.askInjSimplifier
+    OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
+    worker injSimplifier isOverloaded
   where
+    worker injSimplifier isOverloaded
+        | Just unifyData <- matchExpandAlias first second =
+            let UnifyExpandAlias{term1, term2} = unifyData
+            in maybeTermAnd
+                    notSimplifier
+                    childTransformers
+                    term1
+                    term2
+        | Just unifyData <- matchBoolAnd first =
+            lift $ boolAnd first second unifyData
+        | Just unifyData <- matchBoolAnd second =
+            lift $ boolAnd second first unifyData
+        | Just unifyData <- Builtin.Int.matchInt first second =
+            lift $ Builtin.Int.unifyInt first second unifyData
+        | Just unifyData <- Builtin.Bool.matchBools first second =
+            lift $ Builtin.Bool.unifyBool first second unifyData
+        | Just unifyData <- Builtin.String.matchString first second =
+            lift $ Builtin.String.unifyString first second unifyData
+        | Just unifyData <- matchDomainValue first second =
+            lift $ unifyDomainValue first second unifyData
+        | Just unifyData <- matchStringLiteral first second =
+            lift $ unifyStringLiteral first second unifyData
+        | Just () <- matchEqualsAndEquals first second =
+            lift $ equalAndEquals first
+        | Just unifyData <- matchBytes first second =
+            lift $ bytesDifferent unifyData
+        | Just unifyData <- matchVariableFunctionAnd first second =
+            lift $ variableFunctionAnd second unifyData
+        | Just unifyData <- matchVariableFunctionAnd second first =
+            lift $ variableFunctionAnd first unifyData
+        | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
+            lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
+        | Just unifyData <- matchSortInjectionAndEquals injSimplifier first second =
+            lift $ sortInjectionAndEquals childTransformers injSimplifier first second unifyData
+        | Just () <- matchConstructorSortInjectionAndEquals first second =
+            lift $ constructorSortInjectionAndEquals first second
+        | Just () <- matchDifferentConstructors isOverloaded first second =
+            lift $ constructorAndEqualsAssumesDifferentHeads first second
+        | otherwise =
+            overloadedConstructorSortInjectionAndEquals childTransformers first second
+                <|> rest
+
     rest
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData

@@ -67,7 +67,6 @@ import qualified Kore.Step.Simplification.Not as Not (
 import qualified Kore.Step.Simplification.Or as Or (
     simplifyEvaluated,
  )
-import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Unification.UnifierT (
     runUnifierT,
@@ -426,10 +425,8 @@ termEqualsAnd p1 p2 =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         MaybeT unifier (Pattern RewritingVariableName)
-    maybeTermEqualsWorker term1 term2 = do
-        injSimplifier <- askInjSimplifier
-        OverloadSimplifier{isOverloaded} <- askOverloadSimplifier
-        maybeTermEquals Not.notSimplifier termEqualsAndWorker injSimplifier isOverloaded term1 term2
+    maybeTermEqualsWorker =
+        maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker ::
         forall unifier.

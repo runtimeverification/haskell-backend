@@ -56,7 +56,6 @@ import Kore.Step.Simplification.AndTerms (
     maybeTermAnd,
  )
 import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.UnifierT (
@@ -228,11 +227,9 @@ termAnd notSimplifier p1 p2 =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         UnifierT simplifier (Pattern RewritingVariableName)
-    termAndWorker first second = do
-        injSimplifier <- askInjSimplifier
-        OverloadSimplifier{isOverloaded} <- askOverloadSimplifier
-        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker injSimplifier isOverloaded first second
-        patt <- runMaybeT maybeTermAnd'
-        return $ fromMaybe andPattern patt
+    termAndWorker first second =
+        maybeTermAnd notSimplifier termAndWorker first second
+            & runMaybeT
+            & fmap (fromMaybe andPattern)
       where
         andPattern = Pattern.fromTermLike (mkAnd first second)
