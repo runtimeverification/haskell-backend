@@ -237,7 +237,7 @@ maybeTermAnd notSimplifier childTransformers first second = do
     worker injSimplifier isOverloaded
         | Just unifyData <- matchExpandAlias first second =
             let UnifyExpandAlias{term1, term2} = unifyData
-            in maybeTermAnd
+             in maybeTermAnd
                     notSimplifier
                     childTransformers
                     term1
