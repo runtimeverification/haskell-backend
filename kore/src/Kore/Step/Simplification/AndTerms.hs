@@ -615,7 +615,7 @@ unifySortInjection ::
     unifier (Pattern RewritingVariableName)
 unifySortInjection termMerger first second unifyData = do
     injSimplifier <- Simplifier.askInjSimplifier
-    unifyInjs injSimplifier matchData & either distinct merge
+    either distinct (merge . unifyInjs injSimplifier) matchData
   where
     emptyIntersection = explainAndReturnBottom "Empty sort intersection"
     distinct Distinct = emptyIntersection first second

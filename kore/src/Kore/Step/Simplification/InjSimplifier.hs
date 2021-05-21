@@ -85,8 +85,8 @@ data InjSimplifier = InjSimplifier
       unifyInjs ::
         forall variable.
         InternalVariable variable =>
-        Either Distinct (InjUnify variable) ->
-        Either Distinct (Inj (Pair (TermLike variable)))
+        InjUnify variable ->
+        Inj (Pair (TermLike variable))
     , -- | Evaluate the 'Ceil' of 'Inj':
       --
       --        @
@@ -214,34 +214,33 @@ mkInjSimplifier sortGraph =
     unifyInjs ::
         forall variable.
         InternalVariable variable =>
-        Either Distinct (InjUnify variable) ->
-        Either Distinct (Inj (Pair (TermLike variable)))
+        InjUnify variable ->
+        Inj (Pair (TermLike variable))
     unifyInjs unify =
         case unify of
-            Left d -> Left d
-            Right (InjFromEqual injPair) ->
+            (InjFromEqual injPair) ->
                 assert (injTo1 == injTo2) $ do
                     let child1 = injChild inj1
                         child2 = injChild inj2
-                    pure (Pair child1 child2 <$ inj1)
+                    (Pair child1 child2 <$ inj1)
               where
                 InjPair{inj1, inj2} = injPair
                 Inj{injTo = injTo1} = inj1
                 Inj{injTo = injTo2} = inj2
-            Right (InjFrom2SubsortInjFrom1 injPair) ->
+            (InjFrom2SubsortInjFrom1 injPair) ->
                 assert (injTo1 == injTo2) $ do
                     let child1' = injChild inj1
                         child2' = evaluateInj inj2{injTo = injFrom1}
-                    pure (Pair child1' child2' <$ inj1)
+                    (Pair child1' child2' <$ inj1)
               where
                 InjPair{inj1, inj2} = injPair
                 Inj{injFrom = injFrom1, injTo = injTo1} = inj1
                 Inj{injTo = injTo2} = inj2
-            Right (InjFrom1SubsortInjFrom2 injPair) ->
+            (InjFrom1SubsortInjFrom2 injPair) ->
                 assert (injTo1 == injTo2) $ do
                     let child1' = evaluateInj inj1{injTo = injFrom2}
                         child2' = injChild inj2
-                    pure (Pair child1' child2' <$ inj2)
+                    (Pair child1' child2' <$ inj2)
               where
                 InjPair{inj1, inj2} = injPair
                 Inj{injTo = injTo1} = inj1
@@ -259,7 +258,9 @@ unifyInj ::
     Inj (TermLike variable) ->
     Inj (TermLike variable) ->
     Either Distinct (Inj (Pair (TermLike variable)))
-unifyInj injSimplifier inj1 inj2 = unifyInjs injSimplifier (matchInjs injSimplifier inj1 inj2)
+unifyInj injSimplifier inj1 inj2 =
+    matchInjs injSimplifier inj1 inj2
+    <&> unifyInjs injSimplifier
 
 normalize ::
     InjSimplifier ->
