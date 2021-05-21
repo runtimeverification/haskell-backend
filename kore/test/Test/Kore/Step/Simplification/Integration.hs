@@ -21,6 +21,7 @@ import Kore.Equation (
     mkEquation,
  )
 import qualified Kore.Equation as Equation
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -32,6 +33,7 @@ import qualified Kore.Internal.SideCondition as SideCondition (
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
@@ -51,6 +53,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     makeEvaluate,
  )
 import Kore.Step.Simplification.Simplify
+import Kore.Unparser
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Equation.Common (
@@ -782,9 +785,13 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertBool
-            "Expecting simplification"
-            (OrPattern.isSimplified sideRepresentation actual)
+
+        for_ (toList actual) $ \pattern' -> do
+            let message = (show . unparse) pattern'
+            let (term, condition) = Pattern.splitTerm pattern'
+            assertBool "Expected simplified term" (TermLike.isSimplified sideRepresentation term)
+            assertBool (unlines ["Expected simplified condition:", message]) (Condition.isSimplified sideRepresentation condition)
+            assertBool message (Pattern.isSimplified sideRepresentation pattern')
     , testCase "Equals-in simplification" $ do
         let gt =
                 mkSetVariable (testId "gt") Mock.stringSort

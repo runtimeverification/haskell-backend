@@ -30,7 +30,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -107,10 +106,7 @@ simplify sideCondition =
     mark1 ::
         Predicate RewritingVariableName ->
         Predicate RewritingVariableName
-    mark1 =
-        Recursive.fold $ Predicate.markSimplifiedConditional reprSideCondition . Recursive.embed
-
-    reprSideCondition = SideCondition.toRepresentation sideCondition
+    mark1 = Recursive.fold $ Predicate.markSimplified . Recursive.embed
 
     worker ::
         Predicate RewritingVariableName ->
