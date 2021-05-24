@@ -109,6 +109,45 @@ test_simplify =
             (fromImplies fromBottom_ faCeil)
             [[]]
         ]
+    , testGroup
+        "\\iff"
+        [ test
+            "Normalization"
+            ( fromIff
+                (fromOr faCeil fbCeil)
+                (fromOr gaCeil gbCeil)
+            )
+            [ [fromNot faCeil, fromNot fbCeil, fromNot gaCeil, fromNot gbCeil]
+            , [faCeil, gaCeil]
+            , [fbCeil, gaCeil]
+            , [faCeil, gbCeil]
+            , [fbCeil, gbCeil]
+            ]
+        , test
+            "\\top"
+            (fromIff fromTop_ faCeil)
+            [[faCeil]]
+        , test
+            "\\bottom"
+            (fromIff fromBottom_ faCeil)
+            [[fromNot faCeil]]
+        ]
+    , testGroup
+        "Other"
+        [ test
+            "\\iff(\\or(\\and(A, B), A), C)"
+            ( fromIff
+                ( fromOr
+                    (fromAnd faCeil fbCeil)
+                    faCeil
+                )
+                gaCeil
+            )
+            [ [fromNot faCeil, fromNot (fromAnd faCeil fbCeil), fromNot gaCeil]
+            , [faCeil, fbCeil, gaCeil]
+            , [faCeil, gaCeil]
+            ]
+        ]
     ]
   where
     test ::
@@ -141,8 +180,8 @@ test_simplify =
 
     unparseDisjunctiveNormalForm =
         Pretty.indent 2
-            . Pretty.vsep
-            . map (Pretty.pretty . MultiAnd.toPredicate)
+            . Pretty.pretty
+            . map MultiAnd.toPredicate
             . toList
 
     faCeil, fbCeil, gaCeil, gbCeil :: Predicate RewritingVariableName

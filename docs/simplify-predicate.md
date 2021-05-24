@@ -145,4 +145,29 @@ information content of the second clause of the disjunction.
 \implies(\bottom, _) = \top
 ```
 
+## \iff
+
+### Normalization
+
+`\iff` is desugared to `\implies`.
+
+``` kore
+normalize(\iff(L, R)) =
+  \or(normalize(\and(\not(L), \not(R))), normalize(\and(L, R)))
+```
+
+### Simplification
+
+#### \top
+
+``` kore
+\iff(\top, P) = \iff(P, \top) = P
+```
+
+#### \bottom
+
+``` kore
+\iff(\bottom, P) = \iff(P, \bottom) = \not(P)
+```
+
 [disjunctive normal form]: https://en.wikipedia.org/wiki/Disjunctive_normal_form

@@ -37,9 +37,10 @@ import Kore.Step.Simplification.Simplify
 import Kore.Syntax (
     And (..),
     Bottom (..),
+    Iff (..),
     Implies (..),
     Not (..),
-    Or,
+    Or (..),
     Top (..),
  )
 import qualified Kore.TopBottom as TopBottom
@@ -120,6 +121,7 @@ simplify sideCondition =
             TopF topF -> normalizeTop =<< traverse worker topF
             NotF notF -> simplifyNot =<< traverse worker notF
             ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
+            IffF iffF -> simplifyIff =<< traverse worker iffF
             _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -229,3 +231,25 @@ simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort}
                     , andSecond = impliesSecond
                     }
         pure (impliesFirst' <> impliesSecond')
+
+simplifyIff ::
+    Monad simplifier =>
+    Iff sort DisjunctiveNormalForm ->
+    simplifier DisjunctiveNormalForm
+simplifyIff Iff{iffFirst, iffSecond, iffSort}
+    | TopBottom.isTop iffFirst = pure iffSecond
+    | TopBottom.isBottom iffFirst = mkNotSimplified iffSecond
+    | TopBottom.isTop iffSecond = pure iffFirst
+    | TopBottom.isBottom iffSecond = mkNotSimplified iffFirst
+    | otherwise = do
+        -- \iff(A, B) = \or( \and(\not(A), \not(B)), \and(A, B) )
+        orFirst <- do
+            andFirst <- mkNotSimplified iffFirst
+            andSecond <- mkNotSimplified iffSecond
+            mkAndSimplified andFirst andSecond
+        orSecond <- mkAndSimplified iffFirst iffSecond
+        normalizeOr Or{orSort = iffSort, orFirst, orSecond}
+  where
+    mkNotSimplified notChild = simplifyNot Not{notSort = iffSort, notChild}
+    mkAndSimplified andFirst andSecond =
+        normalizeAnd And{andSort = iffSort, andFirst, andSecond}
