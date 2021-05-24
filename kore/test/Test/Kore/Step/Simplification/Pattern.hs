@@ -423,6 +423,7 @@ simplifyAndRemoveTopExists =
         . Pattern.simplifyTopConfiguration
 
 assertBidirectionalEqualityResult ::
+    HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     OrPattern RewritingVariableName ->
