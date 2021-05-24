@@ -18,10 +18,10 @@ import Kore.Internal.Predicate (
     unparseWithSort,
  )
 import Kore.Internal.Substitution (
+    Substitution,
     assignedTerm,
     assignedVariable,
     unwrap,
-    Substitution,
  )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
@@ -48,7 +48,7 @@ import qualified Pretty
 
 data DebugRewriteSubstitution = DebugRewriteSubstitution
     { configuration :: Pattern VariableName
-    , appliedRules  :: [(UniqueId, Substitution VariableName)]
+    , appliedRules :: [(UniqueId, Substitution VariableName)]
     }
     deriving stock (Show)
 
@@ -67,9 +67,9 @@ instance Pretty DebugRewriteSubstitution where
             , "  substitution:"
             ]
           where
-              term = Conditional.term configuration
-              sort = TermLike.termLikeSort term
-              constraint = Conditional.predicate configuration
+            term = Conditional.term configuration
+            sort = TermLike.termLikeSort term
+            constraint = Conditional.predicate configuration
 
         unparseRule :: (UniqueId, Substitution VariableName) -> Pretty.Doc ann
         unparseRule (uniqueId, substitution) =
