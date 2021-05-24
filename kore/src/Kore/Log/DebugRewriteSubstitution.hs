@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
+Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
 module Kore.Log.DebugRewriteSubstitution (
@@ -14,11 +14,14 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern (
     Pattern,
  )
+import Kore.Internal.Predicate (
+    unparseWithSort,
+ )
 import Kore.Internal.Substitution (
-    Substitution,
     assignedTerm,
     assignedVariable,
     unwrap,
+    Substitution,
  )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
@@ -45,7 +48,7 @@ import qualified Pretty
 
 data DebugRewriteSubstitution = DebugRewriteSubstitution
     { configuration :: Pattern VariableName
-    , appliedRules :: [(UniqueId, Substitution VariableName)]
+    , appliedRules  :: [(UniqueId, Substitution VariableName)]
     }
     deriving stock (Show)
 
@@ -57,10 +60,16 @@ instance Pretty DebugRewriteSubstitution where
         ruleInfo uniqueId =
             [ "- type: rewriting"
             , "  from: >"
-            , Pretty.indent 4 $ unparse $ Conditional.term configuration
+            , Pretty.indent 4 $ Pretty.group $ unparse term
+            , "  constraint: >"
+            , Pretty.indent 4 $ Pretty.group $ unparseWithSort sort constraint
             , "  rule-id: " <> (pretty $ fromMaybe "null" $ getUniqueId uniqueId)
             , "  substitution:"
             ]
+          where
+              term = Conditional.term configuration
+              sort = TermLike.termLikeSort term
+              constraint = Conditional.predicate configuration
 
         unparseRule :: (UniqueId, Substitution VariableName) -> Pretty.Doc ann
         unparseRule (uniqueId, substitution) =
@@ -70,9 +79,9 @@ instance Pretty DebugRewriteSubstitution where
             getKV assignment =
                 Pretty.vsep $
                     [ "- key: >"
-                    , Pretty.indent 4 $ unparse $ assignedVariable assignment
+                    , Pretty.indent 4 $ Pretty.group $ unparse $ assignedVariable assignment
                     , "  value: >"
-                    , Pretty.indent 4 $ unparse $ assignedTerm assignment
+                    , Pretty.indent 4 $ Pretty.group $ unparse $ assignedTerm assignment
                     ]
 
 instance Entry DebugRewriteSubstitution where
