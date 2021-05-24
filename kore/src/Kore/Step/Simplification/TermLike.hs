@@ -350,6 +350,7 @@ simplify sideCondition = \termLike ->
             avoiding = freeVariables termLike <> freeVariables sideCondition
             refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
+            ~sort = termLikeSort termLike
             (_ :< termLikeF) = Recursive.project termLike
          in case termLikeF of
                 -- Unimplemented cases
@@ -371,8 +372,10 @@ simplify sideCondition = \termLike ->
                         =<< simplifyChildren applySymbolF
                 InjF injF ->
                     Inj.simplify =<< simplifyChildren injF
-                CeilF ceilF ->
-                    Ceil.simplify sideCondition =<< simplifyChildren ceilF
+                CeilF ceilF -> do
+                    ceilF' <- simplifyChildren ceilF
+                    conditions <- Ceil.simplify sideCondition ceilF'
+                    pure (OrPattern.fromOrCondition sort conditions)
                 EqualsF equalsF ->
                     Equals.simplify sideCondition =<< simplifyChildren equalsF
                 ExistsF exists -> do
@@ -385,8 +388,10 @@ simplify sideCondition = \termLike ->
                     Iff.simplify sideCondition =<< simplifyChildren iffF
                 ImpliesF impliesF ->
                     Implies.simplify sideCondition =<< simplifyChildren impliesF
-                InF inF ->
-                    In.simplify sideCondition =<< simplifyChildren inF
+                InF inF -> do
+                    inF' <- simplifyChildren inF
+                    conditions <- In.simplify sideCondition inF'
+                    pure (OrPattern.fromOrCondition sort conditions)
                 NotF notF ->
                     Not.simplify sideCondition =<< simplifyChildren notF
                 --
