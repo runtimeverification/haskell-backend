@@ -36,14 +36,14 @@ import Data.Functor.Contravariant (
 import Data.Text (
     Text,
  )
+import Kore.Log.DebugRewriteSubstitution (
+    rewriteTraceLogger,
+ )
 import Kore.Log.DebugSolver (
     DebugSolverOptions (DebugSolverOptions),
     solverTranscriptLogger,
  )
 import qualified Kore.Log.DebugSolver as DebugSolver.DoNotUse
-import Kore.Log.DebugRewriteSubstitution (
-    rewriteTraceLogger,
- )
 import Kore.Log.KoreLogOptions as KoreLogOptions
 import Kore.Log.Registry (
     lookupTextFromTypeWithError,

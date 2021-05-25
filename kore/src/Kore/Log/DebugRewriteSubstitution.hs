@@ -8,6 +8,24 @@ module Kore.Log.DebugRewriteSubstitution (
     rewriteTraceLogger,
 ) where
 
+import Data.ByteString (
+    ByteString,
+ )
+import Data.Text (
+    Text,
+ )
+import Data.Text.Encoding (
+    decodeUtf8,
+ )
+import qualified Data.Vector as Vector
+import Data.Yaml (
+    ToJSON,
+    Value (..),
+    encode,
+    object,
+    toJSON,
+    (.=),
+ )
 import Kore.Attribute.UniqueId (
     UniqueId (..),
  )
@@ -45,27 +63,9 @@ import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
-    renderText,
     layoutOneLine,
+    renderText,
  )
-import Data.Yaml (
-    Value (..),
-    ToJSON,
-    toJSON,
-    object,
-    (.=),
-    encode,
- )
-import Data.ByteString (
-    ByteString,
- )
-import Data.Text (
-    Text,
- )
-import Data.Text.Encoding (
-    decodeUtf8,
- )
-import qualified Data.Vector as Vector
 
 data DebugRewriteSubstitution = DebugRewriteSubstitution
     { configuration :: Pattern VariableName
@@ -82,13 +82,13 @@ instance ToJSON DebugRewriteSubstitution where
 
         encodeRule :: (UniqueId, Substitution VariableName) -> Value
         encodeRule (uniqueId, substitution) =
-            object [
-                "type" .= ("rewriting" :: Text),
-                "from" .= unparseOneLine term,
-                "constraint" .= encodedConstraint,
-                "rule-id" .= encodedUniqueId,
-                "substitution" .= encodedSubstitution
-            ]
+            object
+                [ "type" .= ("rewriting" :: Text)
+                , "from" .= unparseOneLine term
+                , "constraint" .= encodedConstraint
+                , "rule-id" .= encodedUniqueId
+                , "substitution" .= encodedSubstitution
+                ]
           where
             term = Conditional.term configuration
             sort = TermLike.termLikeSort term
@@ -98,10 +98,10 @@ instance ToJSON DebugRewriteSubstitution where
             encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
             encodedUniqueId = maybe Null toJSON (getUniqueId uniqueId)
             encodeKV assignment =
-                object [
-                    "key" .= unparseOneLine (assignedVariable assignment),
-                    "value" .= unparseOneLine (assignedTerm assignment)
-                ]
+                object
+                    [ "key" .= unparseOneLine (assignedVariable assignment)
+                    , "value" .= unparseOneLine (assignedTerm assignment)
+                    ]
 
 instance Pretty DebugRewriteSubstitution where
     pretty = pretty . decodeUtf8 . encode
