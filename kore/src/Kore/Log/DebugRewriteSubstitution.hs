@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Log.DebugRewriteSubstitution (
     DebugRewriteSubstitution (..),
     debugRewriteSubstitution,
+    rewriteTraceLogger,
 ) where
 
 import Kore.Attribute.UniqueId (
@@ -37,14 +38,34 @@ import Kore.Step.Step (
     UnifiedRule,
  )
 import Kore.Unparser (
+    Unparse,
     unparse,
  )
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
+    renderText,
+    layoutOneLine,
  )
-import qualified Pretty
+import Data.Yaml (
+    Value (..),
+    ToJSON,
+    toJSON,
+    object,
+    (.=),
+    encode,
+ )
+import Data.ByteString (
+    ByteString,
+ )
+import Data.Text (
+    Text,
+ )
+import Data.Text.Encoding (
+    decodeUtf8,
+ )
+import qualified Data.Vector as Vector
 
 data DebugRewriteSubstitution = DebugRewriteSubstitution
     { configuration :: Pattern VariableName
@@ -52,37 +73,38 @@ data DebugRewriteSubstitution = DebugRewriteSubstitution
     }
     deriving stock (Show)
 
-instance Pretty DebugRewriteSubstitution where
-    pretty DebugRewriteSubstitution{configuration, appliedRules} =
-        Pretty.vsep $ unparseRule <$> appliedRules
+instance ToJSON DebugRewriteSubstitution where
+    toJSON DebugRewriteSubstitution{configuration, appliedRules} =
+        Array $ Vector.fromList $ encodeRule <$> appliedRules
       where
-        ruleInfo :: UniqueId -> [Pretty.Doc ann]
-        ruleInfo uniqueId =
-            [ "- type: rewriting"
-            , "  from: >"
-            , Pretty.indent 4 $ Pretty.group $ unparse term
-            , "  constraint: >"
-            , Pretty.indent 4 $ Pretty.group $ unparseWithSort sort constraint
-            , "  rule-id: " <> (pretty $ fromMaybe "null" $ getUniqueId uniqueId)
-            , "  substitution:"
+        unparseOneLine :: Unparse p => p -> Text
+        unparseOneLine = renderText . layoutOneLine . unparse
+
+        encodeRule :: (UniqueId, Substitution VariableName) -> Value
+        encodeRule (uniqueId, substitution) =
+            object [
+                "type" .= ("rewriting" :: Text),
+                "from" .= unparseOneLine term,
+                "constraint" .= encodedConstraint,
+                "rule-id" .= encodedUniqueId,
+                "substitution" .= encodedSubstitution
             ]
           where
             term = Conditional.term configuration
             sort = TermLike.termLikeSort term
             constraint = Conditional.predicate configuration
 
-        unparseRule :: (UniqueId, Substitution VariableName) -> Pretty.Doc ann
-        unparseRule (uniqueId, substitution) =
-            Pretty.vsep $ ruleInfo uniqueId ++ map (Pretty.indent 2) subst
-          where
-            subst = getKV <$> unwrap substitution
-            getKV assignment =
-                Pretty.vsep $
-                    [ "- key: >"
-                    , Pretty.indent 4 $ Pretty.group $ unparse $ assignedVariable assignment
-                    , "  value: >"
-                    , Pretty.indent 4 $ Pretty.group $ unparse $ assignedTerm assignment
-                    ]
+            encodedSubstitution = encodeKV <$> unwrap substitution
+            encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
+            encodedUniqueId = maybe Null toJSON (getUniqueId uniqueId)
+            encodeKV assignment =
+                object [
+                    "key" .= unparseOneLine (assignedVariable assignment),
+                    "value" .= unparseOneLine (assignedTerm assignment)
+                ]
+
+instance Pretty DebugRewriteSubstitution where
+    pretty = pretty . decodeUtf8 . encode
 
 instance Entry DebugRewriteSubstitution where
     entrySeverity _ = Debug
@@ -104,3 +126,16 @@ debugRewriteSubstitution initial unifiedRules =
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
     uniqueIdAndSubstitution rule =
         (from @_ @UniqueId (extract rule), mapSubstitutionVariables (Conditional.substitution rule))
+
+rewriteTraceLogger ::
+    Applicative m =>
+    LogAction m ByteString ->
+    LogAction m ActualEntry
+rewriteTraceLogger textLogger =
+    LogAction action
+  where
+    action ActualEntry{actualEntry}
+        | Just rewrite <- fromEntry actualEntry =
+            unLogAction textLogger $ encode (rewrite :: DebugRewriteSubstitution)
+        | otherwise =
+            pure ()

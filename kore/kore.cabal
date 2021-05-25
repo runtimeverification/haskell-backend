@@ -113,6 +113,7 @@ common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
+  build-depends: yaml >=0.11.5.0
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
   build-depends: co-log >=0.3
