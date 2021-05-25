@@ -25,19 +25,21 @@ import Prelude.Kore
 
 -- | Simplify an 'InternalMap' pattern.
 simplify ::
+    Sort ->
     InternalSet Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
-simplify =
+simplify sort =
     traverse (Logic.scatter >>> Compose)
-        >>> fmap (normalizeInternalSet >>> markSimplified)
+        >>> fmap (normalizeInternalSet sort >>> markSimplified)
         >>> getCompose
         >>> fmap Pattern.syncSort
         >>> MultiOr.observeAll
 
 normalizeInternalSet ::
+    Sort ->
     InternalSet Key (TermLike RewritingVariableName) ->
     TermLike RewritingVariableName
-normalizeInternalSet map' =
+normalizeInternalSet returnSort map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
         Just normalizedSet ->
             -- If the InternalSet consists of a single compound, remove the
@@ -45,7 +47,7 @@ normalizeInternalSet map' =
             getSingleOpaque normalizedSet
                 -- Otherwise, inject the InternalSet into TermLike.
                 & fromMaybe (mkInternalSet normalizedSet)
-        _ -> mkBottom_
+        _ -> mkBottom returnSort
   where
     getSingleOpaque = asSingleOpaqueElem . getNormalizedAc
     getNormalizedAc = getNormalizedSet . builtinAcChild

@@ -161,11 +161,17 @@ simplify ::
     SideCondition RewritingVariableName ->
     Equals Sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
-simplify sideCondition Equals{equalsFirst = first, equalsSecond = second} =
-    simplifyEvaluated sideCondition first' second'
-  where
-    (first', second') =
-        minMaxBy (on compareForEquals OrPattern.toTermLike) first second
+simplify
+    sideCondition
+    Equals
+        { equalsFirst = first
+        , equalsSecond = second
+        , equalsOperandSort = sort
+        , equalsResultSort = resultSort
+        } = simplifyEvaluated resultSort sideCondition first' second'
+      where
+        (first', second') =
+            minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -182,12 +188,13 @@ carry around.
 -}
 simplifyEvaluated ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplifyEvaluated sideCondition first second
-    | first == second = return OrPattern.top
+simplifyEvaluated sort sideCondition first second
+    | first == second = return (OrPattern.top sort)
     -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
     | otherwise = do
         let isFunctionConditional Conditional{term} = isFunctionPattern term
@@ -202,11 +209,11 @@ simplifyEvaluated sideCondition first second
                     makeEvaluateFunctionalOr sideCondition secondP firstPatterns
             _
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                    Iff.simplifyEvaluated sideCondition first second
+                    Iff.simplifyEvaluated sort sideCondition first second
                 | otherwise ->
                     makeEvaluate
-                        (OrPattern.toPattern first)
-                        (OrPattern.toPattern second)
+                        (OrPattern.toPattern sort first)
+                        (OrPattern.toPattern sort second)
                         sideCondition
   where
     firstPatterns = toList first
@@ -220,34 +227,37 @@ makeEvaluateFunctionalOr ::
     [Pattern RewritingVariableName] ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
-    firstCeil <- makeEvaluateCeil sideCondition first
-    secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
-    firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
+    let sort = Pattern.patternSort first
+    firstCeil <- makeEvaluateCeil sort sideCondition first
+    secondCeilsWithProofs <- mapM (makeEvaluateCeil sort sideCondition) seconds
+    firstNotCeil <- Not.simplifyEvaluated sort sideCondition firstCeil
     let secondCeils = secondCeilsWithProofs
-    secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
+    secondNotCeils <- traverse (Not.simplifyEvaluated sort sideCondition) secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         And.simplify
-            Not.notSimplifier
+            sort
+            (Not.notSimplifier sort)
             sideCondition
             (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
-            (makeEvaluateEqualsIfSecondNotBottom first)
+            (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        And.simplify
-            Not.notSimplifier
+        (And.simplify sort)
+            (Not.notSimplifier sort)
             sideCondition
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
+        sort
         Conditional{term = firstTerm}
         (Conditional{term = secondTerm}, secondCeil) =
             do
                 equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-                Implies.simplifyEvaluated sideCondition secondCeil equality
+                Implies.simplifyEvaluated sort sideCondition secondCeil equality
 
 {- | evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -260,13 +270,13 @@ makeEvaluate ::
     SideCondition RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluate
-    first@Conditional{term = Top_ _}
+    first@Conditional{term = Top_ sort}
     second@Conditional{term = Top_ _}
     _ =
         return
             ( Iff.makeEvaluate
-                first{term = mkTop_} -- remove the term's sort
-                second{term = mkTop_} -- remove the term's sort
+                first{term = mkTop sort} -- remove the term's sort
+                second{term = mkTop sort} -- remove the term's sort
             )
 makeEvaluate
     Conditional
@@ -281,32 +291,35 @@ makeEvaluate
         }
     sideCondition =
         do
+            let sort = termLikeSort firstTerm
             result <- makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
-            return (MultiOr.map Pattern.fromCondition_ result)
+            return (MultiOr.map (Pattern.fromCondition sort) result)
 makeEvaluate
     first@Conditional{term = firstTerm}
     second@Conditional{term = secondTerm}
     sideCondition =
         do
-            let first' = first{term = if termsAreEqual then mkTop_ else firstTerm}
-            firstCeil <- makeEvaluateCeil sideCondition first'
-            let second' = second{term = if termsAreEqual then mkTop_ else secondTerm}
-            secondCeil <- makeEvaluateCeil sideCondition second'
-            firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
-            secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
+            let termSort = termLikeSort firstTerm
+            let first' = first{term = if termsAreEqual then mkTop termSort else firstTerm}
+            firstCeil <- makeEvaluateCeil sort sideCondition first'
+            let second' = second{term = if termsAreEqual then mkTop termSort else secondTerm}
+            secondCeil <- makeEvaluateCeil sort sideCondition second'
+            firstCeilNegation <- Not.simplifyEvaluated sort sideCondition firstCeil
+            secondCeilNegation <- Not.simplifyEvaluated sort sideCondition secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
             negationAnd <-
-                And.simplify
-                    Not.notSimplifier
+                (And.simplify sort)
+                    (Not.notSimplifier sort)
                     sideCondition
                     (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                And.simplify
-                    Not.notSimplifier
+                (And.simplify sort)
+                    (Not.notSimplifier sort)
                     sideCondition
                     (MultiAnd.make [termEquality, firstCeil, secondCeil])
             return $ Or.simplifyEvaluated equalityAnd negationAnd
       where
+        sort = termLikeSort firstTerm
         termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
@@ -322,10 +335,11 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
             makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
     (return . fromMaybe def) result
   where
+    sort = termLikeSort firstTerm
     def =
         OrPattern.fromPattern
             Conditional
-                { term = mkTop_
+                { term = mkTop sort
                 , predicate =
                     Predicate.markSimplified $
                         makeEqualsPredicate firstTerm secondTerm
@@ -342,7 +356,8 @@ makeEvaluateTermsAssumesNoBottomMaybe ::
     MaybeT simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
-    return (MultiOr.map Pattern.fromCondition_ result)
+    let sort = termLikeSort first
+    return (MultiOr.map (Pattern.fromCondition sort) result)
 
 {- | Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -415,8 +430,9 @@ termEqualsAnd ::
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
+    termSort = termLikeSort p1
     run it =
-        (runUnifierT Not.notSimplifier . runMaybeT) it
+        (runUnifierT (Not.notSimplifier termSort) . runMaybeT) it
             >>= Logic.scatter
 
     maybeTermEqualsWorker ::
@@ -426,7 +442,7 @@ termEqualsAnd p1 p2 =
         TermLike RewritingVariableName ->
         MaybeT unifier (Pattern RewritingVariableName)
     maybeTermEqualsWorker =
-        maybeTermEquals Not.notSimplifier termEqualsAndWorker
+        maybeTermEquals (Not.notSimplifier termSort) termEqualsAndWorker
 
     termEqualsAndWorker ::
         forall unifier.
@@ -438,7 +454,7 @@ termEqualsAnd p1 p2 =
         scatterResults
             =<< runUnification (maybeTermEqualsWorker first second)
       where
-        runUnification = runUnifierT Not.notSimplifier . runMaybeT
+        runUnification = runUnifierT (Not.notSimplifier termSort) . runMaybeT
         scatterResults =
             maybe
                 (return equalsPattern) -- default if no results

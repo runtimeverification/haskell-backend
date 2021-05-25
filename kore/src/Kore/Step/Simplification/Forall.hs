@@ -29,13 +29,16 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern (
-    bottom,
+    --    bottom,
+    bottomOf,
     fromTermLike,
     isBottom,
     isTop,
+    patternSort,
+    --    top,
     splitTerm,
     toTermLike,
-    top,
+    topOf,
  )
 import Kore.Internal.Predicate (
     makeForallPredicate,
@@ -115,8 +118,8 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName
 makeEvaluate variable patt
-    | Pattern.isTop patt = Pattern.top
-    | Pattern.isBottom patt = Pattern.bottom
+    | Pattern.isTop patt = Pattern.topOf sort
+    | Pattern.isBottom patt = Pattern.bottomOf sort
     | not variableInTerm && not variableInCondition = patt
     | predicateIsBoolean =
         TermLike.markSimplified (mkForall variable term)
@@ -133,6 +136,7 @@ makeEvaluate variable patt
                 mkForall variable $
                     Pattern.toTermLike patt
   where
+    sort = Pattern.patternSort patt
     (term, predicate) = Pattern.splitTerm patt
     someVariable = mkSomeVariable variable
     someVariableName = variableName someVariable

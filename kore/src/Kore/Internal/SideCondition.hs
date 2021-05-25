@@ -528,7 +528,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         assumeEqualTerms =
             case predicate of
                 PredicateEquals t1 t2 ->
-                    case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
+                    case retractLocalFunction (TermLike.mkEquals (TermLike.termLikeSort t1) t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
                                 HashMap.insert t1' t2'

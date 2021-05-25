@@ -74,5 +74,5 @@ instance
 
 instance Synthetic Sort (Forall Sort variable) where
     synthetic Forall{forallSort, forallChild} =
-        forallSort `matchSort` forallChild
+        forallSort `sameSort` forallChild
     {-# INLINE synthetic #-}

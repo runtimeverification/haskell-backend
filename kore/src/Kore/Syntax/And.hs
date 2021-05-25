@@ -58,6 +58,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (And sort) where
 instance Synthetic Sort (And Sort) where
     synthetic And{andSort, andFirst, andSecond} =
         andSort
-            & seq (matchSort andSort andFirst)
-                . seq (matchSort andSort andSecond)
+            & seq (sameSort andSort andFirst)
+                . seq (sameSort andSort andSecond)
     {-# INLINE synthetic #-}

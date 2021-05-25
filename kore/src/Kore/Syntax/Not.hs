@@ -61,5 +61,5 @@ instance Synthetic (FreeVariables variable) (Not child) where
 
 instance Synthetic Sort (Not Sort) where
     synthetic Not{notSort, notChild} =
-        notSort `matchSort` notChild
+        notSort `sameSort` notChild
     {-# INLINE synthetic #-}

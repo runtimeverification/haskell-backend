@@ -201,8 +201,9 @@ transitionRule
         transitionComputeWeakNext _ (Unprovable config) = return (Unprovable config)
         transitionComputeWeakNext rules (GoalLHS config) =
             transitionComputeWeakNextHelper rules config
-        transitionComputeWeakNext _ (GoalRemLHS _) =
-            return (GoalLHS Pattern.bottom)
+        transitionComputeWeakNext _ (GoalRemLHS pat) =
+            let patSort = Pattern.patternSort pat
+             in return (GoalLHS (Pattern.bottomOf patSort))
 
         transitionComputeWeakNextHelper ::
             [RewriteRule RewritingVariableName] ->

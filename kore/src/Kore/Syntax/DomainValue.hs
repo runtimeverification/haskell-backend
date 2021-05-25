@@ -56,7 +56,7 @@ instance Synthetic (FreeVariables variable) (DomainValue sort) where
 instance Synthetic Sort (DomainValue Sort) where
     synthetic DomainValue{domainValueSort, domainValueChild} =
         domainValueSort
-            & seq (matchSort stringMetaSort domainValueChild)
+            & seq (sameSort stringMetaSort domainValueChild)
     {-# INLINE synthetic #-}
 
 instance TopBottom a => TopBottom (DomainValue Sort a) where

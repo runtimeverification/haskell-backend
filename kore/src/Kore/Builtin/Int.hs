@@ -515,4 +515,4 @@ unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
   where
     UnifyIntEq{eqTerm, value} = unifyData
     EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    eraseTerm = fmap (mkTop . termLikeSort)

@@ -427,9 +427,10 @@ mkEqualityAxiom lhs rhs requires =
                 Just requires' ->
                     TermLike.mkImplies
                         (requires' sortR)
-                        (TermLike.mkAnd function TermLike.mkTop_)
+                        (TermLike.mkAnd function (TermLike.mkTop sortLHS))
                 Nothing -> function
   where
+    sortLHS = TermLike.termLikeSort lhs
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
     function = TermLike.mkEquals sortR lhs rhs

@@ -47,5 +47,5 @@ instance Synthetic (FreeVariables variable) (Next sort) where
 
 instance Synthetic Sort (Next Sort) where
     synthetic Next{nextSort, nextChild} =
-        nextSort `matchSort` nextChild
+        nextSort `sameSort` nextChild
     {-# INLINE synthetic #-}

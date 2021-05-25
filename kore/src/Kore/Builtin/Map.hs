@@ -631,8 +631,10 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
             >>= Unify.scatter
             & lift
 
+    sort1 = TermLike.termLikeSort a
+
     eraseTerm =
-        Pattern.fromCondition_ . Pattern.withoutTerm
+        Pattern.fromCondition sort1 . Pattern.withoutTerm
 
     unifyAndNegate t1 t2 =
         do
@@ -646,7 +648,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                 (OrPattern.fromPatterns unificationSolutions)
             >>= Unify.scatter
 
-    collectConditions terms = fold terms & Pattern.fromCondition_
+    collectConditions terms = fold terms & Pattern.fromCondition sort1
 
     worker ::
         TermLike RewritingVariableName ->
@@ -663,7 +665,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                     mapKeys = symbolicKeys <> concreteKeys
                     opaqueElements = opaque . unwrapAc $ normalizedMap
                 if null mapKeys && null opaqueElements
-                    then return Pattern.top
+                    then return (Pattern.topOf sort1)
                     else do
                         Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
                         -- Concrete keys are constructor-like, therefore they are defined

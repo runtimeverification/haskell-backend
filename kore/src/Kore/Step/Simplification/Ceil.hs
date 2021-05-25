@@ -62,7 +62,6 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Sort as Sort
 import qualified Kore.Step.Function.Evaluator as Axiom (
     evaluatePattern,
  )
@@ -129,9 +128,11 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition child
-    | Pattern.isTop child = return OrPattern.top
+    | Pattern.isTop child = return (OrPattern.top childSort)
     | Pattern.isBottom child = return OrPattern.bottom
     | otherwise = makeEvaluateNonBoolCeil sideCondition child
+  where
+    childSort = Pattern.patternSort child
 
 makeEvaluateNonBoolCeil ::
     MonadSimplify simplifier =>
@@ -142,9 +143,9 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional{term}
     | isTop term =
         return $
             OrPattern.fromPattern
-                patt{term = mkTop_} -- erase the term's sort.
+                patt{term = mkTop pattSort}
     | otherwise = do
-        termCeil <- makeEvaluateTerm sideCondition term
+        termCeil <- makeEvaluateTerm pattSort sideCondition term
         result <-
             And.simplifyEvaluatedMultiPredicate
                 sideCondition
@@ -153,7 +154,9 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional{term}
                     , termCeil
                     ]
                 )
-        return (OrPattern.map Pattern.fromCondition_ result)
+        return (OrPattern.map (Pattern.fromCondition pattSort) result)
+  where
+    pattSort = Pattern.patternSort patt
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -162,15 +165,16 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional{term}
 makeEvaluateTerm ::
     forall simplifier.
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     simplifier (OrCondition RewritingVariableName)
-makeEvaluateTerm sideCondition ceilChild =
+makeEvaluateTerm resultSort sideCondition ceilChild =
     runCeilSimplifierWith
         ceilSimplifier
         sideCondition
         Ceil
-            { ceilResultSort = Sort.predicateSort
+            { ceilResultSort = resultSort
             , ceilOperandSort = termLikeSort ceilChild
             , ceilChild
             }
@@ -185,7 +189,7 @@ makeEvaluateTerm sideCondition ceilChild =
               -- \ceil conditions are reduced to Bool expressions using in_keys.
               newAxiomCeilSimplifier
             , newApplicationCeilSimplifier
-            , newBuiltinCeilSimplifier
+            , newBuiltinCeilSimplifier resultSort
             , newInjCeilSimplifier
             ]
 
@@ -257,21 +261,22 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
 newBuiltinCeilSimplifier ::
     MonadReader (SideCondition RewritingVariableName) simplifier =>
     MonadSimplify simplifier =>
+    Sort ->
     CeilSimplifier
         simplifier
         (TermLike RewritingVariableName)
         (OrCondition RewritingVariableName)
-newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
+newBuiltinCeilSimplifier ceilSort = CeilSimplifier $ \input ->
     case ceilChild input of
         InternalList_ internal -> do
             sideCondition <- Reader.ask
-            makeEvaluateInternalList sideCondition internal
+            makeEvaluateInternalList ceilSort sideCondition internal
         InternalMap_ internalMap -> do
             sideCondition <- Reader.ask
-            makeEvaluateInternalMap sideCondition internalMap
+            makeEvaluateInternalMap ceilSort sideCondition internalMap
         InternalSet_ internalSet -> do
             sideCondition <- Reader.ask
-            makeEvaluateInternalSet sideCondition internalSet
+            makeEvaluateInternalSet ceilSort sideCondition internalSet
         _ -> empty
 
 newAxiomCeilSimplifier ::
@@ -307,15 +312,16 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
 makeEvaluateInternalMap ::
     forall simplifier.
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     InternalMap Key (TermLike RewritingVariableName) ->
     MaybeT simplifier (OrCondition RewritingVariableName)
-makeEvaluateInternalMap sideCondition internalMap =
+makeEvaluateInternalMap resultSort sideCondition internalMap =
     runCeilSimplifierWith
         AssocComm.newMapCeilSimplifier
         sideCondition
         Ceil
-            { ceilResultSort = Sort.predicateSort
+            { ceilResultSort = resultSort
             , ceilOperandSort = builtinAcSort
             , ceilChild = internalMap
             }
@@ -326,15 +332,16 @@ makeEvaluateInternalMap sideCondition internalMap =
 makeEvaluateInternalSet ::
     forall simplifier.
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     InternalSet Key (TermLike RewritingVariableName) ->
     MaybeT simplifier (OrCondition RewritingVariableName)
-makeEvaluateInternalSet sideCondition internalSet =
+makeEvaluateInternalSet resultSort sideCondition internalSet =
     runCeilSimplifierWith
         AssocComm.newSetCeilSimplifier
         sideCondition
         Ceil
-            { ceilResultSort = Sort.predicateSort
+            { ceilResultSort = resultSort
             , ceilOperandSort = builtinAcSort
             , ceilChild = internalSet
             }
@@ -344,11 +351,12 @@ makeEvaluateInternalSet sideCondition internalSet =
 makeEvaluateInternalList ::
     forall simplifier.
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     InternalList (TermLike RewritingVariableName) ->
     simplifier (OrCondition RewritingVariableName)
-makeEvaluateInternalList sideCondition internal = do
-    children <- mapM (makeEvaluateTerm sideCondition) (toList internal)
+makeEvaluateInternalList listSort sideCondition internal = do
+    children <- mapM (makeEvaluateTerm listSort sideCondition) (toList internal)
     let ceils :: [OrCondition RewritingVariableName]
         ceils = children
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
@@ -379,12 +387,13 @@ makeSimplifiedCeil
         do
             childCeils <-
                 if needsChildCeils
-                    then mapM (makeEvaluateTerm sideCondition) (toList termLikeF)
+                    then mapM (makeEvaluateTerm ceilSort sideCondition) (toList termLikeF)
                     else return []
             And.simplifyEvaluatedMultiPredicate
                 sideCondition
                 (MultiAnd.make (unsimplified : childCeils))
       where
+        ceilSort = termLikeSort termLike
         needsChildCeils = case termLikeF of
             ApplyAliasF _ -> False
             EndiannessF _ -> True

@@ -16,6 +16,7 @@ module Kore.Internal.OrPattern (
     bottom,
     isFalse,
     isPredicate,
+    tryGetSort,
     top,
     isTrue,
     toPattern,
@@ -58,7 +59,7 @@ import Kore.Internal.TermLike (
     InternalVariable,
     Sort,
     TermLike,
-    mkBottom_,
+    mkBottom,
     mkOr,
  )
 import Kore.Syntax.Variable
@@ -151,10 +152,12 @@ isFalse = isBottom
 
 @
 'isTrue' top == True
+
+To do (Callan): should this be renamed `topOf` as elsewhere?
 @
 -}
-top :: InternalVariable variable => OrPattern variable
-top = fromPattern Pattern.top
+top :: InternalVariable variable => Sort -> OrPattern variable
+top sort = fromPattern (Pattern.topOf sort)
 
 -- | 'isTrue' checks if the 'Or' has a single top pattern.
 isTrue :: OrPattern variable -> Bool
@@ -164,11 +167,12 @@ isTrue = isTop
 toPattern ::
     forall variable.
     InternalVariable variable =>
+    Sort ->
     OrPattern variable ->
     Pattern variable
-toPattern multiOr =
+toPattern sort multiOr =
     case toList multiOr of
-        [] -> Pattern.bottom
+        [] -> Pattern.bottomOf sort
         [patt] -> patt
         patts -> foldr1 mergeWithOr patts
   where
@@ -198,14 +202,22 @@ toPattern multiOr =
 isPredicate :: OrPattern variable -> Bool
 isPredicate = all Pattern.isPredicate
 
+-- | Gets the `Sort` of a non-empty 'OrPattern' and othewise returns `Nothing`.
+tryGetSort :: OrPattern variable -> Maybe Sort
+tryGetSort multiOr =
+    case toList multiOr of
+        [] -> Nothing
+        p : _ -> Just (Pattern.patternSort p)
+
 -- | Transforms a 'Pattern' into a 'TermLike'.
 toTermLike ::
     InternalVariable variable =>
+    Sort ->
     OrPattern variable ->
     TermLike variable
-toTermLike multiOr =
+toTermLike sort multiOr =
     case toList multiOr of
-        [] -> mkBottom_
+        [] -> mkBottom sort
         [patt] -> Pattern.toTermLike patt
         patts -> foldr1 mkOr (Pattern.toTermLike <$> patts)
 

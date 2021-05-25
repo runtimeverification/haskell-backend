@@ -41,9 +41,10 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.TermLike (
     And (..),
+    Sort,
     TermLike,
     mkAnd,
-    mkBottom_,
+    mkBottom,
     mkNot,
     pattern And_,
     pattern Not_,
@@ -99,14 +100,15 @@ Also, we have
 -}
 simplify ::
     MonadSimplify simplifier =>
+    Sort ->
     NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
-simplify notSimplifier sideCondition orPatterns =
+simplify resultSort notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- MultiAnd.traverse scatter orPatterns
-        makeEvaluate notSimplifier sideCondition patterns
+        makeEvaluate resultSort notSimplifier sideCondition patterns
 
 {- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
 See the comment for 'simplify' to find more details.
@@ -115,24 +117,26 @@ makeEvaluate ::
     forall simplifier.
     HasCallStack =>
     MonadSimplify simplifier =>
+    Sort ->
     NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
-makeEvaluate notSimplifier sideCondition patterns
+makeEvaluate resultSort notSimplifier sideCondition patterns
     | isBottom patterns = empty
-    | Pattern.isTop patterns = return Pattern.top
-    | otherwise = makeEvaluateNonBool notSimplifier sideCondition patterns
+    | Pattern.isTop patterns = return (Pattern.topOf resultSort)
+    | otherwise = makeEvaluateNonBool resultSort notSimplifier sideCondition patterns
 
 makeEvaluateNonBool ::
     forall simplifier.
     HasCallStack =>
     MonadSimplify simplifier =>
+    Sort ->
     NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
-makeEvaluateNonBool notSimplifier sideCondition patterns = do
+makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
     let unify pattern1 term2 = do
             let (term1, condition1) = Pattern.splitTerm pattern1
             unified <- termAnd notSimplifier term1 term2
@@ -140,7 +144,7 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
     unified <-
         foldlM
             unify
-            Pattern.top
+            (Pattern.topOf resultSort)
             (term <$> toList patterns)
     let substitutions =
             Pattern.substitution unified
@@ -172,8 +176,9 @@ applyAndIdempotenceAndFindContradictions ::
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
         then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
-        else mkBottom_
+        else mkBottom sort
   where
+    sort = TermLike.termLikeSort patt
     (terms, negatedTerms) = splitIntoTermsAndNegations patt
     noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
     mkAndSimplified a b =

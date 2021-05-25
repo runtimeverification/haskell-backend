@@ -72,5 +72,6 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
                 >>= Unify.scatter
     | otherwise = empty
   where
+    sort = TermLike.termLikeSort termLike2
     EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    eraseTerm = Pattern.fromCondition sort . Pattern.withoutTerm

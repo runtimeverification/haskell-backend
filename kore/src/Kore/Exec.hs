@@ -266,8 +266,9 @@ exec
                                 <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
-                    forceSort initialSort $
+                    sameTermLikeSort initialSort $
                         OrPattern.toTermLike
+                            _
                             (MultiOr.map getRewritingPattern finalConfigs')
             return (exitCode, finalTerm)
       where
@@ -423,7 +424,7 @@ search
                 orPredicate =
                     makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
             return
-                . forceSort patternSort
+                . sameTermLikeSort patternSort
                 . getRewritingTerm
                 . fromPredicate_
                 $ orPredicate

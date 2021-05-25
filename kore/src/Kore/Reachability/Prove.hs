@@ -101,6 +101,9 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
+import Kore.Sort (
+    Sort,
+ )
 import Kore.Step.ClaimPattern (
     mkGoal,
  )
@@ -142,16 +145,17 @@ type CommonTransitionRule m =
  the configuration will be '\\bottom'.
 -}
 lhsClaimStateTransformer ::
+    Sort ->
     ClaimStateTransformer
         SomeClaim
         (Pattern RewritingVariableName)
-lhsClaimStateTransformer =
+lhsClaimStateTransformer sort =
     ClaimStateTransformer
         { claimedTransformer = getConfiguration
         , remainingTransformer = getConfiguration
         , rewrittenTransformer = getConfiguration
         , stuckTransformer = getConfiguration
-        , provenValue = Pattern.bottom
+        , provenValue = Pattern.bottomOf sort
         }
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.

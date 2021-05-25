@@ -620,8 +620,9 @@ runUnifier ::
 runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
+    let firstSort = TermLike.termLikeSort first
     liftSimplifierWithLogger mvar
-        . runUnifierWithExplanation
+        . (runUnifierWithExplanation firstSort)
         $ unifier sideCondition first second
 
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)

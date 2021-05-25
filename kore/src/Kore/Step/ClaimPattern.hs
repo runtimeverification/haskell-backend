@@ -16,6 +16,7 @@ module Kore.Step.ClaimPattern (
     forgetSimplified,
     parseRightHandSide,
     claimPatternToTerm,
+    getClaimPatternSort,
 ) where
 
 import Control.Error.Util (
@@ -63,6 +64,7 @@ import Kore.Internal.TermLike (
     Modality,
     SomeVariable,
     SomeVariableName (..),
+    Sort,
     TermLike,
     Variable (..),
     VariableName,
@@ -121,7 +123,7 @@ instance Pretty ClaimPattern where
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
-            , Pretty.indent 4 (unparse $ OrPattern.toTermLike right)
+            , Pretty.indent 4 (unparse $ OrPattern.toTermLike sort right)
             ]
       where
         ClaimPattern
@@ -129,6 +131,7 @@ instance Pretty ClaimPattern where
             , right
             , existentials
             } = claimPattern'
+        sort = getClaimPatternSort claimPattern'
 
 instance TopBottom ClaimPattern where
     isTop _ = False
@@ -137,6 +140,12 @@ instance TopBottom ClaimPattern where
 instance From ClaimPattern Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
+getClaimPatternSort ::
+    ClaimPattern ->
+    Sort
+getClaimPatternSort (ClaimPattern left _ _ _) =
+    Pattern.patternSort left
+
 freeVariablesRight ::
     ClaimPattern ->
     FreeVariables RewritingVariableName
@@ -144,10 +153,11 @@ freeVariablesRight claimPattern'@(ClaimPattern _ _ _ _) =
     freeVariables
         ( TermLike.mkExistsN
             existentials
-            (OrPattern.toTermLike right)
+            (OrPattern.toTermLike sort right)
         )
   where
     ClaimPattern{right, existentials} = claimPattern'
+    sort = getClaimPatternSort claimPattern'
 
 freeVariablesLeft ::
     ClaimPattern ->
@@ -214,7 +224,7 @@ claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
             & Pattern.toTermLike
             & getRewritingTerm
     rightPattern =
-        TermLike.mkExistsN existentials (OrPattern.toTermLike right)
+        TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
             & getRewritingTerm
 
 substituteRight ::

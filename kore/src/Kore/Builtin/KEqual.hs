@@ -272,7 +272,7 @@ unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
   where
     UnifyKequalsEq{eqTerm, value} = unifyData
     EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    eraseTerm = fmap (mkTop . termLikeSort)
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

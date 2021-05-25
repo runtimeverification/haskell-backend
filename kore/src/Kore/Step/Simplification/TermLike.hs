@@ -330,12 +330,13 @@ simplify sideCondition = \termLike ->
               , resultPredicate == condition =
                 return $
                     OrPattern.fromPattern $
-                        Pattern.fromCondition_ $
+                        Pattern.fromCondition resultSort $
                             Condition.markPredicateSimplifiedConditional
                                 sideConditionRepresentation
                                 resultPredicate
             | otherwise = continuation
           where
+            resultSort = Pattern.patternSort result
             (resultTerm, resultPredicate) = Pattern.splitTerm result
             resultSubstitutionIsEmpty =
                 case resultPredicate of
@@ -356,6 +357,7 @@ simplify sideCondition = \termLike ->
             refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
             (_ :< termLikeF) = Recursive.project termLike
+            termSort = termLikeSort termLike
          in case termLikeF of
                 -- Unimplemented cases
                 ApplyAliasF _ -> doNotSimplify
@@ -367,7 +369,7 @@ simplify sideCondition = \termLike ->
                 --
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
-                    And.simplify Not.notSimplifier sideCondition
+                    (And.simplify termSort) (Not.notSimplifier termSort) sideCondition
                         =<< MultiAnd.traverse
                             (simplifyTermLike sideCondition)
                             conjuncts
@@ -400,9 +402,9 @@ simplify sideCondition = \termLike ->
                 InternalListF internalF ->
                     InternalList.simplify <$> simplifyChildren internalF
                 InternalMapF internalMapF ->
-                    InternalMap.simplify <$> simplifyChildren internalMapF
+                    (InternalMap.simplify termSort) <$> simplifyChildren internalMapF
                 InternalSetF internalSetF ->
-                    InternalSet.simplify <$> simplifyChildren internalSetF
+                    (InternalSet.simplify termSort) <$> simplifyChildren internalSetF
                 DomainValueF domainValueF ->
                     DomainValue.simplify <$> simplifyChildren domainValueF
                 FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
@@ -423,7 +425,7 @@ simplify sideCondition = \termLike ->
                 -- TODO(virgil): Move next up through patterns.
                 NextF nextF -> Next.simplify <$> simplifyChildren nextF
                 OrF orF -> Or.simplify <$> simplifyChildren orF
-                TopF topF -> Top.simplify <$> simplifyChildren topF
+                TopF topF -> Top.simplify termSort <$> simplifyChildren topF
                 --
                 StringLiteralF stringLiteralF ->
                     return $ StringLiteral.simplify (getConst stringLiteralF)

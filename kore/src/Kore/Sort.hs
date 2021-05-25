@@ -11,11 +11,8 @@ module Kore.Sort (
     getSortId,
     sortSubstitution,
     substituteSortVariables,
-    rigidSort,
     sameSort,
-    matchSort,
     matchSorts,
-    alignSorts,
 
     -- * Meta-sorts
     MetaSortType (..),
@@ -27,7 +24,6 @@ module Kore.Sort (
     stringMetaSort,
     predicateSortId,
     predicateSortActual,
-    predicateSort,
 
     -- * Exceptions
     SortMismatch (..),
@@ -218,29 +214,6 @@ predicateSortActual = SortActual predicateSortId []
 The final predicate sort is unknown until the predicate is attached to a
 pattern.
 -}
-predicateSort :: Sort
-{- TODO PREDICATE (thomas.tuegel):
-
-Add a constructor
-
-> data Sort = ... | FlexibleSort
-
-to use internally as a placeholder where the predicate sort is not yet
-known. Using the sort _PREDICATE{} is a kludge; the backend will melt down if
-the user tries to define a sort named _PREDICATE{}. (At least, this is not
-actually a valid identifier in Kore.)
-
-Until this is fixed, the identifier _PREDICATE is reserved in
-Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
-
--}
-predicateSort = SortActualSort predicateSortActual
-
-rigidSort :: Sort -> Maybe Sort
-rigidSort sort
-    | sort == predicateSort = Nothing
-    | otherwise = Just sort
-
 data SortMismatch = SortMismatch !Sort !Sort
     deriving stock (Eq, Show, Typeable)
 
@@ -290,28 +263,9 @@ sameSort sort1 sort2
     | sort1 == sort2 = sort1
     | otherwise = sortMismatch sort1 sort2
 
-{- | Match the second sort to the first.
-
-If the second sort is flexible, it matches the first sort. If the second sort is
-rigid, it must be equal to the first sort.
--}
-matchSort :: Sort -> Sort -> Sort
-matchSort sort1 sort2 =
-    maybe sort1 (sameSort sort1) (rigidSort sort2)
-
 matchSorts :: [Sort] -> [Sort] -> [Sort]
 matchSorts = alignWith matchTheseSorts
   where
     matchTheseSorts (This sort1) = missingArgument sort1
     matchTheseSorts (That sort2) = unexpectedArgument sort2
-    matchTheseSorts (These sort1 sort2) = matchSort sort1 sort2
-
-alignSorts :: Foldable f => f Sort -> Sort
-alignSorts = fromMaybe predicateSort . foldl' worker Nothing
-  where
-    worker Nothing sort2 = rigidSort sort2
-    worker (Just sort1) sort2 =
-        Just $ maybe sort1 (alignSort sort1) (rigidSort sort2)
-    alignSort sort1 sort2
-        | sort1 == sort2 = sort1
-        | otherwise = sortMismatch sort1 sort2
+    matchTheseSorts (These sort1 sort2) = sameSort sort1 sort2

@@ -136,9 +136,6 @@ import Kore.Internal.TermLike hiding (
     substitute,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort (
-    predicateSort,
- )
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -504,7 +501,7 @@ fromPredicate_ ::
     InternalVariable variable =>
     Predicate variable ->
     TermLike variable
-fromPredicate_ = fromPredicate predicateSort
+fromPredicate_ = fromPredicate undefined
 
 {- | Simple type used to track whether a predicate building function performed
     a simplification that changed the shape of the resulting term. This is
@@ -728,7 +725,7 @@ makeInPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeInPredicate' t1 t2 =
-    (TermLike.makeSortsAgree makeInWorker t1 t2, NotChanged)
+    (TermLike.checkSortsAgree makeInWorker t1 t2, NotChanged)
   where
     makeInWorker t1' t2' _ = synthesize $ InF $ In () () t1' t2'
 
@@ -745,7 +742,7 @@ makeEqualsPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeEqualsPredicate' t1 t2 =
-    (TermLike.makeSortsAgree makeEqualsWorker t1 t2, NotChanged)
+    (TermLike.checkSortsAgree makeEqualsWorker t1 t2, NotChanged)
   where
     makeEqualsWorker t1' t2' _ = synthesize $ EqualsF $ Equals () () t1' t2'
 

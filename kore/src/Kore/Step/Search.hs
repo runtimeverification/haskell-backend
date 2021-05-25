@@ -35,6 +35,7 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Conditional
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -132,7 +133,7 @@ matchWith ::
 matchWith sideCondition e1 e2 = do
     unifiers <-
         lift $
-            Unifier.runUnifierT Not.notSimplifier $
+            Unifier.runUnifierT (Not.notSimplifier sort) $
                 unificationProcedure sideCondition t1 t2
     let mergeAndEvaluate ::
             Condition RewritingVariableName ->
@@ -177,3 +178,4 @@ matchWith sideCondition e1 e2 = do
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2
+    sort = Pattern.patternSort e1

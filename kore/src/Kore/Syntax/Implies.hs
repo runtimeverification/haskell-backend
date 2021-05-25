@@ -70,6 +70,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (Implies sort) where
 instance Synthetic Sort (Implies Sort) where
     synthetic Implies{impliesSort, impliesFirst, impliesSecond} =
         impliesSort
-            & seq (matchSort impliesSort impliesFirst)
-                . seq (matchSort impliesSort impliesSecond)
+            & seq (sameSort impliesSort impliesFirst)
+                . seq (sameSort impliesSort impliesSecond)
     {-# INLINE synthetic #-}

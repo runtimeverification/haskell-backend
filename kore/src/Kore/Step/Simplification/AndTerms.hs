@@ -420,32 +420,28 @@ bottomTermEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier (Pattern RewritingVariableName)
-bottomTermEquals
-    sideCondition
-    first
-    second =
-        do
-            -- MonadUnify
-            secondCeil <- makeEvaluateTermCeil sideCondition second
-            case toList secondCeil of
-                [] -> return Pattern.top
-                [Conditional{predicate = PredicateTrue, substitution}]
-                    | substitution == mempty -> do
-                        explainBottom
-                            "Cannot unify bottom with non-bottom pattern."
-                            first
-                            second
-                        empty
-                _ ->
-                    return
-                        Conditional
-                            { term = mkTop_
-                            , predicate =
-                                makeNotPredicate $
-                                    OrCondition.toPredicate $
-                                        OrPattern.map Condition.toPredicate secondCeil
-                            , substitution = mempty
-                            }
+bottomTermEquals sideCondition first second = do
+    let sort1 = termLikeSort first
+    secondCeil <- makeEvaluateTermCeil sideCondition second
+    case toList secondCeil of
+        [] -> return (Pattern.topOf sort1)
+        [Conditional{predicate = PredicateTrue, substitution}]
+            | substitution == mempty -> do
+                explainBottom
+                    "Cannot unify bottom with non-bottom pattern."
+                    first
+                    second
+                empty
+        _ ->
+            return
+                Conditional
+                    { term = mkTop sort1
+                    , predicate =
+                        makeNotPredicate $
+                            OrCondition.toPredicate $
+                                OrPattern.map Condition.toPredicate secondCeil
+                    , substitution = mempty
+                    }
 
 data UnifyVariables = UnifyVariables
     {variable1, variable2 :: !(ElementVariable RewritingVariableName)}

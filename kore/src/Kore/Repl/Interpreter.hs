@@ -1394,7 +1394,7 @@ prettyClaimStateComponent transformation omitList =
             }
   where
     prettyComponent =
-        unparseToString . OrPattern.toTermLike
+        unparseToString . OrPattern.toTermLike _
             . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::

@@ -57,7 +57,7 @@ unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         Monad.Unify.explainAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
-        pat <- termUnification Not.notSimplifier p1 p2
+        pat <- termUnification (Not.notSimplifier p1Sort) p1 p2
         TopBottom.guardAgainstBottom pat
         let (term, conditions) = Conditional.splitTerm pat
         orCeil <- makeEvaluateTermCeil sideCondition term

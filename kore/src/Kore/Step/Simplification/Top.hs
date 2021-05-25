@@ -26,6 +26,7 @@ import Prelude.Kore ()
 
 -- TODO (virgil): Preserve pattern sorts under simplification.
 simplify ::
+    Sort ->
     Top Sort child ->
     OrPattern RewritingVariableName
-simplify _ = OrPattern.top
+simplify sort _ = OrPattern.top sort

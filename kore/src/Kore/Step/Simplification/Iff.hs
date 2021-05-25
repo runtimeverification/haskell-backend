@@ -56,8 +56,8 @@ simplify ::
     SideCondition RewritingVariableName ->
     Iff Sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
-simplify sideCondition Iff{iffFirst = first, iffSecond = second} =
-    simplifyEvaluated sideCondition first second
+simplify sideCondition Iff{iffFirst = first, iffSecond = second, iffSort = sort} =
+    simplifyEvaluated sort sideCondition first second
 
 {- | evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -79,30 +79,29 @@ carry around.
 -}
 simplifyEvaluated ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplifyEvaluated
-    sideCondition
-    first
-    second
-        | OrPattern.isTrue first = return second
-        | OrPattern.isFalse first = Not.simplifyEvaluated sideCondition second
-        | OrPattern.isTrue second = return first
-        | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
-        | otherwise = case (firstPatterns, secondPatterns) of
-            ([firstP], [secondP]) -> return $ makeEvaluate firstP secondP
-            _ -> do
-                fwd <- Implies.simplifyEvaluated sideCondition first second
-                bwd <- Implies.simplifyEvaluated sideCondition second first
-                And.simplify
-                    Not.notSimplifier
-                    sideCondition
-                    (MultiAnd.make [fwd, bwd])
-      where
-        firstPatterns = toList first
-        secondPatterns = toList second
+simplifyEvaluated sort sideCondition first second
+    | OrPattern.isTrue first = return second
+    | OrPattern.isFalse first = Not.simplifyEvaluated sort sideCondition second
+    | OrPattern.isTrue second = return first
+    | OrPattern.isFalse second = Not.simplifyEvaluated sort sideCondition first
+    | otherwise = case (firstPatterns, secondPatterns) of
+        ([firstP], [secondP]) -> return $ makeEvaluate firstP secondP
+        _ -> do
+            fwd <- Implies.simplifyEvaluated sort sideCondition first second
+            bwd <- Implies.simplifyEvaluated sort sideCondition second first
+            And.simplify
+                sort
+                (Not.notSimplifier sort)
+                sideCondition
+                (MultiAnd.make [fwd, bwd])
+  where
+    firstPatterns = toList first
+    secondPatterns = toList second
 
 {- | evaluates an 'Iff' given its two 'Pattern' children.
 
