@@ -480,6 +480,6 @@ parseTraceRewrites =
         ( Options.strOption
             ( Options.metavar "FILENAME"
                 <> Options.long "trace-rewrites"
-                <> Options.help "Output rewrite trace to a JSON file"
+                <> Options.help "Output rewrite trace to a YAML file"
             )
         )
