@@ -220,6 +220,7 @@ maybeTermAnd notSimplifier childTransformers first second =
         , Builtin.Bool.unifyBoolAnd childTransformers first second
         , Builtin.Bool.unifyBoolOr childTransformers first second
         , Builtin.Bool.unifyBoolNot childTransformers first second
+        , Builtin.Int.unifyIntEq childTransformers notSimplifier first second
         , Builtin.String.unifyStringEq
             childTransformers
             notSimplifier
