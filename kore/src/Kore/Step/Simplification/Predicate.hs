@@ -102,13 +102,13 @@ simplify sideCondition =
             else loop output
 
     mark :: DisjunctiveNormalForm -> DisjunctiveNormalForm
-    mark =
-        (MultiOr.map . MultiAnd.map) mark1
+    mark = id
+    --     (MultiOr.map . MultiAnd.map) mark1
 
-    mark1 ::
-        Predicate RewritingVariableName ->
-        Predicate RewritingVariableName
-    mark1 = Recursive.fold $ Predicate.markSimplified . Recursive.embed
+    -- mark1 ::
+    --     Predicate RewritingVariableName ->
+    --     Predicate RewritingVariableName
+    -- mark1 = Recursive.fold $ Predicate.markSimplified . Recursive.embed
 
     worker ::
         Predicate RewritingVariableName ->
@@ -197,7 +197,9 @@ normalizeNot = normalizeNotOr
             & pure
       where
         fallback =
-            MultiAnd.singleton (fromNot $ MultiAnd.toPredicate predicates)
+            (fromNot $ MultiAnd.toPredicate predicates)
+                & Predicate.markSimplified
+                & MultiAnd.singleton
         normalized =
             case toList predicates of
                 [predicate] ->
@@ -250,6 +252,7 @@ simplifyIff Iff{iffFirst, iffSecond, iffSort}
         orSecond <- mkAndSimplified iffFirst iffSecond
         normalizeOr Or{orSort = iffSort, orFirst, orSecond}
   where
-    mkNotSimplified notChild = simplifyNot Not{notSort = iffSort, notChild}
+    mkNotSimplified notChild =
+        simplifyNot Not{notSort = iffSort, notChild}
     mkAndSimplified andFirst andSecond =
         normalizeAnd And{andSort = iffSort, andFirst, andSecond}
