@@ -17,7 +17,8 @@ Apply this distributive law over both arguments of `\and` until `P[n]` are all
 in disjunctive normal form:
 
 ``` kore
-\and(\or(P[1], P[2]), P[3]) = \or(\and(P[1], P[3]), \and(P[2], P[3]))
+normalize \and(\or(P[1], P[2]), P[3]) =
+  normalize \or(normalize \and(P[1], P[3]), normalize \and(P[2], P[3]))
 ```
 
 ### Simplification
@@ -98,7 +99,8 @@ This one is not as useful as the rule for `\and`:
 ### Normalization
 
 ``` kore
-\not(\or(P[1], P[2])) = \and(\not(P[1]), \not(P[2]))
+normalize \not(\or(P[1], P[2])) =
+  normalize \and(normalize \not(P[1]), normalize \not(P[2]))
 ```
 
 ### Simplification
@@ -126,7 +128,8 @@ This one is not as useful as the rule for `\and`:
 ### Normalization
 
 ``` kore
-normalize(\implies(L, R)) = \or(normalize(\not(L)), normalize(\and(L, R)))
+normalize \implies(L, R) =
+  normalize \or(normalize \not(L), normalize \and(L, R))
 ```
 
 Note: We carry `L` through to the right-hand side because this maximizes the
@@ -152,8 +155,11 @@ information content of the second clause of the disjunction.
 `\iff` is desugared to `\implies`.
 
 ``` kore
-normalize(\iff(L, R)) =
-  \or(normalize(\and(\not(L), \not(R))), normalize(\and(L, R)))
+normalize \iff(L, R) =
+  normalize \or(
+    normalize \and(normalize \not(L), normalize \not(R)),
+    normalize \and(L, R)
+  )
 ```
 
 ### Simplification
