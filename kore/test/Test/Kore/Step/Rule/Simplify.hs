@@ -5,90 +5,90 @@ module Test.Kore.Step.Rule.Simplify (
 ) where
 
 import qualified Control.Lens as Lens
-import Control.Monad.Morph
-    ( MFunctor (..)
-    )
-import Control.Monad.Reader
-    ( MonadReader
-    , ReaderT
-    , runReaderT
-    )
+import Control.Monad.Morph (
+    MFunctor (..),
+ )
+import Control.Monad.Reader (
+    MonadReader,
+    ReaderT,
+    runReaderT,
+ )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
-import Data.Generics.Product
-    ( field
-    )
-import Kore.Internal.Condition
-    ( Condition
-    )
+import Data.Generics.Product (
+    field,
+ )
+import Kore.Internal.Condition (
+    Condition,
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.TermLike
-    ( AdjSomeVariableName
-    , InternalVariable
-    , TermLike
-    , mkAnd
-    , mkElemVar
-    , mkEquals
-    , mkOr
-    )
+import Kore.Internal.TermLike (
+    AdjSomeVariableName,
+    InternalVariable,
+    TermLike,
+    mkAnd,
+    mkElemVar,
+    mkEquals,
+    mkOr,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability
-    ( OnePathClaim (..)
-    , simplify
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , getRewritingVariable
-    , mkRuleVariable
-    )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
-    , mkClaimPattern
-    )
+import Kore.Reachability (
+    OnePathClaim (..),
+    simplify,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingVariable,
+    mkRuleVariable,
+ )
+import Kore.Step.ClaimPattern (
+    ClaimPattern (..),
+    mkClaimPattern,
+ )
 import Kore.Step.Rule.Simplify
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , mapRuleVariables
-    )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    )
-import Kore.Step.Simplification.Simplify
-    ( MonadSMT
-    , MonadSimplify (..)
-    , emptyConditionSimplifier
-    )
-import Kore.Step.Transition
-    ( runTransitionT
-    )
-import Kore.Syntax.Variable
-    ( VariableName
-    , fromVariableName
-    )
+import Kore.Step.RulePattern (
+    RewriteRule (..),
+    mapRuleVariables,
+ )
+import Kore.Step.Simplification.Data (
+    Env (..),
+ )
+import Kore.Step.Simplification.Simplify (
+    MonadSMT,
+    MonadSimplify (..),
+    emptyConditionSimplifier,
+ )
+import Kore.Step.Transition (
+    runTransitionT,
+ )
+import Kore.Syntax.Variable (
+    VariableName,
+    fromVariableName,
+ )
 import Log
 import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Rule.Common
-    ( Pair (..)
-    , RuleBase
-    )
+import Test.Kore.Step.Rule.Common (
+    Pair (..),
+    RuleBase,
+ )
 import qualified Test.Kore.Step.Rule.Common as Common
-import Test.Kore.Step.Simplification
-    ( runSimplifier
-    , runSimplifierSMT
-    )
+import Test.Kore.Step.Simplification (
+    runSimplifier,
+    runSimplifierSMT,
+ )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

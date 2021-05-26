@@ -6,40 +6,40 @@ module Test.Kore.Step.Axiom.EvaluationStrategy (
     test_attemptEquations,
 ) where
 
-import Data.IORef
-    ( modifyIORef'
-    , newIORef
-    , readIORef
-    )
+import Data.IORef (
+    modifyIORef',
+    newIORef,
+    readIORef,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( Conditional (..)
-    )
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeEqualsPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Pattern as Pattern (
+    Conditional (Conditional),
+ )
+import qualified Kore.Internal.Pattern as Pattern (
+    Conditional (..),
+ )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeEqualsPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
-    ( AttemptedAxiom (..)
-    )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
+    AttemptedAxiom (..),
+ )
 import Prelude.Kore
-import Test.Kore.Equation.Common
-    ( axiom
-    , axiom_
-    , concrete
-    )
+import Test.Kore.Equation.Common (
+    axiom,
+    axiom_,
+    concrete,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty

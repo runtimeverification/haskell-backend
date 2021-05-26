@@ -2,27 +2,27 @@ module Test.Kore.Step.Simplification.TermLike (
     test_simplify_sideConditionReplacements,
 ) where
 
-import Control.Monad.Catch
-    ( MonadThrow
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Control.Monad.Catch (
+    MonadThrow,
+ )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeEqualsPredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeEqualsPredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( getRewritingPattern
-    , mkConfigVariable
-    , mkRewritingTerm
-    )
+import Kore.Rewriting.RewritingVariable (
+    getRewritingPattern,
+    mkConfigVariable,
+    mkRewritingTerm,
+ )
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
