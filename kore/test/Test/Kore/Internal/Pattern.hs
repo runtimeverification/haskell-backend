@@ -14,56 +14,56 @@ module Test.Kore.Internal.Pattern (
     module Test.Kore.Internal.TermLike,
 ) where
 
-import Data.Align (
-    align,
- )
+import Data.Align
+    ( align
+    )
 import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Kore.Attribute.Pattern.Simplified (
-    Condition (..),
-    Type (..),
-    pattern Simplified_,
- )
+import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.Simplified
+    ( Condition (..)
+    , pattern Simplified_
+    , Type (..)
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    Predicate,
-    makeAndPredicate,
-    makeCeilPredicate,
-    makeEqualsPredicate,
-    makeFalsePredicate,
-    makeTruePredicate,
- )
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-import Kore.Internal.Substitution (
-    Substitution,
- )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import Prelude.Kore
 import Test.Expect
-import Test.Kore (
-    Gen,
-    sortGen,
- )
-import Test.Kore.Internal.TermLike hiding (
-    forgetSimplified,
-    isSimplified,
-    mapVariables,
-    markSimplified,
-    simplifiedAttribute,
-    substitute,
- )
+import Test.Kore
+    ( Gen
+    , sortGen
+    )
+import Test.Kore.Internal.TermLike hiding
+    ( forgetSimplified
+    , isSimplified
+    , mapVariables
+    , markSimplified
+    , simplifiedAttribute
+    , substitute
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
@@ -351,7 +351,7 @@ test_hasSimplifiedChildren =
             (Mock.f (mkElemVar Mock.x))
             Mock.a
             & Condition.fromPredicate
-            & SideCondition.fromCondition
+            & SideCondition.fromConditionWithReplacements
             & SideCondition.mkRepresentation
 
     setSimplifiedTerm = TermLike.setSimplified

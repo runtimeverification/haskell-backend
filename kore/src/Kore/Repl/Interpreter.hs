@@ -23,203 +23,205 @@ module Kore.Repl.Interpreter (
     showCurrentClaimIndex,
 ) where
 
-import Control.Lens (
-    (%=),
-    (.=),
- )
+import Control.Lens
+    ( (%=)
+    , (.=)
+    )
 import qualified Control.Lens as Lens
-import Control.Monad (
-    void,
-    (<=<),
- )
-import Control.Monad.Extra (
-    ifM,
-    loop,
-    loopM,
- )
-import Control.Monad.RWS.Strict (
-    MonadWriter,
-    RWST,
-    ask,
-    runRWST,
-    tell,
- )
-import Control.Monad.Reader (
-    MonadReader,
-    ReaderT (..),
- )
-import qualified Control.Monad.Reader as Reader (
-    ask,
- )
-import Control.Monad.State.Class (
-    get,
-    put,
- )
-import Control.Monad.State.Strict (
-    MonadState,
-    StateT (..),
-    execStateT,
- )
+import Control.Monad
+    ( void
+    , (<=<)
+    )
+import Control.Monad.Extra
+    ( ifM
+    , loop
+    , loopM
+    )
+import Control.Monad.Reader
+    ( MonadReader
+    , ReaderT (..)
+    )
+import qualified Control.Monad.Reader as Reader
+    ( ask
+    )
+import Control.Monad.RWS.Strict
+    ( MonadWriter
+    , RWST
+    , ask
+    , runRWST
+    , tell
+    )
+import Control.Monad.State.Class
+    ( get
+    , put
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT (..)
+    , execStateT
+    )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import Control.Monad.Trans.Except (
-    runExceptT,
- )
-import Data.Coerce (
-    coerce,
- )
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
+import Data.Coerce
+    ( coerce
+    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
-import Data.Graph.Inductive.PatriciaTree (
-    Gr,
- )
+import Data.Graph.Inductive.PatriciaTree
+    ( Gr
+    )
 import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
-import Data.IORef (
-    IORef,
-    modifyIORef,
-    newIORef,
-    readIORef,
- )
+import Data.IORef
+    ( IORef
+    , modifyIORef
+    , newIORef
+    , readIORef
+    )
 import qualified Data.List as List
-import Data.List.Extra (
-    upper,
- )
+import Data.List.Extra
+    ( upper
+    )
 import qualified Data.Map.Strict as Map
-import Data.Maybe (
-    fromJust,
- )
-import Data.Sequence (
-    Seq,
- )
-import Data.Set (
-    Set,
- )
+import Data.Maybe
+    ( fromJust
+    )
+import Data.Sequence
+    ( Seq
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Typeable as Typeable
-import GHC.Exts (
-    toList,
- )
-import GHC.IO.Handle (
-    hGetContents,
-    hPutStr,
- )
-import GHC.Natural (
-    naturalToInt,
- )
-import Kore.Attribute.Axiom (
-    SourceLocation (..),
- )
+import GHC.Exts
+    ( toList
+    )
+import GHC.IO.Handle
+    ( hGetContents
+    , hPutStr
+    )
+import GHC.Natural
+    ( naturalToInt
+    )
+import Kore.Attribute.Axiom
+    ( SourceLocation (..)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
-import Kore.Attribute.Pattern.FreeVariables (
-    freeVariables,
- )
-import Kore.Attribute.RuleIndex (
-    RuleIndex (..),
- )
-import Kore.Internal.Condition (
-    Condition,
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    )
+import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTrueCondition,
- )
-import Kore.Internal.TermLike (
-    TermLike,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( fromConditionWithReplacements
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
-import Kore.Reachability (
-    ClaimState (..),
-    ClaimStateTransformer (..),
-    CommonClaimState,
-    Rule (ReachabilityRewriteRule),
-    SomeClaim (..),
-    claimState,
-    extractUnproven,
-    getConfiguration,
-    getDestination,
-    isTrusted,
-    makeTrusted,
- )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
+    )
+import Kore.Reachability
+    ( ClaimState (..)
+    , ClaimStateTransformer (..)
+    , CommonClaimState
+    , Rule (ReachabilityRewriteRule)
+    , SomeClaim (..)
+    , claimState
+    , extractUnproven
+    , getConfiguration
+    , getDestination
+    , isTrusted
+    , makeTrusted
+    )
 import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    getRewritingPattern,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , getRewritingPattern
+    )
 import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data (
-    MonadSimplify,
- )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
-import qualified Kore.Syntax.Id as Id (
-    Id (..),
- )
+import qualified Kore.Syntax.Id as Id
+    ( Id (..)
+    )
 import Kore.Syntax.Variable
-import Kore.Unparser (
-    Unparse,
-    unparse,
-    unparseToString,
- )
+import Kore.Unparser
+    ( Unparse
+    , unparse
+    , unparseToString
+    )
 import Numeric.Natural
-import Prelude.Kore hiding (
-    toList,
- )
-import Pretty (
-    Pretty (..),
- )
+import Prelude.Kore hiding
+    ( toList
+    )
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
-import System.Directory (
-    doesDirectoryExist,
-    doesFileExist,
-    findExecutable,
- )
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , findExecutable
+    )
 import System.Exit
-import System.FilePath (
-    splitFileName,
-    (<.>),
- )
-import System.IO (
-    IOMode (..),
-    hPutStrLn,
-    stderr,
-    withFile,
- )
-import System.Process (
-    StdStream (CreatePipe),
-    createProcess,
-    proc,
-    std_in,
-    std_out,
- )
-import Text.Megaparsec (
-    ParseErrorBundle (..),
-    ShowErrorComponent (..),
-    errorBundlePretty,
-    mapParseError,
-    parseMaybe,
-    runParser,
- )
+import System.FilePath
+    ( splitFileName
+    , (<.>)
+    )
+import System.IO
+    ( IOMode (..)
+    , hPutStrLn
+    , stderr
+    , withFile
+    )
+import System.Process
+    ( StdStream (CreatePipe)
+    , createProcess
+    , proc
+    , std_in
+    , std_out
+    )
+import Text.Megaparsec
+    ( ParseErrorBundle (..)
+    , ShowErrorComponent (..)
+    , errorBundlePretty
+    , mapParseError
+    , parseMaybe
+    , runParser
+    )
 
 {- | Warning: you should never use WriterT or RWST. It is used here with
  _great care_ of evaluating the RWST to a StateT immediately, and thus getting
@@ -1015,7 +1017,8 @@ tryAxiomClaimWorker mode ref = do
                         runUnifier' sideCondition first secondTerm
                       where
                         sideCondition =
-                            SideCondition.assumeTrueCondition secondCondition
+                            SideCondition.fromConditionWithReplacements
+                                secondCondition
 
     tryForceAxiomOrClaim ::
         Either Axiom SomeClaim ->

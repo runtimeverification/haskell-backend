@@ -9,49 +9,49 @@ module Kore.Step.Simplification.Pattern (
     makeEvaluate,
 ) where
 
-import Control.Monad (
-    (>=>),
- )
+import Control.Monad
+    ( (>=>)
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Condition,
-    Conditional (..),
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Condition
+    , Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
- )
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    andCondition,
-    assumeDefined,
-    top,
- )
-import Kore.Internal.Substitution (
-    toMap,
- )
-import Kore.Internal.TermLike (
-    pattern Exists_,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
-    simplifyCondition,
-    simplifyConditionalTerm,
- )
-import Kore.Substitute (
-    substitute,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( addConditionWithReplacements
+    , assumeDefined
+    , top
+    )
+import Kore.Internal.Substitution
+    ( toMap
+    )
+import Kore.Internal.TermLike
+    ( pattern Exists_
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , simplifyCondition
+    , simplifyConditionalTerm
+    )
+import Kore.Substitute
+    ( substitute
+    )
 import Prelude.Kore
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
@@ -124,6 +124,7 @@ makeEvaluate sideCondition pattern' =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
             simplifiedCondition' =
+                -- TODO: is this comment accurate anymore?
                 -- Combine the predicate and the substitution. The substitution
                 -- has already been applied to the term being simplified. This
                 -- is only to make SideCondition.andCondition happy, below,
@@ -135,7 +136,9 @@ makeEvaluate sideCondition pattern' =
                     & Condition.toPredicate
                     & Condition.fromPredicate
             termSideCondition =
-                sideCondition `SideCondition.andCondition` simplifiedCondition'
+                SideCondition.addConditionWithReplacements
+                    sideCondition
+                    simplifiedCondition'
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition

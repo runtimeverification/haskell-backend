@@ -16,55 +16,56 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
-import Kore.Equation (
-    Equation (..),
-    mkEquation,
- )
+import Kore.Equation
+    ( Equation (..)
+    , mkEquation
+    )
 import qualified Kore.Equation as Equation
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    toRepresentation,
-    top,
- )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkConfigVariable,
-    mkRuleVariable,
- )
-import Kore.Step.Axiom.EvaluationStrategy (
-    builtinEvaluation,
-    simplifierWithFallback,
- )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
-import Kore.Step.Axiom.Registry (
-    mkEvaluatorRegistry,
- )
-import qualified Kore.Step.Simplification.Pattern as Pattern (
-    makeEvaluate,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( fromConditionWithReplacements
+    , toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    , mkRuleVariable
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    , simplifierWithFallback
+    )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Axiom.Registry
+    ( mkEvaluatorRegistry
+    )
+import qualified Kore.Step.Simplification.Pattern as Pattern
+    ( makeEvaluate
+    )
 import Kore.Step.Simplification.Simplify
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.Equation.Common (
-    functionAxiomUnification,
-    functionAxiomUnification_,
- )
+import Test.Kore.Equation.Common
+    ( functionAxiomUnification
+    , functionAxiomUnification_
+    )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
-import Test.Kore.Internal.Pattern (
-    Conditional (..),
- )
+import Test.Kore.Internal.Pattern
+    ( Conditional (..)
+    )
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
-import Test.Kore.Internal.Substitution as Substitution hiding (
-    test_substitute,
- )
+import Test.Kore.Internal.Substitution as Substitution hiding
+    ( test_substitute
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty
@@ -256,8 +257,9 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                ( from @(Predicate _) @(SideCondition _) $
-                    requirement Mock.xConfig
+                ( SideCondition.fromConditionWithReplacements
+                . from @(Predicate _)
+                $ requirement Mock.xConfig
                 )
                 ( Pattern.fromTermLike $
                     mkExists Mock.zConfig $
@@ -952,8 +954,9 @@ test_simplificationIntegrationUnification =
                         ]
                     )
                 )
-                ( from @(Predicate _) @(SideCondition _) $
-                    requirement Mock.xConfig
+                ( SideCondition.fromConditionWithReplacements
+                . from @(Predicate _)
+                $ requirement Mock.xConfig
                 )
                 ( Pattern.fromTermLike $
                     mkExists Mock.zConfig $

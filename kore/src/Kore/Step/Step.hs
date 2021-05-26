@@ -29,66 +29,66 @@ module Kore.Step.Step (
     Step.results,
 ) where
 
-import Data.Functor (
-    (<&>),
- )
+import Data.Functor
+    ( (<&>)
+    )
 import qualified Data.Map.Strict as Map
-import Data.Set (
-    Set,
- )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Condition (
-    Condition,
- )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    Conditional (Conditional),
- )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike (
-    InternalVariable,
-    SomeVariableName,
-    TermLike,
- )
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , SomeVariableName
+    , TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Procedure
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
- )
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
 import Kore.Unparser
-import Kore.Variables.Target (
-    Target,
- )
+import Kore.Variables.Target
+    ( Target
+    )
 import qualified Kore.Variables.Target as Target
-import Logic (
-    LogicT,
- )
+import Logic
+    ( LogicT
+    )
 import qualified Logic
 import Prelude.Kore
 import qualified Pretty
@@ -143,7 +143,8 @@ unifyRule ::
     LogicT simplifier (UnifiedRule rule)
 unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        sideCondition = SideCondition.fromCondition initialCondition
+        sideCondition =
+            SideCondition.fromConditionWithReplacements initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
@@ -288,7 +289,9 @@ applyRemainder initial remainder = do
     -- to the top level.
     partial <-
         Simplifier.simplifyCondition
-            (SideCondition.fromCondition $ Pattern.withoutTerm initial)
+            ( SideCondition.fromConditionWithReplacements
+            $ Pattern.withoutTerm initial
+            )
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!

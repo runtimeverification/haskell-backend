@@ -35,127 +35,127 @@ module Kore.Reachability.Claim (
     simplifyRightHandSide,
 ) where
 
-import Control.Lens (
-    Lens',
- )
+import Control.Lens
+    ( Lens'
+    )
 import qualified Control.Lens as Lens
-import Control.Monad.Catch (
-    Exception (..),
-    SomeException (..),
- )
-import Control.Monad.State.Strict (
-    MonadState,
-    StateT,
-    runStateT,
- )
+import Control.Monad.Catch
+    ( Exception (..)
+    , SomeException (..)
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    , runStateT
+    )
 import qualified Control.Monad.State.Strict as State
 import Data.Functor.Compose
-import Data.Generics.Product (
-    field,
- )
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Monoid as Monoid
-import Data.Stream.Infinite (
-    Stream (..),
- )
+import Data.Stream.Infinite
+    ( Stream (..)
+    )
 import qualified Data.Stream.Infinite as Stream
 import Debug
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Label as Attribute (
-    Label,
- )
-import qualified Kore.Attribute.RuleIndex as Attribute (
-    RuleIndex,
- )
-import qualified Kore.Attribute.SourceLocation as Attribute (
-    SourceLocation,
- )
+import qualified Kore.Attribute.Label as Attribute
+    ( Label
+    )
+import qualified Kore.Attribute.RuleIndex as Attribute
+    ( RuleIndex
+    )
+import qualified Kore.Attribute.SourceLocation as Attribute
+    ( SourceLocation
+    )
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
-import Kore.IndexedModule.IndexedModule (
-    IndexedModule (indexedModuleClaims),
-    VerifiedModule,
- )
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule (indexedModuleClaims)
+    , VerifiedModule
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
- )
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    Symbol,
- )
-import Kore.Internal.TermLike (
-    isFunctionPattern,
-    mkIn,
-    termLikeSort,
- )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Internal.TermLike
+    ( isFunctionPattern
+    , mkIn
+    , termLikeSort
+    )
 import Kore.Log.InfoReachability
-import Kore.Reachability.ClaimState hiding (
-    claimState,
- )
+import Kore.Reachability.ClaimState hiding
+    ( claimState
+    )
 import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern (
-    AxiomPattern (..),
- )
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
- )
+import Kore.Step.AxiomPattern
+    ( AxiomPattern (..)
+    )
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Result (
-    Result (..),
-    Results (..),
- )
+import Kore.Step.Result
+    ( Result (..)
+    , Results (..)
+    )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern (
-    RewriteRule (..),
-    RulePattern (..),
- )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import Kore.Step.Simplification.Data (
-    MonadSimplify,
- )
+import Kore.Step.RulePattern
+    ( RewriteRule (..)
+    , RulePattern (..)
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Pattern (
-    simplifyTopConfigurationDefined,
- )
+import Kore.Step.Simplification.Pattern
+    ( simplifyTopConfigurationDefined
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
-import Kore.Step.Strategy (
-    Strategy,
- )
+import Kore.Step.Strategy
+    ( Strategy
+    )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
-import Kore.TopBottom (
-    TopBottom (..),
- )
-import Kore.Unparser (
-    Unparse (..),
- )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import qualified Kore.Verified as Verified
-import Logic (
-    LogicT,
-    MonadLogic,
- )
+import Logic
+    ( LogicT
+    , MonadLogic
+    )
 import qualified Logic
 import Prelude.Kore
-import Pretty (
-    Pretty (..),
- )
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 class Claim claim where
@@ -530,8 +530,11 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     -- the claim is fully simplified at every step, that should not be a
     -- problem.
     sideCondition =
-        SideCondition.assumeTrueCondition
-            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+        SideCondition.fromConditionWithReplacements
+            ( Condition.fromPredicate
+            . Condition.toPredicate
+            $ leftCondition
+            )
 
     getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
     getNegativeConjuncts =
@@ -591,7 +594,7 @@ simplify' lensClaimPattern claim = do
     simplifyRightHandSide lensClaimPattern sideCondition claim'
   where
     extractSideCondition =
-        SideCondition.assumeTrueCondition
+        SideCondition.fromConditionWithReplacements
             . Pattern.withoutTerm
             . Lens.view (lensClaimPattern . field @"left")
 

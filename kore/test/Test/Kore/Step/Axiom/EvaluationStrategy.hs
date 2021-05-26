@@ -6,42 +6,40 @@ module Test.Kore.Step.Axiom.EvaluationStrategy (
     test_attemptEquations,
 ) where
 
-import Data.IORef (
-    modifyIORef',
-    newIORef,
-    readIORef,
- )
+import Data.IORef
+    ( modifyIORef'
+    , newIORef
+    , readIORef
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern (
-    Conditional (Conditional),
- )
-import qualified Kore.Internal.Pattern as Pattern (
-    Conditional (..),
- )
-import Kore.Internal.Predicate (
-    Predicate,
-    makeEqualsPredicate,
-    makeNotPredicate,
-    makeTruePredicate,
- )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTruePredicate,
- )
+import Kore.Internal.Pattern as Pattern
+    ( Conditional (Conditional)
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( Conditional (..)
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
-    AttemptedAxiom (..),
- )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
 import Prelude.Kore
-import Test.Kore.Equation.Common (
-    axiom,
-    axiom_,
-    concrete,
- )
+import Test.Kore.Equation.Common
+    ( axiom
+    , axiom_
+    , concrete
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty
@@ -51,8 +49,7 @@ test_attemptEquations :: [TestTree]
 test_attemptEquations =
     [ testCase "Stops attempting equations at first successful result" $ do
         counter <- newIORef (0 :: Int)
-        let condition =
-                SideCondition.assumeTruePredicate makeTruePredicate
+        let condition = SideCondition.top
             term = Mock.functionalConstr10 Mock.a
             equations =
                 [ notApplicable1
@@ -567,4 +564,6 @@ evaluateWithPredicate ::
     IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifierSMT Mock.env $
-        simplifier term (SideCondition.assumeTruePredicate predicate)
+        simplifier
+            term
+            (SideCondition.fromPredicateWithReplacements predicate)

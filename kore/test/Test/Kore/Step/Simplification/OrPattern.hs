@@ -2,34 +2,32 @@ module Test.Kore.Step.Simplification.OrPattern (
     test_orPatternSimplification,
 ) where
 
-import Kore.Internal.Conditional (
-    Conditional (Conditional),
- )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
-import qualified Kore.Internal.OrPattern as OrPattern (
-    bottom,
-    fromPatterns,
-    top,
- )
-import Kore.Internal.Predicate (
-    Predicate,
-    makeAndPredicate,
-    makeEqualsPredicate,
-    makeTruePredicate,
- )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTruePredicate,
- )
-import Kore.Internal.TermLike (
-    TermLike,
-    mkElemVar,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
+    ( bottom
+    , fromPatterns
+    , top
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeAndPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkElemVar
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.OrPattern
 import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -127,5 +125,5 @@ runSimplifyPredicates ::
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifierSMT Mock.env $
         simplifyConditionsWithSmt
-            (SideCondition.assumeTruePredicate predicate)
+            (SideCondition.fromPredicateWithReplacements predicate)
             orPattern

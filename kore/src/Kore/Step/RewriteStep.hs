@@ -15,64 +15,64 @@ module Kore.Step.RewriteStep (
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Sequence as Seq
-import Kore.Attribute.Pattern.FreeVariables (
-    FreeVariables,
- )
-import Kore.Attribute.SourceLocation (
-    SourceLocation,
- )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
+import Kore.Attribute.SourceLocation
+    ( SourceLocation
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugAppliedRewriteRules (
-    debugAppliedRewriteRules,
- )
-import Kore.Log.ErrorRewritesInstantiation (
-    checkSubstitutionCoverage,
- )
+import Kore.Log.DebugAppliedRewriteRules
+    ( debugAppliedRewriteRules
+    )
+import Kore.Log.ErrorRewritesInstantiation
+    ( checkSubstitutionCoverage
+    )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern (
-    AxiomPattern,
- )
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
- )
+import Kore.Step.AxiomPattern
+    ( AxiomPattern
+    )
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    )
 import qualified Kore.Step.ClaimPattern as Claim
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
-import Kore.Step.RulePattern (
-    RewriteRule (..),
-    RulePattern,
- )
+import Kore.Step.RulePattern
+    ( RewriteRule (..)
+    , RulePattern
+    )
 import qualified Kore.Step.RulePattern as Rule
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
-    simplifyCondition,
- )
-import Kore.Step.Step (
-    Result,
-    Results,
-    UnifiedRule,
-    applyInitialConditions,
-    applyRemainder,
-    assertFunctionLikeResults,
-    unifyRules,
- )
-import Logic (
-    LogicT,
- )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , simplifyCondition
+    )
+import Kore.Step.Step
+    ( Result
+    , Results
+    , UnifiedRule
+    , applyInitialConditions
+    , applyRemainder
+    , assertFunctionLikeResults
+    , unifyRules
+    )
+import Logic
+    ( LogicT
+    )
 import qualified Logic
 import Prelude.Kore
 
@@ -131,7 +131,9 @@ constructConfiguration appliedCondition finalPattern = do
     let ensuresCondition = Pattern.withoutTerm finalPattern
     finalCondition <-
         do
-            let sideCondition = SideCondition.fromCondition appliedCondition
+            let sideCondition =
+                    SideCondition.fromConditionWithReplacements
+                        appliedCondition
             partial <- simplifyCondition sideCondition ensuresCondition
             -- TODO (thomas.tuegel): It should not be necessary to simplify
             -- after conjoining the conditions.
