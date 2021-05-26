@@ -27,112 +27,112 @@ module Kore.Internal.SideCondition (
 
 import Changed
 import qualified Control.Lens as Lens
-import Control.Monad.State.Strict
-    ( StateT
-    , runStateT
-    )
+import Control.Monad.State.Strict (
+    StateT,
+    runStateT,
+ )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Product
-    ( field
-    )
-import Data.HashMap.Strict
-    ( HashMap
-    )
+import Data.Generics.Product (
+    field,
+ )
+import Data.HashMap.Strict (
+    HashMap,
+ )
 import qualified Data.HashMap.Strict as HashMap
-import Data.HashSet
-    ( HashSet
-    )
+import Data.HashSet (
+    HashSet,
+ )
 import qualified Data.HashSet as HashSet
-import Data.List
-    ( sortOn
-    )
+import Data.List (
+    sortOn,
+ )
 import Debug
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Pattern.Defined as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    )
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
-import Kore.Internal.Condition
-    ( Condition
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
+import Kore.Internal.Condition (
+    Condition,
+ )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.InternalList
-    ( InternalList (..)
-    )
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.InternalList (
+    InternalList (..),
+ )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.NormalizedAc
-    ( pattern AcPair
-    , AcWrapper (..)
-    , InternalAc (..)
-    , NormalizedAc (..)
-    , PairWiseElements (..)
-    , emptyNormalizedAc
-    , generatePairWiseElements
-    , getConcreteKeysOfAc
-    , getConcreteValuesOfAc
-    , getSymbolicKeysOfAc
-    , getSymbolicValuesOfAc
-    )
-import Kore.Internal.Predicate
-    ( Predicate
-    , pattern PredicateEquals
-    , pattern PredicateExists
-    , pattern PredicateForall
-    , pattern PredicateNot
-    , makeFalsePredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.NormalizedAc (
+    AcWrapper (..),
+    InternalAc (..),
+    NormalizedAc (..),
+    PairWiseElements (..),
+    emptyNormalizedAc,
+    generatePairWiseElements,
+    getConcreteKeysOfAc,
+    getConcreteValuesOfAc,
+    getSymbolicKeysOfAc,
+    getSymbolicValuesOfAc,
+    pattern AcPair,
+ )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeFalsePredicate,
+    makeTruePredicate,
+    pattern PredicateEquals,
+    pattern PredicateExists,
+    pattern PredicateForall,
+    pattern PredicateNot,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
-import Kore.Internal.Symbol
-    ( isConstructor
-    , isFunction
-    , isFunctional
-    )
-import Kore.Internal.TermLike
-    ( pattern App_
-    , pattern Equals_
-    , pattern Exists_
-    , pattern Forall_
-    , pattern Inj_
-    , pattern InternalBool_
-    , pattern InternalBytes_
-    , pattern InternalInt_
-    , pattern InternalList_
-    , pattern InternalMap_
-    , pattern InternalSet_
-    , pattern InternalString_
-    , Key
-    , pattern Mu_
-    , pattern Nu_
-    , TermLike
-    )
+import Kore.Internal.Symbol (
+    isConstructor,
+    isFunction,
+    isFunctional,
+ )
+import Kore.Internal.TermLike (
+    Key,
+    TermLike,
+    pattern App_,
+    pattern Equals_,
+    pattern Exists_,
+    pattern Forall_,
+    pattern Inj_,
+    pattern InternalBool_,
+    pattern InternalBytes_,
+    pattern InternalInt_,
+    pattern InternalList_,
+    pattern InternalMap_,
+    pattern InternalSet_,
+    pattern InternalString_,
+    pattern Mu_,
+    pattern Nu_,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
+import Kore.Internal.Variable (
+    InternalVariable,
+ )
 import Kore.Syntax.Variable
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import Pair
-import Partial
-    ( Partial (..)
-    , getPartial
-    )
+import Partial (
+    Partial (..),
+    getPartial,
+ )
 import Prelude.Kore
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 import qualified SQL
 
@@ -216,8 +216,9 @@ instance
     from = Condition.fromPredicate . toPredicate
     {-# INLINE from #-}
 
--- | Smart constructor for creating a 'SideCondition' by just assuming
--- a conjunction of predicates to be true.
+{- | Smart constructor for creating a 'SideCondition' by just assuming
+ a conjunction of predicates to be true.
+-}
 assumeTrue ::
     MultiAnd (Predicate variable) ->
     SideCondition variable
@@ -228,9 +229,10 @@ assumeTrue assumedTrue =
         , definedTerms = HashSet.empty
         }
 
--- | Assumes a single 'Predicate' to be true in the context of another
--- 'SideCondition'.
--- Does not modify the replacement table or the set of defined terms.
+{- | Assumes a single 'Predicate' to be true in the context of another
+ 'SideCondition'.
+ Does not modify the replacement table or the set of defined terms.
+-}
 addPredicate ::
     Ord variable =>
     Predicate variable ->
@@ -239,9 +241,10 @@ addPredicate ::
 addPredicate predicate =
     addPredicates (MultiAnd.singleton predicate)
 
--- | Assumes a conjunction of 'Predicate's to be true in the context
--- of another 'SideCondition'.
--- Does not modify the replacement table or the set of defined terms.
+{- | Assumes a conjunction of 'Predicate's to be true in the context
+ of another 'SideCondition'.
+ Does not modify the replacement table or the set of defined terms.
+-}
 addPredicates ::
     Ord variable =>
     MultiAnd (Predicate variable) ->
@@ -284,9 +287,9 @@ addConditionWithReplacements
       where
         SideCondition{assumedTrue = oldCondition, definedTerms} = sideCondition
 
-
--- | Smart constructor for creating a 'SideCondition' by just constructing
--- the replacement table from a conjunction of predicates.
+{- | Smart constructor for creating a 'SideCondition' by just constructing
+ the replacement table from a conjunction of predicates.
+-}
 constructReplacements ::
     InternalVariable variable =>
     MultiAnd (Predicate variable) ->
@@ -308,25 +311,27 @@ constructReplacements predicates =
             , definedTerms = HashSet.empty
             }
 
--- | Smart constructor for creating a `SideCondition` by assuming
--- a 'Condition' to be true and building its term replacement table.
-fromConditionWithReplacements
-    :: InternalVariable variable
-    => Condition variable
-    -> SideCondition variable
+{- | Smart constructor for creating a `SideCondition` by assuming
+ a 'Condition' to be true and building its term replacement table.
+-}
+fromConditionWithReplacements ::
+    InternalVariable variable =>
+    Condition variable ->
+    SideCondition variable
 fromConditionWithReplacements (from -> predicates) =
     constructReplacements predicates
-    & Lens.set (field @"assumedTrue") predicates
+        & Lens.set (field @"assumedTrue") predicates
 
--- | Smart constructor for creating a `SideCondition` by assuming
--- a 'Predicate' to be true and building its term replacement table.
-fromPredicateWithReplacements
-    :: InternalVariable variable
-    => Predicate variable
-    -> SideCondition variable
+{- | Smart constructor for creating a `SideCondition` by assuming
+ a 'Predicate' to be true and building its term replacement table.
+-}
+fromPredicateWithReplacements ::
+    InternalVariable variable =>
+    Predicate variable ->
+    SideCondition variable
 fromPredicateWithReplacements (from -> predicates) =
     constructReplacements predicates
-    & Lens.set (field @"assumedTrue") predicates
+        & Lens.set (field @"assumedTrue") predicates
 
 top :: InternalVariable variable => SideCondition variable
 top =

@@ -4,30 +4,30 @@ module Test.Kore.Equation.Application (
     test_applySubstitutionAndSimplify,
 ) where
 
-import Control.Monad
-    ( (>=>)
-    )
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
+import Control.Monad (
+    (>=>),
+ )
+import Control.Monad.Trans.Except (
+    runExceptT,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Kore.Equation as Equation
-import Kore.Equation.Application hiding
-    ( attemptEquation
-    )
+import Kore.Equation.Application hiding (
+    attemptEquation,
+ )
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.Axiom.Registry
-    ( mkEvaluatorRegistry
-    )
+import Kore.Step.Axiom.Registry (
+    mkEvaluatorRegistry,
+ )
 import Prelude.Kore
 import qualified Pretty
 import Test.Expect
@@ -302,8 +302,8 @@ test_attemptEquation =
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         (axiom (sigma x y) a (positive x `orNot` positive y))
-        ( SideCondition.fromPredicateWithReplacements
-        $ positive a
+        ( SideCondition.fromPredicateWithReplacements $
+            positive a
         )
         (sigma a a)
         -- SMT not used to simplify trivial constraints
@@ -312,16 +312,16 @@ test_attemptEquation =
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
         (axiom (f x) a (positive x))
-        ( SideCondition.fromPredicateWithReplacements
-        $ makeNotPredicate (positive z)
+        ( SideCondition.fromPredicateWithReplacements $
+            makeNotPredicate (positive z)
         )
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (axiom (f x) a (positive x))
-        ( SideCondition.fromPredicateWithReplacements
-        $ positive z
+        ( SideCondition.fromPredicateWithReplacements $
+            positive z
         )
         (f z)
         (Pattern.fromTermLike a)
@@ -517,8 +517,8 @@ test_attemptEquationUnification =
             a
             (positive x `orNot` positive y)
         )
-        ( SideCondition.fromPredicateWithReplacements
-        $ positive a
+        ( SideCondition.fromPredicateWithReplacements $
+            positive a
         )
         (sigma a a)
         -- SMT not used to simplify trivial constraints
@@ -527,16 +527,16 @@ test_attemptEquationUnification =
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
         (functionAxiomUnification fSymbol [x] a (positive x))
-        ( SideCondition.fromPredicateWithReplacements
-        $ makeNotPredicate (positive z)
+        ( SideCondition.fromPredicateWithReplacements $
+            makeNotPredicate (positive z)
         )
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (functionAxiomUnification fSymbol [x] a (positive x))
-        ( SideCondition.fromPredicateWithReplacements
-        $ positive z
+        ( SideCondition.fromPredicateWithReplacements $
+            positive z
         )
         (f z)
         (Pattern.fromTermLike a)
