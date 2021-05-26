@@ -57,6 +57,7 @@ import Kore.Step.Simplification.And (
  )
 import Kore.Step.Simplification.AndTerms (
     functionAnd,
+    matchFunctionAnd,
     termUnification,
  )
 import Kore.Step.Simplification.Equals (
@@ -1466,7 +1467,9 @@ test_functionAnd =
                 Pattern.withCondition (f x) $
                     Condition.fromPredicate $
                         makeEqualsPredicate (f x) (f y)
-        let Just actual = functionAnd (f x) (f y)
+        let actual = functionAnd (f x) (f y)
+        let matchResult = matchFunctionAnd (f x) (f y)
+        assertEqual "" (Just ()) matchResult
         assertEqual "" expect (Pattern.syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
     ]

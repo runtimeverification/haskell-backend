@@ -10,6 +10,7 @@ module Kore.Step.Simplification.AndTerms (
     TermTransformationOld,
     cannotUnifyDistinctDomainValues,
     functionAnd,
+    matchFunctionAnd,
     compareForEquals,
 ) where
 
@@ -318,7 +319,9 @@ maybeTermAnd notSimplifier childTransformers first second = do
         rest'
             | Just unifyData <- matchDomainValueAndConstructorErrors first second =
                 lift $ domainValueAndConstructorErrors first second unifyData
-            | otherwise = Error.hoistMaybe (functionAnd first second)
+            | Just () <- matchFunctionAnd first second =
+                return $ functionAnd first second
+            | otherwise = empty
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -883,6 +886,17 @@ unifyStringLiteral term1 term2 unifyData
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 
+matchFunctionAnd ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe ()
+matchFunctionAnd first second
+    | isFunctionPattern first
+      , isFunctionPattern second =
+        Just ()
+    | otherwise = Nothing
+{-# INLINE matchFunctionAnd #-}
+
 {- | Unify any two function patterns.
 
 The function patterns are unified by creating an @\\equals@ predicate. If either
@@ -894,19 +908,15 @@ appears on the right-hand side.
 functionAnd ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe (Pattern RewritingVariableName)
-functionAnd first second
-    | isFunctionPattern first
-      , isFunctionPattern second =
-        makeEqualsPredicate first' second'
-            & Predicate.markSimplified
-            -- Ceil predicate not needed since first being
-            -- bottom will make the entire term bottom. However,
-            -- one must be careful to not just drop the term.
-            & Condition.fromPredicate
-            & Pattern.withCondition first' -- different for Equals
-            & pure
-    | otherwise = empty
+    Pattern RewritingVariableName
+functionAnd first second =
+    makeEqualsPredicate first' second'
+        & Predicate.markSimplified
+        -- Ceil predicate not needed since first being
+        -- bottom will make the entire term bottom. However,
+        -- one must be careful to not just drop the term.
+        & Condition.fromPredicate
+        & Pattern.withCondition first' -- different for Equals
   where
     (first', second') = minMaxBy compareForEquals first second
 
