@@ -629,22 +629,24 @@ matchUnifyNotInKeys first second
             concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
             opaqueElements = opaque . unwrapAc $ normalizedMap
-            unifyData = UnifyNotInKeys2 UnifyNotInKeys
-                { inKeys
-                , keyTerm
-                , mapTerm
-                , concreteKeys
-                , mapKeys
-                , opaqueElements
-                } in
-        case (mapKeys, opaqueElements) of
-            -- null mapKeys && null opaqueElements
-            ([], []) -> Just UnifyNotInKeys1
-            -- (not (null mapKeys) || (length opaqueElements > 1))
-            (_:_, _) -> Just unifyData
-            (_, _:_:_) -> Just unifyData
-            -- otherwise
-            _ -> Nothing
+            unifyData =
+                UnifyNotInKeys2
+                    UnifyNotInKeys
+                        { inKeys
+                        , keyTerm
+                        , mapTerm
+                        , concreteKeys
+                        , mapKeys
+                        , opaqueElements
+                        }
+         in case (mapKeys, opaqueElements) of
+                -- null mapKeys && null opaqueElements
+                ([], []) -> Just UnifyNotInKeys1
+                -- (not (null mapKeys) || (length opaqueElements > 1))
+                (_ : _, _) -> Just unifyData
+                (_, _ : _ : _) -> Just unifyData
+                -- otherwise
+                _ -> Nothing
     | otherwise = Nothing
   where
     normalizedOrBottom ::
@@ -681,11 +683,10 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) termLike1 unifyData =
                     traverse (unifyChildren termLike1) keyInKeysOpaque
                 let conditions =
                         fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                        <> [definedKey, definedMap]
+                            <> [definedKey, definedMap]
                 return $ collectConditions conditions
           where
             UnifyNotInKeys{inKeys, keyTerm, mapTerm, concreteKeys, mapKeys, opaqueElements} = unifyData'
-
   where
     defineTerm ::
         TermLike RewritingVariableName ->

@@ -219,8 +219,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
                 lift $ Builtin.Map.unifyNotInKeys childTransformers notSimplifier second unifyData
             | otherwise =
                 Builtin.Set.unifyEquals childTransformers first second
-                <|> rest''
-        
+                    <|> rest''
           where
             rest''
                 | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
