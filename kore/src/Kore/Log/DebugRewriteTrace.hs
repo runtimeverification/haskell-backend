@@ -2,9 +2,9 @@
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
-module Kore.Log.DebugRewriteSubstitution (
-    DebugRewriteSubstitution (..),
-    debugRewriteSubstitution,
+module Kore.Log.DebugRewriteTrace (
+    DebugRewriteTrace (..),
+    debugRewriteTrace,
     rewriteTraceLogger,
 ) where
 
@@ -17,7 +17,6 @@ import Data.Text (
 import Data.Text.Encoding (
     decodeUtf8,
  )
-import qualified Data.Vector as Vector
 import Data.Yaml (
     ToJSON,
     Value (..),
@@ -67,65 +66,71 @@ import Pretty (
     renderText,
  )
 
-data DebugRewriteSubstitution = DebugRewriteSubstitution
+data AppliedRule = AppliedRule UniqueId (Substitution VariableName)
+    deriving stock (Show)
+
+data DebugRewriteTrace = DebugRewriteTrace
     { configuration :: Pattern VariableName
-    , appliedRules :: [(UniqueId, Substitution VariableName)]
+    , appliedRules :: [AppliedRule]
     }
     deriving stock (Show)
 
-instance ToJSON DebugRewriteSubstitution where
-    toJSON DebugRewriteSubstitution{configuration, appliedRules} =
-        Array $ Vector.fromList $ encodeRule <$> appliedRules
+instance ToJSON AppliedRule where
+    toJSON (AppliedRule uniqueId substitution) =
+        object
+            [ "rule-id" .= encodedUniqueId
+            , "substitution" .= encodedSubstitution
+            ]
       where
-        unparseOneLine :: Unparse p => p -> Text
-        unparseOneLine = renderText . layoutOneLine . unparse
-
-        encodeRule :: (UniqueId, Substitution VariableName) -> Value
-        encodeRule (uniqueId, substitution) =
+        encodedSubstitution = encodeKV <$> unwrap substitution
+        encodedUniqueId = maybe Null toJSON (getUniqueId uniqueId)
+        encodeKV assignment =
             object
-                [ "type" .= ("rewriting" :: Text)
-                , "from" .= unparseOneLine term
-                , "constraint" .= encodedConstraint
-                , "rule-id" .= encodedUniqueId
-                , "substitution" .= encodedSubstitution
+                [ "key" .= unparseOneLine (assignedVariable assignment)
+                , "value" .= unparseOneLine (assignedTerm assignment)
                 ]
-          where
-            term = Conditional.term configuration
-            sort = TermLike.termLikeSort term
-            constraint = Conditional.predicate configuration
 
-            encodedSubstitution = encodeKV <$> unwrap substitution
-            encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
-            encodedUniqueId = maybe Null toJSON (getUniqueId uniqueId)
-            encodeKV assignment =
-                object
-                    [ "key" .= unparseOneLine (assignedVariable assignment)
-                    , "value" .= unparseOneLine (assignedTerm assignment)
-                    ]
+instance ToJSON DebugRewriteTrace where
+    toJSON DebugRewriteTrace{configuration, appliedRules} =
+        object
+            [ "from" .= unparseOneLine term
+            , "constraint" .= encodedConstraint
+            , "applied-rules" .= appliedRules
+            ]
+      where
+        term = Conditional.term configuration
+        sort = TermLike.termLikeSort term
+        constraint = Conditional.predicate configuration
+        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
 
-instance Pretty DebugRewriteSubstitution where
+instance Pretty DebugRewriteTrace where
     pretty = pretty . decodeUtf8 . encode
 
-instance Entry DebugRewriteSubstitution where
+instance Entry DebugRewriteTrace where
     entrySeverity _ = Debug
     helpDoc _ = "log rewrite substitution"
 
-debugRewriteSubstitution ::
+unparseOneLine :: Unparse p => p -> Text
+unparseOneLine = renderText . layoutOneLine . unparse
+
+debugRewriteTrace ::
     MonadLog log =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule UniqueId =>
     Pattern RewritingVariableName ->
     [UnifiedRule rule] ->
     log ()
-debugRewriteSubstitution initial unifiedRules =
-    logEntry (DebugRewriteSubstitution configuration appliedRules)
+debugRewriteTrace initial unifiedRules =
+    logEntry (DebugRewriteTrace configuration appliedRules)
   where
     configuration = Conditional.mapVariables TermLike.mapVariables (pure toVariableName) initial
     appliedRules = uniqueIdAndSubstitution <$> unifiedRules
 
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
     uniqueIdAndSubstitution rule =
-        (from @_ @UniqueId (extract rule), mapSubstitutionVariables (Conditional.substitution rule))
+        AppliedRule
+            (from @_ @UniqueId (extract rule))
+            (mapSubstitutionVariables (Conditional.substitution rule))
 
 rewriteTraceLogger ::
     Applicative m =>
@@ -136,6 +141,6 @@ rewriteTraceLogger textLogger =
   where
     action ActualEntry{actualEntry}
         | Just rewrite <- fromEntry actualEntry =
-            unLogAction textLogger $ encode (rewrite :: DebugRewriteSubstitution)
+            unLogAction textLogger $ encode (rewrite :: DebugRewriteTrace)
         | otherwise =
             pure ()

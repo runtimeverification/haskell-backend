@@ -50,8 +50,8 @@ import Kore.Log.DebugEvaluateCondition (
 import Kore.Log.DebugProven (
     DebugProven,
  )
-import Kore.Log.DebugRewriteSubstitution (
-    DebugRewriteSubstitution,
+import Kore.Log.DebugRewriteTrace (
+    DebugRewriteTrace,
  )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,
@@ -181,7 +181,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugSolverRecv
             , mk $ Proxy @DebugClaimState
             , mk $ Proxy @DebugAppliedRewriteRules
-            , mk $ Proxy @DebugRewriteSubstitution
+            , mk $ Proxy @DebugRewriteTrace
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
             , mk $ Proxy @WarnSymbolSMTRepresentation

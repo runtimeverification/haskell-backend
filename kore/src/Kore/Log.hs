@@ -36,7 +36,7 @@ import Data.Functor.Contravariant (
 import Data.Text (
     Text,
  )
-import Kore.Log.DebugRewriteSubstitution (
+import Kore.Log.DebugRewriteTrace (
     rewriteTraceLogger,
  )
 import Kore.Log.DebugSolver (

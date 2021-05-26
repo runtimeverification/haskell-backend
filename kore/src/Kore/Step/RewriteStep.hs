@@ -41,8 +41,8 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
-import Kore.Log.DebugRewriteSubstitution (
-    debugRewriteSubstitution,
+import Kore.Log.DebugRewriteTrace (
+    debugRewriteTrace,
  )
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
@@ -293,7 +293,7 @@ applyWithFinalizer ::
     simplifier (Results rule)
 applyWithFinalizer finalize rules initial = do
     results <- unifyRules initial rules
-    debugRewriteSubstitution initial results
+    debugRewriteTrace initial results
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
     finalize initialVariables initial results
