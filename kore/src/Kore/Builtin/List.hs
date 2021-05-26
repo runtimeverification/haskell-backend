@@ -82,8 +82,8 @@ import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     Key,
     Sort,
@@ -375,24 +375,24 @@ builtinFunctions =
         , (updateAllKey, Builtin.functionEvaluator evalUpdateAll)
         ]
 
-data FirstElemVarData = FirstElemVarData
-    { pat1, pat2 :: !(TermLike RewritingVariableName)
-    }
+data FirstElemVarData = FirstElemVarData {
+    pat1, pat2 :: !(TermLike RewritingVariableName)
+}
 
-data AppAppData = AppAppData
-    { args1, args2 :: ![TermLike RewritingVariableName]
+data AppAppData = AppAppData {
+    args1, args2 :: ![TermLike RewritingVariableName]
     , symbol2 :: !Symbol
-    }
+}
 
-data ListListData = ListListData
-    { builtin1, builtin2 :: !(InternalList (TermLike RewritingVariableName))
-    }
+data ListListData = ListListData {
+    builtin1, builtin2 :: !(InternalList (TermLike RewritingVariableName))
+}
 
-data ListAppData = ListAppData
-    { pat1, pat2 :: !(TermLike RewritingVariableName)
+data ListAppData = ListAppData {
+    pat1, pat2 :: !(TermLike RewritingVariableName)
     , args2 :: ![TermLike RewritingVariableName]
     , builtin1 :: !(InternalList (TermLike RewritingVariableName))
-    }
+}
 
 data UnifyEqualsList
     = FirstElemVar !FirstElemVarData
@@ -406,20 +406,20 @@ matchUnifyEqualsList ::
     TermLike RewritingVariableName ->
     Maybe UnifyEqualsList
 matchUnifyEqualsList tools first second
-    | Just True <- isListSort tools sort1 =
-        worker (normalize first) (normalize second)
+    | Just True <- isListSort tools sort1
+    = worker (normalize first) (normalize second)
     | otherwise = Nothing
   where
     sort1 = termLikeSort first
 
     worker pat1@(ElemVar_ _) pat2
-        | TermLike.isFunctionPattern pat2 =
-            Just $ FirstElemVar FirstElemVarData{pat1, pat2}
+        | TermLike.isFunctionPattern pat2
+        = Just $ FirstElemVar FirstElemVarData{pat1, pat2}
         | otherwise = Nothing
     worker (App_ symbol1 args1) (App_ symbol2 args2)
         | isSymbolConcat symbol1
-          , isSymbolConcat symbol2 =
-            Just $ AppApp AppAppData{args1, args2, symbol2}
+        , isSymbolConcat symbol2
+        = Just $ AppApp AppAppData{args1, args2, symbol2}
     worker pat1@(InternalList_ builtin1) pat2 =
         case pat2 of
             InternalList_ builtin2 -> Just $ ListList ListListData{builtin1, builtin2}
@@ -497,7 +497,9 @@ unifyEquals
                             pat1
                             pat2
                     _ -> Builtin.wrongArity concatKey
+
       where
+
         propagateConditions ::
             InternalVariable variable =>
             Traversable t =>

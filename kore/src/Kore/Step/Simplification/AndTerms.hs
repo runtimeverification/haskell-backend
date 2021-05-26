@@ -220,24 +220,22 @@ maybeTermEquals notSimplifier childTransformers first second = do
                 , Builtin.Set.unifyEquals childTransformers first second
                 , do
                     unifyData <- Error.hoistMaybe $ Builtin.List.matchUnifyEqualsList tools first second
-                    lift $
-                        Builtin.List.unifyEquals
-                            SimplificationType.Equals
-                            childTransformers
-                            tools
-                            first
-                            second
-                            unifyData
+                    lift $ Builtin.List.unifyEquals
+                        SimplificationType.Equals
+                        childTransformers
+                        tools
+                        first
+                        second
+                        unifyData
                 , do
                     unifyData <- Error.hoistMaybe $ Builtin.List.matchUnifyEqualsList tools second first
-                    lift $
-                        Builtin.List.unifyEquals
-                            SimplificationType.Equals
-                            childTransformers
-                            tools
-                            second
-                            first
-                            unifyData
+                    lift $ Builtin.List.unifyEquals
+                        SimplificationType.Equals
+                        childTransformers
+                        tools
+                        second
+                        first
+                        unifyData
                 , do
                     unifyData <- Error.hoistMaybe $ matchDomainValueAndConstructorErrors first second
                     lift $ domainValueAndConstructorErrors first second unifyData
@@ -331,24 +329,22 @@ maybeTermAnd notSimplifier childTransformers first second = do
                 , Builtin.Set.unifyEquals childTransformers first second
                 , do
                     unifyData <- Error.hoistMaybe $ Builtin.List.matchUnifyEqualsList tools first second
-                    lift $
-                        Builtin.List.unifyEquals
-                            SimplificationType.And
-                            childTransformers
-                            tools
-                            first
-                            second
-                            unifyData
+                    lift $ Builtin.List.unifyEquals
+                        SimplificationType.And
+                        childTransformers
+                        tools
+                        first
+                        second
+                        unifyData
                 , do
                     unifyData <- Error.hoistMaybe $ Builtin.List.matchUnifyEqualsList tools second first
-                    lift $
-                        Builtin.List.unifyEquals
-                            SimplificationType.And
-                            childTransformers
-                            tools
-                            second
-                            first
-                            unifyData
+                    lift $ Builtin.List.unifyEquals
+                        SimplificationType.And
+                        childTransformers
+                        tools
+                        second
+                        first
+                        unifyData
                 , do
                     unifyData <- Error.hoistMaybe $ matchDomainValueAndConstructorErrors first second
                     lift $ domainValueAndConstructorErrors first second unifyData
@@ -786,19 +782,19 @@ data DVConstrError
     = DVConstr
     | ConstrDV
 
-matchDomainValueAndConstructorErrors ::
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    Maybe DVConstrError
+matchDomainValueAndConstructorErrors
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe DVConstrError
 matchDomainValueAndConstructorErrors first second
     | DV_ _ _ <- first
-      , App_ secondHead _ <- second
-      , Symbol.isConstructor secondHead =
-        Just DVConstr
+    , App_ secondHead _ <- second
+    , Symbol.isConstructor secondHead
+    = Just DVConstr
     | App_ firstHead _ <- first
-      , Symbol.isConstructor firstHead
-      , DV_ _ _ <- second =
-        Just ConstrDV
+    , Symbol.isConstructor firstHead
+    , DV_ _ _ <- second
+    = Just ConstrDV
     | otherwise = Nothing
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
@@ -821,6 +817,7 @@ domainValueAndConstructorErrors term1 term2 unifyData =
             , unparseToString term2
             ]
         )
+
   where
     cannotHandle =
         case unifyData of
@@ -926,8 +923,8 @@ matchFunctionAnd ::
     Maybe ()
 matchFunctionAnd first second
     | isFunctionPattern first
-      , isFunctionPattern second =
-        Just ()
+    , isFunctionPattern second
+    = Just ()
     | otherwise = Nothing
 {-# INLINE matchFunctionAnd #-}
 
@@ -945,12 +942,12 @@ functionAnd ::
     Pattern RewritingVariableName
 functionAnd first second =
     makeEqualsPredicate first' second'
-        & Predicate.markSimplified
-        -- Ceil predicate not needed since first being
-        -- bottom will make the entire term bottom. However,
-        -- one must be careful to not just drop the term.
-        & Condition.fromPredicate
-        & Pattern.withCondition first' -- different for Equals
+            & Predicate.markSimplified
+            -- Ceil predicate not needed since first being
+            -- bottom will make the entire term bottom. However,
+            -- one must be careful to not just drop the term.
+            & Condition.fromPredicate
+            & Pattern.withCondition first' -- different for Equals
   where
     (first', second') = minMaxBy compareForEquals first second
 
