@@ -208,17 +208,20 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
             lift $ Builtin.Signedness.unifyEquals first second unifyData
         | otherwise =
-            asum
-                [ Builtin.Map.unifyEquals childTransformers first second
-                , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
-                , Builtin.Set.unifyEquals childTransformers first second
-                , Builtin.List.unifyEquals
+            Builtin.Map.unifyEquals childTransformers first second
+            <|> Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
+            <|> Builtin.Set.unifyEquals childTransformers first second
+            <|> Builtin.List.unifyEquals
                     SimplificationType.Equals
                     childTransformers
                     first
                     second
-                , domainValueAndConstructorErrors first second
-                ]
+            <|> rest'
+          where
+            rest'
+                | Just unifyData <- matchDomainValueAndConstructorErrors first second =
+                    lift $ domainValueAndConstructorErrors first second unifyData
+                | otherwise = empty
 
 maybeTermAnd ::
     MonadUnify unifier =>
@@ -303,17 +306,19 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
             lift $ Builtin.Signedness.unifyEquals first second unifyData
         | otherwise =
-            asum
-                [ Builtin.Map.unifyEquals childTransformers first second
-                , Builtin.Set.unifyEquals childTransformers first second
-                , Builtin.List.unifyEquals
+            Builtin.Map.unifyEquals childTransformers first second
+            <|> Builtin.Set.unifyEquals childTransformers first second
+            <|> Builtin.List.unifyEquals
                     SimplificationType.And
                     childTransformers
                     first
                     second
-                , domainValueAndConstructorErrors first second
-                , Error.hoistMaybe (functionAnd first second)
-                ]
+            <|> rest'
+          where
+            rest'
+                | Just unifyData <- matchDomainValueAndConstructorErrors first second =
+                    lift $ domainValueAndConstructorErrors first second unifyData
+                | otherwise = Error.hoistMaybe (functionAnd first second)
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -740,6 +745,25 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                     explainAndReturnBottom (fromString message) firstTerm secondTerm
             Left Overloading.NotApplicable -> empty
 
+data DVConstrError
+    = DVConstr
+    | ConstrDV
+
+matchDomainValueAndConstructorErrors ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe DVConstrError
+matchDomainValueAndConstructorErrors first second
+    | DV_ _ _ <- first
+      , App_ secondHead _ <- second
+      , Symbol.isConstructor secondHead =
+        Just DVConstr
+    | App_ firstHead _ <- first
+      , Symbol.isConstructor firstHead
+      , DV_ _ _ <- second =
+        Just ConstrDV
+    | otherwise = Nothing
+
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
 
@@ -747,34 +771,24 @@ This unification case throws an error because domain values may not occur in a
 sort with constructors.
 -}
 domainValueAndConstructorErrors ::
-    Monad unifier =>
     HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier a
-domainValueAndConstructorErrors
-    term1@(DV_ _ _)
-    term2@(App_ secondHead _)
-        | Symbol.isConstructor secondHead =
-            error
-                ( unlines
-                    [ "Cannot handle DomainValue and Constructor:"
-                    , unparseToString term1
-                    , unparseToString term2
-                    ]
-                )
-domainValueAndConstructorErrors
-    term1@(App_ firstHead _)
-    term2@(DV_ _ _)
-        | Symbol.isConstructor firstHead =
-            error
-                ( unlines
-                    [ "Cannot handle Constructor and DomainValue:"
-                    , unparseToString term1
-                    , unparseToString term2
-                    ]
-                )
-domainValueAndConstructorErrors _ _ = empty
+    DVConstrError ->
+    unifier a
+domainValueAndConstructorErrors term1 term2 unifyData =
+    error
+        ( unlines
+            [ cannotHandle
+            , unparseToString term1
+            , unparseToString term2
+            ]
+        )
+  where
+    cannotHandle =
+        case unifyData of
+            DVConstr -> "Cannot handle DomainValue and Constructor:"
+            ConstrDV -> "Cannot handle Constructor and DomainValue:"
 
 data UnifyDomainValue = UnifyDomainValue
     { val1, val2 :: !(TermLike RewritingVariableName)
