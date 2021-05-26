@@ -22,9 +22,9 @@ import Data.Text.Encoding (
 import Data.Yaml (
     ToJSON,
     Value (..),
+    array,
     encode,
     object,
-    array,
     toJSON,
     (.=),
  )
@@ -51,13 +51,13 @@ import Kore.Internal.Variable (
     toVariableName,
  )
 import Kore.Rewriting.RewritingVariable
+import qualified Kore.Step.Result as Result
 import Kore.Step.RulePattern (
     UnifyingRuleVariable,
  )
 import Kore.Step.Step (
     Results,
  )
-import qualified Kore.Step.Result as Result
 import Kore.Unparser (
     Unparse,
     unparse,
@@ -107,7 +107,7 @@ instance ToJSON (Substitution VariableName) where
                 ]
 
 instance ToJSON RewriteResult where
-    toJSON RewriteResult{ ruleId, substitution, results } =
+    toJSON RewriteResult{ruleId, substitution, results} =
         object
             [ "rule-id" .= maybe Null toJSON (getUniqueId ruleId)
             , "substitution" .= substitution
@@ -139,23 +139,25 @@ debugRewriteTrace ::
     Pattern RewritingVariableName ->
     Results rule ->
     log ()
-debugRewriteTrace initial Result.Results { results, remainders } =
-    logEntry DebugRewriteTrace
-        { initialPattern = mapPatternVariables initial
-        , rewriteResults = getResult <$> toList results
-        , remainders = multiOrToList remainders
-        }
+debugRewriteTrace initial Result.Results{results, remainders} =
+    logEntry
+        DebugRewriteTrace
+            { initialPattern = mapPatternVariables initial
+            , rewriteResults = getResult <$> toList results
+            , remainders = multiOrToList remainders
+            }
   where
     mapPatternVariables = Conditional.mapVariables TermLike.mapVariables (pure toVariableName)
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
 
     multiOrToList = (mapPatternVariables <$>) . from
 
-    getResult Result.Result{appliedRule, result} = RewriteResult
-        { ruleId = from @_ @UniqueId $ extract appliedRule
-        , substitution = mapSubstitutionVariables $ Conditional.substitution $ appliedRule
-        , results = multiOrToList result
-        }
+    getResult Result.Result{appliedRule, result} =
+        RewriteResult
+            { ruleId = from @_ @UniqueId $ extract appliedRule
+            , substitution = mapSubstitutionVariables $ Conditional.substitution $ appliedRule
+            , results = multiOrToList result
+            }
 
 rewriteTraceLogger ::
     Applicative m =>
