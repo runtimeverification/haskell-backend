@@ -209,19 +209,19 @@ maybeTermEquals notSimplifier childTransformers first second = do
             lift $ Builtin.Signedness.unifyEquals first second unifyData
         | otherwise =
             Builtin.Map.unifyEquals childTransformers first second
-            <|> Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
-            <|> Builtin.Set.unifyEquals childTransformers first second
-            <|> Builtin.List.unifyEquals
+                <|> Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
+                <|> Builtin.Set.unifyEquals childTransformers first second
+                <|> Builtin.List.unifyEquals
                     SimplificationType.Equals
                     childTransformers
                     first
                     second
-            <|> rest'
-          where
-            rest'
-                | Just unifyData <- matchDomainValueAndConstructorErrors first second =
-                    lift $ domainValueAndConstructorErrors first second unifyData
-                | otherwise = empty
+                <|> rest'
+      where
+        rest'
+            | Just unifyData <- matchDomainValueAndConstructorErrors first second =
+                lift $ domainValueAndConstructorErrors first second unifyData
+            | otherwise = empty
 
 maybeTermAnd ::
     MonadUnify unifier =>
@@ -307,18 +307,18 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ Builtin.Signedness.unifyEquals first second unifyData
         | otherwise =
             Builtin.Map.unifyEquals childTransformers first second
-            <|> Builtin.Set.unifyEquals childTransformers first second
-            <|> Builtin.List.unifyEquals
+                <|> Builtin.Set.unifyEquals childTransformers first second
+                <|> Builtin.List.unifyEquals
                     SimplificationType.And
                     childTransformers
                     first
                     second
-            <|> rest'
-          where
-            rest'
-                | Just unifyData <- matchDomainValueAndConstructorErrors first second =
-                    lift $ domainValueAndConstructorErrors first second unifyData
-                | otherwise = Error.hoistMaybe (functionAnd first second)
+                <|> rest'
+      where
+        rest'
+            | Just unifyData <- matchDomainValueAndConstructorErrors first second =
+                lift $ domainValueAndConstructorErrors first second unifyData
+            | otherwise = Error.hoistMaybe (functionAnd first second)
 
 {- | Construct the conjunction or unification of two terms.
 
