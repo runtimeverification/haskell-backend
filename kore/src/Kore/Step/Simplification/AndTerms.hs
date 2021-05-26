@@ -326,7 +326,8 @@ maybeTermAnd notSimplifier childTransformers first second = do
       where
         rest'
             | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
-                lift $ Builtin.List.unifyEquals
+                lift $
+                    Builtin.List.unifyEquals
                         SimplificationType.And
                         childTransformers
                         tools
@@ -334,7 +335,8 @@ maybeTermAnd notSimplifier childTransformers first second = do
                         second
                         unifyData
             | Just unifyData <- Builtin.List.matchUnifyEqualsList tools second first =
-                lift $ Builtin.List.unifyEquals
+                lift $
+                    Builtin.List.unifyEquals
                         SimplificationType.And
                         childTransformers
                         tools
