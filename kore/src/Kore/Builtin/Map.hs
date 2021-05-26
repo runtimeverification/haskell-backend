@@ -21,6 +21,7 @@ module Kore.Builtin.Map (
     -- * Unification
     unifyEquals,
     unifyNotInKeys,
+    matchUnifyNotInKeys,
 
     -- * Raw evaluators
     evalConcat,
@@ -606,30 +607,92 @@ matchInKeys ::
     Maybe (InKeys (TermLike variable))
 matchInKeys = retract
 
-unifyNotInKeys ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
+data UnifyNotInKeys = UnifyNotInKeys
+    { inKeys :: !(InKeys (TermLike RewritingVariableName))
+    , keyTerm, mapTerm :: !(TermLike RewritingVariableName)
+    , concreteKeys, mapKeys, opaqueElements :: ![TermLike RewritingVariableName]
+    }
+
+data UnifyNotInKeysResult
+    = UnifyNotInKeys1
+    | UnifyNotInKeys2 !UnifyNotInKeys
+
+matchUnifyNotInKeys ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
-    worker a b <|> worker b a
+    Maybe UnifyNotInKeysResult
+matchUnifyNotInKeys first second
+    | Just False <- Bool.matchBool first
+      , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys second
+      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+        let symbolicKeys = getSymbolicKeysOfAc normalizedMap
+            concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
+            mapKeys = symbolicKeys <> concreteKeys
+            opaqueElements = opaque . unwrapAc $ normalizedMap
+            unifyData = UnifyNotInKeys2 UnifyNotInKeys
+                { inKeys
+                , keyTerm
+                , mapTerm
+                , concreteKeys
+                , mapKeys
+                , opaqueElements
+                } in
+        case (mapKeys, opaqueElements) of
+            -- null mapKeys && null opaqueElements
+            ([], []) -> Just UnifyNotInKeys1
+            -- (not (null mapKeys) || (length opaqueElements > 1))
+            (_:_, _) -> Just unifyData
+            (_, _:_:_) -> Just unifyData
+            -- otherwise
+            _ -> Nothing
+    | otherwise = Nothing
   where
     normalizedOrBottom ::
         InternalVariable variable =>
         TermLike variable ->
         Ac.NormalizedOrBottom NormalizedMap variable
     normalizedOrBottom = Ac.toNormalized
+{-# INLINE matchUnifyNotInKeys #-}
 
+unifyNotInKeys ::
+    forall unifier.
+    MonadUnify unifier =>
+    TermSimplifier RewritingVariableName unifier ->
+    NotSimplifier unifier ->
+    TermLike RewritingVariableName ->
+    UnifyNotInKeysResult ->
+    unifier (Pattern RewritingVariableName)
+unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) termLike1 unifyData =
+    case unifyData of
+        UnifyNotInKeys1 -> return Pattern.top
+        UnifyNotInKeys2 unifyData' ->
+            do
+                -- Concrete keys are constructor-like, therefore they are defined
+                TermLike.assertConstructorLikeKeys concreteKeys $ return ()
+                definedKey <- defineTerm keyTerm
+                definedMap <- defineTerm mapTerm
+                keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
+
+                let keyInKeysOpaque =
+                        (\term -> inject @(TermLike _) (inKeys :: InKeys (TermLike RewritingVariableName)){mapTerm = term})
+                            <$> opaqueElements
+
+                opaqueConditions <-
+                    traverse (unifyChildren termLike1) keyInKeysOpaque
+                let conditions =
+                        fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
+                        <> [definedKey, definedMap]
+                return $ collectConditions conditions
+          where
+            UnifyNotInKeys{inKeys, keyTerm, mapTerm, concreteKeys, mapKeys, opaqueElements} = unifyData'
+
+  where
     defineTerm ::
         TermLike RewritingVariableName ->
-        MaybeT unifier (Condition RewritingVariableName)
+        unifier (Condition RewritingVariableName)
     defineTerm termLike =
         makeEvaluateTermCeil SideCondition.topTODO termLike
             >>= Unify.scatter
-            & lift
 
     eraseTerm =
         Pattern.fromCondition_ . Pattern.withoutTerm
@@ -647,39 +710,3 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
             >>= Unify.scatter
 
     collectConditions terms = fold terms & Pattern.fromCondition_
-
-    worker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MaybeT unifier (Pattern RewritingVariableName)
-    worker termLike1 termLike2
-        | Just boolValue <- Bool.matchBool termLike1
-          , not boolValue
-          , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys termLike2
-          , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
-            do
-                let symbolicKeys = getSymbolicKeysOfAc normalizedMap
-                    concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
-                    mapKeys = symbolicKeys <> concreteKeys
-                    opaqueElements = opaque . unwrapAc $ normalizedMap
-                if null mapKeys && null opaqueElements
-                    then return Pattern.top
-                    else do
-                        Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
-                        -- Concrete keys are constructor-like, therefore they are defined
-                        TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-                        definedKey <- defineTerm keyTerm
-                        definedMap <- defineTerm mapTerm
-                        keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
-
-                        let keyInKeysOpaque =
-                                (\term -> inject @(TermLike _) inKeys{mapTerm = term})
-                                    <$> opaqueElements
-
-                        opaqueConditions <-
-                            lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
-                        let conditions =
-                                fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                                    <> [definedKey, definedMap]
-                        return $ collectConditions conditions
-    worker _ _ = empty
