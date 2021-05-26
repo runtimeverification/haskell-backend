@@ -293,10 +293,11 @@ applyWithFinalizer ::
     simplifier (Results rule)
 applyWithFinalizer finalize rules initial = do
     results <- unifyRules initial rules
-    debugRewriteTrace initial results
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
-    finalize initialVariables initial results
+    finalizedResults <- finalize initialVariables initial results
+    debugRewriteTrace initial finalizedResults
+    return finalizedResults
   where
     locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}

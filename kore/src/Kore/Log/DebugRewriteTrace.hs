@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
@@ -22,6 +24,7 @@ import Data.Yaml (
     Value (..),
     encode,
     object,
+    array,
     toJSON,
     (.=),
  )
@@ -52,8 +55,9 @@ import Kore.Step.RulePattern (
     UnifyingRuleVariable,
  )
 import Kore.Step.Step (
-    UnifiedRule,
+    Results,
  )
+import qualified Kore.Step.Result as Result
 import Kore.Unparser (
     Unparse,
     unparse,
@@ -66,42 +70,57 @@ import Pretty (
     renderText,
  )
 
-data AppliedRule = AppliedRule UniqueId (Substitution VariableName)
-    deriving stock (Show)
-
-data DebugRewriteTrace = DebugRewriteTrace
-    { configuration :: Pattern VariableName
-    , appliedRules :: [AppliedRule]
+data RewriteResult = RewriteResult
+    { ruleId :: UniqueId
+    , substitution :: Substitution VariableName
+    , results :: [Pattern VariableName]
     }
     deriving stock (Show)
 
-instance ToJSON AppliedRule where
-    toJSON (AppliedRule uniqueId substitution) =
+data DebugRewriteTrace = DebugRewriteTrace
+    { initialPattern :: Pattern VariableName
+    , rewriteResults :: [RewriteResult]
+    , remainders :: [Pattern VariableName]
+    }
+    deriving stock (Show)
+
+instance ToJSON (Pattern VariableName) where
+    toJSON patern =
         object
-            [ "rule-id" .= encodedUniqueId
-            , "substitution" .= encodedSubstitution
+            [ "term" .= unparseOneLine term
+            , "constraint" .= encodedConstraint
             ]
       where
-        encodedSubstitution = encodeKV <$> unwrap substitution
-        encodedUniqueId = maybe Null toJSON (getUniqueId uniqueId)
+        term = Conditional.term patern
+        sort = TermLike.termLikeSort term
+        constraint = Conditional.predicate patern
+        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
+
+instance ToJSON (Substitution VariableName) where
+    toJSON substitution =
+        array (encodeKV <$> unwrap substitution)
+      where
         encodeKV assignment =
             object
                 [ "key" .= unparseOneLine (assignedVariable assignment)
                 , "value" .= unparseOneLine (assignedTerm assignment)
                 ]
 
-instance ToJSON DebugRewriteTrace where
-    toJSON DebugRewriteTrace{configuration, appliedRules} =
+instance ToJSON RewriteResult where
+    toJSON RewriteResult{ ruleId, substitution, results } =
         object
-            [ "from" .= unparseOneLine term
-            , "constraint" .= encodedConstraint
-            , "applied-rules" .= appliedRules
+            [ "rule-id" .= maybe Null toJSON (getUniqueId ruleId)
+            , "substitution" .= substitution
+            , "results" .= results
             ]
-      where
-        term = Conditional.term configuration
-        sort = TermLike.termLikeSort term
-        constraint = Conditional.predicate configuration
-        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
+
+instance ToJSON DebugRewriteTrace where
+    toJSON DebugRewriteTrace{initialPattern, rewriteResults, remainders} =
+        object
+            [ "initial" .= initialPattern
+            , "applied-rules" .= rewriteResults
+            , "remainders" .= remainders
+            ]
 
 instance Pretty DebugRewriteTrace where
     pretty = pretty . decodeUtf8 . encode
@@ -118,19 +137,25 @@ debugRewriteTrace ::
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule UniqueId =>
     Pattern RewritingVariableName ->
-    [UnifiedRule rule] ->
+    Results rule ->
     log ()
-debugRewriteTrace initial unifiedRules =
-    logEntry (DebugRewriteTrace configuration appliedRules)
+debugRewriteTrace initial Result.Results { results, remainders } =
+    logEntry DebugRewriteTrace
+        { initialPattern = mapPatternVariables initial
+        , rewriteResults = getResult <$> toList results
+        , remainders = multiOrToList remainders
+        }
   where
-    configuration = Conditional.mapVariables TermLike.mapVariables (pure toVariableName) initial
-    appliedRules = uniqueIdAndSubstitution <$> unifiedRules
-
+    mapPatternVariables = Conditional.mapVariables TermLike.mapVariables (pure toVariableName)
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
-    uniqueIdAndSubstitution rule =
-        AppliedRule
-            (from @_ @UniqueId (extract rule))
-            (mapSubstitutionVariables (Conditional.substitution rule))
+
+    multiOrToList = (mapPatternVariables <$>) . from
+
+    getResult Result.Result{appliedRule, result} = RewriteResult
+        { ruleId = from @_ @UniqueId $ extract appliedRule
+        , substitution = mapSubstitutionVariables $ Conditional.substitution $ appliedRule
+        , results = multiOrToList result
+        }
 
 rewriteTraceLogger ::
     Applicative m =>
@@ -141,6 +166,6 @@ rewriteTraceLogger textLogger =
   where
     action ActualEntry{actualEntry}
         | Just rewrite <- fromEntry actualEntry =
-            unLogAction textLogger $ encode (rewrite :: DebugRewriteTrace)
+            unLogAction textLogger $ encode [rewrite :: DebugRewriteTrace]
         | otherwise =
             pure ()
