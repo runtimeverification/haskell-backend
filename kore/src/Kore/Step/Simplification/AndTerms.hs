@@ -212,14 +212,27 @@ maybeTermEquals notSimplifier childTransformers first second = do
             Builtin.Map.unifyEquals childTransformers first second
                 <|> Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
                 <|> Builtin.Set.unifyEquals childTransformers first second
-                <|> Builtin.List.unifyEquals
-                    SimplificationType.Equals
-                    childTransformers
-                    first
-                    second
                 <|> rest'
       where
         rest'
+            | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
+                lift $
+                    Builtin.List.unifyEquals
+                        SimplificationType.Equals
+                        childTransformers
+                        tools
+                        first
+                        second
+                        unifyData
+            | Just unifyData <- Builtin.List.matchUnifyEqualsList tools second first =
+                lift $
+                    Builtin.List.unifyEquals
+                        SimplificationType.Equals
+                        childTransformers
+                        tools
+                        second
+                        first
+                        unifyData
             | Just unifyData <- matchDomainValueAndConstructorErrors first second =
                 lift $ domainValueAndConstructorErrors first second unifyData
             | otherwise = empty
@@ -309,14 +322,25 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | otherwise =
             Builtin.Map.unifyEquals childTransformers first second
                 <|> Builtin.Set.unifyEquals childTransformers first second
-                <|> Builtin.List.unifyEquals
-                    SimplificationType.And
-                    childTransformers
-                    first
-                    second
                 <|> rest'
       where
         rest'
+            | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
+                lift $ Builtin.List.unifyEquals
+                        SimplificationType.And
+                        childTransformers
+                        tools
+                        first
+                        second
+                        unifyData
+            | Just unifyData <- Builtin.List.matchUnifyEqualsList tools second first =
+                lift $ Builtin.List.unifyEquals
+                        SimplificationType.And
+                        childTransformers
+                        tools
+                        second
+                        first
+                        unifyData
             | Just unifyData <- matchDomainValueAndConstructorErrors first second =
                 lift $ domainValueAndConstructorErrors first second unifyData
             | Just () <- matchFunctionAnd first second =
