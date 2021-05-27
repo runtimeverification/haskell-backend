@@ -53,6 +53,9 @@ import Kore.Syntax.Application (
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Kore.Unparser (
+    unparseAssoc',
+ )
 import Logic (
     Logic,
     LogicT,
@@ -62,6 +65,9 @@ import qualified Logic
 import Prelude.Kore hiding (
     map,
     traverse,
+ )
+import Pretty (
+    Pretty (..),
  )
 
 -- | 'MultiOr' is a Matching logic or of its children
@@ -76,6 +82,10 @@ newtype MultiOr child = MultiOr {getMultiOr :: [child]}
 instance Debug child => Debug (MultiOr child)
 
 instance (Debug child, Diff child) => Diff (MultiOr child)
+
+instance Pretty child => Pretty (MultiOr child) where
+    pretty = unparseAssoc' "\\or{_}" "\\bottom{_}()" . (<$>) pretty . getMultiOr
+    {-# INLINE pretty #-}
 
 instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
     (MultiOr []) <> b = b
