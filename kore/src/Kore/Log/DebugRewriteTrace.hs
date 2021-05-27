@@ -26,9 +26,9 @@ import Data.Text.Encoding (
 import Data.Yaml (
     ToJSON,
     Value (..),
+    array,
     encode,
     object,
-    array,
     toJSON,
     (.=),
  )
@@ -61,13 +61,13 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import Kore.Rewriting.RewritingVariable
+import qualified Kore.Step.Result as Result
 import Kore.Step.RulePattern (
     UnifyingRuleVariable,
  )
 import Kore.Step.Step (
     Results,
  )
-import qualified Kore.Step.Result as Result
 import Kore.Unparser (
     Unparse,
     unparse,
@@ -139,7 +139,7 @@ instance ToJSON DebugFinalPatterns where
             ]
 
 instance ToJSON RewriteResult where
-    toJSON RewriteResult{ ruleId, substitution, results } =
+    toJSON RewriteResult{ruleId, substitution, results} =
         object
             [ "rule-id" .= maybe Null toJSON (getUniqueId ruleId)
             , "substitution" .= substitution
@@ -212,11 +212,12 @@ debugRewriteTrace initial Result.Results { results = (toList -> results), remain
 
     multiOrToList = (mapPatternVariables <$>) . from
 
-    getResult Result.Result{appliedRule, result} = RewriteResult
-        { ruleId = from @_ @UniqueId $ extract appliedRule
-        , substitution = mapSubstitutionVariables $ Conditional.substitution $ appliedRule
-        , results = multiOrToList result
-        }
+    getResult Result.Result{appliedRule, result} =
+        RewriteResult
+            { ruleId = from @_ @UniqueId $ extract appliedRule
+            , substitution = mapSubstitutionVariables $ Conditional.substitution $ appliedRule
+            , results = multiOrToList result
+            }
 
 rewriteTraceLogger ::
     Applicative m =>
