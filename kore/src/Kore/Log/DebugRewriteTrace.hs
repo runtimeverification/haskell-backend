@@ -5,7 +5,11 @@ Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
 module Kore.Log.DebugRewriteTrace (
+    DebugInitialPattern (..),
+    DebugFinalPatterns (..),
     DebugRewriteTrace (..),
+    debugInitialPattern,
+    debugFinalPatterns,
     debugRewriteTrace,
     rewriteTraceLogger,
 ) where
@@ -50,6 +54,12 @@ import Kore.Internal.Variable (
     VariableName,
     toVariableName,
  )
+import Kore.Internal.TermLike.TermLike (
+    TermLike,
+ )
+import Kore.Internal.MultiOr (
+    MultiOr,
+ )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern (
     UnifyingRuleVariable,
@@ -70,6 +80,12 @@ import Pretty (
     renderText,
  )
 
+data DebugInitialPattern = DebugInitialPattern (TermLike VariableName)
+    deriving stock (Show)
+
+data DebugFinalPatterns = DebugFinalPatterns [Pattern VariableName]
+    deriving stock (Show)
+
 data RewriteResult = RewriteResult
     { ruleId :: UniqueId
     , substitution :: Substitution VariableName
@@ -83,6 +99,9 @@ data DebugRewriteTrace = DebugRewriteTrace
     , remainders :: [Pattern VariableName]
     }
     deriving stock (Show)
+
+instance ToJSON (TermLike VariableName) where
+    toJSON = toJSON . unparseOneLine
 
 instance ToJSON (Pattern VariableName) where
     toJSON patern =
@@ -106,6 +125,19 @@ instance ToJSON (Substitution VariableName) where
                 , "value" .= unparseOneLine (assignedTerm assignment)
                 ]
 
+instance ToJSON DebugInitialPattern where
+    toJSON (DebugInitialPattern initial) =
+        object
+            [ "task" .= ("rewriting" :: Text)
+            , "initial" .= initial
+            ]
+
+instance ToJSON DebugFinalPatterns where
+    toJSON (DebugFinalPatterns finals) =
+        object
+            [ "finals" .= finals
+            ]
+
 instance ToJSON RewriteResult where
     toJSON RewriteResult{ ruleId, substitution, results } =
         object
@@ -122,15 +154,44 @@ instance ToJSON DebugRewriteTrace where
             , "remainders" .= remainders
             ]
 
+instance Pretty DebugInitialPattern where
+    pretty = pretty . decodeUtf8 . encode
+
+instance Pretty DebugFinalPatterns where
+    pretty = pretty . decodeUtf8 . encode
+
 instance Pretty DebugRewriteTrace where
     pretty = pretty . decodeUtf8 . encode
 
+instance Entry DebugInitialPattern where
+    entrySeverity _ = Debug
+    helpDoc _ = "log initial pattern before rewriting"
+
+instance Entry DebugFinalPatterns where
+    entrySeverity _ = Debug
+    helpDoc _ = "log final patterns after rewriting"
+
 instance Entry DebugRewriteTrace where
     entrySeverity _ = Debug
-    helpDoc _ = "log rewrite substitution"
+    helpDoc _ = "log rewrite substitutions"
 
 unparseOneLine :: Unparse p => p -> Text
 unparseOneLine = renderText . layoutOneLine . unparse
+
+mapPatternVariables :: Pattern RewritingVariableName -> Pattern VariableName
+mapPatternVariables = Conditional.mapVariables TermLike.mapVariables (pure toVariableName)
+
+debugInitialPattern ::
+    MonadLog log =>
+    TermLike VariableName ->
+    log ()
+debugInitialPattern = logEntry . DebugInitialPattern
+
+debugFinalPatterns ::
+    MonadLog log =>
+    MultiOr (Pattern RewritingVariableName) ->
+    log ()
+debugFinalPatterns = logEntry . DebugFinalPatterns . (mapPatternVariables <$>) . from
 
 debugRewriteTrace ::
     MonadLog log =>
@@ -139,14 +200,14 @@ debugRewriteTrace ::
     Pattern RewritingVariableName ->
     Results rule ->
     log ()
-debugRewriteTrace initial Result.Results { results, remainders } =
-    logEntry DebugRewriteTrace
-        { initialPattern = mapPatternVariables initial
-        , rewriteResults = getResult <$> toList results
-        , remainders = multiOrToList remainders
-        }
+debugRewriteTrace initial Result.Results { results = (toList -> results), remainders } =
+    when (not (null results)) $
+        logEntry DebugRewriteTrace
+            { initialPattern = mapPatternVariables initial
+            , rewriteResults = getResult <$> results
+            , remainders = multiOrToList remainders
+            }
   where
-    mapPatternVariables = Conditional.mapVariables TermLike.mapVariables (pure toVariableName)
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
 
     multiOrToList = (mapPatternVariables <$>) . from
@@ -165,6 +226,10 @@ rewriteTraceLogger textLogger =
     LogAction action
   where
     action ActualEntry{actualEntry}
+        | Just initial <- fromEntry actualEntry =
+            unLogAction textLogger $ encode (initial :: DebugInitialPattern) <> "steps:"
+        | Just final <- fromEntry actualEntry =
+            unLogAction textLogger $ encode (final :: DebugFinalPatterns)
         | Just rewrite <- fromEntry actualEntry =
             unLogAction textLogger $ encode [rewrite :: DebugRewriteTrace]
         | otherwise =

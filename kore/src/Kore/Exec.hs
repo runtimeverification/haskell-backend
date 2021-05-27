@@ -106,6 +106,10 @@ import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
+import Kore.Log.DebugRewriteTrace (
+    debugInitialPattern,
+    debugFinalPatterns,
+ )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Reachability (
     AllClaims (AllClaims),
@@ -223,7 +227,8 @@ exec
     breadthLimit
     verifiedModule
     strategy
-    (mkRewritingTerm -> initialTerm) =
+    inputPattern@(mkRewritingTerm -> initialTerm) = do
+        debugInitialPattern inputPattern
         evalSimplifier verifiedModule' $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
@@ -264,6 +269,7 @@ exec
                         catMaybes $
                             extractProgramState
                                 <$> finalConfigs
+            debugFinalPatterns finalConfigs'
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
                     forceSort initialSort $
