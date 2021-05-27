@@ -91,6 +91,10 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.DebugRewriteTrace (
+    debugFinalPatterns,
+    debugInitialPattern,
+ )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
@@ -106,10 +110,6 @@ import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
-import Kore.Log.DebugRewriteTrace (
-    debugInitialPattern,
-    debugFinalPatterns,
- )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Reachability (
     AllClaims (AllClaims),

@@ -36,6 +36,9 @@ import Kore.Attribute.UniqueId (
     UniqueId (..),
  )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.MultiOr (
+    MultiOr,
+ )
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -50,15 +53,12 @@ import Kore.Internal.Substitution (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Internal.Variable (
-    VariableName,
-    toVariableName,
- )
 import Kore.Internal.TermLike.TermLike (
     TermLike,
  )
-import Kore.Internal.MultiOr (
-    MultiOr,
+import Kore.Internal.Variable (
+    VariableName,
+    toVariableName,
  )
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Result as Result
@@ -200,13 +200,14 @@ debugRewriteTrace ::
     Pattern RewritingVariableName ->
     Results rule ->
     log ()
-debugRewriteTrace initial Result.Results { results = (toList -> results), remainders } =
+debugRewriteTrace initial Result.Results{results = (toList -> results), remainders} =
     when (not (null results)) $
-        logEntry DebugRewriteTrace
-            { initialPattern = mapPatternVariables initial
-            , rewriteResults = getResult <$> results
-            , remainders = multiOrToList remainders
-            }
+        logEntry
+            DebugRewriteTrace
+                { initialPattern = mapPatternVariables initial
+                , rewriteResults = getResult <$> results
+                , remainders = multiOrToList remainders
+                }
   where
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
 
