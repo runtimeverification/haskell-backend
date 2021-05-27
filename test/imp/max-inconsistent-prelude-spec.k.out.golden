@@ -1,6 +1,6 @@
-kore-exec: [593738] Error (ErrorException):
+kore-exec: [10415077] Error (ErrorException):
     The definitions sent to the solver are inconsistent.
     CallStack (from HasCallStack):
-      error, called at src/Kore/Step/SMT/Lemma.hs:106:9 in kore-0.44.0.0-GXyjcogd7FRExioa8Iqini:Kore.Step.SMT.Lemma
+      error, called at src/Kore/Step/SMT/Lemma.hs:106:9 in kore-0.45.0.0-wxhTBooqYV3YocNuIDw2u:Kore.Step.SMT.Lemma
 [Error] Critical: Haskell Backend execution failed with code 1 and produced no
 output.
