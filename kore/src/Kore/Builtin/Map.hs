@@ -22,6 +22,7 @@ module Kore.Builtin.Map (
     unifyEquals,
     unifyNotInKeys,
     matchUnifyNotInKeys,
+    matchUnifyEquals,
 
     -- * Raw evaluators
     evalConcat,
@@ -31,9 +32,8 @@ module Kore.Builtin.Map (
 ) where
 
 import Control.Error (
-    MaybeT (MaybeT),
+    MaybeT,
     hoistMaybe,
-    runMaybeT,
  )
 import qualified Control.Monad as Monad
 import Data.HashMap.Strict (
@@ -519,6 +519,50 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
+data NormAcData = NormAcData {
+    normalized1, normalized2 :: InternalMap Key (TermLike RewritingVariableName)
+    , acData :: !(Ac.UnifyEqualsNormAc NormalizedMap RewritingVariableName)
+}
+
+data UnifyEqualsMap
+    = ReturnBottom
+    | NormAc !NormAcData
+
+matchUnifyEquals ::
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsMap
+matchUnifyEquals tools first second
+    | Just True <- isMapSort tools sort1 =
+        worker first second
+    | otherwise = Nothing
+
+  where
+    sort1 = termLikeSort first
+
+    normalizedOrBottom ::
+        TermLike RewritingVariableName ->
+        Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
+    normalizedOrBottom = Ac.toNormalized
+
+    worker a b
+        | InternalMap_ normalized1 <- a
+        , InternalMap_ normalized2 <- b
+            = NormAc . NormAcData normalized1 normalized2 <$> Ac.matchUnifyEqualsNormalizedAc
+                tools
+                normalized1
+                normalized2
+        | otherwise = case normalizedOrBottom a of
+            Ac.Bottom -> Just ReturnBottom
+            Ac.Normalized normalized1 ->
+                let a' = Ac.asInternal tools sort1 normalized1
+                 in case normalizedOrBottom b of
+                     Ac.Bottom -> Just ReturnBottom
+                     Ac.Normalized normalized2 ->
+                        let b' = Ac.asInternal tools sort1 normalized2
+                         in worker a' b'
+
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
 When it is used for simplifying equality, one should separately solve the
@@ -532,56 +576,29 @@ unifyEquals ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
+    SmtMetadataTools Attribute.Symbol ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals unifyEqualsChildren first second = do
-    tools <- Simplifier.askMetadataTools
-    (Monad.guard . fromMaybe False) (isMapSort tools sort1)
-    MaybeT $ do
-        unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
-        case sequence unifiers of
-            Nothing -> return Nothing
-            Just us -> Monad.Unify.scatter (map Just us)
-  where
-    sort1 = termLikeSort first
-
-    unifyEquals0 ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MaybeT unifier (Pattern RewritingVariableName)
-    unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
-        tools <- Simplifier.askMetadataTools
-        Ac.unifyEqualsNormalized
-            tools
-            first
-            second
-            unifyEqualsChildren
-            normalized1
-            normalized2
-    unifyEquals0 pat1 pat2 = do
-        firstDomain <- asDomain pat1
-        secondDomain <- asDomain pat2
-        unifyEquals0 firstDomain secondDomain
-      where
-        asDomain ::
-            TermLike RewritingVariableName ->
-            MaybeT unifier (TermLike RewritingVariableName)
-        asDomain patt =
-            case normalizedOrBottom of
-                Ac.Normalized normalized -> do
-                    tools <- Simplifier.askMetadataTools
-                    return (Ac.asInternal tools sort1 normalized)
-                Ac.Bottom ->
-                    lift $
-                        Monad.Unify.explainAndReturnBottom
+    UnifyEqualsMap ->
+    unifier (Pattern RewritingVariableName)
+unifyEquals unifyEqualsChildren tools first second unifyData =
+    case unifyData of
+        ReturnBottom -> 
+            Monad.Unify.explainAndReturnBottom
                             "Duplicated elements in normalization."
                             first
-                            second
-          where
-            normalizedOrBottom ::
-                Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
-            normalizedOrBottom = Ac.toNormalized patt
+                            second 
+        NormAc unifyData' ->
+            Ac.unifyEqualsNormalized
+                tools
+                first
+                second
+                unifyEqualsChildren
+                normalized1
+                normalized2
+                acData
+              where
+                NormAcData{normalized1, normalized2, acData} = unifyData'
 
 data InKeys term = InKeys
     { symbol :: !Symbol

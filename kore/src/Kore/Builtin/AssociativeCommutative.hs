@@ -30,8 +30,10 @@ module Kore.Builtin.AssociativeCommutative (
     renormalize,
     TermNormalizedAc,
     unifyEqualsNormalized,
+    matchUnifyEqualsNormalizedAc,
     UnitSymbol (..),
     VariableElements (..),
+    UnifyEqualsNormAc (..),
 ) where
 
 import Control.Error (
@@ -695,14 +697,16 @@ unifyEqualsNormalized ::
     ) ->
     InternalAc Key normalized (TermLike RewritingVariableName) ->
     InternalAc Key normalized (TermLike RewritingVariableName) ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    UnifyEqualsNormAc normalized RewritingVariableName ->
+    unifier (Pattern RewritingVariableName)
 unifyEqualsNormalized
     tools
     first
     second
     unifyEqualsChildren
     normalized1
-    normalized2 =
+    normalized2
+    unifyData =
         do
             let InternalAc{builtinAcChild = firstNormalized} =
                     normalized1
@@ -717,6 +721,7 @@ unifyEqualsNormalized
                     unifyEqualsChildren
                     firstNormalized
                     secondNormalized
+                    unifyData
             let unifierNormalizedTerm ::
                     TermNormalizedAc normalized RewritingVariableName
                 unifierCondition :: Condition RewritingVariableName
@@ -757,16 +762,280 @@ unifyEqualsNormalized
             HasCallStack =>
             InternalVariable variable =>
             TermLike variable ->
-            MaybeT unifier (TermNormalizedAc normalized variable)
+            unifier (TermNormalizedAc normalized variable)
         normalize1 patt =
             case toNormalized patt of
                 Bottom ->
-                    lift $
                         Monad.Unify.explainAndReturnBottom
                             "Duplicated elements in normalization."
                             first
                             second
                 Normalized n -> return n
+
+data UnifyEqualsElementListsData normalized = UnifyEqualsElementListsData {
+    allElements1, allElements2 :: [ConcreteOrWithVariable normalized RewritingVariableName]
+    , maybeVar :: Maybe (ElementVariable RewritingVariableName)
+}
+
+data UnifyEqualsNormAc normalized variable
+    = UnifyEqualsElementLists !(UnifyEqualsElementListsData normalized)
+    | UnifyOpaqueVar !(UnifyOpVarResult variable)
+
+matchUnifyEqualsNormalizedAc ::
+    forall normalized.
+    ( --Traversable (Value normalized)
+      TermWrapper normalized
+    ) =>
+    SmtMetadataTools Attribute.Symbol ->
+    InternalAc Key normalized (TermLike RewritingVariableName) ->
+    InternalAc Key normalized (TermLike RewritingVariableName) ->
+    Maybe (UnifyEqualsNormAc normalized RewritingVariableName)
+matchUnifyEqualsNormalizedAc
+    tools
+    normalized1
+    normalized2 =
+        case (opaqueDifference1, opaqueDifference2) of
+            ([], []) -> Just $
+                UnifyEqualsElementLists $
+                UnifyEqualsElementListsData
+                    allElements1
+                    allElements2
+                    Nothing
+
+            ([ElemVar_ v1], _)
+                | null opaqueDifference2 -> Just $
+                    UnifyEqualsElementLists $
+                    UnifyEqualsElementListsData
+                        allElements1
+                        allElements2
+                        (Just v1)
+
+                | null allElements1 ->
+                    fmap UnifyOpaqueVar $
+                        matchUnifyOpaqueVariable'
+                        v1
+                        allElements2
+                        opaqueDifference2
+
+            _ -> Nothing
+
+--    (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
+--                 ([], []) ->
+--                     lift $
+--                         unifyEqualsElementLists'
+--                             allElements1
+--                             allElements2
+--                             Nothing
+--                 ([ElemVar_ v1], _)
+--                     | null opaqueDifference2 ->
+--                         lift $
+--                             unifyEqualsElementLists'
+--                                 allElements1
+--                                 allElements2
+--                                 (Just v1)
+--                     | null allElements1 ->
+--                         unifyOpaqueVariable' v1 allElements2 opaqueDifference2
+--                 (_, [ElemVar_ v2])
+--                     | null opaqueDifference1 ->
+--                         lift $
+--                             unifyEqualsElementLists'
+--                                 allElements2
+--                                 allElements1
+--                                 (Just v2)
+--                     | null allElements2 ->
+--                         unifyOpaqueVariable' v2 allElements1 opaqueDifference1
+--                 _ -> empty
+
+
+
+      where
+
+        matchUnifyOpaqueVariable' =
+            matchUnifyOpaqueVariable tools
+
+        listToMap :: Hashable a => Ord a => [a] -> HashMap a Int
+        listToMap = List.foldl' (\m k -> HashMap.insertWith (+) k 1 m) HashMap.empty
+        mapToList :: HashMap a Int -> [a]
+        mapToList =
+            HashMap.foldrWithKey
+                (\key count result -> replicate count key ++ result)
+                []
+
+        -- bottomWithExplanation :: Doc () -> unifier a
+        -- bottomWithExplanation explanation =
+        --     Monad.Unify.explainAndReturnBottom explanation first second
+
+        -- unifyEqualsElementLists' =
+        --     unifyEqualsElementLists
+        --         tools
+        --         first
+        --         second
+        --         unifyEqualsChildren
+
+        -- unifyOpaqueVariable' =
+        --     unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
+
+        NormalizedAc
+            { elementsWithVariables = preElementsWithVariables1
+            , concreteElements = concreteElements1
+            , opaque = opaque1
+            } =
+                unwrapAc firstNormalized
+        NormalizedAc
+            { elementsWithVariables = preElementsWithVariables2
+            , concreteElements = concreteElements2
+            , opaque = opaque2
+            } =
+                unwrapAc secondNormalized
+
+        InternalAc{builtinAcChild = firstNormalized} =
+                normalized1
+        InternalAc{builtinAcChild = secondNormalized} =
+                normalized2
+
+        opaque1Map = listToMap opaque1
+        opaque2Map = listToMap opaque2
+
+        elementsWithVariables1 = unwrapElement <$> preElementsWithVariables1
+        elementsWithVariables2 = unwrapElement <$> preElementsWithVariables2
+        elementsWithVariables1Map = HashMap.fromList elementsWithVariables1
+        elementsWithVariables2Map = HashMap.fromList elementsWithVariables2
+
+        commonElements =
+            HashMap.intersectionWith
+                (,)
+                concreteElements1
+                concreteElements2
+        commonVariables =
+            HashMap.intersectionWith
+                (,)
+                elementsWithVariables1Map
+                elementsWithVariables2Map
+
+        -- Duplicates must be kept in case any of the opaque terms turns out to be
+        -- non-empty, in which case one of the terms is bottom, which
+        -- means that the unification result is bottom.
+        commonOpaqueMap = HashMap.intersectionWith max opaque1Map opaque2Map
+
+        -- commonOpaque = mapToList commonOpaqueMap
+        commonOpaqueKeys = HashMap.keysSet commonOpaqueMap
+
+        elementDifference1 =
+            HashMap.toList (HashMap.difference concreteElements1 commonElements)
+        elementDifference2 =
+            HashMap.toList (HashMap.difference concreteElements2 commonElements)
+        elementVariableDifference1 =
+            HashMap.toList (HashMap.difference elementsWithVariables1Map commonVariables)
+        elementVariableDifference2 =
+            HashMap.toList (HashMap.difference elementsWithVariables2Map commonVariables)
+        opaqueDifference1 =
+            mapToList (withoutKeys opaque1Map commonOpaqueKeys)
+        opaqueDifference2 =
+            mapToList (withoutKeys opaque2Map commonOpaqueKeys)
+
+        withoutKeys ::
+            Hashable k =>
+            Eq k =>
+            HashMap k v ->
+            HashSet k ->
+            HashMap k v
+        withoutKeys hmap (HashSet.toList -> hset) =
+            let keys = zip hset (repeat ()) & HashMap.fromList
+             in hmap `HashMap.difference` keys
+
+        allElements1 =
+            map WithVariablePat elementVariableDifference1
+                ++ map toConcretePat elementDifference1
+        allElements2 =
+            map WithVariablePat elementVariableDifference2
+                ++ map toConcretePat elementDifference2
+
+        toConcretePat ::
+            (Key, Value normalized (TermLike RewritingVariableName)) ->
+            ConcreteOrWithVariable
+                normalized
+                RewritingVariableName
+        toConcretePat (a, b) =
+            ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
+
+        -- unifyElementList ::
+        --     forall key.
+        --     [ ( key
+        --       , ( Value normalized (TermLike RewritingVariableName)
+        --         , Value normalized (TermLike RewritingVariableName)
+        --         )
+        --       )
+        --     ] ->
+        --     unifier
+        --         ( [(key, Value normalized (TermLike RewritingVariableName))]
+        --         , Condition RewritingVariableName
+        --         )
+        -- unifyElementList elements = do
+        --     result <- mapM (unifyCommonElements unifyEqualsChildren) elements
+        --     let terms :: [(key, Value normalized (TermLike RewritingVariableName))]
+        --         predicates :: [Condition RewritingVariableName]
+        --         (terms, predicates) = unzip (map Conditional.splitTerm result)
+        --         predicate :: Condition RewritingVariableName
+        --         predicate =
+        --             List.foldl'
+        --                 andCondition
+        --                 Condition.top
+        --                 predicates
+
+            -- return (terms, predicate)
+
+        -- simplify ::
+        --     TermLike RewritingVariableName ->
+        --     unifier (Pattern RewritingVariableName)
+        -- simplify term =
+        --     lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
+
+        -- simplifyPair ::
+        --     ( TermLike RewritingVariableName
+        --     , Value normalized (TermLike RewritingVariableName)
+        --     ) ->
+        --     unifier
+        --         ( Conditional
+        --             RewritingVariableName
+        --             ( TermLike RewritingVariableName
+        --             , Value normalized (TermLike RewritingVariableName)
+        --             )
+        --         )
+        -- simplifyPair (key, value) = do
+        --     simplifiedKey <- simplifyTermLike' key
+        --     let (keyTerm, keyCondition) = Conditional.splitTerm simplifiedKey
+        --     simplifiedValue <- traverse simplifyTermLike' value
+        --     let splitSimplifiedValue ::
+        --             Value
+        --                 normalized
+        --                 ( TermLike RewritingVariableName
+        --                 , Condition RewritingVariableName
+        --                 )
+        --         splitSimplifiedValue =
+        --             fmap Conditional.splitTerm simplifiedValue
+        --         simplifiedValueTerm ::
+        --             Value normalized (TermLike RewritingVariableName)
+        --         simplifiedValueTerm = fmap fst splitSimplifiedValue
+        --         simplifiedValueConditions ::
+        --             Value normalized (Condition RewritingVariableName)
+        --         simplifiedValueConditions = fmap snd splitSimplifiedValue
+        --         simplifiedValueCondition :: Condition RewritingVariableName
+        --         simplifiedValueCondition =
+        --             foldr
+        --                 andCondition
+        --                 Condition.top
+        --                 simplifiedValueConditions
+        --     return
+        --         ( (keyTerm, simplifiedValueTerm)
+        --             `withCondition` keyCondition
+        --             `andCondition` simplifiedValueCondition
+        --         )
+        --   where
+        --     simplifyTermLike' ::
+        --         TermLike RewritingVariableName ->
+        --         unifier (Pattern RewritingVariableName)
+        --     simplifyTermLike' term =
+        --         lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
 {- | Unifies two AC structs represented as @NormalizedAc@.
 
@@ -787,7 +1056,7 @@ unifyEqualsNormalizedAc ::
     ) ->
     TermNormalizedAc normalized RewritingVariableName ->
     TermNormalizedAc normalized RewritingVariableName ->
-    MaybeT
+    UnifyEqualsNormAc normalized RewritingVariableName ->
         unifier
         ( Conditional
             RewritingVariableName
@@ -799,37 +1068,28 @@ unifyEqualsNormalizedAc
     second
     unifyEqualsChildren
     normalized1
-    normalized2 =
+    normalized2
+    unifyData =
         do
-            (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
-                ([], []) ->
-                    lift $
-                        unifyEqualsElementLists'
-                            allElements1
-                            allElements2
-                            Nothing
-                ([ElemVar_ v1], _)
-                    | null opaqueDifference2 ->
-                        lift $
-                            unifyEqualsElementLists'
-                                allElements1
-                                allElements2
-                                (Just v1)
-                    | null allElements1 ->
-                        unifyOpaqueVariable' v1 allElements2 opaqueDifference2
-                (_, [ElemVar_ v2])
-                    | null opaqueDifference1 ->
-                        lift $
-                            unifyEqualsElementLists'
-                                allElements2
-                                allElements1
-                                (Just v2)
-                    | null allElements2 ->
-                        unifyOpaqueVariable' v2 allElements1 opaqueDifference1
-                _ -> empty
+            (simpleUnifier, opaques) <- case unifyData of
+                UnifyEqualsElementLists unifyData' ->
+                    unifyEqualsElementLists'
+                        allElements1
+                        allElements2
+                        maybeVar
+                
+                  where
+                    UnifyEqualsElementListsData{allElements1, allElements2, maybeVar} = unifyData'
+                
+                UnifyOpaqueVar unifyData' ->
+                    unifyOpaqueVariable
+                        bottomWithExplanation
+                        unifyEqualsChildren
+                        unifyData'
+
             let (unifiedElements, unifierCondition) =
                     Conditional.splitTerm simpleUnifier
-            lift $ do
+            do
                 -- unifier monad
                 -- unify the parts not sent to unifyEqualsNormalizedElements.
                 (commonElementsTerms, commonElementsCondition) <-
@@ -874,8 +1134,8 @@ unifyEqualsNormalizedAc
                 second
                 unifyEqualsChildren
 
-        unifyOpaqueVariable' =
-            unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
+        -- unifyOpaqueVariable' =
+        --     unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
 
         NormalizedAc
             { elementsWithVariables = preElementsWithVariables1
@@ -915,45 +1175,45 @@ unifyEqualsNormalizedAc
         commonOpaqueMap = HashMap.intersectionWith max opaque1Map opaque2Map
 
         commonOpaque = mapToList commonOpaqueMap
-        commonOpaqueKeys = HashMap.keysSet commonOpaqueMap
+        -- commonOpaqueKeys = HashMap.keysSet commonOpaqueMap
 
-        elementDifference1 =
-            HashMap.toList (HashMap.difference concreteElements1 commonElements)
-        elementDifference2 =
-            HashMap.toList (HashMap.difference concreteElements2 commonElements)
-        elementVariableDifference1 =
-            HashMap.toList (HashMap.difference elementsWithVariables1Map commonVariables)
-        elementVariableDifference2 =
-            HashMap.toList (HashMap.difference elementsWithVariables2Map commonVariables)
-        opaqueDifference1 =
-            mapToList (withoutKeys opaque1Map commonOpaqueKeys)
-        opaqueDifference2 =
-            mapToList (withoutKeys opaque2Map commonOpaqueKeys)
+        -- elementDifference1 =
+        --     HashMap.toList (HashMap.difference concreteElements1 commonElements)
+        -- elementDifference2 =
+        --     HashMap.toList (HashMap.difference concreteElements2 commonElements)
+        -- elementVariableDifference1 =
+        --     HashMap.toList (HashMap.difference elementsWithVariables1Map commonVariables)
+        -- elementVariableDifference2 =
+        --     HashMap.toList (HashMap.difference elementsWithVariables2Map commonVariables)
+        -- opaqueDifference1 =
+        --     mapToList (withoutKeys opaque1Map commonOpaqueKeys)
+        -- opaqueDifference2 =
+        --     mapToList (withoutKeys opaque2Map commonOpaqueKeys)
 
-        withoutKeys ::
-            Hashable k =>
-            Eq k =>
-            HashMap k v ->
-            HashSet k ->
-            HashMap k v
-        withoutKeys hmap (HashSet.toList -> hset) =
-            let keys = zip hset (repeat ()) & HashMap.fromList
-             in hmap `HashMap.difference` keys
+        -- withoutKeys ::
+        --     Hashable k =>
+        --     Eq k =>
+        --     HashMap k v ->
+        --     HashSet k ->
+        --     HashMap k v
+        -- withoutKeys hmap (HashSet.toList -> hset) =
+        --     let keys = zip hset (repeat ()) & HashMap.fromList
+        --      in hmap `HashMap.difference` keys
 
-        allElements1 =
-            map WithVariablePat elementVariableDifference1
-                ++ map toConcretePat elementDifference1
-        allElements2 =
-            map WithVariablePat elementVariableDifference2
-                ++ map toConcretePat elementDifference2
+        -- allElements1 =
+        --     map WithVariablePat elementVariableDifference1
+        --         ++ map toConcretePat elementDifference1
+        -- allElements2 =
+        --     map WithVariablePat elementVariableDifference2
+        --         ++ map toConcretePat elementDifference2
 
-        toConcretePat ::
-            (Key, Value normalized (TermLike RewritingVariableName)) ->
-            ConcreteOrWithVariable
-                normalized
-                RewritingVariableName
-        toConcretePat (a, b) =
-            ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
+        -- toConcretePat ::
+        --     (Key, Value normalized (TermLike RewritingVariableName)) ->
+        --     ConcreteOrWithVariable
+        --         normalized
+        --         RewritingVariableName
+        -- toConcretePat (a, b) =
+        --     ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
 
         unifyElementList ::
             forall key.
@@ -1342,39 +1602,36 @@ unifyEqualsElementLists
                 (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
         remainderError = nonEmptyRemainderError first second
 
-unifyOpaqueVariable ::
-    ( MonadUnify unifier
-    , TermWrapper normalized
+data NoCheckUnifyOpaqueChildrenData variable = NoCheckUnifyOpaqueChildrenData {
+    v1 :: TermLike.ElementVariable variable
+    , second :: TermLike variable
+}
+
+data UnifyOpVarResult variable
+    = NoCheckUnifyOpaqueChildren !(NoCheckUnifyOpaqueChildrenData variable)
+    | BottomWithExplanation
+    
+matchUnifyOpaqueVariable ::
+    ( TermWrapper normalized
     , InternalVariable variable
     ) =>
     SmtMetadataTools Attribute.Symbol ->
-    (forall a. Doc () -> unifier a) ->
-    -- | unifier function
-    (TermLike variable -> TermLike variable -> unifier (Pattern variable)) ->
     TermLike.ElementVariable variable ->
     [ConcreteOrWithVariable normalized variable] ->
     [TermLike variable] ->
-    MaybeT
-        unifier
-        ( Conditional
-            variable
-            [(TermLike variable, Value normalized (TermLike variable))]
-        , [TermLike variable]
-        )
-unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] =
-    noCheckUnifyOpaqueChildren unifyChildren v1 second
-unifyOpaqueVariable
+    Maybe (UnifyOpVarResult variable)
+matchUnifyOpaqueVariable _ v1 [] [second@(ElemVar_ _)] =
+    --noCheckUnifyOpaqueChildren unifyChildren v1 second
+    Just $ NoCheckUnifyOpaqueChildren NoCheckUnifyOpaqueChildrenData{v1, second} 
+matchUnifyOpaqueVariable
     tools
-    bottomWithExplanation
-    unifyChildren
     v1
     concreteOrVariableTerms
     opaqueTerms =
         case elementListAsNormalized pairs of
-            Nothing ->
-                lift $
-                    bottomWithExplanation
-                        "Duplicated element in unification results"
+            Nothing -> Just BottomWithExplanation
+                    -- bottomWithExplanation
+                    --     "Duplicated element in unification results"
             Just elementTerm ->
                 let secondTerm =
                         asInternal
@@ -1384,11 +1641,39 @@ unifyOpaqueVariable
                                 elementTerm{opaque = opaqueTerms}
                             )
                  in if TermLike.isFunctionPattern secondTerm
-                        then noCheckUnifyOpaqueChildren unifyChildren v1 secondTerm
-                        else empty
+                        then Just 
+                            $ NoCheckUnifyOpaqueChildren 
+                            $ NoCheckUnifyOpaqueChildrenData v1 secondTerm
+                        else Nothing
       where
         sort = variableSort v1
         pairs = map fromConcreteOrWithVariable concreteOrVariableTerms
+
+unifyOpaqueVariable ::
+    ( MonadUnify unifier
+    , InternalVariable variable
+    ) =>
+    (forall a. Doc () -> unifier a) ->
+    -- | unifier function
+    (TermLike variable -> TermLike variable -> unifier (Pattern variable)) ->
+    UnifyOpVarResult variable ->
+        unifier
+        ( Conditional
+            variable
+            [(TermLike variable, Value normalized (TermLike variable))]
+        , [TermLike variable]
+        )
+unifyOpaqueVariable
+    bottomWithExplanation
+    unifyChildren
+    unifyData =
+        case unifyData of
+            NoCheckUnifyOpaqueChildren unifyData' -> 
+                noCheckUnifyOpaqueChildren unifyChildren v1 second
+              where
+                NoCheckUnifyOpaqueChildrenData{v1, second} = unifyData'
+            _ -> bottomWithExplanation
+                        "Duplicated element in unification results"
 
 noCheckUnifyOpaqueChildren ::
     ( MonadUnify unifier
@@ -1397,14 +1682,13 @@ noCheckUnifyOpaqueChildren ::
     (TermLike variable -> TermLike variable -> unifier (Pattern variable)) ->
     TermLike.ElementVariable variable ->
     TermLike variable ->
-    MaybeT
         unifier
         ( Conditional
             variable
             [(TermLike variable, Value normalized (TermLike variable))]
         , [TermLike variable]
         )
-noCheckUnifyOpaqueChildren unifyChildren v1 second = lift $ do
+noCheckUnifyOpaqueChildren unifyChildren v1 second = do
     unifier <- unifyChildren (mkElemVar v1) second
     let (opaque, predicate) = Conditional.splitTerm unifier
     return ([] `Conditional.withCondition` predicate, [opaque])
