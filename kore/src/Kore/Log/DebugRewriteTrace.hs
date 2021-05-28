@@ -104,7 +104,7 @@ instance ToJSON (TermLike VariableName) where
     toJSON = toJSON . unparseOneLine
 
 instance ToJSON (Pattern VariableName) where
-    toJSON Conditional.Conditional { term, predicate, substitution } =
+    toJSON Conditional.Conditional{term, predicate, substitution} =
         object
             [ "term" .= term
             , "constraint" .= encodedConstraint
