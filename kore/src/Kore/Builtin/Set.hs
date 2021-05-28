@@ -523,10 +523,10 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
-data NormAcData = NormAcData {
-    normalized1, normalized2 :: InternalSet Key (TermLike RewritingVariableName)
+data NormAcData = NormAcData
+    { normalized1, normalized2 :: InternalSet Key (TermLike RewritingVariableName)
     , acData :: !(Ac.UnifyEqualsNormAc NormalizedSet RewritingVariableName)
-}
+    }
 
 data UnifyEqualsMap
     = ReturnBottom
@@ -541,7 +541,6 @@ matchUnifyEquals tools first second
     | Just True <- isSetSort tools sort1 =
         worker first second
     | otherwise = Nothing
-
   where
     sort1 = termLikeSort first
 
@@ -552,20 +551,21 @@ matchUnifyEquals tools first second
 
     worker a b
         | InternalSet_ normalized1 <- a
-        , InternalSet_ normalized2 <- b
-            = NormAc . NormAcData normalized1 normalized2 <$> Ac.matchUnifyEqualsNormalizedAc
-                tools
-                normalized1
-                normalized2
+          , InternalSet_ normalized2 <- b =
+            NormAc . NormAcData normalized1 normalized2
+                <$> Ac.matchUnifyEqualsNormalizedAc
+                    tools
+                    normalized1
+                    normalized2
         | otherwise = case normalizedOrBottom a of
             Ac.Bottom -> Just ReturnBottom
             Ac.Normalized normalized1 ->
                 let a' = Ac.asInternal tools sort1 normalized1
                  in case normalizedOrBottom b of
-                     Ac.Bottom -> Just ReturnBottom
-                     Ac.Normalized normalized2 ->
-                        let b' = Ac.asInternal tools sort1 normalized2
-                         in worker a' b'
+                        Ac.Bottom -> Just ReturnBottom
+                        Ac.Normalized normalized2 ->
+                            let b' = Ac.asInternal tools sort1 normalized2
+                             in worker a' b'
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
@@ -587,11 +587,11 @@ unifyEquals ::
     unifier (Pattern RewritingVariableName)
 unifyEquals unifyEqualsChildren tools first second unifyData =
     case unifyData of
-        ReturnBottom -> 
+        ReturnBottom ->
             Monad.Unify.explainAndReturnBottom
-                            "Duplicated elements in normalization."
-                            first
-                            second 
+                "Duplicated elements in normalization."
+                first
+                second
         NormAc unifyData' ->
             Ac.unifyEqualsNormalized
                 tools
@@ -601,5 +601,5 @@ unifyEquals unifyEqualsChildren tools first second unifyData =
                 normalized1
                 normalized2
                 acData
-              where
-                NormAcData{normalized1, normalized2, acData} = unifyData'
+          where
+            NormAcData{normalized1, normalized2, acData} = unifyData'
