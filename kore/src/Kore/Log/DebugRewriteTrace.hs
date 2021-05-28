@@ -104,16 +104,15 @@ instance ToJSON (TermLike VariableName) where
     toJSON = toJSON . unparseOneLine
 
 instance ToJSON (Pattern VariableName) where
-    toJSON patern =
+    toJSON Conditional.Conditional { term, predicate, substitution } =
         object
-            [ "term" .= unparseOneLine term
+            [ "term" .= term
             , "constraint" .= encodedConstraint
+            , "substitution" .= substitution
             ]
       where
-        term = Conditional.term patern
         sort = TermLike.termLikeSort term
-        constraint = Conditional.predicate patern
-        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort constraint) :: Text
+        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort predicate) :: Text
 
 instance ToJSON (Substitution VariableName) where
     toJSON substitution =
@@ -178,9 +177,6 @@ instance Entry DebugRewriteTrace where
 unparseOneLine :: Unparse p => p -> Text
 unparseOneLine = renderText . layoutOneLine . unparse
 
-mapPatternVariables :: Pattern RewritingVariableName -> Pattern VariableName
-mapPatternVariables = Conditional.mapVariables TermLike.mapVariables (pure toVariableName)
-
 debugInitialPattern ::
     MonadLog log =>
     TermLike VariableName ->
@@ -191,7 +187,7 @@ debugFinalPatterns ::
     MonadLog log =>
     MultiOr (Pattern RewritingVariableName) ->
     log ()
-debugFinalPatterns = logEntry . DebugFinalPatterns . (mapPatternVariables <$>) . from
+debugFinalPatterns = logEntry . DebugFinalPatterns . (getRewritingPattern <$>) . from
 
 debugRewriteTrace ::
     MonadLog log =>
@@ -204,14 +200,14 @@ debugRewriteTrace initial Result.Results{results = (toList -> results), remainde
     when (not (null results)) $
         logEntry
             DebugRewriteTrace
-                { initialPattern = mapPatternVariables initial
+                { initialPattern = getRewritingPattern initial
                 , rewriteResults = getResult <$> results
                 , remainders = multiOrToList remainders
                 }
   where
     mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
 
-    multiOrToList = (mapPatternVariables <$>) . from
+    multiOrToList = (getRewritingPattern <$>) . from
 
     getResult Result.Result{appliedRule, result} =
         RewriteResult
