@@ -97,18 +97,7 @@ simplify sideCondition =
     loop :: DisjunctiveNormalForm -> simplifier DisjunctiveNormalForm
     loop input = do
         output <- MultiAnd.traverseOrAnd worker input
-        if input == output
-            then return (mark output)
-            else loop output
-
-    mark :: DisjunctiveNormalForm -> DisjunctiveNormalForm
-    mark = id
-    --     (MultiOr.map . MultiAnd.map) mark1
-
-    -- mark1 ::
-    --     Predicate RewritingVariableName ->
-    --     Predicate RewritingVariableName
-    -- mark1 = Recursive.fold $ Predicate.markSimplified . Recursive.embed
+        (if input == output then pure else loop) output
 
     worker ::
         Predicate RewritingVariableName ->
