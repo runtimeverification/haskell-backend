@@ -34,6 +34,7 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeNotPredicate,
     makeTruePredicate,
+    fromPredicate_,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -100,6 +101,23 @@ test_andTermsSimplification =
                     , [Pattern.bottom]
                     )
             actual <- simplifyUnify mkBottom_ fOfA
+            assertEqual "" expect actual
+        , testCase "\\and{b}(\\not{b}(\\equals{s, s}(a, b)), \\equals{s, s}(a, b))" $ do
+            let expect = ( [Pattern.bottom]
+                         , [Pattern.bottom]
+                         )
+            actual <- simplifyUnify ( makeNotPredicate
+                                        ( makeEqualsPredicate
+                                                  xVar
+                                                  (mkElemVar Mock.yConfig)
+                                        )
+                                        & fromPredicate_
+                                    )
+                                    ( makeEqualsPredicate
+                                        xVar
+                                        (mkElemVar Mock.yConfig)
+                                        & fromPredicate_
+                                    )
             assertEqual "" expect actual
         ]
     , testCase "equal patterns and" $ do
