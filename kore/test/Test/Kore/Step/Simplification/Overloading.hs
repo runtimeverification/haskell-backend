@@ -400,7 +400,8 @@ doesn'tMatch ::
     TermLike RewritingVariableName ->
     String ->
     TestTree
-doesn'tMatch comment term1 term2 _ = --reason =
+doesn'tMatch comment term1 term2 _ =
+    --reason =
     withMatching
         (assertEqual "" (Left NotApplicable)) --(Left (Clash reason))) TODO:fix
         comment
@@ -458,10 +459,12 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
   where
     checkNarrowing :: UnificationResult -> Assertion
     checkNarrowing
-        ( Just (Resolution
-                ( WithNarrowing
-                        Narrowing{narrowingSubst, overloadPair}
-                    ))
+        ( Just
+                ( Resolution
+                        ( WithNarrowing
+                                Narrowing{narrowingSubst, overloadPair}
+                            )
+                    )
             ) =
             do
                 assertEqual "" (Pair term1' term2') overloadPair
@@ -580,7 +583,6 @@ withUnificationTwice check comment termPair =
                 actual' <- unify overloadPair
                 check actual'
             _ -> assertFailure "Expected matching solution."
-
 
 x1 :: TermLike RewritingVariableName
 x1 =

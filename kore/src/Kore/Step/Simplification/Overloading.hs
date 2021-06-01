@@ -82,10 +82,10 @@ data MatchResult
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-flipResult
-    :: MatchResult
-    -> MatchResult
-flipResult result =   
+flipResult ::
+    MatchResult ->
+    MatchResult
+flipResult result =
     case result of
         Resolution (Simple (Pair term1 term2)) ->
             Resolution (Simple (Pair term2 term1))
@@ -155,8 +155,8 @@ unifyOverloading overloadSimplifier termPair = case termPair of
     Pair
         (Inj_ inj@Inj{injChild = App_ firstHead firstChildren})
         secondTerm@(App_ secondHead _) ->
-            flipResult <$>
-                unifyOverloadingVsOverloaded
+            flipResult
+                <$> unifyOverloadingVsOverloaded
                     overloadSimplifier
                     secondHead
                     secondTerm
@@ -184,7 +184,6 @@ unifyOverloading overloadSimplifier termPair = case termPair of
         case worker firstTerm secondTerm of
             Nothing -> worker secondTerm firstTerm
             Just result -> Just result
-
   where
     worker ::
         TermLike RewritingVariableName ->
@@ -246,23 +245,22 @@ unifyOverloadingCommonOverload
     (Application firstHead firstChildren)
     (Application secondHead secondChildren)
     injProto@Inj{injTo}
-    | isOverloaded firstHead
-    , isOverloaded secondHead
-    = case unifyOverloadWithinBound injProto firstHead secondHead injTo of
-        Nothing -> Just $ ClashResult "overloaded constructors not unifiable"
-        Just InjectedOverload{overload, injectionHead} ->
-            let first' = resolveOverloading injProto overload firstChildren
-                second' = resolveOverloading injProto overload secondChildren
-                mkInj' = maybeMkInj injectionHead
-             in Just $ Resolution $ Simple $ Pair (mkInj' first') (mkInj' second')
-    | otherwise = Nothing
-
-  where
-    OverloadSimplifier
-        { isOverloaded
-        , resolveOverloading
-        , unifyOverloadWithinBound 
-        } = overloadSimplifier
+        | isOverloaded firstHead
+          , isOverloaded secondHead =
+            case unifyOverloadWithinBound injProto firstHead secondHead injTo of
+                Nothing -> Just $ ClashResult "overloaded constructors not unifiable"
+                Just InjectedOverload{overload, injectionHead} ->
+                    let first' = resolveOverloading injProto overload firstChildren
+                        second' = resolveOverloading injProto overload secondChildren
+                        mkInj' = maybeMkInj injectionHead
+                     in Just $ Resolution $ Simple $ Pair (mkInj' first') (mkInj' second')
+        | otherwise = Nothing
+      where
+        OverloadSimplifier
+            { isOverloaded
+            , resolveOverloading
+            , unifyOverloadWithinBound
+            } = overloadSimplifier
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -290,20 +288,20 @@ unifyOverloadingVsOverloaded
     overloadingTerm
     (Application overloadedHead overloadedChildren)
     injProto
-    | isOverloaded overloadingHead
-    , isConstructor overloadedHead || isOverloaded overloadedHead
-    = let ~overloadedTerm' =
-            resolveOverloading injProto overloadingHead overloadedChildren
-       in if isOverloading overloadingHead overloadedHead
-                then Just $ Resolution $ Simple $ Pair overloadingTerm overloadedTerm'
-                else throwBottom "different injected ctor"
-    | otherwise = Nothing
-  where
-    OverloadSimplifier
-        { isOverloaded
-        , isOverloading
-        , resolveOverloading
-        } = overloadSimplifier
+        | isOverloaded overloadingHead
+          , isConstructor overloadedHead || isOverloaded overloadedHead =
+            let ~overloadedTerm' =
+                    resolveOverloading injProto overloadingHead overloadedChildren
+             in if isOverloading overloadingHead overloadedHead
+                    then Just $ Resolution $ Simple $ Pair overloadingTerm overloadedTerm'
+                    else throwBottom "different injected ctor"
+        | otherwise = Nothing
+      where
+        OverloadSimplifier
+            { isOverloaded
+            , isOverloading
+            , resolveOverloading
+            } = overloadSimplifier
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -337,17 +335,19 @@ unifyOverloadingVsOverloadedVariable
             Monad.guard (isOverloaded overloadingHead)
             case getOverloadedWithinSort injProto overloadingHead injFrom of
                 Right Nothing -> Just notUnifiableOverloads
-                Right (Just overHead) -> Just $ Resolution $
-                    WithNarrowing
-                        $ computeNarrowing
-                            overloadSimplifier
-                            overloadingTerm
-                            Nothing
-                            overloadingHead
-                            injProto
-                            freeVars
-                            overloadedVar
-                            overHead
+                Right (Just overHead) ->
+                    Just $
+                        Resolution $
+                            WithNarrowing $
+                                computeNarrowing
+                                    overloadSimplifier
+                                    overloadingTerm
+                                    Nothing
+                                    overloadingHead
+                                    injProto
+                                    freeVars
+                                    overloadedVar
+                                    overHead
                 Left err -> error err
       where
         freeVars = freeVariables overloadingTerm
@@ -383,33 +383,34 @@ unifyOverloadingInjVsVariable
     (Application firstHead firstChildren)
     overloadedVar
     freeVars
-    injProto 
-    | isOverloaded firstHead
-    = case unifyOverloadWithSortWithinBound firstHead injProto of
+    injProto
+        | isOverloaded firstHead =
+            case unifyOverloadWithSortWithinBound firstHead injProto of
                 Left err -> error err
                 Right Nothing -> Just notUnifiableOverloads
                 Right
                     (Just InjectedOverloadPair{overloadingSymbol, overloadedSymbol}) ->
                         let (InjectedOverload headUnion maybeInjUnion) = overloadingSymbol
                             first' = resolveOverloading injProto headUnion firstChildren
-                         in Just $ Resolution $ WithNarrowing
-                                $ computeNarrowing
-                                    overloadSimplifier
-                                    first'
-                                    maybeInjUnion
-                                    headUnion
-                                    injProto
-                                    freeVars
-                                    overloadedVar
-                                    overloadedSymbol
-    | otherwise = Nothing
-
-  where
-    OverloadSimplifier
-                { isOverloaded
-                , resolveOverloading
-                , unifyOverloadWithSortWithinBound
-                } = overloadSimplifier
+                         in Just $
+                                Resolution $
+                                    WithNarrowing $
+                                        computeNarrowing
+                                            overloadSimplifier
+                                            first'
+                                            maybeInjUnion
+                                            headUnion
+                                            injProto
+                                            freeVars
+                                            overloadedVar
+                                            overloadedSymbol
+        | otherwise = Nothing
+      where
+        OverloadSimplifier
+            { isOverloaded
+            , resolveOverloading
+            , unifyOverloadWithSortWithinBound
+            } = overloadSimplifier
 
 computeNarrowing ::
     HasCallStack =>
@@ -440,16 +441,15 @@ computeNarrowing
     overloadedVar
     overloaded
         | App_ _ freshTerms <- overloadedTerm =
-                let second' =
-                        resolveOverloading injUnion headUnion freshTerms
-                 in
-                    Narrowing
-                        { narrowingSubst =
-                            Condition.assign (inject overloadedVar) narrowingTerm
-                        , narrowingVars =
-                            Attribute.getFreeElementVariables $ freeVariables narrowingTerm
-                        , overloadPair = Pair (mkInj' first') (mkInj' second')
-                        }
+            let second' =
+                    resolveOverloading injUnion headUnion freshTerms
+             in Narrowing
+                    { narrowingSubst =
+                        Condition.assign (inject overloadedVar) narrowingTerm
+                    , narrowingVars =
+                        Attribute.getFreeElementVariables $ freeVariables narrowingTerm
+                    , overloadPair = Pair (mkInj' first') (mkInj' second')
+                    }
         | otherwise = error "This should not happen"
       where
         InjectedOverload{overload, injectionHead} = overloaded
@@ -491,8 +491,8 @@ maybeMkInj ::
     TermLike RewritingVariableName
 maybeMkInj maybeInj injChild = maybe injChild (flip mkInj injChild) maybeInj
 
-notUnifiableError
-    :: TermLike RewritingVariableName -> Maybe MatchResult
+notUnifiableError ::
+    TermLike RewritingVariableName -> Maybe MatchResult
 notUnifiableError = \case
     (DV_ _ _) -> Just $ ClashResult "injected domain value"
     (InternalBool_ _) -> Just $ ClashResult "injected builtin bool"

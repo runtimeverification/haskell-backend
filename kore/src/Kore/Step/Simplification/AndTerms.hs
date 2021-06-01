@@ -552,7 +552,6 @@ unifyVariableFunction UnifyVariableFunction{variable, term} =
 @
 \\equals{_, _}(x, f(_))
 @
-
 -}
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
@@ -740,31 +739,32 @@ overloadedConstructorSortInjectionAndEquals ::
     unifier (Pattern RewritingVariableName)
 overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm unifyData =
     case unifyData of
-            Resolution (Simple (Pair firstTerm' secondTerm')) ->
-                termMerger firstTerm' secondTerm'
-            Resolution
-                ( WithNarrowing
-                        Narrowing
-                            { narrowingSubst
-                            , narrowingVars
-                            , overloadPair = Pair firstTerm' secondTerm'
-                            }
-                    ) -> do
-                    boundPattern <- do
-                        merged <- termMerger firstTerm' secondTerm'
-                        Exists.makeEvaluate SideCondition.topTODO narrowingVars $
-                            merged `Pattern.andCondition` narrowingSubst
-                    case OrPattern.toPatterns boundPattern of
-                        [result] -> return result
-                        [] -> explainAndReturnBottom
-                                    ( "exists simplification for overloaded"
-                                        <> " constructors returned no pattern"
-                                    )
-                                    firstTerm
-                                    secondTerm
-                        _ -> scatter boundPattern
-            ClashResult message ->
-                explainAndReturnBottom (fromString message) firstTerm secondTerm
+        Resolution (Simple (Pair firstTerm' secondTerm')) ->
+            termMerger firstTerm' secondTerm'
+        Resolution
+            ( WithNarrowing
+                    Narrowing
+                        { narrowingSubst
+                        , narrowingVars
+                        , overloadPair = Pair firstTerm' secondTerm'
+                        }
+                ) -> do
+                boundPattern <- do
+                    merged <- termMerger firstTerm' secondTerm'
+                    Exists.makeEvaluate SideCondition.topTODO narrowingVars $
+                        merged `Pattern.andCondition` narrowingSubst
+                case OrPattern.toPatterns boundPattern of
+                    [result] -> return result
+                    [] ->
+                        explainAndReturnBottom
+                            ( "exists simplification for overloaded"
+                                <> " constructors returned no pattern"
+                            )
+                            firstTerm
+                            secondTerm
+                    _ -> scatter boundPattern
+        ClashResult message ->
+            explainAndReturnBottom (fromString message) firstTerm secondTerm
 
 data DVConstrError
     = DVConstr
