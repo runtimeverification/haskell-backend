@@ -72,7 +72,6 @@ import Kore.Step.Simplification.ExpandAlias
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.OverloadSimplifier as OverloadSimplifier
 import Kore.Step.Simplification.Overloading as Overloading
 import qualified Kore.Step.Simplification.SimplificationType as SimplificationType (
     SimplificationType (..),
@@ -140,11 +139,11 @@ maybeTermEquals ::
     MaybeT unifier (Pattern RewritingVariableName)
 maybeTermEquals notSimplifier childTransformers first second = do
     injSimplifier <- Simplifier.askInjSimplifier
-    OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
+    overloadSimplifier <- Simplifier.askOverloadSimplifier
     tools <- Simplifier.askMetadataTools
-    worker injSimplifier isOverloaded tools
+    worker injSimplifier overloadSimplifier tools
   where
-    worker injSimplifier isOverloaded tools
+    worker injSimplifier overloadSimplifier tools
         | Just unifyData <- Builtin.Int.matchInt first second =
             lift $ Builtin.Int.unifyInt first second unifyData
         | Just unifyData <- Builtin.Bool.matchBools first second =
@@ -173,13 +172,10 @@ maybeTermEquals notSimplifier childTransformers first second = do
             lift $ unifySortInjection childTransformers first second unifyData
         | Just () <- matchConstructorSortInjectionAndEquals first second =
             lift $ constructorSortInjectionAndEquals first second
-        | Just () <- matchDifferentConstructors isOverloaded first second =
+        | Just () <- matchDifferentConstructors overloadSimplifier first second =
             lift $ constructorAndEqualsAssumesDifferentHeads first second
-        | otherwise =
-            overloadedConstructorSortInjectionAndEquals childTransformers first second
-                <|> rest tools
-
-    rest tools
+        | Just unifyData <- unifyOverloading overloadSimplifier (Pair first second) =
+            lift $ overloadedConstructorSortInjectionAndEquals childTransformers first second unifyData
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
@@ -253,11 +249,11 @@ maybeTermAnd ::
     MaybeT unifier (Pattern RewritingVariableName)
 maybeTermAnd notSimplifier childTransformers first second = do
     injSimplifier <- Simplifier.askInjSimplifier
-    OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
+    overloadSimplifier <- Simplifier.askOverloadSimplifier
     tools <- Simplifier.askMetadataTools
-    worker injSimplifier isOverloaded tools
+    worker injSimplifier overloadSimplifier tools
   where
-    worker injSimplifier isOverloaded tools
+    worker injSimplifier overloadSimplifier tools
         | Just unifyData <- matchExpandAlias first second =
             let UnifyExpandAlias{term1, term2} = unifyData
              in maybeTermAnd
@@ -293,13 +289,10 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ unifySortInjection childTransformers first second unifyData
         | Just () <- matchConstructorSortInjectionAndEquals first second =
             lift $ constructorSortInjectionAndEquals first second
-        | Just () <- matchDifferentConstructors isOverloaded first second =
+        | Just () <- matchDifferentConstructors overloadSimplifier first second =
             lift $ constructorAndEqualsAssumesDifferentHeads first second
-        | otherwise =
-            overloadedConstructorSortInjectionAndEquals childTransformers first second
-                <|> rest tools
-
-    rest tools
+        | Just unifyData <- unifyOverloading overloadSimplifier (Pair first second) =
+            lift $ overloadedConstructorSortInjectionAndEquals childTransformers first second unifyData
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd first second =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers first boolAndData
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
@@ -743,17 +736,13 @@ overloadedConstructorSortInjectionAndEquals ::
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
-    do
-        eunifier <-
-            lift . Error.runExceptT $
-                unifyOverloading (Pair firstTerm secondTerm)
-        case eunifier of
-            Right (Simple (Pair firstTerm' secondTerm')) ->
-                lift $
-                    termMerger firstTerm' secondTerm'
-            Right
+    MatchResult ->
+    unifier (Pattern RewritingVariableName)
+overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm unifyData =
+    case unifyData of
+            Resolution (Simple (Pair firstTerm' secondTerm')) ->
+                termMerger firstTerm' secondTerm'
+            Resolution
                 ( WithNarrowing
                         Narrowing
                             { narrowingSubst
@@ -761,25 +750,21 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                             , overloadPair = Pair firstTerm' secondTerm'
                             }
                     ) -> do
-                    boundPattern <- lift $ do
+                    boundPattern <- do
                         merged <- termMerger firstTerm' secondTerm'
                         Exists.makeEvaluate SideCondition.topTODO narrowingVars $
                             merged `Pattern.andCondition` narrowingSubst
                     case OrPattern.toPatterns boundPattern of
                         [result] -> return result
-                        [] ->
-                            lift $
-                                explainAndReturnBottom
+                        [] -> explainAndReturnBottom
                                     ( "exists simplification for overloaded"
                                         <> " constructors returned no pattern"
                                     )
                                     firstTerm
                                     secondTerm
-                        _ -> empty
-            Left (Clash message) ->
-                lift $
-                    explainAndReturnBottom (fromString message) firstTerm secondTerm
-            Left Overloading.NotApplicable -> empty
+                        _ -> scatter boundPattern
+            ClashResult message ->
+                explainAndReturnBottom (fromString message) firstTerm secondTerm
 
 data DVConstrError
     = DVConstr

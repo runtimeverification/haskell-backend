@@ -19,6 +19,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 import Prelude.Kore hiding (
@@ -114,12 +115,12 @@ and
 when @f /= g@ and @f,g@ either have the @constructor@ attribute or are overloaded.
 -}
 matchDifferentConstructors ::
-    (Symbol -> Bool) ->
+    OverloadSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe ()
 matchDifferentConstructors
-    isOverloaded
+    OverloadSimplifier{isOverloaded}
     first
     second
         | App_ firstHead _ <- first
