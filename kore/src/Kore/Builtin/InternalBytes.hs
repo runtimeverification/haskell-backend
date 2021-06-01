@@ -30,6 +30,10 @@ module Kore.Builtin.InternalBytes (
 import Control.Error (
     MaybeT,
  )
+import Control.Exception (
+    evaluate,
+    try,
+ )
 import Data.ByteString (
     ByteString,
  )
@@ -48,6 +52,7 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
 import Data.Word (
     Word8,
  )
@@ -69,7 +74,11 @@ import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import qualified Kore.Verified as Verified
+import Log (MonadLog)
 import Prelude.Kore
+import System.IO.Unsafe (
+    unsafeDupablePerformIO,
+ )
 
 {- | Verify that the sort is hooked to the @Bytes@ sort.
  | See also: 'sort', 'Builtin.verifySort'.
@@ -234,19 +243,33 @@ evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
         | [_strTerm, _bytesTerm] <- applicationChildren app = do
             let Application{applicationSymbolOrAlias = symbol} = app
                 resultSort = symbolSorts symbol & applicationSortsResult
-                returnResult = return . String.asPattern resultSort
             _str <- String.expectBuiltinString decodeBytesKey _strTerm
             _bytes <- matchBuiltinBytes _bytesTerm
-            case Text.unpack _str of
-                "UTF-8" -> case Text.decodeUtf8' _bytes of
-                    Right str -> returnResult str
-                    Left _ -> return (Pattern.bottomOf resultSort) -- UnicodeException
-                "UTF-16LE" -> returnResult $ Text.decodeUtf16LE _bytes
-                "UTF-16BE" -> returnResult $ Text.decodeUtf16BE _bytes
-                "UTF-32LE" -> returnResult $ Text.decodeUtf32LE _bytes
-                "UTF-32BE" -> returnResult $ Text.decodeUtf32BE _bytes
-                _ -> warnNotImplemented app >> empty
+            decodeBytes app resultSort (Text.unpack _str) _bytes
     evalDecodeBytes0 _ _ = Builtin.wrongArity decodeBytesKey
+
+decodeBytes ::
+    MonadLog unify =>
+    InternalVariable variable =>
+    Application Symbol (TermLike variable) ->
+    Sort ->
+    String ->
+    ByteString ->
+    MaybeT unify (Pattern.Pattern variable)
+decodeBytes app resultSort decoding = fmap (handleError . performDecode) . decode
+  where
+    performDecode :: Text -> Either Text.UnicodeException Text
+    performDecode = unsafeDupablePerformIO . try . evaluate
+    handleError = \case
+        Right str -> String.asPattern resultSort str
+        Left _ -> Pattern.bottomOf resultSort -- UnicodeException
+    decode = case decoding of
+        "UTF-8" -> return . Text.decodeUtf8
+        "UTF-16LE" -> return . Text.decodeUtf16LE
+        "UTF-16BE" -> return . Text.decodeUtf16BE
+        "UTF-32LE" -> return . Text.decodeUtf32LE
+        "UTF-32BE" -> return . Text.decodeUtf32BE
+        _ -> const (warnNotImplemented app >> empty)
 
 evalEncodeBytes :: BuiltinAndAxiomSimplifier
 evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
