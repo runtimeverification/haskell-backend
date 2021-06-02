@@ -256,20 +256,19 @@ decodeBytes ::
     String ->
     ByteString ->
     MaybeT unify (Pattern.Pattern variable)
-decodeBytes app resultSort decoding = fmap (handleError . performDecode) . decode
+decodeBytes app resultSort = \case
+    "UTF-8" -> return . handleError . tryDecode . Text.decodeUtf8
+    "UTF-16LE" -> return . handleError . tryDecode . Text.decodeUtf16LE
+    "UTF-16BE" -> return . handleError . tryDecode . Text.decodeUtf16BE
+    "UTF-32LE" -> return . handleError . tryDecode . Text.decodeUtf32LE
+    "UTF-32BE" -> return . handleError . tryDecode . Text.decodeUtf32BE
+    _ -> const (warnNotImplemented app >> empty)
   where
-    performDecode :: Text -> Either Text.UnicodeException Text
-    performDecode = unsafeDupablePerformIO . try . evaluate
+    tryDecode :: Text -> Either Text.UnicodeException Text
+    tryDecode = unsafeDupablePerformIO . try . evaluate
     handleError = \case
         Right str -> String.asPattern resultSort str
-        Left _ -> Pattern.bottomOf resultSort -- UnicodeException
-    decode = case decoding of
-        "UTF-8" -> return . Text.decodeUtf8
-        "UTF-16LE" -> return . Text.decodeUtf16LE
-        "UTF-16BE" -> return . Text.decodeUtf16BE
-        "UTF-32LE" -> return . Text.decodeUtf32LE
-        "UTF-32BE" -> return . Text.decodeUtf32BE
-        _ -> const (warnNotImplemented app >> empty)
+        Left _ -> Pattern.bottomOf resultSort
 
 evalEncodeBytes :: BuiltinAndAxiomSimplifier
 evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
