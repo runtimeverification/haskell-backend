@@ -17,6 +17,7 @@ module Kore.Step.Simplification.Overloading (
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Except (
     ExceptT,
+    throwE,
  )
 import Data.Text (
     Text,
@@ -132,6 +133,7 @@ matchOverloading termPair = do
     overloadSimplifier <- askOverloadSimplifier
     case unifyOverloading overloadSimplifier termPair of
         Just (Resolution (Simple pair)) -> return pair
+        Just (ClashResult msg) -> throwE $ Clash msg
         _ -> empty
 
 {- |
@@ -217,6 +219,7 @@ unifyOverloading overloadSimplifier termPair = case termPair of
         notUnifiableError child
       where
         OverloadSimplifier{isOverloaded} = overloadSimplifier
+{-# INLINE unifyOverloading #-}
 
 {- Handles the case
     inj{S1,injTo}(firstHead(firstChildren))

@@ -400,10 +400,9 @@ doesn'tMatch ::
     TermLike RewritingVariableName ->
     String ->
     TestTree
-doesn'tMatch comment term1 term2 _ =
-    --reason =
+doesn'tMatch comment term1 term2 reason =
     withMatching
-        (assertEqual "" (Left NotApplicable)) --(Left (Clash reason))) TODO:fix
+        (assertEqual "" (Left (Clash reason)))
         comment
         (Pair term1 term2)
 
