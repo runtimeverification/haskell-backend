@@ -29,7 +29,6 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    fromPredicate_,
     makeAndPredicate,
     makeCeilPredicate,
     makeEqualsPredicate,
@@ -101,26 +100,6 @@ test_andTermsSimplification =
                     , [Pattern.bottom]
                     )
             actual <- simplifyUnify mkBottom_ fOfA
-            assertEqual "" expect actual
-        , testCase "\\and{b}(\\not{b}(\\equals{s, s}(a, b)), \\equals{s, s}(a, b))" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , [Pattern.bottom]
-                    )
-            actual <-
-                simplifyUnify
-                    ( makeNotPredicate
-                        ( makeEqualsPredicate
-                            xVar
-                            (mkElemVar Mock.yConfig)
-                        )
-                        & fromPredicate_
-                    )
-                    ( makeEqualsPredicate
-                        xVar
-                        (mkElemVar Mock.yConfig)
-                        & fromPredicate_
-                    )
             assertEqual "" expect actual
         ]
     , testCase "equal patterns and" $ do
