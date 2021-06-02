@@ -80,8 +80,11 @@ simplifyPredicateTODO sideCondition predicate = do
                 , unparse conditional
                 ]
 
-type DisjunctiveNormalForm =
-    MultiOr (MultiAnd (Predicate RewritingVariableName))
+-- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
+-- The primary purpose of this form is to transmit to the external solver.
+-- Note that this is almost, but not quite, disjunctive normal form; see
+-- 'simplifyNot' for the most notable exception.
+type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
 simplify ::
     forall simplifier.
@@ -90,18 +93,18 @@ simplify ::
     ) =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    simplifier DisjunctiveNormalForm
+    simplifier NormalForm
 simplify sideCondition =
     loop . MultiOr.singleton . MultiAnd.singleton
   where
-    loop :: DisjunctiveNormalForm -> simplifier DisjunctiveNormalForm
+    loop :: NormalForm -> simplifier NormalForm
     loop input = do
         output <- MultiAnd.traverseOrAnd worker input
         (if input == output then pure else loop) output
 
     worker ::
         Predicate RewritingVariableName ->
-        simplifier DisjunctiveNormalForm
+        simplifier NormalForm
     worker predicate =
         case predicateF of
             AndF andF -> normalizeAnd =<< traverse worker andF
@@ -115,49 +118,42 @@ simplify sideCondition =
       where
         _ :< predicateF = Recursive.project predicate
 
+-- | See 'normalizeMultiAnd'.
 normalizeAnd ::
     Applicative simplifier =>
-    And sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
-normalizeAnd andOr =
-    pure . MultiOr.observeAll $ do
-        -- andOr: \and(\or(_, _), \or(_, _))
-        andAnd <- traverse Logic.scatter andOr
-        -- andAnd: \and(\and(_, _), \and(_, _))
-        let multiAnd = fold andAnd
-        pure multiAnd
+    And sort NormalForm ->
+    simplifier NormalForm
+normalizeAnd = normalizeMultiAnd . foldMap MultiAnd.singleton
 
-normalizeOr ::
-    Applicative simplifier =>
-    Or sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
-normalizeOr = pure . fold
-
-normalizeBottom ::
-    Applicative simplifier =>
-    Bottom sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
-normalizeBottom _ = pure MultiOr.bottom
-
-normalizeTop ::
-    Applicative simplifier =>
-    Top sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
-normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
-
-simplifyNot ::
-    Monad simplifier =>
-    Not sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
-simplifyNot notF@Not{notChild, notSort}
-    | TopBottom.isTop notChild = normalizeBottom Bottom{bottomSort = notSort}
-    | TopBottom.isBottom notChild = normalizeTop Top{topSort = notSort}
-    | otherwise = normalizeNot notF
-
+-- | @normalizeAnd@ obeys these laws:
+--
+-- Distribution:
+--
+-- @
+-- \\and(\\or(P[1], P[2]), P[3]) = \\or(\\and(P[1], P[3]), \\and(P[2], P[3]))
+-- @
+--
+-- Identity:
+--
+-- @
+-- \\and(\\top, P[1]) = P[1]
+-- @
+--
+-- Annihilation:
+--
+-- @
+-- \\and(\\bottom, _) = \\bottom
+-- @
+--
+-- Idempotence:
+--
+-- @
+-- \\and(P[1], P[1]) = P[1]
+-- @
 normalizeMultiAnd ::
     Applicative simplifier =>
-    MultiAnd DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
+    MultiAnd NormalForm ->
+    simplifier NormalForm
 normalizeMultiAnd andOr =
     pure . MultiOr.observeAll $ do
         -- andOr: \and(\or(_, _), \or(_, _))
@@ -165,45 +161,130 @@ normalizeMultiAnd andOr =
         -- andAnd: \and(\and(_, _), \and(_, _))
         pure (fold andAnd)
 
-normalizeNot ::
+-- | If the arguments of 'Or' are already in 'NormalForm', then normalization is
+-- trivial.
+--
+-- @normalizeOr@ obeys these laws:
+--
+-- Identity:
+--
+-- @
+-- \\or(\\bottom, P[1]) = P[1]
+-- @
+--
+-- Annihilation:
+--
+-- @
+-- \\or(\\top, _) = \\top
+-- @
+--
+-- Idempotence:
+--
+-- @
+-- \\or(P[1], P[1]) = P[1]
+-- @
+normalizeOr ::
+    Applicative simplifier =>
+    Or sort NormalForm ->
+    simplifier NormalForm
+normalizeOr = pure . fold
+
+-- | 'Bottom' is regarded as trivially-normalizable.
+normalizeBottom ::
+    Applicative simplifier =>
+    Bottom sort NormalForm ->
+    simplifier NormalForm
+normalizeBottom _ = pure MultiOr.bottom
+
+-- | 'Top' is regarded as trivially-normalizable.
+normalizeTop ::
+    Applicative simplifier =>
+    Top sort NormalForm ->
+    simplifier NormalForm
+normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
+
+-- | @simplifyNot@ obeys these laws:
+--
+-- 'Top':
+--
+-- @
+-- \\not(\\top) = \\bottom
+-- @
+--
+-- 'Bottom':
+--
+-- @
+-- \\not(\\bottom) = \\top
+-- @
+--
+-- 'Not':
+--
+-- @
+-- \\not(\\not(P)) = P
+-- @
+--
+-- 'Or':
+--
+-- @
+-- \\not(\\or(P[1], P[2])) = \\and(\\not(P[1]), \\not(P[2]))
+-- @
+--
+-- @simplifyNot@ does not expand @\not(\and(_, _))@ into @\or(_, _)@, because
+-- the purpose of simplification is mostly to prepare 'Predicate' for the
+-- external solver or for the user, and the un-expanded form is more compact.
+simplifyNot ::
     forall simplifier sort.
     Monad simplifier =>
-    Not sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
-normalizeNot = normalizeNotOr
+    Not sort NormalForm ->
+    simplifier NormalForm
+simplifyNot Not{notChild = multiOr, notSort} = do
+    disjunctiveNormalForms <- Logic.observeAllT $ do
+        multiAnd <- Logic.scatter multiOr
+        normalizeNotAnd Not{notSort, notChild = multiAnd} & lift
+    normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
+
+normalizeNotAnd ::
+    forall simplifier sort.
+    Monad simplifier =>
+    Not sort (MultiAnd (Predicate RewritingVariableName)) ->
+    simplifier NormalForm
+normalizeNotAnd Not{notSort, notChild = predicates} =
+    case toList predicates of
+        [] ->
+            -- \not(\top)
+            bottom
+        [predicate] ->
+            case predicateF of
+                NotF Not{notChild = result} ->
+                    MultiAnd.fromPredicate result
+                        & MultiOr.singleton
+                        & pure
+                _ -> fallback
+          where
+            _ :< predicateF = Recursive.project predicate
+        _ -> fallback
   where
-    normalizeNotOr Not{notChild = multiOr, notSort} = do
-        disjunctiveNormalForms <- Logic.observeAllT $ do
-            multiAnd <- Logic.scatter multiOr
-            normalizeNotAnd Not{notSort, notChild = multiAnd} & lift
-        normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
-    normalizeNotAnd ::
-        Not sort (MultiAnd (Predicate RewritingVariableName)) ->
-        simplifier DisjunctiveNormalForm
-    normalizeNotAnd Not{notChild = predicates} =
-        normalized
+    fallback =
+        -- \not(\and(_, ...))
+        MultiAnd.toPredicate predicates
+            & fromNot
+            & Predicate.markSimplified
+            & MultiAnd.singleton
             & MultiOr.singleton
             & pure
-      where
-        fallback =
-            (fromNot $ MultiAnd.toPredicate predicates)
-                & Predicate.markSimplified
-                & MultiAnd.singleton
-        normalized =
-            case toList predicates of
-                [predicate] ->
-                    case predicateF of
-                        NotF Not{notChild = result} ->
-                            MultiAnd.fromPredicate result
-                        _ -> fallback
-                  where
-                    _ :< predicateF = Recursive.project predicate
-                _ -> fallback
+    bottom = normalizeBottom Bottom{bottomSort = notSort}
 
+-- |
+-- @
+-- \\implies(L, R) = \\or(\\not(L), \\and(L, R))
+-- @
+--
+-- Note: @L@ is carried through to the right-hand side of 'Implies' to maximize
+-- the information content of that branch.
 simplifyImplies ::
     Monad simplifier =>
-    Implies sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
+    Implies sort NormalForm ->
+    simplifier NormalForm
 simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort}
     | TopBottom.isTop impliesFirst = pure impliesSecond
     | TopBottom.isBottom impliesFirst = normalizeTop Top{topSort = impliesSort}
@@ -223,10 +304,14 @@ simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort}
                     }
         pure (impliesFirst' <> impliesSecond')
 
+-- |
+-- @
+-- \\iff(P[1], P[2]) = \\and(\\implies(P[1], P[2]), \\implies(P[2], P[1]))
+-- @
 simplifyIff ::
     Monad simplifier =>
-    Iff sort DisjunctiveNormalForm ->
-    simplifier DisjunctiveNormalForm
+    Iff sort NormalForm ->
+    simplifier NormalForm
 simplifyIff Iff{iffFirst, iffSecond, iffSort}
     | TopBottom.isTop iffFirst = pure iffSecond
     | TopBottom.isBottom iffFirst = mkNotSimplified iffSecond
