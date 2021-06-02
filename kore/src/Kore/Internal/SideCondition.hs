@@ -3,9 +3,9 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 module Kore.Internal.SideCondition (
-    SideCondition (assumedTrue), -- Constructor not exported on purpose
-    addPredicate,
-    addPredicates,
+    SideCondition, -- Constructor not exported on purpose
+    addAssumption,
+    addAssumptions,
     assumeTrue,
     constructReplacements,
     fromConditionWithReplacements,
@@ -233,24 +233,24 @@ assumeTrue assumedTrue =
  'SideCondition'.
  Does not modify the replacement table or the set of defined terms.
 -}
-addPredicate ::
+addAssumption ::
     Ord variable =>
     Predicate variable ->
     SideCondition variable ->
     SideCondition variable
-addPredicate predicate =
-    addPredicates (MultiAnd.singleton predicate)
+addAssumption predicate =
+    addAssumptions (MultiAnd.singleton predicate)
 
 {- | Assumes a conjunction of 'Predicate's to be true in the context
  of another 'SideCondition'.
  Does not modify the replacement table or the set of defined terms.
 -}
-addPredicates ::
+addAssumptions ::
     Ord variable =>
     MultiAnd (Predicate variable) ->
     SideCondition variable ->
     SideCondition variable
-addPredicates predicates sideCondition =
+addAssumptions predicates sideCondition =
     sideCondition
         { assumedTrue =
             predicates <> assumedTrue sideCondition

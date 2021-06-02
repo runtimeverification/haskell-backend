@@ -181,7 +181,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         simplifiedSideCond <- State.get
         let otherSideConds =
-                SideCondition.addPredicates
+                SideCondition.addAssumptions
                     ( from @_ @(MultiAnd (Predicate _)) simplifiedSideCond
                         <> unsimplifiedSideCond
                     )
