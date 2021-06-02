@@ -488,11 +488,11 @@ test_unifyStringEq =
             assertEqual "" [expect{term = ()}] actual
         -- integration test (see #2586)
         do
-          actual <-
-            makeInPredicate term1 term2
-              & Condition.fromPredicate
-              & simplifyCondition'
-          assertEqual "" [expect{term = ()}] actual
+            actual <-
+                makeInPredicate term1 term2
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
     , testCase "\\equals(true, X ==String Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqString (mkElemVar x) (mkElemVar y)
