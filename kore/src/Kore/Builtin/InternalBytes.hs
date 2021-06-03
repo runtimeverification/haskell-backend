@@ -248,12 +248,13 @@ evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
             decodeUtf app resultSort (Text.unpack _str) _bytes
     evalDecodeBytes0 _ _ = Builtin.wrongArity decodeBytesKey
 
--- | Decode a ByteString using UTF-8, UTF-16LE, UTF-16BE,
--- UTF-32LE or UTF-32BE. If the decoding format is invalid,
--- warn not implemented. If the ByteString contains any invalid
--- UTF-* data, bottom is returned, otherwise the decoded text.
--- See <https://hackage.haskell.org/package/text-1.2.4.1/docs/Data-Text-Encoding.html#v:decodeUtf8-39- decodeUtf8'>
--- implementation for more information about 'tryDecode'.
+{- | Decode a ByteString using UTF-8, UTF-16LE, UTF-16BE,
+ UTF-32LE or UTF-32BE. If the decoding format is invalid,
+ warn not implemented. If the ByteString contains any invalid
+ UTF-* data, bottom is returned, otherwise the decoded text.
+ See <https://hackage.haskell.org/package/text-1.2.4.1/docs/Data-Text-Encoding.html#v:decodeUtf8-39- decodeUtf8'>
+ implementation for more information about 'tryDecode'.
+-}
 decodeUtf ::
     MonadLog unify =>
     InternalVariable variable =>
