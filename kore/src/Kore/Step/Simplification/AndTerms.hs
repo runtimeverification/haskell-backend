@@ -789,7 +789,6 @@ data DVConstrError
 @
 
 when @f@ is a constructor.
-
 -}
 matchDomainValueAndConstructorErrors ::
     TermLike RewritingVariableName ->
@@ -925,13 +924,11 @@ unifyStringLiteral term1 term2 unifyData
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 
-
-{-| Matches
+{- | Matches
 
 @
 \\and{_}(f(_), g(_))
 @
-
 -}
 matchFunctionAnd ::
     TermLike RewritingVariableName ->

@@ -818,7 +818,6 @@ matchUnifyEqualsNormalizedAc
                             opaqueDifference2
             _ -> Nothing
       where
-
         matchUnifyOpaqueVariable' =
             matchUnifyOpaqueVariable tools
 

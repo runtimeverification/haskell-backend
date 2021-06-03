@@ -419,7 +419,6 @@ data UnifyEqualsList
 @
 
 or similarly with \\and.
-
 -}
 matchUnifyEqualsList ::
     SmtMetadataTools Attribute.Symbol ->
