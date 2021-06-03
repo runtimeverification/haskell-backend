@@ -245,10 +245,16 @@ evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
                 resultSort = symbolSorts symbol & applicationSortsResult
             _str <- String.expectBuiltinString decodeBytesKey _strTerm
             _bytes <- matchBuiltinBytes _bytesTerm
-            decodeBytes app resultSort (Text.unpack _str) _bytes
+            decodeUtf app resultSort (Text.unpack _str) _bytes
     evalDecodeBytes0 _ _ = Builtin.wrongArity decodeBytesKey
 
-decodeBytes ::
+-- | Decode a ByteString using UTF-8, UTF-16LE, UTF-16BE,
+-- UTF-32LE or UTF-32BE. If the decoding format is invalid,
+-- warn not implemented. If the ByteString contains any invalid
+-- UTF-* data, bottom is returned, otherwise the decoded text.
+-- See <https://hackage.haskell.org/package/text-1.2.4.1/docs/Data-Text-Encoding.html#v:decodeUtf8-39- decodeUtf8'>
+-- implementation for more information about 'tryDecode'.
+decodeUtf ::
     MonadLog unify =>
     InternalVariable variable =>
     Application Symbol (TermLike variable) ->
@@ -256,7 +262,7 @@ decodeBytes ::
     String ->
     ByteString ->
     MaybeT unify (Pattern.Pattern variable)
-decodeBytes app resultSort = \case
+decodeUtf app resultSort = \case
     "UTF-8" -> return . handleError . tryDecode . Text.decodeUtf8
     "UTF-16LE" -> return . handleError . tryDecode . Text.decodeUtf16LE
     "UTF-16BE" -> return . handleError . tryDecode . Text.decodeUtf16BE
