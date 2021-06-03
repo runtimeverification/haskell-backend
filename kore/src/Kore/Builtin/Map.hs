@@ -528,6 +528,8 @@ data UnifyEqualsMap
     = ReturnBottom
     | NormAc !NormAcData
 
+{- | Matches two concrete Map domain values.
+-}
 matchUnifyEquals ::
     SmtMetadataTools Attribute.Symbol ->
     TermLike RewritingVariableName ->
@@ -568,9 +570,6 @@ matchUnifyEquals tools first second
 When it is used for simplifying equality, one should separately solve the
 case ⊥ = ⊥. One should also throw away the term in the returned pattern.
 
-The maps are assumed to have the same sort, but this is not checked. If
-multiple sorts are hooked to the same builtin domain, the verifier should
-reject the definition.
 -}
 unifyEquals ::
     forall unifier.
@@ -634,6 +633,15 @@ data UnifyNotInKeysResult
     = UnifyNotInKeys1
     | UnifyNotInKeys2 !UnifyNotInKeys
 
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}(false), inKeys(map, key))
+@
+
+when @key@ does not belong to the keys of @map@.
+
+-}
 matchUnifyNotInKeys ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

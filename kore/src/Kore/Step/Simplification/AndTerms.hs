@@ -770,6 +770,27 @@ data DVConstrError
     = DVConstr
     | ConstrDV
 
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{_}(_), f(_))
+@
+
+@
+\\equals{_, _}(f(_), \\dv{_}(_))
+@
+
+@
+\\and{_}(\\dv{_}(_), f(_))
+@
+
+@
+\\and{_}(f(_), \\dv{_}(_))
+@
+
+when @f@ is a constructor.
+
+-}
 matchDomainValueAndConstructorErrors ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -904,6 +925,14 @@ unifyStringLiteral term1 term2 unifyData
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 
+
+{-| Matches
+
+@
+\\and{_}(f(_), g(_))
+@
+
+-}
 matchFunctionAnd ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

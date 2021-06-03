@@ -78,6 +78,8 @@ data UnifyEqualsSignedness = UnifyEqualsSignedness
     { sign1, sign2 :: Signedness
     }
 
+{- | Matches two terms having the Signedness constructor.
+-}
 matchUnifyEqualsSignedness ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->

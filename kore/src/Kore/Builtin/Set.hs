@@ -532,6 +532,8 @@ data UnifyEqualsMap
     = ReturnBottom
     | NormAc !NormAcData
 
+{- | Matches two concrete Set domain values.
+-}
 matchUnifyEquals ::
     SmtMetadataTools Attribute.Symbol ->
     TermLike RewritingVariableName ->

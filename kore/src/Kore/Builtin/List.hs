@@ -400,6 +400,27 @@ data UnifyEqualsList
     | ListList !ListListData
     | ListApp !ListAppData
 
+{- | Matches two lists of the following patterns:
+
+@
+\\equals{_, _}(x, f(y))
+@
+
+@
+\\equals{_, _}(concat(args1), concat(args2))
+@
+
+@
+\\equals{_, _}(list1, list2)
+@
+
+@
+\\equals{_, _}(list1, concat(args2))
+@
+
+or similarly with \\and.
+
+-}
 matchUnifyEqualsList ::
     SmtMetadataTools Attribute.Symbol ->
     TermLike RewritingVariableName ->

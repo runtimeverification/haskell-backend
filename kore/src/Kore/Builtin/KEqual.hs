@@ -228,11 +228,6 @@ data UnifyKequalsEq = UnifyKequalsEq
     , value :: !Bool
     }
 
-{- | Matches two terms when second is a bool term
-    and the first is a function pattern matching
-    the @KEQUAL.eq@ hooked symbol.
--}
-
 {- | Matches
 
 @

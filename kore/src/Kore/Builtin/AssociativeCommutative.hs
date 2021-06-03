@@ -818,32 +818,6 @@ matchUnifyEqualsNormalizedAc
                             opaqueDifference2
             _ -> Nothing
       where
-        --    (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
-        --                 ([], []) ->
-        --                     lift $
-        --                         unifyEqualsElementLists'
-        --                             allElements1
-        --                             allElements2
-        --                             Nothing
-        --                 ([ElemVar_ v1], _)
-        --                     | null opaqueDifference2 ->
-        --                         lift $
-        --                             unifyEqualsElementLists'
-        --                                 allElements1
-        --                                 allElements2
-        --                                 (Just v1)
-        --                     | null allElements1 ->
-        --                         unifyOpaqueVariable' v1 allElements2 opaqueDifference2
-        --                 (_, [ElemVar_ v2])
-        --                     | null opaqueDifference1 ->
-        --                         lift $
-        --                             unifyEqualsElementLists'
-        --                                 allElements2
-        --                                 allElements1
-        --                                 (Just v2)
-        --                     | null allElements2 ->
-        --                         unifyOpaqueVariable' v2 allElements1 opaqueDifference1
-        --                 _ -> empty
 
         matchUnifyOpaqueVariable' =
             matchUnifyOpaqueVariable tools
@@ -855,20 +829,6 @@ matchUnifyEqualsNormalizedAc
             HashMap.foldrWithKey
                 (\key count result -> replicate count key ++ result)
                 []
-
-        -- bottomWithExplanation :: Doc () -> unifier a
-        -- bottomWithExplanation explanation =
-        --     Monad.Unify.explainAndReturnBottom explanation first second
-
-        -- unifyEqualsElementLists' =
-        --     unifyEqualsElementLists
-        --         tools
-        --         first
-        --         second
-        --         unifyEqualsChildren
-
-        -- unifyOpaqueVariable' =
-        --     unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
 
         NormalizedAc
             { elementsWithVariables = preElementsWithVariables1
@@ -952,85 +912,6 @@ matchUnifyEqualsNormalizedAc
                 RewritingVariableName
         toConcretePat (a, b) =
             ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
-
--- unifyElementList ::
---     forall key.
---     [ ( key
---       , ( Value normalized (TermLike RewritingVariableName)
---         , Value normalized (TermLike RewritingVariableName)
---         )
---       )
---     ] ->
---     unifier
---         ( [(key, Value normalized (TermLike RewritingVariableName))]
---         , Condition RewritingVariableName
---         )
--- unifyElementList elements = do
---     result <- mapM (unifyCommonElements unifyEqualsChildren) elements
---     let terms :: [(key, Value normalized (TermLike RewritingVariableName))]
---         predicates :: [Condition RewritingVariableName]
---         (terms, predicates) = unzip (map Conditional.splitTerm result)
---         predicate :: Condition RewritingVariableName
---         predicate =
---             List.foldl'
---                 andCondition
---                 Condition.top
---                 predicates
-
--- return (terms, predicate)
-
--- simplify ::
---     TermLike RewritingVariableName ->
---     unifier (Pattern RewritingVariableName)
--- simplify term =
---     lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
-
--- simplifyPair ::
---     ( TermLike RewritingVariableName
---     , Value normalized (TermLike RewritingVariableName)
---     ) ->
---     unifier
---         ( Conditional
---             RewritingVariableName
---             ( TermLike RewritingVariableName
---             , Value normalized (TermLike RewritingVariableName)
---             )
---         )
--- simplifyPair (key, value) = do
---     simplifiedKey <- simplifyTermLike' key
---     let (keyTerm, keyCondition) = Conditional.splitTerm simplifiedKey
---     simplifiedValue <- traverse simplifyTermLike' value
---     let splitSimplifiedValue ::
---             Value
---                 normalized
---                 ( TermLike RewritingVariableName
---                 , Condition RewritingVariableName
---                 )
---         splitSimplifiedValue =
---             fmap Conditional.splitTerm simplifiedValue
---         simplifiedValueTerm ::
---             Value normalized (TermLike RewritingVariableName)
---         simplifiedValueTerm = fmap fst splitSimplifiedValue
---         simplifiedValueConditions ::
---             Value normalized (Condition RewritingVariableName)
---         simplifiedValueConditions = fmap snd splitSimplifiedValue
---         simplifiedValueCondition :: Condition RewritingVariableName
---         simplifiedValueCondition =
---             foldr
---                 andCondition
---                 Condition.top
---                 simplifiedValueConditions
---     return
---         ( (keyTerm, simplifiedValueTerm)
---             `withCondition` keyCondition
---             `andCondition` simplifiedValueCondition
---         )
---   where
---     simplifyTermLike' ::
---         TermLike RewritingVariableName ->
---         unifier (Pattern RewritingVariableName)
---     simplifyTermLike' term =
---         lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
 {- | Unifies two AC structs represented as @NormalizedAc@.
 
@@ -1168,45 +1049,6 @@ unifyEqualsNormalizedAc
         commonOpaqueMap = HashMap.intersectionWith max opaque1Map opaque2Map
 
         commonOpaque = mapToList commonOpaqueMap
-        -- commonOpaqueKeys = HashMap.keysSet commonOpaqueMap
-
-        -- elementDifference1 =
-        --     HashMap.toList (HashMap.difference concreteElements1 commonElements)
-        -- elementDifference2 =
-        --     HashMap.toList (HashMap.difference concreteElements2 commonElements)
-        -- elementVariableDifference1 =
-        --     HashMap.toList (HashMap.difference elementsWithVariables1Map commonVariables)
-        -- elementVariableDifference2 =
-        --     HashMap.toList (HashMap.difference elementsWithVariables2Map commonVariables)
-        -- opaqueDifference1 =
-        --     mapToList (withoutKeys opaque1Map commonOpaqueKeys)
-        -- opaqueDifference2 =
-        --     mapToList (withoutKeys opaque2Map commonOpaqueKeys)
-
-        -- withoutKeys ::
-        --     Hashable k =>
-        --     Eq k =>
-        --     HashMap k v ->
-        --     HashSet k ->
-        --     HashMap k v
-        -- withoutKeys hmap (HashSet.toList -> hset) =
-        --     let keys = zip hset (repeat ()) & HashMap.fromList
-        --      in hmap `HashMap.difference` keys
-
-        -- allElements1 =
-        --     map WithVariablePat elementVariableDifference1
-        --         ++ map toConcretePat elementDifference1
-        -- allElements2 =
-        --     map WithVariablePat elementVariableDifference2
-        --         ++ map toConcretePat elementDifference2
-
-        -- toConcretePat ::
-        --     (Key, Value normalized (TermLike RewritingVariableName)) ->
-        --     ConcreteOrWithVariable
-        --         normalized
-        --         RewritingVariableName
-        -- toConcretePat (a, b) =
-        --     ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
 
         unifyElementList ::
             forall key.

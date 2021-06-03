@@ -78,7 +78,8 @@ data UnifyEqualsEndianness = UnifyEqualsEndianness
     { end1, end2 :: Endianness
     }
 
---TODO:document
+{- | Matches two terms having the Endianness constructor.
+-}
 matchUnifyEqualsEndianness ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
