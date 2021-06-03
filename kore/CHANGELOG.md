@@ -14,6 +14,24 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.47.0.0] - 2021-06-02
+
+### Added
+
+- The hook `KEQUALS.neq` eagerly returns `false` when two symbolic patterns are
+  equal. (#2634)
+- The hooks `BYTES.decodeBytes` and `BYTES.encodeBytes` are implemented. (#2619)
+- The warning `WarnIfLowProductivity` indicates the definition where the warning
+  occurred. (#2594)
+- `kore-repl` records effect-ful commands from the current session when it
+  saves a bug report. (#2614)
+
+### Fixed
+
+- The definitions of functions in `prelude.kore` are rewritten in the format
+  expected by the LLVM backend. (#2629)
+- `\next` is correctly distributed over `\or` during simplification. (#2608)
+
 ## [0.45.0.0] - 2021-05-10
 
 ### Fixed
