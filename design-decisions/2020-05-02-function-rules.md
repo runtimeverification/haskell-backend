@@ -1,5 +1,7 @@
 # Interpretation of function rules
 
+Applying function rules in the form of equations is implemented in [`Kore.Equation.Application`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Equation/Application.hs).
+
 ## Purpose
 
 This document
