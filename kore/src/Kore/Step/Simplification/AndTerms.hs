@@ -491,9 +491,7 @@ variableFunctionAnd second unifyData =
         VariableFunctionAnd1 v -> return $ Pattern.assign (inject v) second
         VariableFunctionAnd2 v -> return $ Pattern.withCondition second result
           where
-            result =
-                Condition.fromSingleSubstitution
-                    (Substitution.assign (inject v) second)
+            result = Condition.assign (inject v) second
 
 {- | Matches
 
