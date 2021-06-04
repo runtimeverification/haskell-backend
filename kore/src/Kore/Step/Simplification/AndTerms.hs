@@ -17,7 +17,6 @@ import Control.Error (
     MaybeT (..),
  )
 import qualified Control.Error as Error
-import qualified Data.Functor.Foldable as Recursive
 import Data.String (
     fromString,
  )
@@ -27,6 +26,10 @@ import Data.Text (
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.Int as Builtin.Int
+import Kore.Builtin.InternalBytes (
+    matchBytes,
+    unifyBytes,
+ )
 import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
@@ -74,9 +77,6 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     SimplificationType (..),
  )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.PatternF (
-    Const (..),
- )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
@@ -156,7 +156,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just () <- matchEqualsAndEquals first second =
             lift $ equalAndEquals first
         | Just unifyData <- matchBytes first second =
-            lift $ bytesDifferent unifyData
+            lift $ unifyBytes unifyData
         | Just () <- matchBottomTermEquals first =
             lift $ bottomTermEquals SideCondition.topTODO first second
         | Just () <- matchBottomTermEquals second =
@@ -259,7 +259,7 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just () <- matchEqualsAndEquals first second =
             lift $ equalAndEquals first
         | Just unifyData <- matchBytes first second =
-            lift $ bytesDifferent unifyData
+            lift $ unifyBytes unifyData
         | Just unifyData <- matchVariableFunctionAnd first second =
             lift $ variableFunctionAnd second unifyData
         | Just unifyData <- matchVariableFunctionAnd second first =
@@ -911,40 +911,3 @@ compareForEquals first second
     | isConstructorLike first = LT
     | isConstructorLike second = GT
     | otherwise = compare first second
-
-data UnifyBytes = UnifyBytes
-    { bytes1, bytes2 :: InternalBytes
-    }
-
-{- | Matches
-
-@
-\\equals{_, _}(\\dv{Bytes}(bytes1), \\dv{Bytes}(bytes2))
-@
-
-and
-
-@
-\\and{_}(\\dv{Bytes}(bytes1), \\dv{Bytes}(bytes2))
-@
--}
-matchBytes ::
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    Maybe UnifyBytes
-matchBytes first second
-    | _ :< InternalBytesF (Const bytes1) <- Recursive.project first
-      , _ :< InternalBytesF (Const bytes2) <- Recursive.project second =
-        Just UnifyBytes{bytes1, bytes2}
-    | otherwise = Nothing
-{-# INLINE matchBytes #-}
-
-bytesDifferent ::
-    MonadUnify unifier =>
-    UnifyBytes ->
-    unifier (Pattern RewritingVariableName)
-bytesDifferent UnifyBytes{bytes1, bytes2}
-    | bytes1 == bytes2 =
-        return $ Pattern.fromTermLike $ mkInternalBytes' bytes1
-    | otherwise =
-        empty

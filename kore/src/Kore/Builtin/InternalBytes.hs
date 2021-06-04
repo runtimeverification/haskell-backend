@@ -10,6 +10,9 @@ module Kore.Builtin.InternalBytes (
     asInternal,
     internalize,
     asPattern,
+    UnifyBytes (..),
+    matchBytes,
+    unifyBytes,
 
     -- * Keys
     bytes2StringKey,
@@ -39,6 +42,7 @@ import Data.ByteString (
  )
 import qualified Data.ByteString as ByteString
 import Data.Functor.Const
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
@@ -67,11 +71,20 @@ import qualified Kore.Error
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Log.WarnNotImplemented
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier,
+ )
+import Kore.Unification.Unify (
+    MonadUnify,
  )
 import qualified Kore.Verified as Verified
 import Log (MonadLog)
@@ -546,3 +559,32 @@ builtinFunctions =
         , (int2bytesKey, evalInt2bytes)
         , (bytes2intKey, evalBytes2int)
         ]
+
+-- | @UnifyBytes@ matches unification problems on @\\dv{Bytes}(_)@ itself.
+data UnifyBytes = UnifyBytes
+    { bytes1, bytes2 :: InternalBytes
+    }
+
+{- | Matches the unification problem:
+
+@\\dv{Bytes}(bytes1)@ with @\\dv{Bytes}(bytes2)@.
+-}
+matchBytes ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyBytes
+matchBytes first second
+    | _ :< InternalBytesF (Const bytes1) <- Recursive.project first
+      , _ :< InternalBytesF (Const bytes2) <- Recursive.project second =
+        Just UnifyBytes{bytes1, bytes2}
+    | otherwise = Nothing
+{-# INLINE matchBytes #-}
+
+unifyBytes ::
+    MonadUnify unifier =>
+    UnifyBytes ->
+    unifier (Pattern RewritingVariableName)
+unifyBytes UnifyBytes{bytes1, bytes2}
+    | bytes1 == bytes2 = return $ Pattern.fromTermLike $ mkInternalBytes' bytes1
+    | otherwise = empty
+{-# INLINE unifyBytes #-}
