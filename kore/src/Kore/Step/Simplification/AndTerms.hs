@@ -825,22 +825,12 @@ cannotUnifyDomainValues ::
     unifier a
 cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
 
+-- | @UnifyStringLiteral@ represents unification of two string literals.
 data UnifyStringLiteral = UnifyStringLiteral
     { txt1, txt2 :: !Text
     }
 
-{- | Matches
-
-@
-\\equals{_, _}("str1", "str1")
-@
-
-and
-
-@
-\\and{_}("str1", "str2")
-@
--}
+-- | Matches the unification problem @"txt1"@ with @"txt2"@.
 matchStringLiteral ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -852,13 +842,7 @@ matchStringLiteral first second
     | otherwise = Nothing
 {-# INLINE matchStringLiteral #-}
 
-{- | Unify two literal strings.
-
-The two patterns are assumed to be inequal; therefore this case always returns
-@\\bottom@.
-
-See also: 'equalAndEquals'
--}
+-- | Finish solving the 'UnifyStringLiteral' problem.
 unifyStringLiteral ::
     forall unifier.
     MonadUnify unifier =>
