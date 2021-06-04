@@ -44,9 +44,6 @@ import Control.Monad.Reader (
     ReaderT,
  )
 import qualified Control.Monad.Reader as Reader
-import Data.Functor (
-    (<&>),
- )
 import Data.Functor.Const
 import Data.Text (
     Text,

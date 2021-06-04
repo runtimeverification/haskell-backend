@@ -13,7 +13,6 @@ import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad (
     forever,
-    void,
  )
 import Control.Monad.Catch (
     MonadMask,

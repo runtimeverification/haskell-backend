@@ -11,9 +11,6 @@ module Kore.Repl.Parser (
     ReplParseError (..),
 ) where
 
-import Data.Functor (
-    void,
- )
 import Data.GraphViz (
     GraphvizOutput,
  )

@@ -23,9 +23,6 @@ module Kore.Log.KoreLogOptions (
 
 import qualified Data.Char as Char
 import Data.Default
-import Data.Functor (
-    void,
- )
 import Data.HashSet (
     HashSet,
  )
