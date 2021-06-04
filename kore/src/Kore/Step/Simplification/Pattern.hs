@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Pattern (
 import Control.Monad (
     (>=>),
  )
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -31,7 +30,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition (
-    andCondition,
+    addConditionWithReplacements,
     assumeDefined,
     top,
  )
@@ -123,19 +122,10 @@ makeEvaluate sideCondition pattern' =
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
-            simplifiedCondition' =
-                -- Combine the predicate and the substitution. The substitution
-                -- has already been applied to the term being simplified. This
-                -- is only to make SideCondition.andCondition happy, below,
-                -- because there might be substitution variables in
-                -- sideCondition. That's allowed because we are only going to
-                -- send the side condition to the solver, but we should probably
-                -- fix SideCondition.andCondition instead.
-                simplifiedCondition
-                    & Condition.toPredicate
-                    & Condition.fromPredicate
             termSideCondition =
-                sideCondition `SideCondition.andCondition` simplifiedCondition'
+                SideCondition.addConditionWithReplacements
+                    sideCondition
+                    simplifiedCondition
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition

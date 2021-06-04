@@ -4,11 +4,13 @@ License     : NCSA
 -}
 module Kore.Internal.SideCondition (
     SideCondition, -- Constructor not exported on purpose
-    fromCondition,
-    fromPredicate,
-    andCondition,
-    assumeTrueCondition,
-    assumeTruePredicate,
+    addAssumption,
+    addAssumptions,
+    assumeTrue,
+    constructReplacements,
+    fromConditionWithReplacements,
+    fromPredicateWithReplacements,
+    addConditionWithReplacements,
     mapVariables,
     top,
     topTODO,
@@ -202,45 +204,9 @@ instance From (SideCondition variable) (MultiAnd (Predicate variable)) where
 
 instance
     InternalVariable variable =>
-    From (MultiAnd (Predicate variable)) (SideCondition variable)
-    where
-    from multiAnd =
-        let (assumedTrue, Assumptions termReplacements predicateReplacements) =
-                simplifyConjunctionByAssumption multiAnd
-                    & extract
-            predicateReplacementsAsTerms =
-                mapKeysAndValues
-                    Predicate.fromPredicate_
-                    predicateReplacements
-            replacements =
-                termReplacements
-                    <> predicateReplacementsAsTerms
-         in SideCondition
-                { assumedTrue
-                , replacements
-                , definedTerms = mempty
-                }
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
     From (SideCondition variable) (Predicate variable)
     where
     from = toPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Predicate variable) (SideCondition variable)
-    where
-    from = fromPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Condition variable) (SideCondition variable)
-    where
-    from = fromCondition
     {-# INLINE from #-}
 
 instance
@@ -250,30 +216,56 @@ instance
     from = Condition.fromPredicate . toPredicate
     {-# INLINE from #-}
 
-top :: InternalVariable variable => SideCondition variable
-top =
+{- | Smart constructor for creating a 'SideCondition' by just assuming
+ a conjunction of predicates to be true.
+-}
+assumeTrue ::
+    MultiAnd (Predicate variable) ->
+    SideCondition variable
+assumeTrue assumedTrue =
     SideCondition
-        { assumedTrue = MultiAnd.top
-        , definedTerms = mempty
-        , replacements = mempty
+        { assumedTrue
+        , replacements = HashMap.empty
+        , definedTerms = HashSet.empty
         }
 
--- TODO(ana.pantilie): Should we look into removing this?
-
--- | A 'top' 'Condition' for refactoring which should eventually be removed.
-topTODO :: InternalVariable variable => SideCondition variable
-topTODO = top
-
-{- | A 'SideCondition' and a 'Condition' are combined by assuming
-their conjunction to be true, and creating a new table of replacements
-from the new predicate.
+{- | Assumes a single 'Predicate' to be true in the context of another
+ 'SideCondition'.
+ Does not modify the replacement table or the set of defined terms.
 -}
-andCondition ::
+addAssumption ::
+    Ord variable =>
+    Predicate variable ->
+    SideCondition variable ->
+    SideCondition variable
+addAssumption predicate =
+    addAssumptions (MultiAnd.singleton predicate)
+
+{- | Assumes a conjunction of 'Predicate's to be true in the context
+ of another 'SideCondition'.
+ Does not modify the replacement table or the set of defined terms.
+-}
+addAssumptions ::
+    Ord variable =>
+    MultiAnd (Predicate variable) ->
+    SideCondition variable ->
+    SideCondition variable
+addAssumptions predicates sideCondition =
+    sideCondition
+        { assumedTrue =
+            predicates <> assumedTrue sideCondition
+        }
+
+{- | Assumes a 'Condition' to be true in the context of another
+'SideCondition' and recalculates the term replacements table
+from the combined predicate.
+-}
+addConditionWithReplacements ::
     InternalVariable variable =>
     SideCondition variable ->
     Condition variable ->
     SideCondition variable
-andCondition
+addConditionWithReplacements
     sideCondition
     (from @(Condition _) @(MultiAnd _) -> newCondition) =
         let combinedConditions = oldCondition <> newCondition
@@ -295,17 +287,65 @@ andCondition
       where
         SideCondition{assumedTrue = oldCondition, definedTerms} = sideCondition
 
-assumeTrueCondition ::
+{- | Smart constructor for creating a 'SideCondition' by just constructing
+ the replacement table from a conjunction of predicates.
+-}
+constructReplacements ::
+    InternalVariable variable =>
+    MultiAnd (Predicate variable) ->
+    SideCondition variable
+constructReplacements predicates =
+    let (_, Assumptions termReplacements predicateReplacements) =
+            simplifyConjunctionByAssumption predicates
+                & extract
+        predicateReplacementsAsTerms =
+            mapKeysAndValues
+                Predicate.fromPredicate_
+                predicateReplacements
+        replacements =
+            termReplacements
+                <> predicateReplacementsAsTerms
+     in SideCondition
+            { assumedTrue = MultiAnd.top
+            , replacements
+            , definedTerms = HashSet.empty
+            }
+
+{- | Smart constructor for creating a `SideCondition` by assuming
+ a 'Condition' to be true and building its term replacement table.
+-}
+fromConditionWithReplacements ::
     InternalVariable variable =>
     Condition variable ->
     SideCondition variable
-assumeTrueCondition = fromCondition
+fromConditionWithReplacements (from -> predicates) =
+    constructReplacements predicates
+        & Lens.set (field @"assumedTrue") predicates
 
-assumeTruePredicate ::
+{- | Smart constructor for creating a `SideCondition` by assuming
+ a 'Predicate' to be true and building its term replacement table.
+-}
+fromPredicateWithReplacements ::
     InternalVariable variable =>
     Predicate variable ->
     SideCondition variable
-assumeTruePredicate = fromPredicate
+fromPredicateWithReplacements (from -> predicates) =
+    constructReplacements predicates
+        & Lens.set (field @"assumedTrue") predicates
+
+top :: InternalVariable variable => SideCondition variable
+top =
+    SideCondition
+        { assumedTrue = MultiAnd.top
+        , definedTerms = mempty
+        , replacements = mempty
+        }
+
+-- TODO(ana.pantilie): Should we look into removing this?
+
+-- | A 'top' 'Condition' for refactoring which should eventually be removed.
+topTODO :: InternalVariable variable => SideCondition variable
+topTODO = top
 
 toPredicate ::
     InternalVariable variable =>
@@ -324,12 +364,6 @@ toPredicate condition@(SideCondition _ _ _) =
             & fmap Predicate.makeCeilPredicate
             & MultiAnd.make
             & MultiAnd.toPredicate
-
-fromPredicate ::
-    InternalVariable variable =>
-    Predicate variable ->
-    SideCondition variable
-fromPredicate = from @(MultiAnd _) . MultiAnd.fromPredicate
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>
@@ -366,12 +400,6 @@ mapKeysAndValues f hashMap =
     HashMap.fromList $
         Bifunctor.bimap f f
             <$> HashMap.toList hashMap
-
-fromCondition ::
-    InternalVariable variable =>
-    Condition variable ->
-    SideCondition variable
-fromCondition = fromPredicate . Condition.toPredicate
 
 fromDefinedTerms ::
     InternalVariable variable =>

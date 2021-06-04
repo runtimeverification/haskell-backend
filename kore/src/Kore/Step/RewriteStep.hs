@@ -131,7 +131,9 @@ constructConfiguration appliedCondition finalPattern = do
     let ensuresCondition = Pattern.withoutTerm finalPattern
     finalCondition <-
         do
-            let sideCondition = SideCondition.fromCondition appliedCondition
+            let sideCondition =
+                    SideCondition.fromConditionWithReplacements
+                        appliedCondition
             partial <- simplifyCondition sideCondition ensuresCondition
             -- TODO (thomas.tuegel): It should not be necessary to simplify
             -- after conjoining the conditions.

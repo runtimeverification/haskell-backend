@@ -351,7 +351,7 @@ test_hasSimplifiedChildren =
             (Mock.f (mkElemVar Mock.x))
             Mock.a
             & Condition.fromPredicate
-            & SideCondition.fromCondition
+            & SideCondition.fromConditionWithReplacements
             & SideCondition.mkRepresentation
 
     setSimplifiedTerm = TermLike.setSimplified
