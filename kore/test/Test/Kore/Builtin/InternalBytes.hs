@@ -11,6 +11,9 @@ module Test.Kore.Builtin.InternalBytes (
     test_reverse_length,
     test_update_get,
     test_bytes2string_string2bytes,
+    test_decodeBytes_encodeBytes,
+    test_decodeBytes,
+    test_encodeBytes,
     test_int2bytes,
     test_bytes2int,
     test_InternalBytes,
@@ -522,6 +525,61 @@ test_bytes2string_string2bytes =
                         ]
                     ]
         (===) expect actual
+
+test_decodeBytes_encodeBytes :: [TestTree]
+test_decodeBytes_encodeBytes = map testProp encodings
+  where
+    testProp encoding =
+        testPropertyWithSolver "∀ s. decodeBytes (encodeBytes s) = s" $ do
+            str <- forAll genString
+            let expect = Test.String.asOrPattern str
+            actual <-
+                evaluateT $
+                    mkApplySymbol
+                        decodeBytesBytesSymbol
+                        [ Test.String.asInternal encoding
+                        , mkApplySymbol
+                            encodeBytesBytesSymbol
+                            [ Test.String.asInternal encoding
+                            , Test.String.asInternal str
+                            ]
+                        ]
+            (===) expect actual
+    encodings =
+        [ "UTF-8"
+        , "UTF-16LE"
+        , "UTF-16BE"
+        , "UTF-32LE"
+        , "UTF-32BE"
+        ]
+
+test_decodeBytes :: TestTree
+test_decodeBytes =
+    testBytes
+        "test bad decoding"
+        decodeBytesBytesSymbol
+        [ Test.String.asInternal "bad"
+        , asInternal ""
+        ]
+        ( OrPattern.fromTermLike $
+            mkApplySymbol
+                decodeBytesBytesSymbol
+                [Test.String.asInternal "bad", asInternal ""]
+        )
+
+test_encodeBytes :: TestTree
+test_encodeBytes =
+    testBytes
+        "test bad encoding"
+        encodeBytesBytesSymbol
+        [ Test.String.asInternal "bad"
+        , Test.String.asInternal ""
+        ]
+        ( OrPattern.fromTermLike $
+            mkApplySymbol
+                encodeBytesBytesSymbol
+                [Test.String.asInternal "bad", Test.String.asInternal ""]
+        )
 
 int2bytesData ::
     -- | (integer, big endian?, bytes)

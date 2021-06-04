@@ -137,6 +137,18 @@ test_KEqual =
             original = keqBool (mkBottom kSort) (mkTop kSort)
         actual <- evaluate original
         assertEqual' "" expect actual
+    , testCaseWithoutSMT "X ==K X" $ do
+        let xVar = mkElemVar $ configElementVariableFromId "x" kSort
+            expect = OrPattern.fromTermLike $ Test.Bool.asInternal True
+            original = keqBool xVar xVar
+        actual <- evaluate original
+        assertEqual' "" expect actual
+    , testCaseWithoutSMT "X =/=K X" $ do
+        let xVar = mkElemVar $ configElementVariableFromId "x" kSort
+            expect = OrPattern.fromTermLike $ Test.Bool.asInternal False
+            original = kneqBool xVar xVar
+        actual <- evaluate original
+        assertEqual' "" expect actual
     ]
 
 test_KIte :: [TestTree]

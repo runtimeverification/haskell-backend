@@ -998,3 +998,21 @@ using the provided value.
     hooked-symbol bytes2int{}(Bytes{}, Endianness{}, Signedness{}) : Int{}
         [hook{}("BYTES.bytes2int")]
 ~~~
+
+### BYTES.decodeBytes
+
+`BYTES.decodeBytes` supports `"UTF-8"`, `"UTF-16LE"`, `"UTF-16BE"`, `"UTF-32LE"`, and `"UTF-32BE"` as the first argument. If decoding UTF-8 and the input contains any invalid data then `bottom` is returned. If decoding UTF-16 or UTF-32 and the input contains any invalid data then an exception will be thrown.
+
+~~~
+    hooked-symbol decodeBytes{}(/* decoding */ String{}, /* contents */ Bytes{}) : String{}
+        [hook{}("BYTES.decodeBytes")]
+~~~
+
+### BYTES.encodeBytes
+
+`BYTES.encodeBytes` supports `"UTF-8"`, `"UTF-16LE"`, `"UTF-16BE"`, `"UTF-32LE"`, and `"UTF-32BE"` as the first argument.
+
+~~~
+    hooked-symbol encodeBytes{}(/* encoding */ String{}, /* contents */ String{}) : Bytes{}
+        [hook{}("BYTES.encodeBytes")]
+~~~
