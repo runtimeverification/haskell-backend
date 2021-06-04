@@ -260,10 +260,10 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ equalAndEquals first
         | Just unifyData <- matchBytes first second =
             lift $ unifyBytes unifyData
-        | Just unifyData <- matchVariableFunctionAnd first second =
-            lift $ variableFunctionAnd second unifyData
-        | Just unifyData <- matchVariableFunctionAnd second first =
-            lift $ variableFunctionAnd first unifyData
+        | Just matched <- matchVariables first second =
+            lift $ unifyVariables matched
+        | Just matched <- matchVariableFunction second first =
+            lift $ unifyVariableFunction matched
         | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
             lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
         | Just unifyData <- matchInj injSimplifier first second =
@@ -458,40 +458,54 @@ bottomTermEquals
                             , substitution = mempty
                             }
 
-data VariableFunctionAnd
-    = VariableFunctionAnd1 !(ElementVariable RewritingVariableName)
-    | VariableFunctionAnd2 !(ElementVariable RewritingVariableName)
+data UnifyVariables = UnifyVariables
+    {variable1, variable2 :: !(ElementVariable RewritingVariableName)}
 
-{- | Matches two terms which are either
-        * two variables.
-        * the first a variable and the second a function pattern.
--}
-matchVariableFunctionAnd ::
+-- | Match the unification of two element variables.
+matchVariables ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe VariableFunctionAnd
-matchVariableFunctionAnd first second
-    | ElemVar_ v <- first
-      , ElemVar_ _ <- second =
-        Just $ VariableFunctionAnd1 v
-    | ElemVar_ v <- first
-      , isFunctionPattern second =
-        Just $ VariableFunctionAnd2 v
-    | otherwise =
-        Nothing
-{-# INLINE matchVariableFunctionAnd #-}
+    Maybe UnifyVariables
+matchVariables first second = do
+    ElemVar_ variable1 <- pure first
+    ElemVar_ variable2 <- pure second
+    pure UnifyVariables{variable1, variable2}
+{-# INLINE matchVariables #-}
 
-variableFunctionAnd ::
+unifyVariables ::
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    VariableFunctionAnd ->
+    UnifyVariables ->
     unifier (Pattern RewritingVariableName)
-variableFunctionAnd second unifyData =
-    case unifyData of
-        VariableFunctionAnd1 v -> return $ Pattern.assign (inject v) second
-        VariableFunctionAnd2 v -> return $ Pattern.withCondition second result
-          where
-            result = Condition.assign (inject v) second
+unifyVariables UnifyVariables{variable1, variable2} =
+    pure $ Pattern.assign (inject variable1) (mkElemVar variable2)
+
+data UnifyVariableFunction = UnifyVariableFunction
+    { variable :: !(ElementVariable RewritingVariableName)
+    , term :: !(TermLike RewritingVariableName)
+    }
+
+-- | Match the unification of an element variable with a function-like term.
+matchVariableFunction ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyVariableFunction
+matchVariableFunction = \first second ->
+    worker first second <|> worker second first
+  where
+    worker first term = do
+        ElemVar_ variable <- pure first
+        guard (isFunctionPattern term)
+        pure UnifyVariableFunction{variable, term}
+{-# INLINE matchVariableFunction #-}
+
+unifyVariableFunction ::
+    MonadUnify unifier =>
+    UnifyVariableFunction ->
+    unifier (Pattern RewritingVariableName)
+unifyVariableFunction UnifyVariableFunction{variable, term} =
+    Condition.assign (inject variable) term
+        & Pattern.withCondition term
+        & pure
 
 {- | Matches
 
@@ -499,11 +513,6 @@ variableFunctionAnd second unifyData =
 \\equals{_, _}(x, f(_))
 @
 
-and
-
-@
-\\and{_}(x, f(_))
-@
 -}
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
