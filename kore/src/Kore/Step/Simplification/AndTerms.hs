@@ -139,8 +139,8 @@ maybeTermEquals ::
 maybeTermEquals notSimplifier childTransformers first second =
     asum
         [ Builtin.Int.unifyInt first second
-        --, Builtin.Bool.unifyBool first second
-        , Builtin.String.unifyString first second
+        , --, Builtin.Bool.unifyBool first second
+          Builtin.String.unifyString first second
         , unifyDomainValue first second
         , unifyStringLiteral first second
         , equalAndEquals first second
