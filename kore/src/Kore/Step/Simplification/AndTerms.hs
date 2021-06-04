@@ -512,7 +512,6 @@ unifyVariableFunction UnifyVariableFunction{variable, term} =
 @
 \\equals{_, _}(x, f(_))
 @
-
 -}
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->
