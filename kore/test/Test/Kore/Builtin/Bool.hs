@@ -200,7 +200,9 @@ test_unifyBoolAnd =
                 Nothing -> assertEqual "" expected [Nothing]
 
     unify term boolAnd =
-        run (lift $ Bool.unifyBoolAnd termSimplifier term boolAnd)
+        Bool.unifyBoolAnd termSimplifier term boolAnd
+            & lift
+            & run
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -233,7 +235,9 @@ test_unifyBoolOr =
                 Nothing -> assertEqual "" expected [Nothing]
 
     unify term boolOr =
-        run (lift $ Bool.unifyBoolOr termSimplifier term boolOr)
+        Bool.unifyBoolOr termSimplifier term boolOr
+            & lift
+            & run
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =
