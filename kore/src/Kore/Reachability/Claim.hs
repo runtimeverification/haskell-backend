@@ -530,8 +530,11 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     -- the claim is fully simplified at every step, that should not be a
     -- problem.
     sideCondition =
-        SideCondition.assumeTrueCondition
-            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+        SideCondition.fromConditionWithReplacements
+            ( Condition.fromPredicate
+                . Condition.toPredicate
+                $ leftCondition
+            )
 
     getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
     getNegativeConjuncts =
@@ -591,7 +594,7 @@ simplify' lensClaimPattern claim = do
     simplifyRightHandSide lensClaimPattern sideCondition claim'
   where
     extractSideCondition =
-        SideCondition.assumeTrueCondition
+        SideCondition.fromConditionWithReplacements
             . Pattern.withoutTerm
             . Lens.view (lensClaimPattern . field @"left")
 
