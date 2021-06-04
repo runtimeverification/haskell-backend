@@ -43,8 +43,8 @@ matchExpandAlias t1 t2 =
         (Nothing, Nothing) -> Nothing
         (t1', t2') ->
             let term1 = fromMaybe t1 t1'
-             in let term2 = fromMaybe t2 t2'
-                 in Just UnifyExpandAlias{term1, term2}
+                term2 = fromMaybe t2 t2'
+             in Just UnifyExpandAlias{term1, term2}
 {-# INLINE matchExpandAlias #-}
 
 expandSingleAlias ::
