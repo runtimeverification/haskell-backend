@@ -11,6 +11,10 @@ import Kore.Internal.Condition (
  )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Condition as Conditional
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -354,26 +358,26 @@ test_predicateSimplification =
 test_simplifyPredicates :: [TestTree]
 test_simplifyPredicates =
     [ testCase "\\top => \\top" $ do
-        [actual] <- simplifyPredicates makeTruePredicate
+        [actual] <- simplifyPredicates MultiAnd.top
         assertEqual "" Condition.top actual
     , testCase "\\bottom and _ => \\bottom" $ do
         let predicate =
-                makeAndPredicate
-                    makeFalsePredicate
-                    ( makeEqualsPredicate
+                MultiAnd.make
+                    [ makeFalsePredicate
+                    , makeEqualsPredicate
                         (mkElemVar Mock.xConfig)
                         Mock.a
-                    )
+                    ]
         actual <- simplifyPredicates predicate
         assertEqual "" [] actual
     , testCase "_ and \\bottom => \\bottom" $ do
         let predicate =
-                makeAndPredicate
-                    ( makeEqualsPredicate
+                MultiAnd.make
+                    [ makeEqualsPredicate
                         (mkElemVar Mock.xConfig)
                         Mock.a
-                    )
-                    makeFalsePredicate
+                    , makeFalsePredicate
+                    ]
         actual <- simplifyPredicates predicate
         assertEqual "" [] actual
     ]
@@ -428,7 +432,7 @@ simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
         simpleEvaluator ps patt sideCondition
 
 simplifyPredicates ::
-    Predicate RewritingVariableName ->
+    MultiAnd (Predicate RewritingVariableName) ->
     IO [Condition RewritingVariableName]
 simplifyPredicates predicate =
     Condition.simplifyPredicates SideCondition.top predicate

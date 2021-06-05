@@ -20,9 +20,7 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTruePredicate,
- )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
     mkElemVar,
@@ -127,5 +125,5 @@ runSimplifyPredicates ::
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifierSMT Mock.env $
         simplifyConditionsWithSmt
-            (SideCondition.assumeTruePredicate predicate)
+            (SideCondition.fromPredicateWithReplacements predicate)
             orPattern
