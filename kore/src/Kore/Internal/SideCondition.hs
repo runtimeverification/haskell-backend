@@ -101,6 +101,7 @@ import Kore.Internal.Symbol (
     isFunctional,
  )
 import Kore.Internal.TermLike (
+    Application,
     Key,
     TermLike,
     pattern App_,
@@ -116,7 +117,7 @@ import Kore.Internal.TermLike (
     pattern InternalSet_,
     pattern InternalString_,
     pattern Mu_,
-    pattern Nu_, Application
+    pattern Nu_,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
@@ -906,22 +907,22 @@ isDefinedInternal =
     Attribute.isDefined . TermLike.termDefined . TermLike.extractAttributes
 
 -- TODO: docs
-fromSimplifiedFunctions
-    :: InternalVariable variable
-    => HashSet (TermLike variable)
-    -> SideCondition variable
+fromSimplifiedFunctions ::
+    InternalVariable variable =>
+    HashSet (TermLike variable) ->
+    SideCondition variable
 fromSimplifiedFunctions simplifiedFunctions =
-    top { simplifiedFunctions }
+    top{simplifiedFunctions}
 
 -- TODO: docs
-cacheSimplifiedFunctions
-    :: forall variable
-    .  InternalVariable variable
-    => TermLike variable
-    -> SideCondition variable
+cacheSimplifiedFunctions ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    SideCondition variable
 cacheSimplifiedFunctions =
     fromSimplifiedFunctions
-    . extractSimplifiedFunctions
+        . extractSimplifiedFunctions
   where
     extractSimplifiedFunctions ::
         TermLike variable ->
@@ -931,11 +932,10 @@ cacheSimplifiedFunctions =
             TermLike.ApplySymbolF symbolApp ->
                 let symbol = TermLike.applicationSymbolOrAlias symbolApp
                     children = TermLike.applicationChildren symbolApp
-                in
-                    if isFunction symbol && not (isConstructor symbol)
+                 in if isFunction symbol && not (isConstructor symbol)
                         then
                             HashSet.singleton term
-                            <> foldMap extractSimplifiedFunctions children
+                                <> foldMap extractSimplifiedFunctions children
                         else foldMap extractSimplifiedFunctions children
             TermLike.AndF and' ->
                 foldMap extractSimplifiedFunctions and'

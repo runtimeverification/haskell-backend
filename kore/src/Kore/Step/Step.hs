@@ -142,7 +142,7 @@ unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition =
             SideCondition.cacheSimplifiedFunctions initialTerm
-            & SideCondition.addConditionWithReplacements initialCondition
+                & SideCondition.addConditionWithReplacements initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
