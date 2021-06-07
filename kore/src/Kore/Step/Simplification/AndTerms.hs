@@ -309,10 +309,10 @@ maybeTermAnd notSimplifier childTransformers first second = do
                     childTransformers
                     first
                     second
-                , Builtin.String.unifyStringEq 
-                    childTransformers 
+                , Builtin.String.unifyStringEq
+                    childTransformers
                     notSimplifier
-                    first 
+                    first
                     second
                 , domainValueAndConstructorErrors first second
                 , Error.hoistMaybe (functionAnd first second)
