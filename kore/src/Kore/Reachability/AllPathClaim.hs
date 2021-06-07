@@ -155,8 +155,11 @@ instance Claim AllPathClaim where
 
         simplifyRemainder applied =
             case applied of
-                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                ApplyRemainder claim ->
+                    ApplyRemainder <$> simplifyRemainderWorker claim
                 _ -> return applied
+
+        simplifyRemainderWorker = simplify' _Unwrapped
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
