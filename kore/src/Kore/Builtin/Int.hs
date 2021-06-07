@@ -29,6 +29,8 @@ module Kore.Builtin.Int (
     parse,
     unifyIntEq,
     unifyInt,
+    matchInt,
+    matchUnifyIntEq,
 
     -- * keys
     randKey,
@@ -109,6 +111,8 @@ import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -424,24 +428,72 @@ matchIntEqual =
             Monad.guard (hook2 == eqKey)
             & isJust
 
--- | Unification of Int values.
+data UnifyInt = UnifyInt
+    { int1, int2 :: !InternalInt
+    }
+
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Int}(_), \\dv{Int}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{Int}(_), \\dv{Int}(_))
+@
+-}
+matchInt ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyInt
+matchInt first second
+    | InternalInt_ int1 <- first
+      , InternalInt_ int2 <- second =
+        Just UnifyInt{int1, int2}
+    | otherwise = Nothing
+{-# INLINE matchInt #-}
+
+-- | When int values are equal, returns first term; otherwise returns bottom.
 unifyInt ::
-    forall unifier variable.
-    InternalVariable variable =>
+    forall unifier.
     MonadUnify unifier =>
-    HasCallStack =>
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
-    assert (on (==) internalIntSort int1 int2) $ lift worker
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    UnifyInt ->
+    unifier (Pattern RewritingVariableName)
+unifyInt term1 term2 unifyData =
+    assert (on (==) internalIntSort int1 int2) worker
   where
-    worker :: unifier (Pattern variable)
+    UnifyInt{int1, int2} = unifyData
+    worker :: unifier (Pattern RewritingVariableName)
     worker
         | on (==) internalIntValue int1 int2 =
             return $ Pattern.fromTermLike term1
         | otherwise = explainAndReturnBottom "distinct integers" term1 term2
-unifyInt _ _ = empty
+
+data UnifyIntEq = UnifyIntEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , value :: !Bool
+    }
+
+{- | Matches
+@
+\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_))
+@
+-}
+matchUnifyIntEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyIntEq
+matchUnifyIntEq first second
+    | Just eqTerm <- matchIntEqual first
+      , isFunctionPattern first
+      , Just value <- Bool.matchBool second =
+        Just UnifyIntEq{eqTerm, value}
+    | otherwise = Nothing
+{-# INLINE matchUnifyIntEq #-}
 
 {- | Unification of the @INT.eq@ symbol.
 
@@ -452,14 +504,15 @@ unifyIntEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyIntEq ->
+    unifier (Pattern RewritingVariableName)
+unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- unifyChildren operand1 operand2 & OrPattern.gather
+        let solution' = MultiOr.map eraseTerm solution
+        (if value then pure else notSimplifier SideCondition.top) solution'
+            >>= Unify.scatter
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchIntEqual termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyIntEq{eqTerm, value} = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm

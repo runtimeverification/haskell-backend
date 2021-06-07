@@ -5,12 +5,10 @@ License     : NCSA
 module Kore.Step.Simplification.NoConfusion (
     equalInjectiveHeadsAndEquals,
     constructorAndEqualsAssumesDifferentHeads,
+    matchEqualInjectiveHeadsAndEquals,
+    matchDifferentConstructors,
 ) where
 
-import Control.Error (
-    MaybeT (..),
- )
-import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import Kore.Internal.Pattern (
     Pattern,
@@ -27,6 +25,45 @@ import Prelude.Kore hiding (
     concat,
  )
 
+data UnifyEqualInjectiveHeads = UnifyEqualInjectiveHeads
+    { firstHead :: !Symbol
+    , firstChildren :: ![TermLike RewritingVariableName]
+    , secondChildren :: ![TermLike RewritingVariableName]
+    }
+
+{- | Matches
+
+@
+\\equals{_, _}(f(_), f(_))
+@
+
+and
+
+@
+\\and{_}(f(_), f(_))
+@
+
+when @f@ is injective.
+-}
+matchEqualInjectiveHeadsAndEquals ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualInjectiveHeads
+matchEqualInjectiveHeadsAndEquals first second
+    | App_ firstHead firstChildren <- first
+      , App_ secondHead secondChildren <- second
+      , Symbol.isInjective firstHead
+      , -- We do not need to check if secondHead is injective once we test for equality.
+        firstHead == secondHead =
+        Just
+            UnifyEqualInjectiveHeads
+                { firstHead
+                , firstChildren
+                , secondChildren
+                }
+    | otherwise = Nothing
+{-# INLINE matchEqualInjectiveHeadsAndEquals #-}
+
 {- | Unify two application patterns with equal, injective heads.
 
 This includes constructors and sort injections.
@@ -39,29 +76,60 @@ equalInjectiveHeadsAndEquals ::
     HasCallStack =>
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    UnifyEqualInjectiveHeads ->
+    unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
-    (App_ firstHead firstChildren)
-    (App_ secondHead secondChildren)
-        | isFirstInjective && isSecondInjective && firstHead == secondHead =
-            lift $ do
-                children <- Monad.zipWithM termMerger firstChildren secondChildren
-                let merged = foldMap Pattern.withoutTerm children
-                    -- TODO (thomas.tuegel): This is tricky!
-                    -- Unifying the symbol's children may have produced new patterns
-                    -- which allow evaluating the symbol. It is possible this pattern
-                    -- is not actually fully simplified!
-                    term =
-                        (markSimplified . mkApplySymbol firstHead)
-                            (Pattern.term <$> children)
-                return (Pattern.withCondition term merged)
+    unifyData =
+        do
+            children <- Monad.zipWithM termMerger firstChildren secondChildren
+            let merged = foldMap Pattern.withoutTerm children
+                -- TODO (thomas.tuegel): This is tricky!
+                -- Unifying the symbol's children may have produced new patterns
+                -- which allow evaluating the symbol. It is possible this pattern
+                -- is not actually fully simplified!
+                term =
+                    (markSimplified . mkApplySymbol firstHead)
+                        (Pattern.term <$> children)
+            return (Pattern.withCondition term merged)
       where
-        isFirstInjective = Symbol.isInjective firstHead
-        isSecondInjective = Symbol.isInjective secondHead
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
+        UnifyEqualInjectiveHeads
+            { firstHead
+            , firstChildren
+            , secondChildren
+            } = unifyData
+
+{- | Matches
+
+@
+\\equals{_, _}(f(_), g(_))
+@
+
+and
+
+@
+\\and{_}(f(_), g(_))
+@
+
+when @f /= g@ and @f,g@ either have the @constructor@ attribute or are overloaded.
+-}
+matchDifferentConstructors ::
+    (Symbol -> Bool) ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe ()
+matchDifferentConstructors
+    isOverloaded
+    first
+    second
+        | App_ firstHead _ <- first
+          , App_ secondHead _ <- second
+          , firstHead /= secondHead
+          , Symbol.isConstructor firstHead || isOverloaded firstHead
+          , Symbol.isConstructor secondHead || isOverloaded secondHead =
+            Just ()
+        | otherwise = empty
+{-# INLINE matchDifferentConstructors #-}
 
 {- | Unify two constructor application patterns.
 
@@ -70,22 +138,16 @@ to be different; therefore their conjunction is @\\bottom@.
 -}
 constructorAndEqualsAssumesDifferentHeads ::
     MonadUnify unifier =>
-    HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier a
+    unifier a
 constructorAndEqualsAssumesDifferentHeads
-    first@(App_ firstHead _)
-    second@(App_ secondHead _) =
+    first
+    second =
         do
-            Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
-            Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
-            assert (firstHead /= secondHead) $
-                lift $ do
-                    explainBottom
-                        "Cannot unify different constructors or incompatible \
-                        \sort injections."
-                        first
-                        second
-                    empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty
+            explainBottom
+                "Cannot unify different constructors or incompatible \
+                \sort injections."
+                first
+                second
+            empty

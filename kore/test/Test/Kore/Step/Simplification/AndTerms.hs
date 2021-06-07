@@ -225,10 +225,10 @@ test_andTermsSimplification =
                         [ Pattern.fromTermLike
                             ( Mock.sortInjectionSubToTop
                                 ( mkAnd
+                                    Mock.plain00Subsort
                                     ( Mock.sortInjectionSubSubToSub
                                         Mock.plain00SubSubsort
                                     )
-                                    Mock.plain00Subsort
                                 )
                             )
                         ]
@@ -236,10 +236,10 @@ test_andTermsSimplification =
                         [ Pattern.fromTermLike
                             ( Mock.sortInjectionSubToTop
                                 ( mkAnd
+                                    Mock.plain00Subsort
                                     ( Mock.sortInjectionSubSubToSub
                                         Mock.plain00SubSubsort
                                     )
-                                    Mock.plain00Subsort
                                 )
                             )
                         ]
