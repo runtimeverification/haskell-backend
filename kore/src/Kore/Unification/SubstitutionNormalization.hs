@@ -15,9 +15,6 @@ module Kore.Unification.SubstitutionNormalization (
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.State.Strict as State
-import Data.Functor (
-    (<&>),
- )
 import Data.Functor.Const
 import Data.Functor.Foldable (
     Base,

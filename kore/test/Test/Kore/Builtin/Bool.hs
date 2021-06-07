@@ -160,11 +160,14 @@ test_unifyBoolValues =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchBools term1 term2 of
+                Just unifyData -> do
+                    actual <- unify term1 term2 unifyData
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBool term1 term2)
+    unify term1 term2 unifyData =
+        run (lift $ Bool.unifyBool term1 term2 unifyData)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -190,11 +193,16 @@ test_unifyBoolAnd =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchUnifyBoolAnd term1 term2 of
+                Just boolAnd -> do
+                    actual <- unify term1 boolAnd
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBoolAnd termSimplifier term1 term2)
+    unify term boolAnd =
+        Bool.unifyBoolAnd termSimplifier term boolAnd
+            & lift
+            & run
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -220,11 +228,16 @@ test_unifyBoolOr =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchUnifyBoolOr term1 term2 of
+                Just boolOr -> do
+                    actual <- unify term1 boolOr
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBoolOr termSimplifier term1 term2)
+    unify term boolOr =
+        Bool.unifyBoolOr termSimplifier term boolOr
+            & lift
+            & run
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =

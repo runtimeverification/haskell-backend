@@ -12,9 +12,6 @@ import Control.Monad.Extra as Monad
 import Data.Default (
     def,
  )
-import Data.Functor (
-    (<&>),
- )
 import Data.Generics.Product (
     field,
  )

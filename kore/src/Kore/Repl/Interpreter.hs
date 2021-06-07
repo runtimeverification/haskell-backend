@@ -29,7 +29,6 @@ import Control.Lens (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
-    void,
     (<=<),
  )
 import Control.Monad.Extra (
@@ -137,14 +136,16 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTrueCondition,
+    fromConditionWithReplacements,
  )
 import Kore.Internal.TermLike (
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
+import Kore.Log.WarnIfLowProductivity (
+    warnIfLowProductivity,
+ )
 import Kore.Reachability (
     ClaimState (..),
     ClaimStateTransformer (..),
@@ -1015,7 +1016,8 @@ tryAxiomClaimWorker mode ref = do
                         runUnifier' sideCondition first secondTerm
                       where
                         sideCondition =
-                            SideCondition.assumeTrueCondition secondCondition
+                            SideCondition.fromConditionWithReplacements
+                                secondCondition
 
     tryForceAxiomOrClaim ::
         Either Axiom SomeClaim ->

@@ -489,8 +489,7 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
                     (Condition.toPredicate requires)
                     (makeCeilPredicate leftTerm)
                     & liftPredicate
-                    & Condition.fromPredicate
-                    & SideCondition.fromCondition
+                    & SideCondition.fromPredicateWithReplacements
             satisfied = sideCondition == expectSideCondition
         return
             . OrPattern.fromTermLike

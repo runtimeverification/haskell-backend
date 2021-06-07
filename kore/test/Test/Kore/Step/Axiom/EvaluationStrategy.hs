@@ -24,9 +24,7 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTruePredicate,
- )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -51,8 +49,7 @@ test_attemptEquations :: [TestTree]
 test_attemptEquations =
     [ testCase "Stops attempting equations at first successful result" $ do
         counter <- newIORef (0 :: Int)
-        let condition =
-                SideCondition.assumeTruePredicate makeTruePredicate
+        let condition = SideCondition.top
             term = Mock.functionalConstr10 Mock.a
             equations =
                 [ notApplicable1
@@ -567,4 +564,6 @@ evaluateWithPredicate ::
     IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifierSMT Mock.env $
-        simplifier term (SideCondition.assumeTruePredicate predicate)
+        simplifier
+            term
+            (SideCondition.fromPredicateWithReplacements predicate)
