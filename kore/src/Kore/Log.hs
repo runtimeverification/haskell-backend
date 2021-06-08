@@ -211,14 +211,15 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
         toMicroSecs = (`div` 1000) . toNanoSecs
     exeName' = Pretty.pretty exeName <> Pretty.colon
     prettyActualEntry timestamp ActualEntry{actualEntry, entryContext}
-      | OneLine <- koreLogFormat = fold $
-        catMaybes [timestamp, Just " ", oneLineDoc actualEntry]
-      | otherwise =
-        (Pretty.vsep . concat)
-            [ [header]
-            , indent <$> context'
-            , indent <$> [longDoc actualEntry]
-            ]
+        | OneLine <- koreLogFormat =
+            fold $
+                catMaybes [timestamp, Just " ", oneLineDoc actualEntry]
+        | otherwise =
+            (Pretty.vsep . concat)
+                [ [header]
+                , indent <$> context'
+                , indent <$> [longDoc actualEntry]
+                ]
       where
         header =
             (Pretty.hsep . catMaybes)
