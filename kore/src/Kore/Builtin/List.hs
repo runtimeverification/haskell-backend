@@ -23,6 +23,7 @@ module Kore.Builtin.List (
     asPattern,
     asInternal,
     internalize,
+    matchUnifyEqualsList,
 
     -- * Symbols
     lookupSymbolGet,
@@ -65,6 +66,7 @@ import qualified Data.Sequence as Seq
 import Data.Text (
     Text,
  )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
     acceptAnySort,
@@ -80,6 +82,7 @@ import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
+import Kore.Internal.Symbol
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     Key,
@@ -372,6 +375,61 @@ builtinFunctions =
         , (updateAllKey, Builtin.functionEvaluator evalUpdateAll)
         ]
 
+data FirstElemVarData = FirstElemVarData {
+    pat1, pat2 :: !(TermLike RewritingVariableName)
+}
+
+data AppAppData = AppAppData {
+    args1, args2 :: ![TermLike RewritingVariableName]
+    , symbol2 :: !Symbol
+}
+
+data ListListData = ListListData {
+    builtin1, builtin2 :: !(InternalList (TermLike RewritingVariableName))
+}
+
+data ListAppData = ListAppData {
+    pat1, pat2 :: !(TermLike RewritingVariableName)
+    , args2 :: ![TermLike RewritingVariableName]
+    , builtin1 :: !(InternalList (TermLike RewritingVariableName))
+}
+
+data UnifyEqualsList
+    = FirstElemVar !FirstElemVarData
+    | AppApp !AppAppData
+    | ListList !ListListData
+    | ListApp !ListAppData
+
+matchUnifyEqualsList ::
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsList
+matchUnifyEqualsList tools first second
+    | Just True <- isListSort tools sort1
+    = worker (normalize first) (normalize second)
+    | otherwise = Nothing
+  where
+    sort1 = termLikeSort first
+
+    worker pat1@(ElemVar_ _) pat2
+        | TermLike.isFunctionPattern pat2
+        = Just $ FirstElemVar FirstElemVarData{pat1, pat2}
+        | otherwise = Nothing
+    worker (App_ symbol1 args1) (App_ symbol2 args2)
+        | isSymbolConcat symbol1
+        , isSymbolConcat symbol2
+        = Just $ AppApp AppAppData{args1, args2, symbol2}
+    worker pat1@(InternalList_ builtin1) pat2 =
+        case pat2 of
+            InternalList_ builtin2 -> Just $ ListList ListListData{builtin1, builtin2}
+            App_ symbol2 args2
+                | isSymbolConcat symbol2 -> Just $ ListApp ListAppData{pat1, pat2, args2, builtin1}
+                | otherwise -> Nothing
+            _ -> Nothing
+    worker _ _ = Nothing
+{-# INLINE matchUnifyEqualsList #-}
+
 {- | Simplify the conjunction or equality of two concrete List domain values.
 
     When it is used for simplifying equality, one should separately solve the
@@ -389,45 +447,23 @@ unifyEquals ::
       TermLike RewritingVariableName ->
       unifier (Pattern RewritingVariableName)
     ) ->
+    SmtMetadataTools Attribute.Symbol ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
+    UnifyEqualsList ->
+    unifier (Pattern RewritingVariableName)
 unifyEquals
     simplificationType
     simplifyChild
+    tools
     first
-    second =
-        do
-            tools <- Simplifier.askMetadataTools
-            (Monad.guard . fromMaybe False) (isListSort tools sort1)
-            unifyEquals0 (normalize first) (normalize second)
-      where
-        sort1 = termLikeSort first
-
-        propagateConditions ::
-            InternalVariable variable =>
-            Traversable t =>
-            t (Conditional variable a) ->
-            Conditional variable (t a)
-        propagateConditions = sequenceA
-
-        unifyEquals0 ::
-            TermLike RewritingVariableName ->
-            TermLike RewritingVariableName ->
-            MaybeT unifier (Pattern RewritingVariableName)
-
-        unifyEquals0 pat1@(ElemVar_ _) pat2
-            | TermLike.isFunctionPattern pat2 =
-                lift $ simplifyChild pat1 pat2
-            | otherwise = empty
-        unifyEquals0 pat1 pat2@(ElemVar_ _)
-            | TermLike.isFunctionPattern pat1 =
-                lift $ simplifyChild pat1 pat2
-            | otherwise = empty
-        unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
-            | isSymbolConcat symbol1
-              , isSymbolConcat symbol1 =
-                lift $ case (args1, args2) of
+    second
+    unifyData =
+        case unifyData of
+            FirstElemVar FirstElemVarData{pat1, pat2} ->
+                simplifyChild pat1 pat2
+            AppApp AppAppData{args1, args2, symbol2} ->
+                case (args1, args2) of
                     ( [InternalList_ builtin1, x1@(Var_ _)]
                         , [InternalList_ builtin2, x2@(Var_ _)]
                         ) ->
@@ -447,29 +483,29 @@ unifyEquals
                                 x2
                                 builtin2
                     _ -> empty
-        unifyEquals0 dv1@(InternalList_ builtin1) pat2 =
-            case pat2 of
-                InternalList_ builtin2 ->
-                    lift $ unifyEqualsConcrete builtin1 builtin2
-                app@(App_ symbol2 args2)
-                    | isSymbolConcat symbol2 ->
-                        lift $ case args2 of
-                            [InternalList_ builtin2, x@(Var_ _)] ->
-                                unifyEqualsFramedRight builtin1 builtin2 x
-                            [x@(Var_ _), InternalList_ builtin2] ->
-                                unifyEqualsFramedLeft builtin1 x builtin2
-                            [_, _] ->
-                                Builtin.unifyEqualsUnsolved
-                                    simplificationType
-                                    dv1
-                                    app
-                            _ -> Builtin.wrongArity concatKey
-                    | otherwise -> empty
-                _ -> empty
-        unifyEquals0 pat1 pat2 =
-            case pat2 of
-                dv@(InternalList_ _) -> unifyEquals0 dv pat1
-                _ -> empty
+            ListList ListListData{builtin1, builtin2} ->
+                unifyEqualsConcrete builtin1 builtin2
+            ListApp ListAppData{pat1, pat2, args2, builtin1} ->
+                case args2 of
+                    [InternalList_ builtin2, x@(Var_ _)] ->
+                        unifyEqualsFramedRight builtin1 builtin2 x
+                    [x@(Var_ _), InternalList_ builtin2] ->
+                        unifyEqualsFramedLeft builtin1 x builtin2
+                    [_, _] ->
+                        Builtin.unifyEqualsUnsolved
+                            simplificationType
+                            pat1
+                            pat2
+                    _ -> Builtin.wrongArity concatKey
+
+      where
+
+        propagateConditions ::
+            InternalVariable variable =>
+            Traversable t =>
+            t (Conditional variable a) ->
+            Conditional variable (t a)
+        propagateConditions = sequenceA
 
         unifyEqualsConcrete ::
             InternalList (TermLike RewritingVariableName) ->
@@ -478,7 +514,6 @@ unifyEquals
         unifyEqualsConcrete builtin1 builtin2
             | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
             | otherwise = do
-                tools <- Simplifier.askMetadataTools
                 Reflection.give tools $ do
                     unified <- sequence $ Seq.zipWith simplifyChild list1 list2
                     let propagatedUnified = propagateConditions unified
@@ -504,7 +539,6 @@ unifyEquals
                 | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation
                 | otherwise =
                     do
-                        tools <- Simplifier.askMetadataTools
                         let listSuffix1 = asInternal tools internalListSort suffix1
                         prefixUnified <-
                             unifyEqualsConcrete
@@ -536,7 +570,6 @@ unifyEquals
                 | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation
                 | otherwise =
                     do
-                        tools <- Simplifier.askMetadataTools
                         let listPrefix1 = asInternal tools internalListSort prefix1
                         prefixUnified <- simplifyChild frame2 listPrefix1
                         suffixUnified <-
@@ -576,7 +609,6 @@ unifyEquals
             internal2
             frame2
                 | length1 < length2 = do
-                    tools <- Simplifier.askMetadataTools
                     prefixUnified <-
                         unifyEqualsConcrete
                             internal1
@@ -626,7 +658,6 @@ unifyEquals
             frame2
             internal2
                 | length1 < length2 = do
-                    tools <- Simplifier.askMetadataTools
                     let listPrefix2 = asInternal tools internalListSort prefix2
                         frame2Prefix2 = mkApplySymbol symbol [frame2, listPrefix2]
                     prefixUnified <- simplifyChild frame1 frame2Prefix2
