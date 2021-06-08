@@ -16,6 +16,7 @@ import Control.Monad.Catch (
     MonadThrow,
  )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -26,6 +27,7 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Attribute.Synthetic (synthesize)
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -123,11 +125,19 @@ evaluateApplicationFunction ::
     simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
-    Conditional{term, predicate, substitution} =
-        evaluateApplication
-            sideCondition
-            Conditional{term = (), predicate, substitution}
-            term
+    expandedApp@Conditional{term, predicate, substitution} =
+        if SideCondition.isSimplifiedFunction term sideCondition
+            then
+                return
+                . OrPattern.fromPattern
+                . Pattern.markSimplified
+                . fmap (synthesize . ApplySymbolF)
+                $ expandedApp
+            else
+                evaluateApplication
+                    sideCondition
+                    Conditional{term = (), predicate, substitution}
+                    term
 
 makeExpandedApplication ::
     MonadSimplify simplifier =>

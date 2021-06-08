@@ -24,6 +24,8 @@ module Kore.Internal.SideCondition (
     generateNormalizedAcs,
     simplifyConjunctionByAssumption,
     cacheSimplifiedFunctions,
+    isSimplifiedFunction,
+    fromSimplifiedFunctions,
 ) where
 
 import Changed
@@ -95,10 +97,9 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol (
-    Symbol,
     isConstructor,
     isFunction,
-    isFunctional,
+    isFunctional, Symbol
  )
 import Kore.Internal.TermLike (
     Key,
@@ -162,7 +163,7 @@ data SideCondition variable = SideCondition
     , definedTerms ::
         !(HashSet (TermLike variable))
     , simplifiedFunctions ::
-        !(HashSet (TermLike variable))
+        !(HashSet (Application Symbol (TermLike variable)))
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -396,7 +397,7 @@ mapVariables adj condition@(SideCondition _ _ _ _) =
         definedTerms' =
             HashSet.map (TermLike.mapVariables adj) definedTerms
         simplifiedFunctions' =
-            HashSet.map (TermLike.mapVariables adj) simplifiedFunctions
+            (HashSet.map . fmap) (TermLike.mapVariables adj) simplifiedFunctions
      in SideCondition
             { assumedTrue = assumedTrue'
             , replacements = replacements'
@@ -908,7 +909,7 @@ isDefinedInternal =
 -- TODO: docs
 fromSimplifiedFunctions
     :: InternalVariable variable
-    => HashSet (TermLike variable)
+    => HashSet (Application Symbol (TermLike variable))
     -> SideCondition variable
 fromSimplifiedFunctions simplifiedFunctions =
     top { simplifiedFunctions }
@@ -925,8 +926,8 @@ cacheSimplifiedFunctions =
   where
     extractSimplifiedFunctions ::
         TermLike variable ->
-        HashSet (TermLike variable)
-    extractSimplifiedFunctions term@(Recursive.project -> _ :< termF) =
+        HashSet (Application Symbol (TermLike variable))
+    extractSimplifiedFunctions (Recursive.project -> _ :< termF) =
         case termF of
             TermLike.ApplySymbolF symbolApp ->
                 let symbol = TermLike.applicationSymbolOrAlias symbolApp
@@ -934,7 +935,7 @@ cacheSimplifiedFunctions =
                 in
                     if isFunction symbol && not (isConstructor symbol)
                         then
-                            HashSet.singleton term
+                            HashSet.singleton symbolApp
                             <> foldMap extractSimplifiedFunctions children
                         else foldMap extractSimplifiedFunctions children
             TermLike.AndF and' ->
@@ -1001,3 +1002,12 @@ cacheSimplifiedFunctions =
                 foldMap extractSimplifiedFunctions sign
             TermLike.InjF inj ->
                 foldMap extractSimplifiedFunctions inj
+
+-- TODO: docs
+isSimplifiedFunction
+    :: InternalVariable variable
+    => Application Symbol (TermLike variable)
+    -> SideCondition variable
+    -> Bool
+isSimplifiedFunction app SideCondition { simplifiedFunctions } =
+    HashSet.member app simplifiedFunctions

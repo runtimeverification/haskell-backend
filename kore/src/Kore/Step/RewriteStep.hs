@@ -93,12 +93,14 @@ See also: 'applyInitialConditions'
 finalizeAppliedRule ::
     forall simplifier.
     MonadSimplify simplifier =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
     -- | Applied rule
     RulePattern RewritingVariableName ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-finalizeAppliedRule renamedRule appliedConditions =
+finalizeAppliedRule initialPattern renamedRule appliedConditions =
     MultiOr.observeAllT $
         finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
   where
@@ -110,7 +112,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         let avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
             finalPattern =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
-        constructConfiguration appliedCondition finalPattern
+        constructConfiguration initialPattern appliedCondition finalPattern
 
 {- | Combine all the conditions to apply rule and construct the result.
 
@@ -124,20 +126,30 @@ The parts of the applied condition were already combined by 'unifyRule'. First, 
 -}
 constructConfiguration ::
     MonadSimplify simplifier =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
+    -- | Applied condition
     Condition RewritingVariableName ->
+    -- | Final configuration
     Pattern RewritingVariableName ->
     LogicT simplifier (Pattern RewritingVariableName)
-constructConfiguration appliedCondition finalPattern = do
+constructConfiguration initialPattern appliedCondition finalPattern = do
     let ensuresCondition = Pattern.withoutTerm finalPattern
     finalCondition <-
         do
             let sideCondition =
-                    SideCondition.fromConditionWithReplacements
+                    SideCondition.cacheSimplifiedFunctions
+                        (Pattern.toTermLike initialPattern)
+            partial <-
+                simplifyCondition
+                    ( sideCondition
+                    & SideCondition.addConditionWithReplacements
                         appliedCondition
-            partial <- simplifyCondition sideCondition ensuresCondition
+                    )
+                    ensuresCondition
             -- TODO (thomas.tuegel): It should not be necessary to simplify
             -- after conjoining the conditions.
-            simplifyCondition SideCondition.top (appliedCondition <> partial)
+            simplifyCondition sideCondition (appliedCondition <> partial)
             & Logic.lowerLogicT
     -- Apply the normalized substitution to the right-hand side of the
     -- axiom.
@@ -152,12 +164,14 @@ constructConfiguration appliedCondition finalPattern = do
 finalizeAppliedClaim ::
     forall simplifier.
     MonadSimplify simplifier =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
     -- | Applied rule
     ClaimPattern ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-finalizeAppliedClaim renamedRule appliedConditions =
+finalizeAppliedClaim initialPattern renamedRule appliedConditions =
     MultiOr.observeAllT $
         finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
   where
@@ -168,7 +182,7 @@ finalizeAppliedClaim renamedRule appliedConditions =
             -- Combine the initial conditions, the unification conditions, and
             -- the axiom ensures clause. The axiom requires clause is included
             -- by unifyRule.
-            constructConfiguration appliedCondition finalPattern
+            constructConfiguration initialPattern appliedCondition finalPattern
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
@@ -306,7 +320,11 @@ applyRulesParallel ::
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     simplifier (Results (RulePattern RewritingVariableName))
-applyRulesParallel = applyWithFinalizer (finalizeRulesParallel RewriteRule finalizeAppliedRule)
+applyRulesParallel rules initial =
+    applyWithFinalizer
+        (finalizeRulesParallel RewriteRule (finalizeAppliedRule initial))
+        rules
+        initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -340,7 +358,11 @@ applyRulesSequence ::
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     simplifier (Results (RulePattern RewritingVariableName))
-applyRulesSequence = applyWithFinalizer (finalizeSequence RewriteRule finalizeAppliedRule)
+applyRulesSequence rules initial =
+    applyWithFinalizer
+        (finalizeSequence RewriteRule (finalizeAppliedRule initial))
+        rules
+        initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -375,7 +397,7 @@ applyClaimsSequence ::
 applyClaimsSequence mkClaim initialConfig claims = do
     results <-
         applyWithFinalizer
-            (finalizeSequence mkClaim finalizeAppliedClaim)
+            (finalizeSequence mkClaim (finalizeAppliedClaim initialConfig))
             claims
             initialConfig
     assertFunctionLikeResults (term initialConfig) results

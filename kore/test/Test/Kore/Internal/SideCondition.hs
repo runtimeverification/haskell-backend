@@ -4,6 +4,7 @@ module Test.Kore.Internal.SideCondition (
     test_assumeDefined,
     test_isDefined,
     test_generateNormalizedAcs,
+    test_cacheSimplifiedFunctions,
 ) where
 
 import qualified Data.HashSet as HashSet
@@ -719,6 +720,25 @@ test_generateNormalizedAcs =
             actualSets = generateNormalizedAcs testSet
         assertEqual "Maps" expectedMaps actualMaps
         assertEqual "Sets" expectedSets actualSets
+
+test_cacheSimplifiedFunctions :: [TestTree]
+test_cacheSimplifiedFunctions =
+    [ testCase "TESTING" $ do
+        let configuration =
+                Mock.f (mkElemVar Mock.x)
+            expected =
+                [Application Mock.fSymbol [mkElemVar Mock.x]]
+                & HashSet.fromList
+                & fromSimplifiedFunctions
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let configuration :: TermLike VariableName
+            configuration = Mock.c
+            expected = fromSimplifiedFunctions HashSet.empty
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    ]
 
 collectionToMapTerm ::
     Collection VariableName ->
