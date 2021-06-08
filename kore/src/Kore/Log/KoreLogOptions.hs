@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
+    KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
     TimestampsSwitch (..),
@@ -81,6 +82,8 @@ import Type.Reflection (
 data KoreLogOptions = KoreLogOptions
     { -- | desired output method, see 'KoreLogType'
       logType :: !KoreLogType
+    , -- | the format to display the error log in
+      logFormat :: !KoreLogFormat
     , -- | minimal log level, passed via "--log-level"
       logLevel :: !Severity
     , -- | enable or disable timestamps
@@ -106,6 +109,7 @@ defaultKoreLogOptions :: ExeName -> TimeSpec -> KoreLogOptions
 defaultKoreLogOptions exeName startTime =
     KoreLogOptions
         { logType = def @KoreLogType
+        , logFormat = def @KoreLogFormat
         , logLevel = defaultSeverity
         , timestampsSwitch = def @TimestampsSwitch
         , logEntries = mempty
@@ -130,8 +134,16 @@ data KoreLogType
       LogFileText FilePath
     deriving stock (Eq, Show)
 
+data KoreLogFormat
+    = Standard
+    | OneLine
+    deriving stock (Eq, Show)
+
 instance Default KoreLogType where
     def = LogStdErr
+
+instance Default KoreLogFormat where
+    def = Standard
 
 parseKoreLogType :: Parser KoreLogType
 parseKoreLogType =
@@ -141,6 +153,19 @@ parseKoreLogType =
         mempty
             <> Options.long "log"
             <> Options.help "Name of the log file"
+
+parseKoreLogFormat :: Parser KoreLogFormat
+parseKoreLogFormat = option formatReader info
+  where
+    formatReader = Options.maybeReader $ \case
+        "standard" -> Just Standard
+        "oneline" -> Just OneLine
+        _ -> Nothing
+    info =
+        mempty
+            <> Options.long "log-format"
+            <> Options.help "Formating style selected"
+            <> Options.value def
 
 type EntryTypes = Set SomeTypeRep
 
@@ -172,7 +197,8 @@ parseTimestampsSwitch =
 parseKoreLogOptions :: ExeName -> TimeSpec -> Parser KoreLogOptions
 parseKoreLogOptions exeName startTime =
     KoreLogOptions
-        <$> (parseKoreLogType <|> pure LogStdErr)
+        <$> (parseKoreLogType <|> pure def)
+        <*> (parseKoreLogFormat <|> pure def)
         <*> (parseSeverity <|> pure Warning)
         <*> (parseTimestampsSwitch <|> pure TimestampsEnable)
         <*> (mconcat <$> many parseEntryTypes)
@@ -407,6 +433,7 @@ unparseKoreLogOptions :: KoreLogOptions -> [String]
 unparseKoreLogOptions
     ( KoreLogOptions
             logType
+            logFormat
             logLevel
             timestampsSwitch
             logEntries
@@ -422,6 +449,7 @@ unparseKoreLogOptions
         ) =
         concat
             [ koreLogTypeFlag logType
+            , koreLogFormatFlag logFormat
             , ["--log-level", fmap Char.toLower (show logLevel)]
             , timestampsSwitchFlag timestampsSwitch
             , logEntriesFlag logEntries
@@ -436,6 +464,9 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
+
+        koreLogFormatFlag Standard = []
+        koreLogFormatFlag OneLine = ["--log-format=oneline"]
 
         timestampsSwitchFlag TimestampsEnable = ["--enable-log-timestamps"]
         timestampsSwitchFlag TimestampsDisable = ["--disable-log-timestamps"]

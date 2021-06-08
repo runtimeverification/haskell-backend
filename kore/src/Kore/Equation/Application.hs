@@ -585,12 +585,12 @@ instance Pretty DebugAttemptEquation where
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
-    shortDoc (DebugAttemptEquation equation _) =
+    contextDoc (DebugAttemptEquation equation _) =
         (Just . Pretty.hsep . catMaybes)
             [ Just "while applying equation"
             , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
             ]
-    shortDoc _ = Nothing
+    contextDoc _ = Nothing
     helpDoc _ = "log equation application attempts"
 
 -- | Log the result of attempting to apply an 'Equation'.

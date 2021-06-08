@@ -95,9 +95,10 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
             LogStdErr -> pure Colog.logTextStderr
             LogFileText logFile -> ContT $ Colog.withLogTextFile logFile
     let KoreLogOptions{timestampsSwitch} = koreLogOptions
+        KoreLogOptions{logFormat} = koreLogOptions
         logAction =
             userLogAction <> bugReportLogAction
-                & makeKoreLogger exeName startTime timestampsSwitch
+                & makeKoreLogger exeName startTime timestampsSwitch logFormat
                 & koreLogFilters koreLogOptions
                 & koreLogTransformer koreLogOptions
     pure logAction
@@ -187,9 +188,10 @@ makeKoreLogger ::
     ExeName ->
     TimeSpec ->
     TimestampsSwitch ->
+    KoreLogFormat ->
     LogAction io Text ->
     LogAction io ActualEntry
-makeKoreLogger exeName startTime timestampSwitch logActionText =
+makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
     logActionText
         & contramap render
         & Colog.cmapM withTimestamp
@@ -208,7 +210,10 @@ makeKoreLogger exeName startTime timestampSwitch logActionText =
                         toMicroSecs (diffTimeSpec startTime entryTime)
         toMicroSecs = (`div` 1000) . toNanoSecs
     exeName' = Pretty.pretty exeName <> Pretty.colon
-    prettyActualEntry timestamp ActualEntry{actualEntry, entryContext} =
+    prettyActualEntry timestamp ActualEntry{actualEntry, entryContext}
+      | OneLine <- koreLogFormat = fold $
+        catMaybes [timestamp, Just " ", oneLineDoc actualEntry]
+      | otherwise =
         (Pretty.vsep . concat)
             [ [header]
             , indent <$> context'
@@ -233,7 +238,7 @@ makeKoreLogger exeName startTime timestampSwitch logActionText =
                 & mapMaybe prettyContext
                 & reverse
         prettyContext someEntry' =
-            shortDoc someEntry'
+            contextDoc someEntry'
                 & fmap
                     ( \doc ->
                         Pretty.hsep [Pretty.parens typeName, doc <> Pretty.colon]
@@ -256,9 +261,10 @@ stderrLogger ::
     ExeName ->
     TimeSpec ->
     TimestampsSwitch ->
+    KoreLogFormat ->
     LogAction io ActualEntry
-stderrLogger exeName startTime timestampsSwitch =
-    makeKoreLogger exeName startTime timestampsSwitch Colog.logTextStderr
+stderrLogger exeName startTime timestampsSwitch logFormat =
+    makeKoreLogger exeName startTime timestampsSwitch logFormat Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
