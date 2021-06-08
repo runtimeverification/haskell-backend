@@ -25,6 +25,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition (
+    fromConditionWithReplacements,
     toRepresentation,
     top,
  )
@@ -256,8 +257,9 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                ( from @(Predicate _) @(SideCondition _) $
-                    requirement Mock.xConfig
+                ( SideCondition.fromConditionWithReplacements
+                    . from @(Predicate _)
+                    $ requirement Mock.xConfig
                 )
                 ( Pattern.fromTermLike $
                     mkExists Mock.zConfig $
@@ -952,8 +954,9 @@ test_simplificationIntegrationUnification =
                         ]
                     )
                 )
-                ( from @(Predicate _) @(SideCondition _) $
-                    requirement Mock.xConfig
+                ( SideCondition.fromConditionWithReplacements
+                    . from @(Predicate _)
+                    $ requirement Mock.xConfig
                 )
                 ( Pattern.fromTermLike $
                     mkExists Mock.zConfig $

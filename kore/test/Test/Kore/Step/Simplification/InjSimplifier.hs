@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.InjSimplifier (
-    test_unifyInj,
+    test_matchInjs,
+    test_unifyInjs,
     test_normalize,
 ) where
 
@@ -74,8 +75,8 @@ simpl0 = plain00Sort0
 xSub :: TermLike RewritingVariableName
 xSub = mkElemVar (configElementVariableFromId "xSub" subSort)
 
-test_unifyInj :: [TestTree]
-test_unifyInj =
+test_matchInjs :: [TestTree]
+test_matchInjs =
     [ test
         "inj{Test, Top}(ctorTest1) ∧ inj{Test, Top}(ctorTest2)"
         {-
@@ -83,7 +84,7 @@ test_unifyInj =
          -}
         (inj topSort ctorTest1)
         (inj topSort ctorTest2)
-        (Right (inj' testSort topSort (Pair ctorTest1 ctorTest2)))
+        (Just $ UnifyInjDirect ())
     , test
         "inj{SubSub, Top}(ctorSubSub) ∧ inj{Sub, Top}(x:Sub)"
         {-
@@ -94,7 +95,7 @@ test_unifyInj =
          -}
         (inj topSort ctorSubSub)
         (inj topSort xSub)
-        (Right (inj' subSort topSort (Pair (mkInj subSort ctorSubSub) xSub)))
+        (Just $ UnifyInjSplit ())
     , test
         "inj{Sub, Top}(x:Sub) ∧ inj{SubSub, Top}(ctorSubSub)"
         {-
@@ -105,7 +106,7 @@ test_unifyInj =
          -}
         (inj topSort xSub)
         (inj topSort ctorSubSub)
-        (Right (inj' subSort topSort (Pair xSub (mkInj subSort ctorSubSub))))
+        (Just $ UnifyInjSplit ())
     , test
         "inj{Test, Top}(ctorTest1) ∧ inj{Other, Top}(ctorOther)"
         {-
@@ -116,7 +117,7 @@ test_unifyInj =
          -}
         (inj topSort ctorTest1)
         (inj topSort ctorOther)
-        (Left Distinct)
+        (Just $ UnifyInjDistinct ())
     , test
         "inj{Sub, Top}(simplSub) ∧ inj{Other, Top}(simplOther)"
         {-
@@ -128,7 +129,7 @@ test_unifyInj =
          -}
         (inj topSort simplSub)
         (inj topSort simplOther)
-        (Left Unknown)
+        Nothing
     , test
         "inj{Sub, Top}(ctorSub) ∧ inj{Other, Top}(simplOther)"
         {-
@@ -140,7 +141,7 @@ test_unifyInj =
          -}
         (inj topSort ctorSub)
         (inj topSort simplOther)
-        (Left Distinct)
+        (Just $ UnifyInjDistinct ())
     , test
         "inj{0, Top}(simpl0) ∧ inj{Other, Top}(simplOther)"
         {-
@@ -151,7 +152,7 @@ test_unifyInj =
          -}
         (inj topSort simpl0)
         (inj topSort simplOther)
-        (Left Distinct)
+        (Just $ UnifyInjDistinct ())
     ]
   where
     test ::
@@ -159,11 +160,115 @@ test_unifyInj =
         TestName ->
         Inj (TermLike RewritingVariableName) ->
         Inj (TermLike RewritingVariableName) ->
-        Either Distinct (Inj (Pair (TermLike RewritingVariableName))) ->
+        Maybe (UnifyInj ()) ->
         TestTree
     test testName inj1 inj2 expect =
-        testCase testName (assertEqual "" expect (unifyInj inj1 inj2))
-    InjSimplifier{unifyInj} = injSimplifier
+        testCase testName $ do
+            let actual = matchInjs injSimplifier inj1 inj2
+            assertEqual "" expect (fmap void actual)
+
+test_unifyInjs :: [TestTree]
+test_unifyInjs =
+    [ test
+        "inj{Test, Top}(ctorTest1) ∧ inj{Test, Top}(ctorTest2)"
+        {-
+            Injections with the same child sort are unifiable.
+         -}
+        ( UnifyInjDirect
+            InjPair
+                { inj1 = inj topSort ctorTest1
+                , inj2 = inj topSort ctorTest2
+                }
+        )
+        (Just (inj' testSort topSort (Pair ctorTest1 ctorTest2)))
+    , test
+        "inj{SubSub, Top}(ctorSubSub) ∧ inj{Sub, Top}(x:Sub)"
+        {-
+            Injections with
+                - different child sorts, and
+                - the first sort is a subsort of the second
+            are unifiable.
+         -}
+        ( UnifyInjSplit
+            InjPair
+                { inj1 = inj topSort xSub
+                , inj2 = inj topSort ctorSubSub
+                }
+        )
+        (Just (inj' subSort topSort (Pair xSub (mkInj subSort ctorSubSub))))
+    , test
+        "inj{Sub, Top}(x:Sub) ∧ inj{SubSub, Top}(ctorSubSub)"
+        {-
+            Injections with
+                - different child sorts, and
+                - the second sort is a subsort of the first
+            are unifiable.
+         -}
+        ( UnifyInjSplit
+            InjPair
+                { inj1 = inj topSort xSub
+                , inj2 = inj topSort ctorSubSub
+                }
+        )
+        (Just (inj' subSort topSort (Pair xSub (mkInj subSort ctorSubSub))))
+    , test
+        "inj{Test, Top}(ctorTest1) ∧ inj{Other, Top}(ctorOther)"
+        {-
+            Injections with
+                - different child sorts, and
+                - neither sort is a subsort of the other
+            are known to be distinct.
+         -}
+        ( UnifyInjDistinct
+            InjPair
+                { inj1 = inj topSort ctorTest1
+                , inj2 = inj topSort ctorOther
+                }
+        )
+        Nothing
+    , test
+        "inj{Sub, Top}(ctorSub) ∧ inj{Other, Top}(simplOther)"
+        {-
+            Injections with
+                - different child sorts, and
+                - a common subsort, and
+                - at least one constructor-like child
+            are known to be distinct.
+         -}
+        ( UnifyInjDistinct
+            InjPair
+                { inj1 = inj topSort ctorSub
+                , inj2 = inj topSort simplOther
+                }
+        )
+        Nothing
+    , test
+        "inj{0, Top}(simpl0) ∧ inj{Other, Top}(simplOther)"
+        {-
+            Injections with
+                - different child sorts, and
+                - no common subsorts
+            are known to be distinct.
+         -}
+        ( UnifyInjDistinct
+            InjPair
+                { inj1 = inj topSort simpl0
+                , inj2 = inj topSort simplOther
+                }
+        )
+        Nothing
+    ]
+  where
+    test ::
+        HasCallStack =>
+        TestName ->
+        UnifyInj (InjPair RewritingVariableName) ->
+        Maybe (Inj (Pair (TermLike RewritingVariableName))) ->
+        TestTree
+    test testName unifyInj expect =
+        testCase testName $ do
+            let actual = unifyInjs injSimplifier unifyInj
+            assertEqual "" expect actual
 
 test_normalize :: [TestTree]
 test_normalize =

@@ -26,6 +26,7 @@ module Kore.Builtin.String (
     parse,
     unifyString,
     unifyStringEq,
+    matchString,
 
     -- * keys
     ltKey,
@@ -471,24 +472,50 @@ matchStringEqual =
             Monad.guard (hook2 == eqKey)
             & isJust
 
+data UnifyString = UnifyString
+    { string1, string2 :: !InternalString
+    }
+
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{String}(_), \\dv{String}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{String}(_), \\dv{String}}(_))
+@
+-}
+matchString ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyString
+matchString first second
+    | InternalString_ string1 <- first
+      , InternalString_ string2 <- second =
+        Just UnifyString{string1, string2}
+    | otherwise = Nothing
+{-# INLINE matchString #-}
+
 -- | Unification of String values.
 unifyString ::
-    forall unifier variable.
-    InternalVariable variable =>
+    forall unifier.
     MonadUnify unifier =>
-    HasCallStack =>
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyString term1@(InternalString_ int1) term2@(InternalString_ int2) =
-    assert (on (==) internalStringSort int1 int2) $ lift worker
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    UnifyString ->
+    unifier (Pattern RewritingVariableName)
+unifyString term1 term2 unifyData =
+    assert (on (==) internalStringSort string1 string2) worker
   where
-    worker :: unifier (Pattern variable)
+    worker :: unifier (Pattern RewritingVariableName)
     worker
-        | on (==) internalStringValue int1 int2 =
+        | on (==) internalStringValue string1 string2 =
             return $ Pattern.fromTermLike term1
         | otherwise = explainAndReturnBottom "distinct strings" term1 term2
-unifyString _ _ = empty
+    UnifyString{string1, string2} = unifyData
 
 {- | Unification of the @STRING.eq@ symbol
 
