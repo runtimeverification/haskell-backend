@@ -143,8 +143,8 @@ constructConfiguration initialPattern appliedCondition finalPattern = do
             partial <-
                 simplifyCondition
                     ( sideCondition
-                    & SideCondition.addConditionWithReplacements
-                        appliedCondition
+                        & SideCondition.addConditionWithReplacements
+                            appliedCondition
                     )
                     ensuresCondition
             -- TODO (thomas.tuegel): It should not be necessary to simplify

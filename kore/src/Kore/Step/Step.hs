@@ -30,7 +30,6 @@ module Kore.Step.Step (
 ) where
 
 import qualified Data.Map.Strict as Map
-import qualified Kore.Internal.Predicate as Predicate
 import Data.Set (
     Set,
  )
@@ -52,6 +51,7 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -143,7 +143,7 @@ unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition =
             SideCondition.cacheSimplifiedFunctions (Pattern.toTermLike initial)
-            & SideCondition.addConditionWithReplacements initialCondition
+                & SideCondition.addConditionWithReplacements initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
@@ -250,9 +250,9 @@ applyInitialConditions initial unification = do
     let sideCondition =
             SideCondition.cacheSimplifiedFunctions
                 ( Predicate.fromPredicate_
-                . Condition.toPredicate
-                $ initial
-                -- TODO: should this include unification conditions?
+                    . Condition.toPredicate
+                    $ initial
+                    -- TODO: should this include unification conditions?
                 )
     -- Combine the initial conditions and the unification conditions. The axiom
     -- requires clause is already included in the unification conditions, and
@@ -290,8 +290,8 @@ applyRemainder ::
     LogicT simplifier (Pattern RewritingVariableName)
 applyRemainder initial remainder = do
     let sideCondition =
-            SideCondition.cacheSimplifiedFunctions
-                $ Pattern.toTermLike initial
+            SideCondition.cacheSimplifiedFunctions $
+                Pattern.toTermLike initial
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level
     -- side conditions because we will not re-evaluate them after they are added
@@ -299,8 +299,8 @@ applyRemainder initial remainder = do
     partial <-
         Simplifier.simplifyCondition
             ( sideCondition
-            & SideCondition.addConditionWithReplacements
-                (Pattern.withoutTerm initial)
+                & SideCondition.addConditionWithReplacements
+                    (Pattern.withoutTerm initial)
             )
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve

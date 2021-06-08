@@ -15,8 +15,8 @@ module Kore.Step.Simplification.Application (
 import Control.Monad.Catch (
     MonadThrow,
  )
+import Kore.Attribute.Synthetic (synthesize)
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -27,10 +27,10 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Attribute.Synthetic (synthesize)
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -129,10 +129,10 @@ evaluateApplicationFunction
         if SideCondition.isSimplifiedFunction term sideCondition
             then
                 return
-                . OrPattern.fromPattern
-                . Pattern.markSimplified
-                . fmap (synthesize . ApplySymbolF)
-                $ expandedApp
+                    . OrPattern.fromPattern
+                    . Pattern.markSimplified
+                    . fmap (synthesize . ApplySymbolF)
+                    $ expandedApp
             else
                 evaluateApplication
                     sideCondition

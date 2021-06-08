@@ -728,8 +728,8 @@ test_cacheSimplifiedFunctions =
                 Mock.f (mkElemVar Mock.x)
             expected =
                 [Application Mock.fSymbol [mkElemVar Mock.x]]
-                & HashSet.fromList
-                & fromSimplifiedFunctions
+                    & HashSet.fromList
+                    & fromSimplifiedFunctions
             actual = cacheSimplifiedFunctions configuration
         assertEqual "" expected actual
     , testCase "TESTING" $ do

@@ -97,9 +97,10 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol (
+    Symbol,
     isConstructor,
     isFunction,
-    isFunctional, Symbol
+    isFunctional,
  )
 import Kore.Internal.TermLike (
     Application,
@@ -908,10 +909,10 @@ isDefinedInternal =
     Attribute.isDefined . TermLike.termDefined . TermLike.extractAttributes
 
 -- TODO: docs
-fromSimplifiedFunctions
-    :: InternalVariable variable
-    => HashSet (Application Symbol (TermLike variable))
-    -> SideCondition variable
+fromSimplifiedFunctions ::
+    InternalVariable variable =>
+    HashSet (Application Symbol (TermLike variable)) ->
+    SideCondition variable
 fromSimplifiedFunctions simplifiedFunctions =
     top{simplifiedFunctions}
 
@@ -936,7 +937,7 @@ cacheSimplifiedFunctions =
                  in if isFunction symbol && not (isConstructor symbol)
                         then
                             HashSet.singleton symbolApp
-                            <> foldMap extractSimplifiedFunctions children
+                                <> foldMap extractSimplifiedFunctions children
                         else foldMap extractSimplifiedFunctions children
             TermLike.AndF and' ->
                 foldMap extractSimplifiedFunctions and'
@@ -1004,10 +1005,10 @@ cacheSimplifiedFunctions =
                 foldMap extractSimplifiedFunctions inj
 
 -- TODO: docs
-isSimplifiedFunction
-    :: InternalVariable variable
-    => Application Symbol (TermLike variable)
-    -> SideCondition variable
-    -> Bool
-isSimplifiedFunction app SideCondition { simplifiedFunctions } =
+isSimplifiedFunction ::
+    InternalVariable variable =>
+    Application Symbol (TermLike variable) ->
+    SideCondition variable ->
+    Bool
+isSimplifiedFunction app SideCondition{simplifiedFunctions} =
     HashSet.member app simplifiedFunctions
