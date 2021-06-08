@@ -51,10 +51,12 @@ import Kore.Step.Simplification.AndTerms (
     termUnification,
  )
 import Kore.Step.Simplification.Data (
+    runSimplifier,
     runSimplifierBranch,
     simplifyCondition,
  )
 import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
@@ -493,6 +495,12 @@ test_unifyStringEq =
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                mkAnd term1 term2
+                    & Pattern.fromTermLike
+                    & simplifyPattern
+            assertEqual "" [expect{term = term1}] actual
     , testCase "\\equals(true, X ==String Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqString (mkElemVar x) (mkElemVar y)
@@ -511,6 +519,12 @@ test_unifyStringEq =
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                mkAnd term1 term2
+                    & Pattern.fromTermLike
+                    & simplifyPattern
+            assertEqual "" [expect{term = term1}] actual
     ]
   where
     unifyStringEq ::
@@ -535,6 +549,15 @@ test_unifyStringEq =
         simplifyCondition SideCondition.top condition
             & runSimplifierBranch testEnv
             & runNoSMT
+
+    simplifyPattern ::
+        Pattern RewritingVariableName ->
+        IO [Pattern RewritingVariableName]
+    simplifyPattern pattern1 =
+        Pattern.simplify pattern1
+            & runSimplifier testEnv
+            & runNoSMT
+            & fmap OrPattern.toPatterns
 
 x, y :: ElementVariable RewritingVariableName
 x = "x" `ofSort` stringSort
