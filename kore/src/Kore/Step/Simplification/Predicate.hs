@@ -80,10 +80,11 @@ simplifyPredicateTODO sideCondition predicate = do
                 , unparse conditional
                 ]
 
--- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
--- The primary purpose of this form is to transmit to the external solver.
--- Note that this is almost, but not quite, disjunctive normal form; see
--- 'simplifyNot' for the most notable exception.
+{- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
+ The primary purpose of this form is to transmit to the external solver.
+ Note that this is almost, but not quite, disjunctive normal form; see
+ 'simplifyNot' for the most notable exception.
+-}
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
 simplify ::
@@ -125,31 +126,32 @@ normalizeAnd ::
     simplifier NormalForm
 normalizeAnd = normalizeMultiAnd . foldMap MultiAnd.singleton
 
--- | @normalizeAnd@ obeys these laws:
---
--- Distribution:
---
--- @
--- \\and(\\or(P[1], P[2]), P[3]) = \\or(\\and(P[1], P[3]), \\and(P[2], P[3]))
--- @
---
--- Identity:
---
--- @
--- \\and(\\top, P[1]) = P[1]
--- @
---
--- Annihilation:
---
--- @
--- \\and(\\bottom, _) = \\bottom
--- @
---
--- Idempotence:
---
--- @
--- \\and(P[1], P[1]) = P[1]
--- @
+{- | @normalizeAnd@ obeys these laws:
+
+ Distribution:
+
+ @
+ \\and(\\or(P[1], P[2]), P[3]) = \\or(\\and(P[1], P[3]), \\and(P[2], P[3]))
+ @
+
+ Identity:
+
+ @
+ \\and(\\top, P[1]) = P[1]
+ @
+
+ Annihilation:
+
+ @
+ \\and(\\bottom, _) = \\bottom
+ @
+
+ Idempotence:
+
+ @
+ \\and(P[1], P[1]) = P[1]
+ @
+-}
 normalizeMultiAnd ::
     Applicative simplifier =>
     MultiAnd NormalForm ->
@@ -161,28 +163,29 @@ normalizeMultiAnd andOr =
         -- andAnd: \and(\and(_, _), \and(_, _))
         pure (fold andAnd)
 
--- | If the arguments of 'Or' are already in 'NormalForm', then normalization is
--- trivial.
---
--- @normalizeOr@ obeys these laws:
---
--- Identity:
---
--- @
--- \\or(\\bottom, P[1]) = P[1]
--- @
---
--- Annihilation:
---
--- @
--- \\or(\\top, _) = \\top
--- @
---
--- Idempotence:
---
--- @
--- \\or(P[1], P[1]) = P[1]
--- @
+{- | If the arguments of 'Or' are already in 'NormalForm', then normalization is
+ trivial.
+
+ @normalizeOr@ obeys these laws:
+
+ Identity:
+
+ @
+ \\or(\\bottom, P[1]) = P[1]
+ @
+
+ Annihilation:
+
+ @
+ \\or(\\top, _) = \\top
+ @
+
+ Idempotence:
+
+ @
+ \\or(P[1], P[1]) = P[1]
+ @
+-}
 normalizeOr ::
     Applicative simplifier =>
     Or sort NormalForm ->
@@ -203,35 +206,36 @@ normalizeTop ::
     simplifier NormalForm
 normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
 
--- | @simplifyNot@ obeys these laws:
---
--- 'Top':
---
--- @
--- \\not(\\top) = \\bottom
--- @
---
--- 'Bottom':
---
--- @
--- \\not(\\bottom) = \\top
--- @
---
--- 'Not':
---
--- @
--- \\not(\\not(P)) = P
--- @
---
--- 'Or':
---
--- @
--- \\not(\\or(P[1], P[2])) = \\and(\\not(P[1]), \\not(P[2]))
--- @
---
--- @simplifyNot@ does not expand @\not(\and(_, _))@ into @\or(_, _)@, because
--- the purpose of simplification is mostly to prepare 'Predicate' for the
--- external solver or for the user, and the un-expanded form is more compact.
+{- | @simplifyNot@ obeys these laws:
+
+ 'Top':
+
+ @
+ \\not(\\top) = \\bottom
+ @
+
+ 'Bottom':
+
+ @
+ \\not(\\bottom) = \\top
+ @
+
+ 'Not':
+
+ @
+ \\not(\\not(P)) = P
+ @
+
+ 'Or':
+
+ @
+ \\not(\\or(P[1], P[2])) = \\and(\\not(P[1]), \\not(P[2]))
+ @
+
+ @simplifyNot@ does not expand @\not(\and(_, _))@ into @\or(_, _)@, because
+ the purpose of simplification is mostly to prepare 'Predicate' for the
+ external solver or for the user, and the un-expanded form is more compact.
+-}
 simplifyNot ::
     forall simplifier sort.
     Monad simplifier =>
@@ -274,13 +278,14 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
             & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
 
--- |
--- @
--- \\implies(L, R) = \\or(\\not(L), \\and(L, R))
--- @
---
--- Note: @L@ is carried through to the right-hand side of 'Implies' to maximize
--- the information content of that branch.
+{- |
+ @
+ \\implies(L, R) = \\or(\\not(L), \\and(L, R))
+ @
+
+ Note: @L@ is carried through to the right-hand side of 'Implies' to maximize
+ the information content of that branch.
+-}
 simplifyImplies ::
     Monad simplifier =>
     Implies sort NormalForm ->
@@ -304,10 +309,11 @@ simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort}
                     }
         pure (impliesFirst' <> impliesSecond')
 
--- |
--- @
--- \\iff(P[1], P[2]) = \\and(\\implies(P[1], P[2]), \\implies(P[2], P[1]))
--- @
+{- |
+ @
+ \\iff(P[1], P[2]) = \\and(\\implies(P[1], P[2]), \\implies(P[2], P[1]))
+ @
+-}
 simplifyIff ::
     Monad simplifier =>
     Iff sort NormalForm ->
