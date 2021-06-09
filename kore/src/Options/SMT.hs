@@ -107,7 +107,7 @@ parseKoreSolverOptions =
         , rLimit = defaultRLimit
         , resetInterval = defaultResetInterval
         } =
-        SMT.defaultConfig
+            SMT.defaultConfig
 
     readPositiveInteger ctor optionName = do
         readInt <- auto
