@@ -50,6 +50,7 @@ import System.FilePath (
 -- | Command line options for the SMT solver.
 data KoreSolverOptions = KoreSolverOptions
     { timeOut :: !TimeOut
+    , rLimit :: !RLimit
     , resetInterval :: !ResetInterval
     , prelude :: !Prelude
     , solver :: !Solver
@@ -59,6 +60,7 @@ parseKoreSolverOptions :: Parser KoreSolverOptions
 parseKoreSolverOptions =
     KoreSolverOptions
         <$> parseTimeOut
+        <*> parseRLimit
         <*> parseResetInterval
         <*> parsePrelude
         <*> parseSolver
@@ -70,6 +72,15 @@ parseKoreSolverOptions =
                 <> long "smt-timeout"
                 <> help "Timeout for calls to the SMT solver, in milliseconds"
                 <> value defaultTimeOut
+            )
+
+    parseRLimit =
+        option
+            readRLimit
+            ( metavar "SMT_RLIMIT"
+                <> long "smt-rlimit"
+                <> help "Resource limit for calls to the SMT solver"
+                <> value defaultRLimit
             )
 
     parseResetInterval =
@@ -91,8 +102,12 @@ parseKoreSolverOptions =
                     )
                 )
 
-    SMT.Config{timeOut = defaultTimeOut} = SMT.defaultConfig
-    SMT.Config{resetInterval = defaultResetInterval} = SMT.defaultConfig
+    SMT.Config
+        { timeOut = defaultTimeOut
+        , rLimit = defaultRLimit
+        , resetInterval = defaultResetInterval
+        } =
+        SMT.defaultConfig
 
     readPositiveInteger ctor optionName = do
         readInt <- auto
@@ -105,6 +120,7 @@ parseKoreSolverOptions =
                 $ [optionName, "must be a positive integer."]
 
     readTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
+    readRLimit = readPositiveInteger (SMT.RLimit . Limit) "smt-rlimit"
     readResetInterval =
         readPositiveInteger SMT.ResetInterval "smt-reset-interval"
 
@@ -112,6 +128,7 @@ unparseKoreSolverOptions :: KoreSolverOptions -> [String]
 unparseKoreSolverOptions
     KoreSolverOptions
         { timeOut = TimeOut unwrappedTimeOut
+        , rLimit = RLimit unwrappedRLimit
         , resetInterval
         , prelude = Prelude unwrappedPrelude
         , solver
@@ -119,6 +136,8 @@ unparseKoreSolverOptions
         catMaybes
             [ (\limit -> unwords ["--smt-timeout", show limit])
                 <$> maybeLimit Nothing Just unwrappedTimeOut
+            , (\limit -> unwords ["--smt-rlimit", show limit])
+                <$> maybeLimit Nothing Just unwrappedRLimit
             , pure $
                 unwords
                     [ "--smt-reset-interval"
