@@ -5,9 +5,11 @@ Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
 module Kore.Log.DebugRewriteTrace (
+    DebugInitialClaim (..),
     DebugInitialPattern (..),
     DebugFinalPatterns (..),
     DebugRewriteTrace (..),
+    debugInitialClaim,
     debugInitialPattern,
     debugFinalPatterns,
     debugRewriteTrace,
@@ -80,6 +82,9 @@ import Pretty (
     renderText,
  )
 
+data DebugInitialClaim = DebugInitialClaim UniqueId (TermLike VariableName)
+    deriving stock (Show)
+
 data DebugInitialPattern = DebugInitialPattern (TermLike VariableName)
     deriving stock (Show)
 
@@ -124,6 +129,14 @@ instance ToJSON (Substitution VariableName) where
                 , "value" .= unparseOneLine (assignedTerm assignment)
                 ]
 
+instance ToJSON DebugInitialClaim where
+    toJSON (DebugInitialClaim uniqueId claim) =
+        object
+            [ "task" .= ("reachability" :: Text)
+            , "claim" .= claim
+            , "claim-id" .= maybe Null toJSON (getUniqueId uniqueId)
+            ]
+
 instance ToJSON DebugInitialPattern where
     toJSON (DebugInitialPattern initial) =
         object
@@ -153,6 +166,9 @@ instance ToJSON DebugRewriteTrace where
             , "remainders" .= remainders
             ]
 
+instance Pretty DebugInitialClaim where
+    pretty = pretty . decodeUtf8 . encode
+
 instance Pretty DebugInitialPattern where
     pretty = pretty . decodeUtf8 . encode
 
@@ -161,6 +177,10 @@ instance Pretty DebugFinalPatterns where
 
 instance Pretty DebugRewriteTrace where
     pretty = pretty . decodeUtf8 . encode
+
+instance Entry DebugInitialClaim where
+    entrySeverity _ = Debug
+    helpDoc _ = "log every claim before proving it"
 
 instance Entry DebugInitialPattern where
     entrySeverity _ = Debug
@@ -176,6 +196,13 @@ instance Entry DebugRewriteTrace where
 
 unparseOneLine :: Unparse p => p -> Text
 unparseOneLine = renderText . layoutOneLine . unparse
+
+debugInitialClaim ::
+    MonadLog log =>
+    UniqueId ->
+    TermLike VariableName ->
+    log ()
+debugInitialClaim uniqueId claimPattern = logEntry $ DebugInitialClaim uniqueId claimPattern
 
 debugInitialPattern ::
     MonadLog log =>
@@ -224,6 +251,8 @@ rewriteTraceLogger textLogger =
     LogAction action
   where
     action ActualEntry{actualEntry}
+        | Just initial <- fromEntry actualEntry =
+            unLogAction textLogger $ "---\n" <> encode (initial :: DebugInitialClaim) <> "steps:"
         | Just initial <- fromEntry actualEntry =
             unLogAction textLogger $ encode (initial :: DebugInitialPattern) <> "steps:"
         | Just final <- fromEntry actualEntry =

@@ -129,6 +129,10 @@ instance From SomeClaim Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
+instance From SomeClaim Attribute.UniqueId where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
 instance From SomeClaim (AxiomPattern VariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule

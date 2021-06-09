@@ -81,6 +81,7 @@ import Kore.Internal.Predicate (
  )
 import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
+import Kore.Log.DebugRewriteTrace
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
@@ -97,6 +98,12 @@ import qualified Kore.Reachability.Prim as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
+import Kore.Reachability.OnePathClaim (
+    onePathRuleToTerm,
+ )
+import Kore.Reachability.AllPathClaim (
+    allPathRuleToTerm,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
@@ -280,6 +287,10 @@ proveClaim
     (Axioms axioms)
     (goal, depthLimit) =
         traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
+            debugInitialClaim (from goal) $ case goal of
+                OnePath (onePathRuleToTerm -> term) -> term
+                AllPath (allPathRuleToTerm -> term) -> term
+
             let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
                 limitedStrategy =
                     strategy
