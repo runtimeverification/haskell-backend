@@ -86,6 +86,9 @@ import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
+import Kore.Reachability.AllPathClaim (
+    allPathRuleToTerm,
+ )
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState (
     ClaimState,
@@ -94,16 +97,13 @@ import Kore.Reachability.ClaimState (
     extractUnproven,
  )
 import qualified Kore.Reachability.ClaimState as ClaimState
+import Kore.Reachability.OnePathClaim (
+    onePathRuleToTerm,
+ )
 import qualified Kore.Reachability.Prim as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
-import Kore.Reachability.OnePathClaim (
-    onePathRuleToTerm,
- )
-import Kore.Reachability.AllPathClaim (
-    allPathRuleToTerm,
- )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,

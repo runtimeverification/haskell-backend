@@ -51,9 +51,9 @@ import Kore.Log.DebugProven (
     DebugProven,
  )
 import Kore.Log.DebugRewriteTrace (
+    DebugFinalPatterns,
     DebugInitialClaim,
     DebugInitialPattern,
-    DebugFinalPatterns,
     DebugRewriteTrace,
  )
 import Kore.Log.DebugSolver (
