@@ -191,6 +191,7 @@ normalizeOr ::
     Or sort NormalForm ->
     simplifier NormalForm
 normalizeOr = pure . fold
+{-# INLINE normalizeOr #-}
 
 -- | 'Bottom' is regarded as trivially-normalizable.
 normalizeBottom ::
@@ -198,6 +199,7 @@ normalizeBottom ::
     Bottom sort NormalForm ->
     simplifier NormalForm
 normalizeBottom _ = pure MultiOr.bottom
+{-# INLINE normalizeBottom #-}
 
 -- | 'Top' is regarded as trivially-normalizable.
 normalizeTop ::
@@ -205,6 +207,7 @@ normalizeTop ::
     Top sort NormalForm ->
     simplifier NormalForm
 normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
+{-# INLINE normalizeTop #-}
 
 {- | @simplifyNot@ obeys these laws:
 
@@ -291,18 +294,20 @@ simplifyImplies ::
     Implies sort NormalForm ->
     simplifier NormalForm
 simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort} = do
-    impliesFirst' <- mkNotSimplified impliesFirst
-    impliesSecond' <- mkAndSimplified impliesFirst impliesSecond
-    pure (impliesFirst' <> impliesSecond')
+    negative <- mkNotSimplified impliesFirst
+    positive <- mkAndSimplified impliesFirst impliesSecond
+    mkOrSimplified negative positive
   where
     mkNotSimplified notChild =
         simplifyNot Not{notSort = impliesSort, notChild}
     mkAndSimplified andFirst andSecond =
         normalizeAnd And{andSort = impliesSort, andFirst, andSecond}
+    mkOrSimplified orFirst orSecond =
+        normalizeOr Or{orSort = impliesSort, orFirst, orSecond}
 
 {- |
  @
- \\iff(P[1], P[2]) = \\and(\\implies(P[1], P[2]), \\implies(P[2], P[1]))
+ \\iff(P[1], P[2]) = \\or(\\and(\\not(P[1]), \\not(P[2])), \\and(P[1], P[2]))
  @
 -}
 simplifyIff ::
@@ -310,15 +315,16 @@ simplifyIff ::
     Iff sort NormalForm ->
     simplifier NormalForm
 simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
-    -- \iff(A, B) = \or( \and(\not(A), \not(B)), \and(A, B) )
     orFirst <- do
         andFirst <- mkNotSimplified iffFirst
         andSecond <- mkNotSimplified iffSecond
         mkAndSimplified andFirst andSecond
     orSecond <- mkAndSimplified iffFirst iffSecond
-    normalizeOr Or{orSort = iffSort, orFirst, orSecond}
+    mkOrSimplified orFirst orSecond
   where
     mkNotSimplified notChild =
         simplifyNot Not{notSort = iffSort, notChild}
     mkAndSimplified andFirst andSecond =
         normalizeAnd And{andSort = iffSort, andFirst, andSecond}
+    mkOrSimplified orFirst orSecond =
+        normalizeOr Or{orSort = iffSort, orFirst, orSecond}
