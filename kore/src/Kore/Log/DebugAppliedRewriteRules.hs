@@ -54,7 +54,7 @@ instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
     oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules} =
-        Just $ foldMap pretty appliedRewriteRules
+        Just $ Pretty.hsep $ pretty <$> appliedRewriteRules
 
 debugAppliedRewriteRules ::
     MonadLog log =>

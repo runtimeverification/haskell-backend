@@ -592,6 +592,11 @@ instance Entry DebugAttemptEquation where
             ]
     contextDoc _ = Nothing
     helpDoc _ = "log equation application attempts"
+    oneLineDoc (DebugAttemptEquation equation _) =
+        (\loc -> Pretty.hsep ["applying equation at", pretty loc])
+        <$> srcLoc equation
+    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = Just "equation is not applicable"
+    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = Just "equation is applicable"
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::

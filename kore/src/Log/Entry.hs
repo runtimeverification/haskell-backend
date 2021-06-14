@@ -59,7 +59,7 @@ class (Show entry, Typeable entry) => Entry entry where
     longDoc = Pretty.pretty
 
     oneLineDoc :: entry -> Maybe (Pretty.Doc ann)
-    oneLineDoc = const Nothing
+    oneLineDoc = const $ Just "One line logging not implemented for this entry"
 
     contextDoc :: entry -> Maybe (Pretty.Doc ann)
     contextDoc = const Nothing
