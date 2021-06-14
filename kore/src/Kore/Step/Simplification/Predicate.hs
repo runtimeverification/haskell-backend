@@ -290,24 +290,15 @@ simplifyImplies ::
     Monad simplifier =>
     Implies sort NormalForm ->
     simplifier NormalForm
-simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort}
-    | TopBottom.isTop impliesFirst = pure impliesSecond
-    | TopBottom.isBottom impliesFirst = normalizeTop Top{topSort = impliesSort}
-    | otherwise = do
-        impliesFirst' <-
-            simplifyNot
-                Not
-                    { notSort = impliesSort
-                    , notChild = impliesFirst
-                    }
-        impliesSecond' <-
-            normalizeAnd
-                And
-                    { andSort = impliesSort
-                    , andFirst = impliesFirst
-                    , andSecond = impliesSecond
-                    }
-        pure (impliesFirst' <> impliesSecond')
+simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort} = do
+    impliesFirst' <- mkNotSimplified impliesFirst
+    impliesSecond' <- mkAndSimplified impliesFirst impliesSecond
+    pure (impliesFirst' <> impliesSecond')
+  where
+    mkNotSimplified notChild =
+        simplifyNot Not{notSort = impliesSort, notChild}
+    mkAndSimplified andFirst andSecond =
+        normalizeAnd And{andSort = impliesSort, andFirst, andSecond}
 
 {- |
  @
