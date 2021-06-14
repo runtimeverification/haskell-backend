@@ -183,7 +183,10 @@ instance
     From (Predicate variable) (Conditional variable ())
     where
     from predicate =
-        Conditional{term = (), predicate, substitution = mempty}
+        Substitution.retractAssignment predicate
+            & maybe fallback (from @(Assignment _))
+      where
+        fallback = Conditional{term = (), predicate, substitution = mempty}
 
 instance
     InternalVariable variable =>

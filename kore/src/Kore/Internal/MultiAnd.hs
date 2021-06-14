@@ -120,6 +120,13 @@ instance
 
 instance
     InternalVariable variable =>
+    From (MultiAnd (Predicate variable)) (Condition variable)
+    where
+    from = foldMap (from @_ @(Condition _))
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable =>
     From (TermLike variable) (MultiAnd (TermLike variable))
     where
     from = fromTermLike
