@@ -21,6 +21,7 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate as Predicate (
     makeAndPredicate,
@@ -80,7 +81,7 @@ applyInitialConditions ::
     TestCondition ->
     IO [OrTestCondition]
 applyInitialConditions initial unification =
-    Step.applyInitialConditions initial unification
+    Step.applyInitialConditions SideCondition.top initial unification
         & runSimplifierSMT Mock.env . Logic.observeAllT
 
 test_applyInitialConditions :: [TestTree]
@@ -137,7 +138,7 @@ unifyRule ::
     rule ->
     IO [Step.UnifiedRule rule]
 unifyRule initial rule =
-    Step.unifyRule initial rule
+    Step.unifyRule SideCondition.top initial rule
         & Logic.observeAllT
         & runSimplifier Mock.env
 
