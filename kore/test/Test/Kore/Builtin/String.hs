@@ -532,15 +532,23 @@ test_unifyStringEq =
         TermLike RewritingVariableName ->
         IO [Maybe (Pattern RewritingVariableName)]
     unifyStringEq term1 term2 =
-        String.unifyStringEq
-            (termUnification Not.notSimplifier)
-            Not.notSimplifier
-            term1
-            term2
+        unify matched
             & runMaybeT
             & evalEnvUnifierT Not.notSimplifier
             & runSimplifierBranch testEnv
             & runNoSMT
+      where
+        unify Nothing = empty
+        unify (Just unifyData) =
+            String.unifyStringEq
+                (termUnification Not.notSimplifier)
+                Not.notSimplifier
+                unifyData
+                & lift
+
+        matched =
+            String.matchUnifyStringEq term1 term2
+                <|> String.matchUnifyStringEq term2 term1
 
     simplifyCondition' ::
         Condition RewritingVariableName ->

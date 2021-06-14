@@ -194,14 +194,11 @@ maybeTermEquals notSimplifier childTransformers first second = do
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq first second = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq second first = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
         | otherwise =
             asum
-                [ Builtin.String.unifyStringEq
-                    childTransformers
-                    notSimplifier
-                    first
-                    second
-                , do
+                [ do
                     unifyData <- Error.hoistMaybe $ Builtin.KEqual.matchUnifyKequalsEq first second
                     lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
                 , do
@@ -297,6 +294,8 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq first second = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq second first = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
         | otherwise =
             asum
                 [ Builtin.KEqual.unifyIfThenElse childTransformers first second
@@ -307,11 +306,6 @@ maybeTermAnd notSimplifier childTransformers first second = do
                 , Builtin.List.unifyEquals
                     SimplificationType.And
                     childTransformers
-                    first
-                    second
-                , Builtin.String.unifyStringEq
-                    childTransformers
-                    notSimplifier
                     first
                     second
                 , domainValueAndConstructorErrors first second

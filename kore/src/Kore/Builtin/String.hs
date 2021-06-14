@@ -27,6 +27,7 @@ module Kore.Builtin.String (
     unifyString,
     unifyStringEq,
     matchString,
+    matchUnifyStringEq,
 
     -- * keys
     ltKey,
@@ -78,10 +79,13 @@ import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
 import Kore.Internal.InternalString
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
     symbolHook,
  )
@@ -517,6 +521,23 @@ unifyString term1 term2 unifyData =
         | otherwise = explainAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2} = unifyData
 
+data UnifyStringEq = UnifyStringEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , value :: !Bool
+    }
+
+matchUnifyStringEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyStringEq
+matchUnifyStringEq first second
+    | Just eqTerm <- matchStringEqual first
+      , isFunctionPattern first
+      , Just value <- Bool.matchBool second =
+        Just UnifyStringEq{eqTerm, value}
+    | otherwise = Nothing
+{-# INLINE matchUnifyStringEq #-}
+
 {- | Unification of the @STRING.eq@ symbol
 
 This function is suitable only for equality simplification.
@@ -526,14 +547,15 @@ unifyStringEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyStringEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyStringEq ->
+    unifier (Pattern RewritingVariableName)
+unifyStringEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- unifyChildren operand1 operand2 & OrPattern.gather
+        let solution' = MultiOr.map eraseTerm solution
+        (if value then pure else notSimplifier SideCondition.top) solution'
+            >>= Unify.scatter
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchStringEqual termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyStringEq{eqTerm, value} = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
