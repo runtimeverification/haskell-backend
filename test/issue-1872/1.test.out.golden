@@ -23,7 +23,7 @@
     </generatedTop>
   #And
     {
-      ?_0:Int %Int 2
-    #Equals
       1
+    #Equals
+      ?_0:Int %Int 2
     }
