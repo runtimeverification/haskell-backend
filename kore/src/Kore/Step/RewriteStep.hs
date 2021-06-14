@@ -32,8 +32,8 @@ import Kore.Internal.OrPattern (
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.SideCondition (SideCondition)
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
@@ -104,23 +104,22 @@ finalizeAppliedRule ::
 finalizeAppliedRule
     sideCondition
     renamedRule
-    appliedConditions
-  =
-    MultiOr.observeAllT $
-        finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
-  where
-    ruleRHS = Rule.rhs renamedRule
-    finalizeAppliedRuleWorker appliedCondition = do
-        -- Combine the initial conditions, the unification conditions, and the
-        -- axiom ensures clause. The axiom requires clause is included by
-        -- unifyRule.
-        let avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
-            finalPattern =
-                Rule.topExistsToImplicitForall avoidVars ruleRHS
-        constructConfiguration
-            sideCondition
-            appliedCondition
-            finalPattern
+    appliedConditions =
+        MultiOr.observeAllT $
+            finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
+      where
+        ruleRHS = Rule.rhs renamedRule
+        finalizeAppliedRuleWorker appliedCondition = do
+            -- Combine the initial conditions, the unification conditions, and the
+            -- axiom ensures clause. The axiom requires clause is included by
+            -- unifyRule.
+            let avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
+                finalPattern =
+                    Rule.topExistsToImplicitForall avoidVars ruleRHS
+            constructConfiguration
+                sideCondition
+                appliedCondition
+                finalPattern
 
 {- | Combine all the conditions to apply rule and construct the result.
 
@@ -144,31 +143,31 @@ constructConfiguration ::
 constructConfiguration
     sideCondition
     appliedCondition
-    finalPattern
-  = do
-    let ensuresCondition = Pattern.withoutTerm finalPattern
-    finalCondition <-
+    finalPattern =
         do
-            partial <-
-                simplifyCondition
-                    ( sideCondition
-                        & SideCondition.addConditionWithReplacements
-                            appliedCondition
-                    )
-                    ensuresCondition
-            -- TODO (thomas.tuegel): It should not be necessary to simplify
-            -- after conjoining the conditions.
-            simplifyCondition sideCondition (appliedCondition <> partial)
-            & Logic.lowerLogicT
-    -- Apply the normalized substitution to the right-hand side of the
-    -- axiom.
-    let Conditional{substitution} = finalCondition
-        substitution' = Substitution.toMap substitution
-        Conditional{term = finalTerm} = finalPattern
-        finalTerm' = TermLike.substitute substitution' finalTerm
-    -- TODO (thomas.tuegel): Should the final term be simplified after
-    -- substitution?
-    return (finalTerm' `Pattern.withCondition` finalCondition)
+            let ensuresCondition = Pattern.withoutTerm finalPattern
+            finalCondition <-
+                do
+                    partial <-
+                        simplifyCondition
+                            ( sideCondition
+                                & SideCondition.addConditionWithReplacements
+                                    appliedCondition
+                            )
+                            ensuresCondition
+                    -- TODO (thomas.tuegel): It should not be necessary to simplify
+                    -- after conjoining the conditions.
+                    simplifyCondition sideCondition (appliedCondition <> partial)
+                    & Logic.lowerLogicT
+            -- Apply the normalized substitution to the right-hand side of the
+            -- axiom.
+            let Conditional{substitution} = finalCondition
+                substitution' = Substitution.toMap substitution
+                Conditional{term = finalTerm} = finalPattern
+                finalTerm' = TermLike.substitute substitution' finalTerm
+            -- TODO (thomas.tuegel): Should the final term be simplified after
+            -- substitution?
+            return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
     forall simplifier.
@@ -228,22 +227,21 @@ finalizeRule
     finalizeApplied
     initialVariables
     initial
-    unifiedRule
-  =
-    Logic.observeAllT $ do
-        let initialCondition = Conditional.withoutTerm initial
-        let unificationCondition = Conditional.withoutTerm unifiedRule
-        applied <-
-            applyInitialConditions
-                sideCondition
-                initialCondition
-                unificationCondition
-        checkSubstitutionCoverage initial (toRule <$> unifiedRule)
-        let renamedRule = Conditional.term unifiedRule
-        final <- finalizeApplied renamedRule applied
-        let result =
-                OrPattern.map (resetResultPattern initialVariables) final
-        return Step.Result{appliedRule = unifiedRule, result}
+    unifiedRule =
+        Logic.observeAllT $ do
+            let initialCondition = Conditional.withoutTerm initial
+            let unificationCondition = Conditional.withoutTerm unifiedRule
+            applied <-
+                applyInitialConditions
+                    sideCondition
+                    initialCondition
+                    unificationCondition
+            checkSubstitutionCoverage initial (toRule <$> unifiedRule)
+            let renamedRule = Conditional.term unifiedRule
+            final <- finalizeApplied renamedRule applied
+            let result =
+                    OrPattern.map (resetResultPattern initialVariables) final
+            return Step.Result{appliedRule = unifiedRule, result}
 
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer rule simplifier =
@@ -266,30 +264,30 @@ finalizeRulesParallel
     finalizeApplied
     initialVariables
     initial
-    unifiedRules
-  = do
-    results <-
-        traverse
-            (finalizeRule
-                sideCondition
-                toRule
-                finalizeApplied
-                initialVariables
-                initial
-            )
-            unifiedRules
-            & fmap fold
-    let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-        remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders <-
-        applyRemainder sideCondition initial remainder
-            & Logic.observeAllT
-            & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
-    return
-        Step.Results
-            { results = Seq.fromList results
-            , remainders
-            }
+    unifiedRules =
+        do
+            results <-
+                traverse
+                    ( finalizeRule
+                        sideCondition
+                        toRule
+                        finalizeApplied
+                        initialVariables
+                        initial
+                    )
+                    unifiedRules
+                    & fmap fold
+            let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
+                remainder = Condition.fromPredicate (Remainder.remainder' unifications)
+            remainders <-
+                applyRemainder sideCondition initial remainder
+                    & Logic.observeAllT
+                    & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
+            return
+                Step.Results
+                    { results = Seq.fromList results
+                    , remainders
+                    }
 
 finalizeSequence ::
     forall representation rule simplifier.
@@ -304,42 +302,42 @@ finalizeSequence
     finalizeApplied
     initialVariables
     initial
-    unifiedRules
-  = do
-    (results, remainder) <-
-        State.runStateT
-            (traverse finalizeRuleSequence' unifiedRules)
-            (Conditional.withoutTerm initial)
-    remainders <-
-        applyRemainder sideCondition initial remainder
-            & Logic.observeAllT
-            & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
-    return
-        Step.Results
-            { results = Seq.fromList $ fold results
-            , remainders
-            }
-  where
-    initialTerm = Conditional.term initial
-    finalizeRuleSequence' unifiedRule = do
-        remainder <- State.get
-        let remainderPattern = Conditional.withCondition initialTerm remainder
-        results <-
-            finalizeRule
-                sideCondition
-                toRule
-                finalizeApplied
-                initialVariables
-                remainderPattern
-                unifiedRule
-                & Monad.Trans.lift
-        let unification = Conditional.withoutTerm unifiedRule
-            remainder' =
-                Condition.fromPredicate $
-                    Remainder.remainder' $
-                        MultiOr.singleton unification
-        State.put (remainder `Conditional.andCondition` remainder')
-        return results
+    unifiedRules =
+        do
+            (results, remainder) <-
+                State.runStateT
+                    (traverse finalizeRuleSequence' unifiedRules)
+                    (Conditional.withoutTerm initial)
+            remainders <-
+                applyRemainder sideCondition initial remainder
+                    & Logic.observeAllT
+                    & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
+            return
+                Step.Results
+                    { results = Seq.fromList $ fold results
+                    , remainders
+                    }
+      where
+        initialTerm = Conditional.term initial
+        finalizeRuleSequence' unifiedRule = do
+            remainder <- State.get
+            let remainderPattern = Conditional.withCondition initialTerm remainder
+            results <-
+                finalizeRule
+                    sideCondition
+                    toRule
+                    finalizeApplied
+                    initialVariables
+                    remainderPattern
+                    unifiedRule
+                    & Monad.Trans.lift
+            let unification = Conditional.withoutTerm unifiedRule
+                remainder' =
+                    Condition.fromPredicate $
+                        Remainder.remainder' $
+                            MultiOr.singleton unification
+            State.put (remainder `Conditional.andCondition` remainder')
+            return results
 
 applyWithFinalizer ::
     forall rule simplifier.
@@ -382,7 +380,7 @@ applyRulesParallel ::
 applyRulesParallel sideCondition rules initial =
     applyWithFinalizer
         sideCondition
-        (finalizeRulesParallel
+        ( finalizeRulesParallel
             sideCondition
             RewriteRule
             (finalizeAppliedRule sideCondition)
@@ -430,7 +428,7 @@ applyRulesSequence ::
 applyRulesSequence sideCondition rules initial =
     applyWithFinalizer
         sideCondition
-        (finalizeSequence
+        ( finalizeSequence
             sideCondition
             RewriteRule
             (finalizeAppliedRule sideCondition)
@@ -478,7 +476,7 @@ applyClaimsSequence mkClaim initialConfig claims = do
     results <-
         applyWithFinalizer
             sideCondition
-            (finalizeSequence
+            ( finalizeSequence
                 sideCondition
                 mkClaim
                 (finalizeAppliedClaim sideCondition)

@@ -21,7 +21,6 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate as Predicate (
     makeAndPredicate,
@@ -32,6 +31,7 @@ import Kore.Internal.Predicate as Predicate (
     makeTruePredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Reachability (
