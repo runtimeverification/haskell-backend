@@ -523,7 +523,13 @@ data UnifyStringEq = UnifyStringEq
     , value :: !Bool
     }
 
---TODO: document
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}(_), eqString{_}(_,_))
+@
+
+-}
 matchUnifyStringEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
