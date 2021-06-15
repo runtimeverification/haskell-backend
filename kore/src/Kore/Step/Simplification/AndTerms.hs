@@ -818,11 +818,12 @@ domainValueAndConstructorErrors ::
     DVConstrError ->
     unifier a
 domainValueAndConstructorErrors term1 term2 unifyData =
-    error
-        ( unlines
+    error $ show
+        ( Pretty.vsep
             [ cannotHandle
-            , unparseToString term1
-            , unparseToString term2
+            , fromString $ unparseToString term1
+            , fromString $ unparseToString term2
+            , ""
             ]
         )
   where

@@ -628,8 +628,8 @@ data UnifyNotInKeys = UnifyNotInKeys
     }
 
 data UnifyNotInKeysResult
-    = UnifyNotInKeys1
-    | UnifyNotInKeys2 !UnifyNotInKeys
+    = NullKeysNullOpaques
+    | NonNullKeysOrMultipleOpaques !UnifyNotInKeys
 
 {- | Matches
 
@@ -652,7 +652,7 @@ matchUnifyNotInKeys first second
             mapKeys = symbolicKeys <> concreteKeys
             opaqueElements = opaque . unwrapAc $ normalizedMap
             unifyData =
-                UnifyNotInKeys2
+                NonNullKeysOrMultipleOpaques
                     UnifyNotInKeys
                         { inKeys
                         , keyTerm
@@ -663,7 +663,7 @@ matchUnifyNotInKeys first second
                         }
          in case (mapKeys, opaqueElements) of
                 -- null mapKeys && null opaqueElements
-                ([], []) -> Just UnifyNotInKeys1
+                ([], []) -> Just NullKeysNullOpaques
                 -- (not (null mapKeys) || (length opaqueElements > 1))
                 (_ : _, _) -> Just unifyData
                 (_, _ : _ : _) -> Just unifyData
@@ -688,8 +688,8 @@ unifyNotInKeys ::
     unifier (Pattern RewritingVariableName)
 unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) termLike1 unifyData =
     case unifyData of
-        UnifyNotInKeys1 -> return Pattern.top
-        UnifyNotInKeys2 unifyData' ->
+        NullKeysNullOpaques -> return Pattern.top
+        NonNullKeysOrMultipleOpaques unifyData' ->
             do
                 -- Concrete keys are constructor-like, therefore they are defined
                 TermLike.assertConstructorLikeKeys concreteKeys $ return ()
