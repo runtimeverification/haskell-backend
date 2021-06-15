@@ -528,7 +528,6 @@ data UnifyStringEq = UnifyStringEq
 @
 \\equals{_, _}(\\dv{Bool}(_), eqString{_}(_,_))
 @
-
 -}
 matchUnifyStringEq ::
     TermLike RewritingVariableName ->
