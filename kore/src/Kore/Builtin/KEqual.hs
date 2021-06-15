@@ -19,6 +19,7 @@ module Kore.Builtin.KEqual (
     builtinFunctions,
     unifyKequalsEq,
     unifyIfThenElse,
+    matchUnifyKequalsEq,
 
     -- * keys
     eqKey,
@@ -52,6 +53,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -219,22 +222,57 @@ matchKequalEq =
             Monad.guard (hook2 == eqKey)
             & isJust
 
+data UnifyKequalsEq = UnifyKequalsEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , value :: !Bool
+    }
+
+{- | Matches two terms when second is a bool term
+    and the first is a function pattern matching
+    the @KEQUAL.eq@ hooked symbol.
+-}
+
+{- | Matches
+
+@
+\\equals{_, _}(eq(_,_), \\dv{Bool}(_))
+@
+
+and
+
+@
+\\and{_}(eq(_,_), \\dv{Bool}(_))
+@
+-}
+matchUnifyKequalsEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyKequalsEq
+matchUnifyKequalsEq first second
+    | Just eqTerm <- matchKequalEq first
+      , isFunctionPattern first
+      , Just value <- Bool.matchBool second =
+        Just UnifyKequalsEq{eqTerm, value}
+    | otherwise = Nothing
+{-# INLINE matchUnifyKequalsEq #-}
+
 unifyKequalsEq ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyKequalsEq ->
+    unifier (Pattern RewritingVariableName)
+unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- unifyChildren operand1 operand2 & OrPattern.gather
+        let solution' = MultiOr.map eraseTerm solution
+        (if value then pure else notSimplifier SideCondition.top) solution'
+            >>= Unify.scatter
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchKequalEq termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyKequalsEq{eqTerm, value} = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

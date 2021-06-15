@@ -29,9 +29,6 @@ module Kore.Step.Step (
     Step.results,
 ) where
 
-import Data.Functor (
-    (<&>),
- )
 import qualified Data.Map.Strict as Map
 import Data.Set (
     Set,
@@ -143,7 +140,8 @@ unifyRule ::
     LogicT simplifier (UnifiedRule rule)
 unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        sideCondition = SideCondition.fromCondition initialCondition
+        sideCondition =
+            SideCondition.fromConditionWithReplacements initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
@@ -288,7 +286,9 @@ applyRemainder initial remainder = do
     -- to the top level.
     partial <-
         Simplifier.simplifyCondition
-            (SideCondition.fromCondition $ Pattern.withoutTerm initial)
+            ( SideCondition.fromConditionWithReplacements $
+                Pattern.withoutTerm initial
+            )
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!

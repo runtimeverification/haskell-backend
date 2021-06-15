@@ -54,9 +54,6 @@ import Control.Monad (
  )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Data.Functor (
-    (<&>),
- )
 import Data.HashMap.Strict (
     HashMap,
  )

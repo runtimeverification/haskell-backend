@@ -216,11 +216,18 @@ runKEqualSimplification ::
     TermLike RewritingVariableName ->
     NoSMT [Maybe (Pattern RewritingVariableName)]
 runKEqualSimplification term1 term2 =
-    runSimplifierBranch testEnv
-        . evalEnvUnifierT Not.notSimplifier
-        . runMaybeT
-        $ KEqual.unifyKequalsEq
+    unify matched
+        & runMaybeT
+        & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+  where
+    matched =
+        KEqual.matchUnifyKequalsEq term1 term2
+            <|> KEqual.matchUnifyKequalsEq term2 term1
+    unify (Just unifyData) =
+        KEqual.unifyKequalsEq
             (termUnification Not.notSimplifier)
             Not.notSimplifier
-            term1
-            term2
+            unifyData
+            & lift
+    unify Nothing = empty

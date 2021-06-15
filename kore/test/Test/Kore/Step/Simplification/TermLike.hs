@@ -38,7 +38,7 @@ test_simplify_sideConditionReplacements =
     [ testCase "Replaces top level term" $ do
         let sideCondition =
                 f a `equals` b
-                    & SideCondition.fromPredicate
+                    & SideCondition.fromPredicateWithReplacements
             term = f a
             expected = b & OrPattern.fromTermLike
         actual <-
@@ -49,7 +49,7 @@ test_simplify_sideConditionReplacements =
     , testCase "Replaces nested term" $ do
         let sideCondition =
                 f a `equals` b
-                    & SideCondition.fromPredicate
+                    & SideCondition.fromPredicateWithReplacements
             term = g (f a)
             expected = g b & OrPattern.fromTermLike
         actual <-
@@ -60,7 +60,7 @@ test_simplify_sideConditionReplacements =
     , testCase "Replaces terms in sequence" $ do
         let sideCondition =
                 (f a `equals` g b) `and'` (g b `equals` c)
-                    & SideCondition.fromPredicate
+                    & SideCondition.fromPredicateWithReplacements
             term = f a
             expected = c & OrPattern.fromTermLike
         actual <-
@@ -71,7 +71,7 @@ test_simplify_sideConditionReplacements =
     , testCase "Replaces top level term after replacing subterm" $ do
         let sideCondition =
                 (f a `equals` b) `and'` (g b `equals` c)
-                    & SideCondition.fromPredicate
+                    & SideCondition.fromPredicateWithReplacements
             term = g (f a)
             expected = c & OrPattern.fromTermLike
         actual <-
