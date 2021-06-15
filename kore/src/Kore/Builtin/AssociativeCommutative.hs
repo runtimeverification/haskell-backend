@@ -783,9 +783,7 @@ data UnifyEqualsNormAc normalized variable
 
 matchUnifyEqualsNormalizedAc ::
     forall normalized.
-    ( --Traversable (Value normalized)
-      TermWrapper normalized
-    ) =>
+    TermWrapper normalized =>
     SmtMetadataTools Attribute.Symbol ->
     InternalAc Key normalized (TermLike RewritingVariableName) ->
     InternalAc Key normalized (TermLike RewritingVariableName) ->
@@ -871,7 +869,6 @@ matchUnifyEqualsNormalizedAc
         -- means that the unification result is bottom.
         commonOpaqueMap = HashMap.intersectionWith max opaque1Map opaque2Map
 
-        -- commonOpaque = mapToList commonOpaqueMap
         commonOpaqueKeys = HashMap.keysSet commonOpaqueMap
 
         elementDifference1 =
@@ -1006,9 +1003,6 @@ unifyEqualsNormalizedAc
                 first
                 second
                 unifyEqualsChildren
-
-        -- unifyOpaqueVariable' =
-        --     unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
 
         NormalizedAc
             { elementsWithVariables = preElementsWithVariables1
@@ -1455,7 +1449,6 @@ matchUnifyOpaqueVariable ::
     [TermLike variable] ->
     Maybe (UnifyOpVarResult variable)
 matchUnifyOpaqueVariable _ v1 [] [second@(ElemVar_ _)] =
-    --noCheckUnifyOpaqueChildren unifyChildren v1 second
     Just $ NoCheckUnifyOpaqueChildren NoCheckUnifyOpaqueChildrenData{v1, second}
 matchUnifyOpaqueVariable
     tools
@@ -1464,8 +1457,6 @@ matchUnifyOpaqueVariable
     opaqueTerms =
         case elementListAsNormalized pairs of
             Nothing -> Just BottomWithExplanation
-            -- bottomWithExplanation
-            --     "Duplicated element in unification results"
             Just elementTerm ->
                 let secondTerm =
                         asInternal

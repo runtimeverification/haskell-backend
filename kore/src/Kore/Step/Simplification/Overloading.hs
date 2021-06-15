@@ -214,7 +214,6 @@ unifyOverloading overloadSimplifier termPair = case termPair of
     worker _ _ = Nothing
 
     notUnifiableTest termHead child = do
-        --OverloadSimplifier{isOverloaded} <- Simplifier.askOverloadSimplifier
         Monad.guard (isOverloaded termHead)
         notUnifiableError child
       where
