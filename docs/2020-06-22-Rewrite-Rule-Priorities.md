@@ -167,7 +167,7 @@ and we encode the rule as:
     φ(X) ∧ P(X)
     ∧ ¬ (∃ X₁ . φ₁(X₁) ∧ P₁(X₁))
     ...
-    ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))
+    ∧ ¬ (∃ Xₙ . φₙ(Xₙ) ∧ Pₙ(Xₙ))
     ⇒ ψ(X)
 ```
 Strictly speaking, we should have the left hand side of the encoding of the
