@@ -129,37 +129,66 @@ others are true.
 This procedure is applied until the conjunction stabilizes.
 -}
 simplifyPredicates ::
-    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (Predicate RewritingVariableName) ->
     LogicT simplifier (Condition RewritingVariableName)
-simplifyPredicates initialSideCondition predicates = do
-    let predicatesList = toList predicates
-        unsimplifieds = scanr ((<>) . MultiAnd.singleton) MultiAnd.top predicatesList
-    simplifieds <-
-        traverse worker (zip predicatesList unsimplifieds)
-            & flip State.evalStateT initialSideCondition
-    markConjunctionSimplified (foldMap mkCondition $ mconcat simplifieds)
+simplifyPredicates sideCondition original = do
+    let predicates =
+            SideCondition.simplifyConjunctionByAssumption original
+                & fst . extract
+    simplified <-
+        simplifyPredicatesWithAssumptions
+            sideCondition
+            (toList predicates)
+    let simplifiedPredicates =
+            from @(Condition _) @(MultiAnd (Predicate _)) simplified
+    if original == simplifiedPredicates
+        then return (Condition.markSimplified simplified)
+        else simplifyPredicates sideCondition simplifiedPredicates
+
+{- | Simplify a conjunction of predicates by simplifying each one
+under the assumption that the others are true.
+-}
+simplifyPredicatesWithAssumptions ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    [Predicate RewritingVariableName] ->
+    LogicT
+        simplifier
+        (Condition RewritingVariableName)
+simplifyPredicatesWithAssumptions _ [] = return Condition.top
+simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
+    let predicatesWithUnsimplified =
+            zip predicates $
+                scanr ((<>) . MultiAnd.singleton) MultiAnd.top rest
+    State.execStateT
+        ( traverse_
+            simplifyWithAssumptions
+            predicatesWithUnsimplified
+        )
+        MultiAnd.top
+        & fmap (foldMap mkCondition)
   where
-    worker ::
+    simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
         , MultiAnd (Predicate RewritingVariableName)
         ) ->
         StateT
-            (SideCondition RewritingVariableName)
-            (LogicT simplifier)
             (MultiAnd (Predicate RewritingVariableName))
-    worker (predicate, unsimplified) = do
-        sideCondition <- SideCondition.addAssumptions unsimplified <$> State.get
-        results <-
-            Predicate.simplify sideCondition predicate >>= Logic.scatter
+            (LogicT simplifier)
+            ()
+    simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
+        simplifiedSideCond <- State.get
+        let otherSideConds =
+                SideCondition.addAssumptions
+                    (simplifiedSideCond <> unsimplifiedSideCond)
+                    sideCondition
+        result <-
+            Predicate.simplify otherSideConds predicate >>= Logic.scatter
                 & lift
-        State.modify (SideCondition.addAssumptions results)
-        return results
-
-    markConjunctionSimplified =
-        return . Lens.over (field @"predicate") Predicate.markSimplified
+        State.put (simplifiedSideCond <> result)
 
 mkCondition ::
     InternalVariable variable =>
