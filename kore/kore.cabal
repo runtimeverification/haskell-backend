@@ -549,6 +549,7 @@ executable kore-exec
   build-depends: extra >=1.6
   build-depends: generic-lens >=1.1
   build-depends: reflection >=2.1
+  ghc-options: -eventlog
 
 executable kore-format
   import: haskell
