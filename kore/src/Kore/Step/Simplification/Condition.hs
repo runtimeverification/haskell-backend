@@ -159,15 +159,11 @@ simplifyPredicatesWithAssumptions ::
         (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
-    let predicatesWithUnsimplified =
-            zip predicates $
-                scanr ((<>) . MultiAnd.singleton) MultiAnd.top rest
-    State.execStateT
-        ( traverse_
-            simplifyWithAssumptions
-            predicatesWithUnsimplified
-        )
-        MultiAnd.top
+    let unsimplifieds =
+            map MultiAnd.singleton rest
+                & scanr (<>) MultiAnd.top
+    traverse_ simplifyWithAssumptions (zip predicates unsimplifieds)
+        & flip State.execStateT MultiAnd.top
   where
     simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
@@ -178,15 +174,21 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             (LogicT simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
+        sideCondition' <- getSideCondition unsimplifiedSideCond
+        result <- simplifyPredicate sideCondition' predicate
+        putSimplifiedResult result
+
+    getSideCondition unsimplifiedSideCond = do
         simplifiedSideCond <- State.get
-        let otherSideConds =
-                SideCondition.addAssumptions
-                    (simplifiedSideCond <> unsimplifiedSideCond)
-                    sideCondition
-        result <-
-            Predicate.simplify otherSideConds predicate >>= Logic.scatter
-                & lift
-        State.put (simplifiedSideCond <> result)
+        SideCondition.addAssumptions
+            (simplifiedSideCond <> unsimplifiedSideCond)
+            sideCondition
+            & return
+
+    putSimplifiedResult result = State.modify' (<> result)
+
+    simplifyPredicate sideCondition' predicate =
+        Predicate.simplify sideCondition' predicate >>= Logic.scatter & lift
 
 mkCondition ::
     InternalVariable variable =>
