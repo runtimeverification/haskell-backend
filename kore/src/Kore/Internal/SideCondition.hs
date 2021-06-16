@@ -433,16 +433,17 @@ fromDefinedTerms ::
 fromDefinedTerms definedTerms =
     top{definedTerms}
 
--- | Prepares the 'SideCondition' for storing in the term attributes.
--- Any metadata information used only in particular places during execution
--- is erased.
+{- | Prepares the 'SideCondition' for storing in the term attributes.
+ Any metadata information used only in particular places during execution
+ is erased.
+-}
 toRepresentation ::
     InternalVariable variable =>
     SideCondition variable ->
     SideCondition.Representation
 toRepresentation sideCondition =
     let sideCondition' =
-            sideCondition { simplifiedFunctions = HashSet.empty }
+            sideCondition{simplifiedFunctions = HashSet.empty}
      in mkRepresentation sideCondition'
 
 -- | Looks up the term in the table of replacements.
