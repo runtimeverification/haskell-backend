@@ -62,6 +62,9 @@ import Kore.Internal.Condition (
     Condition,
  )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -382,16 +385,17 @@ checkRequires sideCondition predicate requires =
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
-    assertBottom orCondition
-        | isBottom orCondition = done
-        | otherwise = requiresNotMet
+    assertBottom negatedImplication
+        | isBottom negatedImplication = done
+        | otherwise = requiresNotMet negatedImplication
     done = return ()
-    requiresNotMet =
+    requiresNotMet negatedImplication =
         throwE
             CheckRequiresError
                 { matchPredicate = predicate
                 , equationRequires = requires
                 , sideCondition
+                , negatedImplication
                 }
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
@@ -530,6 +534,7 @@ data CheckRequiresError variable = CheckRequiresError
     { matchPredicate :: !(Predicate variable)
     , equationRequires :: !(Predicate variable)
     , sideCondition :: !(SideCondition variable)
+    , negatedImplication :: !(OrCondition variable)
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -539,16 +544,22 @@ data CheckRequiresError variable = CheckRequiresError
 instance Pretty (CheckRequiresError RewritingVariableName) where
     pretty checkRequiresError =
         Pretty.vsep
-            [ "could not infer the equation requirement:"
+            [ "Could not infer the equation requirement:"
             , Pretty.indent 4 (pretty equationRequires)
             , "and the matching requirement:"
             , Pretty.indent 4 (pretty matchPredicate)
             , "from the side condition:"
             , Pretty.indent 4 (pretty sideCondition)
+            , "The negated implication is:"
+            , Pretty.indent 4 (pretty negatedImplication)
             ]
       where
-        CheckRequiresError{matchPredicate, equationRequires, sideCondition} =
-            checkRequiresError
+        CheckRequiresError
+            { matchPredicate
+            , equationRequires
+            , sideCondition
+            , negatedImplication
+            } = checkRequiresError
 
 -- * Logging
 
