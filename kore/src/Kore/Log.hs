@@ -213,7 +213,7 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
     prettyActualEntry timestamp ActualEntry{actualEntry, entryContext}
         | OneLine <- koreLogFormat =
             Pretty.hsep $
-                catMaybes [timestamp, Just (Pretty.parens $ type' actualEntry), oneLineDoc actualEntry]
+                catMaybes [Just header, oneLineDoc actualEntry]
         | otherwise =
             (Pretty.vsep . concat)
                 [ [header]
