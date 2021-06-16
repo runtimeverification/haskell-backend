@@ -78,12 +78,12 @@ packages:
     git: https://github.com/ttuegel/pipes-ghc-events.git
     pantry-tree:
       size: 363
-      sha256: 4bddba2dbf59144a60ab35ca92c282b38778141465d202602c8d5439f0a3f9db
-    commit: 780b479300bd165f58b3bdd5f941ea81844fc937
+      sha256: db17d33a7672b8e31f5fe9a1808331ab6ec0882ac8c15c51ba25d96bcd8f5042
+    commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
   original:
     subdir: eventlog2speedscope
     git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 780b479300bd165f58b3bdd5f941ea81844fc937
+    commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
 - completed:
     subdir: pipes-ghc-events
     name: pipes-ghc-events
@@ -92,11 +92,11 @@ packages:
     pantry-tree:
       size: 234
       sha256: 442cb60eae9a3f52d872d5fbae872a5b2bf8fe144940cb2b10f75f6a0caf3182
-    commit: 780b479300bd165f58b3bdd5f941ea81844fc937
+    commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
   original:
     subdir: pipes-ghc-events
     git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 780b479300bd165f58b3bdd5f941ea81844fc937
+    commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
 - completed:
     name: pipes-sqlite-simple
     version: '0.2'
