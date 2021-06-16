@@ -137,12 +137,11 @@ simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
                 & fst . extract
-    simplified <-
+    simplifiedPredicates <-
         simplifyPredicatesWithAssumptions
             sideCondition
             (toList predicates)
-    let simplifiedPredicates =
-            from @(Condition _) @(MultiAnd (Predicate _)) simplified
+    let simplified = foldMap mkCondition simplifiedPredicates
     if original == simplifiedPredicates
         then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
@@ -157,8 +156,8 @@ simplifyPredicatesWithAssumptions ::
     [Predicate RewritingVariableName] ->
     LogicT
         simplifier
-        (Condition RewritingVariableName)
-simplifyPredicatesWithAssumptions _ [] = return Condition.top
+        (MultiAnd (Predicate RewritingVariableName))
+simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
     let predicatesWithUnsimplified =
             zip predicates $
@@ -169,7 +168,6 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             predicatesWithUnsimplified
         )
         MultiAnd.top
-        & fmap (foldMap mkCondition)
   where
     simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
