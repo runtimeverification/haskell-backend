@@ -143,21 +143,25 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
     inputPattern = applyToNoArgs mySort "a"
     expected = (ExitSuccess, applyToNoArgs mySort "d")
 
-newtype TestLog a = TestLog (StateT [SomeEntry] SMT.NoSMT a)
+newtype TestLog m a = TestLog (StateT [SomeEntry] m a)
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (State.MonadState [SomeEntry], MonadIO, SMT.MonadSMT)
     deriving newtype (MonadThrow, MonadCatch, MonadMask, MonadProf)
 
-instance MonadLog TestLog where
+instance Monad m => MonadLog (TestLog m) where
     logEntry entry = State.modify (toEntry entry :)
     logWhile entry (TestLog state) =
         TestLog $ State.mapStateT addEntry state
       where
-        addEntry :: SMT.NoSMT (a, [SomeEntry]) -> SMT.NoSMT (a, [SomeEntry])
+        addEntry :: m (a, [SomeEntry]) -> m (a, [SomeEntry])
         addEntry = fmap $ Bifunctor.second (toEntry entry :)
 
-runTestLog :: TestLog a -> IO [SomeEntry]
-runTestLog (TestLog state) = runNoSMT $ State.execStateT state []
+runTestLog ::
+    Monad m =>
+    (m [SomeEntry] -> IO [SomeEntry]) ->
+    TestLog m a ->
+    IO [SomeEntry]
+runTestLog run (TestLog state) = run $ State.execStateT state []
 
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
@@ -175,7 +179,7 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
             verifiedModule
             Any
             inputPattern
-            & runTestLog
+            & runTestLog runNoSMT
     verifiedModule =
         verifiedMyModule
             Module

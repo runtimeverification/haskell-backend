@@ -717,7 +717,7 @@ runWithState command axioms claims claim stateTransformer = do
             liftSimplifier $
                 flip runStateT state $
                     flip runReaderT config $
-                        replInterpreter0
+                        replInterpreter0 @(SimplifierT NoSMT)
                             (PrintAuxOutput . modifyAuxOutput $ output)
                             (PrintKoreOutput . modifyKoreOutput $ output)
                             command
