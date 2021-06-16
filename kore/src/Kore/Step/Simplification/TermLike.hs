@@ -376,8 +376,10 @@ simplify sideCondition = \termLike ->
                     ceilF' <- simplifyChildren ceilF
                     conditions <- Ceil.simplify sideCondition ceilF'
                     pure (OrPattern.fromOrCondition sort conditions)
-                EqualsF equalsF ->
-                    Equals.simplify sideCondition =<< simplifyChildren equalsF
+                EqualsF equalsF -> do
+                    equalsF' <- simplifyChildren equalsF
+                    conditions <- Equals.simplify sideCondition equalsF'
+                    pure (OrPattern.fromOrCondition sort conditions)
                 ExistsF exists -> do
                     simplifiedChildren <-
                         simplifyChildren (refresh exists)
