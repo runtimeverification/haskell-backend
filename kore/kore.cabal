@@ -445,6 +445,7 @@ library
     Kore.Step.Simplification.Overloading
     Kore.Step.Simplification.OverloadSimplifier
     Kore.Step.Simplification.Pattern
+    Kore.Step.Simplification.Predicate
     Kore.Step.Simplification.Rewrites
     Kore.Step.Simplification.Rule
     Kore.Step.Simplification.SetVariable
@@ -752,6 +753,7 @@ test-suite kore-test
     Test.Kore.Step.Simplification.Or
     Test.Kore.Step.Simplification.OrPattern
     Test.Kore.Step.Simplification.Overloading
+    Test.Kore.Step.Simplification.Predicate
     Test.Kore.Step.Simplification.Pattern
     Test.Kore.Step.Simplification.Rule
     Test.Kore.Step.Simplification.StringLiteral

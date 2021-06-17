@@ -58,8 +58,11 @@ class (Show entry, Typeable entry) => Entry entry where
     default longDoc :: Pretty entry => entry -> Pretty.Doc ann
     longDoc = Pretty.pretty
 
-    shortDoc :: entry -> Maybe (Pretty.Doc ann)
-    shortDoc = const Nothing
+    oneLineDoc :: entry -> Maybe (Pretty.Doc ann)
+    oneLineDoc = const $ Just "One line logging not implemented for this entry"
+
+    contextDoc :: entry -> Maybe (Pretty.Doc ann)
+    contextDoc = const Nothing
 
     helpDoc :: Proxy entry -> Pretty.Doc ann
     helpDoc _ = Pretty.emptyDoc
@@ -78,7 +81,8 @@ instance Entry SomeEntry where
     fromEntry = Just
     entrySeverity (SomeEntry entry) = entrySeverity entry
     longDoc (SomeEntry entry) = longDoc entry
-    shortDoc (SomeEntry entry) = shortDoc entry
+    oneLineDoc (SomeEntry entry) = oneLineDoc entry
+    contextDoc (SomeEntry entry) = contextDoc entry
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry

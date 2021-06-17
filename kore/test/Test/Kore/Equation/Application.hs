@@ -178,16 +178,11 @@ test_attemptEquation =
                 makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
-            expect1 =
-                WhileCheckRequires
-                    CheckRequiresError
-                        { matchPredicate = makeTruePredicate
-                        , equationRequires = requires1
-                        , sideCondition = SideCondition.top
-                        }
-        attemptEquation SideCondition.top initial equation
-            >>= expectLeft
-            >>= assertEqual "" expect1
+        checkRequiresError <-
+            attemptEquation SideCondition.top initial equation
+                >>= expectLeft
+                >>= expectCheckRequiresError
+        assertEqual "" requires1 (equationRequires checkRequiresError)
         let requires2 =
                 makeEqualsPredicate
                     (Mock.functional10 Mock.a)
@@ -217,17 +212,12 @@ test_attemptEquation =
             >>= expectRight
             >>= assertEqual "" expect
     , testCase "rule a => b requires \\bottom" $ do
-        let expect =
-                WhileCheckRequires
-                    CheckRequiresError
-                        { matchPredicate = makeTruePredicate
-                        , equationRequires = makeFalsePredicate
-                        , sideCondition = SideCondition.top
-                        }
-            initial = Mock.a
-        attemptEquation SideCondition.top initial equationRequiresBottom
-            >>= expectLeft
-            >>= assertEqual "" expect
+        let initial = Mock.a
+        checkRequiresError <-
+            attemptEquation SideCondition.top initial equationRequiresBottom
+                >>= expectLeft
+                >>= expectCheckRequiresError
+        assertEqual "" makeFalsePredicate (equationRequires checkRequiresError)
     , testCase "rule a => \\bottom does not apply to c" $ do
         let initial = Mock.c
         attemptEquation SideCondition.top initial equationRequiresBottom
@@ -716,3 +706,13 @@ requiresNotMet ::
     TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)
+
+expectCheckRequiresError ::
+    AttemptEquationError variable ->
+    IO (CheckRequiresError variable)
+expectCheckRequiresError (WhileCheckRequires checkRequiresError) =
+    pure checkRequiresError
+expectCheckRequiresError (WhileMatch _) =
+    assertFailure "Expected WhileCheckRequires, but found WhileMatch"
+expectCheckRequiresError (WhileApplyMatchResult _) =
+    assertFailure "Expected WhileCheckRequires, but found WhileApplyMatchResult"

@@ -14,6 +14,7 @@ import Data.Text (
     Text,
  )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -187,12 +188,13 @@ andSimplify ::
     [UnificationResult] ->
     Assertion
 andSimplify term1 term2 results = do
-    let expect = map unificationResult results
+    let expect = OrPattern.fromPatterns $ map unificationResult results
     subst' <-
-        runNoSMT $
-            runSimplifier testEnv $
-                Monad.Unify.runUnifierT Not.notSimplifier $
-                    simplifyAnds (unificationProblem term1 term2 :| [])
+        simplifyAnds (unificationProblem term1 term2 :| [])
+            & Monad.Unify.runUnifierT Not.notSimplifier
+            & runSimplifier testEnv
+            & runNoSMT
+            & fmap OrPattern.fromPatterns
     assertEqual (message expect subst') expect subst'
   where
     message expected actual =
@@ -201,11 +203,12 @@ andSimplify term1 term2 results = do
             , Pretty.indent 4 (unparse term1)
             , "with term:"
             , Pretty.indent 4 (unparse term2)
-            , "expected="
-            , Pretty.indent 4 (foldMap unparse expected)
-            , "actual="
-            , Pretty.indent 4 (foldMap unparse actual)
+            , "expected:"
+            , Pretty.indent 4 (unparseOrPattern expected)
+            , "actual:"
+            , Pretty.indent 4 (unparseOrPattern actual)
             ]
+    unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns
 
 andSimplifyException ::
     HasCallStack =>
