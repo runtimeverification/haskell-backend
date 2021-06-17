@@ -221,12 +221,8 @@ simplify sideCondition = \termLike ->
             case Predicate.makePredicate termLike of
                 Left _ -> return . OrPattern.fromTermLike $ termLike
                 Right predicate -> do
-                    let predicate' =
-                            predicate
-                                & SideCondition.replacePredicate sideCondition
-                                & fromMaybe predicate
                     condition <-
-                        Condition.fromPredicate predicate'
+                        Condition.fromPredicate predicate
                             & ensureSimplifiedCondition
                                 sideConditionRepresentation
                                 termLike
