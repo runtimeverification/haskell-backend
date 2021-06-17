@@ -758,7 +758,8 @@ test_cacheSimplifiedFunctions =
                     (Mock.f (Mock.constr10 (Mock.g Mock.c)))
                     (Mock.h Mock.c)
             expected =
-                [ Application Mock.fSymbol
+                [ Application
+                    Mock.fSymbol
                     [Mock.constr10 (Mock.g Mock.c)]
                 , Application Mock.gSymbol [Mock.c]
                 , Application Mock.hSymbol [Mock.c]
