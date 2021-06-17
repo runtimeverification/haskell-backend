@@ -133,8 +133,7 @@ evaluateApplicationFunction
         | SideCondition.isSimplifiedFunction term sideCondition =
             let applicationPattern =
                     synthesize . ApplySymbolF <$> expandedApp
-            in
-                applicationPattern
+             in applicationPattern
                     & Pattern.markSimplified
                     & OrPattern.fromPattern
                     & return
