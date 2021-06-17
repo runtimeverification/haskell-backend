@@ -440,7 +440,7 @@ cannotReplaceTerm ::
 cannotReplaceTerm SideCondition{replacementsTermLike} term =
     HashMap.lookup term replacementsTermLike & isNothing
 
--- | Looks up the term in the table of replacements.
+-- | Looks up the predicate in the table of replacements.
 replacePredicate ::
     InternalVariable variable =>
     SideCondition variable ->
