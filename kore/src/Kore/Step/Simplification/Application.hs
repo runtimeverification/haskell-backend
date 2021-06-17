@@ -114,6 +114,10 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
             expandedApplications
     return (MultiOr.mergeAll orResults)
 
+{- | Evaluates function applications, without attempting
+ to reevaluate functions which are known to have been simplified
+ as much as possible inside the current rewrite step.
+-}
 evaluateApplicationFunction ::
     ( MonadSimplify simplifier
     , MonadThrow simplifier
@@ -125,19 +129,20 @@ evaluateApplicationFunction ::
     simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
-    expandedApp@Conditional{term, predicate, substitution} =
-        if SideCondition.isSimplifiedFunction term sideCondition
-            then
-                return
-                    . OrPattern.fromPattern
-                    . Pattern.markSimplified
-                    . fmap (synthesize . ApplySymbolF)
-                    $ expandedApp
-            else
-                evaluateApplication
-                    sideCondition
-                    Conditional{term = (), predicate, substitution}
-                    term
+    expandedApp@Conditional{term, predicate, substitution}
+        | SideCondition.isSimplifiedFunction term sideCondition =
+            let applicationPattern =
+                    synthesize . ApplySymbolF <$> expandedApp
+            in
+                applicationPattern
+                    & Pattern.markSimplified
+                    & OrPattern.fromPattern
+                    & return
+        | otherwise =
+            evaluateApplication
+                sideCondition
+                Conditional{term = (), predicate, substitution}
+                term
 
 makeExpandedApplication ::
     MonadSimplify simplifier =>

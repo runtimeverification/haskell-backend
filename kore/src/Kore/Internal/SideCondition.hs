@@ -915,7 +915,6 @@ isDefinedInternal :: TermLike variable -> Bool
 isDefinedInternal =
     Attribute.isDefined . TermLike.termDefined . TermLike.extractAttributes
 
--- TODO: docs
 fromSimplifiedFunctions ::
     InternalVariable variable =>
     HashSet (Application Symbol (TermLike variable)) ->
@@ -923,7 +922,13 @@ fromSimplifiedFunctions ::
 fromSimplifiedFunctions simplifiedFunctions =
     top{simplifiedFunctions}
 
--- TODO: docs
+{- | Stores all non-constructor function symbols appearing in a term. 
+ Inside a rewrite step, this information is used to avoid trying to
+ reevaluate functions which could not be evaluated during the 'Simplify'
+ stage of execution.
+
+ See 'isSimplifiedFunction'.
+-}
 cacheSimplifiedFunctions ::
     forall variable.
     InternalVariable variable =>
@@ -1011,7 +1016,9 @@ cacheSimplifiedFunctions =
             TermLike.InjF inj ->
                 foldMap extractSimplifiedFunctions inj
 
--- TODO: docs
+{- | Decides whether a function can be further simplified or not.
+ See also 'cacheSimplifiedFunctions'.
+-}
 isSimplifiedFunction ::
     InternalVariable variable =>
     Application Symbol (TermLike variable) ->
