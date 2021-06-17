@@ -157,16 +157,15 @@ instance Monad m => MonadLog (TestLog m) where
         addEntry = fmap $ Bifunctor.second (toEntry entry :)
 
 runTestLog ::
-    Monad m =>
-    (m [SomeEntry] -> IO [SomeEntry]) ->
+    (m (a, [SomeEntry]) -> IO (a, [SomeEntry])) ->
     TestLog m a ->
-    IO [SomeEntry]
-runTestLog run (TestLog state) = run $ State.execStateT state []
+    IO (a, [SomeEntry])
+runTestLog run (TestLog state) = run $ State.runStateT state []
 
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
     do
-        entries <- actual
+        (_, entries) <- actual
         let actualDepthWarnings =
                 catMaybes $ fromEntry @WarnDepthLimitExceeded <$> entries
             expectedWarning = WarnDepthLimitExceeded 1
