@@ -15,6 +15,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -38,10 +39,9 @@ simplifyEvaluatedMultiPredicate ::
     SideCondition RewritingVariableName ->
     MultiAnd (OrCondition RewritingVariableName) ->
     simplifier (OrCondition RewritingVariableName)
-simplifyEvaluatedMultiPredicate sideCondition predicates = do
-    let crossProduct = MultiOr.distributeAnd predicates
+simplifyEvaluatedMultiPredicate sideCondition predicates =
     MultiOr.observeAllT $ do
-        element <- LogicT.scatter crossProduct
+        element <- MultiAnd.traverse LogicT.scatter predicates
         andConditions element
   where
     andConditions predicates' =

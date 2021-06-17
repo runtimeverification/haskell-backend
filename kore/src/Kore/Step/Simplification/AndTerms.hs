@@ -72,6 +72,7 @@ import Kore.Step.Simplification.ExpandAlias
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
+import Kore.Step.Simplification.OverloadSimplifier as OverloadSimplifier
 import Kore.Step.Simplification.Overloading as Overloading
 import qualified Kore.Step.Simplification.SimplificationType as SimplificationType (
     SimplificationType (..),
@@ -832,6 +833,34 @@ domainValueAndConstructorErrors term1 term2 unifyData =
         case unifyData of
             DVConstr -> "Cannot handle DomainValue and Constructor:"
             ConstrDV -> "Cannot handle Constructor and DomainValue:"
+
+data UnifyDomainValue = UnifyDomainValue
+    { val1, val2 :: !(TermLike RewritingVariableName)
+    }
+
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{s}(_), \\dv{s}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{s}(_), \\dv{s}(_))
+@
+-}
+matchDomainValue ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyDomainValue
+matchDomainValue first second
+    | DV_ sort1 val1 <- first
+      , DV_ sort2 val2 <- second
+      , sort1 == sort2 =
+        Just UnifyDomainValue{val1, val2}
+    | otherwise = Nothing
+{-# INLINE matchDomainValue #-}
 
 data UnifyDomainValue = UnifyDomainValue
     { val1, val2 :: !(TermLike RewritingVariableName)

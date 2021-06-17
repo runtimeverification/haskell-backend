@@ -223,6 +223,7 @@ mainWithOptions
                                 let smtConfig =
                                         SMT.defaultConfig
                                             { SMT.timeOut = smtTimeOut
+                                            , SMT.rLimit = smtRLimit
                                             , SMT.resetInterval = smtResetInterval
                                             , SMT.prelude = smtPrelude
                                             }
@@ -313,6 +314,9 @@ mainWithOptions
 
         smtTimeOut :: SMT.TimeOut
         smtTimeOut = timeOut smtOptions
+
+        smtRLimit :: SMT.RLimit
+        smtRLimit = rLimit smtOptions
 
         smtResetInterval :: SMT.ResetInterval
         smtResetInterval = resetInterval smtOptions

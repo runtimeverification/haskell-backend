@@ -21,6 +21,9 @@ import Kore.Equation (
     mkEquation,
  )
 import qualified Kore.Equation as Equation
+import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.From
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -32,6 +35,7 @@ import qualified Kore.Internal.SideCondition as SideCondition (
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
@@ -51,7 +55,9 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     makeEvaluate,
  )
 import Kore.Step.Simplification.Simplify
+import Kore.Unparser
 import Prelude.Kore
+import qualified Pretty
 import Test.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification,
@@ -542,22 +548,21 @@ test_simplificationIntegration =
         assertEqual "" expected actual
     , testCase "Or to pattern" $ do
         let expected =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop Mock.boolSort
-                        , predicate =
-                            makeIffPredicate
-                                ( makeOrPredicate
-                                    ( makeAndPredicate
-                                        (makeCeilPredicate Mock.cf)
-                                        (makeCeilPredicate Mock.cg)
-                                    )
-                                    (makeCeilPredicate Mock.cf)
-                                )
-                                (makeCeilPredicate Mock.ch)
-                        , substitution = mempty
-                        }
+                ( OrPattern.fromPatterns
+                    . map
+                        ( Pattern.fromCondition Mock.boolSort
+                            . Condition.fromPredicate
+                            . MultiAnd.toPredicate
+                            . MultiAnd.make
+                        )
+                )
+                    [ [fromNot cfCeil, fromNot chCeil]
+                    , [chCeil, cgCeil, cfCeil]
+                    , [chCeil, cfCeil]
                     ]
+            cfCeil = makeCeilPredicate Mock.cf
+            cgCeil = makeCeilPredicate Mock.cg
+            chCeil = makeCeilPredicate Mock.ch
         actual <-
             evaluate
                 Conditional
@@ -575,7 +580,16 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqual "" expected actual
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (map unparse . toList $ expected)
+                    , "but found:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (map unparse . toList $ actual)
+                    ]
+        assertEqual message expected actual
     , testCase "Sort matching" $ do
         let mx =
                 Variable
@@ -782,9 +796,13 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertBool
-            "Expecting simplification"
-            (OrPattern.isSimplified sideRepresentation actual)
+
+        for_ (toList actual) $ \pattern' -> do
+            let message = (show . unparse) pattern'
+            let (term, condition) = Pattern.splitTerm pattern'
+            assertBool "Expected simplified term" (TermLike.isSimplified sideRepresentation term)
+            assertBool (unlines ["Expected simplified condition:", message]) (Condition.isSimplified sideRepresentation condition)
+            assertBool message (Pattern.isSimplified sideRepresentation pattern')
     , testCase "Equals-in simplification" $ do
         let gt =
                 mkSetVariable (testId "gt") Mock.stringSort
