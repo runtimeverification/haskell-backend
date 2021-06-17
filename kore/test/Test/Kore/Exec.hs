@@ -8,16 +8,6 @@ module Test.Kore.Exec (
 ) where
 
 import Control.Exception as Exception
-import Control.Monad.Catch (
-    MonadCatch,
-    MonadMask,
-    MonadThrow,
- )
-import Control.Monad.State.Strict (
-    StateT (..),
- )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Bifunctor as Bifunctor
 import Data.Default (
     def,
  )
@@ -73,9 +63,6 @@ import Kore.Step.Search (
     SearchType (..),
  )
 import qualified Kore.Step.Search as Search
-import Kore.Step.Simplification.Data (
-    MonadProf,
- )
 import Kore.Step.Strategy (
     LimitExceeded (..),
  )
@@ -87,11 +74,8 @@ import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
 import Log (
     Entry (..),
-    MonadLog (..),
-    SomeEntry,
  )
 import Prelude.Kore
-import qualified SMT
 import System.Exit (
     ExitCode (..),
  )
@@ -142,25 +126,6 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
                 }
     inputPattern = applyToNoArgs mySort "a"
     expected = (ExitSuccess, applyToNoArgs mySort "d")
-
-newtype TestLog m a = TestLog (StateT [SomeEntry] m a)
-    deriving newtype (Functor, Applicative, Monad)
-    deriving newtype (State.MonadState [SomeEntry], MonadIO, SMT.MonadSMT)
-    deriving newtype (MonadThrow, MonadCatch, MonadMask, MonadProf)
-
-instance Monad m => MonadLog (TestLog m) where
-    logEntry entry = State.modify (toEntry entry :)
-    logWhile entry (TestLog state) =
-        TestLog $ State.mapStateT addEntry state
-      where
-        addEntry :: m (a, [SomeEntry]) -> m (a, [SomeEntry])
-        addEntry = fmap $ Bifunctor.second (toEntry entry :)
-
-runTestLog ::
-    (m (a, [SomeEntry]) -> IO (a, [SomeEntry])) ->
-    TestLog m a ->
-    IO (a, [SomeEntry])
-runTestLog run (TestLog state) = run $ State.runStateT state []
 
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $

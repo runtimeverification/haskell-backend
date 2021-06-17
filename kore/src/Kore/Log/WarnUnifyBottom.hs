@@ -5,40 +5,42 @@ License     : NCSA
 module Kore.Log.WarnUnifyBottom (
     WarnUnifyBottom (..),
     warnUnifyBottom,
+    warnUnifyBottomAndReturnBottom,
 ) where
 
+import Data.Text (
+    Text,
+ )
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike (..),
  )
-import Kore.Log (
-    MonadLog,
-    Severity (..),
- )
 import Kore.Unparser (unparse)
 import Log (
     Entry (..),
+    MonadLog (..),
+    Severity (..),
     logEntry,
  )
 import Prelude.Kore
 import Pretty (
-    Doc,
     Pretty,
+    pretty,
     unAnnotate,
  )
 import qualified Pretty
 
 data WarnUnifyBottom variable = WarnUnifyBottom
-    { info :: Doc ()
+    { info :: Text
     , first :: TermLike variable
     , second :: TermLike variable
     }
-    deriving stock (Show)
+    deriving stock (Show, Eq)
 
 instance InternalVariable variable => Pretty (WarnUnifyBottom variable) where
     pretty (WarnUnifyBottom info first second) =
         Pretty.vsep
-            [ unAnnotate info
+            [ unAnnotate $ pretty info
             , "When unifying:"
             , Pretty.indent 4 . unparse $ first
             , "With:\n"
@@ -52,9 +54,21 @@ instance InternalVariable variable => Entry (WarnUnifyBottom variable) where
 warnUnifyBottom ::
     MonadLog log =>
     InternalVariable variable =>
-    Doc () ->
+    Text ->
     TermLike variable ->
     TermLike variable ->
     log ()
 warnUnifyBottom info first second =
     logEntry $ WarnUnifyBottom info first second
+
+warnUnifyBottomAndReturnBottom ::
+    MonadLog log =>
+    Alternative log =>
+    InternalVariable variable =>
+    Text ->
+    TermLike variable ->
+    TermLike variable ->
+    log a
+warnUnifyBottomAndReturnBottom info first second = do
+    warnUnifyBottom info first second
+    empty

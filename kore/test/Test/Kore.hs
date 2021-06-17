@@ -33,6 +33,9 @@ module Test.Kore (
     addVariable,
     sentenceAxiomGen,
     korePatternUnifiedGen,
+    TestLog (..),
+    runTestLog,
+    makeTestLog,
 
     -- * Re-exports
     ParsedPattern,
@@ -43,7 +46,14 @@ module Test.Kore (
 import Control.Monad.Reader (
     ReaderT,
  )
+import Control.Monad.State.Strict (
+    StateT (..),
+ )
+import qualified Control.Monad.State.Strict as State
+
+import Control.Monad.Catch
 import qualified Control.Monad.Reader as Reader
+import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Const
 import Data.Text (
     Text,
@@ -74,7 +84,10 @@ import Kore.Internal.TermLike as TermLike hiding (
     Symbol,
  )
 import qualified Kore.Log as Log (
+    Entry (toEntry),
+    MonadLog (..),
     emptyLogger,
+    toEntry,
  )
 import Kore.Parser (
     embedParsedPattern,
@@ -86,6 +99,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkElementConfigVariable,
  )
+import qualified Kore.Step.Simplification.Simplify as SMT
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Variables.Target (
@@ -95,7 +109,9 @@ import Kore.Variables.Target (
     mkSetNonTarget,
     mkSetTarget,
  )
+import Log (SomeEntry)
 import Prelude.Kore
+import Prof (MonadProf)
 
 -- | @Context@ stores the variables and sort variables in scope.
 data Context = Context
@@ -765,3 +781,25 @@ sortActual name sorts =
             { sortActualName = testId name
             , sortActualSorts = sorts
             }
+
+newtype TestLog m a = TestLog (StateT [SomeEntry] m a)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (State.MonadState [SomeEntry], MonadIO, SMT.MonadSMT)
+    deriving newtype (MonadThrow, MonadCatch, MonadMask, MonadProf)
+
+instance Monad m => Log.MonadLog (TestLog m) where
+    logEntry entry = State.modify (Log.toEntry entry :)
+    logWhile entry (TestLog state) =
+        TestLog $ State.mapStateT addEntry state
+      where
+        addEntry :: m (a, [SomeEntry]) -> m (a, [SomeEntry])
+        addEntry = fmap $ Bifunctor.second (Log.toEntry entry :)
+
+runTestLog ::
+    (m (a, [SomeEntry]) -> IO (a, [SomeEntry])) ->
+    TestLog m a ->
+    IO (a, [SomeEntry])
+runTestLog run (TestLog state) = run $ State.runStateT state []
+
+makeTestLog :: Monad m => m a -> TestLog m a
+makeTestLog ma = TestLog $ StateT $ \s -> fmap (flip (,) s) ma

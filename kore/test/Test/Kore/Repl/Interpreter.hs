@@ -44,6 +44,10 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+
+import Kore.Log.WarnUnifyBottom (
+    WarnUnifyBottom (..),
+ )
 import Kore.Reachability hiding (
     AppliedRule,
  )
@@ -65,19 +69,25 @@ import Kore.Syntax.Module (
 import Kore.Unification.Procedure (
     unificationProcedure,
  )
-import Kore.Unification.Unify (
-    explainBottom,
- )
+
+-- import Kore.Unification.Unify (
+--     explainBottom,
+--  )
 import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-import qualified Pretty
+
+-- import qualified Pretty
 import qualified SMT
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
+ )
+import Test.Kore (
+    makeTestLog,
+    runTestLog,
  )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -323,9 +333,12 @@ unificationFailure =
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    WarnUnifyBottom "distinct integers" one zero
+                actualWarnUnifyBottom =
+                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
+            actualWarnUnifyBottom `equals` [expectedLogEntry]
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -338,9 +351,12 @@ unificationFailureWithName =
         claim = zeroToTen
         command = Try . ByName . RuleName $ "impossible"
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    WarnUnifyBottom "distinct integers" one zero
+                actualWarnUnifyBottom =
+                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
+            actualWarnUnifyBottom `equals` [expectedLogEntry]
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -383,9 +399,12 @@ forceFailure =
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    WarnUnifyBottom "distinct integers" one zero
+                actualWarnUnifyBottom =
+                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
+            actualWarnUnifyBottom `equals` [expectedLogEntry]
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -398,9 +417,12 @@ forceFailureWithName =
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "impossible"
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    WarnUnifyBottom "distinct integers" one zero
+                actualWarnUnifyBottom =
+                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
+            actualWarnUnifyBottom `equals` [expectedLogEntry]
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -712,9 +734,9 @@ runWithState command axioms claims claim stateTransformer = do
     mvar <- newMVar logger
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar
-    (c, s) <-
-        flip Log.runLoggerT (Log.swappableLogger mvar) $
-            liftSimplifier $
+    ((c, s), logEntries) <-
+        runTestLog (flip Log.runLoggerT (Log.swappableLogger mvar) . liftSimplifier) $
+            makeTestLog $
                 flip runStateT state $
                     flip runReaderT config $
                         replInterpreter0 @(SimplifierT NoSMT)
@@ -722,7 +744,7 @@ runWithState command axioms claims claim stateTransformer = do
                             (PrintKoreOutput . modifyKoreOutput $ output)
                             command
     output' <- readIORef output
-    return $ Result output' c s
+    return $ Result output' c s logEntries
   where
     liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
@@ -736,6 +758,7 @@ data Result = Result
     { output :: ReplOutput
     , continue :: ReplStatus
     , state :: ReplState
+    , logEntries :: [Log.SomeEntry]
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -821,16 +844,16 @@ mkConfig logger =
     stepper0 claims' axioms' graph (ReplNode node) =
         proveClaimStep claims' axioms' graph node
 
-formatUnificationError ::
-    Pretty.Doc () ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    IO ReplOutput
-formatUnificationError info first second = do
-    res <- runSimplifier testEnv . runUnifierWithExplanation $ do
-        explainBottom info first second
-        empty
-    return $ formatUnificationMessage res
+-- formatUnificationError ::
+--     Pretty.Doc () ->
+--     TermLike RewritingVariableName ->
+--     TermLike RewritingVariableName ->
+--     IO ReplOutput
+-- formatUnificationError info first second = do
+--     res <- runSimplifier testEnv . runUnifierWithExplanation $ do
+--         explainBottom info first second
+--         empty
+--     return $ formatUnificationMessage res
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->
