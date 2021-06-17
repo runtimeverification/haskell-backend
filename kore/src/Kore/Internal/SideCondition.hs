@@ -922,7 +922,7 @@ fromSimplifiedFunctions ::
 fromSimplifiedFunctions simplifiedFunctions =
     top{simplifiedFunctions}
 
-{- | Stores all non-constructor function symbols appearing in a term. 
+{- | Stores all non-constructor function symbols appearing in a term.
  Inside a rewrite step, this information is used to avoid trying to
  reevaluate functions which could not be evaluated during the 'Simplify'
  stage of execution.
