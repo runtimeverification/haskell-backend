@@ -449,7 +449,7 @@ replacePredicate ::
 replacePredicate SideCondition{replacementsPredicate} original =
     HashMap.lookup original replacementsPredicate
 
-{- | If the term isn't a key in the table of replacements
+{- | If the predicate isn't a key in the table of replacements
 then it cannot be replaced.
 -}
 cannotReplacePredicate ::
