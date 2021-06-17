@@ -20,6 +20,9 @@ module Kore.Internal.MultiAnd (
     singleton,
     map,
     traverse,
+    distributeAnd,
+    traverseOr,
+    traverseOrAnd,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -35,6 +38,10 @@ import Kore.Attribute.Pattern.FreeVariables (
 import Kore.Internal.Condition (
     Condition,
  )
+import Kore.Internal.MultiOr (
+    MultiOr,
+ )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate (
     Predicate,
     getMultiAndPredicate,
@@ -49,6 +56,7 @@ import Kore.Internal.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import qualified Logic
 import Prelude.Kore hiding (
     map,
     traverse,
@@ -251,3 +259,32 @@ traverse ::
     f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}
+
+distributeAnd ::
+    Ord term =>
+    TopBottom term =>
+    MultiAnd (MultiOr term) ->
+    MultiOr (MultiAnd term)
+distributeAnd multiAnd =
+    MultiOr.observeAll $ traverse Logic.scatter multiAnd
+{-# INLINE distributeAnd #-}
+
+traverseOr ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr child2)) ->
+    MultiAnd child1 ->
+    f (MultiOr (MultiAnd child2))
+traverseOr f = fmap distributeAnd . traverse f
+{-# INLINE traverseOr #-}
+
+traverseOrAnd ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr (MultiAnd child2))) ->
+    MultiOr (MultiAnd child1) ->
+    f (MultiOr (MultiAnd child2))
+traverseOrAnd f = MultiOr.traverseOr (fmap (MultiOr.map fold) . traverseOr f)
+{-# INLINE traverseOrAnd #-}

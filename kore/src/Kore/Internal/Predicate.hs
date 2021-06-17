@@ -254,6 +254,10 @@ instance From (Iff () child) (PredicateF variable child) where
     from = IffF
     {-# INLINE from #-}
 
+instance From (Not () child) (PredicateF variable child) where
+    from = NotF
+    {-# INLINE from #-}
+
 newtype Predicate variable = Predicate
     { getPredicate ::
         Cofree (PredicateF variable) (PredicatePattern variable)
