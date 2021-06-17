@@ -99,7 +99,6 @@ import Kore.Internal.TermLike (
     mkNot,
     mkNu,
     mkOr,
-    mkRewrites,
     mkSetVar,
     mkStringLiteral,
     mkTop,
@@ -349,7 +348,6 @@ termGenerators = do
             , notGenerator
             , nuGenerator
             , orGenerator
-            , rewritesGenerator
             , topGenerator
             ]
     literals <-
@@ -581,9 +579,6 @@ nuGenerator = muNuOperatorGenerator mkNu
 
 orGenerator :: TermGenerator
 orGenerator = binaryOperatorGenerator mkOr
-
-rewritesGenerator :: TermGenerator
-rewritesGenerator = binaryOperatorGenerator mkRewrites
 
 topGenerator :: TermGenerator
 topGenerator = nullaryFreeSortOperatorGenerator mkTop

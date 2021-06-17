@@ -138,9 +138,6 @@ import qualified Kore.Step.Simplification.Nu as Nu (
 import qualified Kore.Step.Simplification.Or as Or (
     simplify,
  )
-import qualified Kore.Step.Simplification.Rewrites as Rewrites (
-    simplify,
- )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral (
     simplify,
@@ -428,8 +425,7 @@ simplify sideCondition = \termLike ->
                 -- TODO(virgil): Move next up through patterns.
                 NextF nextF -> Next.simplify <$> simplifyChildren nextF
                 OrF orF -> Or.simplify <$> simplifyChildren orF
-                RewritesF rewritesF ->
-                    Rewrites.simplify <$> simplifyChildren rewritesF
+                RewritesF _ -> error "Attempting to simplify a Rewrites term"
                 TopF topF -> Top.simplify <$> simplifyChildren topF
                 --
                 StringLiteralF stringLiteralF ->
