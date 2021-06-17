@@ -218,7 +218,7 @@ scatterAnd ::
     TopBottom child =>
     MultiAnd (MultiOr child) ->
     LogicT m (MultiAnd child)
-scatterAnd = scatter . MultiOr.distributeAnd
+scatterAnd = scatter . MultiAnd.distributeAnd
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
 mkMultiAndPattern ::

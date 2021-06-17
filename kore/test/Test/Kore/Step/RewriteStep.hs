@@ -21,6 +21,7 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate as Predicate (
     makeAndPredicate,
@@ -1337,14 +1338,15 @@ test_applyRewriteRulesParallel =
         --        with ¬(⌈cf⌉ and ⌈cg⌉ and [x=a])
         --         and ¬(⌈cf⌉ and ⌈cg⌉ and [x=b])
         let definedBranches =
-                makeAndPredicate
-                    (makeCeilPredicate Mock.cf)
-                    (makeCeilPredicate Mock.cg)
+                MultiAnd.make
+                    [ makeCeilPredicate Mock.cf
+                    , makeCeilPredicate Mock.cg
+                    ]
             results =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cf
-                        , predicate = definedBranches
+                        , predicate = MultiAnd.toPredicate definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
@@ -1352,34 +1354,37 @@ test_applyRewriteRulesParallel =
                         }
                     , Conditional
                         { term = Mock.cg
-                        , predicate = definedBranches
+                        , predicate = MultiAnd.toPredicate definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.xConfig, Mock.b)]
                         }
                     ]
+            aBranch =
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.a
+                    & MultiAnd.singleton
+                    & mappend definedBranches
+            aBranchNot =
+                MultiAnd.toPredicate aBranch
+                    & makeNotPredicate
+            bBranch =
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.b
+                    & MultiAnd.singleton
+                    & mappend definedBranches
+            bBranchNot =
+                MultiAnd.toPredicate bBranch
+                    & makeNotPredicate
             remainders =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            Predicate.makeAndPredicate
-                                ( makeNotPredicate $
-                                    makeAndPredicate
-                                        definedBranches
-                                        ( Predicate.makeEqualsPredicate
-                                            (mkElemVar Mock.xConfig)
-                                            Mock.a
-                                        )
-                                )
-                                ( makeNotPredicate $
-                                    makeAndPredicate
-                                        definedBranches
-                                        ( Predicate.makeEqualsPredicate
-                                            (mkElemVar Mock.xConfig)
-                                            Mock.b
-                                        )
-                                )
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                                [aBranchNot, bBranchNot]
                         }
                     ]
             initialTerm =
@@ -1560,14 +1565,15 @@ test_applyRewriteRulesSequence =
         --        with ¬(⌈cf⌉ and [x=a])
         --         and ¬(⌈cg⌉ and [x=b])
         let definedBranches =
-                makeAndPredicate
-                    (makeCeilPredicate Mock.cf)
-                    (makeCeilPredicate Mock.cg)
+                MultiAnd.make
+                    [ makeCeilPredicate Mock.cf
+                    , makeCeilPredicate Mock.cg
+                    ]
             results =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cf
-                        , predicate = definedBranches
+                        , predicate = MultiAnd.toPredicate definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
@@ -1575,34 +1581,37 @@ test_applyRewriteRulesSequence =
                         }
                     , Conditional
                         { term = Mock.cg
-                        , predicate = definedBranches
+                        , predicate = MultiAnd.toPredicate definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.xConfig, Mock.b)]
                         }
                     ]
+            aBranch =
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.a
+                    & MultiAnd.singleton
+                    & mappend definedBranches
+            aBranchNot =
+                MultiAnd.toPredicate aBranch
+                    & makeNotPredicate
+            bBranch =
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.b
+                    & MultiAnd.singleton
+                    & mappend definedBranches
+            bBranchNot =
+                MultiAnd.toPredicate bBranch
+                    & makeNotPredicate
             remainders =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            Predicate.makeAndPredicate
-                                ( Predicate.makeNotPredicate $
-                                    Predicate.makeAndPredicate
-                                        definedBranches
-                                        ( Predicate.makeEqualsPredicate
-                                            (mkElemVar Mock.xConfig)
-                                            Mock.a
-                                        )
-                                )
-                                ( Predicate.makeNotPredicate $
-                                    Predicate.makeAndPredicate
-                                        definedBranches
-                                        ( Predicate.makeEqualsPredicate
-                                            (mkElemVar Mock.xConfig)
-                                            Mock.b
-                                        )
-                                )
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                                [aBranchNot, bBranchNot]
                         }
                     ]
             initialTerm =

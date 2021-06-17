@@ -26,7 +26,7 @@ instance Pretty InfoReachability where
 
 instance Entry InfoReachability where
     entrySeverity _ = Info
-    shortDoc InfoReachability{prim} = (<+>) "while" <$> primDoc prim
+    contextDoc InfoReachability{prim} = (<+>) "while" <$> primDoc prim
     helpDoc _ = "log reachability proof steps"
 
 primDoc :: Prim -> Maybe (Doc ann)
