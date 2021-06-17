@@ -1,15 +1,25 @@
 module Test.Kore.Step.Simplification.Predicate (
     test_simplify,
+    test_simplify_SideCondition,
 ) where
 
 import Kore.Internal.From
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiOr (
+    MultiOr,
+ )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.TermLike (TermLike)
+import Kore.Internal.TermLike (
+    TermLike,
+ )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Simplification.Predicate (simplify)
+import Kore.TopBottom
 import Prelude.Kore
 import qualified Pretty
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -151,41 +161,111 @@ test_simplify =
     ]
   where
     test ::
+        HasCallStack =>
         TestName ->
         Predicate RewritingVariableName ->
         [[Predicate RewritingVariableName]] ->
         TestTree
     test testName input expect =
-        testCase testName $ do
-            let expect' = mkDisjunctiveNormalForm expect
-            actual <-
-                simplify SideCondition.top input
-                    & Test.runSimplifier Mock.env
-            let message =
-                    (show . Pretty.vsep)
-                        [ "Expected:"
-                        , unparseDisjunctiveNormalForm expect'
-                        , "but found:"
-                        , unparseDisjunctiveNormalForm actual
-                        ]
-            assertEqual message expect' actual
+        testCase testName $ simplifyExpect [] input expect
 
-    fa, fb, ga, gb :: TermLike RewritingVariableName
-    fa = Mock.f Mock.a
-    fb = Mock.f Mock.b
-    ga = Mock.g Mock.a
-    gb = Mock.g Mock.b
+test_simplify_SideCondition :: [TestTree]
+test_simplify_SideCondition =
+    [ testGroup
+        "\\ceil"
+        [ test "Positive" [faCeil] faCeil [[]]
+        , test "Negative" [fromNot faCeil] faCeil []
+        ]
+    , testGroup
+        "\\floor"
+        [ test "Positive" [fromFloor_ fb] (fromFloor_ fb) [[]]
+        , test "Negative" [fromNot $ fromFloor_ fb] (fromFloor_ fb) []
+        ]
+    , testGroup
+        "\\equals"
+        [ test "Positive" [fromEquals_ fa gb] (fromEquals_ fa gb) [[]]
+        , test "Negative" [fromNot $ fromEquals_ fa gb] (fromEquals_ fa gb) []
+        ]
+    , testGroup
+        "\\in"
+        [ test "Positive" [fromIn_ fa gb] (fromIn_ fa gb) [[]]
+        , test "Negative" [fromNot $ fromIn_ fa gb] (fromIn_ fa gb) []
+        ]
+    , testGroup
+        "\\and"
+        [ test "Positive" [faCeil] (fromAnd faCeil fbCeil) [[fbCeil]]
+        , test "Negative" [fromNot faCeil] (fromAnd faCeil fbCeil) []
+        ]
+    , testGroup
+        "\\or"
+        [ test "Positive" [faCeil] (fromOr faCeil fbCeil) [[]]
+        , test "Negative" [fromNot faCeil] (fromOr faCeil fbCeil) [[fbCeil]]
+        ]
+    , testGroup
+        "\\implies"
+        [ test "Positive" [faCeil] (fromImplies faCeil fbCeil) [[fbCeil]]
+        , test "Negative" [fromNot faCeil] (fromImplies faCeil fbCeil) [[]]
+        ]
+    , testGroup
+        "\\iff"
+        [ test "Positive" [faCeil] (fromIff faCeil fbCeil) [[fbCeil]]
+        , test "Negative" [fromNot faCeil] (fromIff faCeil fbCeil) [[fromNot fbCeil]]
+        ]
+    ]
+  where
+    test ::
+        HasCallStack =>
+        TestName ->
+        [Predicate RewritingVariableName] ->
+        Predicate RewritingVariableName ->
+        [[Predicate RewritingVariableName]] ->
+        TestTree
+    test testName replacements input expect =
+        testCase testName $ simplifyExpect replacements input expect
 
-    mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
+mkDisjunctiveNormalForm :: Ord a => TopBottom a => [[a]] -> MultiOr (MultiAnd a)
+mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
 
-    unparseDisjunctiveNormalForm =
-        Pretty.indent 2
-            . Pretty.pretty
-            . map MultiAnd.toPredicate
-            . toList
+unparseDisjunctiveNormalForm ::
+    MultiOr (MultiAnd (Predicate RewritingVariableName)) ->
+    Pretty.Doc ann
+unparseDisjunctiveNormalForm =
+    Pretty.indent 2
+        . Pretty.pretty
+        . map MultiAnd.toPredicate
+        . toList
 
-    faCeil, fbCeil, gaCeil, gbCeil :: Predicate RewritingVariableName
-    faCeil = fromCeil_ fa
-    fbCeil = fromCeil_ fb
-    gaCeil = fromCeil_ ga
-    gbCeil = fromCeil_ gb
+fa, fb, ga, gb :: TermLike RewritingVariableName
+fa = Mock.f Mock.a
+fb = Mock.f Mock.b
+ga = Mock.g Mock.a
+gb = Mock.g Mock.b
+
+faCeil, fbCeil, gaCeil, gbCeil :: Predicate RewritingVariableName
+faCeil = fromCeil_ fa
+fbCeil = fromCeil_ fb
+gaCeil = fromCeil_ ga
+gbCeil = fromCeil_ gb
+
+simplifyExpect ::
+    HasCallStack =>
+    [Predicate RewritingVariableName] ->
+    Predicate RewritingVariableName ->
+    [[Predicate RewritingVariableName]] ->
+    IO ()
+simplifyExpect replacements input expect = do
+    let sideCondition =
+            SideCondition.constructReplacements
+                (MultiAnd.make replacements)
+        expect' = mkDisjunctiveNormalForm expect
+    actual <-
+        simplify sideCondition input
+            & Test.runSimplifier Mock.env
+    let message =
+            (show . Pretty.vsep)
+                [ "Expected:"
+                , unparseDisjunctiveNormalForm expect'
+                , "but found:"
+                , unparseDisjunctiveNormalForm actual
+                ]
+    assertEqual message expect' actual
