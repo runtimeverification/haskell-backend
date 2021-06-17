@@ -887,11 +887,12 @@ execute options mainModule worker =
             )
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreSolverOptions{timeOut, resetInterval, prelude, solver} =
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
         Lens.view (field @"koreSolverOptions") options
     config =
         SMT.defaultConfig
             { SMT.timeOut = timeOut
+            , SMT.rLimit = rLimit
             , SMT.resetInterval = resetInterval
             , SMT.prelude = prelude
             }
