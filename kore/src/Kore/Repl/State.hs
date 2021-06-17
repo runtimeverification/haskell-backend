@@ -483,6 +483,7 @@ liftSimplifierWithLogger mLogger simplifier = do
     let Log.KoreLogOptions
             { logType
             , timestampsSwitch
+            , logFormat
             , exeName
             , startTime
             } = koreLogOptions
@@ -493,6 +494,7 @@ liftSimplifierWithLogger mLogger simplifier = do
                     exeName
                     startTime
                     timestampsSwitch
+                    logFormat
                     textLogger
     _ <-
         Monad.Trans.lift . liftIO $

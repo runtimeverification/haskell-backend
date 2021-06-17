@@ -33,6 +33,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional,
  )
@@ -120,7 +121,9 @@ instance
     where
     evaluate (sideCondition, conditional) =
         assert (Conditional.isNormalized conditional) $
-            evaluate (sideCondition, Conditional.predicate conditional)
+            evaluate (sideCondition, Condition.toPredicate condition)
+      where
+        condition = Conditional.withoutTerm conditional
 
 -- | Removes all branches refuted by an external SMT solver.
 filterBranch ::

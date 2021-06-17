@@ -401,6 +401,7 @@ assertEquivalentPatterns ::
     Foldable t =>
     InternalVariable variable =>
     Diff variable =>
+    HasCallStack =>
     t (Pattern variable) ->
     t (Pattern variable) ->
     IO ()
