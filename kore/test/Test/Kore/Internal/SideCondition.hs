@@ -723,7 +723,7 @@ test_generateNormalizedAcs =
 
 test_cacheSimplifiedFunctions :: [TestTree]
 test_cacheSimplifiedFunctions =
-    [ testCase "TESTING" $ do
+    [ testCase "Single function" $ do
         let configuration =
                 Mock.f (mkElemVar Mock.x)
             expected =
@@ -732,10 +732,39 @@ test_cacheSimplifiedFunctions =
                     & fromSimplifiedFunctions
             actual = cacheSimplifiedFunctions configuration
         assertEqual "" expected actual
-    , testCase "TESTING" $ do
+    , testCase "Single constructor" $ do
         let configuration :: TermLike VariableName
             configuration = Mock.c
             expected = fromSimplifiedFunctions HashSet.empty
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    , testCase "Function and constructor" $ do
+        let configuration =
+                mkAnd
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.c)
+            expected =
+                [ Application Mock.fSymbol [mkElemVar Mock.x]
+                , Application Mock.gSymbol [Mock.c]
+                ]
+                    & HashSet.fromList
+                    & fromSimplifiedFunctions
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    , testCase "Nested functions" $ do
+        let configuration :: TermLike VariableName
+            configuration =
+                mkAnd
+                    (Mock.f (Mock.constr10 (Mock.g Mock.c)))
+                    (Mock.h Mock.c)
+            expected =
+                [ Application Mock.fSymbol
+                    [Mock.constr10 (Mock.g Mock.c)]
+                , Application Mock.gSymbol [Mock.c]
+                , Application Mock.hSymbol [Mock.c]
+                ]
+                    & HashSet.fromList
+                    & fromSimplifiedFunctions
             actual = cacheSimplifiedFunctions configuration
         assertEqual "" expected actual
     ]
