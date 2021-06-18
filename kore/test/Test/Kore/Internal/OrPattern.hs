@@ -19,10 +19,10 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Kore.Internal.MultiAnd (
     MultiAnd,
+    distributeAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr (
-    distributeAnd,
     distributeApplication,
  )
 import qualified Kore.Internal.MultiOr as MultiOr

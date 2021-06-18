@@ -13,6 +13,7 @@ module Kore.Internal.Substitution (
     assignedVariable,
     assignedTerm,
     mapAssignedTerm,
+    retractAssignment,
     singleSubstitutionToPredicate,
     UnwrappedSubstitution,
     mkUnwrappedSubstitution,
@@ -68,6 +69,7 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute (
 import Kore.Debug
 import Kore.Internal.Predicate (
     Predicate,
+    pattern PredicateEquals,
  )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
@@ -154,6 +156,20 @@ mkUnwrappedSubstitution ::
     [(SomeVariable variable, TermLike variable)] ->
     [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
+
+{- | Extract an 'Assignment' from a 'Predicate' of the proper form.
+
+Returns 'Nothing' if the 'Predicate' is not in the correct form.
+-}
+retractAssignment ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Maybe (Assignment variable)
+retractAssignment (PredicateEquals (Var_ var) term) =
+    Just (assign var term)
+retractAssignment (PredicateEquals term (Var_ var)) =
+    Just (assign var term)
+retractAssignment _ = Nothing
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 

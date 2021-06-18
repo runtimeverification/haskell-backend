@@ -15,7 +15,6 @@ module Kore.Internal.MultiOr (
     bottom,
     filterOr,
     flatten,
-    distributeAnd,
     distributeApplication,
     gather,
     observeAllT,
@@ -26,6 +25,7 @@ module Kore.Internal.MultiOr (
     singleton,
     map,
     traverse,
+    traverseOr,
 
     -- * Re-exports
     Alternative (..),
@@ -43,10 +43,6 @@ import GHC.Exts (
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Debug
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Syntax.Application (
     Application (..),
  )
@@ -161,17 +157,6 @@ singleton ::
 singleton term
     | isBottom term = MultiOr []
     | otherwise = MultiOr [term]
-
-distributeAnd ::
-    Ord term =>
-    TopBottom term =>
-    MultiAnd (MultiOr term) ->
-    MultiOr (MultiAnd term)
-distributeAnd =
-    foldr (crossProductGeneric and') (singleton MultiAnd.top)
-  where
-    and' term ma =
-        MultiAnd.singleton term <> ma
 
 distributeApplication ::
     Ord head =>
@@ -343,3 +328,14 @@ traverse ::
     f (MultiOr child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}
+
+-- | Traverse a @MultiOr@ using an action that returns a disjunction.
+traverseOr ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr child2)) ->
+    MultiOr child1 ->
+    f (MultiOr child2)
+traverseOr f = fmap fold . traverse f
+{-# INLINE traverseOr #-}

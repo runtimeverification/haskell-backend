@@ -33,7 +33,7 @@ data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike V
 
 instance Entry InfoAttemptUnification where
     entrySeverity _ = Info
-    shortDoc _ = Just "while attempting unification"
+    contextDoc _ = Just "while attempting unification"
     helpDoc _ = "log unification attempts"
 
 instance Pretty InfoAttemptUnification where
