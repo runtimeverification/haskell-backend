@@ -45,9 +45,11 @@ import Control.Monad.Catch (
  )
 import Control.Monad.Counter (
     CounterT,
+    mapCounterT,
  )
 import Control.Monad.Except (
     ExceptT,
+    mapExceptT,
  )
 import Control.Monad.Morph (
     MFunctor,
@@ -62,6 +64,7 @@ import Control.Monad.Trans.Accum (
  )
 import Control.Monad.Trans.Identity (
     IdentityT,
+    mapIdentityT,
  )
 import Control.Monad.Trans.Maybe (
     MaybeT,
@@ -188,6 +191,16 @@ logError = log Error
 
 -- * MonadLog
 
+-- | @LogBoundary@ describes the boundaries of a block of logged code.
+data LogBoundary a
+    = -- | The beginning of a block. No data is present because the block has
+      -- not been run.
+      LogBegin
+    | -- | The end of a block. The attached data is the result of the block.
+      LogEnd !a
+    deriving stock (Eq, Ord, Read, Show)
+    deriving stock (Functor, Foldable)
+
 class Monad m => MonadLog m where
     logEntry :: Entry entry => entry -> m ()
     default logEntry ::
@@ -197,6 +210,8 @@ class Monad m => MonadLog m where
         m ()
     logEntry = lift . logEntry
     {-# INLINE logEntry #-}
+
+    logBlock :: Entry entry => (LogBoundary a -> Maybe entry) -> m a -> m a
 
     logWhile :: Entry entry => entry -> m a -> m a
     default logWhile ::
@@ -212,15 +227,33 @@ instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
     logWhile = mapAccumT . logWhile
     {-# INLINE logWhile #-}
 
-instance MonadLog log => MonadLog (CounterT log)
+    logBlock mkEntry = mapAccumT (logBlock (mkEntry . fmap fst))
+    {-# INLINE logBlock #-}
 
-instance MonadLog log => MonadLog (ExceptT error log)
+instance MonadLog log => MonadLog (CounterT log) where
+    logBlock mkEntry = mapCounterT (logBlock (mkEntry . fmap fst))
+    {-# INLINE logBlock #-}
 
-instance MonadLog log => MonadLog (IdentityT log)
+instance MonadLog log => MonadLog (ExceptT error log) where
+    logBlock mkEntry = mapExceptT (logBlock mkEntry')
+      where
+        mkEntry' LogBegin = mkEntry LogBegin
+        mkEntry' (LogEnd result) =
+            case result of
+                Left _ -> Nothing
+                Right a -> mkEntry (LogEnd a)
+    {-# INLINE logBlock #-}
+
+instance MonadLog log => MonadLog (IdentityT log) where
+    logBlock mkEntry = mapIdentityT (logBlock mkEntry)
+    {-# INLINE logBlock #-}
 
 instance MonadLog log => MonadLog (LogicT log) where
     logWhile entry = mapLogicT (logWhile entry)
     {-# INLINE logWhile #-}
+
+    logBlock mkEntry = mapLogicT (logBlock _)
+    {-# INLINE logBlock #-}
 
 instance MonadLog log => MonadLog (MaybeT log)
 

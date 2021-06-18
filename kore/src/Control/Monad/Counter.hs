@@ -20,6 +20,7 @@ module Control.Monad.Counter (
 
     -- * Implementation
     CounterT (..),
+    mapCounterT,
     runCounterT,
     evalCounterT,
     Counter,
@@ -77,6 +78,14 @@ instance MonadReader e m => MonadReader e (CounterT m) where
 instance Morph.MFunctor CounterT where
     hoist f = CounterT . Morph.hoist f . getCounterT
     {-# INLINE hoist #-}
+
+-- | Transform the result and counter simultaneously.
+mapCounterT ::
+    (m (a, Natural) -> m (b, Natural)) ->
+    CounterT m a ->
+    CounterT m b
+mapCounterT f = CounterT . Monad.State.Strict.mapStateT f . getCounterT
+{-# INLINE mapCounterT #-}
 
 {- | Run a computation using a monotonic counter.
 
