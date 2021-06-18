@@ -775,8 +775,8 @@ unifyEqualsNormalized
 data UnifyEqualsElementListsData normalized = UnifyEqualsElementListsData
     { -- Given normalized data norm1, norm2, norm1 - norm2 and norm2 - norm1
       allElements1, allElements2 :: ![ConcreteOrWithVariable normalized RewritingVariableName]
-      -- Is Just v if v is the sole opaque in norm1 - norm2, else Nothing
-    , maybeVar :: !(Maybe (ElementVariable RewritingVariableName))
+    , -- Is Just v if v is the sole opaque in norm1 - norm2, else Nothing
+      maybeVar :: !(Maybe (ElementVariable RewritingVariableName))
     }
 
 data UnifyEqualsNormAc normalized variable
@@ -1435,8 +1435,8 @@ unifyEqualsElementLists
 data NoCheckUnifyOpaqueChildrenData variable = NoCheckUnifyOpaqueChildrenData
     { -- Given normalized data norm1, norm2, the sole opaque variable in norm1 - norm2
       v1 :: !(TermLike.ElementVariable variable)
-      -- The term to unify against v1
-    , second :: !(TermLike variable)
+    , -- The term to unify against v1
+      second :: !(TermLike variable)
     }
 
 data UnifyOpVarResult variable
