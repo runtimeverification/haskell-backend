@@ -16,6 +16,8 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
+    mkEquals,
+    mkOr,
  )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Simplification.Predicate (simplify)
@@ -141,6 +143,19 @@ test_simplify =
             "\\bottom"
             (fromIff fromBottom_ faCeil)
             [[fromNot faCeil]]
+        ]
+    , testGroup
+        "\\ceil"
+        [ test
+            "\\or"
+            (fromCeil_ (mkOr fa fb))
+            [ [faCeil]
+            , [fbCeil]
+            ]
+        , test
+            "Predicate"
+            (fromCeil_ (mkEquals Mock.testSort fa fb))
+            [[fromEquals_ fa fb]]
         ]
     , testGroup
         "Other"
