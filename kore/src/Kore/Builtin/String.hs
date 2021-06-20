@@ -522,9 +522,9 @@ unifyString term1 term2 unifyData =
     UnifyString{string1, string2} = unifyData
 
 data UnifyStringEq = UnifyStringEq
-    { eqTerm    :: !(EqTerm (TermLike RewritingVariableName))
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
     , boolValue :: !Bool
-    , boolTerm  :: !(TermLike RewritingVariableName)
+    , boolTerm :: !(TermLike RewritingVariableName)
     }
 
 matchUnifyStringEq ::
