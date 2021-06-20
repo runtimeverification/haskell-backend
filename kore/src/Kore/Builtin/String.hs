@@ -522,19 +522,20 @@ unifyString term1 term2 unifyData =
     UnifyString{string1, string2} = unifyData
 
 data UnifyStringEq = UnifyStringEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , value :: !Bool
+    { eqTerm    :: !(EqTerm (TermLike RewritingVariableName))
+    , boolValue :: !Bool
+    , boolTerm  :: !(TermLike RewritingVariableName)
     }
 
 matchUnifyStringEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyStringEq
-matchUnifyStringEq first second
+matchUnifyStringEq first boolTerm
     | Just eqTerm <- matchStringEqual first
       , isFunctionPattern first
-      , Just value <- Bool.matchBool second =
-        Just UnifyStringEq{eqTerm, value}
+      , Just boolValue <- Bool.matchBool boolTerm =
+        Just UnifyStringEq{eqTerm, boolValue, boolTerm}
     | otherwise = Nothing
 {-# INLINE matchUnifyStringEq #-}
 
@@ -553,9 +554,10 @@ unifyStringEq unifyChildren (NotSimplifier notSimplifier) unifyData =
     do
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else notSimplifier SideCondition.top) solution'
-            >>= Unify.scatter
+        scattered <- (if boolValue then pure else notSimplifier SideCondition.top) solution' >>= Unify.scatter
+        return $ addTerm scattered
   where
-    UnifyStringEq{eqTerm, value} = unifyData
+    UnifyStringEq{eqTerm, boolValue, boolTerm} = unifyData
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    addTerm = Pattern.withCondition boolTerm . Pattern.withoutTerm
