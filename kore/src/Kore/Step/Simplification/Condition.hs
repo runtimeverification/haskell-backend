@@ -5,7 +5,6 @@ License     : NCSA
 module Kore.Step.Simplification.Condition (
     create,
     simplify,
-    simplifyPredicate,
     simplifyCondition,
     -- For testing
     simplifyPredicates,
@@ -26,12 +25,10 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Condition,
     Conditional (..),
  )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -40,19 +37,21 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitution (
+    Assignment,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unparser
 import Logic
 import Prelude.Kore
-import qualified Pretty
 
 -- | Create a 'ConditionSimplifier' using 'simplify'.
 create ::
@@ -87,8 +86,9 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
             predicate' = Predicate.substitute substitution' predicate
 
         simplified <-
-            simplifyPredicate sideCondition predicate'
-                >>= simplifyPredicates sideCondition . from @_ @(MultiAnd _)
+            Predicate.simplify sideCondition predicate'
+                >>= Logic.scatter
+                >>= simplifyPredicates sideCondition
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -118,8 +118,8 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
     normalize conditional@Conditional{substitution} = do
         let conditional' = conditional{substitution = mempty}
         predicates' <-
-            lift $
-                simplifySubstitution sideCondition substitution
+            simplifySubstitution sideCondition substitution
+                & lift
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 
@@ -168,58 +168,37 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             simplifyWithAssumptions
             predicatesWithUnsimplified
         )
-        Condition.top
+        MultiAnd.top
+        & fmap (foldMap mkCondition)
   where
     simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
         , MultiAnd (Predicate RewritingVariableName)
         ) ->
         StateT
-            (Condition RewritingVariableName)
+            (MultiAnd (Predicate RewritingVariableName))
             (LogicT simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         simplifiedSideCond <- State.get
         let otherSideConds =
                 SideCondition.addAssumptions
-                    ( from @_ @(MultiAnd (Predicate _)) simplifiedSideCond
-                        <> unsimplifiedSideCond
-                    )
+                    (simplifiedSideCond <> unsimplifiedSideCond)
                     sideCondition
-        result <- lift $ simplifyPredicate otherSideConds predicate
+        result <-
+            Predicate.simplify otherSideConds predicate >>= Logic.scatter
+                & lift
         State.put (simplifiedSideCond <> result)
 
-{- | Simplify the 'Predicate' once.
-
-@simplifyPredicate@ does not attempt to apply the resulting substitution and
-re-simplify the result.
-
-See also: 'simplify'
--}
-simplifyPredicate ::
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
-    SideCondition RewritingVariableName ->
-    Predicate RewritingVariableName ->
-    LogicT simplifier (Condition RewritingVariableName)
-simplifyPredicate sideCondition predicate = do
-    patternOr <-
-        lift $
-            simplifyTermLike sideCondition $
-                Predicate.fromPredicate_ predicate
-    -- Despite using lift above, we do not need to
-    -- explicitly check for \bottom because patternOr is an OrPattern.
-    scatter (OrPattern.map eraseTerm patternOr)
-  where
-    eraseTerm conditional
-        | TopBottom.isTop (Pattern.term conditional) =
-            Conditional.withoutTerm conditional
-        | otherwise =
-            (error . show . Pretty.vsep)
-                [ "Expecting a \\top term, but found:"
-                , unparse conditional
-                ]
+mkCondition ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Condition variable
+mkCondition predicate =
+    maybe
+        (from @(Predicate _) predicate)
+        (from @(Assignment _))
+        (Substitution.retractAssignment predicate)
 
 simplifyConjunctions ::
     Predicate RewritingVariableName ->

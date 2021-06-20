@@ -18,6 +18,7 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Not
 import Kore.Syntax.Or
 import Kore.Syntax.Variable
 import Prelude.Kore
@@ -124,4 +125,10 @@ test_Predicate =
                 assertEqual "Expected \\top" fromTop_ iffFirst
                 assertEqual "Expected \\bottom" fromBottom_ iffSecond
             _ -> assertFailure "Expected IffF"
+    , testCase "\\not(\\top())" $ do
+        let actual = fromNot fromTop_
+        case fromPredicate actual of
+            NotF Not{notChild} -> do
+                assertEqual "Expected \\top" fromTop_ notChild
+            _ -> assertFailure "Expected NotF"
     ]
