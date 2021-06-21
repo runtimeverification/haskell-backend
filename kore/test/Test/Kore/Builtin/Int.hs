@@ -580,7 +580,8 @@ test_unifyIntEq =
         -- unit test
         do
             actual <- unifyIntEq term1 term2
-            assertEqual "" [Just expect] actual
+            let expect' = expect{term = term1}
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
@@ -612,7 +613,7 @@ test_unifyIntEq =
             actual <- unifyIntEq term1 term2
             -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
             -- inconsistency.
-            let expect' = expect{predicate = makeTruePredicate}
+            let expect' = expect{term = term1}
             assertEqual "" [Just expect'] actual
         -- integration test
         do
@@ -650,7 +651,8 @@ test_unifyIntEq =
         -- unit test
         do
             actual <- unifyIntEq term1 term2
-            assertEqual "" [Just expect] actual
+            let expect' = expect{term = term2}
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
