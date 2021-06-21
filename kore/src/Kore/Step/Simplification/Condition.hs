@@ -44,7 +44,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Simplification.Predicate as Predicate
+import {-# SOURCE #-} qualified Kore.Step.Simplification.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
