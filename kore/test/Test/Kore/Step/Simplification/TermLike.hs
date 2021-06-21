@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.TermLike (
     test_simplify_sideConditionReplacements,
+    test_simplifyOnly,
 ) where
 
 import Control.Monad.Catch (
@@ -17,8 +18,13 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+    mkRepresentation,
+ )
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
     getRewritingPattern,
     mkConfigVariable,
     mkRewritingTerm,
@@ -28,6 +34,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Logic
 import Prelude.Kore
+import qualified Pretty
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty
@@ -119,3 +126,52 @@ instance MonadSimplify TestSimplifier where
 
     -- Throw an error if any term would be simplified.
     simplifyTermLike = undefined
+    simplifyTermLikeOnly = undefined
+
+test_simplifyOnly :: [TestTree]
+test_simplifyOnly =
+    [ (test "LIST.List \\and simplification failure")
+        (mkAnd (Mock.concatList mkTop_ mkTop_) (Mock.builtinList []))
+        OrPattern.bottom
+    , (test "Non-function symbol without evaluators")
+        Mock.plain00Subsort
+        (OrPattern.fromTermLike Mock.plain00Subsort)
+    , (test "\\rewrites - simplified children")
+        ( mkRewrites
+            (mkBottom Mock.topSort)
+            (mkCeil Mock.topSort Mock.unitSet)
+        )
+        OrPattern.top
+    ]
+  where
+    test ::
+        HasCallStack =>
+        TestName ->
+        TermLike RewritingVariableName ->
+        OrPattern RewritingVariableName ->
+        TestTree
+    test testName input expect =
+        testCase testName $ do
+            actual <- simplifyOnly input
+            let message =
+                    (show . Pretty.vsep)
+                        [ "Expected:"
+                        , (Pretty.indent 4) (Pretty.pretty expect)
+                        , "Actually:"
+                        , (Pretty.indent 4) (Pretty.pretty actual)
+                        ]
+            assertEqual message expect actual
+            (assertBool "Expected simplified pattern")
+                (OrPattern.isSimplified repr actual)
+
+    repr :: SideCondition.Representation
+    repr =
+        SideCondition.mkRepresentation
+            (SideCondition.top @RewritingVariableName)
+
+simplifyOnly ::
+    TermLike RewritingVariableName ->
+    IO (OrPattern RewritingVariableName)
+simplifyOnly =
+    runSimplifier Mock.env
+        . TermLike.simplifyOnly SideCondition.top
