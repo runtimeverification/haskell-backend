@@ -72,22 +72,21 @@ unmodified.
 -}
 simplify ::
     forall simplifier any.
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
+    HasCallStack =>
+    MonadSimplify simplifier =>
     SubstitutionSimplifier simplifier ->
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
     LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
-    normalize >=> worker
+    normalize >=> worker 0
   where
-    worker Conditional{term, predicate, substitution} = do
+    worker count Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
             predicate' = substitute substitution' predicate
 
         simplified <-
-            Predicate.simplify sideCondition predicate'
+            simplifyPredicate predicate'
                 >>= Logic.scatter
                 >>= simplifyPredicates sideCondition
         TopBottom.guardAgainstBottom simplified
@@ -103,7 +102,10 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
                     normalized{term}
         if fullySimplified simplifiedPattern
             then return (extract simplifiedPattern)
-            else worker (extract simplifiedPattern)
+            else worker (count + 1 :: Int) (extract simplifiedPattern)
+
+    simplifyPredicate predicate =
+        Predicate.simplify sideCondition predicate & lift
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional{predicate, substitution}) =
