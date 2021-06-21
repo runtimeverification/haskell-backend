@@ -32,7 +32,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Step.Simplification.And as And (
-    makeEvaluate,
+    simplify,
  )
 import qualified Kore.Step.Simplification.Implies as Implies (
     simplifyEvaluated,
@@ -91,17 +91,15 @@ simplifyEvaluated
         | OrPattern.isFalse first = Not.simplifyEvaluated sideCondition second
         | OrPattern.isTrue second = return first
         | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
-        | otherwise =
-            return $ case (firstPatterns, secondPatterns) of
-                ([firstP], [secondP]) -> makeEvaluate firstP secondP
-                _ -> do
-                    fwd <- Implies.simplifyEvaluated sideCondition first second
-                    bwd <- Implies.simplifyEvaluated sideCondition second first
-                    And.makeEvaluate
-                        Not.notSimplifier
-                        sideCondition
-                        (MultiAnd.make [fwd, bwd])
-                        & OrPattern.observeAllT
+        | otherwise = case (firstPatterns, secondPatterns) of
+            ([firstP], [secondP]) -> return $ makeEvaluate firstP secondP
+            _ -> do
+                fwd <- Implies.simplifyEvaluated sideCondition first second
+                bwd <- Implies.simplifyEvaluated sideCondition second first
+                And.simplify
+                    Not.notSimplifier
+                    sideCondition
+                    (MultiAnd.make [fwd, bwd])
       where
         firstPatterns = toList first
         secondPatterns = toList second
