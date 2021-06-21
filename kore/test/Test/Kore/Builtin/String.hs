@@ -480,7 +480,8 @@ test_unifyStringEq =
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            assertEqual "" [Just expect] actual
+            let expect' = expect{term = term1}
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
@@ -510,12 +511,18 @@ test_unifyStringEq =
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            let expect' = expect{predicate = makeTruePredicate}
+            let expect' = expect{term = term1}
             assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
                 makeEqualsPredicate term1 term2
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                makeInPredicate term1 term2
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
