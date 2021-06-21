@@ -27,6 +27,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
     mkConfigVariable,
+    mkElementConfigVariable,
     mkRewritingTerm,
  )
 import qualified Kore.Step.Function.Memo as Memo
@@ -132,26 +133,33 @@ test_simplifyOnly :: [TestTree]
 test_simplifyOnly =
     [ (test "LIST.List \\and simplification failure")
         (mkAnd (Mock.concatList mkTop_ mkTop_) (Mock.builtinList []))
-        OrPattern.bottom
+        expectUnsimplified
     , (test "Non-function symbol without evaluators")
         Mock.plain00Subsort
-        (OrPattern.fromTermLike Mock.plain00Subsort)
+        (expectTerm Mock.plain00Subsort)
     , (test "\\rewrites - simplified children")
         ( mkRewrites
             (mkBottom Mock.topSort)
             (mkCeil Mock.topSort Mock.unitSet)
         )
-        OrPattern.top
+        expectUnsimplified
     ]
   where
+    expectUnsimplified = Nothing
+    expectTerm termLike = Just (OrPattern.fromTermLike termLike)
+
+    x = mkElementConfigVariable Mock.x
+
     test ::
         HasCallStack =>
         TestName ->
         TermLike RewritingVariableName ->
-        OrPattern RewritingVariableName ->
+        -- | Expected output, if simplified.
+        Maybe (OrPattern RewritingVariableName) ->
         TestTree
-    test testName input expect =
+    test testName input maybeExpect =
         testCase testName $ do
+            let expect = fromMaybe (OrPattern.fromTermLike input) maybeExpect
             actual <- simplifyOnly input
             let message =
                     (show . Pretty.vsep)
@@ -162,7 +170,7 @@ test_simplifyOnly =
                         ]
             assertEqual message expect actual
             (assertBool "Expected simplified pattern")
-                (OrPattern.isSimplified repr actual)
+                (isNothing maybeExpect || OrPattern.isSimplified repr actual)
 
     repr :: SideCondition.Representation
     repr =

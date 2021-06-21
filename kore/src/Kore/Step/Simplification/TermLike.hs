@@ -527,6 +527,8 @@ simplifyOnly sideCondition =
                 -- Not simplifiable:
                 EndiannessF _ -> doNotSimplify
                 SignednessF _ -> doNotSimplify
+                -- Handled elsewhere, not a proper term:
+                RewritesF _ -> doNotSimplify
                 -- Symbols:
                 ApplySymbolF applySymbolF ->
                     Application.simplify sideCondition
@@ -558,8 +560,6 @@ simplifyOnly sideCondition =
                 -- Reachability:
                 NextF nextF ->
                     Next.simplify <$> traverse worker nextF
-                RewritesF rewritesF ->
-                    Rewrites.simplify <$> traverse worker rewritesF
                 -- Matching Logic:
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
