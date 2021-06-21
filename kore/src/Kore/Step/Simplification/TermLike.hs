@@ -534,8 +534,7 @@ simplifyOnly sideCondition =
                     Application.simplify sideCondition
                         =<< traverse worker applySymbolF
                 InjF injF ->
-                    Inj.simplify
-                        =<< traverse worker injF
+                    Inj.simplify =<< traverse worker injF
                 InternalListF internalListF ->
                     InternalList.simplify <$> traverse worker internalListF
                 InternalMapF internalMapF ->
