@@ -13,6 +13,7 @@ module Kore.Step.Simplification.Iff (
     simplifyEvaluated,
 ) where
 
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -30,8 +31,15 @@ import qualified Kore.Internal.TermLike as TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Step.Simplification.And as And (
+    makeEvaluate,
+ )
+import qualified Kore.Step.Simplification.Implies as Implies (
+    simplifyEvaluated,
+ )
 import qualified Kore.Step.Simplification.Not as Not (
     makeEvaluate,
+    notSimplifier,
     simplifyEvaluated,
  )
 import Kore.Step.Simplification.Simplify
@@ -86,10 +94,14 @@ simplifyEvaluated
         | otherwise =
             return $ case (firstPatterns, secondPatterns) of
                 ([firstP], [secondP]) -> makeEvaluate firstP secondP
-                _ ->
-                    makeEvaluate
-                        (OrPattern.toPattern first)
-                        (OrPattern.toPattern second)
+                _ -> do
+                    fwd <- Implies.simplifyEvaluated sideCondition first second
+                    bwd <- Implies.simplifyEvaluated sideCondition second first
+                    And.makeEvaluate
+                        Not.notSimplifier
+                        sideCondition
+                        (MultiAnd.make [fwd, bwd])
+                        & OrPattern.observeAllT
       where
         firstPatterns = toList first
         secondPatterns = toList second
