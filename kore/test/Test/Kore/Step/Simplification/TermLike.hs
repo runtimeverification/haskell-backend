@@ -143,6 +143,18 @@ test_simplifyOnly =
             (mkCeil Mock.topSort Mock.unitSet)
         )
         expectUnsimplified
+    , (test "Sort injection")
+        (Mock.sortInjection Mock.topSort (mkElemVar x))
+        (expectTerm $ Mock.sortInjection Mock.topSort (mkElemVar x))
+    , (test "Sort injection - Nested")
+        ( Mock.sortInjection
+            Mock.topSort
+            (Mock.sortInjection Mock.subSort Mock.aSubSubsort)
+        )
+        (expectTerm $ Mock.sortInjection Mock.topSort Mock.aSubSubsort)
+    , (test "Variable")
+        (mkElemVar x)
+        (expectTerm $ mkElemVar x)
     ]
   where
     expectUnsimplified = Nothing
