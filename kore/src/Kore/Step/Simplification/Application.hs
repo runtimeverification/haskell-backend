@@ -60,9 +60,8 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Application Symbol (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
@@ -84,9 +83,8 @@ simplify sideCondition application = do
         MultiOr.distributeApplication application
 
 makeAndEvaluateApplications ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
@@ -95,9 +93,8 @@ makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
@@ -113,9 +110,8 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     -- | The predicate from the configuration
     SideCondition RewritingVariableName ->
     -- | The pattern to be evaluated
