@@ -292,10 +292,7 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
-        | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
-            lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.String.matchUnifyStringEq first second = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
-        | Just unifyData <- Builtin.String.matchUnifyStringEq second first = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
         | otherwise =
             asum
                 [ Builtin.KEqual.unifyIfThenElse childTransformers first second
