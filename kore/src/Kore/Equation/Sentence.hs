@@ -149,6 +149,40 @@ matchEquation attributes termLike
                         , attributes
                         }
 
+    match
+        ( TermLike.Implies_
+                _
+                ( TermLike.And_
+                        _
+                        requires
+                        argument@( TermLike.And_
+                                        _
+                                        (TermLike.In_ _ _ _ _)
+                                        _
+                                    )
+                    )
+                ( TermLike.Equals_
+                        _
+                        _
+                        left
+                        (TermLike.And_ _ right ensures)
+                    )
+            ) =
+            do
+                requires' <- makePredicate requires & Bifunctor.first RequiresError
+                argument' <- makePredicate argument & Bifunctor.first ArgumentError
+                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                pure
+                    Equation
+                        { requires = requires'
+                        , argument = Just argument'
+                        , antiLeft = Nothing
+                        , left
+                        , right
+                        , ensures = ensures'
+                        , attributes
+                        }
+
     -- function rule with priority
     match
         ( TermLike.Implies_
@@ -186,11 +220,69 @@ matchEquation attributes termLike
     match
         ( TermLike.Implies_
                 _
+                ( TermLike.And_
+                        _
+                        antiLeft
+                        ( TermLike.And_
+                                _
+                                requires
+                                argument
+                            )
+                    )
+                ( TermLike.Equals_
+                        _
+                        _
+                        left
+                        (TermLike.And_ _ right ensures)
+                    )
+            ) =
+            do
+                requires' <- makePredicate requires & Bifunctor.first RequiresError
+                argument' <- makePredicate argument & Bifunctor.first ArgumentError
+                antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
+                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                pure
+                    Equation
+                        { requires = requires'
+                        , argument = Just argument'
+                        , antiLeft = Just antiLeft'
+                        , left
+                        , right
+                        , ensures = ensures'
+                        , attributes
+                        }
+    match
+        ( TermLike.Implies_
+                _
                 requires
                 ( TermLike.And_
                         _
                         (TermLike.Equals_ _ _ left right)
                         ensures
+                    )
+            ) =
+            do
+                requires' <- makePredicate requires & Bifunctor.first RequiresError
+                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                pure
+                    Equation
+                        { requires = requires'
+                        , argument = Nothing
+                        , antiLeft = Nothing
+                        , left
+                        , right
+                        , ensures = ensures'
+                        , attributes
+                        }
+    match
+        ( TermLike.Implies_
+                _
+                requires
+                ( TermLike.Equals_
+                        _
+                        _
+                        left
+                        (TermLike.And_ _ right ensures)
                     )
             ) =
             do
