@@ -366,7 +366,6 @@
           "Kore/Step/Simplification/OverloadSimplifier"
           "Kore/Step/Simplification/Pattern"
           "Kore/Step/Simplification/Predicate"
-          "Kore/Step/Simplification/Rewrites"
           "Kore/Step/Simplification/Rule"
           "Kore/Step/Simplification/SetVariable"
           "Kore/Step/Simplification/SimplificationType"
