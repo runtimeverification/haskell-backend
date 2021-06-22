@@ -39,11 +39,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    cannotReplaceTerm,
-    replaceTerm,
-    toRepresentation,
- )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
@@ -221,12 +217,12 @@ simplify sideCondition = \termLike ->
         | otherwise =
             case Predicate.makePredicate termLike of
                 Left _ -> return . OrPattern.fromTermLike $ termLike
-                Right termPredicate -> do
+                Right predicate -> do
                     condition <-
-                        ensureSimplifiedCondition
-                            sideConditionRepresentation
-                            termLike
-                            (Condition.fromPredicate termPredicate)
+                        Condition.fromPredicate predicate
+                            & ensureSimplifiedCondition
+                                sideConditionRepresentation
+                                termLike
                     condition
                         & Pattern.fromCondition (termLikeSort termLike)
                         & OrPattern.fromPattern
