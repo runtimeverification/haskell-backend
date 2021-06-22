@@ -605,7 +605,6 @@ withDebugProven rule prim state =
                     _ -> pure state'
             _ -> pure state'
 
-
 --     rule prim state >>= debugProven
 --   where
 --     debugProven state'
