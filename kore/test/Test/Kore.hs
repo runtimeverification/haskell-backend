@@ -42,17 +42,16 @@ module Test.Kore (
     Log.emptyLogger,
 ) where
 
+import Control.Monad.Catch
+import Control.Monad.Morph (MFunctor (..))
 import Control.Monad.Reader (
     ReaderT,
  )
+import qualified Control.Monad.Reader as Reader
 import Control.Monad.State.Strict (
     StateT (..),
  )
 import qualified Control.Monad.State.Strict as State
-
-import Control.Monad.Catch
-import Control.Monad.Morph (MFunctor (..))
-import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Const
 import Data.Text (

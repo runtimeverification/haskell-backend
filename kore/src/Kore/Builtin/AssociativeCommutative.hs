@@ -55,6 +55,7 @@ import Data.Reflection (
     Given,
  )
 import qualified Data.Reflection as Reflection
+import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Pattern.Simplified as Attribute (
@@ -103,6 +104,9 @@ import Kore.Internal.TermLike (
     pattern InternalSet_,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Log.WarnUnifyBottom (
+    warnUnifyBottomAndReturnBottom,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -122,10 +126,6 @@ import qualified Kore.Unparser as Unparser
 import Logic
 import Prelude.Kore
 import qualified Pretty
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottomAndReturnBottom,
- )
-import Data.Text (Text)
 
 -- | Any @TermWrapper@ may be inside of an 'InternalAc'.
 class
