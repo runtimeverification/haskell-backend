@@ -148,7 +148,6 @@ matchEquation attributes termLike
                         , ensures = ensures'
                         , attributes
                         }
-
     match
         ( TermLike.Implies_
                 _
