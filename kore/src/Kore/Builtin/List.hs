@@ -100,6 +100,9 @@ import qualified Kore.Internal.TermLike as TermLike (
     isFunctionPattern,
     markSimplified,
  )
+import Kore.Log.WarnUnifyBottom (
+    warnUnifyBottom,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -113,7 +116,6 @@ import Kore.Syntax.Sentence (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
@@ -556,7 +558,7 @@ unifyEquals
                   where
                     prefixLength = Seq.length list1 - Seq.length suffix2
         bottomWithExplanation = do
-            Monad.Unify.explainBottom
+            warnUnifyBottom
                 "Cannot unify lists of different length."
                 first
                 second

@@ -35,7 +35,6 @@ module Test.Kore (
     korePatternUnifiedGen,
     TestLog (..),
     runTestLog,
-    makeTestLog,
 
     -- * Re-exports
     ParsedPattern,
@@ -52,6 +51,7 @@ import Control.Monad.State.Strict (
 import qualified Control.Monad.State.Strict as State
 
 import Control.Monad.Catch
+import Control.Monad.Morph (MFunctor (..))
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Const
@@ -782,7 +782,7 @@ sortActual name sorts =
             , sortActualSorts = sorts
             }
 
-newtype TestLog m a = TestLog (StateT [SomeEntry] m a)
+newtype TestLog m a = TestLog {logState :: StateT [SomeEntry] m a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (State.MonadState [SomeEntry], MonadIO, SMT.MonadSMT)
     deriving newtype (MonadThrow, MonadCatch, MonadMask, MonadProf)
@@ -795,11 +795,19 @@ instance Monad m => Log.MonadLog (TestLog m) where
         addEntry :: m (a, [SomeEntry]) -> m (a, [SomeEntry])
         addEntry = fmap $ Bifunctor.second (Log.toEntry entry :)
 
+instance MonadTrans TestLog where
+    lift ma = TestLog $ StateT $ \s -> fmap (flip (,) s) ma
+
+instance MFunctor TestLog where
+    hoist f (TestLog (StateT state)) =
+        TestLog $
+            StateT $
+                \s -> f (state s)
+
+instance SMT.MonadSimplify m => SMT.MonadSimplify (TestLog m)
+
 runTestLog ::
     (m (a, [SomeEntry]) -> IO (a, [SomeEntry])) ->
     TestLog m a ->
     IO (a, [SomeEntry])
 runTestLog run (TestLog state) = run $ State.runStateT state []
-
-makeTestLog :: Monad m => m a -> TestLog m a
-makeTestLog ma = TestLog $ StateT $ \s -> fmap (flip (,) s) ma

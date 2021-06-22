@@ -39,12 +39,15 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     TermLike,
+    VariableName,
     mkBottom_,
     mkElemVar,
  )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 
+import qualified Control.Monad.Trans.State.Strict as State
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnUnifyBottom (
     WarnUnifyBottom (..),
  )
@@ -69,16 +72,10 @@ import Kore.Syntax.Module (
 import Kore.Unification.Procedure (
     unificationProcedure,
  )
-
--- import Kore.Unification.Unify (
---     explainBottom,
---  )
 import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-
--- import qualified Pretty
 import qualified SMT
 import System.Clock (
     Clock (Monotonic),
@@ -86,8 +83,8 @@ import System.Clock (
     getTime,
  )
 import Test.Kore (
-    makeTestLog,
-    runTestLog,
+    TestLog,
+    logState,
  )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -118,7 +115,7 @@ test_replInterpreter =
     , tryAlias `tests` "Executing an existing alias with arguments"
     , unificationFailure `tests` "Try axiom that doesn't unify"
     , unificationSuccess `tests` "Try axiom that does unify"
-    , forceFailure `tests` "TryF axiom that doesn't unify"
+    , forceFailure `tests` "qqTryF axiom that doesn't unify"
     , forceSuccess `tests` "TryF axiom that does unify"
     , tryResultsInProven `tests` "TryF axiom results in proven config"
     , proofStatus `tests` "Multi claim proof status"
@@ -132,7 +129,7 @@ test_replInterpreter =
     , showAxiomByName `tests` "Showing the axiom with the name add1Axiom"
     , unificationFailureWithName `tests` "Try axiom by name that doesn't unify"
     , unificationSuccessWithName `tests` "Try axiom by name that does unify"
-    , forceFailureWithName `tests` "TryF axiom by name that doesn't unify"
+    , forceFailureWithName `tests` "qqTryF axiom by name that doesn't unify"
     , forceSuccessWithName `tests` "TryF axiom by name that does unify"
     , proveSecondClaim `tests` "Starting to prove the second claim"
     , proveSecondClaimByName
@@ -326,7 +323,8 @@ tryAlias =
 
 unificationFailure :: IO ()
 unificationFailure =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkAxiom one one
         axioms = [impossibleAxiom]
@@ -335,16 +333,20 @@ unificationFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom "distinct integers" one zero
+                    WarnUnifyBottom
+                        "distinct integers"
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
                 actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
-            actualWarnUnifyBottom `equals` [expectedLogEntry]
+                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
+            head actualWarnUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
 unificationFailureWithName :: IO ()
 unificationFailureWithName =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [impossibleAxiom]
@@ -353,10 +355,13 @@ unificationFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom "distinct integers" one zero
+                    WarnUnifyBottom
+                        "distinct integers"
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
                 actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
-            actualWarnUnifyBottom `equals` [expectedLogEntry]
+                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
+            head actualWarnUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -392,7 +397,8 @@ unificationSuccessWithName = do
 
 forceFailure :: IO ()
 forceFailure =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkAxiom one one
         axioms = [impossibleAxiom]
@@ -401,16 +407,20 @@ forceFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom "distinct integers" one zero
+                    WarnUnifyBottom
+                        "distinct integers"
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
                 actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
-            actualWarnUnifyBottom `equals` [expectedLogEntry]
+                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
+            head actualWarnUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
 forceFailureWithName :: IO ()
 forceFailureWithName =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [impossibleAxiom]
@@ -419,10 +429,13 @@ forceFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom "distinct integers" one zero
+                    WarnUnifyBottom
+                        "distinct integers"
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
+                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
                 actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @(WarnUnifyBottom _) <$> logEntries
-            actualWarnUnifyBottom `equals` [expectedLogEntry]
+                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
+            head actualWarnUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -734,19 +747,27 @@ runWithState command axioms claims claim stateTransformer = do
     mvar <- newMVar logger
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar
+        run1 =
+            flip Log.runLoggerT (Log.swappableLogger mvar)
+                . liftSimplifier
+                . flip runStateT state
+                . flip runReaderT config
     ((c, s), logEntries) <-
-        runTestLog (flip Log.runLoggerT (Log.swappableLogger mvar) . liftSimplifier) $
-            makeTestLog $
-                flip runStateT state $
-                    flip runReaderT config $
-                        replInterpreter0 @(SimplifierT NoSMT)
-                            (PrintAuxOutput . modifyAuxOutput $ output)
-                            (PrintKoreOutput . modifyKoreOutput $ output)
-                            command
+        run1 $
+            replInterpreter0
+                @(TestLog (SimplifierT NoSMT))
+                (PrintAuxOutput . modifyAuxOutput $ output)
+                (PrintKoreOutput . modifyKoreOutput $ output)
+                command
+
     output' <- readIORef output
     return $ Result output' c s logEntries
   where
-    liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
+    liftSimplifier =
+        SMT.runNoSMT
+            . Kore.runSimplifier testEnv
+            . (\state -> State.runStateT state [])
+            . logState
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
@@ -824,7 +845,7 @@ mkState startTime axioms claims claim =
 
 mkConfig ::
     MVar (Log.LogAction IO Log.ActualEntry) ->
-    Config (SimplifierT NoSMT)
+    Config (TestLog (SimplifierT NoSMT))
 mkConfig logger =
     Config
         { stepper = stepper0
@@ -840,20 +861,9 @@ mkConfig logger =
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        SimplifierT NoSMT ExecutionGraph
+        TestLog (SimplifierT NoSMT) ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
         proveClaimStep claims' axioms' graph node
-
--- formatUnificationError ::
---     Pretty.Doc () ->
---     TermLike RewritingVariableName ->
---     TermLike RewritingVariableName ->
---     IO ReplOutput
--- formatUnificationError info first second = do
---     res <- runSimplifier testEnv . runUnifierWithExplanation $ do
---         explainBottom info first second
---         empty
---     return $ formatUnificationMessage res
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->

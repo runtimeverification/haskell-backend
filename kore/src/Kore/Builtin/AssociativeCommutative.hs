@@ -114,7 +114,6 @@ import Kore.Syntax.Variable
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser (
     unparse,
     unparseToString,
@@ -122,10 +121,11 @@ import Kore.Unparser (
 import qualified Kore.Unparser as Unparser
 import Logic
 import Prelude.Kore
-import Pretty (
-    Doc,
- )
 import qualified Pretty
+import Kore.Log.WarnUnifyBottom (
+    warnUnifyBottomAndReturnBottom,
+ )
+import Data.Text (Text)
 
 -- | Any @TermWrapper@ may be inside of an 'InternalAc'.
 class
@@ -762,7 +762,7 @@ unifyEqualsNormalized
             case toNormalized patt of
                 Bottom ->
                     lift $
-                        Monad.Unify.explainAndReturnBottom
+                        warnUnifyBottomAndReturnBottom
                             "Duplicated elements in normalization."
                             first
                             second
@@ -863,9 +863,9 @@ unifyEqualsNormalizedAc
                 (\key count result -> replicate count key ++ result)
                 []
 
-        bottomWithExplanation :: Doc () -> unifier a
+        bottomWithExplanation :: Text -> unifier a
         bottomWithExplanation explanation =
-            Monad.Unify.explainAndReturnBottom explanation first second
+            warnUnifyBottomAndReturnBottom explanation first second
 
         unifyEqualsElementLists' =
             unifyEqualsElementLists
@@ -1040,7 +1040,7 @@ buildResultFromUnifiers ::
     , InternalVariable variable
     , TermWrapper normalized
     ) =>
-    (forall result. Doc () -> unifier result) ->
+    (forall result. Text -> unifier result) ->
     [(Key, Value normalized (TermLike variable))] ->
     [(TermLike variable, Value normalized (TermLike variable))] ->
     [TermLike variable] ->
@@ -1131,7 +1131,7 @@ buildResultFromUnifiers
 
 addAllDisjoint ::
     (Monad unifier, Ord a, Hashable a) =>
-    (forall result. Doc () -> unifier result) ->
+    (forall result. Text -> unifier result) ->
     HashMap a b ->
     [(a, b)] ->
     unifier (HashMap a b)
@@ -1241,7 +1241,7 @@ unifyEqualsElementLists
             --
             -- Since the two lists have different counts, their structures can
             -- never unify.
-            Monad.Unify.explainAndReturnBottom
+            warnUnifyBottomAndReturnBottom
                 "Cannot unify ac structures with different sizes."
                 first
                 second
@@ -1294,7 +1294,7 @@ unifyEqualsElementLists
             -- The second structure does not include an opaque term, so all the
             -- elements in the first structure must be matched by elements in the second
             -- one. Since we don't have enough, we return bottom.
-            Monad.Unify.explainAndReturnBottom
+            warnUnifyBottomAndReturnBottom
                 "Cannot unify ac structures with different sizes."
                 first
                 second
@@ -1312,7 +1312,7 @@ unifyEqualsElementLists
 
             case elementListAsInternal tools (termLikeSort first) remainder2Terms of
                 Nothing ->
-                    Monad.Unify.explainAndReturnBottom
+                    warnUnifyBottomAndReturnBottom
                         "Duplicated element in unification results"
                         first
                         second
@@ -1348,7 +1348,7 @@ unifyOpaqueVariable ::
     , InternalVariable variable
     ) =>
     SmtMetadataTools Attribute.Symbol ->
-    (forall a. Doc () -> unifier a) ->
+    (forall a. Text -> unifier a) ->
     -- | unifier function
     (TermLike variable -> TermLike variable -> unifier (Pattern variable)) ->
     TermLike.ElementVariable variable ->

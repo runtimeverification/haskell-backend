@@ -28,9 +28,11 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import Kore.Log.WarnUnifyBottom (
+    warnUnifyBottomAndReturnBottom,
+ )
 import Kore.Unification.Unify (
     MonadUnify,
-    explainAndReturnBottom,
  )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
@@ -85,7 +87,7 @@ unifyEquals termLike1@(Signedness_ sign1) termLike2@(Signedness_ sign2)
     | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
     | otherwise =
         lift $
-            explainAndReturnBottom
+            warnUnifyBottomAndReturnBottom
                 "Cannot unify distinct constructors."
                 termLike1
                 termLike2

@@ -22,6 +22,7 @@ import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
  )
+import Kore.Log.WarnUnifyBottom (warnUnifyBottomAndReturnBottom)
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -55,7 +56,7 @@ unificationProcedure ::
     unifier (Condition RewritingVariableName)
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
-        Monad.Unify.explainAndReturnBottom "Cannot unify different sorts." p1 p2
+        warnUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
         pat <- termUnification Not.notSimplifier p1 p2
         TopBottom.guardAgainstBottom pat

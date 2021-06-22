@@ -56,8 +56,6 @@ import Control.Monad.Trans.Accum (
     AccumT,
     runAccumT,
  )
-import qualified Control.Monad.Trans.Accum as Monad.Accum
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -117,13 +115,9 @@ import Kore.Unification.UnifierT (
     UnifierT (..),
  )
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Unparser (
-    unparse,
- )
 import Logic
 import Numeric.Natural
 import Prelude.Kore
-import qualified Pretty
 import SMT (
     MonadSMT,
  )
@@ -640,20 +634,7 @@ instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
     localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
         UnifierWithExplanation $ localSimplifierAxioms locally unifierT
 
-instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    explainBottom info first second =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Accum.add
-            . First
-            . Just
-            $ ReplOutput
-                [ AuxOut . show $ info <> "\n"
-                , AuxOut "When unifying:\n"
-                , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
-                , AuxOut "With:\n"
-                , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
-                ]
+instance MonadSimplify m => MonadUnify (UnifierWithExplanation m)
 
 -- | Result after running one or multiple proof steps.
 data StepResult

@@ -58,10 +58,15 @@ import qualified Kore.Internal.SideCondition as SideCondition (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnification (
     debugUnificationSolved,
     debugUnificationUnsolved,
     whileDebugUnification,
+ )
+import Kore.Log.WarnUnifyBottom (
+    warnUnifyBottom,
+    warnUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -81,7 +86,6 @@ import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
 import Prelude.Kore
-import qualified Pretty
 
 {- | Unify two terms without discarding the terms.
 
@@ -376,7 +380,7 @@ explainBoolAndBottom ::
     TermLike RewritingVariableName ->
     unifier ()
 explainBoolAndBottom term1 term2 =
-    explainBottom "Cannot unify bottom." term1 term2
+    warnUnifyBottom "Cannot unify bottom." term1 term2
 
 {- | Matches
 
@@ -442,11 +446,10 @@ bottomTermEquals
                 [] -> return Pattern.top
                 [Conditional{predicate = PredicateTrue, substitution}]
                     | substitution == mempty -> do
-                        explainBottom
+                        warnUnifyBottomAndReturnBottom
                             "Cannot unify bottom with non-bottom pattern."
                             first
                             second
-                        empty
                 _ ->
                     return
                         Conditional
@@ -544,12 +547,11 @@ variableFunctionEquals
                 resultOr <- makeEvaluateTermCeil SideCondition.topTODO second
                 case toList resultOr of
                     [] -> do
-                        explainBottom
+                        warnUnifyBottomAndReturnBottom
                             "Unification of variable and bottom \
                             \when attempting to simplify equals."
                             first
                             second
-                        empty
                     resultConditions -> Unify.scatter resultConditions
             let result =
                     predicate
@@ -617,7 +619,8 @@ unifySortInjection termMerger term1 term2 unifyInj = do
     InjSimplifier{unifyInjs} <- Simplifier.askInjSimplifier
     unifyInjs unifyInj & maybe distinct merge
   where
-    distinct = explainAndReturnBottom "Distinct sort injections" term1 term2
+    distinct =
+        warnUnifyBottomAndReturnBottom "Distinct sort injections" term1 term2
     merge inj@Inj{injChild = Pair child1 child2} = do
         childPattern <- termMerger child1 child2
         InjSimplifier{evaluateInj} <- askInjSimplifier
@@ -681,8 +684,11 @@ noConfusionInjectionConstructor ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier a
-noConfusionInjectionConstructor =
-    explainAndReturnBottom "No confusion: sort injections and constructors"
+noConfusionInjectionConstructor term1 term2 =
+    warnUnifyBottomAndReturnBottom
+        "No confusion: sort injections and constructors"
+        term1
+        term2
 
 {- |
  If the two constructors form an overload pair, apply the overloading axioms
@@ -721,16 +727,25 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                         [result] -> return result
                         [] ->
                             lift $
-                                explainAndReturnBottom
+                                warnUnifyBottomAndReturnBottom
                                     ( "exists simplification for overloaded"
                                         <> " constructors returned no pattern"
                                     )
-                                    firstTerm
-                                    secondTerm
+                                    ( TermLike.mapVariables
+                                        (pure $ from @_ @VariableName)
+                                        firstTerm
+                                    )
+                                    ( TermLike.mapVariables
+                                        (pure $ from @_ @VariableName)
+                                        secondTerm
+                                    )
                         _ -> empty
             Left (Clash message) ->
                 lift $
-                    explainAndReturnBottom (fromString message) firstTerm secondTerm
+                    warnUnifyBottomAndReturnBottom
+                        (fromString message)
+                        firstTerm
+                        secondTerm
             Left Overloading.NotApplicable -> empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
@@ -821,7 +836,7 @@ unifyDomainValue term1 term2 unifyData
   where
     UnifyDomainValue{val1, val2} = unifyData
 
-cannotUnifyDistinctDomainValues :: Pretty.Doc ()
+cannotUnifyDistinctDomainValues :: Text
 cannotUnifyDistinctDomainValues = "distinct domain values"
 
 cannotUnifyDomainValues ::
@@ -829,7 +844,8 @@ cannotUnifyDomainValues ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier a
-cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
+cannotUnifyDomainValues term1 term2 =
+    warnUnifyBottomAndReturnBottom cannotUnifyDistinctDomainValues term1 term2
 
 -- | @UnifyStringLiteral@ represents unification of two string literals.
 data UnifyStringLiteral = UnifyStringLiteral
@@ -858,7 +874,8 @@ unifyStringLiteral ::
     unifier (Pattern RewritingVariableName)
 unifyStringLiteral term1 term2 unifyData
     | txt1 == txt2 = return $ Pattern.fromTermLike term1
-    | otherwise = explainAndReturnBottom "distinct string literals" term1 term2
+    | otherwise =
+        warnUnifyBottomAndReturnBottom "distinct string literals" term1 term2
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 

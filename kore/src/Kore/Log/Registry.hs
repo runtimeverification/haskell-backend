@@ -124,6 +124,9 @@ import Kore.Log.WarnSymbolSMTRepresentation (
 import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
  )
+import Kore.Log.WarnUnifyBottom (
+    WarnUnifyBottom,
+ )
 import Log (
     Entry (..),
     LogMessage,
@@ -187,6 +190,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
             , mk $ Proxy @WarnRetrySolverQuery
+            , mk $ Proxy @WarnUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
             , mk $ Proxy @LogMessage
             , mk $ Proxy @InfoAttemptUnification

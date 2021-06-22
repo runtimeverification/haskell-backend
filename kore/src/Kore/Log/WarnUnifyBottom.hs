@@ -14,7 +14,9 @@ import Data.Text (
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike (..),
+    VariableName,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Unparser (unparse)
 import Log (
     Entry (..),
@@ -30,14 +32,14 @@ import Pretty (
  )
 import qualified Pretty
 
-data WarnUnifyBottom variable = WarnUnifyBottom
+data WarnUnifyBottom = WarnUnifyBottom
     { info :: Text
-    , first :: TermLike variable
-    , second :: TermLike variable
+    , first :: TermLike VariableName
+    , second :: TermLike VariableName
     }
     deriving stock (Show, Eq)
 
-instance InternalVariable variable => Pretty (WarnUnifyBottom variable) where
+instance Pretty WarnUnifyBottom where
     pretty (WarnUnifyBottom info first second) =
         Pretty.vsep
             [ unAnnotate $ pretty info
@@ -47,7 +49,7 @@ instance InternalVariable variable => Pretty (WarnUnifyBottom variable) where
             , Pretty.indent 4 . unparse $ second
             ]
 
-instance InternalVariable variable => Entry (WarnUnifyBottom variable) where
+instance Entry WarnUnifyBottom where
     entrySeverity _ = Warning
     helpDoc _ = "TODO"
 
@@ -59,7 +61,11 @@ warnUnifyBottom ::
     TermLike variable ->
     log ()
 warnUnifyBottom info first second =
-    logEntry $ WarnUnifyBottom info first second
+    logEntry $
+        WarnUnifyBottom
+            info
+            (TermLike.mapVariables (pure $ from @_ @VariableName) first)
+            (TermLike.mapVariables (pure $ from @_ @VariableName) second)
 
 warnUnifyBottomAndReturnBottom ::
     MonadLog log =>
@@ -70,5 +76,8 @@ warnUnifyBottomAndReturnBottom ::
     TermLike variable ->
     log a
 warnUnifyBottomAndReturnBottom info first second = do
-    warnUnifyBottom info first second
+    warnUnifyBottom
+        info
+        (TermLike.mapVariables (pure $ from @_ @VariableName) first)
+        (TermLike.mapVariables (pure $ from @_ @VariableName) second)
     empty

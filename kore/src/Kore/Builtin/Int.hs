@@ -125,6 +125,7 @@ import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.WarnUnifyBottom (warnUnifyBottomAndReturnBottom)
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -471,7 +472,8 @@ unifyInt term1 term2 unifyData =
     worker
         | on (==) internalIntValue int1 int2 =
             return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+        | otherwise =
+            warnUnifyBottomAndReturnBottom "distinct integers" term1 term2
 
 data UnifyIntEq = UnifyIntEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
