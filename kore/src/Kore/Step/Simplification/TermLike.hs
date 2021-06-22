@@ -366,6 +366,8 @@ simplify sideCondition = \termLike ->
                 -- Do not simplify non-simplifiable patterns.
                 EndiannessF _ -> doNotSimplify
                 SignednessF _ -> doNotSimplify
+                -- We should never attempt to simplify a Rewrites term as this is only used for rules parsing.
+                RewritesF _ -> error "Attempting to simplify a Rewrites term. This is an error. Please report it at https://github.com/kframework/kore/issues"
                 --
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
@@ -425,7 +427,6 @@ simplify sideCondition = \termLike ->
                 -- TODO(virgil): Move next up through patterns.
                 NextF nextF -> Next.simplify <$> simplifyChildren nextF
                 OrF orF -> Or.simplify <$> simplifyChildren orF
-                RewritesF _ -> error "Attempting to simplify a Rewrites term"
                 TopF topF -> Top.simplify <$> simplifyChildren topF
                 --
                 StringLiteralF stringLiteralF ->
