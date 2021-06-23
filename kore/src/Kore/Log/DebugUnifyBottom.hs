@@ -51,7 +51,7 @@ instance Pretty DebugUnifyBottom where
 
 instance Entry DebugUnifyBottom where
     entrySeverity _ = Debug
-    helpDoc _ = "TODO"
+    helpDoc _ = "log failed unification"
 
 debugUnifyBottom ::
     MonadLog log =>
