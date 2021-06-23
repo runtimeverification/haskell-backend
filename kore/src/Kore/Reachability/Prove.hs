@@ -605,16 +605,6 @@ withDebugProven rule prim state =
                     _ -> pure state'
             _ -> pure state'
 
---     rule prim state >>= debugProven
---   where
---     debugProven state'
---         | ClaimState.Proven <- state'
---           , Just claim <- extractUnproven state =
---             do
---                 Log.logEntry DebugProven{claim}
---                 pure state'
---         | otherwise = pure state'
-
 withConfiguration ::
     MonadCatch monad =>
     CommonTransitionRule monad ->
