@@ -250,6 +250,7 @@
           "Kore/Internal/Variable"
           "Kore/Log"
           "Kore/Log/DebugAppliedRewriteRules"
+          "Kore/Log/DebugBeginClaim"
           "Kore/Log/DebugClaimState"
           "Kore/Log/DebugEvaluateCondition"
           "Kore/Log/DebugProven"
