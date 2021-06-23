@@ -2,10 +2,10 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-module Kore.Log.WarnUnifyBottom (
-    WarnUnifyBottom (..),
-    warnUnifyBottom,
-    warnUnifyBottomAndReturnBottom,
+module Kore.Log.DebugUnifyBottom (
+    DebugUnifyBottom (..),
+    debugUnifyBottom,
+    debugUnifyBottomAndReturnBottom,
 ) where
 
 import Data.Text (
@@ -32,15 +32,15 @@ import Pretty (
  )
 import qualified Pretty
 
-data WarnUnifyBottom = WarnUnifyBottom
+data DebugUnifyBottom = DebugUnifyBottom
     { info :: Text
     , first :: TermLike VariableName
     , second :: TermLike VariableName
     }
     deriving stock (Show, Eq)
 
-instance Pretty WarnUnifyBottom where
-    pretty (WarnUnifyBottom info first second) =
+instance Pretty DebugUnifyBottom where
+    pretty (DebugUnifyBottom info first second) =
         Pretty.vsep
             [ unAnnotate $ pretty info
             , "When unifying:"
@@ -49,25 +49,25 @@ instance Pretty WarnUnifyBottom where
             , Pretty.indent 4 . unparse $ second
             ]
 
-instance Entry WarnUnifyBottom where
-    entrySeverity _ = Warning
+instance Entry DebugUnifyBottom where
+    entrySeverity _ = Debug
     helpDoc _ = "TODO"
 
-warnUnifyBottom ::
+debugUnifyBottom ::
     MonadLog log =>
     InternalVariable variable =>
     Text ->
     TermLike variable ->
     TermLike variable ->
     log ()
-warnUnifyBottom info first second =
+debugUnifyBottom info first second =
     logEntry $
-        WarnUnifyBottom
+        DebugUnifyBottom
             info
             (TermLike.mapVariables (pure $ from @_ @VariableName) first)
             (TermLike.mapVariables (pure $ from @_ @VariableName) second)
 
-warnUnifyBottomAndReturnBottom ::
+debugUnifyBottomAndReturnBottom ::
     MonadLog log =>
     Alternative log =>
     InternalVariable variable =>
@@ -75,8 +75,8 @@ warnUnifyBottomAndReturnBottom ::
     TermLike variable ->
     TermLike variable ->
     log a
-warnUnifyBottomAndReturnBottom info first second = do
-    warnUnifyBottom
+debugUnifyBottomAndReturnBottom info first second = do
+    debugUnifyBottom
         info
         (TermLike.mapVariables (pure $ from @_ @VariableName) first)
         (TermLike.mapVariables (pure $ from @_ @VariableName) second)

@@ -56,8 +56,8 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottomAndReturnBottom,
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Simplification.Simplify (
@@ -206,7 +206,7 @@ unifyBool termLike1 termLike2 unifyData
     | bool1 == bool2 =
         return (Pattern.fromTermLike termLike1)
     | otherwise =
-        warnUnifyBottomAndReturnBottom
+        debugUnifyBottomAndReturnBottom
             "different Bool domain values"
             termLike1
             termLike2

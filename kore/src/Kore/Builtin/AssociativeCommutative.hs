@@ -104,8 +104,8 @@ import Kore.Internal.TermLike (
     pattern InternalSet_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottomAndReturnBottom,
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -762,7 +762,7 @@ unifyEqualsNormalized
             case toNormalized patt of
                 Bottom ->
                     lift $
-                        warnUnifyBottomAndReturnBottom
+                        debugUnifyBottomAndReturnBottom
                             "Duplicated elements in normalization."
                             first
                             second
@@ -865,7 +865,7 @@ unifyEqualsNormalizedAc
 
         bottomWithExplanation :: Text -> unifier a
         bottomWithExplanation explanation =
-            warnUnifyBottomAndReturnBottom explanation first second
+            debugUnifyBottomAndReturnBottom explanation first second
 
         unifyEqualsElementLists' =
             unifyEqualsElementLists
@@ -1241,7 +1241,7 @@ unifyEqualsElementLists
             --
             -- Since the two lists have different counts, their structures can
             -- never unify.
-            warnUnifyBottomAndReturnBottom
+            debugUnifyBottomAndReturnBottom
                 "Cannot unify ac structures with different sizes."
                 first
                 second
@@ -1294,7 +1294,7 @@ unifyEqualsElementLists
             -- The second structure does not include an opaque term, so all the
             -- elements in the first structure must be matched by elements in the second
             -- one. Since we don't have enough, we return bottom.
-            warnUnifyBottomAndReturnBottom
+            debugUnifyBottomAndReturnBottom
                 "Cannot unify ac structures with different sizes."
                 first
                 second
@@ -1312,7 +1312,7 @@ unifyEqualsElementLists
 
             case elementListAsInternal tools (termLikeSort first) remainder2Terms of
                 Nothing ->
-                    warnUnifyBottomAndReturnBottom
+                    debugUnifyBottomAndReturnBottom
                         "Duplicated element in unification results"
                         first
                         second

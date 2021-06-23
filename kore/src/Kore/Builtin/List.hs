@@ -100,8 +100,8 @@ import qualified Kore.Internal.TermLike as TermLike (
     isFunctionPattern,
     markSimplified,
  )
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottom,
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottom,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -558,7 +558,7 @@ unifyEquals
                   where
                     prefixLength = Seq.length list1 - Seq.length suffix2
         bottomWithExplanation = do
-            warnUnifyBottom
+            debugUnifyBottom
                 "Cannot unify lists of different length."
                 first
                 second

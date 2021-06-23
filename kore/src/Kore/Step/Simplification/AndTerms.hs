@@ -64,9 +64,9 @@ import Kore.Log.DebugUnification (
     debugUnificationUnsolved,
     whileDebugUnification,
  )
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottom,
-    warnUnifyBottomAndReturnBottom,
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottom,
+    debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -380,7 +380,7 @@ explainBoolAndBottom ::
     TermLike RewritingVariableName ->
     unifier ()
 explainBoolAndBottom term1 term2 =
-    warnUnifyBottom "Cannot unify bottom." term1 term2
+    debugUnifyBottom "Cannot unify bottom." term1 term2
 
 {- | Matches
 
@@ -446,7 +446,7 @@ bottomTermEquals
                 [] -> return Pattern.top
                 [Conditional{predicate = PredicateTrue, substitution}]
                     | substitution == mempty -> do
-                        warnUnifyBottomAndReturnBottom
+                        debugUnifyBottomAndReturnBottom
                             "Cannot unify bottom with non-bottom pattern."
                             first
                             second
@@ -547,7 +547,7 @@ variableFunctionEquals
                 resultOr <- makeEvaluateTermCeil SideCondition.topTODO second
                 case toList resultOr of
                     [] -> do
-                        warnUnifyBottomAndReturnBottom
+                        debugUnifyBottomAndReturnBottom
                             "Unification of variable and bottom \
                             \when attempting to simplify equals."
                             first
@@ -620,7 +620,7 @@ unifySortInjection termMerger term1 term2 unifyInj = do
     unifyInjs unifyInj & maybe distinct merge
   where
     distinct =
-        warnUnifyBottomAndReturnBottom "Distinct sort injections" term1 term2
+        debugUnifyBottomAndReturnBottom "Distinct sort injections" term1 term2
     merge inj@Inj{injChild = Pair child1 child2} = do
         childPattern <- termMerger child1 child2
         InjSimplifier{evaluateInj} <- askInjSimplifier
@@ -685,7 +685,7 @@ noConfusionInjectionConstructor ::
     TermLike RewritingVariableName ->
     unifier a
 noConfusionInjectionConstructor term1 term2 =
-    warnUnifyBottomAndReturnBottom
+    debugUnifyBottomAndReturnBottom
         "No confusion: sort injections and constructors"
         term1
         term2
@@ -727,7 +727,7 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                         [result] -> return result
                         [] ->
                             lift $
-                                warnUnifyBottomAndReturnBottom
+                                debugUnifyBottomAndReturnBottom
                                     ( "exists simplification for overloaded"
                                         <> " constructors returned no pattern"
                                     )
@@ -742,7 +742,7 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                         _ -> empty
             Left (Clash message) ->
                 lift $
-                    warnUnifyBottomAndReturnBottom
+                    debugUnifyBottomAndReturnBottom
                         (fromString message)
                         firstTerm
                         secondTerm
@@ -845,7 +845,7 @@ cannotUnifyDomainValues ::
     TermLike RewritingVariableName ->
     unifier a
 cannotUnifyDomainValues term1 term2 =
-    warnUnifyBottomAndReturnBottom cannotUnifyDistinctDomainValues term1 term2
+    debugUnifyBottomAndReturnBottom cannotUnifyDistinctDomainValues term1 term2
 
 -- | @UnifyStringLiteral@ represents unification of two string literals.
 data UnifyStringLiteral = UnifyStringLiteral
@@ -875,7 +875,7 @@ unifyStringLiteral ::
 unifyStringLiteral term1 term2 unifyData
     | txt1 == txt2 = return $ Pattern.fromTermLike term1
     | otherwise =
-        warnUnifyBottomAndReturnBottom "distinct string literals" term1 term2
+        debugUnifyBottomAndReturnBottom "distinct string literals" term1 term2
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 

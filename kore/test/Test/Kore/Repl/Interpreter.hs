@@ -45,10 +45,10 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import qualified Kore.Log.Registry as Log
-import Kore.Log.WarnUnifyBottom (
-    WarnUnifyBottom (..),
+import Kore.Log.DebugUnifyBottom (
+    DebugUnifyBottom (..),
  )
+import qualified Kore.Log.Registry as Log
 import Kore.Reachability hiding (
     AppliedRule,
  )
@@ -331,13 +331,13 @@ unificationFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom
+                    DebugUnifyBottom
                         "distinct integers"
                         (TermLike.mapVariables (pure $ from @_ @VariableName) one)
                         (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
-                actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
-            head actualWarnUnifyBottom `equals` expectedLogEntry
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -353,13 +353,13 @@ unificationFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom
+                    DebugUnifyBottom
                         "distinct integers"
                         (TermLike.mapVariables (pure $ from @_ @VariableName) one)
                         (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
-                actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
-            head actualWarnUnifyBottom `equals` expectedLogEntry
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -405,13 +405,13 @@ forceFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom
+                    DebugUnifyBottom
                         "distinct integers"
                         (TermLike.mapVariables (pure $ from @_ @VariableName) one)
                         (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
-                actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
-            head actualWarnUnifyBottom `equals` expectedLogEntry
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -427,13 +427,13 @@ forceFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    WarnUnifyBottom
+                    DebugUnifyBottom
                         "distinct integers"
                         (TermLike.mapVariables (pure $ from @_ @VariableName) one)
                         (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
-                actualWarnUnifyBottom =
-                    catMaybes $ Log.fromEntry @WarnUnifyBottom <$> logEntries
-            head actualWarnUnifyBottom `equals` expectedLogEntry
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 

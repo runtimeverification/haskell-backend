@@ -16,8 +16,8 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottomAndReturnBottom,
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -148,7 +148,7 @@ constructorAndEqualsAssumesDifferentHeads
     first
     second =
         do
-            warnUnifyBottomAndReturnBottom
+            debugUnifyBottomAndReturnBottom
                 "Cannot unify different constructors or incompatible \
                 \sort injections."
                 first

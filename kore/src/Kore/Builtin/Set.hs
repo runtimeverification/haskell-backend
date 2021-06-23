@@ -95,8 +95,8 @@ import Kore.Internal.TermLike (
     pattern InternalSet_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnUnifyBottom (
-    warnUnifyBottomAndReturnBottom,
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -588,7 +588,7 @@ unifyEquals
                         return (Ac.asInternal tools sort1 normalized)
                     Ac.Bottom ->
                         lift $
-                            warnUnifyBottomAndReturnBottom
+                            debugUnifyBottomAndReturnBottom
                                 "Duplicated elements in normalization."
                                 first
                                 second
