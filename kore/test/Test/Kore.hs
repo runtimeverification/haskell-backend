@@ -35,6 +35,7 @@ module Test.Kore (
     korePatternUnifiedGen,
     TestLog (..),
     runTestLog,
+    runTestLog',
 
     -- * Re-exports
     ParsedPattern,
@@ -810,3 +811,9 @@ runTestLog ::
     TestLog m a ->
     IO (a, [SomeEntry])
 runTestLog run (TestLog state) = run $ State.runStateT state []
+
+runTestLog' ::
+    (m (a, [SomeEntry]) -> IO (f (a, [SomeEntry]))) ->
+    TestLog m a ->
+    IO (f (a, [SomeEntry]))
+runTestLog' run (TestLog state) = run $ State.runStateT state []

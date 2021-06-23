@@ -11,7 +11,6 @@ import Control.Monad.Trans.State.Strict (
     evalStateT,
     runStateT,
  )
-import qualified Control.Monad.Trans.State.Strict as State
 import Data.Coerce (
     coerce,
  )
@@ -83,7 +82,7 @@ import System.Clock (
  )
 import Test.Kore (
     TestLog,
-    logState,
+    runTestLog,
  )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -746,13 +745,12 @@ runWithState command axioms claims claim stateTransformer = do
     mvar <- newMVar logger
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar
-        run1 =
-            flip Log.runLoggerT (Log.swappableLogger mvar)
-                . liftSimplifier
+        runLogger =
+            runTestLog (flip Log.runLoggerT mempty . liftSimplifier)
                 . flip runStateT state
                 . flip runReaderT config
     ((c, s), logEntries) <-
-        run1 $
+        runLogger $
             replInterpreter0
                 @(TestLog (SimplifierT NoSMT))
                 (PrintAuxOutput . modifyAuxOutput $ output)
@@ -762,11 +760,7 @@ runWithState command axioms claims claim stateTransformer = do
     output' <- readIORef output
     return $ Result output' c s logEntries
   where
-    liftSimplifier =
-        SMT.runNoSMT
-            . Kore.runSimplifier testEnv
-            . (\state -> State.runStateT state [])
-            . logState
+    liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
