@@ -39,11 +39,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    cannotReplaceTerm,
-    replaceTerm,
-    toRepresentation,
- )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
@@ -138,9 +134,6 @@ import qualified Kore.Step.Simplification.Nu as Nu (
 import qualified Kore.Step.Simplification.Or as Or (
     simplify,
  )
-import qualified Kore.Step.Simplification.Rewrites as Rewrites (
-    simplify,
- )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral (
     simplify,
@@ -224,12 +217,12 @@ simplify sideCondition = \termLike ->
         | otherwise =
             case Predicate.makePredicate termLike of
                 Left _ -> return . OrPattern.fromTermLike $ termLike
-                Right termPredicate -> do
+                Right predicate -> do
                     condition <-
-                        ensureSimplifiedCondition
-                            sideConditionRepresentation
-                            termLike
-                            (Condition.fromPredicate termPredicate)
+                        Condition.fromPredicate predicate
+                            & ensureSimplifiedCondition
+                                sideConditionRepresentation
+                                termLike
                     condition
                         & Pattern.fromCondition (termLikeSort termLike)
                         & OrPattern.fromPattern
@@ -369,6 +362,8 @@ simplify sideCondition = \termLike ->
                 -- Do not simplify non-simplifiable patterns.
                 EndiannessF _ -> doNotSimplify
                 SignednessF _ -> doNotSimplify
+                -- We should never attempt to simplify a Rewrites term as this is only used for rules parsing.
+                RewritesF _ -> error "Attempting to simplify a Rewrites term. This is an error. Please report it at https://github.com/kframework/kore/issues"
                 --
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
@@ -428,8 +423,6 @@ simplify sideCondition = \termLike ->
                 -- TODO(virgil): Move next up through patterns.
                 NextF nextF -> Next.simplify <$> simplifyChildren nextF
                 OrF orF -> Or.simplify <$> simplifyChildren orF
-                RewritesF rewritesF ->
-                    Rewrites.simplify <$> simplifyChildren rewritesF
                 TopF topF -> Top.simplify <$> simplifyChildren topF
                 --
                 StringLiteralF stringLiteralF ->

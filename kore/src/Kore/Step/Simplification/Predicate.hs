@@ -30,6 +30,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -103,19 +104,24 @@ simplify sideCondition =
         output <- MultiAnd.traverseOrAnd worker input
         (if input == output then pure else loop) output
 
+    replacePredicate = SideCondition.replacePredicate sideCondition
+
     worker ::
         Predicate RewritingVariableName ->
         simplifier NormalForm
-    worker predicate =
-        case predicateF of
-            AndF andF -> normalizeAnd =<< traverse worker andF
-            OrF orF -> normalizeOr =<< traverse worker orF
-            BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
-            TopF topF -> normalizeTop =<< traverse worker topF
-            NotF notF -> simplifyNot =<< traverse worker notF
-            ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
-            IffF iffF -> simplifyIff =<< traverse worker iffF
-            _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
+    worker predicate
+        | Just predicate' <- replacePredicate predicate =
+            worker predicate'
+        | otherwise =
+            case predicateF of
+                AndF andF -> normalizeAnd =<< traverse worker andF
+                OrF orF -> normalizeOr =<< traverse worker orF
+                BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
+                TopF topF -> normalizeTop =<< traverse worker topF
+                NotF notF -> simplifyNot =<< traverse worker notF
+                ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
+                IffF iffF -> simplifyIff =<< traverse worker iffF
+                _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
 
