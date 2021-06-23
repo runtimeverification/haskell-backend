@@ -41,6 +41,9 @@ import Kore.Equation.Application (
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
+import Kore.Log.DebugBeginClaim (
+    DebugBeginClaim,
+ )
 import Kore.Log.DebugClaimState (
     DebugClaimState,
  )
@@ -197,6 +200,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugUnification
             , mk $ Proxy @InfoProofDepth
             , mk $ Proxy @InfoExecDepth
+            , mk $ Proxy @DebugBeginClaim
             , mk $ Proxy @DebugProven
             ]
         ,

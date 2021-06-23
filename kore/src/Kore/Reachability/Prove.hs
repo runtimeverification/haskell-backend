@@ -79,6 +79,7 @@ import Kore.Internal.Predicate (
     pattern PredicateCeil,
     pattern PredicateNot,
  )
+import Kore.Log.DebugBeginClaim
 import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
@@ -256,6 +257,7 @@ proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
         (SomeClaim, Limit Natural) ->
         ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
     verifyWorker unprovenClaim@(claim, _) = do
+        debugBeginClaim claim
         proveClaim breadthLimit searchOrder claims axioms unprovenClaim
         addProvenClaim claim
 
