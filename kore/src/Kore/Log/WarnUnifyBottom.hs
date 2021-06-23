@@ -45,7 +45,7 @@ instance Pretty WarnUnifyBottom where
             [ unAnnotate $ pretty info
             , "When unifying:"
             , Pretty.indent 4 . unparse $ first
-            , "With:\n"
+            , "With:"
             , Pretty.indent 4 . unparse $ second
             ]
 
