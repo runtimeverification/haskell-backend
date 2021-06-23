@@ -786,6 +786,7 @@
             "Test/Kore/Step/Simplification/Forall"
             "Test/Kore/Step/Simplification/Iff"
             "Test/Kore/Step/Simplification/Implies"
+            "Test/Kore/Step/Simplification/Inj"
             "Test/Kore/Step/Simplification/InjSimplifier"
             "Test/Kore/Step/Simplification/Integration"
             "Test/Kore/Step/Simplification/IntegrationProperty"
