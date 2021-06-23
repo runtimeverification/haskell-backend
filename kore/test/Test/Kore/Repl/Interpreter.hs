@@ -11,6 +11,7 @@ import Control.Monad.Trans.State.Strict (
     evalStateT,
     runStateT,
  )
+import qualified Control.Monad.Trans.State.Strict as State
 import Data.Coerce (
     coerce,
  )
@@ -43,11 +44,9 @@ import Kore.Internal.TermLike (
     mkBottom_,
     mkElemVar,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
-
-import qualified Control.Monad.Trans.State.Strict as State
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnUnifyBottom (
     WarnUnifyBottom (..),
  )
