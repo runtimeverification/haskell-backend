@@ -137,12 +137,11 @@ simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
                 & fst . extract
-    simplified <-
+    simplifiedPredicates <-
         simplifyPredicatesWithAssumptions
             sideCondition
             (toList predicates)
-    let simplifiedPredicates =
-            from @(Condition _) @(MultiAnd (Predicate _)) simplified
+    let simplified = foldMap mkCondition simplifiedPredicates
     if original == simplifiedPredicates
         then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
@@ -157,19 +156,14 @@ simplifyPredicatesWithAssumptions ::
     [Predicate RewritingVariableName] ->
     LogicT
         simplifier
-        (Condition RewritingVariableName)
-simplifyPredicatesWithAssumptions _ [] = return Condition.top
+        (MultiAnd (Predicate RewritingVariableName))
+simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
-    let predicatesWithUnsimplified =
-            zip predicates $
-                scanr ((<>) . MultiAnd.singleton) MultiAnd.top rest
-    State.execStateT
-        ( traverse_
-            simplifyWithAssumptions
-            predicatesWithUnsimplified
-        )
-        MultiAnd.top
-        & fmap (foldMap mkCondition)
+    let unsimplifieds =
+            map MultiAnd.singleton rest
+                & scanr (<>) MultiAnd.top
+    traverse_ simplifyWithAssumptions (zip predicates unsimplifieds)
+        & flip State.execStateT MultiAnd.top
   where
     simplifyWithAssumptions ::
         ( Predicate RewritingVariableName
@@ -180,15 +174,21 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
             (LogicT simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
+        sideCondition' <- getSideCondition unsimplifiedSideCond
+        result <- simplifyPredicate sideCondition' predicate
+        putSimplifiedResult result
+
+    getSideCondition unsimplifiedSideCond = do
         simplifiedSideCond <- State.get
-        let otherSideConds =
-                SideCondition.addAssumptions
-                    (simplifiedSideCond <> unsimplifiedSideCond)
-                    sideCondition
-        result <-
-            Predicate.simplify otherSideConds predicate >>= Logic.scatter
-                & lift
-        State.put (simplifiedSideCond <> result)
+        SideCondition.addAssumptions
+            (simplifiedSideCond <> unsimplifiedSideCond)
+            sideCondition
+            & return
+
+    putSimplifiedResult result = State.modify' (<> result)
+
+    simplifyPredicate sideCondition' predicate =
+        Predicate.simplify sideCondition' predicate >>= Logic.scatter & lift
 
 mkCondition ::
     InternalVariable variable =>

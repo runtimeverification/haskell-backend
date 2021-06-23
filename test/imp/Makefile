@@ -18,8 +18,9 @@ max-inconsistent-prelude-spec.k.out: \
 max-inconsistent-prelude-spec.k.out: max-inconsistent-prelude-spec.k imp.k $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "kprove" $<
 	rm -f $@
-	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) 1> /dev/null 2> $@ || true
-	grep -q "The definitions sent to the solver are inconsistent." $@ || mv $@ $@.fail
+	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) 2>&1 1>/dev/null \
+		| grep "inconsistent" > $@ \
+		|| mv $@ $@.fail
 
 max-consistent-prelude-spec.k.out: \
     KPROVE_OPTS += --spec-module MAX-SPEC
