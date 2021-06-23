@@ -475,7 +475,6 @@ unifyInt term1 term2 unifyData =
 
 data UnifyIntEq = UnifyIntEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , boolValue :: !Bool
     , boolTerm :: !(TermLike RewritingVariableName)
     }
 
@@ -491,8 +490,8 @@ matchUnifyIntEq ::
 matchUnifyIntEq first boolTerm
     | Just eqTerm <- matchIntEqual first
       , isFunctionPattern first
-      , Just boolValue <- Bool.matchBool boolTerm =
-        Just UnifyIntEq{eqTerm, boolValue, boolTerm}
+      , Just _ <- Bool.matchBool boolTerm =
+        Just UnifyIntEq{eqTerm, boolTerm}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}
 
@@ -512,11 +511,12 @@ unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = MultiOr.map eraseTerm solution
         scattered <-
-            (if boolValue then pure else notSimplifier SideCondition.top) solution'
-                >>= Unify.scatter
+            Unify.scatter =<< case Bool.matchBool boolTerm of
+                Just False -> notSimplifier SideCondition.top solution'
+                _ -> pure solution'
         return $ addTerm scattered
   where
-    UnifyIntEq{eqTerm, boolValue, boolTerm} = unifyData
+    UnifyIntEq{eqTerm, boolTerm} = unifyData
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
     addTerm = Pattern.withCondition boolTerm . Pattern.withoutTerm
