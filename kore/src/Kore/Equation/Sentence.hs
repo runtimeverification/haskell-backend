@@ -116,6 +116,8 @@ matchEquation attributes termLike
     isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
 
     -- function rule without priority
+    -- TODO The pattern match below should be removed after the frontend is updated
+    -- to use the correct format
     match
         ( TermLike.Implies_
                 _
@@ -183,6 +185,8 @@ matchEquation attributes termLike
                         }
 
     -- function rule with priority
+    -- TODO The pattern match below should be removed after the frontend is updated
+    -- to use the correct format
     match
         ( TermLike.Implies_
                 _
@@ -250,6 +254,8 @@ matchEquation attributes termLike
                         , ensures = ensures'
                         , attributes
                         }
+    -- TODO The pattern match below should be removed after the frontend is updated
+    -- to use the correct format
     match
         ( TermLike.Implies_
                 _

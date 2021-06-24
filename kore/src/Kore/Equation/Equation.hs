@@ -168,9 +168,8 @@ toTermLike sort equation
                         argumentTerm
                     )
                 )
-                ( TermLike.mkAnd
-                    (TermLike.mkEquals sort left right)
-                    ensures'
+                ( TermLike.mkEquals sort left $
+                    TermLike.mkAnd right ensures'
                 )
     -- function rule without priority
     | Just argument' <- argument =
@@ -180,9 +179,8 @@ toTermLike sort equation
                     requires'
                     (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
                 )
-                ( TermLike.mkAnd
-                    (TermLike.mkEquals sort left right)
-                    ensures'
+                ( TermLike.mkEquals sort left $
+                    TermLike.mkAnd right ensures'
                 )
     -- unconditional equation
     | isTop requires
@@ -192,13 +190,12 @@ toTermLike sort equation
     | otherwise =
         TermLike.mkImplies
             requires'
-            ( TermLike.mkAnd
-                (TermLike.mkEquals sort left right)
-                ensures'
+            ( TermLike.mkEquals sort left $
+                TermLike.mkAnd right ensures'
             )
   where
     requires' = fromPredicate sort requires
-    ensures' = fromPredicate sort ensures
+    ensures' = fromPredicate rightSort ensures
     Equation
         { requires
         , argument
@@ -207,6 +204,7 @@ toTermLike sort equation
         , right
         , ensures
         } = equation
+    rightSort = TermLike.termLikeSort right
 
 instance
     InternalVariable variable =>

@@ -32,12 +32,12 @@ test_fromSentenceAxiom =
         assertions original equation
     , testCase "⌈f(x))⌉ → f(x) = g(x) ∧ ⌈h(x)⌉" $ do
         let requires = mkCeil sortR (Mock.f Mock.a)
-            ensures = mkCeil sortR (Mock.h Mock.b)
+            ensures = mkCeil Mock.testSort (Mock.h Mock.b)
             left = Mock.f (mkElemVar Mock.x)
             right = Mock.g (mkElemVar Mock.x)
             original =
                 mkImplies requires $
-                    mkAnd (mkEquals sortR left right) ensures
+                    mkEquals sortR left (mkAnd right ensures)
             equation =
                 (mkEquation left right)
                     { requires = wrapPredicate requires
@@ -46,7 +46,7 @@ test_fromSentenceAxiom =
         assertions original equation
     , testCase "New equation form: ⌈f(x)⌉ ∧ ⌈y ∈ x⌉ → f(y) = g(x) ∧ ⌈h(x)⌉" $ do
         let requires = mkCeil sortR (Mock.f Mock.a)
-            ensures = mkCeil sortR (Mock.h Mock.b)
+            ensures = mkCeil Mock.testSort (Mock.h Mock.b)
             argument = mkIn sortR (mkElemVar Mock.y) (mkElemVar Mock.x)
             argument' =
                 mkAnd argument (mkTop sortR)
@@ -54,7 +54,7 @@ test_fromSentenceAxiom =
             right = Mock.g (mkElemVar Mock.y)
             original =
                 mkImplies (mkAnd requires argument') $
-                    mkAnd (mkEquals sortR left right) ensures
+                    mkEquals sortR left (mkAnd right ensures)
             equation =
                 (mkEquation left right)
                     { requires = wrapPredicate requires
