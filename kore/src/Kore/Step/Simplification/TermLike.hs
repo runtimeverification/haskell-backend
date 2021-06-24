@@ -508,6 +508,8 @@ simplifyOnly sideCondition =
 
     replaceTerm = SideCondition.replaceTerm sideCondition
 
+    repr = SideCondition.toRepresentation sideCondition
+
     propagateConditions action input = do
         results <- action (Conditional.term input)
         MultiOr.map (input *>) results
@@ -520,6 +522,8 @@ simplifyOnly sideCondition =
     worker termLike
         | Just termLike' <- replaceTerm termLike =
             worker termLike'
+        | TermLike.isSimplified repr termLike =
+            pure (OrPattern.fromTermLike termLike)
         | otherwise =
             case termLikeF of
                 -- Not implemented:
