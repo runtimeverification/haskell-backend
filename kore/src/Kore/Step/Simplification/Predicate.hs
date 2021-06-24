@@ -100,8 +100,8 @@ simplify ::
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
     simplifier NormalForm
-simplify sideCondition =
-    loop 0 . MultiOr.singleton . MultiAnd.singleton
+simplify sideCondition original =
+    (loop 0 . mkSingleton) original
   where
     loop :: Int -> NormalForm -> simplifier NormalForm
     loop count input = do
@@ -114,12 +114,16 @@ simplify sideCondition =
 
     simplifyTerm = simplifyTermLikeOnly sideCondition
 
+    repr = SideCondition.toRepresentation sideCondition
+
     worker ::
         Predicate RewritingVariableName ->
         simplifier NormalForm
     worker predicate
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
+        | Predicate.isSimplified repr predicate =
+            pure (mkSingleton predicate)
         | otherwise =
             case predicateF of
                 AndF andF -> normalizeAnd =<< traverse worker andF
@@ -134,6 +138,13 @@ simplify sideCondition =
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
+
+-- | Construct a 'NormalForm' from a single 'Predicate'.
+mkSingleton ::
+    Predicate RewritingVariableName ->
+    NormalForm
+mkSingleton = MultiOr.singleton . MultiAnd.singleton
+{-# INLINE mkSingleton #-}
 
 -- | See 'normalizeMultiAnd'.
 normalizeAnd ::
@@ -292,8 +303,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         MultiAnd.toPredicate predicates
             & fromNot
             & Predicate.markSimplified
-            & MultiAnd.singleton
-            & MultiOr.singleton
+            & mkSingleton
             & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
 

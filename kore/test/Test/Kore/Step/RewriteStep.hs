@@ -21,6 +21,7 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.From
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate as Predicate (
@@ -59,6 +60,7 @@ import Kore.Variables.Fresh (
  )
 import qualified Logic
 import Prelude.Kore
+import qualified Pretty
 import Test.Kore.Internal.Condition as Condition
 import Test.Kore.Internal.OrCondition (
     OrTestCondition,
@@ -1128,11 +1130,16 @@ checkRemainders ::
     OrPattern RewritingVariableName ->
     Step.Results rule ->
     Assertion
-checkRemainders expect actual =
-    assertEqual
-        "compare remainders"
-        expect
-        (Step.remainders actual)
+checkRemainders expect (Step.remainders -> actual) =
+    assertEqual message expect actual
+  where
+    message =
+        (show . Pretty.vsep)
+            [ "Expected:"
+            , (Pretty.indent 4) (Pretty.pretty expect)
+            , "but found:"
+            , (Pretty.indent 4) (Pretty.pretty actual)
+            ]
 
 test_applyRewriteRulesParallel :: [TestTree]
 test_applyRewriteRulesParallel =
@@ -1361,20 +1368,30 @@ test_applyRewriteRulesParallel =
                         }
                     ]
             aBranch =
-                Predicate.makeEqualsPredicate
-                    (mkElemVar Mock.xConfig)
-                    Mock.a
-                    & MultiAnd.singleton
-                    & mappend definedBranches
+                MultiAnd.make
+                    [ MultiAnd.toPredicate definedBranches
+                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.a
+                    ]
+            -- Uncomment when using new Equals simplifier:
+            -- Predicate.makeEqualsPredicate
+            --     (mkElemVar Mock.xConfig)
+            --     Mock.a
+            --     & MultiAnd.singleton
+            --     & mappend definedBranches
             aBranchNot =
                 MultiAnd.toPredicate aBranch
                     & makeNotPredicate
             bBranch =
-                Predicate.makeEqualsPredicate
-                    (mkElemVar Mock.xConfig)
-                    Mock.b
-                    & MultiAnd.singleton
-                    & mappend definedBranches
+                MultiAnd.make
+                    [ MultiAnd.toPredicate definedBranches
+                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.b
+                    ]
+            -- Uncomment when using new Equals simplifier:
+            -- Predicate.makeEqualsPredicate
+            --     (mkElemVar Mock.xConfig)
+            --     Mock.b
+            --     & MultiAnd.singleton
+            --     & mappend definedBranches
             bBranchNot =
                 MultiAnd.toPredicate bBranch
                     & makeNotPredicate
@@ -1588,20 +1605,30 @@ test_applyRewriteRulesSequence =
                         }
                     ]
             aBranch =
-                Predicate.makeEqualsPredicate
-                    (mkElemVar Mock.xConfig)
-                    Mock.a
-                    & MultiAnd.singleton
-                    & mappend definedBranches
+                MultiAnd.make
+                    [ MultiAnd.toPredicate definedBranches
+                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.a
+                    ]
+            -- Uncomment when using new Equals simplifier:
+            -- Predicate.makeEqualsPredicate
+            --     (mkElemVar Mock.xConfig)
+            --     Mock.a
+            --     & MultiAnd.singleton
+            --     & mappend definedBranches
             aBranchNot =
                 MultiAnd.toPredicate aBranch
                     & makeNotPredicate
             bBranch =
-                Predicate.makeEqualsPredicate
-                    (mkElemVar Mock.xConfig)
-                    Mock.b
-                    & MultiAnd.singleton
-                    & mappend definedBranches
+                MultiAnd.make
+                    [ MultiAnd.toPredicate definedBranches
+                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.b
+                    ]
+            -- Uncomment when using new Equals simplifier:
+            -- Predicate.makeEqualsPredicate
+            --     (mkElemVar Mock.xConfig)
+            --     Mock.b
+            --     & MultiAnd.singleton
+            --     & mappend definedBranches
             bBranchNot =
                 MultiAnd.toPredicate bBranch
                     & makeNotPredicate
