@@ -626,7 +626,7 @@ runUnifier ::
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    t m (Either ReplOutput (NonEmpty (Condition RewritingVariableName)))
+    t m (Maybe (NonEmpty (Condition RewritingVariableName)))
 runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
@@ -639,7 +639,7 @@ runUnifier sideCondition first second = do
     put newState
     result <-
         liftSimplifierWithLogger mvar
-            . runUnifierWithExplanation
+            . runUnifierWithoutExplanation
             $ unifier sideCondition first second
     put initialState
     return result

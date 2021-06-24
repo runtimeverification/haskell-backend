@@ -861,4 +861,4 @@ mkConfig logger =
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->
     ReplOutput
-formatUnifiers = formatUnificationMessage . Right
+formatUnifiers = formatUnificationMessage . Just
