@@ -34,6 +34,9 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Log.WarnUnsimplifiedPredicate (
+    warnUnsimplifiedPredicate,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -101,14 +104,22 @@ simplify ::
     Predicate RewritingVariableName ->
     simplifier NormalForm
 simplify sideCondition original =
-    (loop 0 . mkSingleton) original
+    loop 0 (mkSingleton original)
   where
+    limit :: Int
+    limit = 4
+
     loop :: Int -> NormalForm -> simplifier NormalForm
-    loop count input = do
-        output <- MultiAnd.traverseOrAnd worker input
-        if input == output
-            then pure output
-            else loop (count + 1) output
+    loop count input
+        | count >= limit = do
+            warnUnsimplifiedPredicate limit original input
+            -- Return the current NormalForm. Do not iterate further.
+            pure input
+        | otherwise = do
+            output <- MultiAnd.traverseOrAnd worker input
+            if input == output
+                then pure output
+                else loop (count + 1) output
 
     replacePredicate = SideCondition.replacePredicate sideCondition
 
