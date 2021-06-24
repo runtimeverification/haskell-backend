@@ -110,6 +110,10 @@ import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -475,7 +479,7 @@ unifyInt term1 term2 unifyData =
 
 data UnifyIntEq = UnifyIntEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , boolTerm :: !(TermLike RewritingVariableName)
+    , internalBool :: !InternalBool
     }
 
 {- | Matches
@@ -487,11 +491,11 @@ matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyIntEq
-matchUnifyIntEq first boolTerm
+matchUnifyIntEq first second
     | Just eqTerm <- matchIntEqual first
       , isFunctionPattern first
-      , Just _ <- Bool.matchBool boolTerm =
-        Just UnifyIntEq{eqTerm, boolTerm}
+      , InternalBool_ internalBool <- second =
+        Just UnifyIntEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}
 
@@ -508,15 +512,15 @@ unifyIntEq ::
     unifier (Pattern RewritingVariableName)
 unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
     do
-        solution <- unifyChildren operand1 operand2 & OrPattern.gather
-        let solution' = MultiOr.map eraseTerm solution
-        scattered <-
-            Unify.scatter =<< case Bool.matchBool boolTerm of
-                Just False -> notSimplifier SideCondition.top solution'
-                _ -> pure solution'
-        return $ addTerm scattered
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else notSimplifier SideCondition.top
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    UnifyIntEq{eqTerm, boolTerm} = unifyData
+    UnifyIntEq{eqTerm, internalBool} = unifyData
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
-    addTerm = Pattern.withCondition boolTerm . Pattern.withoutTerm
