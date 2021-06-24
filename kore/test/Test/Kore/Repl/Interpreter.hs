@@ -39,14 +39,13 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     TermLike,
-    VariableName,
     mkBottom_,
     mkElemVar,
  )
-import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom (..),
+    mkDebugUnifyBottom,
  )
 import qualified Kore.Log.Registry as Log
 import Kore.Reachability hiding (
@@ -113,7 +112,7 @@ test_replInterpreter =
     , tryAlias `tests` "Executing an existing alias with arguments"
     , unificationFailure `tests` "Try axiom that doesn't unify"
     , unificationSuccess `tests` "Try axiom that does unify"
-    , forceFailure `tests` "qqTryF axiom that doesn't unify"
+    , forceFailure `tests` "TryF axiom that doesn't unify"
     , forceSuccess `tests` "TryF axiom that does unify"
     , tryResultsInProven `tests` "TryF axiom results in proven config"
     , proofStatus `tests` "Multi claim proof status"
@@ -127,7 +126,7 @@ test_replInterpreter =
     , showAxiomByName `tests` "Showing the axiom with the name add1Axiom"
     , unificationFailureWithName `tests` "Try axiom by name that doesn't unify"
     , unificationSuccessWithName `tests` "Try axiom by name that does unify"
-    , forceFailureWithName `tests` "qqTryF axiom by name that doesn't unify"
+    , forceFailureWithName `tests` "TryF axiom by name that doesn't unify"
     , forceSuccessWithName `tests` "TryF axiom by name that does unify"
     , proveSecondClaim `tests` "Starting to prove the second claim"
     , proveSecondClaimByName
@@ -331,10 +330,7 @@ unificationFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    DebugUnifyBottom
-                        "distinct integers"
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
+                    mkDebugUnifyBottom "distinct integers" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -353,10 +349,7 @@ unificationFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    DebugUnifyBottom
-                        "distinct integers"
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
+                    mkDebugUnifyBottom "distinct integers" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -405,10 +398,7 @@ forceFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    DebugUnifyBottom
-                        "distinct integers"
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
+                    mkDebugUnifyBottom "distinct integers" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -427,10 +417,7 @@ forceFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    DebugUnifyBottom
-                        "distinct integers"
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) one)
-                        (TermLike.mapVariables (pure $ from @_ @VariableName) zero)
+                    mkDebugUnifyBottom "distinct integers" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry

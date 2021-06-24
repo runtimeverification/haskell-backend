@@ -58,7 +58,6 @@ import qualified Kore.Internal.SideCondition as SideCondition (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnification (
     debugUnificationSolved,
     debugUnificationUnsolved,
@@ -731,14 +730,8 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                                     ( "exists simplification for overloaded"
                                         <> " constructors returned no pattern"
                                     )
-                                    ( TermLike.mapVariables
-                                        (pure $ from @_ @VariableName)
-                                        firstTerm
-                                    )
-                                    ( TermLike.mapVariables
-                                        (pure $ from @_ @VariableName)
-                                        secondTerm
-                                    )
+                                    firstTerm
+                                    secondTerm
                         _ -> empty
             Left (Clash message) ->
                 lift $
