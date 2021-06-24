@@ -22,20 +22,34 @@ module GlobalMain (
     LoadedModule,
     loadDefinitions,
     loadModule,
+    mainParseSearchPattern,
+    mainPatternParseAndVerify
 ) where
 
 import Control.Exception (
     evaluate,
+ )
+import Kore.Internal.Predicate (makePredicate)
+import Kore.Parser (
+    ParsedPattern,
+    parseKorePattern,
+ )
+import Kore.Attribute.Symbol (
+    StepperAttributes,
  )
 import Control.Lens (
     (%~),
  )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import qualified Pretty as KorePretty
 import Data.List (
     intercalate,
     nub,
  )
+import Kore.Internal.TermLike (pattern And_, TermLike)
+import Kore.Internal.Conditional (Conditional (..))
+import Kore.Internal.Pattern (Pattern)
 import Data.Map.Strict (
     Map,
  )
@@ -88,7 +102,7 @@ import Kore.Parser.ParserUtils (
 import Kore.Step.Strategy (
     GraphSearchOrder (..),
  )
-import Kore.Syntax
+import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
     ParsedDefinition,
@@ -513,3 +527,39 @@ loadDefinitions filePaths =
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
+
+mainParseSearchPattern ::
+    VerifiedModule StepperAttributes ->
+    String ->
+    Main (Pattern VariableName)
+mainParseSearchPattern indexedModule patternFileName = do
+    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+    case purePattern of
+        And_ _ term predicateTerm ->
+            return
+                Conditional
+                    { term
+                    , predicate =
+                        either
+                            (error . show . KorePretty.pretty)
+                            id
+                            (makePredicate predicateTerm)
+                    , substitution = mempty
+                    }
+        _ -> error "Unexpected non-conjunctive pattern"
+
+{- | IO action that parses a kore pattern from a filename, verifies it,
+ converts it to a pure pattern, and prints timing information.
+-}
+mainPatternParseAndVerify ::
+    VerifiedModule StepperAttributes ->
+    String ->
+    Main (TermLike VariableName)
+mainPatternParseAndVerify indexedModule patternFileName =
+    mainPatternParse patternFileName >>= mainPatternVerify indexedModule
+
+{- | IO action that parses a kore pattern from a filename and prints timing
+ information.
+-}
+mainPatternParse :: String -> Main ParsedPattern
+mainPatternParse = mainParse parseKorePattern
