@@ -1,21 +1,21 @@
 module Main (main) where
 
-import Prelude.Kore
-import System.Clock (TimeSpec, getTime, Clock (..))
-import Kore.Log (runKoreLog, KoreLogOptions, parseKoreLogOptions)
-import Kore.BugReport
 import GlobalMain
-import Kore.Internal.TermLike (pattern Or_, VariableName)
-import Kore.Internal.Pattern (Pattern)
+import qualified GlobalMain
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
+import Kore.BugReport
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.TermLike (VariableName, pattern Or_)
+import Kore.Log (KoreLogOptions, parseKoreLogOptions, runKoreLog)
 import Kore.Syntax.Module (ModuleName (..))
-import Options.Applicative (Parser, argument, str, metavar, help, strOption, long, InfoMod, fullDesc, progDesc, header)
-import qualified GlobalMain
+import Options.Applicative (InfoMod, Parser, argument, fullDesc, header, help, long, metavar, progDesc, str, strOption)
+import Prelude.Kore
+import System.Clock (Clock (..), TimeSpec, getTime)
 import System.Exit (ExitCode, exitWith)
 
 exeName :: ExeName
@@ -24,21 +24,20 @@ exeName = ExeName "kore-match-disjunction"
 envName :: String
 envName = "KORE_MATCH_DISJUNCTION_OPTS"
 
-data KoreMatchDisjunctionOptions =
-    KoreMatchDisjunctionOptions
-        { -- | Name of file containing a definition to verify and use for execution
-          definitionFileName :: !FilePath
-        , -- | Name of file containing a disjunction to verify and use for matching
-          disjunctionFileName :: !FilePath
-        , -- | Name of file used to match with disjunction
-          matchFileName :: !FilePath
-        , -- | Name for file to contain the output pattern
-          outputFileName :: !(Maybe FilePath)
-        , -- | The name of the main module in the definition
-          mainModuleName :: !ModuleName
-        , bugReportOption :: !BugReportOption
-        , koreLogOptions :: !KoreLogOptions
-        }
+data KoreMatchDisjunctionOptions = KoreMatchDisjunctionOptions
+    { -- | Name of file containing a definition to verify and use for execution
+      definitionFileName :: !FilePath
+    , -- | Name of file containing a disjunction to verify and use for matching
+      disjunctionFileName :: !FilePath
+    , -- | Name of file used to match with disjunction
+      matchFileName :: !FilePath
+    , -- | Name for file to contain the output pattern
+      outputFileName :: !(Maybe FilePath)
+    , -- | The name of the main module in the definition
+      mainModuleName :: !ModuleName
+    , bugReportOption :: !BugReportOption
+    , koreLogOptions :: !KoreLogOptions
+    }
 
 parseKoreMatchDisjunctionOptions :: TimeSpec -> Parser KoreMatchDisjunctionOptions
 parseKoreMatchDisjunctionOptions startTime =
@@ -98,11 +97,11 @@ mainWithOptions options = do
     exitCode <-
         withBugReport exeName bugReportOption $ \tmpDir ->
             koreMatchDisjunction options
-            & runKoreLog tmpDir koreLogOptions
+                & runKoreLog tmpDir koreLogOptions
     exitWith exitCode
   where
-    KoreMatchDisjunctionOptions { bugReportOption } = options
-    KoreMatchDisjunctionOptions { koreLogOptions } = options
+    KoreMatchDisjunctionOptions{bugReportOption} = options
+    KoreMatchDisjunctionOptions{koreLogOptions} = options
 
 koreMatchDisjunction :: KoreMatchDisjunctionOptions -> Main ExitCode
 koreMatchDisjunction options = do

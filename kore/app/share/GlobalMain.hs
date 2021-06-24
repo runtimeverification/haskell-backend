@@ -23,33 +23,21 @@ module GlobalMain (
     loadDefinitions,
     loadModule,
     mainParseSearchPattern,
-    mainPatternParseAndVerify
+    mainPatternParseAndVerify,
 ) where
 
 import Control.Exception (
     evaluate,
- )
-import Kore.Internal.Predicate (makePredicate)
-import Kore.Parser (
-    ParsedPattern,
-    parseKorePattern,
- )
-import Kore.Attribute.Symbol (
-    StepperAttributes,
  )
 import Control.Lens (
     (%~),
  )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import qualified Pretty as KorePretty
 import Data.List (
     intercalate,
     nub,
  )
-import Kore.Internal.TermLike (pattern And_, TermLike)
-import Kore.Internal.Conditional (Conditional (..))
-import Kore.Internal.Pattern (Pattern)
 import Data.Map.Strict (
     Map,
  )
@@ -77,6 +65,9 @@ import Kore.Attribute.Definition (
 import Kore.Attribute.SourceLocation (
     notDefault,
  )
+import Kore.Attribute.Symbol (
+    StepperAttributes,
+ )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -84,6 +75,10 @@ import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
+import Kore.Internal.Conditional (Conditional (..))
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Predicate (makePredicate)
+import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
 import Kore.Log.ErrorParse (
     errorParse,
@@ -94,6 +89,7 @@ import Kore.Log.ErrorVerify (
 import Kore.Parser (
     ParsedPattern,
     parseKoreDefinition,
+    parseKorePattern,
  )
 import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils (
@@ -144,6 +140,7 @@ import qualified Paths_kore as MetaData (
     version,
  )
 import Prelude.Kore
+import qualified Pretty as KorePretty
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
