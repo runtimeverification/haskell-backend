@@ -76,3 +76,10 @@ instance Synthetic Sort (Exists Sort variable) where
     synthetic Exists{existsSort, existsChild} =
         existsSort `matchSort` existsChild
     {-# INLINE synthetic #-}
+
+instance
+    (Ord variable, HasFreeVariables child variable) =>
+    HasFreeVariables (Exists sort variable child) variable
+    where
+    freeVariables Exists{existsVariable, existsChild} =
+        bindVariable (inject existsVariable) (freeVariables existsChild)
