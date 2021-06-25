@@ -20,7 +20,7 @@ import Data.Text (
  )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.From
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -937,10 +937,9 @@ test_andTermsSimplification =
             actual <- unify term7 term8
             assertEqual "" expect actual
         , testCase "fallback for external List symbols" $ do
-            let expectTerm = mkAnd rhs lhs
-                expect =
-                    Pattern.fromTermLike expectTerm
-                        `Conditional.andPredicate` makeCeilPredicate expectTerm
+            let expect =
+                    (Pattern.withCondition rhs)
+                        (fromEquals_ rhs lhs & Condition.fromPredicate)
                 x = mkElemVar $ configElementVariableFromId "x" Mock.testSort
                 l = mkElemVar $ configElementVariableFromId "y" Mock.listSort
                 -- List unification does not fully succeed because the
