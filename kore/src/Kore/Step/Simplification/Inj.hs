@@ -18,7 +18,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -39,7 +39,13 @@ simplify ::
 simplify injOrPattern = do
     let composed = MultiOr.map liftConditional $ distributeOr injOrPattern
     InjSimplifier{evaluateInj} <- askInjSimplifier
-    let evaluated = MultiOr.map (fmap evaluateInj) composed
+    let evaluated =
+            (MultiOr.map . fmap)
+                -- evaluateInj does not mark its result simplified because it
+                -- exists outside the simplifier; for example, it might be
+                -- called during unification or matching.
+                (TermLike.markSimplified . evaluateInj)
+                composed
     return evaluated
 
 distributeOr ::
