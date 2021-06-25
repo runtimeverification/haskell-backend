@@ -18,6 +18,9 @@ import Kore.Internal.TermLike (
     VariableName,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Unification.Unify (
+    MonadUnify,
+ )
 import Kore.Unparser (unparse)
 import Log (
     Entry (..),
@@ -81,8 +84,7 @@ debugUnifyBottom info first second =
             (TermLike.mapVariables (pure $ from @_ @VariableName) second)
 
 debugUnifyBottomAndReturnBottom ::
-    MonadLog log =>
-    Alternative log =>
+    MonadUnify log =>
     InternalVariable variable =>
     Text ->
     TermLike variable ->
