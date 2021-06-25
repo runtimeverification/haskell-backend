@@ -53,6 +53,10 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
@@ -224,7 +228,7 @@ matchKequalEq =
 
 data UnifyKequalsEq = UnifyKequalsEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , value :: !Bool
+    , internalBool :: !InternalBool
     }
 
 {- | Matches two terms when second is a bool term
@@ -251,8 +255,8 @@ matchUnifyKequalsEq ::
 matchUnifyKequalsEq first second
     | Just eqTerm <- matchKequalEq first
       , isFunctionPattern first
-      , Just value <- Bool.matchBool second =
-        Just UnifyKequalsEq{eqTerm, value}
+      , InternalBool_ internalBool <- second =
+        Just UnifyKequalsEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
 
@@ -265,12 +269,16 @@ unifyKequalsEq ::
     unifier (Pattern RewritingVariableName)
 unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
     do
-        solution <- unifyChildren operand1 operand2 & OrPattern.gather
-        let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else notSimplifier SideCondition.top) solution'
-            >>= Unify.scatter
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else notSimplifier SideCondition.top
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    UnifyKequalsEq{eqTerm, value} = unifyData
+    UnifyKequalsEq{eqTerm, internalBool} = unifyData
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
 
