@@ -76,8 +76,12 @@ import Kore.Internal.Predicate (
     pattern PredicateCeil,
     pattern PredicateNot,
  )
+import Kore.Log.DebugAfterTransition (
+    debugAfterTransition,
+    debugFinalTransition,
+ )
+import Kore.Log.DebugBeforeTransition
 import Kore.Log.DebugBeginClaim
-import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
@@ -528,45 +532,31 @@ trackProofDepth rule prim (!proofDepth, proofState) = do
     isRewritten _ = False
 
 debugClaimStateBracket ::
-    forall monad.
+    forall monad rule.
     MonadLog monad =>
+    From rule Attribute.Axiom.SourceLocation =>
     -- | current proof state
     ClaimState SomeClaim ->
     -- | transition
     Prim ->
     -- | action to be computed
-    monad (ClaimState SomeClaim) ->
-    monad (ClaimState SomeClaim)
-debugClaimStateBracket
-    proofState
-    transition
-    action =
-        do
-            result <- action
-            logEntry
-                DebugClaimState
-                    { proofState
-                    , transition
-                    , result = Just result
-                    }
-            return result
+    Transition.TransitionT rule monad (ClaimState SomeClaim) ->
+    Transition.TransitionT rule monad (ClaimState SomeClaim)
+debugClaimStateBracket proofState transition action = do
+    debugBeforeTransition proofState transition
+    (result, rules) <- Transition.record action
+    debugAfterTransition result transition $ toList rules
+    return result
 
 debugClaimStateFinal ::
     forall monad.
     Alternative monad =>
     MonadLog monad =>
-    -- | current proof state
-    ClaimState SomeClaim ->
     -- | transition
     Prim ->
     monad (ClaimState SomeClaim)
-debugClaimStateFinal proofState transition = do
-    logEntry
-        DebugClaimState
-            { proofState
-            , transition
-            , result = Nothing
-            }
+debugClaimStateFinal transition = do
+    debugFinalTransition transition
     empty
 
 withDebugClaimState ::
@@ -583,7 +573,6 @@ withDebugClaimState transitionFunc =
                 (transitionFunc transition state)
             )
             ( debugClaimStateFinal
-                state
                 transition
             )
 

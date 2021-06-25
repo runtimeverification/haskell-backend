@@ -328,9 +328,10 @@ library
     Kore.Internal.TermLike.TermLike
     Kore.Internal.Variable
     Kore.Log
+    Kore.Log.DebugAfterTransition
     Kore.Log.DebugAppliedRewriteRules
+    Kore.Log.DebugBeforeTransition
     Kore.Log.DebugBeginClaim
-    Kore.Log.DebugClaimState
     Kore.Log.DebugEvaluateCondition
     Kore.Log.DebugProven
     Kore.Log.DebugSolver
