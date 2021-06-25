@@ -45,6 +45,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -60,13 +61,7 @@ import Kore.Internal.TermLike (
     retractElementVariable,
     withoutFreeVariable,
  )
-import qualified Kore.Internal.TermLike as TermLike (
-    hasFreeVariable,
-    markSimplified,
-    substitute,
-    withoutFreeVariable,
- )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -306,10 +301,10 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
             substituted =
                 normalized
                     { Conditional.term =
-                        TermLike.substitute boundSubstitution $
+                        substitute boundSubstitution $
                             Conditional.term normalized
                     , Conditional.predicate =
-                        Predicate.substitute boundSubstitution $
+                        substitute boundSubstitution $
                             Conditional.predicate normalized
                     }
         orPattern <-

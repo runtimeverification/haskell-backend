@@ -37,6 +37,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Assignment,
  )
@@ -83,7 +84,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
   where
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
-            predicate' = Predicate.substitute substitution' predicate
+            predicate' = substitute substitution' predicate
 
         simplified <-
             Predicate.simplify sideCondition predicate'

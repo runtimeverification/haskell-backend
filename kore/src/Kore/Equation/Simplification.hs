@@ -26,6 +26,7 @@ import Kore.Internal.MultiAnd (
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
@@ -76,11 +77,11 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         let Conditional{substitution, predicate} = simplifiedCond
         lift $ Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
-            left' = TermLike.substitute subst left
-            requires' = Predicate.substitute subst requires
-            antiLeft' = Predicate.substitute subst <$> antiLeft
-            right' = TermLike.substitute subst right
-            ensures' = Predicate.substitute subst ensures
+            left' = substitute subst left
+            requires' = substitute subst requires
+            antiLeft' = substitute subst <$> antiLeft
+            right' = substitute subst right
+            ensures' = substitute subst ensures
         return
             Equation
                 { left = TermLike.forgetSimplified left'

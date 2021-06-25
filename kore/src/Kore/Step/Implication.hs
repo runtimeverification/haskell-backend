@@ -51,6 +51,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -67,6 +68,7 @@ import Kore.Internal.TermLike (
     TermLike,
     Variable (..),
     VariableName,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
@@ -164,6 +166,20 @@ instance HasFreeVariables (Implication modality) RewritingVariableName where
         freeVariablesLeft implication'
             <> freeVariablesRight implication'
 
+instance Substitute RewritingVariableName (Implication modality) where
+    type SubstituteTerm (Implication modality) = TermLike RewritingVariableName
+
+    substitute subst implication'@(Implication _ _ _ _ _) =
+        substituteRight subst $
+            implication'
+                { left = substitute subst left
+                }
+      where
+        Implication{left} = implication'
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
 {- | Creates an 'Implication' from a left hand side 'Pattern'
  and an 'OrPattern', representing the right hand side pattern.
  The list of element variables are existentially quantified
@@ -226,14 +242,14 @@ substituteRight ::
         (TermLike RewritingVariableName) ->
     Implication modality ->
     Implication modality
-substituteRight rename implication'@Implication{right, existentials} =
+substituteRight subst0 implication'@Implication{right, existentials} =
     implication'
-        { right = OrPattern.substitute newSubst right
+        { right = substitute newSubst right
         , existentials = renameVariable <$> existentials
         }
   where
     existentials' = inject . TermLike.variableName <$> existentials
-    subst = foldr Map.delete rename existentials'
+    subst = foldr Map.delete subst0 existentials'
     newFreeVars =
         Foldable.foldl'
             Set.union
@@ -255,21 +271,6 @@ substituteRight rename implication'@Implication{right, existentials} =
         let name = SomeVariableNameElement $ variableName var
          in maybe var TermLike.expectElementVariable $
                 Map.lookup name subst'
-
--- | Apply the substitution to the implication.
-substitute ::
-    Map
-        (SomeVariableName RewritingVariableName)
-        (TermLike RewritingVariableName) ->
-    Implication modality ->
-    Implication modality
-substitute subst implication'@(Implication _ _ _ _ _) =
-    substituteRight subst $
-        implication'
-            { left = Pattern.substitute subst left
-            }
-  where
-    Implication{left} = implication'
 
 {- | Applies a substitution to an implication and checks that
  it was fully applied, i.e. there is no substitution
@@ -375,16 +376,14 @@ instance UnifyingRule (Implication modality) where
 
         renameExistentials = do
             let existentials' = Set.fromList (inject <$> existentials)
-            rename <- refreshVariables' existentials'
+            subst0 <- refreshVariables' existentials'
             let renameVariable var =
-                    maybe var TermLike.expectElementVariable $
-                        Map.lookup
-                            (SomeVariableNameElement (variableName var))
-                            rename
-                subst = TermLike.mkVar <$> rename
+                    Map.lookup (inject (variableName var)) subst0
+                        & maybe var TermLike.expectElementVariable
+                subst = TermLike.mkVar <$> subst0
             pure $
                 implication'
-                    { right = OrPattern.substitute subst right
+                    { right = substitute subst right
                     , existentials = renameVariable <$> existentials
                     }
 

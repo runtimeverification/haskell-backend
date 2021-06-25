@@ -30,6 +30,7 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Assignment,
     Normalization (..),
@@ -187,7 +188,7 @@ backSubstitute sorted =
         State.modify' $ Map.insert (variableName variable) termLike
     applySubstitution termLike = do
         substitution <- State.get
-        return $ TermLike.substitute substitution termLike
+        return $ substitute substitution termLike
 
 isTrivialSubstitution ::
     Eq variable =>

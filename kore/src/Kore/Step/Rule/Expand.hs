@@ -43,8 +43,8 @@ import Kore.IndexedModule.MetadataTools (
     findSortConstructors,
  )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -135,10 +135,10 @@ instance ExpandSingleConstructors ClaimPattern where
                          in rule
                                 { left =
                                     Pattern.andCondition
-                                        (Pattern.substitute subst left)
+                                        (substitute subst left)
                                         (Condition.fromPredicate substitutionPredicate)
                                 , existentials
-                                , right = OrPattern.substitute subst right
+                                , right = substitute subst right
                                 }
           where
             extractFreeElementVariables =

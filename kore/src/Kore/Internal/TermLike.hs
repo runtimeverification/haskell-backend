@@ -34,7 +34,6 @@ module Kore.Internal.TermLike (
     isConcrete,
     fromConcrete,
     retractKey,
-    Substitute.substitute,
     refreshElementBinder,
     refreshSetBinder,
     depth,

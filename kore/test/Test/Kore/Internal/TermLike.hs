@@ -15,6 +15,7 @@ module Test.Kore.Internal.TermLike (
     module Kore.Internal.TermLike,
 ) where
 
+import Kore.Internal.Substitute
 import qualified Control.Lens as Lens
 import Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor

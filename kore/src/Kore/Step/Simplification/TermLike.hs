@@ -43,6 +43,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
+import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution (
     toMap,
  )
@@ -255,14 +256,8 @@ simplify sideCondition = \termLike ->
             InternalVariable variable =>
             Pattern variable ->
             Pattern variable
-        applyTermSubstitution
-            Conditional{term = term', predicate = predicate', substitution} =
-                Conditional
-                    { term =
-                        TermLike.substitute (Substitution.toMap substitution) term'
-                    , predicate = predicate'
-                    , substitution
-                    }
+        applyTermSubstitution conditional@Conditional{substitution} =
+            fmap (substitute (Substitution.toMap substitution)) conditional
 
         assertTermNotPredicate getResults = do
             results <- getResults

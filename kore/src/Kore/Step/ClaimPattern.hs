@@ -7,7 +7,6 @@ module Kore.Step.ClaimPattern (
     freeVariablesLeft,
     freeVariablesRight,
     mkClaimPattern,
-    substitute,
     assertRefreshed,
     refreshExistentials,
     applySubstitution,
@@ -50,6 +49,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -66,6 +66,7 @@ import Kore.Internal.TermLike (
     TermLike,
     Variable (..),
     VariableName,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
@@ -162,6 +163,20 @@ instance HasFreeVariables ClaimPattern RewritingVariableName where
         freeVariablesLeft claimPattern'
             <> freeVariablesRight claimPattern'
 
+instance Substitute RewritingVariableName ClaimPattern where
+    type SubstituteTerm ClaimPattern = TermLike RewritingVariableName
+
+    substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
+        substituteRight subst $
+            claimPattern'
+                { left = substitute subst left
+                }
+      where
+        ClaimPattern{left} = claimPattern'
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
 {- | Creates a 'ClaimPattern' from a left hand side 'Pattern'
  and an 'OrPattern', representing the right hand side pattern.
  The list of element variables are existentially quantified
@@ -223,18 +238,15 @@ substituteRight ::
         (TermLike RewritingVariableName) ->
     ClaimPattern ->
     ClaimPattern
-substituteRight rename claimPattern'@ClaimPattern{right, existentials} =
+substituteRight subst0 claimPattern'@ClaimPattern{right, existentials} =
     claimPattern'
-        { right = OrPattern.substitute subst right
+        { right = substitute subst right
         }
   where
     subst =
         foldr
-            ( Map.delete
-                . inject
-                . TermLike.variableName
-            )
-            rename
+            (Map.delete . inject . TermLike.variableName)
+            subst0
             existentials
 
 renameExistentials ::
@@ -244,9 +256,9 @@ renameExistentials ::
         (SomeVariable RewritingVariableName) ->
     ClaimPattern ->
     ClaimPattern
-renameExistentials rename claimPattern'@ClaimPattern{right, existentials} =
+renameExistentials subst0 claimPattern'@ClaimPattern{right, existentials} =
     claimPattern'
-        { right = OrPattern.substitute subst right
+        { right = substitute subst right
         , existentials = renameVariable <$> existentials
         }
   where
@@ -256,23 +268,8 @@ renameExistentials rename claimPattern'@ClaimPattern{right, existentials} =
     renameVariable var =
         let name = SomeVariableNameElement . variableName $ var
          in maybe var TermLike.expectElementVariable $
-                Map.lookup name rename
-    subst = TermLike.mkVar <$> rename
-
--- | Apply the substitution to the claim.
-substitute ::
-    Map
-        (SomeVariableName RewritingVariableName)
-        (TermLike RewritingVariableName) ->
-    ClaimPattern ->
-    ClaimPattern
-substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
-    substituteRight subst $
-        claimPattern'
-            { left = Pattern.substitute subst left
-            }
-  where
-    ClaimPattern{left} = claimPattern'
+                Map.lookup name subst0
+    subst = TermLike.mkVar <$> subst0
 
 {- | Applies a substitution to a claim and checks that
  it was fully applied, i.e. there is no substitution

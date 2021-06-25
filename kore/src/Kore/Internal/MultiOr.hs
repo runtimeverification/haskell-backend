@@ -42,7 +42,14 @@ import GHC.Exts (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+ )
 import Kore.Debug
+import Kore.Internal.Substitute
+import Kore.Internal.Variable (
+    InternalVariable,
+ )
 import Kore.Syntax.Application (
     Application (..),
  )
@@ -105,6 +112,29 @@ instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
 
 instance From (MultiOr child) [child] where
     from = getMultiOr
+
+instance
+    (Ord variable, HasFreeVariables child variable) =>
+    HasFreeVariables (MultiOr child) variable
+    where
+    freeVariables = foldMap freeVariables
+    {-# INLINE freeVariables #-}
+
+instance
+    ( InternalVariable variable
+    , Ord child
+    , TopBottom child
+    , Substitute variable child
+    ) =>
+    Substitute variable (MultiOr child)
+    where
+    type SubstituteTerm (MultiOr child) = SubstituteTerm child
+
+    substitute = map . substitute
+    {-# INLINE substitute #-}
+
+    rename = map . rename
+    {-# INLINE rename #-}
 
 bottom :: MultiOr term
 bottom = MultiOr []

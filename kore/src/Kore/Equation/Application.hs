@@ -80,11 +80,11 @@ import Kore.Internal.Predicate (
     makeAndPredicate,
     makeNotPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -293,10 +293,8 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
                     , applyMatchErrors = x :| xs
                     }
         _ -> return ()
-    let predicate' =
-            Predicate.substitute orientedSubstitution predicate
-        equation' =
-            Equation.substitute orientedSubstitution equation
+    let predicate' = substitute orientedSubstitution predicate
+        equation' = substitute orientedSubstitution equation
     return (equation', predicate')
   where
     orientedSubstitution = Substitution.orientSubstitution occursInEquation substitution

@@ -321,6 +321,7 @@ library
     Kore.Internal.Predicate
     Kore.Internal.SideCondition
     Kore.Internal.SideCondition.SideCondition
+    Kore.Internal.Substitute
     Kore.Internal.Substitution
     Kore.Internal.Symbol
     Kore.Internal.TermLike

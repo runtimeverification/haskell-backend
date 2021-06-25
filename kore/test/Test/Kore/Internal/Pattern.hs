@@ -62,7 +62,6 @@ import Test.Kore.Internal.TermLike hiding (
     mapVariables,
     markSimplified,
     simplifiedAttribute,
-    substitute,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Variables.V

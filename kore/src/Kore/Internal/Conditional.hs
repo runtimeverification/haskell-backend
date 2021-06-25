@@ -45,6 +45,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Assignment,
     Substitution,
@@ -57,6 +58,7 @@ import Kore.Internal.TermLike (
     Sort,
     SubstitutionOrd,
     TermLike,
+    mkVar,
     termLikeSort,
  )
 import Kore.TopBottom (
@@ -228,6 +230,25 @@ instance
             . from
                 @(Map (SomeVariable variable) (TermLike variable))
                 @(Substitution variable)
+
+instance
+    ( InternalVariable variable
+    , Substitute variable child
+    , SubstituteTerm child ~ TermLike variable
+    ) =>
+    Substitute variable (Conditional variable child)
+    where
+    type SubstituteTerm (Conditional variable child) = TermLike variable
+
+    substitute subst Conditional{term, predicate, substitution} =
+        Conditional
+            { term = substitute subst term
+            , predicate = substitute subst predicate
+            , substitution = substitute subst substitution
+            }
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 prettyConditional ::
     Sort ->

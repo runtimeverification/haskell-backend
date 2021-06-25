@@ -20,6 +20,7 @@ import Kore.Internal.Predicate (
     pattern PredicateTrue,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (
     TermLike,
@@ -28,10 +29,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.AntiLeft as AntiLeft (
-    forgetSimplified,
-    substitute,
- )
+import qualified Kore.Step.AntiLeft as AntiLeft
 import Kore.Step.ClaimPattern (
     ClaimPattern (..),
  )
@@ -75,14 +73,14 @@ simplifyRulePattern rule = do
                 -- in the RHS is wrong because those variables are not
                 -- existentially quantified.
                 let subst = Substitution.toMap substitution
-                    left' = TermLike.substitute subst term
-                    antiLeft' = AntiLeft.substitute subst <$> antiLeft
+                    left' = substitute subst term
+                    antiLeft' = substitute subst <$> antiLeft
                       where
                         RulePattern{antiLeft} = rule
-                    requires' = Predicate.substitute subst requires
+                    requires' = substitute subst requires
                       where
                         RulePattern{requires} = rule
-                    rhs' = rhsSubstitute subst rhs
+                    rhs' = substitute subst rhs
                       where
                         RulePattern{rhs} = rule
                     RulePattern{attributes} = rule
@@ -123,7 +121,7 @@ simplifyClaimPattern claim = do
                     left' = Pattern.withCondition term (Pattern.withoutTerm left)
                  in return
                         . ClaimPattern.forgetSimplified
-                        . ClaimPattern.substitute subst
+                        . substitute subst
                         $ claim
                             { ClaimPattern.left = left'
                             }

@@ -13,6 +13,7 @@ import qualified Data.Map.Strict as Map
 import Kore.Internal.Alias (
     Alias (..),
  )
+import Kore.Internal.Substitute
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
@@ -21,7 +22,6 @@ import Kore.Internal.TermLike (
     fromVariableName,
     mapSomeVariableName,
     mapVariables,
-    substitute,
     pattern ApplyAlias_,
  )
 import Kore.Rewriting.RewritingVariable (

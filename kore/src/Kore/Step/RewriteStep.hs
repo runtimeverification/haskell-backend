@@ -33,6 +33,7 @@ import Kore.Internal.OrPattern (
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
@@ -144,7 +145,7 @@ constructConfiguration appliedCondition finalPattern = do
     let Conditional{substitution} = finalCondition
         substitution' = Substitution.toMap substitution
         Conditional{term = finalTerm} = finalPattern
-        finalTerm' = TermLike.substitute substitution' finalTerm
+        finalTerm' = substitute substitution' finalTerm
     -- TODO (thomas.tuegel): Should the final term be simplified after
     -- substitution?
     return (finalTerm' `Pattern.withCondition` finalCondition)
