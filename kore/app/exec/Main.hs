@@ -429,6 +429,7 @@ unparseKoreProveOptions
             graphSearch
             bmc
             saveProofs
+            maxCounterexamples
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -438,6 +439,7 @@ unparseKoreProveOptions
             ]
         , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
+        , unwords ["--max-counterexamples", show maxCounterexamples]
         ]
 
 koreExecSh :: KoreExecOptions -> String
