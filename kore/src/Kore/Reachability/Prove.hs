@@ -44,9 +44,6 @@ import Control.Monad.State.Strict (
     runStateT,
  )
 import qualified Control.Monad.State.Strict as State
-import Data.Coerce (
-    coerce,
- )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit (
     Limit,
@@ -542,7 +539,7 @@ debugClaimStateBracket ::
     monad (ClaimState SomeClaim)
 debugClaimStateBracket
     proofState
-    (coerce -> transition)
+    transition
     action =
         do
             result <- action
@@ -563,7 +560,7 @@ debugClaimStateFinal ::
     -- | transition
     Prim ->
     monad (ClaimState SomeClaim)
-debugClaimStateFinal proofState (coerce -> transition) = do
+debugClaimStateFinal proofState transition = do
     logEntry
         DebugClaimState
             { proofState
