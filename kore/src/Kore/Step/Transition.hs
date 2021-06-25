@@ -34,7 +34,7 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Accum (
     AccumT (..),
     mapAccumT,
-    runAccumT
+    runAccumT,
  )
 import qualified Control.Monad.Trans.Accum as Accum
 import Data.Functor.Identity (
@@ -168,9 +168,10 @@ mapRules f trans = do
 
 -- | Get the record of applied rules during an action.
 record :: TransitionT rule m a -> TransitionT rule m (a, Seq rule)
-record action = TransitionT $ AccumT $ \w -> do
-    (a, rules) <- runAccumT (getTransitionT action) mempty
-    return ((a, rules), w <> rules)
+record action = TransitionT $
+    AccumT $ \w -> do
+        (a, rules) <- runAccumT (getTransitionT action) mempty
+        return ((a, rules), w <> rules)
 
 {- |
 

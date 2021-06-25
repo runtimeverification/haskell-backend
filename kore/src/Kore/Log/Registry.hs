@@ -45,7 +45,7 @@ import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
 import Kore.Log.DebugBeforeTransition (
-    DebugBeforeTransition
+    DebugBeforeTransition,
  )
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,

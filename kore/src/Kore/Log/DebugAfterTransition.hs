@@ -28,8 +28,8 @@ import Pretty (
 import qualified Pretty
 
 data DebugAfterTransition = DebugAfterTransition
-    { result       :: Maybe (ClaimState SomeClaim)
-    , transition   :: Prim
+    { result :: Maybe (ClaimState SomeClaim)
+    , transition :: Prim
     , appliedRules :: [SourceLocation]
     }
     deriving stock (Show)
@@ -41,29 +41,33 @@ instance Pretty DebugAfterTransition where
             , transition
             , appliedRules
             } =
-            Pretty.vsep $ concat
-                [ [ "Applied the following transition:"
-                  , Pretty.indent 4 (pretty transition)
-                  ]
-                , prettyRules
-                , [ "Resulting in:"
-                  , Pretty.indent 4 (maybe "Terminal state." pretty result)
-                  ]
-                ]
-      where
-        -- match behavior of DebugAppliedRewriteRules
-        prettyRules = case appliedRules of
-            [] -> ["No rules were applied."]
-            rules ->
-                ["The rules at following locations were applied:"]
-                    <> fmap pretty rules
+            Pretty.vsep $
+                concat
+                    [
+                        [ "Applied the following transition:"
+                        , Pretty.indent 4 (pretty transition)
+                        ]
+                    , prettyRules
+                    ,
+                        [ "Resulting in:"
+                        , Pretty.indent 4 (maybe "Terminal state." pretty result)
+                        ]
+                    ]
+          where
+            -- match behavior of DebugAppliedRewriteRules
+            prettyRules = case appliedRules of
+                [] -> ["No rules were applied."]
+                rules ->
+                    ["The rules at following locations were applied:"]
+                        <> fmap pretty rules
 
 instance Entry DebugAfterTransition where
     entrySeverity _ = Debug
     helpDoc _ = "log proof state"
     oneLineDoc DebugAfterTransition{transition, appliedRules} =
-        Just $ transitionHeader 
-            <> Pretty.hsep (pretty <$> appliedRules)
+        Just $
+            transitionHeader
+                <> Pretty.hsep (pretty <$> appliedRules)
       where
         transitionHeader = case appliedRules of
             [] -> pretty transition
