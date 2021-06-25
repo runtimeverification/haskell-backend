@@ -165,6 +165,31 @@ test_simplify =
             (fromExists Mock.xConfig faCeil)
             [[faCeil]]
         , test
+            "single assignment"
+            ( fromExists
+                Mock.xConfig
+                (fromEquals_ (mkElemVar Mock.xConfig) (Mock.f Mock.a))
+            )
+            [[faCeil]]
+        , test
+            "invalid assignment"
+            ( fromExists
+                Mock.xConfig
+                ( fromEquals_
+                    (mkElemVar Mock.xConfig)
+                    (Mock.f $ mkElemVar Mock.xConfig)
+                )
+            )
+            [
+                [ fromExists
+                    Mock.xConfig
+                    ( fromEquals_
+                        (mkElemVar Mock.xConfig)
+                        (Mock.f $ mkElemVar Mock.xConfig)
+                    )
+                ]
+            ]
+        , test
             "apply substitution"
             ( fromExists
                 Mock.xConfig

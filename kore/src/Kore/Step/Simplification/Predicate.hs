@@ -7,6 +7,14 @@ module Kore.Step.Simplification.Predicate (
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Map.Strict as Map
+import Data.Monoid (
+    First (..),
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    freeVariables,
+    isFreeVariable,
+ )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
@@ -34,6 +42,12 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitution (
+    pattern Assignment,
+ )
+import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.TermLike (TermLike)
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnUnsimplifiedPredicate (
     warnUnsimplifiedPredicate,
  )
@@ -42,15 +56,19 @@ import Kore.Rewriting.RewritingVariable (
  )
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify
+import Kore.Substitute
 import Kore.Syntax (
     And (..),
     Bottom (..),
     Ceil (..),
+    Exists (..),
     Iff (..),
     Implies (..),
     Not (..),
     Or (..),
+    SomeVariableName,
     Top (..),
+    variableName,
  )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
@@ -146,9 +164,21 @@ simplify sideCondition original =
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
+                ExistsF existsF ->
+                    traverse worker (refreshExists sideCondition existsF)
+                        >>= simplifyExists sideCondition
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
+
+refreshExists ::
+    SideCondition RewritingVariableName ->
+    Exists sort RewritingVariableName (Predicate RewritingVariableName) ->
+    Exists sort RewritingVariableName (Predicate RewritingVariableName)
+refreshExists sideCondition existsF =
+    Predicate.refreshExists
+        (freeVariables existsF <> freeVariables sideCondition)
+        existsF
 
 -- | Construct a 'NormalForm' from a single 'Predicate'.
 mkSingleton ::
@@ -373,3 +403,64 @@ simplifyCeil ::
     simplifier NormalForm
 simplifyCeil sideCondition =
     Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
+
+simplifyExists ::
+    forall simplifier.
+    Monad simplifier =>
+    SideCondition RewritingVariableName ->
+    Exists () RewritingVariableName NormalForm ->
+    simplifier NormalForm
+simplifyExists _ = \exists@Exists{existsChild} ->
+    MultiOr.traverseOr (simplifyExistsAnd . ($>) exists) existsChild
+  where
+    simplifyExistsAnd ::
+        (Exists () RewritingVariableName)
+            (MultiAnd (Predicate RewritingVariableName)) ->
+        simplifier NormalForm
+    simplifyExistsAnd Exists{existsVariable, existsChild}
+        | not (isFreeVariable existsVariableName existsChildFreeVariables) =
+            pure (MultiOr.singleton existsChild)
+        | Just value <- extractFirstAssignment existsVariableName existsChild =
+            applyAssignment existsVariableName value existsChild
+                & MultiOr.singleton
+                & pure
+        | otherwise = undefined
+      where
+        existsVariableName :: SomeVariableName RewritingVariableName
+        existsVariableName = inject (variableName existsVariable)
+        existsChildFreeVariables = freeVariables existsChild
+
+    extractFirstAssignment ::
+        SomeVariableName RewritingVariableName ->
+        MultiAnd (Predicate RewritingVariableName) ->
+        Maybe (TermLike RewritingVariableName)
+    extractFirstAssignment existsVariableName predicates =
+        getFirst
+            ( foldMap
+                (First . extractAssignment existsVariableName)
+                predicates
+            )
+
+    extractAssignment ::
+        SomeVariableName RewritingVariableName ->
+        Predicate RewritingVariableName ->
+        Maybe (TermLike RewritingVariableName)
+    extractAssignment existsVariableName predicate = do
+        assignment <- Substitution.retractAssignment predicate
+        let Assignment someVariable termLike = assignment
+            sameVariableName = existsVariableName == variableName someVariable
+        guard sameVariableName
+        guard (TermLike.isFunctionPattern termLike)
+        guard (not $ TermLike.hasFreeVariable existsVariableName termLike)
+        pure termLike
+
+    applyAssignment ::
+        SomeVariableName RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        MultiAnd (Predicate RewritingVariableName) ->
+        MultiAnd (Predicate RewritingVariableName)
+    applyAssignment existsVariableName termLike predicates =
+        let substitution = Map.singleton existsVariableName termLike
+            existsChild' = MultiAnd.map (substitute substitution) predicates
+            valueCeil = MultiAnd.singleton (fromCeil_ termLike)
+         in existsChild' <> valueCeil
