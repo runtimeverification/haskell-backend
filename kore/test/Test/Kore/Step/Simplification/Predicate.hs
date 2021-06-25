@@ -16,6 +16,7 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
+    mkElemVar,
     mkEquals,
     mkOr,
  )
@@ -156,6 +157,23 @@ test_simplify =
             "Predicate"
             (fromCeil_ (mkEquals Mock.testSort fa fb))
             [[fromEquals_ fa fb]]
+        ]
+    , testGroup
+        "\\exists"
+        [ test
+            "irrelevant variable"
+            (fromExists Mock.xConfig faCeil)
+            [[faCeil]]
+        , test
+            "apply substitution"
+            ( fromExists
+                Mock.xConfig
+                ( fromAnd
+                    (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                    (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
+                )
+            )
+            [[faCeil]]
         ]
     , testGroup
         "Other"
