@@ -1246,7 +1246,7 @@ test_andTermsSimplification =
         , testCase "And unification" $ do
             let input1 = Mock.keqBool (cf xVar) a
                 input2 = Mock.builtinBool False
-                expected = [Pattern.top]
+                expected = [Pattern.fromTermLike input2]
             actual <- simplify input1 input2
             assertEqual "" expected actual
         , testCase
