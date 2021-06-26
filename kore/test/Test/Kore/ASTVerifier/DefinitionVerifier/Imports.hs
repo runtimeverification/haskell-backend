@@ -405,7 +405,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkAnd (mkTop sort) mkTop_
+                    externalize $ mkAnd (mkTop sort) (mkTop sort)
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInNextPatternSentence =
@@ -678,7 +678,8 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkAnd symbolPattern mkTop_
+                    mkAnd symbolPattern (mkTop $ termLikeSort symbolPattern)
+                        & externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInExistsPatternSentence =
@@ -901,7 +902,8 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkAnd aliasPattern mkTop_
+                    mkAnd aliasPattern (mkTop $ termLikeSort aliasPattern)
+                        & externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInExistsPatternSentence =
