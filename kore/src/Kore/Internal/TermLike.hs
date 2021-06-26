@@ -250,6 +250,7 @@ import Kore.Internal.Key (
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
+import Kore.Internal.Substitute
 import Kore.Internal.Symbol (
     Symbol (..),
  )
@@ -257,7 +258,6 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
-import qualified Kore.Substitute as Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
@@ -315,12 +315,11 @@ refreshVariables ::
     TermLike variable ->
     TermLike variable
 refreshVariables (Attribute.FreeVariables.toNames -> avoid) term =
-    Substitute.substitute subst term
+    rename renamed term
   where
-    rename = Fresh.refreshVariables avoid originalFreeVariables
+    renamed = Fresh.refreshVariables avoid originalFreeVariables
     originalFreeVariables =
         Attribute.FreeVariables.toSet (Attribute.freeVariables term)
-    subst = mkVar <$> rename
 
 -- | Is the 'TermLike' a function pattern?
 isFunctionPattern :: TermLike variable -> Bool
@@ -1870,8 +1869,8 @@ refreshBinder
                         ( inject @(SomeVariableName variable)
                             (variableName binderVariable)
                         )
-                        (mkVar $ inject @(SomeVariable _) binderVariable')
-                binderChild' = Substitute.substitute renaming binderChild
+                        (inject @(SomeVariable _) binderVariable')
+                binderChild' = rename renaming binderChild
             return
                 Binder
                     { binderVariable = binderVariable'

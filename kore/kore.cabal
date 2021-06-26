@@ -472,7 +472,6 @@ library
     Kore.Step.Strategy
     Kore.Step.Substitution
     Kore.Step.Transition
-    Kore.Substitute
     Kore.Syntax
     Kore.Syntax.And
     Kore.Syntax.Application

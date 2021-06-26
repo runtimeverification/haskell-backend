@@ -48,10 +48,8 @@ import Kore.Step.Simplification.Simplify (
     simplifyCondition,
     simplifyConditionalTerm,
  )
-import Kore.Substitute (
-    substitute,
- )
 import Prelude.Kore
+import Kore.Internal.Substitute
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
 simplifyTopConfiguration ::
