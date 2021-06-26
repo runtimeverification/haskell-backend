@@ -61,21 +61,17 @@ test_forallSimplification =
             -- forall(top) = top
             assertEqual
                 "forall(top)"
-                ( OrPattern.fromPatterns
-                    [Pattern.top]
-                )
+                (OrPattern.top Mock.topSort)
                 ( evaluate
                     ( makeForall
                         Mock.xConfig
-                        [Pattern.top]
+                        [Pattern.topOf Mock.topSort]
                     )
                 )
             -- forall(bottom) = bottom
             assertEqual
                 "forall(bottom)"
-                ( OrPattern.fromPatterns
-                    []
-                )
+                (OrPattern.bottom)
                 ( evaluate
                     ( makeForall
                         Mock.xConfig
@@ -89,18 +85,18 @@ test_forallSimplification =
             -- forall(top) = top
             assertEqual
                 "forall(top)"
-                Pattern.top
+                (Pattern.topOf Mock.topSort)
                 ( makeEvaluate
                     Mock.xConfig
-                    (Pattern.top :: Pattern RewritingVariableName)
+                    (Pattern.topOf Mock.topSort :: Pattern RewritingVariableName)
                 )
             -- forall(bottom) = bottom
             assertEqual
                 "forall(bottom)"
-                Pattern.bottom
+                (Pattern.bottomOf Mock.topSort)
                 ( makeEvaluate
                     Mock.xConfig
-                    (Pattern.bottom :: Pattern RewritingVariableName)
+                    (Pattern.bottomOf Mock.topSort :: Pattern RewritingVariableName)
                 )
         )
     , testCase
@@ -115,11 +111,13 @@ test_forallSimplification =
                         ( mkAnd
                             ( mkAnd
                                 (Mock.f $ mkElemVar Mock.xConfig)
-                                (mkCeil_ (Mock.h (mkElemVar Mock.xConfig)))
+                                ( (mkCeil Mock.testSort)
+                                    (Mock.h (mkElemVar Mock.xConfig))
+                                )
                             )
                             ( mkAnd
-                                (mkEquals_ (mkElemVar Mock.xConfig) gOfA)
-                                (mkEquals_ (mkElemVar Mock.yConfig) fOfA)
+                                (mkEquals Mock.testSort (mkElemVar Mock.xConfig) gOfA)
+                                (mkEquals Mock.testSort (mkElemVar Mock.yConfig) fOfA)
                             )
                         )
                 , predicate = makeTruePredicate
@@ -165,7 +163,7 @@ test_forallSimplification =
         ( assertEqual
             "forall on term"
             Conditional
-                { term = mkForall Mock.xConfig (mkAnd fOfX (mkCeil_ gOfA))
+                { term = mkForall Mock.xConfig (mkAnd fOfX (mkCeil Mock.testSort gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -210,9 +208,9 @@ test_forallSimplification =
                         ( mkAnd
                             ( mkAnd
                                 fOfA
-                                (mkCeil_ fOfX)
+                                (mkCeil Mock.testSort fOfX)
                             )
-                            (mkEquals_ (mkElemVar Mock.yConfig) fOfA)
+                            (mkEquals Mock.testSort (mkElemVar Mock.yConfig) fOfA)
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -236,7 +234,7 @@ test_forallSimplification =
         ( assertEqual
             "forall on predicate"
             Conditional
-                { term = mkTop_
+                { term = mkTop Mock.topSort
                 , predicate =
                     makeForallPredicate
                         Mock.xConfig
@@ -249,7 +247,7 @@ test_forallSimplification =
             ( makeEvaluate
                 Mock.xConfig
                 Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.topSort
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
                         Substitution.wrap $
@@ -268,8 +266,8 @@ test_forallSimplification =
                     mkForall
                         Mock.xConfig
                         ( mkAnd
-                            (mkAnd fOfX (mkEquals_ fOfX gOfA))
-                            (mkEquals_ (mkElemVar Mock.yConfig) hOfA)
+                            (mkAnd fOfX (mkEquals Mock.testSort fOfX gOfA))
+                            (mkEquals Mock.testSort (mkElemVar Mock.yConfig) hOfA)
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
