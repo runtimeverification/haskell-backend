@@ -38,8 +38,8 @@ import Test.Tasty.HUnit.Ext
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
     [ testCase "Identity for top" $ do
-        actual <- runSimplifyPredicates makeTruePredicate OrPattern.top
-        assertEqual "" OrPattern.top actual
+        actual <- runSimplifyPredicates makeTruePredicate (OrPattern.top Mock.topSort)
+        assertEqual "" (OrPattern.top Mock.topSort) actual
     , testCase "Identity for bottom" $ do
         actual <- runSimplifyPredicates makeTruePredicate OrPattern.bottom
         assertEqual "" OrPattern.bottom actual
