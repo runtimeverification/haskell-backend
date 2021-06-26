@@ -92,14 +92,12 @@ import qualified Kore.Internal.Key as Key
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Substitute
 import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
-import qualified Kore.Substitute as Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
@@ -810,15 +808,6 @@ instance Ord variable => From Key (TermLike variable) where
           where
             attrs :< keyF = Recursive.project key
             attrs' = fromKeyAttributes attrs
-
-instance InternalVariable variable => Substitute variable (TermLike variable) where
-    type SubstituteTerm (TermLike variable) = TermLike variable
-
-    substitute = Substitute.substitute
-    {-# INLINE substitute #-}
-
-    rename = Substitute.substitute . fmap mkVar
-    {-# INLINE rename #-}
 
 fromKeyAttributes ::
     Ord variable =>

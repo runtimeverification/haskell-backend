@@ -128,13 +128,8 @@ instance
     ) =>
     Substitute variable (MultiOr child)
     where
-    type SubstituteTerm (MultiOr child) = SubstituteTerm child
-
     substitute = map . substitute
     {-# INLINE substitute #-}
-
-    rename = map . rename
-    {-# INLINE rename #-}
 
 bottom :: MultiOr term
 bottom = MultiOr []

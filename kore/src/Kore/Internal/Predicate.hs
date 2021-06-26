@@ -406,8 +406,6 @@ instance TopBottom (Predicate variable) where
     isBottom _ = False
 
 instance InternalVariable variable => Substitute variable (Predicate variable) where
-    type SubstituteTerm (Predicate variable) = TermLike variable
-
     substitute subst predicate =
         substituteNone <|> substituteBinder <|> substituteTermLike
             & fromMaybe substituteDefault
@@ -475,9 +473,6 @@ instance InternalVariable variable => Substitute variable (Predicate variable) w
         substituteDefault = synthesize (substitute subst' <$> predF)
           where
             _ :< predF = Recursive.project predicate
-
-    rename = substitute . fmap TermLike.mkVar
-    {-# INLINE rename #-}
 
 unparseWithSort ::
     forall variable ann.

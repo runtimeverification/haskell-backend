@@ -146,8 +146,6 @@ instance
     InternalVariable variable =>
     Substitute variable (Equation variable)
     where
-    type SubstituteTerm (Equation variable) = TermLike variable
-
     substitute assignments equation =
         Equation
             { requires = substitute assignments requires
@@ -168,9 +166,6 @@ instance
             , ensures
             , attributes
             } = equation
-
-    rename = substitute . fmap TermLike.mkVar
-    {-# INLINE rename #-}
 
 toTermLike ::
     InternalVariable variable =>

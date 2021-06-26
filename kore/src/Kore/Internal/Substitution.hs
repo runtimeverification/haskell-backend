@@ -303,14 +303,9 @@ instance
     InternalVariable variable =>
     Substitute variable (Substitution variable)
     where
-    type SubstituteTerm (Substitution variable) = TermLike variable
-
     substitute subst =
         wrap . (map . mapAssignedTerm) (substitute subst) . unwrap
     {-# INLINE substitute #-}
-
-    rename = substitute . fmap mkVar
-    {-# INLINE rename #-}
 
 type UnwrappedSubstitution variable = [Assignment variable]
 

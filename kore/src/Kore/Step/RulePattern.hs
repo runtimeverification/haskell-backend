@@ -145,8 +145,6 @@ instance
     InternalVariable variable =>
     Substitute variable (RHS variable)
     where
-    type SubstituteTerm (RHS variable) = TermLike variable
-
     substitute subst RHS{existentials, right, ensures} =
         RHS
             { existentials
@@ -155,9 +153,6 @@ instance
             }
       where
         subst' = foldr (Map.delete . inject . variableName) subst existentials
-
-    rename = substitute . fmap TermLike.mkVar
-    {-# INLINE rename #-}
 
 {- | Given a collection of 'FreeVariables' and a RHS, it removes
 converts existential quantifications at the top of the term to implicit
@@ -245,8 +240,6 @@ instance
     InternalVariable variable =>
     Substitute variable (RulePattern variable)
     where
-    type SubstituteTerm (RulePattern variable) = TermLike variable
-
     substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
         rulePattern'
             { left = substitute subst left
@@ -256,9 +249,6 @@ instance
             }
       where
         RulePattern{left, antiLeft, requires, rhs} = rulePattern'
-
-    rename = substitute . fmap TermLike.mkVar
-    {-# INLINE rename #-}
 
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern ::

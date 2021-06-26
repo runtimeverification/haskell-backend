@@ -46,7 +46,6 @@ import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
     mkElemVar,
-    mkVar,
     pattern And_,
     pattern ApplyAlias_,
     pattern Bottom_,
@@ -113,8 +112,6 @@ instance
     InternalVariable variable =>
     Substitute variable (AntiLeftLhs variable)
     where
-    type SubstituteTerm (AntiLeftLhs variable) = TermLike variable
-
     substitute subst antiLeft@(AntiLeftLhs _ _ _) =
         AntiLeftLhs
             { existentials
@@ -128,9 +125,6 @@ instance
                 (flip Map.delete)
                 subst
                 (map (SomeVariableNameElement . variableName) existentials)
-
-    rename = substitute . fmap mkVar
-    {-# INLINE rename #-}
 
 {- | Expansion of an antileft alias.
 
@@ -190,8 +184,6 @@ instance
     InternalVariable variable =>
     Substitute variable (AntiLeft variable)
     where
-    type SubstituteTerm (AntiLeft variable) = TermLike variable
-
     substitute subst antiLeft@(AntiLeft _ _ _) =
         AntiLeft
             { aliasTerm = substitute subst aliasTerm
@@ -200,9 +192,6 @@ instance
             }
       where
         AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
-
-    rename = substitute . fmap mkVar
-    {-# INLINE rename #-}
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>

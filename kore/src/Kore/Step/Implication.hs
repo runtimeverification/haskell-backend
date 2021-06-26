@@ -68,7 +68,6 @@ import Kore.Internal.TermLike (
     TermLike,
     Variable (..),
     VariableName,
-    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
@@ -167,8 +166,6 @@ instance HasFreeVariables (Implication modality) RewritingVariableName where
             <> freeVariablesRight implication'
 
 instance Substitute RewritingVariableName (Implication modality) where
-    type SubstituteTerm (Implication modality) = TermLike RewritingVariableName
-
     substitute subst implication'@(Implication _ _ _ _ _) =
         substituteRight subst $
             implication'
@@ -176,9 +173,6 @@ instance Substitute RewritingVariableName (Implication modality) where
                 }
       where
         Implication{left} = implication'
-
-    rename = substitute . fmap mkVar
-    {-# INLINE rename #-}
 
 {- | Creates an 'Implication' from a left hand side 'Pattern'
  and an 'OrPattern', representing the right hand side pattern.
