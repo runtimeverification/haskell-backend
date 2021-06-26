@@ -34,6 +34,7 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     assumeDefined,
     top,
  )
+import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     toMap,
  )
@@ -49,7 +50,6 @@ import Kore.Step.Simplification.Simplify (
     simplifyConditionalTerm,
  )
 import Prelude.Kore
-import Kore.Internal.Substitute
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
 simplifyTopConfiguration ::
