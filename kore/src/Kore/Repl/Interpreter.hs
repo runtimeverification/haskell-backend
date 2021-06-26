@@ -167,6 +167,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
+import Kore.Sort
 import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data (
     MonadSimplify,
@@ -1393,8 +1394,11 @@ prettyClaimStateComponent transformation omitList =
             , provenValue = makeAuxReplOutput "Proven."
             }
   where
+    -- Dummy sort used to unparse configurations.
+    -- This is only used for unparsing \bottom.
+    dummySort = SortVariableSort (SortVariable "R")
     prettyComponent =
-        unparseToString . OrPattern.toTermLike _
+        unparseToString . OrPattern.toTermLike dummySort
             . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::
