@@ -73,7 +73,7 @@ test_simplify =
     ceila =
         makeCeilPredicate (Mock.f Mock.a)
             & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottom]
+    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
     becomes ::
         HasCallStack =>
         TestName ->
@@ -82,7 +82,7 @@ test_simplify =
         TestTree
     becomes name origin (OrPattern.fromPatterns -> expects) =
         testCase name $ do
-            let actuals = evaluate origin
+            let actuals = evaluate Mock.topSort origin
             assertEqual "" expects actuals
 
 mkSet :: [child] -> [child] -> InternalSet Key child
@@ -114,6 +114,7 @@ mkSetAux concreteElements elements opaque =
     mkSetValue = \x -> (x, SetValue)
 
 evaluate ::
+    Sort ->
     InternalSet Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
 evaluate = simplify
