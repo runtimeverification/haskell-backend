@@ -266,10 +266,13 @@ exec
                                 <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
-                    sameTermLikeSort initialSort $
-                        OrPattern.toTermLike
-                            _
-                            (MultiOr.map getRewritingPattern finalConfigs')
+                    MultiOr.map getRewritingPattern finalConfigs'
+                        & OrPattern.toTermLike dummySort
+                        & sameTermLikeSort initialSort
+                  where
+                    -- Dummy sort used to unparse configurations.
+                    -- This is only used for unparsing \bottom.
+                    dummySort = SortVariableSort (SortVariable "R")
             return (exitCode, finalTerm)
       where
         dropStrategy = snd
