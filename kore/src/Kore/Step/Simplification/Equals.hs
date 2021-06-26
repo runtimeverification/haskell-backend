@@ -59,11 +59,7 @@ import qualified Kore.Step.Simplification.Iff as Iff (
 import qualified Kore.Step.Simplification.Implies as Implies (
     simplifyEvaluated,
  )
-import qualified Kore.Step.Simplification.Not as Not (
-    notSimplifier,
-    simplifyEvaluated,
-    simplifyEvaluatedPredicate,
- )
+import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Or as Or (
     simplifyEvaluated,
  )
@@ -230,24 +226,21 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     let sort = Pattern.patternSort first
     firstCeil <- makeEvaluateCeil sort sideCondition first
     secondCeilsWithProofs <- mapM (makeEvaluateCeil sort sideCondition) seconds
-    firstNotCeil <- Not.simplifyEvaluated sort sideCondition firstCeil
+    let mkNotSimplified notChild =
+            Not.simplify sideCondition Not{notSort = sort, notChild}
+    firstNotCeil <- mkNotSimplified firstCeil
     let secondCeils = secondCeilsWithProofs
-    secondNotCeils <- traverse (Not.simplifyEvaluated sort sideCondition) secondCeils
+    secondNotCeils <- traverse mkNotSimplified secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        And.simplify
-            sort
-            (Not.notSimplifier sort)
-            sideCondition
+        (And.simplify sort Not.notSimplifier sideCondition)
             (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        (And.simplify sort)
-            (Not.notSimplifier sort)
-            sideCondition
+        (And.simplify sort Not.notSimplifier sideCondition)
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
@@ -304,18 +297,16 @@ makeEvaluate
             firstCeil <- makeEvaluateCeil sort sideCondition first'
             let second' = second{term = if termsAreEqual then mkTop termSort else secondTerm}
             secondCeil <- makeEvaluateCeil sort sideCondition second'
-            firstCeilNegation <- Not.simplifyEvaluated sort sideCondition firstCeil
-            secondCeilNegation <- Not.simplifyEvaluated sort sideCondition secondCeil
+            let mkNotSimplified notChild =
+                    Not.simplify sideCondition Not{notSort = termSort, notChild}
+            firstCeilNegation <- mkNotSimplified firstCeil
+            secondCeilNegation <- mkNotSimplified secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
             negationAnd <-
-                (And.simplify sort)
-                    (Not.notSimplifier sort)
-                    sideCondition
+                (And.simplify sort Not.notSimplifier sideCondition)
                     (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                (And.simplify sort)
-                    (Not.notSimplifier sort)
-                    sideCondition
+                (And.simplify sort Not.notSimplifier sideCondition)
                     (MultiAnd.make [termEquality, firstCeil, secondCeil])
             return $ Or.simplifyEvaluated equalityAnd negationAnd
       where
@@ -430,9 +421,8 @@ termEqualsAnd ::
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
-    termSort = termLikeSort p1
     run it =
-        (runUnifierT (Not.notSimplifier termSort) . runMaybeT) it
+        (runUnifierT Not.notSimplifier . runMaybeT) it
             >>= Logic.scatter
 
     maybeTermEqualsWorker ::
@@ -442,7 +432,7 @@ termEqualsAnd p1 p2 =
         TermLike RewritingVariableName ->
         MaybeT unifier (Pattern RewritingVariableName)
     maybeTermEqualsWorker =
-        maybeTermEquals (Not.notSimplifier termSort) termEqualsAndWorker
+        maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker ::
         forall unifier.
@@ -454,7 +444,7 @@ termEqualsAnd p1 p2 =
         scatterResults
             =<< runUnification (maybeTermEqualsWorker first second)
       where
-        runUnification = runUnifierT (Not.notSimplifier termSort) . runMaybeT
+        runUnification = runUnifierT Not.notSimplifier . runMaybeT
         scatterResults =
             maybe
                 (return equalsPattern) -- default if no results

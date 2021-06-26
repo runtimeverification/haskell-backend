@@ -122,6 +122,7 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
+    applicationSortsResult,
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
@@ -506,13 +507,16 @@ unifyIntEq ::
     NotSimplifier unifier ->
     UnifyIntEq ->
     unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- unifyChildren operand1 operand2 & OrPattern.gather
-        let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else notSimplifier SideCondition.top) solution'
-            >>= Unify.scatter
+unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData = do
+    solution <- unifyChildren operand1 operand2 & OrPattern.gather
+    let solution' = MultiOr.map eraseTerm solution
+    if value
+        then Unify.scatter solution'
+        else mkNotSimplified solution' >>= Unify.scatter
   where
     UnifyIntEq{eqTerm, value} = unifyData
-    EqTerm{operand1, operand2} = eqTerm
+    EqTerm{symbol, operand1, operand2} = eqTerm
     eraseTerm = fmap (mkTop . termLikeSort)
+    notSort = applicationSortsResult . symbolSorts $ symbol
+    mkNotSimplified notChild =
+        notSimplifier SideCondition.top Not{notSort, notChild}

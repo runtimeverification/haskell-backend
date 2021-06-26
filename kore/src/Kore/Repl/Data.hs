@@ -104,9 +104,6 @@ import qualified Kore.Reachability as Reachability
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Sort (
-    Sort,
- )
 import Kore.Step.Simplification.Data (
     MonadSimplify (..),
  )
@@ -694,17 +691,16 @@ makeKoreReplOutput str =
 runUnifierWithExplanation ::
     forall m a.
     MonadSimplify m =>
-    Sort ->
     UnifierWithExplanation m a ->
     m (Either ReplOutput (NonEmpty a))
-runUnifierWithExplanation currSort (UnifierWithExplanation unifier) =
+runUnifierWithExplanation (UnifierWithExplanation unifier) =
     failWithExplanation <$> unificationResults
   where
     unificationResults ::
         m ([a], First ReplOutput)
     unificationResults =
         flip runAccumT mempty
-            . Monad.Unify.runUnifierT (Not.notSimplifier currSort)
+            . Monad.Unify.runUnifierT Not.notSimplifier
             $ unifier
     failWithExplanation ::
         ([a], First ReplOutput) ->

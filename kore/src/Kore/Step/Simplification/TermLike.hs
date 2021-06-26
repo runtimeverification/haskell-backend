@@ -369,7 +369,7 @@ simplify sideCondition = \termLike ->
                 --
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
-                    (And.simplify termSort) (Not.notSimplifier termSort) sideCondition
+                    (And.simplify termSort Not.notSimplifier sideCondition)
                         =<< MultiAnd.traverse
                             (simplifyTermLike sideCondition)
                             conjuncts

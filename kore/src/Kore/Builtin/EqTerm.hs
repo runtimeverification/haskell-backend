@@ -68,10 +68,13 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
         lift $ do
             solution <- unifyChildren operand1 operand2 & OrPattern.gather
             let solution' = MultiOr.map eraseTerm solution
-            (if value2 then pure else notSimplifier SideCondition.top) solution'
-                >>= Unify.scatter
+            if value2
+                then Unify.scatter solution'
+                else mkNotSimplified solution' >>= Unify.scatter
     | otherwise = empty
   where
     sort = TermLike.termLikeSort termLike2
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition sort . Pattern.withoutTerm
+    mkNotSimplified notChild =
+        notSimplifier SideCondition.top Not{notSort = sort, notChild}

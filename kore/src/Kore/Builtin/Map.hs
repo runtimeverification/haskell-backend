@@ -88,6 +88,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     Key,
+    Not (..),
     TermLike,
     retractKey,
     termLikeSort,
@@ -641,11 +642,12 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
             -- Erasing the unified term is valid here because
             -- the terms are all wrapped in \ceil below.
             unificationSolutions <-
-                fmap eraseTerm
-                    <$> Unify.gather (unifyChildren t1 t2)
-            notSimplifier
-                SideCondition.top
-                (OrPattern.fromPatterns unificationSolutions)
+                fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
+            (notSimplifier SideCondition.top)
+                Not
+                    { notSort = sort1
+                    , notChild = OrPattern.fromPatterns unificationSolutions
+                    }
             >>= Unify.scatter
 
     collectConditions terms = fold terms & Pattern.fromCondition sort1

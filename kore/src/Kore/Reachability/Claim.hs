@@ -97,6 +97,7 @@ import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Internal.TermLike (
+    Not (..),
     Sort,
     isFunctionPattern,
     mkIn,
@@ -557,8 +558,11 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             Exists.makeEvaluate sideCondition existentials removed
                 >>= Logic.scatter
             & OrPattern.observeAllT
-            & (>>= (Not.simplifyEvaluated sort) sideCondition)
+            & (>>= mkNotSimplified)
             & wereAnyUnified
+      where
+        mkNotSimplified notChild =
+            Not.simplify sideCondition Not{notSort = sort, notChild}
 
     wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
     wereAnyUnified act = swap <$> runStateT act mempty

@@ -263,16 +263,19 @@ unifyKequalsEq ::
     NotSimplifier unifier ->
     UnifyKequalsEq ->
     unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- unifyChildren operand1 operand2 & OrPattern.gather
-        let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else notSimplifier SideCondition.top) solution'
-            >>= Unify.scatter
+unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData = do
+    solution <- unifyChildren operand1 operand2 & OrPattern.gather
+    let solution' = MultiOr.map eraseTerm solution
+    if value
+        then Unify.scatter solution'
+        else mkNotSimplified solution' >>= Unify.scatter
   where
     UnifyKequalsEq{eqTerm, value} = unifyData
-    EqTerm{operand1, operand2} = eqTerm
+    EqTerm{symbol, operand1, operand2} = eqTerm
     eraseTerm = fmap (mkTop . termLikeSort)
+    sort = applicationSortsResult . symbolSorts $ symbol
+    mkNotSimplified notChild =
+        notSimplifier SideCondition.top Not{notSort = sort, notChild}
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

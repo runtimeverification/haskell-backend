@@ -11,7 +11,6 @@ module Kore.Step.Simplification.Not (
     makeEvaluate,
     makeEvaluatePredicate,
     simplify,
-    simplifyEvaluated,
     simplifyEvaluatedPredicate,
     notSimplifier,
 ) where
@@ -82,42 +81,11 @@ simplify ::
     SideCondition RewritingVariableName ->
     Not Sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
-simplify sideCondition Not{notChild, notSort} =
-    simplifyEvaluated sort sideCondition notChild
-  where
-    sort = notSort
-
-{- |'simplifyEvaluated' simplifies a 'Not' pattern given its
-'OrPattern' child.
-
-See 'simplify' for details.
--}
-
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
-take an argument of type
-
-> CofreeF (Not Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually
-cache information besides the pattern sort, which will make it even more useful
-to carry around.
-
--}
-simplifyEvaluated ::
-    MonadSimplify simplifier =>
-    Sort ->
-    SideCondition RewritingVariableName ->
-    OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
-simplifyEvaluated resultSort sideCondition simplified =
+simplify sideCondition not'@Not{notSort} =
     OrPattern.observeAllT $ do
-        let not' = Not{notChild = simplified, notSort = ()}
-        andPattern <-
-            scatterAnd (MultiAnd.map makeEvaluateNot (distributeNot not'))
-        mkMultiAndPattern resultSort sideCondition andPattern
+        let evaluated = MultiAnd.map makeEvaluateNot (distributeNot not')
+        andPattern <- scatterAnd evaluated
+        mkMultiAndPattern notSort sideCondition andPattern
 
 simplifyEvaluatedPredicate ::
     MonadSimplify simplifier =>
@@ -233,7 +201,7 @@ mkMultiAndPattern ::
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
-mkMultiAndPattern resultSort = And.makeEvaluate resultSort (notSimplifier resultSort)
+mkMultiAndPattern resultSort = And.makeEvaluate resultSort notSimplifier
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
 mkMultiAndPredicate ::
@@ -244,9 +212,5 @@ mkMultiAndPredicate predicates =
     -- implements And semantics.
     return $ fold predicates
 
-notSimplifier ::
-    MonadSimplify simplifier =>
-    Sort ->
-    NotSimplifier simplifier
-notSimplifier sort =
-    NotSimplifier (simplifyEvaluated sort)
+notSimplifier :: MonadSimplify simplifier => NotSimplifier simplifier
+notSimplifier = NotSimplifier simplify

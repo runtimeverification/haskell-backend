@@ -37,11 +37,7 @@ import qualified Kore.Step.Simplification.And as And (
 import qualified Kore.Step.Simplification.Implies as Implies (
     simplifyEvaluated,
  )
-import qualified Kore.Step.Simplification.Not as Not (
-    makeEvaluate,
-    notSimplifier,
-    simplifyEvaluated,
- )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import Prelude.Kore
 
@@ -86,18 +82,17 @@ simplifyEvaluated ::
     simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sort sideCondition first second
     | OrPattern.isTrue first = return second
-    | OrPattern.isFalse first = Not.simplifyEvaluated sort sideCondition second
+    | OrPattern.isFalse first =
+        Not.simplify sideCondition Not{notSort = sort, notChild = second}
     | OrPattern.isTrue second = return first
-    | OrPattern.isFalse second = Not.simplifyEvaluated sort sideCondition first
+    | OrPattern.isFalse second =
+        Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise = case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) -> return $ makeEvaluate firstP secondP
         _ -> do
             fwd <- Implies.simplifyEvaluated sort sideCondition first second
             bwd <- Implies.simplifyEvaluated sort sideCondition second first
-            And.simplify
-                sort
-                (Not.notSimplifier sort)
-                sideCondition
+            (And.simplify sort Not.notSimplifier sideCondition)
                 (MultiAnd.make [fwd, bwd])
   where
     firstPatterns = toList first

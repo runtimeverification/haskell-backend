@@ -145,10 +145,9 @@ unifyRule initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    let initialSort = Pattern.patternSort initial
     unification <-
         unificationProcedure sideCondition initialTerm ruleLeft
-            & evalEnvUnifierT (Not.notSimplifier initialSort)
+            & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires

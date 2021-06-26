@@ -15,10 +15,14 @@ import Kore.Internal.SideCondition (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Syntax (
+    Not,
+    Sort,
+ )
 
 newtype NotSimplifier simplifier = NotSimplifier
     { runNotSimplifier ::
         SideCondition RewritingVariableName ->
-        OrPattern RewritingVariableName ->
+        Not Sort (OrPattern RewritingVariableName) ->
         simplifier (OrPattern RewritingVariableName)
     }
