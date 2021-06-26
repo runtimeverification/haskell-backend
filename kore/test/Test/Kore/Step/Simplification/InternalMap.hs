@@ -99,7 +99,7 @@ test_simplify =
     ceilb =
         makeCeilPredicate (Mock.f Mock.b)
             & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottom]
+    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
     becomes ::
         HasCallStack =>
         TestName ->
@@ -111,7 +111,7 @@ test_simplify =
             assertEqual
                 ""
                 (OrPattern.fromPatterns expect)
-                (evaluate origin)
+                (evaluate Mock.topSort origin)
 
 mkMap :: [(child, child)] -> [child] -> InternalMap Key child
 mkMap = mkMapAux []
@@ -140,6 +140,7 @@ mkMapAux concreteElements elements opaque =
         }
 
 evaluate ::
+    Sort ->
     InternalMap Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
 evaluate = simplify
