@@ -6,9 +6,7 @@ import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern (
-    bottom,
- )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -28,7 +26,7 @@ test_bottomSimplification =
         "Bottom evaluates to bottom"
         ( assertEqual
             ""
-            (OrPattern.fromPatterns [Pattern.bottom])
+            (OrPattern.fromPatterns [Pattern.bottomOf Mock.testSort])
             (evaluate Bottom{bottomSort = Mock.testSort})
         )
     ]
