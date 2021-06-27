@@ -400,12 +400,13 @@ test_euclidian_division_theorem =
             (asInternal <$> [a, b])
             & evaluateT
             & fmap extractValue
+
     extractValue :: OrPattern RewritingVariableName -> Integer
-    extractValue (OrPattern.toTermLike -> term) =
+    extractValue (OrPattern.toTermLike intSort -> term) =
         case term of
             InternalInt_ InternalInt{internalIntValue} ->
                 internalIntValue
-            _ -> error "Expecting builtin int."
+            _ -> error "Expecting builtin Int"
 
 -- Bitwise operations
 test_and :: TestTree
@@ -485,7 +486,7 @@ test_unifyEqual_NotEqual =
     testCaseWithoutSMT "unifyEqual BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
-        actual <- evaluate $ mkEquals_ dv1 dv2
+        actual <- evaluate $ mkEquals kSort dv1 dv2
         assertEqual' "" OrPattern.bottom actual
 
 -- | "\equal"ed internal Integers that are equal
@@ -493,8 +494,8 @@ test_unifyEqual_Equal :: TestTree
 test_unifyEqual_Equal =
     testCaseWithoutSMT "unifyEqual BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
-        actual <- evaluate $ mkEquals_ dv1 dv1
-        assertEqual' "" OrPattern.top actual
+        actual <- evaluate $ mkEquals kSort dv1 dv1
+        assertEqual' "" (OrPattern.top kSort) actual
 
 -- | "\and"ed internal Integers that are not equal
 test_unifyAnd_NotEqual :: TestTree
@@ -518,8 +519,8 @@ test_unifyAndEqual_Equal :: TestTree
 test_unifyAndEqual_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
-        actual <- evaluate $ mkEquals_ dv $ mkAnd dv dv
-        assertEqual' "" OrPattern.top actual
+        actual <- evaluate $ mkEquals kSort dv $ mkAnd dv dv
+        assertEqual' "" (OrPattern.top kSort) actual
 
 -- | Internal Integer "\and"ed with builtin function applied to variable
 test_unifyAnd_Fn :: TestTree
@@ -574,7 +575,7 @@ test_unifyIntEq =
                 makeEqualsPredicate (mkElemVar x) (mkElemVar y)
                     & makeNotPredicate
                     & Condition.fromPredicate
-                    & Pattern.fromCondition_
+                    & Pattern.fromCondition boolSort
         -- unit test
         do
             actual <- unifyIntEq term1 term2
@@ -591,7 +592,7 @@ test_unifyIntEq =
             term2 = eqInt (mkElemVar x) (mkElemVar y)
             expect =
                 Condition.assign (inject x) (mkElemVar y)
-                    & Pattern.fromCondition_
+                    & Pattern.fromCondition boolSort
         -- unit test
         do
             actual <- unifyIntEq term1 term2
@@ -618,7 +619,7 @@ test_unifyIntEq =
                     (addInt (mkElemVar y) (asInternal 1))
                     & makeNotPredicate
                     & Condition.fromPredicate
-                    & Pattern.fromCondition_
+                    & Pattern.fromCondition boolSort
         -- unit test
         do
             actual <- unifyIntEq term1 term2
