@@ -81,25 +81,19 @@ test_andTermsSimplification =
         "Predicates"
         [ testCase "\\and{s}(f{}(a), \\top{s}())" $ do
             let expected = Pattern.fromTermLike fOfA
-            actual <- simplifyUnify fOfA mkTop_
+            actual <- simplifyUnify fOfA (mkTop Mock.testSort)
             assertEqual "" ([expected], [expected]) actual
         , testCase "\\and{s}(\\top{s}(), f{}(a))" $ do
             let expected = Pattern.fromTermLike fOfA
-            actual <- simplifyUnify mkTop_ fOfA
+            actual <- simplifyUnify (mkTop Mock.testSort) fOfA
             assertEqual "" ([expected], [expected]) actual
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , [Pattern.bottom]
-                    )
-            actual <- simplifyUnify fOfA mkBottom_
+            let expect = ([], [])
+            actual <- simplifyUnify fOfA (mkBottom Mock.testSort)
             assertEqual "" expect actual
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , [Pattern.bottom]
-                    )
-            actual <- simplifyUnify mkBottom_ fOfA
+            let expect = ([], [])
+            actual <- simplifyUnify (mkBottom Mock.testSort) fOfA
             assertEqual "" expect actual
         ]
     , testCase "equal patterns and" $ do
@@ -933,7 +927,7 @@ test_andTermsSimplification =
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
-                expect = [Pattern.bottom]
+                expect = []
             actual <- unify term7 term8
             assertEqual "" expect actual
         , testCase "fallback for external List symbols" $ do
@@ -1123,29 +1117,41 @@ test_andTermsSimplification =
         "alias expansion"
         [ testCase "alias() vs top" $ do
             let x = mkVariable "x"
-                alias = mkAlias' "alias1" x mkTop_
+                alias = mkAlias' "alias1" x $ mkTop Mock.testSort
                 left = applyAlias' alias $ mkTop Mock.testSort & mkRewritingTerm
-            actual <- simplifyUnify left mkTop_
-            assertExpectTop actual
+            actual <- simplifyUnify left (mkTop Mock.testSort)
+            let expect =
+                    ( [Pattern.topOf Mock.testSort]
+                    , [Pattern.topOf Mock.testSort]
+                    )
+            assertEqual "" expect actual
         , testCase "alias1() vs alias2()" $ do
             let x = mkVariable "x"
-                leftAlias = mkAlias' "leftAlias" x mkTop_
+                leftAlias = mkAlias' "leftAlias" x $ mkTop Mock.testSort
                 left = applyAlias' leftAlias $ mkTop Mock.testSort
-                rightAlias = mkAlias' "rightAlias" x mkTop_
+                rightAlias = mkAlias' "rightAlias" x $ mkTop Mock.testSort
                 right = applyAlias' rightAlias $ mkTop Mock.testSort
             actual <- simplifyUnify left right
-            assertExpectTop actual
+            let expect =
+                    ( [Pattern.topOf Mock.testSort]
+                    , [Pattern.topOf Mock.testSort]
+                    )
+            assertEqual "" expect actual
         , testCase "alias1(alias2()) vs top" $ do
             let x = mkVariable "x"
                 y = mkVariable "y"
-                alias1 = mkAlias' "alias1" x mkTop_
+                alias1 = mkAlias' "alias1" x (mkTop Mock.testSort)
                 alias1App =
                     applyAlias' alias1 $
                         mkSetVar (SetVariableName <$> y)
                 alias2 = mkAlias' "alias2" x alias1App
                 alias2App = applyAlias' alias2 $ mkTop Mock.testSort
-            actual <- simplifyUnify alias2App mkTop_
-            assertExpectTop actual
+                expect =
+                    ( [Pattern.topOf Mock.testSort]
+                    , [Pattern.topOf Mock.testSort]
+                    )
+            actual <- simplifyUnify alias2App (mkTop $ termLikeSort alias2App)
+            assertEqual "" expect actual
         , testCase "alias1() vs injHead" $ do
             let expect =
                     Conditional
@@ -1245,7 +1251,7 @@ test_andTermsSimplification =
         , testCase "And unification" $ do
             let input1 = Mock.keqBool (cf xVar) a
                 input2 = Mock.builtinBool False
-                expected = [Pattern.top]
+                expected = [Pattern.topOf Mock.boolSort]
             actual <- simplify input1 input2
             assertEqual "" expected actual
         , testCase
@@ -1301,12 +1307,6 @@ applyAlias' ::
     TermLike variable ->
     TermLike variable
 applyAlias' alias arg = applyAlias alias [] [arg]
-
-assertExpectTop ::
-    ([Pattern RewritingVariableName], [Pattern RewritingVariableName]) ->
-    IO ()
-assertExpectTop =
-    assertEqual "" ([Pattern.top], [Pattern.top])
 
 test_equalsTermsSimplification :: [TestTree]
 test_equalsTermsSimplification =
