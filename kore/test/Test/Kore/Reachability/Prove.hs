@@ -658,7 +658,7 @@ test_proveClaims =
     , testGroup "LHS is undefined" $
         let mkTest name mkSimpleClaim =
                 testCase name $ do
-                    let claims = [mkSimpleClaim mkBottom_ Mock.a]
+                    let claims = [mkSimpleClaim (mkBottom Mock.testSort) Mock.a]
                     actual <-
                         proveClaims_
                             Unlimited
