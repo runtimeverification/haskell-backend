@@ -474,7 +474,7 @@ test_unifyStringEq =
                 makeEqualsPredicate (mkElemVar x) (mkElemVar y)
                     & makeNotPredicate
                     & Condition.fromPredicate
-                    & Pattern.fromCondition_
+                    & Pattern.fromCondition boolSort
         -- unit test
         do
             actual <- unifyStringEq term1 term2
@@ -491,7 +491,7 @@ test_unifyStringEq =
             term2 = eqString (mkElemVar x) (mkElemVar y)
             expect =
                 Condition.assign (inject x) (mkElemVar y)
-                    & Pattern.fromCondition_
+                    & Pattern.fromCondition boolSort
         -- unit test
         do
             actual <- unifyStringEq term1 term2
