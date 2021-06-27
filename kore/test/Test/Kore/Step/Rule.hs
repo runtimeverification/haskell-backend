@@ -105,8 +105,8 @@ axiomPatternsUnitTests =
                     ( applyInj
                         sortKItem
                         ( mkRewrites
-                            (mkAnd mkTop_ varI1)
-                            (mkAnd mkTop_ varI2)
+                            (mkAnd (mkTop sortAInt) varI1)
+                            (mkAnd (mkTop sortAInt) varI2)
                         )
                     )
               moduleTest =
@@ -152,8 +152,8 @@ axiomPatternsUnitTests =
                                     symbolInj
                                     [sortAInt, sortKItem]
                                     [ mkRewrites
-                                        (mkAnd mkTop_ varI1)
-                                        (mkAnd mkTop_ varI2)
+                                        (mkAnd (mkTop sortAInt) varI1)
+                                        (mkAnd (mkTop sortAInt) varI2)
                                     ]
                                 )
                             )
