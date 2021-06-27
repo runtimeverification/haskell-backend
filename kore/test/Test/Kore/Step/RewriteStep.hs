@@ -987,12 +987,12 @@ test_applyRewriteRule_ =
     axiomSigmaTopId =
         RewriteRule $
             rulePattern
-                (Mock.sigma (mkElemVar Mock.xRule) mkTop_)
+                (Mock.sigma (mkElemVar Mock.xRule) (mkTop Mock.testSort))
                 (mkElemVar Mock.xRule)
 
     claimSigmaTopId =
         claimPatternFromTerms
-            (Mock.sigma (mkElemVar Mock.xRule) mkTop_)
+            (Mock.sigma (mkElemVar Mock.xRule) (mkTop Mock.testSort))
             (mkElemVar Mock.xRule)
             []
 
