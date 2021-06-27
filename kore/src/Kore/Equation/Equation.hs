@@ -142,11 +142,10 @@ instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
-instance
-    InternalVariable variable =>
-    Substitute variable (Equation variable)
-    where
+instance InternalVariable variable => Substitute (Equation variable) where
     type TermType (Equation variable) = TermLike variable
+
+    type VariableNameType (Equation variable) = variable
 
     substitute assignments equation =
         Equation

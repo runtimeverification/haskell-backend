@@ -405,8 +405,10 @@ instance TopBottom (Predicate variable) where
     isBottom PredicateFalse = True
     isBottom _ = False
 
-instance InternalVariable variable => Substitute variable (Predicate variable) where
+instance InternalVariable variable => Substitute (Predicate variable) where
     type TermType (Predicate variable) = TermLike variable
+
+    type VariableNameType (Predicate variable) = variable
 
     substitute subst predicate =
         substituteNone <|> substituteBinder <|> substituteTermLike

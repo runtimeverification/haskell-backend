@@ -162,8 +162,10 @@ instance HasFreeVariables ClaimPattern RewritingVariableName where
         freeVariablesLeft claimPattern'
             <> freeVariablesRight claimPattern'
 
-instance Substitute RewritingVariableName ClaimPattern where
+instance Substitute ClaimPattern where
     type TermType ClaimPattern = TermLike RewritingVariableName
+
+    type VariableNameType ClaimPattern = RewritingVariableName
 
     substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
         substituteRight subst $

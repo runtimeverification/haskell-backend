@@ -141,11 +141,10 @@ data RHS variable = RHS
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance
-    InternalVariable variable =>
-    Substitute variable (RHS variable)
-    where
+instance InternalVariable variable => Substitute (RHS variable) where
     type TermType (RHS variable) = TermLike variable
+
+    type VariableNameType (RHS variable) = variable
 
     substitute subst RHS{existentials, right, ensures} =
         RHS
@@ -237,11 +236,11 @@ instance TopBottom (RulePattern variable) where
 instance From (RulePattern variable) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-instance
-    InternalVariable variable =>
-    Substitute variable (RulePattern variable)
-    where
+instance InternalVariable variable => Substitute (RulePattern variable) where
     type TermType (RulePattern variable) = TermLike variable
+
+    type VariableNameType (RulePattern variable) = variable
+
     substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
         rulePattern'
             { left = substitute subst left

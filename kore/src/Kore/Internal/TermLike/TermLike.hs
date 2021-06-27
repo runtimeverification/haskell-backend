@@ -822,18 +822,21 @@ instance Ord variable => From Key (TermLike variable) where
             attrs' = fromKeyAttributes attrs
 
 rename ::
-    (Substitute variable child, TermType child ~ TermLike variable) =>
+    ( Substitute child
+    , TermType child ~ TermLike variable
+    , VariableNameType child ~ variable
+    , Ord variable
+    ) =>
     Map (SomeVariableName variable) (SomeVariable variable) ->
     child ->
     child
 rename = substitute . fmap mkVar
 {-# INLINE rename #-}
 
-instance
-    InternalVariable variable =>
-    Substitute variable (TermLike variable)
-    where
+instance InternalVariable variable => Substitute (TermLike variable) where
     type TermType (TermLike variable) = TermLike variable
+
+    type VariableNameType (TermLike variable) = variable
 
     substitute = substituteWorker . Map.map Left
       where

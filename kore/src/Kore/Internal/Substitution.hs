@@ -299,11 +299,10 @@ instance
             let variableSort = TermLike.termLikeSort term
              in (Variable{variableName, variableSort}, term)
 
-instance
-    InternalVariable variable =>
-    Substitute variable (Substitution variable)
-    where
+instance InternalVariable variable => Substitute (Substitution variable) where
     type TermType (Substitution variable) = TermLike variable
+
+    type VariableNameType (Substitution variable) = variable
 
     substitute subst =
         wrap . (map . mapAssignedTerm) (substitute subst) . unwrap

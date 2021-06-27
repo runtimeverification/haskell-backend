@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Substitute (
     Substitute (..),
+    NormalSubstitution,
 ) where
 
 import Data.Kind (
@@ -18,16 +19,21 @@ import Kore.Attribute.Pattern.FreeVariables (
 import Kore.Internal.Variable
 
 -- | @Substitute@ implements capture-avoiding substitution over many types.
-class
-    (InternalVariable variable, HasFreeVariables child variable) =>
-    Substitute variable child
-        | child -> variable
-    where
+class HasFreeVariables child (VariableNameType child) => Substitute child where
     -- | The type of terms used to replace variables under substitution.
     type TermType child :: Type
 
-    -- | Apply a substitution: replace variables with terms from a 'Map'.
-    substitute ::
-        Map (SomeVariableName variable) (TermType child) ->
-        child ->
-        child
+    -- | The type of variable names to be replaced under substitution.
+    type VariableNameType child :: Type
+
+    -- | Apply a substitution: replace variables with terms from a 'Map'. The
+    -- 'NormalSubstitution' is assumed to be proper (none of the variables on
+    -- the left appear in any term on the right), but this is not checked.
+    substitute :: NormalSubstitution child -> child -> child
+
+-- | A @NormalSubstitution@ maps variable names to terms so that the former may
+-- be replaced by the latter. In a proper @NormalSubstitution@, none of the
+-- variable on the left appear in any of the terms on the right.
+type NormalSubstitution child =
+    Map (SomeVariableName (VariableNameType child)) (TermType child)
+

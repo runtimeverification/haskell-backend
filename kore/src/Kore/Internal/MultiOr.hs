@@ -121,14 +121,16 @@ instance
     {-# INLINE freeVariables #-}
 
 instance
-    ( InternalVariable variable
+    ( InternalVariable (VariableNameType child)
     , Ord child
     , TopBottom child
-    , Substitute variable child
+    , Substitute child
     ) =>
-    Substitute variable (MultiOr child)
+    Substitute (MultiOr child)
     where
     type TermType (MultiOr child) = TermType child
+
+    type VariableNameType (MultiOr child) = VariableNameType child
 
     substitute = map . substitute
     {-# INLINE substitute #-}
