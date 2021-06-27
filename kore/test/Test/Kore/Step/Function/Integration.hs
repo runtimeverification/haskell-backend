@@ -134,7 +134,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functional10 Mock.c)
-        assertEqual "" expect (OrPattern.toTermLike actual)
+        assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Simple evaluation (builtin branch)" $ do
         let expect = Mock.g Mock.c
         actual <-
@@ -148,7 +148,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functional10 Mock.c)
-        assertEqual "" expect (OrPattern.toTermLike actual)
+        assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)" $
         do
             let expect = Mock.g Mock.c
@@ -169,7 +169,7 @@ test_functionIntegration =
                         )
                     )
                     (Mock.functional10 Mock.c)
-            assertEqual "" expect (OrPattern.toTermLike actual)
+            assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)" $
         do
             let expect = Mock.g Mock.c
@@ -189,7 +189,7 @@ test_functionIntegration =
                         )
                     )
                     (Mock.functional10 Mock.c)
-            assertEqual "" expect (OrPattern.toTermLike actual)
+            assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Evaluates inside functions" $ do
         let expect = Mock.functional11 (Mock.functional11 Mock.c)
         actual <-
@@ -202,7 +202,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functional10 (Mock.functional10 Mock.c))
-        assertEqual "" expect (OrPattern.toTermLike actual)
+        assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Evaluates 'or'" $ do
         let expect =
                 mkOr
@@ -223,7 +223,7 @@ test_functionIntegration =
                         (Mock.functional10 Mock.d)
                     )
                 )
-        assertEqual "" expect (OrPattern.toTermLike actual)
+        assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Evaluates on multiple branches" $ do
         let expect =
                 Mock.functional11
@@ -246,7 +246,7 @@ test_functionIntegration =
                         (Mock.functional10 Mock.c)
                     )
                 )
-        assertEqual "" expect (OrPattern.toTermLike actual)
+        assertEqual "" expect (OrPattern.toTermLike Mock.testSort actual)
     , testCase "Returns conditions" $ do
         let expect =
                 Conditional
@@ -452,7 +452,7 @@ test_functionIntegration =
                     [ "Expected:"
                     , Pretty.indent 4 (unparse expect)
                     , "but found:"
-                    , Pretty.indent 4 (unparse $ OrPattern.toTermLike actual)
+                    , Pretty.indent 4 (Pretty.pretty actual)
                     ]
         assertEqual message (MultiOr.singleton expect) actual
     , testCase "Evaluates only simplifications." $ do
@@ -1664,11 +1664,11 @@ test_updateList =
     , equals
         "negative index"
         (updateList singletonList (mkInt (-1)) (mkInt 1))
-        [mkBottom_]
+        [mkBottom listSort]
     , equals
         "positive index outside rage"
         (updateList singletonList (mkInt 1) (mkInt 1))
-        [mkBottom_]
+        [mkBottom listSort]
     , applies
         "same abstract key"
         [updateListSimplifier]
@@ -1850,7 +1850,7 @@ test_Ceil =
     [ simplifies
         "\\ceil(dummy(X)) => ... ~ \\ceil(dummy(Y))"
         ceilDummyRule
-        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yConfigInt)
+        (mkCeil Builtin.kSort $ Builtin.dummyInt $ mkElemVar yConfigInt)
     , notSimplifies
         "\\ceil(dummy(X)) => \\not(\\equals(X, 0)) !~ dummy(Y)"
         ceilDummyRule
@@ -1858,20 +1858,20 @@ test_Ceil =
     , simplifies
         "\\ceil(dummy(@X)) => ... ~ \\ceil(dummy(Y))"
         ceilDummySetRule
-        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yConfigInt)
+        (mkCeil Builtin.kSort $ Builtin.dummyInt $ mkElemVar yConfigInt)
     ]
 
 ceilDummyRule :: Equation RewritingVariableName
 ceilDummyRule =
     axiom_
-        (mkCeil_ $ Builtin.dummyInt $ mkElemVar xConfigInt)
-        (mkEquals_ (Builtin.eqInt (mkElemVar xConfigInt) (mkInt 0)) (mkBool False))
+        (mkCeil Builtin.kSort $ Builtin.dummyInt $ mkElemVar xConfigInt)
+        (mkEquals Builtin.kSort (Builtin.eqInt (mkElemVar xConfigInt) (mkInt 0)) (mkBool False))
 
 ceilDummySetRule :: Equation RewritingVariableName
 ceilDummySetRule =
     axiom_
-        (mkCeil_ $ Builtin.dummyInt $ mkSetVar xsConfigInt)
-        (mkEquals_ (Builtin.eqInt (mkSetVar xsConfigInt) (mkInt 0)) (mkBool False))
+        (mkCeil _ $ Builtin.dummyInt $ mkSetVar xsConfigInt)
+        (mkEquals _ (Builtin.eqInt (mkSetVar xsConfigInt) (mkInt 0)) (mkBool False))
 
 -- Simplification tests: check that one or more rules applies or not
 withSimplified ::
