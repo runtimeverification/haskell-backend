@@ -22,12 +22,12 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike (
     mkAnd,
     mkApplyAlias,
-    mkBottom_,
-    mkCeil_,
+    mkBottom,
+    mkCeil,
     mkElemVar,
     mkExists,
     mkOr,
-    mkTop_,
+    mkTop,
  )
 import Kore.Internal.TermLike.TermLike (
     TermLike,
@@ -60,8 +60,11 @@ test_antiLeft =
                     ( applyAliasToNoArgs
                         "A"
                         ( mkOr
-                            (applyAliasToNoArgs "B" (mkAnd mkTop_ Mock.a))
-                            mkBottom_
+                            ( applyAliasToNoArgs
+                                "B"
+                                (mkAnd (mkTop Mock.testSort) Mock.a)
+                            )
+                            (mkBottom Mock.testSort)
                         )
                     )
                 )
@@ -80,9 +83,9 @@ test_antiLeft =
                         ( mkOr
                             ( applyAliasToNoArgs
                                 "B"
-                                (mkAnd (mkCeil_ Mock.cg) Mock.a)
+                                (mkAnd (mkCeil Mock.testSort Mock.cg) Mock.a)
                             )
-                            mkBottom_
+                            (mkBottom Mock.testSort)
                         )
                     )
                 )
@@ -99,10 +102,16 @@ test_antiLeft =
                     ( applyAliasToNoArgs
                         "A"
                         ( mkOr
-                            (applyAliasToNoArgs "B" (mkAnd mkTop_ Mock.a))
+                            ( applyAliasToNoArgs
+                                "B"
+                                (mkAnd (mkTop Mock.testSort) Mock.a)
+                            )
                             ( mkOr
-                                (applyAliasToNoArgs "C" (mkAnd mkTop_ Mock.b))
-                                mkBottom_
+                                ( applyAliasToNoArgs
+                                    "C"
+                                    (mkAnd (mkTop Mock.testSort) Mock.b)
+                                )
+                                (mkBottom Mock.testSort)
                             )
                         )
                     )
@@ -123,13 +132,19 @@ test_antiLeft =
                             ( applyAliasToNoArgs
                                 "B"
                                 ( mkOr
-                                    (applyAliasToNoArgs "C" (mkAnd mkTop_ Mock.a))
-                                    mkBottom_
+                                    ( applyAliasToNoArgs
+                                        "C"
+                                        (mkAnd (mkTop Mock.testSort) Mock.a)
+                                    )
+                                    (mkBottom Mock.testSort)
                                 )
                             )
                             ( mkOr
-                                (applyAliasToNoArgs "D" (mkAnd mkTop_ Mock.b))
-                                mkBottom_
+                                ( applyAliasToNoArgs
+                                    "D"
+                                    (mkAnd (mkTop Mock.testSort) Mock.b)
+                                )
+                                (mkBottom Mock.testSort)
                             )
                         )
                     )
@@ -156,10 +171,13 @@ test_antiLeft =
                                 Mock.x
                                 ( applyAliasToNoArgs
                                     "B"
-                                    (mkAnd mkTop_ (Mock.f (mkElemVar Mock.x)))
+                                    ( mkAnd
+                                        (mkTop Mock.testSort)
+                                        (Mock.f (mkElemVar Mock.x))
+                                    )
                                 )
                             )
-                            mkBottom_
+                            (mkBottom Mock.testSort)
                         )
                     )
                 )
@@ -168,7 +186,9 @@ test_antiLeft =
     ]
 
 parseAndApply ::
-    AntiLeftTerm -> TermLike VariableName -> IO (Predicate VariableName)
+    AntiLeftTerm ->
+    TermLike VariableName ->
+    IO (Predicate VariableName)
 parseAndApply (AntiLeftTerm antiLeftTerm) configurationTerm = do
     antiLeft <- case parse antiLeftTerm of
         Nothing ->
