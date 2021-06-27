@@ -37,15 +37,17 @@ class HasFreeVariables child (VariableNameType child) => Substitute child where
     -- is not checked.
     rename :: NormalRenaming child -> child -> child
 
--- | A @NormalSubstitution@ maps variable names to terms so that the former may
--- be replaced by the latter. In a proper @NormalSubstitution@, none of the
--- variable on the left appear in any of the terms on the right.
+{- | A @NormalSubstitution@ maps variable names to terms so that the former may
+ be replaced by the latter. In a proper @NormalSubstitution@, none of the
+ variable on the left appear in any of the terms on the right.
+-}
 type NormalSubstitution child =
     Map (SomeVariableName (VariableNameType child)) (TermType child)
 
--- | A @NormalRenaming@ maps variable names to variables so that the former may
--- be renamed based on the latter. In a proper @NormalRenaming@, none of the
--- variable on the left appear in any of the terms on the right.
+{- | A @NormalRenaming@ maps variable names to variables so that the former may
+ be renamed based on the latter. In a proper @NormalRenaming@, none of the
+ variable on the left appear in any of the terms on the right.
+-}
 type NormalRenaming child =
     Map
         (SomeVariableName (VariableNameType child))
