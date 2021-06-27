@@ -14,11 +14,7 @@ import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
-    bottom,
-    fromCondition,
-    top,
- )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeEqualsPredicate,
@@ -41,6 +37,7 @@ import Test.Kore (
     testId,
  )
 import Test.Kore.Step.MockSymbols (
+    subSort,
     testSort,
  )
 import Test.Kore.Step.Simplification
@@ -56,7 +53,7 @@ test_floorSimplification =
             ""
             ( OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
+                    { term = mkTop testSort
                     , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
                     }
@@ -75,11 +72,11 @@ test_floorSimplification =
             assertEqual
                 "floor(top)"
                 ( OrPattern.fromPatterns
-                    [Pattern.top]
+                    [Pattern.topOf testSort]
                 )
                 ( evaluate
                     ( makeFloor
-                        [Pattern.top]
+                        [Pattern.topOf subSort]
                     )
                 )
             -- floor(bottom) = bottom
@@ -99,7 +96,7 @@ test_floorSimplification =
         assertEqual
             "floor(top)"
             ( OrPattern.fromPatterns
-                [Pattern.top]
+                [Pattern.topOf testSort]
             )
             ( evaluate
                 ( makeFloor
@@ -113,19 +110,19 @@ test_floorSimplification =
             assertEqual
                 "floor(top)"
                 ( OrPattern.fromPatterns
-                    [Pattern.top]
+                    [Pattern.topOf testSort]
                 )
                 ( makeEvaluate
-                    (Pattern.top :: Pattern RewritingVariableName)
+                    testSort
+                    (Pattern.topOf subSort :: Pattern RewritingVariableName)
                 )
             -- floor(bottom) = bottom
             assertEqual
                 "floor(bottom)"
-                ( OrPattern.fromPatterns
-                    []
-                )
+                OrPattern.bottom
                 ( makeEvaluate
-                    (Pattern.bottom :: Pattern RewritingVariableName)
+                    testSort
+                    (Pattern.bottomOf subSort :: Pattern RewritingVariableName)
                 )
         )
     , testCase
@@ -136,7 +133,7 @@ test_floorSimplification =
             "floor(top)"
             ( OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
+                    { term = mkTop testSort
                     , predicate =
                         makeAndPredicate
                             (makeFloorPredicate a)
@@ -149,6 +146,7 @@ test_floorSimplification =
                 ]
             )
             ( makeEvaluate
+                testSort
                 Conditional
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -211,5 +209,8 @@ evaluate ::
     OrPattern RewritingVariableName
 evaluate = simplify . fmap simplifiedOrPattern
 
-makeEvaluate :: Pattern RewritingVariableName -> OrPattern RewritingVariableName
-makeEvaluate = makeEvaluateFloor . simplifiedPattern
+makeEvaluate ::
+    Sort ->
+    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName
+makeEvaluate sort = makeEvaluateFloor sort . simplifiedPattern
