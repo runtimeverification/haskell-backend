@@ -27,9 +27,9 @@ import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
     mkApplyAlias,
-    mkBottom_,
+    mkBottom,
     mkElemVar,
-    mkEquals_,
+    mkEquals,
     mkOr,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
@@ -206,9 +206,12 @@ test_combineRulesPredicate =
                     ( mkOr
                         ( applyAlias
                             "B"
-                            (mkAnd (mkEquals_ Mock.cf Mock.cg) Mock.ch)
+                            ( mkAnd
+                                (mkEquals Mock.testSort Mock.cf Mock.cg)
+                                Mock.ch
+                            )
                         )
-                        mkBottom_
+                        (mkBottom Mock.testSort)
                     )
                 )
         let expected =
