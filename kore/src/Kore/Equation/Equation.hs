@@ -48,6 +48,7 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
@@ -157,6 +158,9 @@ instance InternalVariable variable => Substitute (Equation variable) where
             , ensures = substitute assignments (ensures equation)
             , attributes = attributes equation
             }
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 toTermLike ::
     InternalVariable variable =>

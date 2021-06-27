@@ -135,6 +135,9 @@ instance
     substitute = map . substitute
     {-# INLINE substitute #-}
 
+    rename = map . rename
+    {-# INLINE rename #-}
+
 bottom :: MultiOr term
 bottom = MultiOr []
 

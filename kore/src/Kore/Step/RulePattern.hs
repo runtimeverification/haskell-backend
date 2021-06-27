@@ -87,6 +87,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     TermLike,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
@@ -155,6 +156,9 @@ instance InternalVariable variable => Substitute (RHS variable) where
       where
         subst' = foldr (Map.delete . inject . variableName) subst existentials
 
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
 {- | Given a collection of 'FreeVariables' and a RHS, it removes
 converts existential quantifications at the top of the term to implicit
 universal quantification,
@@ -167,7 +171,7 @@ topExistsToImplicitForall ::
     RHS variable ->
     Pattern variable
 topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
-    (TermLike.rename renamed)
+    (rename renamed)
         Conditional
             { term = right
             , predicate = ensures
@@ -250,6 +254,9 @@ instance InternalVariable variable => Substitute (RulePattern variable) where
             }
       where
         RulePattern{left, antiLeft, requires, rhs} = rulePattern'
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern ::
@@ -388,8 +395,8 @@ renameExistentials ::
 renameExistentials subst RHS{existentials, right, ensures} =
     RHS
         { existentials = renameVariable <$> existentials
-        , right = TermLike.rename subst right
-        , ensures = TermLike.rename subst ensures
+        , right = rename subst right
+        , ensures = rename subst ensures
         }
   where
     renameVariable ::

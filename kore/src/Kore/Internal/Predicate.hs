@@ -410,6 +410,9 @@ instance InternalVariable variable => Substitute (Predicate variable) where
 
     type VariableNameType (Predicate variable) = variable
 
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
     substitute subst predicate =
         substituteNone <|> substituteBinder <|> substituteTermLike
             & fromMaybe substituteDefault

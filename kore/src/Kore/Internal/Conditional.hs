@@ -57,6 +57,7 @@ import Kore.Internal.TermLike (
     Sort,
     SubstitutionOrd,
     TermLike,
+    mkVar,
     termLikeSort,
  )
 import Kore.Substitute
@@ -241,12 +242,16 @@ instance
     type TermType (Conditional variable child) = TermLike variable
 
     type VariableNameType (Conditional variable child) = variable
+
     substitute subst Conditional{term, predicate, substitution} =
         Conditional
             { term = substitute subst term
             , predicate = substitute subst predicate
             , substitution = substitute subst substitution
             }
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 prettyConditional ::
     Sort ->

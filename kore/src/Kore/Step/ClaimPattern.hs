@@ -65,6 +65,7 @@ import Kore.Internal.TermLike (
     TermLike,
     Variable (..),
     VariableName,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
@@ -174,6 +175,9 @@ instance Substitute ClaimPattern where
                 }
       where
         ClaimPattern{left} = claimPattern'
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 {- | Creates a 'ClaimPattern' from a left hand side 'Pattern'
  and an 'OrPattern', representing the right hand side pattern.

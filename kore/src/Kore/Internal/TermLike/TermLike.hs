@@ -24,7 +24,6 @@ module Kore.Internal.TermLike.TermLike (
     setAttributeSimplified,
     mapAttributeVariables,
     deleteFreeVariable,
-    rename,
 ) where
 
 import Control.Comonad.Trans.Cofree (
@@ -821,22 +820,13 @@ instance Ord variable => From Key (TermLike variable) where
             attrs :< keyF = Recursive.project key
             attrs' = fromKeyAttributes attrs
 
-rename ::
-    ( Substitute child
-    , TermType child ~ TermLike variable
-    , VariableNameType child ~ variable
-    , Ord variable
-    ) =>
-    Map (SomeVariableName variable) (SomeVariable variable) ->
-    child ->
-    child
-rename = substitute . fmap mkVar
-{-# INLINE rename #-}
-
 instance InternalVariable variable => Substitute (TermLike variable) where
     type TermType (TermLike variable) = TermLike variable
 
     type VariableNameType (TermLike variable) = variable
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
     substitute = substituteWorker . Map.map Left
       where

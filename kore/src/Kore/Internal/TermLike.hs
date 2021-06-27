@@ -38,7 +38,6 @@ module Kore.Internal.TermLike (
     refreshSetBinder,
     depth,
     makeSortsAgree,
-    rename,
 
     -- * Utility functions for dealing with sorts
     forceSort,
@@ -258,6 +257,7 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
+import Kore.Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
