@@ -168,8 +168,7 @@ topExistsToImplicitForall ::
     RHS variable ->
     Pattern variable
 topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
-    rename
-        renamed
+    (TermLike.rename renamed)
         Conditional
             { term = right
             , predicate = ensures
@@ -389,10 +388,9 @@ renameExistentials ::
     RHS variable
 renameExistentials subst RHS{existentials, right, ensures} =
     RHS
-        { existentials =
-            renameVariable <$> existentials
-        , right = rename subst right
-        , ensures = rename subst ensures
+        { existentials = renameVariable <$> existentials
+        , right = TermLike.rename subst right
+        , ensures = TermLike.rename subst ensures
         }
   where
     renameVariable ::
@@ -400,8 +398,7 @@ renameExistentials subst RHS{existentials, right, ensures} =
         ElementVariable variable
     renameVariable var =
         let name = SomeVariableNameElement . variableName $ var
-         in maybe var expectElementVariable $
-                Map.lookup name subst
+         in maybe var expectElementVariable $ Map.lookup name subst
 
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS{existentials, right, ensures} =

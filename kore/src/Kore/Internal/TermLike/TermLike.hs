@@ -24,6 +24,7 @@ module Kore.Internal.TermLike.TermLike (
     setAttributeSimplified,
     mapAttributeVariables,
     deleteFreeVariable,
+    rename,
 ) where
 
 import Control.Comonad.Trans.Cofree (
@@ -49,6 +50,14 @@ import Data.Functor.Identity (
  )
 import Data.Generics.Product
 import qualified Data.Generics.Product as Lens.Product
+import Data.Map.Strict (
+    Map,
+ )
+import qualified Data.Map.Strict as Map
+import Data.Set (
+    Set,
+ )
+import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 import qualified Generics.SOP as SOP
@@ -61,6 +70,7 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
 import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
@@ -92,6 +102,7 @@ import qualified Kore.Internal.Key as Key
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
+import Kore.Internal.Substitute
 import Kore.Internal.Symbol (
     Symbol,
  )
@@ -125,6 +136,7 @@ import Kore.Unparser (
  )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
+import Kore.Variables.Fresh (refreshVariable)
 import Prelude.Kore
 import qualified Pretty
 import qualified SQL
@@ -808,6 +820,120 @@ instance Ord variable => From Key (TermLike variable) where
           where
             attrs :< keyF = Recursive.project key
             attrs' = fromKeyAttributes attrs
+
+rename ::
+    (Substitute variable child, TermType child ~ TermLike variable) =>
+    Map (SomeVariableName variable) (SomeVariable variable) ->
+    child ->
+    child
+rename = substitute . fmap mkVar
+{-# INLINE rename #-}
+
+instance
+    InternalVariable variable =>
+    Substitute variable (TermLike variable)
+    where
+    type TermType (TermLike variable) = TermLike variable
+
+    substitute = substituteWorker . Map.map Left
+      where
+        extractFreeVariables ::
+            TermLike variable -> Set (SomeVariableName variable)
+        extractFreeVariables = FreeVariables.toNames . freeVariables
+
+        getTargetFreeVariables ::
+            Either (TermLike variable) (SomeVariable variable) ->
+            Set (SomeVariableName variable)
+        getTargetFreeVariables =
+            either extractFreeVariables (Set.singleton . variableName)
+
+        renaming ::
+            -- | Original variable
+            SomeVariable variable ->
+            -- | Renamed variable
+            Maybe (SomeVariable variable) ->
+            -- | Substitution
+            Map
+                (SomeVariableName variable)
+                (Either (TermLike variable) (SomeVariable variable)) ->
+            Map
+                (SomeVariableName variable)
+                (Either (TermLike variable) (SomeVariable variable))
+        renaming Variable{variableName} =
+            maybe id (Map.insert variableName . Right)
+
+        substituteWorker ::
+            Map
+                (SomeVariableName variable)
+                (Either (TermLike variable) (SomeVariable variable)) ->
+            TermLike variable ->
+            TermLike variable
+        substituteWorker subst termLike =
+            substituteNone <|> substituteBinder <|> substituteVariable
+                & fromMaybe substituteDefault
+          where
+            substituteNone :: Maybe (TermLike variable)
+            substituteNone
+                | Map.null subst' = pure termLike
+                | otherwise = empty
+
+            substituteBinder :: Maybe (TermLike variable)
+            substituteBinder =
+                runIdentity <$> matchWith traverseBinder worker termLike
+              where
+                worker ::
+                    Binder (SomeVariable variable) (TermLike variable) ->
+                    Identity (Binder (SomeVariable variable) (TermLike variable))
+                worker Binder{binderVariable, binderChild} = do
+                    let binderVariable' = avoidCapture binderVariable
+                        -- Rename the freshened bound variable in the subterms.
+                        subst'' = renaming binderVariable binderVariable' subst'
+                    return
+                        Binder
+                            { binderVariable = fromMaybe binderVariable binderVariable'
+                            , binderChild = substituteWorker subst'' binderChild
+                            }
+
+            substituteVariable :: Maybe (TermLike variable)
+            substituteVariable =
+                either id id <$> matchWith traverseVariable worker termLike
+              where
+                worker ::
+                    SomeVariable variable ->
+                    Either (TermLike variable) (SomeVariable variable)
+                worker Variable{variableName} =
+                    -- If the variable is not substituted or renamed, return the
+                    -- original pattern.
+                    fromMaybe
+                        (Left termLike)
+                        -- If the variable is renamed, 'Map.lookup' returns a
+                        -- 'Right' which @traverseVariable@ embeds into
+                        -- @patternType@. If the variable is substituted,
+                        -- 'Map.lookup' returns a 'Left' which is used directly as
+                        -- the result, exiting early from @traverseVariable@.
+                        (Map.lookup variableName subst')
+
+            substituteDefault =
+                synthesize termLikeHead'
+              where
+                _ :< termLikeHead = Recursive.project termLike
+                termLikeHead' = substituteWorker subst' <$> termLikeHead
+
+            freeVars = extractFreeVariables termLike
+
+            subst' = Map.intersection subst (Map.fromSet id freeVars)
+
+            originalVariables = Set.difference freeVars (Map.keysSet subst')
+
+            freeVariables' = Set.union originalVariables targetFreeVariables
+              where
+                targetFreeVariables =
+                    foldl'
+                        Set.union
+                        Set.empty
+                        (getTargetFreeVariables <$> subst')
+
+            avoidCapture = refreshVariable freeVariables'
 
 fromKeyAttributes ::
     Ord variable =>
