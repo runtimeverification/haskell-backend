@@ -51,7 +51,6 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -78,6 +77,7 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Rewriting.UnifyingRule (
     UnifyingRule (..),
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )

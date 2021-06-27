@@ -18,7 +18,6 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
@@ -38,6 +37,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Step.Simplification.Simplify
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )

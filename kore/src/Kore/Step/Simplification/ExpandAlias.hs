@@ -13,7 +13,6 @@ import qualified Data.Map.Strict as Map
 import Kore.Internal.Alias (
     Alias (..),
  )
-import Kore.Internal.Substitute
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
@@ -27,6 +26,7 @@ import Kore.Internal.TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Substitute
 import Prelude.Kore
 
 data UnifyExpandAlias = UnifyExpandAlias

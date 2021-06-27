@@ -46,10 +46,10 @@ import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import Kore.Debug
-import Kore.Internal.Substitute
 import Kore.Internal.Variable (
     InternalVariable,
  )
+import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),
  )

@@ -100,7 +100,6 @@ import Kore.Debug
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Substitute
 import Kore.Internal.TermLike hiding (
     AndF,
     BottomF,
@@ -132,6 +131,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort (
     predicateSort,
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )

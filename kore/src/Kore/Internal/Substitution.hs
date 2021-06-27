@@ -74,7 +74,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Substitute
 import Kore.Internal.TermLike (
     TermLike,
     mkVar,
@@ -82,6 +81,7 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )

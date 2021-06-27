@@ -45,7 +45,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -75,6 +74,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     makeEvaluate,
  )
 import Kore.Step.Simplification.Simplify
+import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic (

@@ -41,7 +41,7 @@ import Kore.Attribute.Synthetic (
  )
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalInt
-import Kore.Internal.Substitute
+import Kore.Substitute
 import Kore.Internal.Substitution (
     orientSubstitution,
  )

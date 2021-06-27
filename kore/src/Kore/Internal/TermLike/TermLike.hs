@@ -102,13 +102,13 @@ import qualified Kore.Internal.Key as Key
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Substitute
 import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
+import Kore.Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom

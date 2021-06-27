@@ -12,8 +12,8 @@ module Test.Kore.Internal.Substitution (
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution as Substitution
+import Kore.Substitute
 import Kore.TopBottom (
     isBottom,
     isTop,

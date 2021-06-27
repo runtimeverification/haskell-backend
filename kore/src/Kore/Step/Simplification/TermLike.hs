@@ -43,7 +43,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution (
     toMap,
  )
@@ -145,6 +144,7 @@ import qualified Kore.Step.Simplification.Top as Top (
 import qualified Kore.Step.Simplification.Variable as Variable (
     simplify,
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )

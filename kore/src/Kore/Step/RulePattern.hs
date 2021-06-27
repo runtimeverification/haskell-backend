@@ -75,7 +75,6 @@ import Kore.Internal.Predicate (
     Predicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -108,6 +107,7 @@ import qualified Kore.Step.AntiLeft as AntiLeft
 import Kore.Step.Step (
     UnifyingRule (..),
  )
+import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),
     Id (..),

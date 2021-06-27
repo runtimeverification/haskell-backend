@@ -41,7 +41,6 @@ import Kore.Internal.Predicate (
     makeOrPredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
@@ -59,6 +58,7 @@ import Kore.Internal.Variable (
 import Kore.Step.Simplification.ExpandAlias (
     substituteInAlias,
  )
+import Kore.Substitute
 import Kore.Syntax.Variable (
     AdjSomeVariableName,
     ElementVariable,

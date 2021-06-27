@@ -30,7 +30,6 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Assignment,
     Normalization (..),
@@ -40,6 +39,7 @@ import Kore.Internal.Substitution (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Substitute
 import Kore.TopBottom
 import Prelude.Kore
 

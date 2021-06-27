@@ -45,7 +45,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Assignment,
     Substitution,
@@ -60,6 +59,7 @@ import Kore.Internal.TermLike (
     TermLike,
     termLikeSort,
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )

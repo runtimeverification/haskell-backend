@@ -33,7 +33,6 @@ import Kore.Internal.OrPattern (
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
@@ -71,6 +70,7 @@ import Kore.Step.Step (
     assertFunctionLikeResults,
     unifyRules,
  )
+import Kore.Substitute
 import Logic (
     LogicT,
  )

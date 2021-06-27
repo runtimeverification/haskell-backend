@@ -37,7 +37,6 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Assignment,
  )
@@ -50,6 +49,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
+import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
 import Logic
 import Prelude.Kore

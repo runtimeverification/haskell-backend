@@ -80,7 +80,6 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitute as Substitute
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
@@ -94,6 +93,7 @@ import Kore.Step.Simplification.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Substitute as Substitute
 import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Variables
 import Pair

@@ -20,7 +20,6 @@ import Kore.Internal.Predicate (
     pattern PredicateTrue,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (
     TermLike,
@@ -40,6 +39,7 @@ import Kore.Step.Simplification.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Substitute
 import Prelude.Kore
 
 {- | Simplify a 'Rule' using only matching logic rules.

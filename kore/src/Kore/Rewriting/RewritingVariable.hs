@@ -58,11 +58,11 @@ import Kore.Internal.Predicate (
     Predicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike hiding (
     refreshVariables,
  )
+import Kore.Substitute
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Prelude.Kore

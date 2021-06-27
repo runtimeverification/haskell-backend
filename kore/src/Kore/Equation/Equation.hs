@@ -42,7 +42,6 @@ import Kore.Internal.Predicate (
     fromPredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitute
 import Kore.Internal.Symbol (
     Symbol (..),
  )
@@ -55,6 +54,7 @@ import Kore.Sort
 import Kore.Step.Step (
     Renaming,
  )
+import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),
  )

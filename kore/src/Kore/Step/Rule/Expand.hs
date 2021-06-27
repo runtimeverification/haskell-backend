@@ -44,7 +44,6 @@ import Kore.IndexedModule.MetadataTools (
  )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -72,6 +71,7 @@ import Kore.Step.ClaimPattern (
     ClaimPattern (..),
     freeVariablesLeft,
  )
+import Kore.Substitute
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh (
     refreshVariable,

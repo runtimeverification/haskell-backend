@@ -84,7 +84,6 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Substitute
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -106,6 +105,7 @@ import Kore.Step.Simplification.Simplify (
  )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.Substitution as Substitution
+import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),
     FileLocation (..),
