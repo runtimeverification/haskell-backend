@@ -407,8 +407,8 @@ testDef =
                 , sentenceAxiomPattern =
                     externalize $
                         mkRewrites
-                            (mkAnd mkTop_ (mkApplySymbol fHead []))
-                            (mkAnd mkTop_ (mkApplySymbol tHead []))
+                            (mkAnd (mkTop sortS) (mkApplySymbol fHead []))
+                            (mkAnd (mkTop sortS) (mkApplySymbol tHead []))
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -422,7 +422,7 @@ testDef =
                                 ( mkEquals
                                     sortVarS
                                     (mkCeil sortVar1S (mkApplySymbol fHead []))
-                                    mkTop_
+                                    (mkTop sortVar1S)
                                 )
                                 (mkTop sortVarS)
                             )
