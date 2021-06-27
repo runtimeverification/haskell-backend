@@ -46,15 +46,15 @@ test_andSimplification =
         assertEqual
             "false and true = false"
             OrPattern.bottom
-            =<< evaluate (makeAnd [] [Pattern.top])
+            =<< evaluate (makeAnd [] [Pattern.topOf Mock.testSort])
         assertEqual
             "true and false = false"
             OrPattern.bottom
-            =<< evaluate (makeAnd [Pattern.top] [])
+            =<< evaluate (makeAnd [Pattern.topOf Mock.testSort] [])
         assertEqual
             "true and true = true"
-            OrPattern.top
-            =<< evaluate (makeAnd [Pattern.top] [Pattern.top])
+            (OrPattern.top Mock.testSort)
+            =<< evaluate (makeAnd [Pattern.topOf Mock.testSort] [Pattern.topOf Mock.testSort])
     , testCase "And with booleans" $ do
         assertEqual
             "false and something = false"
@@ -67,11 +67,11 @@ test_andSimplification =
         assertEqual
             "true and something = something"
             (OrPattern.fromPatterns [fOfXExpanded])
-            =<< evaluate (makeAnd [Pattern.top] [fOfXExpanded])
+            =<< evaluate (makeAnd [Pattern.topOf Mock.testSort] [fOfXExpanded])
         assertEqual
             "something and true = something"
             (OrPattern.fromPatterns [fOfXExpanded])
-            =<< evaluate (makeAnd [fOfXExpanded] [Pattern.top])
+            =<< evaluate (makeAnd [fOfXExpanded] [Pattern.topOf Mock.testSort])
     , testCase "And with partial booleans" $ do
         assertEqual
             "false term and something = false"
@@ -110,7 +110,7 @@ test_andSimplification =
         , testCase "And predicates" $ do
             let expect =
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate fOfX)
@@ -120,12 +120,12 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
@@ -133,7 +133,7 @@ test_andSimplification =
         , testCase "And substitutions - simple" $ do
             let expect =
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
@@ -144,7 +144,7 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -152,7 +152,7 @@ test_andSimplification =
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -183,7 +183,7 @@ test_andSimplification =
         , testCase "And substitutions - separate predicate" $ do
             let expect =
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution =
                             Substitution.unsafeWrap [(inject Mock.yConfig, fOfX)]
@@ -191,7 +191,7 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -199,7 +199,7 @@ test_andSimplification =
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -211,7 +211,7 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -224,7 +224,7 @@ test_andSimplification =
                                     ]
                         }
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -244,7 +244,7 @@ test_andSimplification =
             assertEqual
                 "Combines conditions with substitution merge condition"
                 Pattern
-                    { term = mkTop_
+                    { term = mkTop Mock.topSort
                     , predicate =
                         fst $ makeAndPredicate
                             (fst $ makeAndPredicate
@@ -259,12 +259,12 @@ test_andSimplification =
                     , (gSymbol, mock.functionAttributes)
                     ]
                     Pattern
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeCeilPredicate fOfX
                         , substitution = [(y, fOfX)]
                         }
                     Pattern
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeCeilPredicate gOfX
                         , substitution = [(y, gOfX)]
                         }
@@ -352,7 +352,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
                     , Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate fOfX)
@@ -365,14 +365,14 @@ test_andSimplification =
                 ( makeAnd
                     [ fOfXExpanded
                     , Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     ]
                     [ gOfXExpanded
                     , Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.topSort
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
@@ -435,13 +435,13 @@ test_andSimplification =
             }
     bottomTerm =
         Conditional
-            { term = mkBottom_
+            { term = mkBottom Mock.topSort
             , predicate = makeTruePredicate
             , substitution = mempty
             }
     falsePredicate =
         Conditional
-            { term = mkTop_
+            { term = mkTop Mock.topSort
             , predicate = makeFalsePredicate
             , substitution = mempty
             }
@@ -466,7 +466,7 @@ evaluate ::
     IO (OrPattern RewritingVariableName)
 evaluate And{andFirst, andSecond} =
     MultiAnd.make [andFirst, andSecond]
-        & simplify Not.notSimplifier SideCondition.top
+        & simplify Mock.topSort Not.notSimplifier SideCondition.top
         & runSimplifier Mock.env
 
 evaluatePatterns ::
@@ -475,6 +475,6 @@ evaluatePatterns ::
     IO (OrPattern RewritingVariableName)
 evaluatePatterns first second =
     MultiAnd.make [first, second]
-        & makeEvaluate Not.notSimplifier SideCondition.top
+        & makeEvaluate Mock.topSort Not.notSimplifier SideCondition.top
         & runSimplifierBranch Mock.env
         & fmap OrPattern.fromPatterns
