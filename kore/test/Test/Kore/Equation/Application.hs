@@ -249,7 +249,7 @@ test_attemptEquation =
         "F(x) => G(x) doesn't apply to F(top)"
         (axiom_ (f x) (g x))
         SideCondition.top
-        (f mkTop_)
+        (f (mkTop Mock.testSort))
     , applies
         "F(x) => G(x) [concrete] applies to F(a)"
         (axiom_ (f x) (g x) & concrete [x])
@@ -436,7 +436,7 @@ test_attemptEquationUnification =
         "F(x) => G(x) doesn't apply to F(top)"
         (functionAxiomUnification_ fSymbol [x] (g x))
         SideCondition.top
-        (f mkTop_)
+        (f (mkTop Mock.testSort))
     , applies
         "F(x) => G(x) [concrete] applies to F(a)"
         (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
