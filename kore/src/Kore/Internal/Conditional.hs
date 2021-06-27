@@ -323,6 +323,20 @@ instance
                 <$> Substitution.unwrap substitution
 
 instance
+    InternalVariable variable =>
+    Pretty (Conditional variable (TermLike variable))
+    where
+    pretty Conditional{term, predicate, substitution} =
+        prettyConditional'
+            (unparse term)
+            (pretty predicate)
+            (pretty <$> termLikeSubstitution)
+      where
+        termLikeSubstitution =
+            Substitution.singleSubstitutionToPredicate
+                <$> Substitution.unwrap substitution
+
+instance
     ( InternalVariable variable
     , SQL.Column term
     , Typeable term
