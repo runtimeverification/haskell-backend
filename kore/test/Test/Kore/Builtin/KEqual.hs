@@ -83,11 +83,12 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.top kSort
             xConfigElemVarKItemSort =
                 configElementVariableFromId "x" kItemSort
             original =
-                mkEquals_
+                mkEquals
+                    kSort
                     (Test.Bool.asInternal True)
                     ( keqBool
                         (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
@@ -96,11 +97,12 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.top kSort
             xConfigElemVarIdSort =
                 configElementVariableFromId "x" idSort
             original =
-                mkEquals_
+                mkEquals
+                    kSort
                     (Test.Bool.asInternal True)
                     ( keqBool
                         (kseq (inj kItemSort (mkElemVar xConfigElemVarIdSort)) dotk)
@@ -109,9 +111,10 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct constructor-like terms" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.top kSort
             original =
-                mkEquals_
+                mkEquals
+                    kSort
                     (Test.Bool.asInternal False)
                     ( keqBool
                         (kseq (inj kItemSort dvX) dotk)
@@ -192,7 +195,7 @@ test_KEqualSimplification =
                 keqBool
                     (kseq (inj kItemSort dvX) dotk)
                     (kseq (inj kItemSort dvT) dotk)
-            expect = [Just Pattern.top]
+            expect = [Just (Pattern.topOf kSort)]
         actual <- runKEqualSimplification term1 term2
         assertEqual' "" expect actual
     ]
