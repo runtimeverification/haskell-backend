@@ -821,7 +821,7 @@ test_onePathStrategy =
                                 Mock.a
                             )
                     )
-            right' = Pattern.bottom
+            right' = Pattern.bottomOf Mock.testSort
             original = makeOnePathGoalFromPatterns left right
             expect = makeOnePathGoalFromPatterns left' right'
         [_actual] <-
