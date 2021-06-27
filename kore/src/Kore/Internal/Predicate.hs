@@ -406,6 +406,8 @@ instance TopBottom (Predicate variable) where
     isBottom _ = False
 
 instance InternalVariable variable => Substitute variable (Predicate variable) where
+    type TermType (Predicate variable) = TermLike variable
+
     substitute subst predicate =
         substituteNone <|> substituteBinder <|> substituteTermLike
             & fromMaybe substituteDefault

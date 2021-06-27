@@ -231,9 +231,10 @@ instance
                 @(Substitution variable)
 
 instance
-    Substitute variable child =>
+    (Substitute variable child, TermType child ~ TermLike variable) =>
     Substitute variable (Conditional variable child)
     where
+    type TermType (Conditional variable child) = TermLike variable
     substitute subst Conditional{term, predicate, substitution} =
         Conditional
             { term = substitute subst term

@@ -146,26 +146,18 @@ instance
     InternalVariable variable =>
     Substitute variable (Equation variable)
     where
+    type TermType (Equation variable) = TermLike variable
+
     substitute assignments equation =
         Equation
-            { requires = substitute assignments requires
-            , argument = substitute assignments <$> argument
-            , antiLeft = substitute assignments <$> antiLeft
-            , left = substitute assignments left
-            , right = substitute assignments right
-            , ensures = substitute assignments ensures
-            , attributes
+            { requires = substitute assignments (requires equation)
+            , argument = substitute assignments <$> argument equation
+            , antiLeft = substitute assignments <$> antiLeft equation
+            , left = substitute assignments (left equation)
+            , right = substitute assignments (right equation)
+            , ensures = substitute assignments (ensures equation)
+            , attributes = attributes equation
             }
-      where
-        Equation
-            { requires
-            , argument
-            , antiLeft
-            , left
-            , right
-            , ensures
-            , attributes
-            } = equation
 
 toTermLike ::
     InternalVariable variable =>

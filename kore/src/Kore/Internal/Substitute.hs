@@ -9,6 +9,9 @@ module Kore.Internal.Substitute (
 
 import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
+import Data.Kind (
+    Type,
+ )
 import Data.Map.Strict (
     Map,
  )
@@ -35,18 +38,23 @@ import Kore.Variables.Fresh (
  )
 import Prelude.Kore
 
+-- | @Substitute@ implements capture-avoiding substitution over many types.
 class
     (InternalVariable variable, HasFreeVariables child variable) =>
     Substitute variable child
         | child -> variable
     where
+    -- | The type of terms used to replace variables under substitution.
+    type TermType child :: Type
+
+    -- | Apply a substitution: replace variables with terms from a 'Map'.
     substitute ::
-        Map (SomeVariableName variable) (TermLike variable) ->
+        Map (SomeVariableName variable) (TermType child) ->
         child ->
         child
 
 rename ::
-    Substitute variable child =>
+    (Substitute variable child, TermType child ~ TermLike variable) =>
     Map (SomeVariableName variable) (SomeVariable variable) ->
     child ->
     child
@@ -57,6 +65,8 @@ instance
     InternalVariable variable =>
     Substitute variable (TermLike variable)
     where
+    type TermType (TermLike variable) = TermLike variable
+
     substitute = substituteWorker . Map.map Left
       where
         extractFreeVariables ::

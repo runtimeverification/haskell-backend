@@ -166,6 +166,8 @@ instance HasFreeVariables (Implication modality) RewritingVariableName where
             <> freeVariablesRight implication'
 
 instance Substitute RewritingVariableName (Implication modality) where
+    type TermType (Implication modality) = TermLike RewritingVariableName
+
     substitute subst implication'@(Implication _ _ _ _ _) =
         substituteRight subst $
             implication'

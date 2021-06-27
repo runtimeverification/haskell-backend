@@ -303,6 +303,8 @@ instance
     InternalVariable variable =>
     Substitute variable (Substitution variable)
     where
+    type TermType (Substitution variable) = TermLike variable
+
     substitute subst =
         wrap . (map . mapAssignedTerm) (substitute subst) . unwrap
     {-# INLINE substitute #-}

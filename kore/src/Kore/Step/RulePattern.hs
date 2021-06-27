@@ -145,6 +145,8 @@ instance
     InternalVariable variable =>
     Substitute variable (RHS variable)
     where
+    type TermType (RHS variable) = TermLike variable
+
     substitute subst RHS{existentials, right, ensures} =
         RHS
             { existentials
@@ -240,6 +242,7 @@ instance
     InternalVariable variable =>
     Substitute variable (RulePattern variable)
     where
+    type TermType (RulePattern variable) = TermLike variable
     substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
         rulePattern'
             { left = substitute subst left

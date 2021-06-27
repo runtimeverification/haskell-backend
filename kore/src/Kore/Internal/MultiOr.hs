@@ -128,6 +128,8 @@ instance
     ) =>
     Substitute variable (MultiOr child)
     where
+    type TermType (MultiOr child) = TermType child
+
     substitute = map . substitute
     {-# INLINE substitute #-}
 

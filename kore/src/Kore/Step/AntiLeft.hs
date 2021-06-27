@@ -112,6 +112,8 @@ instance
     InternalVariable variable =>
     Substitute variable (AntiLeftLhs variable)
     where
+    type TermType (AntiLeftLhs variable) = TermLike variable
+
     substitute subst antiLeft@(AntiLeftLhs _ _ _) =
         AntiLeftLhs
             { existentials
@@ -184,6 +186,8 @@ instance
     InternalVariable variable =>
     Substitute variable (AntiLeft variable)
     where
+    type TermType (AntiLeft variable) = TermLike variable
+
     substitute subst antiLeft@(AntiLeft _ _ _) =
         AntiLeft
             { aliasTerm = substitute subst aliasTerm
