@@ -558,7 +558,7 @@ applyAliasToNoArgs sort name =
             , aliasParams = []
             , aliasSorts = applicationSorts [] sort
             , aliasLeft = []
-            , aliasRight = mkTop_
+            , aliasRight = mkTop sort
             }
         []
 
