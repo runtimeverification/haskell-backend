@@ -178,6 +178,7 @@ import Data.String (
  )
 import Data.Text (
     Text,
+    pack,
  )
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -287,6 +288,8 @@ data SolverHandle = SolverHandle
     , hErr :: !Handle
     , hProc :: !ProcessHandle
     , queryCounter :: !Int
+    , tactic :: !SExpr
+    , unknownAsSat :: !Bool
     }
     deriving stock (GHC.Generic)
 
@@ -328,12 +331,21 @@ newSolver ::
     FilePath ->
     -- | Arguments
     [String] ->
+    -- | Tactic ->
+    String ->
+    -- | Unknown as sat
+    Bool ->
     -- | Logger
     Logger ->
     IO SolverHandle
-newSolver exe opts logger = do
+newSolver exe opts tactic unknownAsSat logger = do
+    tacticExpr <-
+        case Parser.runParser parseSExpr "(tactic)" (pack tactic) of
+            Left err -> fail (show err)
+            Right expr -> return expr
+
     (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
-    let solverHandle = SolverHandle{hIn, hOut, hErr, hProc, queryCounter = 0}
+    let solverHandle = SolverHandle{hIn, hOut, hErr, hProc, queryCounter = 0, tactic = tacticExpr, unknownAsSat}
         solver = Solver{solverHandle, logger}
 
     _ <- forkIO $ do
@@ -705,15 +717,18 @@ assert proc e = ackCommand proc $ fun "assert" [e]
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
 check solver = do
-    res <- command solver (List [Atom "check-sat"])
+    res <- command solver (List [Atom "check-sat-using", tactic (solverHandle solver)])
     case res of
         Atom "unsat" -> return Unsat
-        Atom "unknown" -> do
-            Monad.when featureProduceAssertions $ do
-                asserts <- command solver (List [Atom "get-assertions"])
-                warn solver (buildText asserts)
-            _ <- command solver (List [Atom "get-info", Atom ":reason-unknown"])
-            return Unknown
+        Atom "unknown" ->
+            if unknownAsSat (solverHandle solver) then
+                return Sat
+            else do
+                Monad.when featureProduceAssertions $ do
+                    asserts <- command solver (List [Atom "get-assertions"])
+                    warn solver (buildText asserts)
+                _ <- command solver (List [Atom "get-info", Atom ":reason-unknown"])
+                return Unknown
         Atom "sat" -> return Sat
         _ ->
             fail $

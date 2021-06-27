@@ -32,6 +32,7 @@ import Options.Applicative (
     str,
     strOption,
     value,
+    switch,
  )
 import qualified Options.Applicative as Options
 import Prelude.Kore
@@ -53,6 +54,8 @@ data KoreSolverOptions = KoreSolverOptions
     , resetInterval :: !ResetInterval
     , prelude :: !Prelude
     , solver :: !Solver
+    , tactic :: !String
+    , unknownAsSat :: !Bool
     }
 
 parseKoreSolverOptions :: Parser KoreSolverOptions
@@ -62,6 +65,8 @@ parseKoreSolverOptions =
         <*> parseResetInterval
         <*> parsePrelude
         <*> parseSolver
+        <*> parseTactic
+        <*> parseUnknownAsSat
   where
     parseTimeOut =
         option
@@ -90,6 +95,20 @@ parseKoreSolverOptions =
                         <> help "Path to the SMT prelude file"
                     )
                 )
+
+    parseTactic =
+        strOption
+            ( metavar "Z3_TACTIC"
+                <> long "z3-tactic"
+                <> help "z3 tactic to use"
+                <> value "default"
+            )
+
+    parseUnknownAsSat =
+        switch
+            ( long "unknown-as-sat"
+                <> help "Treat unknown results from the SMT solver as satisfiable"
+            )
 
     SMT.Config{timeOut = defaultTimeOut} = SMT.defaultConfig
     SMT.Config{resetInterval = defaultResetInterval} = SMT.defaultConfig
