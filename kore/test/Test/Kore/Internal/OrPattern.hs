@@ -122,7 +122,7 @@ test_distributeAnd =
     , testCase "\\top and (a or b) => a or b " $ do
         let conjunction =
                 MultiAnd.make
-                    [ MultiOr.singleton TermLike.mkTop_
+                    [ MultiOr.singleton (TermLike.mkTop Mock.testSort)
                     , MultiOr.make [a, b]
                     ]
             expect =
@@ -135,7 +135,7 @@ test_distributeAnd =
         let conjunction =
                 MultiAnd.make
                     [ MultiOr.singleton a
-                    , MultiOr.make [b, TermLike.mkBottom_]
+                    , MultiOr.make [b, TermLike.mkBottom Mock.testSort]
                     ]
             expect =
                 MultiOr.make
@@ -197,7 +197,7 @@ test_distributeApplication =
         let app =
                 sigma2
                     [ MultiOr.singleton a
-                    , MultiOr.make [b, TermLike.mkBottom_]
+                    , MultiOr.make [b, TermLike.mkBottom Mock.testSort]
                     ]
             expect =
                 MultiOr.make
