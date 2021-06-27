@@ -93,7 +93,8 @@ test_substitute :: [TestTree]
 test_substitute =
     [ testCase "does not capture free variables from the substitution" $ do
         let dummy =
-                Pattern.fromCondition_
+                Pattern.fromCondition
+                    Mock.testSort
                     (fromPredicate Predicate.makeTruePredicate)
             right = OrPattern.fromTermLike (mkElemVar y)
             imp = mkImplication () dummy right [x]

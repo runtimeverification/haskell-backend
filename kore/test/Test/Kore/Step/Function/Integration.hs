@@ -1870,8 +1870,8 @@ ceilDummyRule =
 ceilDummySetRule :: Equation RewritingVariableName
 ceilDummySetRule =
     axiom_
-        (mkCeil _ $ Builtin.dummyInt $ mkSetVar xsConfigInt)
-        (mkEquals _ (Builtin.eqInt (mkSetVar xsConfigInt) (mkInt 0)) (mkBool False))
+        (mkCeil Builtin.kSort $ Builtin.dummyInt $ mkSetVar xsConfigInt)
+        (mkEquals Builtin.kSort (Builtin.eqInt (mkSetVar xsConfigInt) (mkInt 0)) (mkBool False))
 
 -- Simplification tests: check that one or more rules applies or not
 withSimplified ::
