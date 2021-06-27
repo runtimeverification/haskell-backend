@@ -31,8 +31,8 @@ import Options.Applicative (
     readerError,
     str,
     strOption,
-    value,
     switch,
+    value,
  )
 import qualified Options.Applicative as Options
 import Prelude.Kore

@@ -721,14 +721,14 @@ check solver = do
     case res of
         Atom "unsat" -> return Unsat
         Atom "unknown" ->
-            if unknownAsSat (solverHandle solver) then
-                return Sat
-            else do
-                Monad.when featureProduceAssertions $ do
-                    asserts <- command solver (List [Atom "get-assertions"])
-                    warn solver (buildText asserts)
-                _ <- command solver (List [Atom "get-info", Atom ":reason-unknown"])
-                return Unknown
+            if unknownAsSat (solverHandle solver)
+                then return Sat
+                else do
+                    Monad.when featureProduceAssertions $ do
+                        asserts <- command solver (List [Atom "get-assertions"])
+                        warn solver (buildText asserts)
+                    _ <- command solver (List [Atom "get-info", Atom ":reason-unknown"])
+                    return Unknown
         Atom "sat" -> return Sat
         _ ->
             fail $
