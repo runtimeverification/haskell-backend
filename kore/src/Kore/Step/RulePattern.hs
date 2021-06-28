@@ -185,7 +185,7 @@ topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
             & FreeVariables.toNames
     renamed :: Map (SomeVariableName variable) (SomeVariable variable)
     renamed =
-        refreshVariables
+        refreshVariablesSet
             (avoid <> bindExistsFreeVariables)
             (Set.fromList $ mkSomeVariable <$> existentials)
 
@@ -580,7 +580,7 @@ instance UnifyingRule (RulePattern variable) where
         RulePattern{left, antiLeft, requires, rhs, attributes} = rule0
         refreshVariables' variables = do
             staleNames <- State.get
-            let renaming = refreshVariables staleNames variables
+            let renaming = refreshVariablesSet staleNames variables
                 staleNames' = Set.map variableName variables
                 staleNames'' =
                     Map.elems renaming

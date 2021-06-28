@@ -84,7 +84,7 @@ import Kore.Unparser (
     Unparse (..),
  )
 import Kore.Variables.Fresh (
-    refreshVariables,
+    refreshVariablesSet,
  )
 import Prelude.Kore
 import Pretty (
@@ -370,7 +370,7 @@ instance UnifyingRule ClaimPattern where
       where
         refreshVariables' variables = do
             staleNames <- State.get
-            let renaming = refreshVariables staleNames variables
+            let renaming = refreshVariablesSet staleNames variables
                 staleNames' = Set.map variableName variables
                 staleNames'' =
                     Map.elems renaming

@@ -317,7 +317,7 @@ refreshVariables ::
 refreshVariables (Attribute.FreeVariables.toNames -> avoid) term =
     rename renamed term
   where
-    renamed = Fresh.refreshVariables avoid originalFreeVariables
+    renamed = Fresh.refreshVariablesSet avoid originalFreeVariables
     originalFreeVariables =
         Attribute.FreeVariables.toSet (Attribute.freeVariables term)
 

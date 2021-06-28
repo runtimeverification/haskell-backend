@@ -140,6 +140,7 @@ common library
   build-depends: logict >=0.7
   build-depends: megaparsec >=7.0.4
   build-depends: mmorph >=1.1
+  build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: optparse-applicative >=0.14
   build-depends: parser-combinators >=1.1
