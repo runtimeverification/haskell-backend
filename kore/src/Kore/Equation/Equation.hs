@@ -6,6 +6,7 @@ module Kore.Equation.Equation (
     Equation (..),
     mkEquation,
     toTermLike,
+    toTermLikeOld,
     mapVariables,
     refreshVariables,
     isSimplificationRule,
@@ -141,6 +142,73 @@ instance SQL.Table (Equation VariableName)
 instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
+
+-- This function must be removed as part of https://github.com/kframework/kore/issues/2593
+toTermLikeOld ::
+    InternalVariable variable =>
+    Sort ->
+    Equation variable ->
+    TermLike variable
+toTermLikeOld sort equation
+    -- \ceil axiom
+    | isTop requires
+      , isTop ensures
+      , TermLike.Ceil_ _ sort1 _ <- left
+      , TermLike.Top_ sort2 <- right
+      , sort1 == sort2 =
+        left
+    -- function rule
+    | Just argument' <- argument
+      , Just antiLeft' <- antiLeft =
+        let antiLeftTerm = fromPredicate sort antiLeft'
+            argumentTerm = fromPredicate sort argument'
+         in TermLike.mkImplies
+                ( TermLike.mkAnd
+                    antiLeftTerm
+                    ( TermLike.mkAnd
+                        requires'
+                        argumentTerm
+                    )
+                )
+                ( TermLike.mkAnd
+                    (TermLike.mkEquals sort left right)
+                    ensures'
+                )
+    -- function rule without priority
+    | Just argument' <- argument =
+        let argumentTerm = fromPredicate sort argument'
+         in TermLike.mkImplies
+                ( TermLike.mkAnd
+                    requires'
+                    (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
+                )
+                ( TermLike.mkAnd
+                    (TermLike.mkEquals sort left right)
+                    ensures'
+                )
+    -- unconditional equation
+    | isTop requires
+      , isTop ensures =
+        TermLike.mkEquals sort left right
+    -- conditional equation
+    | otherwise =
+        TermLike.mkImplies
+            requires'
+            ( TermLike.mkAnd
+                (TermLike.mkEquals sort left right)
+                ensures'
+            )
+  where
+    requires' = fromPredicate sort requires
+    ensures' = fromPredicate sort ensures
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        } = equation
 
 toTermLike ::
     InternalVariable variable =>
