@@ -38,14 +38,11 @@ import Kore.Equation.Application (
     DebugApplyEquation,
     DebugAttemptEquation,
  )
-import Kore.Log.DebugAfterTransition (
-    DebugAfterTransition,
+import Kore.Log.DebugTransition (
+    DebugTransition,
  )
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
- )
-import Kore.Log.DebugBeforeTransition (
-    DebugBeforeTransition,
  )
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
@@ -182,8 +179,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         (
             [ mk $ Proxy @DebugSolverSend
             , mk $ Proxy @DebugSolverRecv
-            , mk $ Proxy @DebugBeforeTransition
-            , mk $ Proxy @DebugAfterTransition
+            , mk $ Proxy @DebugTransition
             , mk $ Proxy @DebugAppliedRewriteRules
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
