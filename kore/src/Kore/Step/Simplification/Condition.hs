@@ -79,9 +79,9 @@ simplify ::
     Conditional RewritingVariableName any ->
     LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
-    normalize >=> worker 0
+    normalize >=> worker
   where
-    worker count Conditional{term, predicate, substitution} = do
+    worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
             predicate' = substitute substitution' predicate
 
@@ -102,7 +102,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
                     normalized{term}
         if fullySimplified simplifiedPattern
             then return (extract simplifiedPattern)
-            else worker (count + 1 :: Int) (extract simplifiedPattern)
+            else worker (extract simplifiedPattern)
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
