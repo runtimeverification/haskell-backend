@@ -1,29 +1,29 @@
-/* Spc */
+/* Spa */
 \rewrites{SortGeneratedTopCell{}}(
-    /* Spc */
+    /* Spa */
     \and{SortGeneratedTopCell{}}(
         /* D Sfa */ \top{SortGeneratedTopCell{}}(),
-        /* Fn Sfc */
+        /* Fn Sfa */
         Lbl'-LT-'generatedTop'-GT-'{}(
-            /* Fn Sfc */
+            /* Fn Sfa */
             Lbl'-LT-'T'-GT-'{}(
-                /* Fl Fn D Sfc */
+                /* Fl Fn D Sfa */
                 Lbl'-LT-'k'-GT-'{}(
-                    /* Fl Fn D Sfc */
+                    /* Fl Fn D Sfa */
                     kseq{}(
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
                             /* Fl Fn D Sfa */ VarX:SortId{}
                         ),
                         /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
                     )
                 ),
-                /* Fn Sfc */
+                /* Fn Sfa */
                 Lbl'-LT-'state'-GT-'{}(
-                    /* Fn Sfc */
+                    /* Fn Sfa */
                     /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                         /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                            /* Fl Fn D Sfc */
+                            /* Fl Fn D Sfa */
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
                                 /* Fl Fn D Sfa */ VarX:SortId{}
                             ),
@@ -37,9 +37,9 @@
             /* Fl Fn D Sfa */ Var'Unds'DotVar0:SortGeneratedCounterCell{}
         )
     ),
-    /* Fn Spc */
+    /* Fn Spa */
     Lbl'-LT-'generatedTop'-GT-'{}(
-        /* Fn Spc */
+        /* Fn Spa */
         Lbl'-LT-'T'-GT-'{}(
             /* Fl Fn D Spa */
             Lbl'-LT-'k'-GT-'{}(
@@ -49,12 +49,12 @@
                     /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
                 )
             ),
-            /* Fn Sfc */
+            /* Fn Sfa */
             Lbl'-LT-'state'-GT-'{}(
-                /* Fn Sfc */
+                /* Fn Sfa */
                 /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
                             /* Fl Fn D Sfa */ VarX:SortId{}
                         ),
