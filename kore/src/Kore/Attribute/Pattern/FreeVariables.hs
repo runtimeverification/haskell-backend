@@ -18,6 +18,7 @@ module Kore.Attribute.Pattern.FreeVariables (
     getFreeElementVariables,
     HasFreeVariables (..),
     occursIn,
+    freeVariableNames,
 ) where
 
 import Data.Functor.Const
@@ -177,3 +178,9 @@ occursIn ::
     Bool
 occursIn variableName thing =
     isFreeVariable variableName (freeVariables thing)
+
+freeVariableNames ::
+    HasFreeVariables thing variable =>
+    thing ->
+    Set (SomeVariableName variable)
+freeVariableNames = toNames . freeVariables
