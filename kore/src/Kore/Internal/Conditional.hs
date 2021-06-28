@@ -6,6 +6,7 @@ Representation of conditional terms.
 -}
 module Kore.Internal.Conditional (
     Conditional (..),
+    Condition,
     withoutTerm,
     withCondition,
     andCondition,
@@ -96,6 +97,9 @@ data Conditional variable child = Conditional
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
+
+-- | A predicate and substitution without an accompanying term.
+type Condition variable = Conditional variable ()
 
 instance
     ( Debug child
