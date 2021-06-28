@@ -75,7 +75,7 @@ bigEndianVerifier :: ApplicationVerifier Verified.Pattern
 bigEndianVerifier = endiannessVerifier BigEndian
 
 data UnifyEqualsEndianness = UnifyEqualsEndianness
-    { end1, end2 :: Endianness
+    { end1, end2 :: !Endianness
     }
 
 -- | Matches two terms having the Endianness constructor.
