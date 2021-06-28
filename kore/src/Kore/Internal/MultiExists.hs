@@ -37,11 +37,18 @@ import Kore.Internal.Variable (
     variableName,
  )
 import Kore.Substitute
+import Kore.Unparser (
+    Unparse (unparse),
+ )
 import Kore.Variables.Fresh (
     FreshPartialOrd,
     refreshVariables',
  )
 import Prelude.Kore
+import Pretty (
+    Pretty (..),
+ )
+import qualified Pretty
 
 {- | @MultiExists@ represents a pattern (type @child@) quantified by many
  variables (type @'ElementVariable' variable@), that is:
@@ -59,6 +66,20 @@ data MultiExists variable child = MultiExists
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance
+    (Unparse variable, Pretty child) =>
+    Pretty (MultiExists variable child)
+    where
+    pretty MultiExists{existsVariables, existsChild} =
+        Pretty.vsep
+            [ Pretty.vsep (mkExistsDoc <$> toList existsVariables)
+            , pretty existsChild
+            , mconcat (")" <$ toList existsVariables)
+            ]
+      where
+        mkExistsDoc variable = "\\exists{_}(" <> unparse variable <> ","
+    {-# INLINE pretty #-}
 
 instance
     (Ord variable, HasFreeVariables child variable) =>
