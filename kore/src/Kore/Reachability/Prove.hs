@@ -76,13 +76,13 @@ import Kore.Internal.Predicate (
     pattern PredicateCeil,
     pattern PredicateNot,
  )
-import Kore.Log.DebugTransition (
-    debugBeforeTransition,
-    debugAfterTransition,
-    debugFinalTransition,
- )
 import Kore.Log.DebugBeginClaim
 import Kore.Log.DebugProven
+import Kore.Log.DebugTransition (
+    debugAfterTransition,
+    debugBeforeTransition,
+    debugFinalTransition,
+ )
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState

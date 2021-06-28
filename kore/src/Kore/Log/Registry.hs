@@ -38,9 +38,6 @@ import Kore.Equation.Application (
     DebugApplyEquation,
     DebugAttemptEquation,
  )
-import Kore.Log.DebugTransition (
-    DebugTransition,
- )
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
@@ -59,6 +56,9 @@ import Kore.Log.DebugSolver (
  )
 import Kore.Log.DebugSubstitutionSimplifier (
     DebugSubstitutionSimplifier,
+ )
+import Kore.Log.DebugTransition (
+    DebugTransition,
  )
 import Kore.Log.DebugUnification (
     DebugUnification,

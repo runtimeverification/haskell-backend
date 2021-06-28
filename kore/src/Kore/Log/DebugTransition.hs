@@ -40,17 +40,18 @@ data DebugTransition
 
 instance Pretty DebugTransition where
     pretty (DebugAfterTransition result transition appliedRules) =
-        Pretty.vsep $ concat
-            [ 
-                [ "Applied the following transition:"
-                , Pretty.indent 4 (pretty transition)
+        Pretty.vsep $
+            concat
+                [
+                    [ "Applied the following transition:"
+                    , Pretty.indent 4 (pretty transition)
+                    ]
+                , prettyRules
+                ,
+                    [ "Resulting in:"
+                    , Pretty.indent 4 (maybe "Terminal state." pretty result)
+                    ]
                 ]
-            , prettyRules
-            ,   
-                [ "Resulting in:"
-                , Pretty.indent 4 (maybe "Terminal state." pretty result)
-                ]
-            ]
       where
         -- match behavior of DebugAppliedRewriteRules
         prettyRules = case appliedRules of
@@ -58,7 +59,6 @@ instance Pretty DebugTransition where
             rules ->
                 ["The rules at following locations were applied:"]
                     <> fmap pretty rules
-
     pretty (DebugBeforeTransition proofState transition) =
         Pretty.vsep
             [ "Reached proof state with the following configuration:"
@@ -71,8 +71,8 @@ instance Entry DebugTransition where
     entrySeverity _ = Debug
     helpDoc _ = "log proof state"
     oneLineDoc (DebugAfterTransition _proofState transition appliedRules) =
-        Just $ 
-            transitionHeader 
+        Just $
+            transitionHeader
                 <> Pretty.hsep (pretty <$> appliedRules)
       where
         transitionHeader = case appliedRules of
