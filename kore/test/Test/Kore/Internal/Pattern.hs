@@ -29,7 +29,6 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
@@ -394,7 +393,7 @@ normalizeConj ::
 normalizeConj Conditional{term, predicate, substitution} =
     NormalizedAndPattern
         { term
-        , predicate = MultiAnd.fromPredicate predicate
+        , predicate = Predicate.toMultiAnd predicate
         , substitution
         }
 

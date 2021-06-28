@@ -76,7 +76,7 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( MultiAnd.toPredicate . MultiAnd.make $
+                    ( Predicate.fromMultiAnd . MultiAnd.make $
                         [ makeCeilPredicate fOfX
                         , makeCeilPredicate fOfY
                         , makeCeilPredicate gOfX
@@ -91,7 +91,7 @@ test_Pattern_simplify =
                         (Mock.constr10 fOfX)
                         (Mock.constr10 gOfX)
                     )
-                    ( MultiAnd.toPredicate . MultiAnd.make $
+                    ( Predicate.fromMultiAnd . MultiAnd.make $
                         [ makeCeilPredicate fOfX
                         , makeImpliesPredicate
                             (makeCeilPredicate fOfX)
@@ -140,7 +140,7 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( MultiAnd.toPredicate . MultiAnd.make $
+                    ( Predicate.fromMultiAnd . MultiAnd.make $
                         [ makeCeilPredicate fOfX
                         , makeCeilPredicate gOfX
                         , makeEqualsPredicate fOfX gOfX
@@ -166,7 +166,7 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( (MultiAnd.toPredicate . MultiAnd.make)
+                    ( (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeEqualsPredicate fOfX gOfX
                         , makeNotPredicate $ makeCeilPredicate fOfX
                         ]
@@ -231,7 +231,7 @@ test_Pattern_simplify_equalityterm =
                     ]
             -- Uncomment this when using the new Equals simplifier:
             -- [ Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ makeCeilPredicate Mock.cf
             --         , makeCeilPredicate Mock.cg
             --         , makeEqualsPredicate Mock.cf Mock.cg
@@ -239,7 +239,7 @@ test_Pattern_simplify_equalityterm =
             --         ]
             --     )
             -- , Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ makeCeilPredicate Mock.cf
             --         , makeCeilPredicate Mock.cg
             --         , makeCeilPredicate Mock.ch
@@ -248,7 +248,7 @@ test_Pattern_simplify_equalityterm =
             --         ]
             --     )
             -- , Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ makeCeilPredicate Mock.cf
             --         , makeCeilPredicate Mock.ch
             --         , makeEqualsPredicate Mock.cf Mock.ch
@@ -256,7 +256,7 @@ test_Pattern_simplify_equalityterm =
             --         ]
             --     )
             -- , Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ makeCeilPredicate Mock.cf
             --         , makeCeilPredicate Mock.ch
             --         , makeCeilPredicate Mock.cg
@@ -265,7 +265,7 @@ test_Pattern_simplify_equalityterm =
             --         ]
             --     )
             -- , Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ makeNotPredicate $ makeCeilPredicate Mock.cf
             --         , makeNotPredicate $ makeCeilPredicate Mock.cg
             --         , makeNotPredicate $ makeCeilPredicate Mock.ch
@@ -280,7 +280,7 @@ test_Pattern_simplify_equalityterm =
                 OrPattern.fromPatterns
                     [ Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
-                        ( MultiAnd.toPredicate . MultiAnd.make $
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.ch
                             , makeEqualsPredicate Mock.cf Mock.ch
@@ -289,7 +289,7 @@ test_Pattern_simplify_equalityterm =
                         )
                     , Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
-                        ( MultiAnd.toPredicate . MultiAnd.make $
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
                             [ makeNotPredicate $ makeCeilPredicate Mock.cf
                             , makeNotPredicate $ makeCeilPredicate Mock.cg
                             , makeNotPredicate $ makeCeilPredicate Mock.ch
@@ -308,7 +308,7 @@ test_Pattern_simplify_equalityterm =
             predicateSubstitution =
                 makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a
             definedGWithSubstitution =
-                (MultiAnd.toPredicate . MultiAnd.make)
+                (Predicate.fromMultiAnd . MultiAnd.make)
                     [definedG, predicateSubstitution]
             definedH = makeCeilPredicate Mock.ch
             expected =
@@ -339,7 +339,7 @@ test_Pattern_simplify_equalityterm =
                     ]
             -- Uncomment this when using the new Equals simplifier:
             -- [ mconcat
-            --     [ (Condition.fromPredicate . MultiAnd.toPredicate . MultiAnd.make)
+            --     [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
             --         [ definedF
             --         , definedG
             --         , makeEqualsPredicate Mock.cf Mock.cg
@@ -348,7 +348,7 @@ test_Pattern_simplify_equalityterm =
             --     , Condition.assign (inject Mock.xConfig) Mock.a
             --     ]
             -- , mconcat
-            --     [ (Condition.fromPredicate . MultiAnd.toPredicate . MultiAnd.make)
+            --     [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
             --         [ definedF
             --         , definedG
             --         , definedH
@@ -358,7 +358,7 @@ test_Pattern_simplify_equalityterm =
             --     , Condition.assign (inject Mock.xConfig) Mock.a
             --     ]
             -- , Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ definedF
             --         , definedH
             --         , makeEqualsPredicate Mock.cf Mock.ch
@@ -366,7 +366,7 @@ test_Pattern_simplify_equalityterm =
             --         ]
             --     )
             -- , Condition.fromPredicate
-            --     ( MultiAnd.toPredicate . MultiAnd.make $
+            --     ( Predicate.fromMultiAnd . MultiAnd.make $
             --         [ makeNotPredicate definedGWithSubstitution
             --         , makeNotPredicate definedF
             --         , makeNotPredicate definedH

@@ -331,7 +331,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         [predicate] ->
             case predicateF of
                 NotF Not{notChild = result} ->
-                    MultiAnd.fromPredicate result
+                    Predicate.toMultiAnd result
                         & MultiOr.singleton
                         & pure
                 _ -> fallback
@@ -341,7 +341,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
   where
     fallback =
         -- \not(\and(_, ...))
-        MultiAnd.toPredicate predicates
+        Predicate.fromMultiAnd predicates
             & fromNot
             & Predicate.markSimplified
             & mkSingleton

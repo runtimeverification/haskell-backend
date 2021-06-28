@@ -284,15 +284,6 @@ test_simplify_SideCondition =
 mkDisjunctiveNormalForm :: Ord a => TopBottom a => [[a]] -> MultiOr (MultiAnd a)
 mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
 
-unparseDisjunctiveNormalForm ::
-    MultiOr (MultiAnd (Predicate RewritingVariableName)) ->
-    Pretty.Doc ann
-unparseDisjunctiveNormalForm =
-    Pretty.indent 2
-        . Pretty.pretty
-        . map MultiAnd.toPredicate
-        . toList
-
 fa, fb, ga, gb :: TermLike RewritingVariableName
 fa = Mock.f Mock.a
 fb = Mock.f Mock.b
@@ -322,8 +313,8 @@ simplifyExpect replacements input expect = do
     let message =
             (show . Pretty.vsep)
                 [ "Expected:"
-                , unparseDisjunctiveNormalForm expect'
+                , Pretty.indent 2 (Pretty.pretty expect')
                 , "but found:"
-                , unparseDisjunctiveNormalForm actual
+                , Pretty.indent 2 (Pretty.pretty actual)
                 ]
     assertEqual message expect' actual

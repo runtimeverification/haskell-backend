@@ -535,7 +535,7 @@ test_simplificationIntegration =
                     . map
                         ( Pattern.fromCondition Mock.boolSort
                             . Condition.fromPredicate
-                            . MultiAnd.toPredicate
+                            . Predicate.fromMultiAnd
                             . MultiAnd.make
                         )
                 )
@@ -555,7 +555,7 @@ test_simplificationIntegration =
             --     . map
             --         ( Pattern.fromCondition Mock.boolSort
             --             . Condition.fromPredicate
-            --             . MultiAnd.toPredicate
+            --             . Predicate.fromMultiAnd
             --             . MultiAnd.make
             --         )
             -- )

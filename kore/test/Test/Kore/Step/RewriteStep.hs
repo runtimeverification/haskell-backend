@@ -1352,7 +1352,7 @@ test_applyRewriteRulesParallel =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cf
-                        , predicate = MultiAnd.toPredicate definedBranches
+                        , predicate = Predicate.fromMultiAnd definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
@@ -1360,7 +1360,7 @@ test_applyRewriteRulesParallel =
                         }
                     , Conditional
                         { term = Mock.cg
-                        , predicate = MultiAnd.toPredicate definedBranches
+                        , predicate = Predicate.fromMultiAnd definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
@@ -1369,7 +1369,7 @@ test_applyRewriteRulesParallel =
                     ]
             aBranch =
                 MultiAnd.make
-                    [ MultiAnd.toPredicate definedBranches
+                    [ Predicate.fromMultiAnd definedBranches
                     , fromEquals_ (mkElemVar Mock.xConfig) Mock.a
                     ]
             -- Uncomment when using new Equals simplifier:
@@ -1379,11 +1379,11 @@ test_applyRewriteRulesParallel =
             --     & MultiAnd.singleton
             --     & mappend definedBranches
             aBranchNot =
-                MultiAnd.toPredicate aBranch
+                Predicate.fromMultiAnd aBranch
                     & makeNotPredicate
             bBranch =
                 MultiAnd.make
-                    [ MultiAnd.toPredicate definedBranches
+                    [ Predicate.fromMultiAnd definedBranches
                     , fromEquals_ (mkElemVar Mock.xConfig) Mock.b
                     ]
             -- Uncomment when using new Equals simplifier:
@@ -1393,13 +1393,13 @@ test_applyRewriteRulesParallel =
             --     & MultiAnd.singleton
             --     & mappend definedBranches
             bBranchNot =
-                MultiAnd.toPredicate bBranch
+                Predicate.fromMultiAnd bBranch
                     & makeNotPredicate
             remainders =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            (MultiAnd.toPredicate . MultiAnd.make)
+                            (Predicate.fromMultiAnd . MultiAnd.make)
                                 [aBranchNot, bBranchNot]
                         }
                     ]
@@ -1589,7 +1589,7 @@ test_applyRewriteRulesSequence =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cf
-                        , predicate = MultiAnd.toPredicate definedBranches
+                        , predicate = Predicate.fromMultiAnd definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
@@ -1597,7 +1597,7 @@ test_applyRewriteRulesSequence =
                         }
                     , Conditional
                         { term = Mock.cg
-                        , predicate = MultiAnd.toPredicate definedBranches
+                        , predicate = Predicate.fromMultiAnd definedBranches
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
@@ -1606,7 +1606,7 @@ test_applyRewriteRulesSequence =
                     ]
             aBranch =
                 MultiAnd.make
-                    [ MultiAnd.toPredicate definedBranches
+                    [ Predicate.fromMultiAnd definedBranches
                     , fromEquals_ (mkElemVar Mock.xConfig) Mock.a
                     ]
             -- Uncomment when using new Equals simplifier:
@@ -1616,11 +1616,11 @@ test_applyRewriteRulesSequence =
             --     & MultiAnd.singleton
             --     & mappend definedBranches
             aBranchNot =
-                MultiAnd.toPredicate aBranch
+                Predicate.fromMultiAnd aBranch
                     & makeNotPredicate
             bBranch =
                 MultiAnd.make
-                    [ MultiAnd.toPredicate definedBranches
+                    [ Predicate.fromMultiAnd definedBranches
                     , fromEquals_ (mkElemVar Mock.xConfig) Mock.b
                     ]
             -- Uncomment when using new Equals simplifier:
@@ -1630,13 +1630,13 @@ test_applyRewriteRulesSequence =
             --     & MultiAnd.singleton
             --     & mappend definedBranches
             bBranchNot =
-                MultiAnd.toPredicate bBranch
+                Predicate.fromMultiAnd bBranch
                     & makeNotPredicate
             remainders =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            (MultiAnd.toPredicate . MultiAnd.make)
+                            (Predicate.fromMultiAnd . MultiAnd.make)
                                 [aBranchNot, bBranchNot]
                         }
                     ]

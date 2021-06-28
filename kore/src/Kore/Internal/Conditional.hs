@@ -37,6 +37,9 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified,
  )
 import Kore.Debug
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import Kore.Internal.Predicate (
     Predicate,
     unparse2WithSort,
@@ -234,6 +237,13 @@ instance
             . from
                 @(Map (SomeVariable variable) (TermLike variable))
                 @(Substitution variable)
+
+instance
+    InternalVariable variable =>
+    From (Condition variable) (MultiAnd (Predicate variable))
+    where
+    from = Predicate.toMultiAnd . from @(Condition _)
+    {-# INLINE from #-}
 
 instance
     ( Substitute child
