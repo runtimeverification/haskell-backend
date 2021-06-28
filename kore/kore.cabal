@@ -321,7 +321,6 @@ library
     Kore.Internal.Predicate
     Kore.Internal.SideCondition
     Kore.Internal.SideCondition.SideCondition
-    Kore.Substitute
     Kore.Internal.Substitution
     Kore.Internal.Symbol
     Kore.Internal.TermLike
@@ -472,6 +471,7 @@ library
     Kore.Step.Strategy
     Kore.Step.Substitution
     Kore.Step.Transition
+    Kore.Substitute
     Kore.Syntax
     Kore.Syntax.And
     Kore.Syntax.Application
