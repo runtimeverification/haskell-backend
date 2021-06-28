@@ -17,6 +17,7 @@ module Kore.Attribute.Pattern.FreeVariables (
     traverseFreeVariables,
     getFreeElementVariables,
     HasFreeVariables (..),
+    occursIn,
 ) where
 
 import Data.Functor.Const
@@ -166,3 +167,13 @@ class HasFreeVariables pat variable where
 
 instance HasFreeVariables () variable where
     freeVariables = const emptyFreeVariables
+
+-- | Does the named variable occur free in the pattern?
+occursIn ::
+    Ord variable =>
+    HasFreeVariables thing variable =>
+    SomeVariableName variable ->
+    thing ->
+    Bool
+occursIn variableName thing =
+    isFreeVariable variableName (freeVariables thing)
