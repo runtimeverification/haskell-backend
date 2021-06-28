@@ -18,6 +18,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables,
  )
 import Kore.Internal.Variable
+import Prelude.Kore
 
 -- | @Substitute@ implements capture-avoiding substitution over many types.
 class HasFreeVariables child (VariableNameType child) => Substitute child where
@@ -54,3 +55,16 @@ type NormalRenaming child =
         -- TODO (thomas.tuegel): Arguably, the values below should be only
         -- 'SomeVariableName' and not 'SomeVariable'.
         (SomeVariable (VariableNameType child))
+
+instance
+    (Substitute child, Ord (VariableNameType child)) =>
+    Substitute [child]
+    where
+    type TermType [child] = TermType child
+    type VariableNameType [child] = VariableNameType child
+
+    substitute subst = fmap (substitute subst)
+    {-# INLINE substitute #-}
+
+    rename renaming = fmap (rename renaming)
+    {-# INLINE rename #-}

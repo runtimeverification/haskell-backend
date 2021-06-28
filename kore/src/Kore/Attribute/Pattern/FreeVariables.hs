@@ -169,6 +169,13 @@ class HasFreeVariables pat variable where
 instance HasFreeVariables () variable where
     freeVariables = const emptyFreeVariables
 
+instance
+    (HasFreeVariables child variable, Ord variable) =>
+    HasFreeVariables [child] variable
+    where
+    freeVariables = foldMap freeVariables
+    {-# INLINE freeVariables #-}
+
 -- | Does the named variable occur free in the pattern?
 occursIn ::
     Ord variable =>
