@@ -39,7 +39,7 @@ class HasFreeVariables child (VariableNameType child) => Substitute child where
 
 {- | A @NormalSubstitution@ maps variable names to terms so that the former may
  be replaced by the latter. In a proper @NormalSubstitution@, none of the
- variable on the left appear in any of the terms on the right.
+ variables on the left appear in any of the terms on the right.
 -}
 type NormalSubstitution child =
     Map (SomeVariableName (VariableNameType child)) (TermType child)
