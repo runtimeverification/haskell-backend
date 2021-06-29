@@ -572,7 +572,6 @@ withDebugClaimState transitionFunc transition state =
             (transitionFunc transition state)
         )
         ( debugClaimStateFinal
-            state
             transition
         )
 
