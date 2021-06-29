@@ -40,7 +40,7 @@ import Data.Sequence (
     Seq,
  )
 import qualified Data.Sequence as Seq
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify (..),
  )
 import Log (

@@ -167,10 +167,10 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     MonadSimplify,
  )
+import qualified Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id (

@@ -85,6 +85,19 @@ import Kore.Rewriting.RewritingVariable (
     mkEquationVariable,
     mkRuleVariable,
  )
+import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.Data (
+    Env (Env),
+    MonadSimplify,
+ )
+import qualified Kore.Simplify.Data as SimplificationData.DoNotUse
+import Kore.Simplify.InjSimplifier
+import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Simplify (
+    BuiltinAndAxiomSimplifierMap,
+    ConditionSimplifier,
+ )
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Sort
 import Kore.Step.Axiom.EvaluationStrategy (
     builtinEvaluation,
@@ -97,19 +110,6 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT (
     resolve,
  )
-import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
-import Kore.Step.Simplification.Data (
-    Env (Env),
-    MonadSimplify,
- )
-import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
-import Kore.Step.Simplification.InjSimplifier
-import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify (
-    BuiltinAndAxiomSimplifierMap,
-    ConditionSimplifier,
- )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Prelude.Kore

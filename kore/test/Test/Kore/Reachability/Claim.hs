@@ -48,10 +48,10 @@ import Kore.Step.ClaimPattern (
  )
 import qualified Logic
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
+import Test.Kore.Simplify (
     runSimplifierSMT,
  )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

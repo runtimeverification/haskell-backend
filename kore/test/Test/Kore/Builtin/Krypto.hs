@@ -37,10 +37,10 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     runSimplifier,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     AttemptedAxiomResults (..),
     BuiltinAndAxiomSimplifier (..),
  )

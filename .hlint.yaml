@@ -115,7 +115,7 @@
       - Test.Terse
       - Test.Kore.Step.Axiom.Evaluate
       - Test.Kore.Step.Axiom.Matcher
-      - Test.Kore.Step.Simplification.Overloading
+      - Test.Kore.Simplify.Overloading
 
 
 # Unsuitable suggestions
@@ -129,7 +129,7 @@
       - Kore.Exec
       - Kore.Internal.Conditional
       - Kore.Step.Axiom.Matcher
-      - Kore.Step.Simplification.AndTerms
+      - Kore.Simplify.AndTerms
       - Kore.Parser.Parser
       - Main
 - ignore:

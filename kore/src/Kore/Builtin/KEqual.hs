@@ -75,8 +75,8 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Simplify
+import Kore.Simplify.NotSimplifier
+import Kore.Simplify.Simplify
 import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )

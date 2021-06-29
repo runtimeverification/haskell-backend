@@ -13,7 +13,7 @@ module Kore.Unification.Unify (
 import Kore.Internal.TermLike (
     InternalVariable,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify (..),
  )
 import Logic

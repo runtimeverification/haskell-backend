@@ -86,12 +86,12 @@ import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
  )
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+ )
 import Kore.Step.SMT.Resolvers (
     translateSort,
     translateSymbol,
- )
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
  )
 import Log (
     MonadLog (..),

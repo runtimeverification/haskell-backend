@@ -34,7 +34,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern (
     Pattern,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (AttemptedAxiomResults),
     InternalVariable,

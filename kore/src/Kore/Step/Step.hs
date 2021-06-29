@@ -64,15 +64,15 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+ )
+import qualified Kore.Simplify.Simplify as Simplifier
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Procedure
 import Kore.Unification.UnifierT (

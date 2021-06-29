@@ -16,13 +16,13 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     runSimplifier,
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
 import Kore.Unification.UnifierT (
     runUnifierT,
  )

@@ -53,15 +53,15 @@ import Kore.Rewriting.RewritingVariable (
     getRewritingTerm,
     resetConfigVariable,
  )
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+ )
 import Kore.Step.RulePattern (
     ImplicationRule (ImplicationRule),
     RHS (..),
     RewriteRule,
     RulePattern (..),
     mapRuleVariables,
- )
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
  )
 import Kore.Step.Strategy (
     ExecutionGraph (..),

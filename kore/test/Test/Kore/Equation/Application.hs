@@ -38,8 +38,8 @@ import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

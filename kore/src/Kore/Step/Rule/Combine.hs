@@ -48,6 +48,10 @@ import Kore.Internal.Variable (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+    simplifyCondition,
+ )
 import qualified Kore.Step.AntiLeft as AntiLeft (
     antiLeftPredicate,
  )
@@ -62,10 +66,6 @@ import qualified Kore.Step.RulePattern as RulePattern (
  )
 import qualified Kore.Step.SMT.Evaluator as SMT (
     evaluate,
- )
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
-    simplifyCondition,
  )
 import Kore.Step.Step (
     refreshRule,

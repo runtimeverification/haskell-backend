@@ -93,10 +93,10 @@ import qualified Kore.Reachability as Reachability
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     MonadSimplify (..),
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Module (
     ModuleName (..),

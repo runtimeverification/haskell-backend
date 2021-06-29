@@ -45,6 +45,10 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Rewriting.RewritingVariable
+import qualified Kore.Simplify.Pattern as Pattern (
+    simplifyTopConfiguration,
+ )
+import Kore.Simplify.Simplify as Simplifier
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern (
@@ -54,10 +58,6 @@ import Kore.Step.RulePattern (
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
     filterMultiOr,
  )
-import qualified Kore.Step.Simplification.Pattern as Pattern (
-    simplifyTopConfiguration,
- )
-import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Strategy hiding (
     transitionRule,
  )

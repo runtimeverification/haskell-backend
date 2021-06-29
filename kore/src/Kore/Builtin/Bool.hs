@@ -60,7 +60,7 @@ import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
     TermSimplifier,
  )

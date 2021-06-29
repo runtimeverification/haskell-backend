@@ -46,11 +46,11 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Rewriting.UnifyingRule (
     UnifyingRule (..),
  )
-import Kore.Step.AxiomPattern
-import Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify,
  )
+import Kore.Step.AxiomPattern
+import Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Transition (
     TransitionT,
  )

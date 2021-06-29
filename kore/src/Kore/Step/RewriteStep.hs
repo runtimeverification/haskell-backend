@@ -42,6 +42,10 @@ import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
 import Kore.Rewriting.RewritingVariable
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+    simplifyCondition,
+ )
 import Kore.Step.AxiomPattern (
     AxiomPattern,
  )
@@ -57,10 +61,6 @@ import Kore.Step.RulePattern (
     RulePattern,
  )
 import qualified Kore.Step.RulePattern as Rule
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
-    simplifyCondition,
- )
 import Kore.Step.Step (
     Result,
     Results,

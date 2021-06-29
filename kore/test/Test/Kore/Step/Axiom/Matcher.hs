@@ -53,8 +53,8 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Map as Test.Map
 import qualified Test.Kore.Builtin.Set as Test.Set
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

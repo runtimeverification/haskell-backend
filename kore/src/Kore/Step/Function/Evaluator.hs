@@ -53,11 +53,11 @@ import Kore.Log.ErrorBottomTotalFunction (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Function.Memo as Memo
-import Kore.Step.Simplification.Simplify as AttemptedAxiom (
+import Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
-import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Simplify.Simplify as Simplifier
+import qualified Kore.Step.Function.Memo as Memo
 import Kore.TopBottom
 import Kore.Unparser
 import qualified Logic

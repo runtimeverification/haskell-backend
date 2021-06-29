@@ -32,6 +32,10 @@ import Kore.Reachability (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+ )
 import Kore.Step.ClaimPattern (
     ClaimPattern,
  )
@@ -46,10 +50,6 @@ import qualified Kore.Step.RulePattern as RulePattern (
     applySubstitution,
  )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
 import Logic (
     LogicT,
  )

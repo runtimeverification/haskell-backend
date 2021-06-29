@@ -61,11 +61,11 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
+import Test.Kore.Simplify (
     runSimplifier,
     runSimplifierSMT,
  )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

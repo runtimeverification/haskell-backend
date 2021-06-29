@@ -31,8 +31,8 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
+import qualified Kore.Simplify.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Simplification.Data as Kore
 import Prelude.Kore
 import SMT (
     SMT,
@@ -46,9 +46,9 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
 import Test.Kore.Internal.Predicate ()
+import Test.Kore.Simplify
+import qualified Test.Kore.Simplify as Test
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
-import qualified Test.Kore.Step.Simplification as Test
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

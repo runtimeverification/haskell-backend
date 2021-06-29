@@ -25,17 +25,17 @@ import qualified Kore.Internal.SideCondition as SideCondition (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     Env (..),
     runSimplifier,
  )
-import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.Not as Not
+import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     MonadSimplify,
  )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify

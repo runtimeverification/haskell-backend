@@ -74,19 +74,19 @@ import Kore.Parser (
     parseKorePattern,
  )
 import Kore.Rewriting.RewritingVariable
+import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.Data
+import Kore.Simplify.InjSimplifier
+import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Simplify
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Simplify.TermLike as TermLike
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
-import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
-import Kore.Step.Simplification.Data
-import Kore.Step.Simplification.InjSimplifier
-import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition (
     ModuleName,

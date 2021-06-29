@@ -101,10 +101,10 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
+import Kore.Simplify.Simplify
 import Kore.Step.ClaimPattern (
     mkGoal,
  )
-import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,

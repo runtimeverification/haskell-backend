@@ -36,12 +36,12 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Simplification.Ceil as Ceil (
+import qualified Kore.Simplify.Ceil as Ceil (
     makeEvaluate,
  )
 import Prelude.Kore
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

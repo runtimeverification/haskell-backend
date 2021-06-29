@@ -53,8 +53,8 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
 import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Tasty.Hedgehog

@@ -24,10 +24,10 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier (
+import Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     TermSimplifier,
  )
 import Kore.Unification.Unify as Unify

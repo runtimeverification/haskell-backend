@@ -59,6 +59,9 @@ import Kore.Reachability (
 import Kore.Rewriting.RewritingVariable (
     mkRuleVariable,
  )
+import Kore.Simplify.ExpandAlias (
+    substituteInAlias,
+ )
 import Kore.Sort (
     Sort (..),
     SortVariable (SortVariable),
@@ -80,9 +83,6 @@ import Kore.Step.RulePattern (
     injectTermIntoRHS,
     rewriteRuleToTerm,
     termToRHS,
- )
-import Kore.Step.Simplification.ExpandAlias (
-    substituteInAlias,
  )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id (

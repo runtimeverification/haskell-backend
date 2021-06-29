@@ -28,8 +28,8 @@ import Kore.TopBottom (
 import Prelude.Kore
 import Test.Expect
 import Test.Kore
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

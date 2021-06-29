@@ -40,6 +40,8 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
  )
+import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Simplify
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
@@ -47,8 +49,6 @@ import Kore.Step.Axiom.Registry
 import Kore.Step.Rule (
     extractRewriteAxioms,
  )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition hiding (
     Symbol,
  )
@@ -56,8 +56,8 @@ import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty (
     TestTree,
  )

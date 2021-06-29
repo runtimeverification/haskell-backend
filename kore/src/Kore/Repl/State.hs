@@ -136,11 +136,11 @@ import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Data (
+    MonadSimplify,
+ )
 import Kore.Step.AxiomPattern (
     AxiomPattern (..),
- )
-import Kore.Step.Simplification.Data (
-    MonadSimplify,
  )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Definition (

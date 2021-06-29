@@ -123,10 +123,10 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
+import Test.Kore.Simplify (
     runSimplifier,
  )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

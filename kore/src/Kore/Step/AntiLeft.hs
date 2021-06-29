@@ -56,7 +56,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
-import Kore.Step.Simplification.ExpandAlias (
+import Kore.Simplify.ExpandAlias (
     substituteInAlias,
  )
 import Kore.Substitute

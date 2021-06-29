@@ -155,7 +155,7 @@ The substitution normalization step is discussed below.
 
 References:
 
-- `Kore.Step.Simplification.AndTerms`
+- `Kore.Simplify.AndTerms`
 - `Kore.Builtin.List`
 - `Kore.Builtin.Map`
 - `Kore.Builtin.Set`
@@ -199,7 +199,7 @@ it is entirely reasonable to generate conditions such as `x = x + y` in this con
 References:
 
 - `Kore.Unification.SubstitutionNormalization`
-- `Kore.Step.Simplification.SubstitutionSimplifier`
+- `Kore.Simplify.SubstitutionSimplifier`
 
 ### Matching
 
@@ -252,8 +252,8 @@ requiring substitution normalization at the top.
 
 References:
 
-- `Kore.Step.Simplification.TermLike`
-- `Kore.Step.Simplification.Condition`
+- `Kore.Simplify.TermLike`
+- `Kore.Simplify.Condition`
 
 ### Refuting predicates
 

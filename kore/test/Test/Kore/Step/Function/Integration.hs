@@ -67,6 +67,17 @@ import Kore.Rewriting.RewritingVariable (
     configElementVariableFromId,
     mkConfigVariable,
  )
+import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.InjSimplifier (
+    InjSimplifier,
+    mkInjSimplifier,
+ )
+import Kore.Simplify.Simplify
+import Kore.Simplify.Simplify as AttemptedAxiom (
+    AttemptedAxiom (..),
+ )
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Simplify.TermLike as TermLike
 import Kore.Step.Axiom.EvaluationStrategy (
     builtinEvaluation,
     definitionEvaluation,
@@ -79,17 +90,6 @@ import Kore.Step.Axiom.Identifier (
  )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
-import Kore.Step.Simplification.InjSimplifier (
-    InjSimplifier,
-    mkInjSimplifier,
- )
-import Kore.Step.Simplification.Simplify
-import Kore.Step.Simplification.Simplify as AttemptedAxiom (
-    AttemptedAxiom (..),
- )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding (
     Symbol (..),
  )
@@ -111,12 +111,12 @@ import Test.Kore.Equation.Common (
     functionAxiomUnification,
     functionAxiomUnification_,
  )
+import Test.Kore.Simplify
 import Test.Kore.Step.Axiom.Matcher (
     doesn'tMatch,
     matches,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

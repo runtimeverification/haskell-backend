@@ -39,9 +39,9 @@ import Kore.Internal.Substitution (
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
-import qualified Kore.Step.Simplification.Ceil as Ceil
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.AndPredicates as AndPredicates
+import qualified Kore.Simplify.Ceil as Ceil
+import Kore.Simplify.Simplify (
     MonadSimplify (..),
  )
 import Prelude.Kore

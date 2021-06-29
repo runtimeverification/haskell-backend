@@ -40,13 +40,13 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     SimplifierT,
     runSimplifier,
     runSimplifierBranch,
     simplifyCondition,
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
 import Kore.Unification.UnifierT (
     UnifierT,
     runUnifierT,

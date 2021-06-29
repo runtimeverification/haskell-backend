@@ -26,11 +26,11 @@ import Kore.Log.InfoAttemptUnification (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )

@@ -107,6 +107,15 @@ import Kore.Reachability.ClaimState hiding (
  )
 import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
+import Kore.Simplify.Data (
+    MonadSimplify,
+ )
+import qualified Kore.Simplify.Exists as Exists
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Pattern (
+    simplifyTopConfigurationDefined,
+ )
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Step.AxiomPattern (
     AxiomPattern (..),
  )
@@ -124,15 +133,6 @@ import Kore.Step.RulePattern (
     RulePattern (..),
  )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import Kore.Step.Simplification.Data (
-    MonadSimplify,
- )
-import qualified Kore.Step.Simplification.Exists as Exists
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Pattern (
-    simplifyTopConfigurationDefined,
- )
-import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy (
     Strategy,

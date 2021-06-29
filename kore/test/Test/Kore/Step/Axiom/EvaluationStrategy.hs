@@ -29,19 +29,19 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Axiom.EvaluationStrategy
-import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
+import Kore.Simplify.Simplify
+import qualified Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
+import Kore.Step.Axiom.EvaluationStrategy
 import Prelude.Kore
 import Test.Kore.Equation.Common (
     axiom,
     axiom_,
     concrete,
  )
+import Test.Kore.Simplify
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

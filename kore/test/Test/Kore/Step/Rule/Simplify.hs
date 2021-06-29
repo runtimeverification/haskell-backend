@@ -53,6 +53,14 @@ import Kore.Rewriting.RewritingVariable (
     getRewritingVariable,
     mkRuleVariable,
  )
+import Kore.Simplify.Data (
+    Env (..),
+ )
+import Kore.Simplify.Simplify (
+    MonadSMT,
+    MonadSimplify (..),
+    emptyConditionSimplifier,
+ )
 import Kore.Step.ClaimPattern (
     ClaimPattern (..),
     mkClaimPattern,
@@ -61,14 +69,6 @@ import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern (
     RewriteRule (..),
     mapRuleVariables,
- )
-import Kore.Step.Simplification.Data (
-    Env (..),
- )
-import Kore.Step.Simplification.Simplify (
-    MonadSMT,
-    MonadSimplify (..),
-    emptyConditionSimplifier,
  )
 import Kore.Step.Transition (
     runTransitionT,
@@ -79,16 +79,16 @@ import Kore.Syntax.Variable (
  )
 import Log
 import Prelude.Kore
+import Test.Kore.Simplify (
+    runSimplifier,
+    runSimplifierSMT,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Rule.Common (
     Pair (..),
     RuleBase,
  )
 import qualified Test.Kore.Step.Rule.Common as Common
-import Test.Kore.Step.Simplification (
-    runSimplifier,
-    runSimplifierSMT,
- )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

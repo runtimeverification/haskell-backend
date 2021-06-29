@@ -80,7 +80,7 @@ import Kore.Log.WarnNotImplemented
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Kore.Unification.Unify (

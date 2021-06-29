@@ -85,14 +85,14 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.InjSimplifier as InjSimplifier
-import Kore.Step.Simplification.Overloading (
+import Kore.Simplify.InjSimplifier as InjSimplifier
+import Kore.Simplify.Overloading (
     matchOverloading,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Simplify.Simplify as Simplifier
 import qualified Kore.Substitute as Substitute
 import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Variables

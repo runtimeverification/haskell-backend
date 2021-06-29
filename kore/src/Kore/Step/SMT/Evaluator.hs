@@ -65,8 +65,8 @@ import Kore.Log.ErrorDecidePredicateUnknown (
 import Kore.Log.WarnRetrySolverQuery (
     warnRetrySolverQuery,
  )
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Step.SMT.Translate
-import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom (
     TopBottom,
  )

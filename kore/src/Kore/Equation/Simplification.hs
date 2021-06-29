@@ -31,10 +31,10 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Simplify.Simplify as Simplifier
 import Kore.Substitute
 import Kore.TopBottom
 import qualified Logic

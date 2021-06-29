@@ -31,11 +31,11 @@ import Kore.Internal.Substitution (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Simplification.SubstitutionSimplifier (
+import Kore.Simplify.Simplify as Simplifier
+import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.TopBottom (
     TopBottom,
  )

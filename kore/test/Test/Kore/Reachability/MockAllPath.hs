@@ -32,7 +32,7 @@ import Kore.Reachability.Claim (
 import qualified Kore.Reachability.Claim as Claim
 import qualified Kore.Reachability.ClaimState as ClaimState
 import qualified Kore.Reachability.Prim as Prim
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     MonadSimplify (..),
  )
 import qualified Kore.Step.Strategy as Strategy

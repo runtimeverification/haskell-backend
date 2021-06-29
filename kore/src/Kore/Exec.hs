@@ -123,6 +123,15 @@ import Kore.Reachability (
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
+import Kore.Simplify.Data (
+    evalSimplifier,
+ )
+import qualified Kore.Simplify.Data as Simplifier
+import qualified Kore.Simplify.Pattern as Pattern
+import qualified Kore.Simplify.Rule as Rule
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+ )
 import Kore.Step
 import Kore.Step.Rule (
     extractImplicationClaims,
@@ -152,15 +161,6 @@ import Kore.Step.Search (
     searchGraph,
  )
 import qualified Kore.Step.Search as Search
-import Kore.Step.Simplification.Data (
-    evalSimplifier,
- )
-import qualified Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Rule as Rule
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition (
     runTransitionT,

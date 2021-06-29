@@ -20,6 +20,9 @@ import Kore.Equation.Registry
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Simplify (
+    BuiltinAndAxiomSimplifier (..),
+ )
 import Kore.Step.Axiom.EvaluationStrategy (
     definitionEvaluation,
     firstFullEvaluation,
@@ -28,9 +31,6 @@ import Kore.Step.Axiom.EvaluationStrategy (
  )
 import Kore.Step.Axiom.Identifier (
     AxiomIdentifier,
- )
-import Kore.Step.Simplification.Simplify (
-    BuiltinAndAxiomSimplifier (..),
  )
 
 {- | Converts a collection of processed 'EqualityRule's to one of

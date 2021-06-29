@@ -41,11 +41,11 @@ import Kore.Internal.SideCondition (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
     evaluate,
  )
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Substitution (
     mergePredicatesAndSubstitutions,

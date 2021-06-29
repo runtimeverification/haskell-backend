@@ -101,10 +101,10 @@ import Kore.Log.DebugUnifyBottom (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Sort (
     Sort,
  )
-import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence (
     SentenceSort (SentenceSort),
  )
