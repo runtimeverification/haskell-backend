@@ -70,6 +70,7 @@ import Kore.Step.Step (
     assertFunctionLikeResults,
     unifyRules,
  )
+import Kore.Substitute
 import Logic (
     LogicT,
  )
@@ -144,7 +145,7 @@ constructConfiguration appliedCondition finalPattern = do
     let Conditional{substitution} = finalCondition
         substitution' = Substitution.toMap substitution
         Conditional{term = finalTerm} = finalPattern
-        finalTerm' = TermLike.substitute substitution' finalTerm
+        finalTerm' = substitute substitution' finalTerm
     -- TODO (thomas.tuegel): Should the final term be simplified after
     -- substitution?
     return (finalTerm' `Pattern.withCondition` finalCondition)

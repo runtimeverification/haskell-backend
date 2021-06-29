@@ -78,14 +78,10 @@ import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike hiding (
-    substitute,
- )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -97,6 +93,7 @@ import Kore.Step.Simplification.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Substitute as Substitute
 import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Variables
 import Pair
@@ -535,7 +532,7 @@ substitute eVariable termLike = do
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
-    field @"predicate" %= MultiAnd.map (Predicate.substitute subst)
+    field @"predicate" %= MultiAnd.map (Substitute.substitute subst)
 
     return ()
   where
@@ -560,7 +557,7 @@ substitute eVariable termLike = do
     substitute1 termLike' = do
         injSimplifier <- Simplifier.askInjSimplifier
         termLike'
-            & TermLike.substitute subst
+            & Substitute.substitute subst
             -- Injected Map and Set keys must be properly normalized before
             -- calling renormalize.
             & InjSimplifier.normalize injSimplifier
@@ -598,7 +595,7 @@ setSubstitute sVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" %= MultiAnd.map (Predicate.substitute subst)
+    field @"predicate" %= MultiAnd.map (Substitute.substitute subst)
 
     return ()
   where
@@ -624,7 +621,7 @@ substituteTermLike ::
     Map (SomeVariableName variable) (TermLike variable) ->
     TermLike variable ->
     TermLike variable
-substituteTermLike subst = renormalizeBuiltins . TermLike.substitute subst
+substituteTermLike subst = renormalizeBuiltins . Substitute.substitute subst
 
 occursCheck ::
     (MatchingVariable variable, Monad simplifier) =>

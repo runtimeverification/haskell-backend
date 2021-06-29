@@ -21,7 +21,6 @@ module Kore.Internal.OrPattern (
     toPattern,
     toTermLike,
     targetBinder,
-    substitute,
     mapVariables,
     MultiOr.flatten,
     MultiOr.filterOr,
@@ -31,9 +30,6 @@ module Kore.Internal.OrPattern (
     MultiOr.traverse,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
 import Kore.Internal.Condition (
     Condition,
  )
@@ -243,14 +239,6 @@ targetBinder Binder{binderVariable, binderChild} =
             { binderVariable = newVar
             , binderChild = newChild
             }
-
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    OrPattern variable ->
-    OrPattern variable
-substitute subst =
-    fromPatterns . fmap (Pattern.substitute subst) . toPatterns
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>

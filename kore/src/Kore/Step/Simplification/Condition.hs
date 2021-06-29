@@ -49,6 +49,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
+import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
 import Logic
 import Prelude.Kore
@@ -83,7 +84,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
   where
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
-            predicate' = Predicate.substitute substitution' predicate
+            predicate' = substitute substitution' predicate
 
         simplified <-
             Predicate.simplify sideCondition predicate'
