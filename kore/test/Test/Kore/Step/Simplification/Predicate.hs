@@ -181,11 +181,13 @@ test_simplify =
                 )
             )
             [
-                [ fromExists
-                    Mock.xConfig
-                    ( fromEquals_
-                        (mkElemVar Mock.xConfig)
-                        (Mock.f $ mkElemVar Mock.xConfig)
+                [ (fromExists Mock.xConfig)
+                    ( fromAnd
+                        (fromCeil_ (Mock.f $ mkElemVar Mock.xConfig))
+                        ( fromEquals_
+                            (mkElemVar Mock.xConfig)
+                            (Mock.f $ mkElemVar Mock.xConfig)
+                        )
                     )
                 ]
             ]
@@ -199,6 +201,21 @@ test_simplify =
                 )
             )
             [[faCeil]]
+        ]
+    , (testGroup "\\equals")
+        [ test
+            "invalid assignment"
+            ( fromEquals_
+                (mkElemVar Mock.xConfig)
+                (Mock.f $ mkElemVar Mock.xConfig)
+            )
+            [
+                [ fromEquals_
+                    (mkElemVar Mock.xConfig)
+                    (Mock.f $ mkElemVar Mock.xConfig)
+                , fromCeil_ (Mock.f $ mkElemVar Mock.xConfig)
+                ]
+            ]
         ]
     , testGroup
         "Other"
