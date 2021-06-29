@@ -4,6 +4,8 @@ module Test.Kore.Step.Simplification.Pattern (
     test_Pattern_simplify_equalityterm,
 ) where
 
+import Data.Maybe (fromJust)
+import qualified Data.Set as Set
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.From
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -30,6 +32,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import Kore.Variables.Fresh (refreshElementVariable)
 import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -103,14 +106,20 @@ test_Pattern_simplify =
                     )
         Pattern.assertEquivalentPatterns expect actual
     , testCase "Does not replace and terms under intersecting quantifiers" $ do
-        let expect =
+        let x = Mock.xConfig
+            x' =
+                refreshElementVariable
+                    (Set.singleton $ inject $ variableName x)
+                    x
+                    & fromJust
+            expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
                         ( makeExistsPredicate
-                            Mock.xConfig
-                            (makeCeilPredicate fOfX)
+                            x'
+                            (fromCeil_ $ Mock.f (mkElemVar x'))
                         )
                     )
                     & OrPattern.fromPattern
