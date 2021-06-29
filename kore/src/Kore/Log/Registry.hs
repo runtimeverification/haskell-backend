@@ -60,6 +60,9 @@ import Kore.Log.DebugSubstitutionSimplifier (
 import Kore.Log.DebugUnification (
     DebugUnification,
  )
+import Kore.Log.DebugUnifyBottom (
+    DebugUnifyBottom,
+ )
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
  )
@@ -187,6 +190,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
             , mk $ Proxy @WarnRetrySolverQuery
+            , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
             , mk $ Proxy @LogMessage
             , mk $ Proxy @InfoAttemptUnification
