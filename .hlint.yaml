@@ -85,6 +85,7 @@
 - ignore: {name: "Monoid law, left identity"}
 - ignore: {name: "Replace case with maybe"}
 - ignore: {name: "Hoist not"}
+- ignore: {name: "Redundant bracket"}
 
 # Ignore suggestions to reduce duplication, because:
 #  - High rate of false positives

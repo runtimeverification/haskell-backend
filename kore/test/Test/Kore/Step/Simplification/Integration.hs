@@ -541,7 +541,7 @@ test_simplificationIntegration =
                 )
                     [ [fromNot cfCeil, fromNot chCeil]
                     , [chCeil, cgCeil, cfCeil]
-                    , [chCeil, cfCeil]
+                    , [chCeil, cfCeil, fromNot cgCeil]
                     ]
             cfCeil = makeCeilPredicate Mock.cf
             cgCeil = makeCeilPredicate Mock.cg

@@ -77,9 +77,6 @@ import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.OverloadSimplifier as OverloadSimplifier
 import Kore.Step.Simplification.Overloading as Overloading
-import qualified Kore.Step.Simplification.SimplificationType as SimplificationType (
-    SimplificationType (..),
- )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
@@ -215,11 +212,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
                 , Builtin.Map.unifyEquals childTransformers first second
                 , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
                 , Builtin.Set.unifyEquals childTransformers first second
-                , Builtin.List.unifyEquals
-                    SimplificationType.Equals
-                    childTransformers
-                    first
-                    second
+                , Builtin.List.unifyEquals childTransformers first second
                 , domainValueAndConstructorErrors first second
                 ]
 
@@ -303,11 +296,7 @@ maybeTermAnd notSimplifier childTransformers first second = do
                 , Builtin.Signedness.unifyEquals first second
                 , Builtin.Map.unifyEquals childTransformers first second
                 , Builtin.Set.unifyEquals childTransformers first second
-                , Builtin.List.unifyEquals
-                    SimplificationType.And
-                    childTransformers
-                    first
-                    second
+                , Builtin.List.unifyEquals childTransformers first second
                 , domainValueAndConstructorErrors first second
                 , Error.hoistMaybe (functionAnd first second)
                 ]
