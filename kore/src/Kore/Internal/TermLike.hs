@@ -34,7 +34,6 @@ module Kore.Internal.TermLike (
     isConcrete,
     fromConcrete,
     retractKey,
-    refreshElementBinder,
     refreshSetBinder,
     depth,
     makeSortsAgree,
@@ -293,7 +292,6 @@ import Kore.Unparser (
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (
-    refreshElementVariable,
     refreshSetVariable,
  )
 import qualified Kore.Variables.Fresh as Fresh
@@ -1879,13 +1877,6 @@ refreshBinder
             & fromMaybe binder
       where
         Binder{binderVariable, binderChild} = binder
-
-refreshElementBinder ::
-    InternalVariable variable =>
-    Attribute.FreeVariables variable ->
-    Binder (ElementVariable variable) (TermLike variable) ->
-    Binder (ElementVariable variable) (TermLike variable)
-refreshElementBinder = refreshBinder refreshElementVariable
 
 refreshSetBinder ::
     InternalVariable variable =>

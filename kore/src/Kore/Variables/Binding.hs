@@ -11,8 +11,6 @@ module Kore.Variables.Binding (
 
     -- * Binders
     Binder (..),
-    existsBinder,
-    forallBinder,
     muBinder,
     nuBinder,
 ) where
@@ -29,8 +27,6 @@ import Data.Monoid (
     Any (..),
  )
 import qualified GHC.Generics as GHC
-import Kore.Syntax.Exists
-import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.Variable
@@ -119,54 +115,6 @@ data Binder variable child = Binder
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
-
-{- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
-
-@existsBinder@ may be used to implement 'traverseBinder'.
-
-See also: 'forallBinder'.
--}
-existsBinder ::
-    Lens.Lens
-        (Exists sort variable1 child1)
-        (Exists sort variable2 child2)
-        (Binder (ElementVariable variable1) child1)
-        (Binder (ElementVariable variable2) child2)
-existsBinder mapping exists =
-    finish <$> mapping binder
-  where
-    binder =
-        Binder
-            { binderVariable = existsVariable
-            , binderChild = existsChild
-            }
-      where
-        Exists{existsVariable, existsChild} = exists
-    finish Binder{binderVariable, binderChild} =
-        exists{existsVariable = binderVariable, existsChild = binderChild}
-
-{- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
-
-@forallBinder@ may be used to implement 'traverseBinder'.
-
-See also: 'existsBinder'.
--}
-forallBinder ::
-    Lens.Lens
-        (Forall sort variable1 child1)
-        (Forall sort variable2 child2)
-        (Binder (ElementVariable variable1) child1)
-        (Binder (ElementVariable variable2) child2)
-forallBinder mapping forall =
-    finish <$> mapping binder
-  where
-    binder =
-        Binder{binderVariable = forallVariable, binderChild}
-      where
-        Forall{forallVariable} = forall
-        Forall{forallChild = binderChild} = forall
-    finish Binder{binderVariable, binderChild} =
-        forall{forallVariable = binderVariable, forallChild = binderChild}
 
 {- | A 'Lens.Lens' to view a 'Mu' as a 'Binder'.
 

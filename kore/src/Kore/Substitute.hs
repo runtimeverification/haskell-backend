@@ -6,6 +6,7 @@ module Kore.Substitute (
     Substitute (..),
     NormalSubstitution,
     NormalRenaming,
+    refreshElementBinder
 ) where
 
 import Data.Kind (
@@ -19,6 +20,12 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import Kore.Internal.Variable
 import Prelude.Kore
+import Data.Set
+    (Set)
+import Kore.Variables.Binding
+    (Binder (..))
+import qualified Data.Map.Strict as Map
+import Kore.Variables.Fresh (refreshElementVariable)
 
 -- | @Substitute@ implements capture-avoiding substitution over many types.
 class HasFreeVariables child (VariableNameType child) => Substitute child where
@@ -68,3 +75,29 @@ instance
 
     rename renaming = fmap (rename renaming)
     {-# INLINE rename #-}
+
+refreshElementBinder ::
+    forall variable child.
+    Substitute child =>
+    VariableNameType child ~ variable =>
+    FreshPartialOrd variable =>
+    Set (SomeVariableName variable) ->
+    Binder (ElementVariable variable) child ->
+    Binder (ElementVariable variable) child
+refreshElementBinder avoiding binder =
+    do
+        binderVariable' <- refreshElementVariable avoiding binderVariable
+        let someVariableName =
+                inject @(SomeVariableName variable)
+                    (variableName binderVariable)
+            someVariable' = inject @(SomeVariable _) binderVariable'
+            renaming = Map.singleton someVariableName someVariable'
+            binderChild' = rename renaming binderChild
+        return
+            Binder
+                { binderVariable = binderVariable'
+                , binderChild = binderChild'
+                }
+        & fromMaybe binder
+  where
+    Binder{binderVariable, binderChild} = binder

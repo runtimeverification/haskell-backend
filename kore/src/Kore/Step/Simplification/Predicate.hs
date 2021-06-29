@@ -12,6 +12,7 @@ import Data.Monoid (
     First (..),
  )
 import Kore.Attribute.Pattern.FreeVariables (
+    freeVariableNames,
     freeVariables,
     isFreeVariable,
     occursIn,
@@ -71,6 +72,7 @@ import Kore.Syntax (
     Top (..),
     variableName,
  )
+import qualified Kore.Syntax.Exists as Exists
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -177,8 +179,8 @@ refreshExists ::
     Exists sort RewritingVariableName (Predicate RewritingVariableName) ->
     Exists sort RewritingVariableName (Predicate RewritingVariableName)
 refreshExists sideCondition existsF =
-    Predicate.refreshExists
-        (freeVariables existsF <> freeVariables sideCondition)
+    Exists.refreshExists
+        (freeVariableNames existsF <> freeVariableNames sideCondition)
         existsF
 
 -- | Construct a 'NormalForm' from a single 'Predicate'.

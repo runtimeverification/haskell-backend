@@ -63,7 +63,6 @@ module Kore.Internal.Predicate (
 ) where
 
 import qualified Control.Comonad.Trans.Env as Env
-import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
@@ -144,7 +143,6 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
-import Kore.Variables.Binding
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
@@ -1285,42 +1283,6 @@ containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =
         CeilF x -> any (containsSymbolWithId symId) x
         FloorF x -> any (containsSymbolWithId symId) x
         _ -> any (containsSymbolWithIdPred symId) predicate
-
-refreshBinder ::
-    forall variable.
-    InternalVariable variable =>
-    Attribute.FreeVariables variable ->
-    Binder (ElementVariable variable) (Predicate variable) ->
-    Binder (ElementVariable variable) (Predicate variable)
-refreshBinder
-    (Attribute.FreeVariables.toNames -> avoiding)
-    binder =
-        do
-            binderVariable' <- refreshElementVariable avoiding binderVariable
-            let renaming =
-                    Map.singleton
-                        ( inject @(SomeVariableName variable)
-                            (variableName binderVariable)
-                        )
-                        (mkVar $ inject @(SomeVariable _) binderVariable')
-                binderChild' = substitute renaming binderChild
-            return
-                Binder
-                    { binderVariable = binderVariable'
-                    , binderChild = binderChild'
-                    }
-            & fromMaybe binder
-      where
-        Binder{binderVariable, binderChild} = binder
-
-refreshExists ::
-    InternalVariable variable =>
-    Attribute.FreeVariables variable ->
-    Exists sort variable (Predicate variable) ->
-    Exists sort variable (Predicate variable)
-refreshExists avoiding =
-    Lens.over existsBinder (refreshBinder avoiding)
-{-# INLINE refreshExists #-}
 
 fromMultiAnd ::
     InternalVariable variable =>
