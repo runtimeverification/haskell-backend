@@ -14,6 +14,7 @@ import Data.Monoid (
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     isFreeVariable,
+    occursIn,
  )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.From
@@ -424,7 +425,10 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             applyAssignment existsVariableName value existsChild
                 & MultiOr.singleton
                 & pure
-        | otherwise = undefined
+        | otherwise =
+            fromExists existsVariable (Predicate.fromMultiAnd existsChild)
+                & mkSingleton
+                & pure
       where
         existsVariableName :: SomeVariableName RewritingVariableName
         existsVariableName = inject (variableName existsVariable)
@@ -435,11 +439,10 @@ simplifyExists _ = \exists@Exists{existsChild} ->
         MultiAnd (Predicate RewritingVariableName) ->
         Maybe (TermLike RewritingVariableName)
     extractFirstAssignment existsVariableName predicates =
-        getFirst
-            ( foldMap
-                (First . extractAssignment existsVariableName)
-                predicates
-            )
+        foldMap
+            (First . extractAssignment existsVariableName)
+            predicates
+            & getFirst
 
     extractAssignment ::
         SomeVariableName RewritingVariableName ->
@@ -451,7 +454,7 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             sameVariableName = existsVariableName == variableName someVariable
         guard sameVariableName
         guard (TermLike.isFunctionPattern termLike)
-        guard (not $ TermLike.hasFreeVariable existsVariableName termLike)
+        guard (not $ occursIn existsVariableName termLike)
         pure termLike
 
     applyAssignment ::
