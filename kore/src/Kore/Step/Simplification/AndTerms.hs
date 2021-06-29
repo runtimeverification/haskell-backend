@@ -180,13 +180,13 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers second boolAndData
         | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr first second =
-            lift $ Builtin.Bool.unifyBoolOr childTransformers second boolOrData
-        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr second first =
             lift $ Builtin.Bool.unifyBoolOr childTransformers first boolOrData
+        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr second first =
+            lift $ Builtin.Bool.unifyBoolOr childTransformers second boolOrData
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
-            lift $ Builtin.Bool.unifyBoolNot childTransformers second boolNotData
-        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot second first =
             lift $ Builtin.Bool.unifyBoolNot childTransformers first boolNotData
+        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot second first =
+            lift $ Builtin.Bool.unifyBoolNot childTransformers second boolNotData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
@@ -275,13 +275,13 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just boolAndData <- Builtin.Bool.matchUnifyBoolAnd second first =
             lift $ Builtin.Bool.unifyBoolAnd childTransformers second boolAndData
         | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr first second =
-            lift $ Builtin.Bool.unifyBoolOr childTransformers second boolOrData
-        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr second first =
             lift $ Builtin.Bool.unifyBoolOr childTransformers first boolOrData
+        | Just boolOrData <- Builtin.Bool.matchUnifyBoolOr second first =
+            lift $ Builtin.Bool.unifyBoolOr childTransformers second boolOrData
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
-            lift $ Builtin.Bool.unifyBoolNot childTransformers second boolNotData
-        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot second first =
             lift $ Builtin.Bool.unifyBoolNot childTransformers first boolNotData
+        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot second first =
+            lift $ Builtin.Bool.unifyBoolNot childTransformers second boolNotData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
             lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq second first =
