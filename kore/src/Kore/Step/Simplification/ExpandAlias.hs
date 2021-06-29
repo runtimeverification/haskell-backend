@@ -21,12 +21,12 @@ import Kore.Internal.TermLike (
     fromVariableName,
     mapSomeVariableName,
     mapVariables,
-    substitute,
     pattern ApplyAlias_,
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Substitute
 import Prelude.Kore
 
 data UnifyExpandAlias = UnifyExpandAlias

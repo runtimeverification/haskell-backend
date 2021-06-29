@@ -144,6 +144,7 @@ import qualified Kore.Step.Simplification.Top as Top (
 import qualified Kore.Step.Simplification.Variable as Variable (
     simplify,
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -255,14 +256,8 @@ simplify sideCondition = \termLike ->
             InternalVariable variable =>
             Pattern variable ->
             Pattern variable
-        applyTermSubstitution
-            Conditional{term = term', predicate = predicate', substitution} =
-                Conditional
-                    { term =
-                        TermLike.substitute (Substitution.toMap substitution) term'
-                    , predicate = predicate'
-                    , substitution
-                    }
+        applyTermSubstitution conditional@Conditional{substitution} =
+            fmap (substitute (Substitution.toMap substitution)) conditional
 
         assertTermNotPredicate getResults = do
             results <- getResults

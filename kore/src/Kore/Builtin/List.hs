@@ -100,11 +100,11 @@ import qualified Kore.Internal.TermLike as TermLike (
     isFunctionPattern,
     markSimplified,
  )
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottom,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
- )
-import Kore.Step.Simplification.SimplificationType (
-    SimplificationType,
  )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence (
@@ -113,7 +113,6 @@ import Kore.Syntax.Sentence (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
@@ -384,7 +383,6 @@ builtinFunctions =
 unifyEquals ::
     forall unifier.
     MonadUnify unifier =>
-    SimplificationType ->
     ( TermLike RewritingVariableName ->
       TermLike RewritingVariableName ->
       unifier (Pattern RewritingVariableName)
@@ -393,7 +391,6 @@ unifyEquals ::
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
 unifyEquals
-    simplificationType
     simplifyChild
     first
     second =
@@ -426,8 +423,8 @@ unifyEquals
             | otherwise = empty
         unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
             | isSymbolConcat symbol1
-              , isSymbolConcat symbol1 =
-                lift $ case (args1, args2) of
+              , isSymbolConcat symbol2 =
+                case (args1, args2) of
                     ( [InternalList_ builtin1, x1@(Var_ _)]
                         , [InternalList_ builtin2, x2@(Var_ _)]
                         ) ->
@@ -437,6 +434,7 @@ unifyEquals
                                 x1
                                 builtin2
                                 x2
+                                & lift
                     ( [x1@(Var_ _), InternalList_ builtin1]
                         , [x2@(Var_ _), InternalList_ builtin2]
                         ) ->
@@ -446,23 +444,20 @@ unifyEquals
                                 builtin1
                                 x2
                                 builtin2
+                                & lift
                     _ -> empty
-        unifyEquals0 dv1@(InternalList_ builtin1) pat2 =
+        unifyEquals0 (InternalList_ builtin1) pat2 =
             case pat2 of
                 InternalList_ builtin2 ->
                     lift $ unifyEqualsConcrete builtin1 builtin2
-                app@(App_ symbol2 args2)
+                (App_ symbol2 args2)
                     | isSymbolConcat symbol2 ->
-                        lift $ case args2 of
+                        case args2 of
                             [InternalList_ builtin2, x@(Var_ _)] ->
-                                unifyEqualsFramedRight builtin1 builtin2 x
+                                unifyEqualsFramedRight builtin1 builtin2 x & lift
                             [x@(Var_ _), InternalList_ builtin2] ->
-                                unifyEqualsFramedLeft builtin1 x builtin2
-                            [_, _] ->
-                                Builtin.unifyEqualsUnsolved
-                                    simplificationType
-                                    dv1
-                                    app
+                                unifyEqualsFramedLeft builtin1 x builtin2 & lift
+                            [_, _] -> empty
                             _ -> Builtin.wrongArity concatKey
                     | otherwise -> empty
                 _ -> empty
@@ -556,7 +551,7 @@ unifyEquals
                   where
                     prefixLength = Seq.length list1 - Seq.length suffix2
         bottomWithExplanation = do
-            Monad.Unify.explainBottom
+            debugUnifyBottom
                 "Cannot unify lists of different length."
                 first
                 second

@@ -71,6 +71,7 @@ import Kore.Step.Step (
     assertFunctionLikeResults,
     unifyRules,
  )
+import Kore.Substitute
 import Logic (
     LogicT,
  )
@@ -143,31 +144,30 @@ constructConfiguration ::
 constructConfiguration
     sideCondition
     appliedCondition
-    finalPattern =
-        do
-            let ensuresCondition = Pattern.withoutTerm finalPattern
-            finalCondition <-
-                do
-                    partial <-
-                        simplifyCondition
-                            ( sideCondition
-                                & SideCondition.addConditionWithReplacements
-                                    appliedCondition
-                            )
-                            ensuresCondition
-                    -- TODO (thomas.tuegel): It should not be necessary to simplify
-                    -- after conjoining the conditions.
-                    simplifyCondition sideCondition (appliedCondition <> partial)
-                    & Logic.lowerLogicT
-            -- Apply the normalized substitution to the right-hand side of the
-            -- axiom.
-            let Conditional{substitution} = finalCondition
-                substitution' = Substitution.toMap substitution
-                Conditional{term = finalTerm} = finalPattern
-                finalTerm' = TermLike.substitute substitution' finalTerm
-            -- TODO (thomas.tuegel): Should the final term be simplified after
-            -- substitution?
-            return (finalTerm' `Pattern.withCondition` finalCondition)
+    finalPattern = do
+        let ensuresCondition = Pattern.withoutTerm finalPattern
+        finalCondition <-
+            do
+                partial <-
+                    simplifyCondition
+                        ( sideCondition
+                            & SideCondition.addConditionWithReplacements
+                                appliedCondition
+                        )
+                        ensuresCondition
+                -- TODO (thomas.tuegel): It should not be necessary to simplify
+                -- after conjoining the conditions.
+                simplifyCondition sideCondition (appliedCondition <> partial)
+                & Logic.lowerLogicT
+        -- Apply the normalized substitution to the right-hand side of the
+        -- axiom.
+        let Conditional{substitution} = finalCondition
+            substitution' = Substitution.toMap substitution
+            Conditional{term = finalTerm} = finalPattern
+            finalTerm' = substitute substitution' finalTerm
+        -- TODO (thomas.tuegel): Should the final term be simplified after
+        -- substitution?
+        return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
     forall simplifier.

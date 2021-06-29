@@ -61,6 +61,7 @@ import Control.Monad.State.Strict (
     MonadState,
     get,
     modify,
+    put,
  )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import Data.Bitraversable (
@@ -85,6 +86,9 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
+import Data.Proxy (
+    Proxy (..),
+ )
 import Data.Sequence (
     Seq,
  )
@@ -115,6 +119,9 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
+import Kore.Log.DebugUnifyBottom (
+    DebugUnifyBottom,
+ )
 import Kore.Reachability (
     ClaimState (..),
     ClaimStateTransformer (..),
@@ -155,6 +162,9 @@ import System.IO (
     IOMode (AppendMode),
     hClose,
     openFile,
+ )
+import Type.Reflection (
+    someTypeRep,
  )
 
 -- | Creates a fresh execution graph for the given claim.
@@ -616,13 +626,23 @@ runUnifier ::
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    t m (Either ReplOutput (NonEmpty (Condition RewritingVariableName)))
+    t m (Maybe (NonEmpty (Condition RewritingVariableName)))
 runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
-    liftSimplifierWithLogger mvar
-        . runUnifierWithExplanation
-        $ unifier sideCondition first second
+    initialState <- get
+    let unifyBottomEntry = someTypeRep (Proxy @DebugUnifyBottom)
+        newState =
+            initialState
+                & field @"koreLogOptions" . field @"logEntries"
+                    Lens.%~ Set.insert unifyBottomEntry
+    put newState
+    result <-
+        liftSimplifierWithLogger mvar
+            . runUnifierWithoutExplanation
+            $ unifier sideCondition first second
+    put initialState
+    return result
 
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
