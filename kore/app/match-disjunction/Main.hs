@@ -1,7 +1,9 @@
 module Main (main) where
 
+import Control.Monad.Trans.Maybe (
+    runMaybeT,
+ )
 import GlobalMain
-import qualified GlobalMain
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
@@ -9,14 +11,62 @@ import Kore.BugReport
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern (Pattern)
-import Kore.Internal.TermLike (VariableName, pattern Or_)
-import Kore.Log (KoreLogOptions, parseKoreLogOptions, runKoreLog)
-import Kore.Syntax.Module (ModuleName (..))
-import Options.Applicative (InfoMod, Parser, argument, fullDesc, header, help, long, metavar, progDesc, str, strOption)
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.TermLike (
+    pattern Or_,
+ )
+import Kore.Log (
+    KoreLogOptions,
+    parseKoreLogOptions,
+    runKoreLog,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingTerm,
+    mkRewritingPattern,
+ )
+import qualified Kore.Step.Search as Search
+import Kore.Step.Simplification.Data (
+    evalSimplifier,
+ )
+import Kore.Syntax.Module (
+    ModuleName (..),
+ )
+import Kore.Unparser (
+    unparse,
+ )
+import Options.Applicative (
+    InfoMod,
+    Parser,
+    argument,
+    fullDesc,
+    header,
+    help,
+    long,
+    metavar,
+    progDesc,
+    str,
+    strOption,
+ )
 import Prelude.Kore
-import System.Clock (Clock (..), TimeSpec, getTime)
-import System.Exit (ExitCode, exitWith)
+import Pretty
+import qualified SMT
+import System.Clock (
+    Clock (..),
+    TimeSpec,
+    getTime,
+ )
+import System.Exit (
+    exitWith,
+ )
+import System.IO (
+    IOMode (WriteMode),
+    withFile,
+ )
 
 exeName :: ExeName
 exeName = ExeName "kore-match-disjunction"
@@ -108,28 +158,57 @@ koreMatchDisjunction options = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     matchPattern <- mainParseMatchPattern mainModule matchFileName
-    -- TODO: do we wanna do some simplification of the disjunction
-    -- pattern, since the simplifier will return a list of patterns,
-    -- and then we can match on this?
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
-    undefined
+    let sort = Pattern.patternSort matchPattern
+    final <-
+        clockSomethingIO "Executing" $
+            SMT.runNoSMT $
+                evalSimplifier mainModule $ do
+                    results <-
+                        traverse (runMaybeT . match matchPattern) disjunctionPattern
+                            <&> catMaybes
+                            <&> concatMap toList
+                    results
+                        <&> Condition.toPredicate
+                        & Predicate.makeMultipleOrPredicate
+                        & Predicate.fromPredicate sort
+                        & getRewritingTerm
+                        & return
+    lift $ renderResult options (unparse final)
+    return ExitSuccess
   where
-    mainParseMatchPattern = mainParseSearchPattern
+    mainParseMatchPattern mainModule fileName =
+        mainParseSearchPattern mainModule fileName
+            <&> mkRewritingPattern
+    match = Search.matchWith SideCondition.top
     KoreMatchDisjunctionOptions
         { definitionFileName
         , disjunctionFileName
         , matchFileName
-        , outputFileName
         , mainModuleName
         } = options
 
 mainParseDisjunctionPattern ::
     VerifiedModule StepperAttributes ->
     String ->
-    Main [Pattern VariableName]
+    Main [Pattern RewritingVariableName]
 mainParseDisjunctionPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     return $ parseDisjunction purePattern
   where
-    parseDisjunction = undefined
+    parseDisjunction (Or_ _ term1 term2) =
+        parseDisjunction term1 <> parseDisjunction term2
+    parseDisjunction term =
+        let patt =
+                mkRewritingPattern
+                    . Pattern.fromTermLike
+                    $ term
+         in [patt]
+
+renderResult :: KoreMatchDisjunctionOptions -> Doc ann -> IO ()
+renderResult KoreMatchDisjunctionOptions{outputFileName} doc =
+    case outputFileName of
+        Nothing -> putDoc doc
+        Just outputFile ->
+            withFile outputFile WriteMode (`hPutDoc` doc)
