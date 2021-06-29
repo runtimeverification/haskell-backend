@@ -8,7 +8,6 @@ module Kore.Step.AntiLeft (
     forgetSimplified,
     mapVariables,
     parse,
-    substitute,
     toTermLike,
 ) where
 
@@ -41,33 +40,26 @@ import Kore.Internal.Predicate (
     makeMultipleOrPredicate,
     makeOrPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate (
-    forgetSimplified,
-    mapVariables,
-    substitute,
-    wrapPredicate,
- )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
     mkElemVar,
+    mkVar,
     pattern And_,
     pattern ApplyAlias_,
     pattern Bottom_,
     pattern Exists_,
     pattern Or_,
  )
-import qualified Kore.Internal.TermLike as TermLike (
-    forgetSimplified,
-    mapVariables,
-    substitute,
- )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
 import Kore.Step.Simplification.ExpandAlias (
     substituteInAlias,
  )
+import Kore.Substitute
 import Kore.Syntax.Variable (
     AdjSomeVariableName,
     ElementVariable,
@@ -116,6 +108,28 @@ data AntiLeftLhs variable = AntiLeftLhs
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance InternalVariable variable => Substitute (AntiLeftLhs variable) where
+    type TermType (AntiLeftLhs variable) = TermLike variable
+
+    type VariableNameType (AntiLeftLhs variable) = variable
+
+    substitute subst antiLeft@(AntiLeftLhs _ _ _) =
+        AntiLeftLhs
+            { existentials
+            , predicate = substitute subst' predicate
+            , term = substitute subst' term
+            }
+      where
+        AntiLeftLhs{existentials, predicate, term} = antiLeft
+        subst' =
+            foldl'
+                (flip Map.delete)
+                subst
+                (map (SomeVariableNameElement . variableName) existentials)
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 {- | Expansion of an antileft alias.
 
@@ -171,6 +185,23 @@ instance
       where
         AntiLeftLhs{existentials, predicate, term} = antiLeft
 
+instance InternalVariable variable => Substitute (AntiLeft variable) where
+    type TermType (AntiLeft variable) = TermLike variable
+
+    type VariableNameType (AntiLeft variable) = variable
+
+    substitute subst antiLeft@(AntiLeft _ _ _) =
+        AntiLeft
+            { aliasTerm = substitute subst aliasTerm
+            , maybeInner = substitute subst <$> maybeInner
+            , leftHands = map (substitute subst) leftHands
+            }
+      where
+        AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>
     AdjSomeVariableName (variable1 -> variable2) ->
@@ -198,39 +229,6 @@ mapVariablesLeft adj antiLeft@(AntiLeftLhs _ _ _) =
         }
   where
     AntiLeftLhs{existentials, predicate, term} = antiLeft
-
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    AntiLeft variable ->
-    AntiLeft variable
-substitute subst antiLeft@(AntiLeft _ _ _) =
-    AntiLeft
-        { aliasTerm = TermLike.substitute subst aliasTerm
-        , maybeInner = substitute subst <$> maybeInner
-        , leftHands = map (substituteLeft subst) leftHands
-        }
-  where
-    AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
-
-substituteLeft ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    AntiLeftLhs variable ->
-    AntiLeftLhs variable
-substituteLeft subst antiLeft@(AntiLeftLhs _ _ _) =
-    AntiLeftLhs
-        { existentials
-        , predicate = Predicate.substitute subst' predicate
-        , term = TermLike.substitute subst' term
-        }
-  where
-    AntiLeftLhs{existentials, predicate, term} = antiLeft
-    subst' =
-        foldl'
-            (flip Map.delete)
-            subst
-            (map (SomeVariableNameElement . variableName) existentials)
 
 forgetSimplified ::
     InternalVariable variable =>
@@ -408,8 +406,8 @@ refreshAntiLeftExistentials
     antiLeftLhs@(AntiLeftLhs _ _ _) =
         AntiLeftLhs
             { existentials = map renameVar existentials
-            , predicate = Predicate.substitute substitution predicate
-            , term = TermLike.substitute substitution term
+            , predicate = substitute substitution predicate
+            , term = substitute substitution term
             }
       where
         AntiLeftLhs{existentials, predicate, term} = antiLeftLhs
