@@ -38,7 +38,9 @@ import Prelude.Kore hiding (
     toList,
  )
 
-newtype FreeVariables variable = FreeVariables {getFreeVariables :: Map (SomeVariableName variable) Sort}
+newtype FreeVariables variable = FreeVariables
+    { getFreeVariables :: Map (SomeVariableName variable) Sort
+    }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -50,7 +52,11 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt = hashWithSalt salt . toList
     {-# INLINE hashWithSalt #-}
 
-instance Synthetic (FreeVariables variable) (Const (SomeVariable variable)) where
+instance
+    Synthetic
+        (FreeVariables variable)
+        (Const (SomeVariable variable))
+    where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
 

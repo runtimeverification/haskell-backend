@@ -11,7 +11,6 @@ module Kore.Equation.Equation (
     refreshVariables,
     isSimplificationRule,
     equationPriority,
-    substitute,
     identifiers,
 ) where
 
@@ -50,12 +49,14 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
 import Kore.Step.Step (
     Renaming,
  )
+import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),
  )
@@ -142,6 +143,25 @@ instance SQL.Table (Equation VariableName)
 instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
+
+instance InternalVariable variable => Substitute (Equation variable) where
+    type TermType (Equation variable) = TermLike variable
+
+    type VariableNameType (Equation variable) = variable
+
+    substitute assignments equation =
+        Equation
+            { requires = substitute assignments (requires equation)
+            , argument = substitute assignments <$> argument equation
+            , antiLeft = substitute assignments <$> antiLeft equation
+            , left = substitute assignments (left equation)
+            , right = substitute assignments (right equation)
+            , ensures = substitute assignments (ensures equation)
+            , attributes = attributes equation
+            }
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 -- This function must be removed as part of https://github.com/kframework/kore/issues/2593
 toTermLikeOld ::
@@ -327,8 +347,8 @@ refreshVariables ::
 refreshVariables
     (FreeVariables.toNames -> avoid)
     equation@(Equation _ _ _ _ _ _ _) =
-        let rename :: Map (SomeVariableName variable) (SomeVariable variable)
-            rename =
+        let rename' :: Map (SomeVariableName variable) (SomeVariable variable)
+            rename' =
                 FreeVariables.toSet originalFreeVariables
                     & Fresh.refreshVariables avoid
             lookupSomeVariableName ::
@@ -339,7 +359,7 @@ refreshVariables
             lookupSomeVariableName variable =
                 do
                     let injected = inject @(SomeVariableName _) variable
-                    someVariableName <- variableName <$> Map.lookup injected rename
+                    someVariableName <- variableName <$> Map.lookup injected rename'
                     retract someVariableName
                     & fromMaybe variable
             adj :: AdjSomeVariableName (variable -> variable)
@@ -361,12 +381,12 @@ refreshVariables
                 ( variableName variable
                 , TermLike.mkVar (mapSomeVariable adj variable)
                 )
-            left' = TermLike.substitute subst left
-            requires' = Predicate.substitute subst requires
-            argument' = Predicate.substitute subst <$> argument
-            antiLeft' = Predicate.substitute subst <$> antiLeft
-            right' = TermLike.substitute subst right
-            ensures' = Predicate.substitute subst ensures
+            left' = substitute subst left
+            requires' = substitute subst requires
+            argument' = substitute subst <$> argument
+            antiLeft' = substitute subst <$> antiLeft
+            right' = substitute subst right
+            ensures' = substitute subst ensures
             attributes' = Attribute.mapAxiomVariables adj attributes
             equation' =
                 equation
@@ -378,7 +398,7 @@ refreshVariables
                     , ensures = ensures'
                     , attributes = attributes'
                     }
-         in (rename, equation')
+         in (rename', equation')
       where
         Equation
             { requires
@@ -399,32 +419,6 @@ isSimplificationRule Equation{attributes} =
 
 equationPriority :: Equation variable -> Integer
 equationPriority = Attribute.getPriorityOfAxiom . attributes
-
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    Equation variable ->
-    Equation variable
-substitute assignments equation =
-    Equation
-        { requires = Predicate.substitute assignments requires
-        , argument = Predicate.substitute assignments <$> argument
-        , antiLeft = Predicate.substitute assignments <$> antiLeft
-        , left = TermLike.substitute assignments left
-        , right = TermLike.substitute assignments right
-        , ensures = Predicate.substitute assignments ensures
-        , attributes
-        }
-  where
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        , attributes
-        } = equation
 
 {- | The list of identifiers for an 'Equation'.
 

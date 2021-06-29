@@ -110,6 +110,10 @@ import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -125,6 +129,7 @@ import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -471,11 +476,12 @@ unifyInt term1 term2 unifyData =
     worker
         | on (==) internalIntValue int1 int2 =
             return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+        | otherwise =
+            debugUnifyBottomAndReturnBottom "distinct integers" term1 term2
 
 data UnifyIntEq = UnifyIntEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , value :: !Bool
+    , internalBool :: !InternalBool
     }
 
 {- | Matches
@@ -490,8 +496,8 @@ matchUnifyIntEq ::
 matchUnifyIntEq first second
     | Just eqTerm <- matchIntEqual first
       , isFunctionPattern first
-      , Just value <- Bool.matchBool second =
-        Just UnifyIntEq{eqTerm, value}
+      , InternalBool_ internalBool <- second =
+        Just UnifyIntEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}
 
@@ -508,11 +514,15 @@ unifyIntEq ::
     unifier (Pattern RewritingVariableName)
 unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
     do
-        solution <- unifyChildren operand1 operand2 & OrPattern.gather
-        let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else notSimplifier SideCondition.top) solution'
-            >>= Unify.scatter
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else notSimplifier SideCondition.top
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    UnifyIntEq{eqTerm, value} = unifyData
+    UnifyIntEq{eqTerm, internalBool} = unifyData
     EqTerm{operand1, operand2} = eqTerm
     eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm

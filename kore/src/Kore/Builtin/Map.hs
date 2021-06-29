@@ -95,6 +95,9 @@ import Kore.Internal.TermLike (
     pattern InternalMap_,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -573,7 +576,7 @@ unifyEquals unifyEqualsChildren first second = do
                     return (Ac.asInternal tools sort1 normalized)
                 Ac.Bottom ->
                     lift $
-                        Monad.Unify.explainAndReturnBottom
+                        debugUnifyBottomAndReturnBottom
                             "Duplicated elements in normalization."
                             first
                             second
