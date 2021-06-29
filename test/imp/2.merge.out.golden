@@ -1,31 +1,31 @@
-/* Spu */
+/* Spa */
 \rewrites{SortGeneratedTopCell{}}(
-    /* Spu */
+    /* Spa */
     \and{SortGeneratedTopCell{}}(
-        /* Sfu */
+        /* Sfa */
         \and{SortGeneratedTopCell{}}(
-            /* Sfc */
+            /* Sfa */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
                 /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
-                /* Fl Fn D Sfc */
+                /* Fl Fn D Sfa */
                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                    /* Fl Fn D Sfc */
+                    /* Fl Fn D Sfa */
                     /* Inj: */ inj{SortId{}, SortKItem{}}(
                         /* Fl Fn D Sfa */ VarX:SortId{}
                     ),
                     /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortMap{}
                 )
             ),
-            /* Sfc */
+            /* Sfa */
             \equals{SortMap{}, SortGeneratedTopCell{}}(
-                /* Fn Sfc */
+                /* Fn Sfa */
                 /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
                             /* Fl Fn D Sfa */ VarX:SortId{}
                         ),
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         /* Inj: */ inj{SortInt{}, SortKItem{}}(
                             /* Fl Fn D Sfa */ VarI:SortInt{}
                         )
@@ -33,10 +33,10 @@
                     /* opaque child: */ /* Fl Fn D Sfa */
                     Var'Unds'DotVar3:SortMap{}
                 ),
-                /* Fn Sfc */
+                /* Fn Sfa */
                 /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
                             /* Fl Fn D Sfa */ VarX0:SortId{}
                         ),
@@ -47,28 +47,28 @@
                 )
             )
         ),
-        /* Fn Spc */
+        /* Fn Spa */
         Lbl'-LT-'generatedTop'-GT-'{}(
-            /* Fn Spc */
+            /* Fn Spa */
             Lbl'-LT-'T'-GT-'{}(
-                /* Fl Fn D Spc */
+                /* Fl Fn D Spa */
                 Lbl'-LT-'k'-GT-'{}(
-                    /* Fl Fn D Spc */
+                    /* Fl Fn D Spa */
                     kseq{}(
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         /* Inj: */ inj{SortStmt{}, SortKItem{}}(
-                            /* Fl Fn D Sfc */
+                            /* Fl Fn D Sfa */
                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
                                 /* Fl Fn D Sfa */ VarX:SortId{},
-                                /* Fl Fn D Sfc */
+                                /* Fl Fn D Sfa */
                                 /* Inj: */ inj{SortInt{}, SortAExp{}}(
                                     /* Fl Fn D Sfa */ VarI:SortInt{}
                                 )
                             )
                         ),
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Sfa */
                         kseq{}(
-                            /* Fl Fn D Sfc */
+                            /* Fl Fn D Sfa */
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
                                 /* Fl Fn D Sfa */ VarX0:SortId{}
                             ),
@@ -76,12 +76,12 @@
                         )
                     )
                 ),
-                /* Fn Sfc */
+                /* Fn Sfa */
                 Lbl'-LT-'state'-GT-'{}(
-                    /* Fn Sfc */
+                    /* Fn Sfa */
                     /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                         /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                            /* Fl Fn D Sfc */
+                            /* Fl Fn D Sfa */
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
                                 /* Fl Fn D Sfa */ VarX:SortId{}
                             ),

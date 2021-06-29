@@ -94,6 +94,9 @@ import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Log.WarnNotImplemented
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -522,7 +525,8 @@ unifyString term1 term2 unifyData =
     worker
         | on (==) internalStringValue string1 string2 =
             return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct strings" term1 term2
+        | otherwise =
+            debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2} = unifyData
 
 data UnifyStringEq = UnifyStringEq

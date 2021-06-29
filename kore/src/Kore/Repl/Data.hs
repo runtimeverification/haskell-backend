@@ -31,8 +31,7 @@ module Kore.Repl.Data (
     InnerGraph,
     shouldStore,
     commandSet,
-    UnifierWithExplanation (..),
-    runUnifierWithExplanation,
+    runUnifierWithoutExplanation,
     StepResult (..),
     LogType (..),
     ReplScript (..),
@@ -52,12 +51,6 @@ module Kore.Repl.Data (
 ) where
 
 import Control.Concurrent.MVar
-import Control.Monad.Trans.Accum (
-    AccumT,
-    runAccumT,
- )
-import qualified Control.Monad.Trans.Accum as Monad.Accum
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -68,9 +61,6 @@ import Data.List (
  )
 import Data.Map.Strict (
     Map,
- )
-import Data.Monoid (
-    First (..),
  )
 import Data.Sequence (
     Seq,
@@ -93,7 +83,6 @@ import Kore.Internal.TermLike (
 import Kore.Log (
     ActualEntry (..),
     LogAction (..),
-    MonadLog (..),
  )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
@@ -113,20 +102,12 @@ import Kore.Syntax.Module (
     ModuleName (..),
  )
 import Kore.Unification.UnifierT (
-    MonadUnify,
     UnifierT (..),
  )
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Unparser (
-    unparse,
- )
 import Logic
 import Numeric.Natural
 import Prelude.Kore
-import qualified Pretty
-import SMT (
-    MonadSMT,
- )
 
 {- | Represents an optional file name which contains a sequence of
  repl commands.
@@ -597,7 +578,7 @@ data Config m = Config
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        UnifierWithExplanation m (Condition RewritingVariableName)
+        UnifierT m (Condition RewritingVariableName)
     , -- | Logger function, see 'logging'.
       logger :: MVar (LogAction IO ActualEntry)
     , -- | Output resulting pattern to this file.
@@ -606,54 +587,6 @@ data Config m = Config
     , kFileLocations :: KFileLocations
     }
     deriving stock (GHC.Generic)
-
-{- | Unifier that stores the first 'explainBottom'.
- See 'runUnifierWithExplanation'.
--}
-newtype UnifierWithExplanation m a = UnifierWithExplanation
-    { getUnifierWithExplanation ::
-        UnifierT (AccumT (First ReplOutput) m) a
-    }
-    deriving newtype (Alternative, Applicative, Functor, Monad, MonadPlus)
-
-instance Monad m => MonadLogic (UnifierWithExplanation m) where
-    msplit act =
-        UnifierWithExplanation $
-            msplit (getUnifierWithExplanation act) >>= return . wrapNext
-      where
-        wrapNext = (fmap . fmap) UnifierWithExplanation
-
-deriving newtype instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
-
-instance MonadTrans UnifierWithExplanation where
-    lift = UnifierWithExplanation . lift . lift
-    {-# INLINE lift #-}
-
-instance MonadLog m => MonadLog (UnifierWithExplanation m) where
-    logEntry entry = UnifierWithExplanation $ logEntry entry
-    {-# INLINE logEntry #-}
-    logWhile entry ma =
-        UnifierWithExplanation $ logWhile entry (getUnifierWithExplanation ma)
-    {-# INLINE logWhile #-}
-
-instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
-
-instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    explainBottom info first second =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Accum.add
-            . First
-            . Just
-            $ ReplOutput
-                [ AuxOut . show $ info <> "\n"
-                , AuxOut "When unifying:\n"
-                , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
-                , AuxOut "With:\n"
-                , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
-                ]
 
 -- | Result after running one or multiple proof steps.
 data StepResult
@@ -688,31 +621,21 @@ makeKoreReplOutput :: String -> ReplOutput
 makeKoreReplOutput str =
     ReplOutput . return . KoreOut $ str <> "\n"
 
-runUnifierWithExplanation ::
+runUnifierWithoutExplanation ::
     forall m a.
     MonadSimplify m =>
-    UnifierWithExplanation m a ->
-    m (Either ReplOutput (NonEmpty a))
-runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    failWithExplanation <$> unificationResults
+    UnifierT m a ->
+    m (Maybe (NonEmpty a))
+runUnifierWithoutExplanation unifier =
+    failEmptyList <$> unificationResults
   where
-    unificationResults ::
-        m ([a], First ReplOutput)
-    unificationResults =
-        flip runAccumT mempty
-            . Monad.Unify.runUnifierT Not.notSimplifier
-            $ unifier
-    failWithExplanation ::
-        ([a], First ReplOutput) ->
-        Either ReplOutput (NonEmpty a)
-    failWithExplanation (results, explanation) =
+    unificationResults :: m [a]
+    unificationResults = Monad.Unify.runUnifierT Not.notSimplifier unifier
+    failEmptyList :: [a] -> Maybe (NonEmpty a)
+    failEmptyList results =
         case results of
-            [] ->
-                Left $
-                    fromMaybe
-                        (makeAuxReplOutput "No explanation given")
-                        (getFirst explanation)
-            r : rs -> Right (r :| rs)
+            [] -> Nothing
+            r : rs -> Just (r :| rs)
 
 data TryApplyRuleResult
     = DoesNotApply
