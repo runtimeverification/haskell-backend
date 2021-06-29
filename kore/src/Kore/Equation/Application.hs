@@ -92,6 +92,12 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.Axiom.Matcher (
+    MatchResult,
+    matchIncremental,
+ )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT
+import qualified Kore.Rewrite.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -99,12 +105,6 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Simplify.Simplify as Simplifier
-import Kore.Step.Axiom.Matcher (
-    MatchResult,
-    matchIncremental,
- )
-import qualified Kore.Step.SMT.Evaluator as SMT
-import qualified Kore.Step.Substitution as Substitution
 import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),

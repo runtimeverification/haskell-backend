@@ -47,7 +47,7 @@ import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Internal.TermLike as TermLike
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.SMT (

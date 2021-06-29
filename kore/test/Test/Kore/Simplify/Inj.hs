@@ -23,10 +23,10 @@ import Kore.Rewriting.RewritingVariable (
  )
 import qualified Kore.Simplify.Inj as Kore
 import Prelude.Kore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify (
     runSimplifier,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

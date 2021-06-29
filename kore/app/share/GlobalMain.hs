@@ -85,7 +85,7 @@ import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils (
     parseOnly,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Syntax

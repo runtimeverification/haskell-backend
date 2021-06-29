@@ -40,10 +40,10 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import Test.Kore.Simplify
-import Test.Kore.Step.MockSymbols (
+import Test.Kore.Rewrite.MockSymbols (
     testSort,
  )
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -36,22 +36,22 @@ import qualified Kore.Internal.SideCondition as SideCondition (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.EvaluationStrategy (
+    firstFullEvaluation,
+ )
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Condition as Condition
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Step.Axiom.EvaluationStrategy (
-    firstFullEvaluation,
- )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
 import Kore.TopBottom
 import Prelude.Kore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import qualified Test.Kore.Simplify as Test
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

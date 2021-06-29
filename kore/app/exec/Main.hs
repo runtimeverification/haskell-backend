@@ -102,19 +102,19 @@ import Kore.Reachability (
     getConfiguration,
  )
 import qualified Kore.Reachability.Claim as Claim
-import Kore.Rewriting.RewritingVariable
-import Kore.Step
-import Kore.Step.RulePattern (
+import Kore.Rewrite
+import Kore.Rewrite.RulePattern (
     mapRuleVariables,
  )
-import Kore.Step.SMT.Lemma
-import Kore.Step.Search (
+import Kore.Rewrite.SMT.Lemma
+import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Strategy (
+import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.Definition (
     Definition (Definition),
     Module (Module),

@@ -49,6 +49,7 @@ import Kore.Internal.TermLike (
     pattern Not_,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Rewrite.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -57,7 +58,6 @@ import Kore.Simplify.AndTerms (
  )
 import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify
-import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.UnifierT (
     UnifierT (..),
     runUnifierT,

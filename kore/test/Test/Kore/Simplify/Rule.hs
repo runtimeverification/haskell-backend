@@ -1,15 +1,15 @@
 module Test.Kore.Simplify.Rule (test_simplifyRulePattern) where
 
 import Kore.Internal.TermLike
+import Kore.Rewrite.RulePattern (
+    RulePattern,
+    rulePattern,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkRewritingTerm,
  )
 import qualified Kore.Simplify.Rule as Kore
-import Kore.Step.RulePattern (
-    RulePattern,
-    rulePattern,
- )
 import Prelude.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin

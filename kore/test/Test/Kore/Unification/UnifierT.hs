@@ -27,6 +27,8 @@ import Kore.Internal.Substitution (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import qualified Kore.Rewrite.Axiom.EvaluationStrategy as EvaluationStrategy
+import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -36,13 +38,11 @@ import Kore.Simplify.Data (
  )
 import qualified Kore.Simplify.Not as Not
 import qualified Kore.Simplify.Simplify as Simplifier
-import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
-import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import qualified Logic
 import Prelude.Kore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import qualified Test.Kore.Simplify as Test
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

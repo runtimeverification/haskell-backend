@@ -28,11 +28,11 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Simplify.And
 import qualified Kore.Simplify.Not as Not
 import Prelude.Kore
-import Test.Kore.Simplify
-import Test.Kore.Step.MockSymbols (
+import Test.Kore.Rewrite.MockSymbols (
     testSort,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

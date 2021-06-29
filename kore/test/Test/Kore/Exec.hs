@@ -45,25 +45,25 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnDepthLimitExceeded
-import Kore.Step (
+import Kore.Rewrite (
     ExecutionMode (..),
  )
-import Kore.Step.AntiLeft (
+import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
-import qualified Kore.Step.AntiLeft as AntiLeft.DoNotUse
-import Kore.Step.Rule
-import Kore.Step.RulePattern (
+import qualified Kore.Rewrite.AntiLeft as AntiLeft.DoNotUse
+import Kore.Rewrite.Rule
+import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (..),
     injectTermIntoRHS,
     rewriteRuleToTerm,
  )
-import Kore.Step.Search (
+import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Strategy (
+import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
 import Kore.Syntax.Definition hiding (

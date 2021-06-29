@@ -97,25 +97,25 @@ import qualified Kore.Reachability.Prim as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    getRewritingPattern,
- )
-import Kore.Simplify.Simplify
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     mkGoal,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,
     Strategy,
     executionHistoryStep,
  )
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition (
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import qualified Kore.Step.Transition as Transition
+import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingPattern,
+ )
+import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Kore.Unparser
 import Log (

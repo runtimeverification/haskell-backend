@@ -18,8 +18,8 @@ import Kore.Simplify.Overloading
 import Pair
 import Prelude.Kore
 import Test.Kore.Internal.TermLike
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Syntax.Id
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

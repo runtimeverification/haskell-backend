@@ -21,13 +21,13 @@ import GHC.Stack (
 import Kore.Attribute.Axiom (
     Axiom (..),
  )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RewriteRule,
     RulePattern (..),
     getRewriteRule,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
  )
 import Log
 import Prelude.Kore

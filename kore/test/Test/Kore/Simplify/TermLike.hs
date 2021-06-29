@@ -18,6 +18,7 @@ import Kore.Internal.SideCondition (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import qualified Kore.Rewrite.Function.Memo as Memo
 import Kore.Rewriting.RewritingVariable (
     getRewritingPattern,
     mkConfigVariable,
@@ -25,11 +26,10 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.TermLike as TermLike
-import qualified Kore.Step.Function.Memo as Memo
 import qualified Logic
 import Prelude.Kore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

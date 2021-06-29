@@ -15,7 +15,7 @@ import Kore.Simplify.Top (
  )
 import Kore.Syntax
 import Prelude.Kore ()
-import Test.Kore.Step.MockSymbols (
+import Test.Kore.Rewrite.MockSymbols (
     testSort,
  )
 import Test.Tasty

@@ -21,11 +21,11 @@ import Kore.Internal.Symbol (
     toSymbolOrAlias,
  )
 import Kore.Internal.TermLike
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.Axiom.Registry
 import Kore.Rewriting.RewritingVariable (
     mkConfigVariable,
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.Axiom.Registry
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
@@ -38,7 +38,7 @@ import Test.Kore.Builtin.Definition (
     symbolDecl,
  )
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

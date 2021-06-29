@@ -33,28 +33,28 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
 import qualified Kore.Reachability.ClaimState as ClaimState
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RulePattern (..),
     injectTermIntoRHS,
     mkRewritingRule,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     Strategy,
     pickFinal,
     runStrategy,
  )
+import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.Variable
 import Numeric.Natural (
     Natural,
  )
 import Prelude.Kore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

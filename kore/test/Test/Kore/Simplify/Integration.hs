@@ -36,6 +36,16 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.Axiom.EvaluationStrategy (
+    builtinEvaluation,
+    simplifierWithFallback,
+ )
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
+import Kore.Rewrite.Axiom.Registry (
+    mkEvaluatorRegistry,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
@@ -45,16 +55,6 @@ import qualified Kore.Simplify.Pattern as Pattern (
     makeEvaluate,
  )
 import Kore.Simplify.Simplify
-import Kore.Step.Axiom.EvaluationStrategy (
-    builtinEvaluation,
-    simplifierWithFallback,
- )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
-import Kore.Step.Axiom.Registry (
-    mkEvaluatorRegistry,
- )
 import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
@@ -72,8 +72,8 @@ import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution hiding (
     test_substitute,
  )
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

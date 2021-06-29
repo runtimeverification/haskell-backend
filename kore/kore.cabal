@@ -383,6 +383,43 @@ library
     Kore.Repl.Interpreter
     Kore.Repl.Parser
     Kore.Repl.State
+    Kore.Rewrite
+    Kore.Rewrite.AntiLeft
+    Kore.Rewrite.Axiom.EvaluationStrategy
+    Kore.Rewrite.Axiom.Identifier
+    Kore.Rewrite.Axiom.Matcher
+    Kore.Rewrite.Axiom.Registry
+    Kore.Rewrite.AxiomPattern
+    Kore.Rewrite.ClaimPattern
+    Kore.Rewrite.Function.Evaluator
+    Kore.Rewrite.Function.Memo
+    Kore.Rewrite.Implication
+    Kore.Rewrite.Remainder
+    Kore.Rewrite.Result
+    Kore.Rewrite.RewriteStep
+    Kore.Rewrite.Rule
+    Kore.Rewrite.Rule.Combine
+    Kore.Rewrite.Rule.Expand
+    Kore.Rewrite.Rule.Simplify
+    Kore.Rewrite.RulePattern
+    Kore.Rewrite.Search
+    Kore.Rewrite.SMT.AST
+    Kore.Rewrite.SMT.Declaration.All
+    Kore.Rewrite.SMT.Declaration.Sorts
+    Kore.Rewrite.SMT.Declaration.Symbols
+    Kore.Rewrite.SMT.Encoder
+    Kore.Rewrite.SMT.Evaluator
+    Kore.Rewrite.SMT.Lemma
+    Kore.Rewrite.SMT.Representation.All
+    Kore.Rewrite.SMT.Representation.Resolve
+    Kore.Rewrite.SMT.Representation.Sorts
+    Kore.Rewrite.SMT.Representation.Symbols
+    Kore.Rewrite.SMT.Resolvers
+    Kore.Rewrite.SMT.Translate
+    Kore.Rewrite.Step
+    Kore.Rewrite.Strategy
+    Kore.Rewrite.Substitution
+    Kore.Rewrite.Transition
     Kore.Rewriting.RewritingVariable
     Kore.Rewriting.UnifyingRule
     Kore.Simplify.And
@@ -435,43 +472,6 @@ library
     Kore.Simplify.Top
     Kore.Simplify.Variable
     Kore.Sort
-    Kore.Step
-    Kore.Step.AntiLeft
-    Kore.Step.Axiom.EvaluationStrategy
-    Kore.Step.Axiom.Identifier
-    Kore.Step.Axiom.Matcher
-    Kore.Step.Axiom.Registry
-    Kore.Step.AxiomPattern
-    Kore.Step.ClaimPattern
-    Kore.Step.Function.Evaluator
-    Kore.Step.Function.Memo
-    Kore.Step.Implication
-    Kore.Step.Remainder
-    Kore.Step.Result
-    Kore.Step.RewriteStep
-    Kore.Step.Rule
-    Kore.Step.Rule.Combine
-    Kore.Step.Rule.Expand
-    Kore.Step.Rule.Simplify
-    Kore.Step.RulePattern
-    Kore.Step.Search
-    Kore.Step.SMT.AST
-    Kore.Step.SMT.Declaration.All
-    Kore.Step.SMT.Declaration.Sorts
-    Kore.Step.SMT.Declaration.Symbols
-    Kore.Step.SMT.Encoder
-    Kore.Step.SMT.Evaluator
-    Kore.Step.SMT.Lemma
-    Kore.Step.SMT.Representation.All
-    Kore.Step.SMT.Representation.Resolve
-    Kore.Step.SMT.Representation.Sorts
-    Kore.Step.SMT.Representation.Symbols
-    Kore.Step.SMT.Resolvers
-    Kore.Step.SMT.Translate
-    Kore.Step.Step
-    Kore.Step.Strategy
-    Kore.Step.Substitution
-    Kore.Step.Transition
     Kore.Substitute
     Kore.Syntax
     Kore.Syntax.And
@@ -706,6 +706,39 @@ test-suite kore-test
     Test.Kore.Repl.Graph
     Test.Kore.Repl.Interpreter
     Test.Kore.Repl.Parser
+    Test.Kore.Rewrite
+    Test.Kore.Rewrite.AntiLeft
+    Test.Kore.Rewrite.Axiom.EvaluationStrategy
+    Test.Kore.Rewrite.Axiom.Identifier
+    Test.Kore.Rewrite.Axiom.Matcher
+    Test.Kore.Rewrite.Axiom.Registry
+    Test.Kore.Rewrite.ClaimPattern
+    Test.Kore.Rewrite.Function.Evaluator
+    Test.Kore.Rewrite.Function.Integration
+    Test.Kore.Rewrite.Function.Memo
+    Test.Kore.Rewrite.Implication
+    Test.Kore.Rewrite.MockSymbols
+    Test.Kore.Rewrite.Remainder
+    Test.Kore.Rewrite.RewriteStep
+    Test.Kore.Rewrite.Rule
+    Test.Kore.Rewrite.Rule.Combine
+    Test.Kore.Rewrite.Rule.Common
+    Test.Kore.Rewrite.Rule.Expand
+    Test.Kore.Rewrite.Rule.Simplify
+    Test.Kore.Rewrite.RulePattern
+    Test.Kore.Rewrite.SMT.Builders
+    Test.Kore.Rewrite.SMT.Evaluator
+    Test.Kore.Rewrite.SMT.Helpers
+    Test.Kore.Rewrite.SMT.Representation.All
+    Test.Kore.Rewrite.SMT.Representation.Builders
+    Test.Kore.Rewrite.SMT.Representation.Helpers
+    Test.Kore.Rewrite.SMT.Representation.Sorts
+    Test.Kore.Rewrite.SMT.Representation.Symbols
+    Test.Kore.Rewrite.SMT.Sorts
+    Test.Kore.Rewrite.SMT.Symbols
+    Test.Kore.Rewrite.SMT.Translate
+    Test.Kore.Rewrite.Strategy
+    Test.Kore.Rewrite.Transition
     Test.Kore.Rewriting.RewritingVariable
     Test.Kore.Simplify
     Test.Kore.Simplify.And
@@ -740,39 +773,6 @@ test-suite kore-test
     Test.Kore.Simplify.SubstitutionSimplifier
     Test.Kore.Simplify.TermLike
     Test.Kore.Simplify.Top
-    Test.Kore.Step
-    Test.Kore.Step.AntiLeft
-    Test.Kore.Step.Axiom.EvaluationStrategy
-    Test.Kore.Step.Axiom.Identifier
-    Test.Kore.Step.Axiom.Matcher
-    Test.Kore.Step.Axiom.Registry
-    Test.Kore.Step.ClaimPattern
-    Test.Kore.Step.Function.Evaluator
-    Test.Kore.Step.Function.Integration
-    Test.Kore.Step.Function.Memo
-    Test.Kore.Step.Implication
-    Test.Kore.Step.MockSymbols
-    Test.Kore.Step.Remainder
-    Test.Kore.Step.RewriteStep
-    Test.Kore.Step.Rule
-    Test.Kore.Step.Rule.Combine
-    Test.Kore.Step.Rule.Common
-    Test.Kore.Step.Rule.Expand
-    Test.Kore.Step.Rule.Simplify
-    Test.Kore.Step.RulePattern
-    Test.Kore.Step.SMT.Builders
-    Test.Kore.Step.SMT.Evaluator
-    Test.Kore.Step.SMT.Helpers
-    Test.Kore.Step.SMT.Representation.All
-    Test.Kore.Step.SMT.Representation.Builders
-    Test.Kore.Step.SMT.Representation.Helpers
-    Test.Kore.Step.SMT.Representation.Sorts
-    Test.Kore.Step.SMT.Representation.Symbols
-    Test.Kore.Step.SMT.Sorts
-    Test.Kore.Step.SMT.Symbols
-    Test.Kore.Step.SMT.Translate
-    Test.Kore.Step.Strategy
-    Test.Kore.Step.Transition
     Test.Kore.Syntax.Id
     Test.Kore.Syntax.Variable
     Test.Kore.TopBottom

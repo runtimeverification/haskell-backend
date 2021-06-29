@@ -27,6 +27,9 @@ import Kore.Internal.TermLike (
     pattern Forall_,
     pattern Implies_,
  )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
+    filterMultiOr,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -34,9 +37,6 @@ import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Simplify.Simplify
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
-    filterMultiOr,
- )
 import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),

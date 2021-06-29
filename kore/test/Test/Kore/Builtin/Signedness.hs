@@ -29,7 +29,7 @@ import Kore.Unification.UnifierT (
 import Prelude.Kore
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Step.Axiom.Matcher (
+import Test.Kore.Rewrite.Axiom.Matcher (
     doesn'tMatch,
     matches,
  )

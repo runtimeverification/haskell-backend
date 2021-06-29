@@ -22,8 +22,8 @@ import Kore.Simplify.Predicate (simplify)
 import Kore.TopBottom
 import Prelude.Kore
 import qualified Pretty
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import qualified Test.Kore.Simplify as Test
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

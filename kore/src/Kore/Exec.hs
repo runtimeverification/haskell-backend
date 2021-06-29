@@ -122,6 +122,40 @@ import Kore.Reachability (
  )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
+import Kore.Rewrite
+import Kore.Rewrite.Rule (
+    extractImplicationClaims,
+    extractRewriteAxioms,
+ )
+import qualified Kore.Rewrite.Rule.Combine as Rules (
+    mergeRules,
+    mergeRulesConsecutiveBatches,
+ )
+import Kore.Rewrite.Rule.Expand (
+    ExpandSingleConstructors (..),
+ )
+import Kore.Rewrite.Rule.Simplify (
+    SimplifyRuleLHS (..),
+ )
+import Kore.Rewrite.RulePattern (
+    ImplicationRule (..),
+    RewriteRule (..),
+    getRewriteRule,
+    lhsEqualsRhs,
+    mapRuleVariables,
+ )
+import Kore.Rewrite.RulePattern as RulePattern (
+    RulePattern (..),
+ )
+import Kore.Rewrite.Search (
+    searchGraph,
+ )
+import qualified Kore.Rewrite.Search as Search
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Transition (
+    runTransitionT,
+    scatter,
+ )
 import Kore.Rewriting.RewritingVariable
 import Kore.Simplify.Data (
     evalSimplifier,
@@ -131,40 +165,6 @@ import qualified Kore.Simplify.Pattern as Pattern
 import qualified Kore.Simplify.Rule as Rule
 import Kore.Simplify.Simplify (
     MonadSimplify,
- )
-import Kore.Step
-import Kore.Step.Rule (
-    extractImplicationClaims,
-    extractRewriteAxioms,
- )
-import qualified Kore.Step.Rule.Combine as Rules (
-    mergeRules,
-    mergeRulesConsecutiveBatches,
- )
-import Kore.Step.Rule.Expand (
-    ExpandSingleConstructors (..),
- )
-import Kore.Step.Rule.Simplify (
-    SimplifyRuleLHS (..),
- )
-import Kore.Step.RulePattern (
-    ImplicationRule (..),
-    RewriteRule (..),
-    getRewriteRule,
-    lhsEqualsRhs,
-    mapRuleVariables,
- )
-import Kore.Step.RulePattern as RulePattern (
-    RulePattern (..),
- )
-import Kore.Step.Search (
-    searchGraph,
- )
-import qualified Kore.Step.Search as Search
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition (
-    runTransitionT,
-    scatter,
  )
 import Kore.Syntax.Module (
     ModuleName,

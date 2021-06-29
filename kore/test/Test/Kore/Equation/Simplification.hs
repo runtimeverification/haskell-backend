@@ -16,10 +16,10 @@ import Prelude.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification_,
  )
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify (
     runSimplifier,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -23,13 +23,13 @@ import Kore.Internal.OrCondition (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Rewrite.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Step.Substitution as Substitution
 import qualified Logic as LogicT
 import Prelude.Kore
 

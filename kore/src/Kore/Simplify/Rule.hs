@@ -25,6 +25,12 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Rewrite.AntiLeft as AntiLeft
+import Kore.Rewrite.ClaimPattern (
+    ClaimPattern (..),
+ )
+import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.RulePattern
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -33,12 +39,6 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Simplify.Simplify as Simplifier
-import qualified Kore.Step.AntiLeft as AntiLeft
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
- )
-import qualified Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.RulePattern
 import Kore.Substitute
 import Prelude.Kore
 

@@ -133,16 +133,16 @@ import Kore.Reachability (
  )
 import Kore.Reachability.Prove
 import Kore.Repl.Data
+import Kore.Rewrite.AxiomPattern (
+    AxiomPattern (..),
+ )
+import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Data (
     MonadSimplify,
  )
-import Kore.Step.AxiomPattern (
-    AxiomPattern (..),
- )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Definition (
     Definition (..),
     Module (..),

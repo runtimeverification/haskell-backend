@@ -90,6 +90,7 @@ import Kore.Reachability hiding (
     AppliedRule,
  )
 import qualified Kore.Reachability as Reachability
+import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -97,7 +98,6 @@ import Kore.Simplify.Data (
     MonadSimplify (..),
  )
 import qualified Kore.Simplify.Not as Not
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Module (
     ModuleName (..),
  )

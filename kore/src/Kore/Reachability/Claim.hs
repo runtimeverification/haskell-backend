@@ -106,6 +106,29 @@ import Kore.Reachability.ClaimState hiding (
     claimState,
  )
 import Kore.Reachability.Prim
+import Kore.Rewrite.AxiomPattern (
+    AxiomPattern (..),
+ )
+import Kore.Rewrite.ClaimPattern (
+    ClaimPattern (..),
+ )
+import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.Result (
+    Result (..),
+    Results (..),
+ )
+import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RulePattern (
+    RewriteRule (..),
+    RulePattern (..),
+ )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
+import qualified Kore.Rewrite.Step as Step
+import Kore.Rewrite.Strategy (
+    Strategy,
+ )
+import qualified Kore.Rewrite.Strategy as Strategy
+import qualified Kore.Rewrite.Transition as Transition
 import Kore.Rewriting.RewritingVariable
 import Kore.Simplify.Data (
     MonadSimplify,
@@ -116,29 +139,6 @@ import Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
  )
 import qualified Kore.Simplify.Pattern as Pattern
-import Kore.Step.AxiomPattern (
-    AxiomPattern (..),
- )
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
- )
-import qualified Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Result (
-    Result (..),
-    Results (..),
- )
-import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern (
-    RewriteRule (..),
-    RulePattern (..),
- )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Step as Step
-import Kore.Step.Strategy (
-    Strategy,
- )
-import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),

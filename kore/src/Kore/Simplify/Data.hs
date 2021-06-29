@@ -51,6 +51,14 @@ import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.TermLike (
     TermLike,
  )
+import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
+import Kore.Rewrite.Axiom.Identifier (
+    matchAxiomIdentifier,
+ )
+import Kore.Rewrite.Axiom.Registry (
+    mkEvaluatorRegistry,
+ )
+import qualified Kore.Rewrite.Function.Memo as Memo
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkEquationVariable,
@@ -61,14 +69,6 @@ import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
-import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
-import Kore.Step.Axiom.Identifier (
-    matchAxiomIdentifier,
- )
-import Kore.Step.Axiom.Registry (
-    mkEvaluatorRegistry,
- )
-import qualified Kore.Step.Function.Memo as Memo
 import Log
 import Logic
 import Prelude.Kore

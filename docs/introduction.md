@@ -208,7 +208,7 @@ Matching is implemented sequentially, so there is no separate substitution norma
 
 References:
 
-- `Kore.Step.Axiom.Matcher`
+- `Kore.Rewrite.Axiom.Matcher`
 
 ### Semantic rules
 
@@ -226,7 +226,7 @@ The procedures to apply one-path and all-path reachability claims is described i
 
 References:
 
-- `Kore.Step.Step`
+- `Kore.Rewrite.Step`
 
 ### Function rules
 
@@ -238,8 +238,8 @@ this point is planned to change.
 
 References:
 
-- `Kore.Step.Function.Evaluator`
-- `Kore.Step.Axiom.EvaluationStrategy`
+- `Kore.Rewrite.Function.Evaluator`
+- `Kore.Rewrite.Axiom.EvaluationStrategy`
 
 ### Simplification
 
@@ -278,5 +278,5 @@ avoiding the overhead of restarting the solver for each query.
 
 References:
 
-- `Kore.Step.SMT.Translate`
-- `Kore.Step.SMT.Evaluator`
+- `Kore.Rewrite.SMT.Translate`
+- `Kore.Rewrite.SMT.Evaluator`

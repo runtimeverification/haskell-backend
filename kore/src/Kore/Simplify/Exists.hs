@@ -61,6 +61,9 @@ import Kore.Internal.TermLike (
     withoutFreeVariable,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.Axiom.Matcher (
+    matchIncremental,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -71,9 +74,6 @@ import qualified Kore.Simplify.Pattern as Pattern (
     makeEvaluate,
  )
 import Kore.Simplify.Simplify
-import Kore.Step.Axiom.Matcher (
-    matchIncremental,
- )
 import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser

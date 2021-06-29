@@ -15,11 +15,11 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.TermLike
 import Kore.Reachability.SomeClaim
+import Kore.Rewrite.ClaimPattern (
+    ClaimPattern (..),
+ )
 import Kore.Rewriting.RewritingVariable (
     mkRuleVariable,
- )
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
  )
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
@@ -27,7 +27,7 @@ import Kore.Syntax.Sentence (
  )
 import Prelude.Kore
 import Test.Expect
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -95,6 +95,13 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.RulePattern (
+    RewriteRule (RewriteRule),
+    injectTermIntoRHS,
+ )
+import Kore.Rewrite.RulePattern as RulePattern (
+    RulePattern (..),
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
@@ -106,13 +113,6 @@ import Kore.Simplify.AndTerms (
     termUnification,
  )
 import qualified Kore.Simplify.Not as Not
-import Kore.Step.RulePattern (
-    RewriteRule (RewriteRule),
-    injectTermIntoRHS,
- )
-import Kore.Step.RulePattern as RulePattern (
-    RulePattern (..),
- )
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
@@ -137,8 +137,8 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.With
 import Test.SMT hiding (
     runSMT,

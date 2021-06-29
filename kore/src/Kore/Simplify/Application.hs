@@ -30,16 +30,16 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike
+import Kore.Rewrite.Function.Evaluator (
+    evaluateApplication,
+ )
+import Kore.Rewrite.Substitution (
+    mergePredicatesAndSubstitutions,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify as Simplifier
-import Kore.Step.Function.Evaluator (
-    evaluateApplication,
- )
-import Kore.Step.Substitution (
-    mergePredicatesAndSubstitutions,
- )
 import Logic (
     LogicT,
  )

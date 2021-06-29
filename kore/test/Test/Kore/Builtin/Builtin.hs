@@ -73,6 +73,13 @@ import Kore.Internal.TermLike
 import Kore.Parser (
     parseKorePattern,
  )
+import qualified Kore.Rewrite.Function.Memo as Memo
+import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RulePattern (
+    RewriteRule (..),
+    RulePattern,
+ )
+import qualified Kore.Rewrite.Step as Step
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Simplify.Condition as Simplifier.Condition
 import Kore.Simplify.Data
@@ -81,13 +88,6 @@ import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
-import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern (
-    RewriteRule (..),
-    RulePattern,
- )
-import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,

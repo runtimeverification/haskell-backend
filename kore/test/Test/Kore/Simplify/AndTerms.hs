@@ -70,8 +70,8 @@ import Kore.Syntax.Sentence (
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Prelude.Kore
 import Test.Kore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

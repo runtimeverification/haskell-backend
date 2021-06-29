@@ -81,12 +81,12 @@ import Kore.Reachability (
     extractClaim,
     lensClaimPattern,
  )
-import Kore.Sort
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     freeVariablesLeft,
     freeVariablesRight,
  )
+import Kore.Sort
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified

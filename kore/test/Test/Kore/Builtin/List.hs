@@ -58,7 +58,7 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit

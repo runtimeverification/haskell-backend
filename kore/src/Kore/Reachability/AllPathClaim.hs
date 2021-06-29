@@ -39,6 +39,11 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
+import Kore.Rewrite.AxiomPattern
+import Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.Transition (
+    TransitionT,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkRuleVariable,
@@ -48,11 +53,6 @@ import Kore.Rewriting.UnifyingRule (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
- )
-import Kore.Step.AxiomPattern
-import Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Transition (
-    TransitionT,
  )
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.TopBottom (

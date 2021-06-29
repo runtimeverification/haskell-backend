@@ -23,6 +23,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -34,20 +37,17 @@ import Kore.Simplify.Simplify
 import qualified Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
 import Prelude.Kore
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
-import Test.Kore.Simplify
-import Test.Kore.Step.MockSymbols (
+import Test.Kore.Rewrite.MockSymbols (
     testSort,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

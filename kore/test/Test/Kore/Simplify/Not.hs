@@ -22,8 +22,8 @@ import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty (
     TestTree,
  )

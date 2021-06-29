@@ -32,6 +32,20 @@ import Kore.Internal.TermLike (
 import Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
  )
+import qualified Kore.Rewrite.Result as StepResult
+import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RulePattern (
+    RewriteRule (RewriteRule),
+    allPathGlobally,
+ )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
+    filterMultiOr,
+ )
+import Kore.Rewrite.Strategy (
+    Strategy,
+    TransitionT,
+ )
+import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
@@ -39,20 +53,6 @@ import qualified Kore.Simplify.Pattern as Pattern (
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Step.Result as StepResult
-import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern (
-    RewriteRule (RewriteRule),
-    allPathGlobally,
- )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
-    filterMultiOr,
- )
-import Kore.Step.Strategy (
-    Strategy,
-    TransitionT,
- )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.TopBottom
 import Prelude.Kore
 import qualified Pretty

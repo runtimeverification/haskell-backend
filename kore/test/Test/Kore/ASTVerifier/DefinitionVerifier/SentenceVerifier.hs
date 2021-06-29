@@ -21,14 +21,14 @@ import Kore.Internal.TermLike (
 import Kore.Reachability (
     OnePathClaim (..),
  )
-import Kore.Rewriting.RewritingVariable (
-    ruleElementVariableFromId,
- )
-import Kore.Step.AxiomPattern (
+import Kore.Rewrite.AxiomPattern (
     AxiomPattern (..),
  )
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
+ )
+import Kore.Rewriting.RewritingVariable (
+    ruleElementVariableFromId,
  )
 import Kore.Syntax
 import Kore.Syntax.Definition as Syntax
@@ -40,7 +40,7 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External (
     externalize,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty (
     TestTree,
  )

@@ -41,6 +41,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.EvaluationStrategy (
+    simplifierWithFallback,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkRewritingTerm,
@@ -50,15 +53,12 @@ import qualified Kore.Simplify.Pattern as Pattern (
     simplify,
  )
 import Kore.Simplify.Simplify
-import Kore.Step.Axiom.EvaluationStrategy (
-    simplifierWithFallback,
- )
 import Kore.Unparser
 import Prelude.Kore
 import qualified SMT
 import Test.ConsistentKore
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT (
     testPropertyWithoutSolver,
  )

@@ -16,7 +16,7 @@ import Kore.Simplify.InjSimplifier
 import Pair
 import Prelude.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-import Test.Kore.Step.MockSymbols
+import Test.Kore.Rewrite.MockSymbols
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

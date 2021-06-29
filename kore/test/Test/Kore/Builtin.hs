@@ -42,7 +42,7 @@ import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
 import qualified Test.Kore.Builtin.Set as Set
-import Test.Kore.Step.SMT.Builders (
+import Test.Kore.Rewrite.SMT.Builders (
     indexModule,
  )
 import Test.Tasty
