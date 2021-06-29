@@ -564,17 +564,17 @@ withDebugClaimState ::
     MonadLog monad =>
     CommonTransitionRule monad ->
     CommonTransitionRule monad
-withDebugClaimState transitionFunc =
-    \transition state ->
-        Transition.orElse
-            ( debugClaimStateBracket
-                state
-                transition
-                (transitionFunc transition state)
-            )
-            ( debugClaimStateFinal
-                transition
-            )
+withDebugClaimState transitionFunc transition state =
+    Transition.orElse
+        ( debugClaimStateBracket
+            state
+            transition
+            (transitionFunc transition state)
+        )
+        ( debugClaimStateFinal
+            state
+            transition
+        )
 
 withDebugProven ::
     forall monad.
@@ -582,15 +582,17 @@ withDebugProven ::
     CommonTransitionRule monad ->
     CommonTransitionRule monad
 withDebugProven rule prim state =
-    rule prim state >>= debugProven
-  where
-    debugProven state'
-        | ClaimState.Proven <- state'
-          , Just claim <- extractUnproven state =
-            do
-                Log.logEntry DebugProven{claim}
-                pure state'
-        | otherwise = pure state'
+    do
+        state' <- rule prim state
+        case state' of
+            ClaimState.Proven ->
+                case extractUnproven state of
+                    Just claim ->
+                        do
+                            Log.logEntry DebugProven{claim}
+                            pure state'
+                    _ -> pure state'
+            _ -> pure state'
 
 withConfiguration ::
     MonadCatch monad =>

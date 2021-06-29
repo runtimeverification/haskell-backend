@@ -39,6 +39,7 @@ import Kore.Internal.Substitution (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Substitute
 import Kore.TopBottom
 import Prelude.Kore
 
@@ -187,7 +188,7 @@ backSubstitute sorted =
         State.modify' $ Map.insert (variableName variable) termLike
     applySubstitution termLike = do
         substitution <- State.get
-        return $ TermLike.substitute substitution termLike
+        return $ substitute substitution termLike
 
 isTrivialSubstitution ::
     Eq variable =>
