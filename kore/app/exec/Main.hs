@@ -55,19 +55,11 @@ import Kore.Internal.MultiAnd (
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Conditional (..),
-    Pattern,
- )
-import Kore.Internal.Predicate (
-    makePredicate,
- )
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
     mkSortVariable,
     mkTop,
-    pattern And_,
  )
 import Kore.Log (
     KoreLogOptions (..),
@@ -90,10 +82,6 @@ import Kore.Log.WarnIfLowProductivity (
  )
 import qualified Kore.ModelChecker.Bounded as Bounded (
     CheckResult (..),
- )
-import Kore.Parser (
-    ParsedPattern,
-    parseKorePattern,
  )
 import Kore.Reachability (
     ProveClaimsResult (..),
@@ -158,7 +146,6 @@ import Options.SMT (
 import Prelude.Kore
 import Pretty (
     Doc,
-    Pretty (..),
     hPutDoc,
     putDoc,
     vsep,
@@ -902,47 +889,11 @@ loadPattern mainModule (Just fileName) =
     mainPatternParseAndVerify mainModule fileName
 loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
-{- | IO action that parses a kore pattern from a filename and prints timing
- information.
--}
-mainPatternParse :: String -> Main ParsedPattern
-mainPatternParse = mainParse parseKorePattern
-
 renderResult :: KoreExecOptions -> Doc ann -> IO ()
 renderResult KoreExecOptions{outputFileName} doc =
     case outputFileName of
         Nothing -> putDoc doc
         Just outputFile -> withFile outputFile WriteMode (`hPutDoc` doc)
-
-{- | IO action that parses a kore pattern from a filename, verifies it,
- converts it to a pure pattern, and prints timing information.
--}
-mainPatternParseAndVerify ::
-    VerifiedModule StepperAttributes ->
-    String ->
-    Main (TermLike VariableName)
-mainPatternParseAndVerify indexedModule patternFileName =
-    mainPatternParse patternFileName >>= mainPatternVerify indexedModule
-
-mainParseSearchPattern ::
-    VerifiedModule StepperAttributes ->
-    String ->
-    Main (Pattern VariableName)
-mainParseSearchPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
-    case purePattern of
-        And_ _ term predicateTerm ->
-            return
-                Conditional
-                    { term
-                    , predicate =
-                        either
-                            (error . show . pretty)
-                            id
-                            (makePredicate predicateTerm)
-                    , substitution = mempty
-                    }
-        _ -> error "Unexpected non-conjunctive pattern"
 
 savedProofsModuleName :: ModuleName
 savedProofsModuleName =
