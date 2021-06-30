@@ -4,6 +4,8 @@ import qualified Data.Text.IO as Text
 import GlobalMain
 import Kore.Options
 import Kore.Parser (parseKoreDefinition)
+import Kore.Syntax.Definition (definitionModules)
+import Kore.Syntax.Module (Module (..))
 import Prelude.Kore
 
 -- | modifiers for the command line parser description
@@ -40,6 +42,8 @@ main = do
             checkerInfoModifiers
     forM_ (localOptions options) $ \KoreCheckerOptions{fileName} -> do
         file <- Text.readFile fileName
-        case parseKoreDefinition fileName file of
+        mods <- case parseKoreDefinition fileName file of
             Left msg -> error msg
-            Right _ -> return ()
+            Right defn -> return $ definitionModules defn
+        forM_ (mods >>= moduleSentences) $ \_ ->
+            return ()
