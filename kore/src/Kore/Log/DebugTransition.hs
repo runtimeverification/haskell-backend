@@ -100,14 +100,16 @@ instance Entry DebugTransition where
                 transitionHeader
                     <> Pretty.hsep (pretty <$> appliedRules)
           where
-            transitionHeader = case appliedRules of
-                [] -> pretty transition
-                _otherwise -> pretty transition <> ": "
+            transitionHeader =
+                "after  "
+                    <> case appliedRules of
+                        [] -> pretty transition
+                        _otherwise -> pretty transition <> ": "
     oneLineDoc
         ( DebugBeforeTransition
                 BeforeTransition{transition}
             ) =
-            Just (pretty transition)
+            Just $ "before " <> pretty transition
 
 debugBeforeTransition ::
     MonadLog log =>
