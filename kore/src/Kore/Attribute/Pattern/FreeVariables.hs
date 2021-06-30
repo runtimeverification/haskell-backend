@@ -176,6 +176,13 @@ instance
     freeVariables = foldMap freeVariables
     {-# INLINE freeVariables #-}
 
+instance
+    (HasFreeVariables a variable, HasFreeVariables b variable, Ord variable) =>
+    HasFreeVariables (a, b) variable
+    where
+    freeVariables = \(a, b) -> freeVariables a <> freeVariables b
+    {-# INLINE freeVariables #-}
+
 -- | Does the named variable occur free in the pattern?
 occursIn ::
     Ord variable =>
