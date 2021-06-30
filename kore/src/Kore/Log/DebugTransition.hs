@@ -9,8 +9,8 @@ module Kore.Log.DebugTransition (
     debugFinalTransition,
 ) where
 
-import Kore.Attribute.SourceLocation ( 
-    SourceLocation
+import Kore.Attribute.SourceLocation (
+    SourceLocation,
  )
 import Kore.Reachability.ClaimState (
     ClaimState,
@@ -76,7 +76,7 @@ instance Pretty AfterTransition where
             | shouldDisplayRules = case appliedRules of
                 [] -> ["No rules were applied."]
                 rules ->
-                    [  "The rules at following locations were applied:"
+                    [ "The rules at following locations were applied:"
                     , Pretty.indent 4 $ Pretty.vsep $ fmap pretty rules
                     ]
             | otherwise = []
