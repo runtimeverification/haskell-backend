@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.ASTVerifier.Error
+Module      : Kore.Validate.Error
 Description : Helpers for verification errors.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.Error (
+module Kore.Validate.Error (
     VerifyError (..),
     VerifySuccess (..),
     verifySuccess,

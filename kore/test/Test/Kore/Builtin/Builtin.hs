@@ -31,15 +31,6 @@ import Data.Text (
     Text,
  )
 import qualified Hedgehog
-import Kore.ASTVerifier.DefinitionVerifier
-import Kore.ASTVerifier.Error (
-    VerifyError,
- )
-import Kore.ASTVerifier.PatternVerifier (
-    runPatternVerifier,
-    verifyStandalonePattern,
- )
-import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -95,6 +86,15 @@ import Kore.Syntax.Definition (
 import Kore.Unparser (
     unparseToText,
  )
+import Kore.Validate.DefinitionVerifier
+import Kore.Validate.Error (
+    VerifyError,
+ )
+import Kore.Validate.PatternVerifier (
+    runPatternVerifier,
+    verifyStandalonePattern,
+ )
+import qualified Kore.Validate.PatternVerifier as PatternVerifier
 import qualified Logic
 import Prelude.Kore
 import SMT (

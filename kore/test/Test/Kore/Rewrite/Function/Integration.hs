@@ -20,10 +20,6 @@ import Data.Map.Strict (
  )
 import qualified Data.Map.Strict as Map
 import Data.Sup
-import Kore.ASTVerifier.DefinitionVerifier
-import Kore.ASTVerifier.Error (
-    VerifyError,
- )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -94,6 +90,10 @@ import Kore.Syntax.Definition hiding (
     Symbol (..),
  )
 import Kore.Unparser
+import Kore.Validate.DefinitionVerifier
+import Kore.Validate.Error (
+    VerifyError,
+ )
 import Prelude.Kore hiding (
     succ,
  )

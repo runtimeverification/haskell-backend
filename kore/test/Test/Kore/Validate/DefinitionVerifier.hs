@@ -1,4 +1,4 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier (
+module Test.Kore.Validate.DefinitionVerifier (
     ErrorStack (..),
     SortName (..),
     NamePrefix (..),
@@ -59,8 +59,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier (
 import Data.Text (
     Text,
  )
-import Kore.ASTVerifier.DefinitionVerifier
-import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Debug
@@ -79,6 +77,8 @@ import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Unparser (
     unparseToString,
  )
+import Kore.Validate.DefinitionVerifier
+import Kore.Validate.Error
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External

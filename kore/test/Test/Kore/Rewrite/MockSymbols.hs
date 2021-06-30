@@ -86,15 +86,15 @@ import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import qualified Kore.Rewrite.Function.Memo as Memo
-import qualified Kore.Rewrite.SMT.AST as SMT
-import qualified Kore.Rewrite.SMT.Representation.Resolve as SMT (
-    resolve,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
     mkEquationVariable,
     mkRuleVariable,
+ )
+import qualified Kore.Rewrite.SMT.AST as SMT
+import qualified Kore.Rewrite.SMT.Representation.Resolve as SMT (
+    resolve,
  )
 import qualified Kore.Simplify.Condition as Simplifier.Condition
 import Kore.Simplify.Data (

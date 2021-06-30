@@ -1,14 +1,10 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier (
+module Test.Kore.Validate.DefinitionVerifier.PatternVerifier (
     test_patternVerifier,
     test_verifyBinder,
 ) where
 
 import qualified Data.List as List
 import qualified Data.Text as Text
-import Kore.ASTVerifier.Error (
-    sortNeedsDomainValueAttributeMessage,
- )
-import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import Kore.Attribute.Simplification (
     simplificationAttribute,
@@ -21,12 +17,16 @@ import Kore.IndexedModule.Error (
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Kore.Validate.Error (
+    sortNeedsDomainValueAttributeMessage,
+ )
+import Kore.Validate.PatternVerifier as PatternVerifier
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import Test.Kore.Builtin.External
+import Test.Kore.Validate.DefinitionVerifier as Helpers
 import Test.Tasty (
     TestTree,
  )

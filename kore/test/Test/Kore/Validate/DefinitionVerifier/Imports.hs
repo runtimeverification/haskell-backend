@@ -1,4 +1,4 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier.Imports (
+module Test.Kore.Validate.DefinitionVerifier.Imports (
     test_imports,
 ) where
 
@@ -17,8 +17,8 @@ import Kore.Internal.TermLike hiding (
 import Kore.Syntax.Definition
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
     testGroup,

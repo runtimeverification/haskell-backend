@@ -20,12 +20,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
- )
-import Kore.ASTVerifier.Error (
-    VerifyError,
- )
 import qualified Kore.Attribute.Constructor as Constructor
 import qualified Kore.Attribute.Functional as Functional
 import qualified Kore.Attribute.Hook as Hook
@@ -49,6 +43,12 @@ import qualified Kore.Sort as SortActual (
     SortActual (..),
  )
 import Kore.Syntax.Definition
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
+import Kore.Validate.Error (
+    VerifyError,
+ )
 import Prelude.Kore
 import Test.Kore (
     testId,

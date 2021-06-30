@@ -23,9 +23,6 @@ import qualified Data.Set as Set
 import Data.Text (
     Text,
  )
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
- )
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -71,6 +68,9 @@ import Kore.Syntax.Definition hiding (
     Symbol,
  )
 import qualified Kore.Syntax.Definition as Syntax
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
 import qualified Kore.Verified as Verified
 import Log (
     Entry (..),

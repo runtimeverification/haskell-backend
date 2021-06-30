@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.ASTVerifier.Verifier (
+module Kore.Validate.Verifier (
     Verifier,
     VerifierContext (..),
     VerifierState (..),
@@ -32,7 +32,6 @@ import Data.Map.Strict (
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 import Kore.AST.Error
-import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -43,6 +42,7 @@ import qualified Kore.Internal.Symbol as Internal.Symbol (
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
+import Kore.Validate.Error
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 

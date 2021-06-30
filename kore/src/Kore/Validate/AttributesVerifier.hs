@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.ASTVerifier.AttributesVerifier
+Module      : Kore.Validate.AttributesVerifier
 Description : Tools for verifying the wellformedness of Kore 'Attributes'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.AttributesVerifier (
+module Kore.Validate.AttributesVerifier (
     verifyAttributes,
     verifySortHookAttribute,
     verifySymbolHookAttribute,
@@ -25,7 +25,6 @@ import Data.Generics.Product
 import Kore.AST.AstWithLocation (
     locationFromAst,
  )
-import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute (
     Axiom,
     sourceLocation,
@@ -60,6 +59,7 @@ import Kore.Syntax.Variable (
 import Kore.Unparser (
     unparse,
  )
+import Kore.Validate.Error
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 import Pretty

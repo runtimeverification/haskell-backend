@@ -51,11 +51,6 @@ import Data.Version (
 import GHC.Stack (
     emptyCallStack,
  )
-import Kore.ASTVerifier.DefinitionVerifier (
-    sortModuleClaims,
-    verifyAndIndexDefinitionWithBase,
- )
-import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.Attribute.Definition (
     KFileLocations (..),
     parseKFileAttributes,
@@ -95,6 +90,11 @@ import Kore.Syntax.Definition (
     definitionAttributes,
     getModuleNameForError,
  )
+import Kore.Validate.DefinitionVerifier (
+    sortModuleClaims,
+    verifyAndIndexDefinitionWithBase,
+ )
+import Kore.Validate.PatternVerifier as PatternVerifier
 import qualified Kore.Verified as Verified
 import Kore.VersionInfo
 import Options.Applicative (

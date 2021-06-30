@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.ASTVerifier.AliasVerifier (verifyAliases) where
+module Kore.Validate.AliasVerifier (verifyAliases) where
 
 import qualified Control.Lens as Lens
 import Control.Monad.Reader (
@@ -23,10 +23,6 @@ import Data.Set (
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import Kore.AST.Error
-import Kore.ASTVerifier.SentenceVerifier (
-    SentenceVerifier,
- )
-import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
 import Kore.Attribute.Parser (
     liftParser,
     parseAttributes,
@@ -36,6 +32,10 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Kore.Validate.SentenceVerifier (
+    SentenceVerifier,
+ )
+import qualified Kore.Validate.SentenceVerifier as SentenceVerifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 

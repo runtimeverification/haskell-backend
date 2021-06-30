@@ -1,4 +1,4 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier.SentenceVerifier (
+module Test.Kore.Validate.DefinitionVerifier.SentenceVerifier (
     test_FreeVarInRHS,
 ) where
 
@@ -36,11 +36,11 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External (
     externalize,
  )
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
  )

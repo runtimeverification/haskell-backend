@@ -16,7 +16,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -31,14 +30,15 @@ import Kore.Rewrite.RulePattern
 import Kore.Syntax.Definition hiding (
     Alias (..),
  )
+import Kore.Validate.DefinitionVerifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

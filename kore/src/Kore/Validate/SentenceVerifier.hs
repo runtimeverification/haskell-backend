@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.ASTVerifier.SentenceVerifier
+Module      : Kore.Validate.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.SentenceVerifier (
+module Kore.Validate.SentenceVerifier (
     verifyUniqueNames,
     SentenceVerifier,
     runSentenceVerifier,
@@ -42,11 +42,6 @@ import Data.Text (
     Text,
  )
 import Kore.AST.Error
-import Kore.ASTVerifier.AttributesVerifier
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import Kore.ASTVerifier.SortVerifier
-import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute (
     Axiom,
     parseAxiomAttributes,
@@ -89,6 +84,11 @@ import Kore.Rewrite.ClaimPattern (
 import Kore.Sort
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
+import Kore.Validate.AttributesVerifier
+import Kore.Validate.Error
+import Kore.Validate.PatternVerifier as PatternVerifier
+import Kore.Validate.SortVerifier
+import Kore.Validate.Verifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 

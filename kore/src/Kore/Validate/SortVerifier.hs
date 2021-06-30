@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.ASTVerifier.SortVerifier
+Module      : Kore.Validate.SortVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sort'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,14 +7,14 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.SortVerifier (verifySort) where
+module Kore.Validate.SortVerifier (verifySort) where
 
 import qualified Data.Set as Set
 import Kore.AST.Error
-import Kore.ASTVerifier.Error
 import Kore.Error
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Kore.Validate.Error
 import Prelude.Kore
 
 -- |'verifySort' verifies the welformedness of a Kore 'Sort'.

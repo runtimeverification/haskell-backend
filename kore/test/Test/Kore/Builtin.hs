@@ -13,9 +13,6 @@ import Data.Generics.Product (
     field,
  )
 import qualified Data.HashSet as HashSet
-import Kore.ASTVerifier.DefinitionVerifier (
-    sortModuleClaims,
- )
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
@@ -32,6 +29,9 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
+ )
+import Kore.Validate.DefinitionVerifier (
+    sortModuleClaims,
  )
 import Prelude.Kore hiding (
     concatMap,

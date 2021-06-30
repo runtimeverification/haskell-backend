@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.ASTVerifier.DefinitionVerifier
+Module      : Kore.Validate.DefinitionVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Definiton'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.DefinitionVerifier (
+module Kore.Validate.DefinitionVerifier (
     verifyDefinition,
     verifyAndIndexDefinition,
     verifyAndIndexDefinitionWithBase,
@@ -33,12 +33,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-import Kore.ASTVerifier.AttributesVerifier hiding (
-    parseAttributes,
- )
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.ModuleVerifier
-import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
@@ -50,6 +44,12 @@ import qualified Kore.Internal.Symbol as Internal.Symbol (
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
+import Kore.Validate.AttributesVerifier hiding (
+    parseAttributes,
+ )
+import Kore.Validate.Error
+import Kore.Validate.ModuleVerifier
+import Kore.Validate.Verifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 

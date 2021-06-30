@@ -7,7 +7,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Priority (
     defaultPriority,
@@ -52,12 +51,13 @@ import Kore.Simplify.Simplify
 import Kore.Syntax.Definition hiding (
     Symbol,
  )
+import Kore.Validate.DefinitionVerifier
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
  )

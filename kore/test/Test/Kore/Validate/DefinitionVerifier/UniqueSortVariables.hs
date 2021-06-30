@@ -1,4 +1,4 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables (
+module Test.Kore.Validate.DefinitionVerifier.UniqueSortVariables (
     test_uniqueSortVariables,
 ) where
 
@@ -11,8 +11,8 @@ import Kore.Syntax.Definition (
  )
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
  )

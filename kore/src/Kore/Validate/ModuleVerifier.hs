@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.ASTVerifier.ModuleVerifier
+Module      : Kore.Validate.ModuleVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Module'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.ModuleVerifier (
+module Kore.Validate.ModuleVerifier (
     verifyModule,
     verifyUniqueNames,
 ) where
@@ -25,9 +25,17 @@ import Data.Text (
     Text,
  )
 import Kore.AST.Error
-import Kore.ASTVerifier.AliasVerifier
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.SentenceVerifier (
+import Kore.Attribute.Parser (
+    ParseAttributes,
+ )
+import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Error
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Validate.AliasVerifier
+import Kore.Validate.Error
+import Kore.Validate.SentenceVerifier (
     SentenceVerifier,
     verifyAxioms,
     verifyClaims,
@@ -37,16 +45,8 @@ import Kore.ASTVerifier.SentenceVerifier (
     verifySorts,
     verifySymbols,
  )
-import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
-import Kore.ASTVerifier.Verifier
-import Kore.Attribute.Parser (
-    ParseAttributes,
- )
-import qualified Kore.Attribute.Parser as Attribute.Parser
-import Kore.Error
-import Kore.IndexedModule.IndexedModule as IndexedModule
-import Kore.Syntax
-import Kore.Syntax.Definition
+import qualified Kore.Validate.SentenceVerifier as SentenceVerifier
+import Kore.Validate.Verifier
 import Prelude.Kore
 
 {- |'verifyUniqueNames' verifies that names defined in a module are unique both

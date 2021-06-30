@@ -1,10 +1,9 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier.SortUsage (
+module Test.Kore.Validate.DefinitionVerifier.SortUsage (
     test_sortUsage,
 ) where
 
 import qualified Data.List as List
 import qualified Data.Text as Text
-import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import Kore.Error
@@ -24,10 +23,11 @@ import Kore.Syntax.Definition (
     SentenceSort (..),
     asSentence,
  )
+import Kore.Validate.Error
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
     testGroup,

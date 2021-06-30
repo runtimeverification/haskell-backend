@@ -4,7 +4,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.ASTVerifier.PatternVerifier.PatternVerifier (
+module Kore.Validate.PatternVerifier.PatternVerifier (
     PatternVerifier (..),
     runPatternVerifier,
     Context (..),
@@ -48,8 +48,6 @@ import Data.Set (
  )
 import qualified GHC.Generics as GHC
 import Kore.AST.Error
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Error
@@ -61,6 +59,8 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
+import Kore.Validate.Error
+import Kore.Validate.SortVerifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 import Pretty (

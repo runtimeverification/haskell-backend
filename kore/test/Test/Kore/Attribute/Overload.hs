@@ -9,7 +9,6 @@ module Test.Kore.Attribute.Overload (
 
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
-import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Equation as Equation
@@ -30,6 +29,7 @@ import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
  )
+import Kore.Validate.DefinitionVerifier
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Attribute.Parser

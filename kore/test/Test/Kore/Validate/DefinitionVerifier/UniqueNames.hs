@@ -1,4 +1,4 @@
-module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames (
+module Test.Kore.Validate.DefinitionVerifier.UniqueNames (
     test_uniqueNames,
 ) where
 
@@ -8,7 +8,7 @@ import Kore.Syntax hiding (
  )
 import Kore.Syntax.Definition
 import Prelude.Kore ()
-import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
  )

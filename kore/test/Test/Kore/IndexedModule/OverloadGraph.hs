@@ -7,9 +7,6 @@ module Test.Kore.IndexedModule.OverloadGraph (
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
- )
 import Kore.Attribute.Overload (
     overloadAttribute,
  )
@@ -30,6 +27,9 @@ import Kore.Syntax.Definition (
     ParsedSentence,
     Sentence (..),
     SentenceAxiom (..),
+ )
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
  )
 import Prelude.Kore
 import Test.Kore

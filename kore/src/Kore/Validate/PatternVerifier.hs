@@ -2,14 +2,14 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
-module Kore.ASTVerifier.PatternVerifier (
+module Kore.Validate.PatternVerifier (
     verifyPattern,
     verifyStandalonePattern,
     verifyNoPatterns,
     verifyAliasLeftPattern,
     verifyFreeVariables,
     withBuiltinVerifiers,
-    module Kore.ASTVerifier.PatternVerifier.PatternVerifier,
+    module Kore.Validate.PatternVerifier.PatternVerifier,
 ) where
 
 import qualified Control.Monad as Monad
@@ -23,9 +23,6 @@ import Data.Text (
     Text,
  )
 import Kore.AST.Error
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.PatternVerifier.PatternVerifier
-import Kore.ASTVerifier.SortVerifier
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariables,
@@ -48,6 +45,9 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
+import Kore.Validate.Error
+import Kore.Validate.PatternVerifier.PatternVerifier
+import Kore.Validate.SortVerifier
 import qualified Kore.Variables.Free as Variables
 import qualified Kore.Verified as Verified
 import Prelude.Kore
