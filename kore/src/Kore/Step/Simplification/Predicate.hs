@@ -167,20 +167,12 @@ simplify sideCondition original =
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
                 ExistsF existsF ->
-                    traverse worker (refreshExists sideCondition existsF)
+                    traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
-
-refreshExists ::
-    SideCondition RewritingVariableName ->
-    Exists sort RewritingVariableName (Predicate RewritingVariableName) ->
-    Exists sort RewritingVariableName (Predicate RewritingVariableName)
-refreshExists sideCondition existsF =
-    Exists.refreshExists
-        (freeVariableNames existsF <> freeVariableNames sideCondition)
-        existsF
+        ~avoid = freeVariableNames sideCondition
 
 -- | Construct a 'NormalForm' from a single 'Predicate'.
 mkSingleton ::

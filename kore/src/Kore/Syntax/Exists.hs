@@ -134,5 +134,8 @@ refreshExists ::
     Set (SomeVariableName variable) ->
     Exists sort variable child ->
     Exists sort variable child
-refreshExists avoid = Lens.over existsBinder (refreshElementBinder avoid)
+refreshExists extraAvoid existsF =
+    Lens.over existsBinder (refreshElementBinder avoid) existsF
+  where
+    avoid = freeVariableNames existsF <> extraAvoid
 {-# INLINE refreshExists #-}
