@@ -5,7 +5,6 @@ License     : NCSA
 module Kore.Step.Simplification.Predicate (
     simplify,
     extractFirstAssignment,
-    extractAssignment,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -452,23 +451,22 @@ extractFirstAssignment ::
     MultiAnd (Predicate RewritingVariableName) ->
     Maybe (TermLike RewritingVariableName)
 extractFirstAssignment someVariableName predicates =
-    foldMap (First . extractAssignment someVariableName) predicates
+    foldMap (First . extractAssignment) predicates
         & getFirst
-
-extractAssignment ::
-    SomeVariableName RewritingVariableName ->
-    Predicate RewritingVariableName ->
-    Maybe (TermLike RewritingVariableName)
-extractAssignment someVariableName predicate = do
-    traceShowM (unparse someVariableName)
-    traceShowM (Pretty.pretty predicate)
-    case Substitution.retractAssignmentFor someVariableName predicate of
-        Nothing -> Nothing
-        Just assignment@(Assignment someVariable' termLike) ->
-            traceShow assignment . assert (variableName someVariable' == someVariableName) $ do
-                traceShowM (unparse someVariable')
-                traceShowM (unparse termLike)
-                guard (TermLike.isFunctionPattern termLike)
-                traceM "isFunctionPattern"
-                guard (not $ occursIn someVariableName termLike)
-                pure termLike
+  where
+    extractAssignment ::
+        Predicate RewritingVariableName ->
+        Maybe (TermLike RewritingVariableName)
+    extractAssignment predicate = do
+        traceShowM (unparse someVariableName)
+        traceShowM (Pretty.pretty predicate)
+        case Substitution.retractAssignmentFor someVariableName predicate of
+            Nothing -> Nothing
+            Just assignment@(Assignment someVariable' termLike) ->
+                traceShow assignment . assert (variableName someVariable' == someVariableName) $ do
+                    traceShowM (unparse someVariable')
+                    traceShowM (unparse termLike)
+                    guard (TermLike.isFunctionPattern termLike)
+                    traceM "isFunctionPattern"
+                    guard (not $ occursIn someVariableName termLike)
+                    pure termLike

@@ -2,7 +2,6 @@ module Test.Kore.Step.Simplification.Predicate (
     test_simplify,
     test_simplify_SideCondition,
     test_extractFirstAssignment,
-    test_extractAssignment,
 ) where
 
 import Kore.Internal.From
@@ -25,7 +24,7 @@ import Kore.Internal.TermLike (
     variableName,
  )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.Simplification.Predicate (extractAssignment, extractFirstAssignment, simplify)
+import Kore.Step.Simplification.Predicate (extractFirstAssignment, simplify)
 import Kore.TopBottom
 import Kore.Unparser (unparse)
 import Prelude.Kore
@@ -395,30 +394,6 @@ test_extractFirstAssignment =
                                     , "but found:"
                                     , Pretty.indent 4 (unparse actual')
                                     ]
-
-test_extractAssignment :: [TestTree]
-test_extractAssignment =
-    [ (test "renaming, on the right" y)
-        (fromEquals_ (mkElemVar x) (mkElemVar y))
-        (Just (mkElemVar x))
-    ]
-  where
-    x, y :: ElementVariable RewritingVariableName
-    x = Mock.xConfig
-    y = Mock.yConfig
-
-    test ::
-        HasCallStack =>
-        TestName ->
-        ElementVariable RewritingVariableName ->
-        Predicate RewritingVariableName ->
-        Maybe (TermLike RewritingVariableName) ->
-        TestTree
-    test testName elementVariable predicate expect =
-        testCase testName $ do
-            let someVariableName = inject (variableName elementVariable)
-                actual = extractAssignment someVariableName predicate
-            assertEqual "" expect actual
 
 mkDisjunctiveNormalForm :: Ord a => TopBottom a => [[a]] -> MultiOr (MultiAnd a)
 mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
