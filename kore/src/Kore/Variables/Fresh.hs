@@ -17,11 +17,12 @@ module Kore.Variables.Fresh (
     module Kore.Syntax.Variable,
 ) where
 
-import qualified Control.Monad.State.Strict as State
-import Control.Monad.State.Strict
-    (runState)
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import Control.Monad.State.Strict (
+    runState,
+ )
+import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product (
     field,
  )
@@ -29,6 +30,7 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
+import Data.MonoTraversable
 import Data.Set (
     Set,
  )
@@ -38,7 +40,6 @@ import Data.Void
 import Kore.Sort
 import Kore.Syntax.Variable
 import Prelude.Kore
-import Data.MonoTraversable
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
 
@@ -264,7 +265,7 @@ refreshVariables ::
     Map variable (Variable variable)
 refreshVariables avoid variables =
     let (_, refreshed) = refreshVariables' avoid variables
-    in Map.mapKeys variableName refreshed
+     in Map.mapKeys variableName refreshed
 
 refreshVariablesSet ::
     FreshName variable =>
@@ -287,7 +288,7 @@ refreshVariables' ::
 refreshVariables' avoid0 variables =
     let (variables', (_, rename)) =
             runState (otraverse worker variables) (avoid0, Map.empty)
-    in (variables', rename)
+     in (variables', rename)
   where
     worker var = do
         (avoid, rename) <- State.get
