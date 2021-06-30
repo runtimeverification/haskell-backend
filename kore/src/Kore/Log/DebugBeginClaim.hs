@@ -7,6 +7,9 @@ module Kore.Log.DebugBeginClaim (
     debugBeginClaim,
 ) where
 
+import Kore.Attribute.SourceLocation ( 
+    SourceLocation
+ )
 import Kore.Reachability.SomeClaim (
     SomeClaim (..),
  )
@@ -27,6 +30,8 @@ instance Pretty DebugBeginClaim where
 instance Entry DebugBeginClaim where
     entrySeverity _ = Debug
     helpDoc _ = "log starting claims"
+    oneLineDoc DebugBeginClaim{claim} =
+        Just $ pretty @SourceLocation $ from claim
 
 debugBeginClaim ::
     MonadLog log =>
