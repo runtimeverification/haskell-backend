@@ -13,8 +13,6 @@ import Data.Monoid (
  )
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
-    freeVariables,
-    isFreeVariable,
     occursIn,
  )
 import qualified Kore.Internal.Conditional as Conditional
@@ -421,28 +419,28 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             (MultiAnd (Predicate RewritingVariableName)) ->
         simplifier NormalForm
     simplifyExistsAnd Exists{existsVariable, existsChild}
-        | not (isFreeVariable existsVariableName existsChildFreeVariables) =
+        | not (someVariableName `occursIn` existsChild) =
             pure (MultiOr.singleton existsChild)
-        | Just value <- extractFirstAssignment existsVariableName existsChild =
-            applyAssignment existsVariableName value existsChild
+        | Just value <- extractFirstAssignment someVariableName existsChild =
+            applyAssignment someVariableName value existsChild
                 & MultiOr.singleton
                 & pure
         | otherwise =
             fromExists existsVariable (Predicate.fromMultiAnd existsChild)
                 & mkSingleton
                 & pure
+                & traceShow (Pretty.pretty existsChild)
       where
-        existsVariableName :: SomeVariableName RewritingVariableName
-        existsVariableName = inject (variableName existsVariable)
-        existsChildFreeVariables = freeVariables existsChild
+        someVariableName :: SomeVariableName RewritingVariableName
+        someVariableName = inject (variableName existsVariable)
 
     extractFirstAssignment ::
         SomeVariableName RewritingVariableName ->
         MultiAnd (Predicate RewritingVariableName) ->
         Maybe (TermLike RewritingVariableName)
-    extractFirstAssignment existsVariableName predicates =
+    extractFirstAssignment someVariableName predicates =
         foldMap
-            (First . extractAssignment existsVariableName)
+            (First . extractAssignment someVariableName)
             predicates
             & getFirst
 
@@ -450,13 +448,13 @@ simplifyExists _ = \exists@Exists{existsChild} ->
         SomeVariableName RewritingVariableName ->
         Predicate RewritingVariableName ->
         Maybe (TermLike RewritingVariableName)
-    extractAssignment existsVariableName predicate = do
-        assignment <- Substitution.retractAssignment predicate
-        let Assignment someVariable termLike = assignment
-            sameVariableName = existsVariableName == variableName someVariable
-        guard sameVariableName
+    extractAssignment someVariableName predicate = do
+        Assignment _ termLike <-
+            Substitution.retractAssignmentFor
+                someVariableName
+                predicate
         guard (TermLike.isFunctionPattern termLike)
-        guard (not $ occursIn existsVariableName termLike)
+        guard (not $ occursIn someVariableName termLike)
         pure termLike
 
     applyAssignment ::
@@ -464,8 +462,8 @@ simplifyExists _ = \exists@Exists{existsChild} ->
         TermLike RewritingVariableName ->
         MultiAnd (Predicate RewritingVariableName) ->
         MultiAnd (Predicate RewritingVariableName)
-    applyAssignment existsVariableName termLike predicates =
-        let substitution = Map.singleton existsVariableName termLike
+    applyAssignment someVariableName termLike predicates =
+        let substitution = Map.singleton someVariableName termLike
             existsChild' = MultiAnd.map (substitute substitution) predicates
             valueCeil = MultiAnd.singleton (fromCeil_ termLike)
          in existsChild' <> valueCeil
