@@ -538,6 +538,10 @@ matchUnifyStringEq first second
       , isFunctionPattern first
       , Just value <- Bool.matchBool first =
         Just UnifyStringEq{eqTerm, value}
+    | Just eqTerm <- matchStringEqual first
+      , isFunctionPattern second
+      , Just value <- Bool.matchBool second =
+        Just UnifyStringEq{eqTerm, value}
     | otherwise = Nothing
 
 {- | Unification of the @STRING.eq@ symbol

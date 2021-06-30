@@ -194,13 +194,13 @@ test_unifyBoolAnd =
     test testName term1 term2 expected =
         testCase testName $ do
             case Bool.matchUnifyBoolAnd term1 term2 of
-                Just boolAnd -> do
-                    actual <- unify term1 boolAnd
+                Just unifyData -> do
+                    actual <- unify term1 term2 unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term boolAnd =
-        Bool.unifyBoolAnd termSimplifier term boolAnd
+    unify term1 term2 unifyData =
+        Bool.unifyBoolAnd termSimplifier term1 term2 unifyData
             & lift
             & run
 
@@ -229,13 +229,13 @@ test_unifyBoolOr =
     test testName term1 term2 expected =
         testCase testName $ do
             case Bool.matchUnifyBoolOr term1 term2 of
-                Just boolOr -> do
-                    actual <- unify term1 boolOr
+                Just unifyData -> do
+                    actual <- unify term1 term2 unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term boolOr =
-        Bool.unifyBoolOr termSimplifier term boolOr
+    unify term1 term2 unifyData =
+        Bool.unifyBoolOr termSimplifier term1 term2 unifyData
             & lift
             & run
 

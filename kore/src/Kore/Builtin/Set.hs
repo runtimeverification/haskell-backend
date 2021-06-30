@@ -525,11 +525,12 @@ internalize tools termLike
 
 data NormAcData = NormAcData
     { normalized1, normalized2 :: InternalSet Key (TermLike RewritingVariableName)
+    , isFirstMatched :: !Bool
     , acData :: !(Ac.UnifyEqualsNormAc NormalizedSet RewritingVariableName)
     }
 
 data UnifyEqualsMap
-    = ReturnBottom
+    = ReturnBottom !Bool
     | NormAc !NormAcData
 
 -- | Matches two concrete Set domain values.
@@ -540,7 +541,7 @@ matchUnifyEquals ::
     Maybe UnifyEqualsMap
 matchUnifyEquals tools first second
     | Just True <- isSetSort tools sort1 =
-        worker first second
+        worker first second True <|> worker second first False
     | otherwise = Nothing
   where
     sort1 = termLikeSort first
@@ -550,23 +551,23 @@ matchUnifyEquals tools first second
         Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
     normalizedOrBottom = Ac.toNormalized
 
-    worker a b
+    worker a b isFirstMatched
         | InternalSet_ normalized1 <- a
           , InternalSet_ normalized2 <- b =
-            NormAc . NormAcData normalized1 normalized2
+            NormAc . NormAcData normalized1 normalized2 isFirstMatched
                 <$> Ac.matchUnifyEqualsNormalizedAc
                     tools
                     normalized1
                     normalized2
         | otherwise = case normalizedOrBottom a of
-            Ac.Bottom -> Just ReturnBottom
+            Ac.Bottom -> Just $ ReturnBottom isFirstMatched
             Ac.Normalized normalized1 ->
                 let a' = Ac.asInternal tools sort1 normalized1
                  in case normalizedOrBottom b of
-                        Ac.Bottom -> Just ReturnBottom
+                        Ac.Bottom -> Just $ ReturnBottom isFirstMatched
                         Ac.Normalized normalized2 ->
                             let b' = Ac.asInternal tools sort1 normalized2
-                             in worker a' b'
+                             in worker a' b' isFirstMatched
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
@@ -588,19 +589,22 @@ unifyEquals ::
     unifier (Pattern RewritingVariableName)
 unifyEquals unifyEqualsChildren tools first second unifyData =
     case unifyData of
-        ReturnBottom ->
+        ReturnBottom isFirstMatched ->
             Monad.Unify.explainAndReturnBottom
                 "Duplicated elements in normalization."
-                first
-                second
+                first'
+                second'
+          where
+            (first',second') = if isFirstMatched then (first,second) else (second,first) 
         NormAc unifyData' ->
             Ac.unifyEqualsNormalized
                 tools
-                first
-                second
+                first'
+                second'
                 unifyEqualsChildren
                 normalized1
                 normalized2
                 acData
           where
-            NormAcData{normalized1, normalized2, acData} = unifyData'
+            NormAcData{normalized1, normalized2, isFirstMatched, acData} = unifyData'
+            (first',second') = if isFirstMatched then (first,second) else (second,first) 

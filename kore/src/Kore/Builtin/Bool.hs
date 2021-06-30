@@ -211,6 +211,11 @@ unifyBool termLike1 termLike2 unifyData
   where
     UnifyBool{bool1, bool2} = unifyData
 
+data UnifyBoolAnd = UnifyBoolAnd
+    { isFirstMatched :: !Bool
+    , boolAnd :: !BoolAnd
+    }
+
 {- | Matches
 
 @
@@ -226,12 +231,16 @@ and
 matchUnifyBoolAnd ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe BoolAnd
+    Maybe UnifyBoolAnd
 matchUnifyBoolAnd first second
     | Just True <- matchBool first
       , Just boolAnd <- matchBoolAnd second
       , isFunctionPattern second =
-        Just boolAnd
+        Just $ UnifyBoolAnd{isFirstMatched = True, boolAnd}
+    | Just True <- matchBool second
+      , Just boolAnd <- matchBoolAnd first
+      , isFunctionPattern first =
+        Just $ UnifyBoolAnd{isFirstMatched = False, boolAnd}
     | otherwise =
         Nothing
 {-# INLINE matchUnifyBoolAnd #-}
@@ -241,11 +250,14 @@ unifyBoolAnd ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
-    BoolAnd ->
+    TermLike RewritingVariableName ->
+    UnifyBoolAnd ->
     unifier (Pattern RewritingVariableName)
-unifyBoolAnd unifyChildren term boolAnd =
+unifyBoolAnd unifyChildren term1 term2 unifyData =
     unifyBothWith unifyChildren term operand1 operand2
   where
+    UnifyBoolAnd{isFirstMatched, boolAnd} = unifyData
+    term = if isFirstMatched then term1 else term2
     BoolAnd{operand1, operand2} = boolAnd
 
 {- |Takes a (function-like) pattern and unifies it against two other patterns.
@@ -273,6 +285,11 @@ unifyBothWith unify termLike1 operand1 operand2 = do
     unify' term1 term2 =
         Pattern.withoutTerm <$> unify term1 term2
 
+data UnifyBoolOr = UnifyBoolOr
+    { isFirstMatched :: !Bool
+    , boolOr :: !BoolOr
+    }
+
 {- | Matches
 
 @
@@ -288,12 +305,16 @@ and
 matchUnifyBoolOr ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe BoolOr
+    Maybe UnifyBoolOr
 matchUnifyBoolOr first second
     | Just False <- matchBool first
       , Just boolOr <- matchBoolOr second
       , isFunctionPattern second =
-        Just boolOr
+        Just UnifyBoolOr{isFirstMatched = True, boolOr}
+    | Just False <- matchBool second
+      , Just boolOr <- matchBoolOr first
+      , isFunctionPattern first =
+        Just UnifyBoolOr{isFirstMatched = False, boolOr}
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolOr #-}
 
@@ -302,16 +323,20 @@ unifyBoolOr ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
-    BoolOr ->
+    TermLike RewritingVariableName ->
+    UnifyBoolOr ->
     unifier (Pattern RewritingVariableName)
-unifyBoolOr unifyChildren termLike boolOr =
+unifyBoolOr unifyChildren first second unifyData =
     unifyBothWith unifyChildren termLike operand1 operand2
   where
+    UnifyBoolOr{isFirstMatched, boolOr} = unifyData
     BoolOr{operand1, operand2} = boolOr
+    termLike = if isFirstMatched then first else second
 
 data UnifyBoolNot = UnifyBoolNot
-    { boolNot :: BoolNot
-    , value :: Bool
+    { boolNot :: !BoolNot
+    , value :: !Bool
+    , isFirstMatched :: !Bool
     }
 
 {- | Matches
@@ -334,7 +359,11 @@ matchUnifyBoolNot first second
     | Just boolNot <- matchBoolNot first
       , isFunctionPattern first
       , Just value <- matchBool second =
-        Just $ UnifyBoolNot boolNot value
+        Just UnifyBoolNot{boolNot, value, isFirstMatched = True}
+    | Just boolNot <- matchBoolNot second
+      , isFunctionPattern second
+      , Just value <- matchBool first =
+        Just UnifyBoolNot{boolNot, value, isFirstMatched = False}
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolNot #-}
 
@@ -342,14 +371,16 @@ unifyBoolNot ::
     forall unifier.
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
     UnifyBoolNot ->
     unifier (Pattern RewritingVariableName)
-unifyBoolNot unifyChildren term unifyData =
+unifyBoolNot unifyChildren term1 term2 unifyData =
     let notValue = asInternal (termLikeSort term) (not value)
      in unifyChildren notValue operand
   where
-    UnifyBoolNot{boolNot, value} = unifyData
+    UnifyBoolNot{boolNot, value, isFirstMatched} = unifyData
     BoolNot{operand} = boolNot
+    term = if isFirstMatched then term2 else term1
 
 -- | Match a @BOOL.Bool@ builtin value.
 matchBool :: TermLike variable -> Maybe Bool

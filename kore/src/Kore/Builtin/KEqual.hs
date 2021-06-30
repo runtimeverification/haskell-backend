@@ -249,6 +249,10 @@ matchUnifyKequalsEq first second
       , isFunctionPattern first
       , Just value <- Bool.matchBool second =
         Just UnifyKequalsEq{eqTerm, value}
+    | Just eqTerm <- matchKequalEq second
+      , isFunctionPattern second
+      , Just value <- Bool.matchBool first =
+        Just UnifyKequalsEq{eqTerm, value}
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
 
@@ -277,25 +281,41 @@ data IfThenElse term = IfThenElse
     , branch1, branch2 :: !term
     }
 
+data UnifyIfThenElse = UnifyIfThenElse
+    { ifThenElse :: IfThenElse (TermLike RewritingVariableName)
+    -- The term that was not matched by @matchIfThenElse@
+    , otherTerm :: TermLike RewritingVariableName
+    }
+
 -- | Match the @KEQUAL.eq@ hooked symbol.
-matchIfThenElse :: TermLike variable -> Maybe (IfThenElse (TermLike variable))
-matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
-    hook' <- (getHook . symbolHook) symbol
-    Monad.guard (hook' == iteKey)
-    return IfThenElse{symbol, condition, branch1, branch2}
-matchIfThenElse _ = Nothing
+matchIfThenElse ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyIfThenElse
+matchIfThenElse first second
+    | Just ifThenElse <- match first
+    = Just $ UnifyIfThenElse{ifThenElse, otherTerm = second}
+    | Just ifThenElse <- match second
+    = Just $ UnifyIfThenElse{ifThenElse, otherTerm = first}
+    | otherwise = Nothing
+  where
+    match (App_ symbol [condition, branch1, branch2]) = do
+        hook' <- (getHook . symbolHook) symbol
+        Monad.guard (hook' == iteKey)
+        return IfThenElse{symbol, condition, branch1, branch2}
+    match _ = Nothing
 {-# INLINE matchIfThenElse #-}
 
 unifyIfThenElse ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
-    IfThenElse (TermLike RewritingVariableName) ->
-    TermLike RewritingVariableName ->
+    UnifyIfThenElse ->
     unifier (Pattern RewritingVariableName)
-unifyIfThenElse unifyChildren ifThenElse second =
-    worker ifThenElse second
+unifyIfThenElse unifyChildren unifyData =
+    worker ifThenElse otherTerm
   where
+    UnifyIfThenElse{ifThenElse, otherTerm} = unifyData
     takeCondition value condition' =
         makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
             & Condition.fromPredicate

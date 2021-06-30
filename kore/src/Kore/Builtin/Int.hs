@@ -492,6 +492,10 @@ matchUnifyIntEq first second
       , isFunctionPattern first
       , Just value <- Bool.matchBool second =
         Just UnifyIntEq{eqTerm, value}
+    | Just eqTerm <- matchIntEqual second
+      , isFunctionPattern second
+      , Just value <- Bool.matchBool first =
+        Just UnifyIntEq{eqTerm, value}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}
 
