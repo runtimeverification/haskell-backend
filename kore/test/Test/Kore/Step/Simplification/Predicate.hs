@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification.Predicate (
     test_simplify,
     test_simplify_SideCondition,
+    test_extractFirstAssignment,
 ) where
 
 import Kore.Internal.From
@@ -20,10 +21,12 @@ import Kore.Internal.TermLike (
     mkElemVar,
     mkEquals,
     mkOr,
+    variableName,
  )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.Simplification.Predicate (simplify)
+import Kore.Step.Simplification.Predicate (extractFirstAssignment, simplify)
 import Kore.TopBottom
+import Kore.Unparser (unparse)
 import Prelude.Kore
 import qualified Pretty
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -199,7 +202,7 @@ test_simplify =
                 )
                 [[fromCeil_ (Mock.f (mkElemVar y))]]
             ]
-        , (test "qqnested quantifiers")
+        , (test "nested quantifiers")
             ( (fromExists x) . (fromExists y) $
                 ( fromAnd
                     (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
@@ -335,6 +338,104 @@ test_simplify_SideCondition =
         TestTree
     test testName replacements input expect =
         testCase testName $ simplifyExpect replacements input expect
+
+test_extractFirstAssignment :: [TestTree]
+test_extractFirstAssignment =
+    [ (test "assignment, on the left" x)
+        [fromEquals_ (mkElemVar x) Mock.a]
+        (Just Mock.a)
+    , (test "assignment, on the right" x)
+        [fromEquals_ Mock.a (mkElemVar x)]
+        (Just Mock.a)
+    , (test "no matching assignment" x)
+        [fromEquals_ (mkElemVar y) Mock.a]
+        Nothing
+    , (test "one of many relevant assignments, on the left" x)
+        [fromEquals_ (mkElemVar x) Mock.a, fromEquals_ (mkElemVar x) Mock.b]
+        (Just Mock.a)
+    , (test "one of many relevant assignments, on the right" x)
+        [fromEquals_ Mock.a (mkElemVar x), fromEquals_ (mkElemVar x) Mock.b]
+        (Just Mock.a)
+    , (test "single relevant assignment, many clauses, on the left" x)
+        [ fromEquals_ (mkElemVar x) Mock.a
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.a)
+    , (test "single relevant assignment, many clauses, on the right" x)
+        [ fromEquals_ Mock.a (mkElemVar x)
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.a)
+    , (test "single relevant assignment, many clauses, on the left" y)
+        [ fromEquals_ (mkElemVar x) Mock.a
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.b)
+    , (test "single relevant assignment, many clauses, on the right" y)
+        [ fromEquals_ Mock.a (mkElemVar x)
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.b)
+    , (test "renaming, on the left" x)
+        [fromEquals_ (mkElemVar x) (mkElemVar y)]
+        (Just (mkElemVar y))
+    , (test "renaming, on the right" y)
+        [fromEquals_ (mkElemVar x) (mkElemVar y)]
+        (Just (mkElemVar x))
+    ]
+  where
+    x, y :: ElementVariable RewritingVariableName
+    x = Mock.xConfig
+    y = Mock.yConfig
+
+    test ::
+        HasCallStack =>
+        TestName ->
+        ElementVariable RewritingVariableName ->
+        [Predicate RewritingVariableName] ->
+        Maybe (TermLike RewritingVariableName) ->
+        TestTree
+    test testName elementVariable predicates expect =
+        testCase testName $ do
+            let someVariableName = inject (variableName elementVariable)
+                multiAnd = MultiAnd.make predicates
+                actual = extractFirstAssignment someVariableName multiAnd
+            case expect of
+                Nothing ->
+                    case actual of
+                        Nothing -> pure ()
+                        Just actual' -> assertFailure message
+                          where
+                            message =
+                                (show . Pretty.vsep)
+                                    [ "Expected: Nothing"
+                                    , "but found:"
+                                    , Pretty.indent 4 (unparse actual')
+                                    ]
+                Just expect' ->
+                    case actual of
+                        Nothing -> assertFailure message
+                          where
+                            message =
+                                (show . Pretty.vsep)
+                                    [ "Expected:"
+                                    , Pretty.indent 4 (unparse expect')
+                                    , "but found: Nothing"
+                                    ]
+                        Just actual' ->
+                            assertEqual message expect' actual'
+                          where
+                            message =
+                                (show . Pretty.vsep)
+                                    [ "Expected:"
+                                    , Pretty.indent 4 (unparse expect')
+                                    , "but found:"
+                                    , Pretty.indent 4 (unparse actual')
+                                    ]
 
 mkDisjunctiveNormalForm :: Ord a => TopBottom a => [[a]] -> MultiOr (MultiAnd a)
 mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make

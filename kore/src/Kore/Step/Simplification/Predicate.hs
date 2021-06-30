@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.Predicate (
     simplify,
+    extractFirstAssignment,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -434,29 +435,6 @@ simplifyExists _ = \exists@Exists{existsChild} ->
         someVariableName :: SomeVariableName RewritingVariableName
         someVariableName = inject (variableName existsVariable)
 
-    extractFirstAssignment ::
-        SomeVariableName RewritingVariableName ->
-        MultiAnd (Predicate RewritingVariableName) ->
-        Maybe (TermLike RewritingVariableName)
-    extractFirstAssignment someVariableName predicates =
-        foldMap
-            (First . extractAssignment someVariableName)
-            predicates
-            & getFirst
-
-    extractAssignment ::
-        SomeVariableName RewritingVariableName ->
-        Predicate RewritingVariableName ->
-        Maybe (TermLike RewritingVariableName)
-    extractAssignment someVariableName predicate = do
-        Assignment _ termLike <-
-            Substitution.retractAssignmentFor
-                someVariableName
-                predicate
-        guard (TermLike.isFunctionPattern termLike)
-        guard (not $ occursIn someVariableName termLike)
-        pure termLike
-
     applyAssignment ::
         SomeVariableName RewritingVariableName ->
         TermLike RewritingVariableName ->
@@ -467,3 +445,23 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             existsChild' = MultiAnd.map (substitute substitution) predicates
             valueCeil = MultiAnd.singleton (fromCeil_ termLike)
          in existsChild' <> valueCeil
+
+extractFirstAssignment ::
+    SomeVariableName RewritingVariableName ->
+    MultiAnd (Predicate RewritingVariableName) ->
+    Maybe (TermLike RewritingVariableName)
+extractFirstAssignment someVariableName predicates =
+    foldMap (First . extractAssignment) predicates
+        & getFirst
+  where
+    extractAssignment ::
+        Predicate RewritingVariableName ->
+        Maybe (TermLike RewritingVariableName)
+    extractAssignment predicate = do
+        Assignment _ termLike <-
+            Substitution.retractAssignmentFor
+                someVariableName
+                predicate
+        guard (TermLike.isFunctionPattern termLike)
+        guard (not $ occursIn someVariableName termLike)
+        pure termLike
