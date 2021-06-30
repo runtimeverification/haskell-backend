@@ -27,6 +27,7 @@ import Kore.Variables.Target (
 import Prelude.Kore hiding (
     null,
  )
+import Test.Expect
 import Test.Kore
 import Test.Kore.Internal.Predicate (
     TestPredicate,
@@ -466,53 +467,60 @@ test_retractAssignmentFor =
             let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
                 someVariable = inject Mock.x
                 someVariableName = variableName someVariable
-                expect = assign someVariable (mkElemVar Mock.y)
-                actual = retractAssignmentFor someVariableName input
-            assertEqual "" (Just expect) actual
+            expectAssignment
+                someVariable
+                (mkElemVar Mock.y)
+                (retractAssignmentFor someVariableName input)
         , testCase "retract right" $ do
             let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
                 someVariable = inject Mock.y
                 someVariableName = variableName someVariable
-                expect = assign someVariable (mkElemVar Mock.x)
-                actual = retractAssignmentFor someVariableName input
-            assertEqual "" (Just expect) actual
+            expectAssignment
+                someVariable
+                (mkElemVar Mock.x)
+                (retractAssignmentFor someVariableName input)
         , testCase "missing" $ do
             let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
                 someVariable = inject Mock.z
                 someVariableName = variableName someVariable
-                actual = retractAssignmentFor someVariableName input
-            assertEqual "" Nothing actual
+            expectNothing (retractAssignmentFor someVariableName input)
         ]
     , (testGroup "X = a()")
         [ testCase "retract left" $ do
             let input = fromEquals_ (mkElemVar Mock.x) Mock.a
                 someVariable = inject Mock.x
                 someVariableName = variableName someVariable
-                expect = assign someVariable Mock.a
-                actual = retractAssignmentFor someVariableName input
-            assertEqual "" (Just expect) actual
+            expectAssignment
+                someVariable
+                Mock.a
+                (retractAssignmentFor someVariableName input)
         , testCase "retract right" $ do
             let input = fromEquals_ Mock.a (mkElemVar Mock.y)
                 someVariable = inject Mock.y
                 someVariableName = variableName someVariable
-                expect = assign someVariable Mock.a
-                actual = retractAssignmentFor someVariableName input
-            assertEqual "" (Just expect) actual
+            expectAssignment
+                someVariable
+                Mock.a
+                (retractAssignmentFor someVariableName input)
         , testCase "missing" $ do
             let input = fromEquals_ (mkElemVar Mock.x) Mock.a
                 someVariable = inject Mock.z
                 someVariableName = variableName someVariable
-                actual = retractAssignmentFor someVariableName input
-            assertEqual "" Nothing actual
+            expectNothing (retractAssignmentFor someVariableName input)
         ]
     , testCase "specific case" $ do
         let input =
                 fromEquals_
                     (mkElemVar Mock.xConfig)
                     (mkElemVar Mock.yConfig)
-            someVariable = inject Mock.yConfig
-            someVariableName = variableName someVariable
-            expect = assign someVariable (mkElemVar Mock.xConfig)
-            actual = retractAssignmentFor someVariableName input
-        assertEqual "" (Just expect) actual
+            someVariableName = variableName (inject Mock.yConfig)
+        expectAssignment
+            (inject Mock.yConfig)
+            (mkElemVar Mock.xConfig)
+            (retractAssignmentFor someVariableName input)
     ]
+  where
+    expectAssignment someVariable termLike actual = do
+        Assignment someVariable' termLike' <- expectJust actual
+        assertEqual "" someVariable someVariable'
+        assertEqual "" termLike termLike'
