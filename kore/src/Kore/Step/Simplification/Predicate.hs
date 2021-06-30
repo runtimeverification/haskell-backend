@@ -458,10 +458,15 @@ extractFirstAssignment someVariableName predicates =
         Predicate RewritingVariableName ->
         Maybe (TermLike RewritingVariableName)
     extractAssignment predicate = do
-        Assignment _ termLike <-
-            Substitution.retractAssignmentFor
-                someVariableName
-                predicate
-        guard (TermLike.isFunctionPattern termLike)
-        guard (not $ occursIn someVariableName termLike)
-        pure termLike
+        traceShowM (unparse someVariableName)
+        traceShowM (Pretty.pretty predicate)
+        case Substitution.retractAssignmentFor someVariableName predicate of
+            Nothing -> Nothing
+            Just assignment@(Assignment someVariable' termLike) ->
+                traceShow assignment . assert (variableName someVariable' == someVariableName) $ do
+                    traceShowM (unparse someVariable')
+                    traceShowM (unparse termLike)
+                    guard (TermLike.isFunctionPattern termLike)
+                    traceM "isFunctionPattern"
+                    guard (not $ occursIn someVariableName termLike)
+                    pure termLike
