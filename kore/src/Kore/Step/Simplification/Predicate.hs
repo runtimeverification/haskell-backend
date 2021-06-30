@@ -420,20 +420,19 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             (MultiAnd (Predicate RewritingVariableName)) ->
         simplifier NormalForm
     simplifyExistsAnd Exists{existsVariable, existsChild}
-        | not (someVariableName `occursIn` existsChild) =
+        | not (existsVariableName `occursIn` existsChild) =
             pure (MultiOr.singleton existsChild)
-        | Just value <- extractFirstAssignment someVariableName existsChild =
-            applyAssignment someVariableName value existsChild
+        | Just value <- extractFirstAssignment existsVariableName existsChild =
+            applyAssignment existsVariableName value existsChild
                 & MultiOr.singleton
                 & pure
         | otherwise =
             fromExists existsVariable (Predicate.fromMultiAnd existsChild)
                 & mkSingleton
                 & pure
-                & traceShow (Pretty.pretty existsChild)
       where
-        someVariableName :: SomeVariableName RewritingVariableName
-        someVariableName = inject (variableName existsVariable)
+        existsVariableName :: SomeVariableName RewritingVariableName
+        existsVariableName = inject (variableName existsVariable)
 
     applyAssignment ::
         SomeVariableName RewritingVariableName ->
@@ -463,5 +462,5 @@ extractFirstAssignment someVariableName predicates =
                 someVariableName
                 predicate
         guard (TermLike.isFunctionPattern termLike)
-        guard (not $ occursIn someVariableName termLike)
+        (guard . not) (someVariableName `occursIn` termLike)
         pure termLike
