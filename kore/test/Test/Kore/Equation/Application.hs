@@ -28,6 +28,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry (
     mkEvaluatorRegistry,
  )
+import Kore.Unparser (
+    unparse,
+ )
 import Prelude.Kore
 import qualified Pretty
 import Test.Expect
@@ -164,9 +167,17 @@ test_attemptEquation =
                             (Mock.functional10 (mkElemVar Mock.yConfig))
             initial = mkElemVar Mock.yConfig
             equation = equationId{ensures}
-        attemptEquation SideCondition.top initial equation
-            >>= expectRight
-            >>= assertEqual "" expect
+        actual <-
+            attemptEquation SideCondition.top initial equation
+                >>= expectRight
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , Pretty.indent 4 (unparse expect)
+                    , "but found:"
+                    , Pretty.indent 4 (unparse actual)
+                    ]
+        assertEqual message expect actual
     , testCase "equation requirement" $ do
         let requires =
                 makeEqualsPredicate

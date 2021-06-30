@@ -63,6 +63,10 @@ import Kore.Log.DebugUnification (
     debugUnificationUnsolved,
     whileDebugUnification,
  )
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottom,
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -78,7 +82,6 @@ import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
 import Prelude.Kore
-import qualified Pretty
 
 {- | Unify two terms without discarding the terms.
 
@@ -191,14 +194,11 @@ maybeTermEquals notSimplifier childTransformers first second = do
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq second first =
             lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq first second = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq second first = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
         | otherwise =
             asum
-                [ Builtin.String.unifyStringEq
-                    childTransformers
-                    notSimplifier
-                    first
-                    second
-                , do
+                [ do
                     unifyData <- Error.hoistMaybe $ Builtin.KEqual.matchUnifyKequalsEq first second
                     lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
                 , do
@@ -284,8 +284,9 @@ maybeTermAnd notSimplifier childTransformers first second = do
             lift $ Builtin.Bool.unifyBoolNot childTransformers first boolNotData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
             lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
-        | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq second first =
-            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
+            lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+        | Just unifyData <- Builtin.String.matchUnifyStringEq first second = lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
         | otherwise =
             asum
                 [ Builtin.KEqual.unifyIfThenElse childTransformers first second
@@ -365,7 +366,7 @@ explainBoolAndBottom ::
     TermLike RewritingVariableName ->
     unifier ()
 explainBoolAndBottom term1 term2 =
-    explainBottom "Cannot unify bottom." term1 term2
+    debugUnifyBottom "Cannot unify bottom." term1 term2
 
 {- | Matches
 
@@ -431,11 +432,10 @@ bottomTermEquals
                 [] -> return Pattern.top
                 [Conditional{predicate = PredicateTrue, substitution}]
                     | substitution == mempty -> do
-                        explainBottom
+                        debugUnifyBottomAndReturnBottom
                             "Cannot unify bottom with non-bottom pattern."
                             first
                             second
-                        empty
                 _ ->
                     return
                         Conditional
@@ -533,12 +533,11 @@ variableFunctionEquals
                 resultOr <- makeEvaluateTermCeil SideCondition.topTODO second
                 case toList resultOr of
                     [] -> do
-                        explainBottom
+                        debugUnifyBottomAndReturnBottom
                             "Unification of variable and bottom \
                             \when attempting to simplify equals."
                             first
                             second
-                        empty
                     resultConditions -> Unify.scatter resultConditions
             let result =
                     predicate
@@ -606,7 +605,8 @@ unifySortInjection termMerger term1 term2 unifyInj = do
     InjSimplifier{unifyInjs} <- Simplifier.askInjSimplifier
     unifyInjs unifyInj & maybe distinct merge
   where
-    distinct = explainAndReturnBottom "Distinct sort injections" term1 term2
+    distinct =
+        debugUnifyBottomAndReturnBottom "Distinct sort injections" term1 term2
     merge inj@Inj{injChild = Pair child1 child2} = do
         childPattern <- termMerger child1 child2
         InjSimplifier{evaluateInj} <- askInjSimplifier
@@ -670,8 +670,11 @@ noConfusionInjectionConstructor ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier a
-noConfusionInjectionConstructor =
-    explainAndReturnBottom "No confusion: sort injections and constructors"
+noConfusionInjectionConstructor term1 term2 =
+    debugUnifyBottomAndReturnBottom
+        "No confusion: sort injections and constructors"
+        term1
+        term2
 
 {- |
  If the two constructors form an overload pair, apply the overloading axioms
@@ -710,7 +713,7 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                         [result] -> return result
                         [] ->
                             lift $
-                                explainAndReturnBottom
+                                debugUnifyBottomAndReturnBottom
                                     ( "exists simplification for overloaded"
                                         <> " constructors returned no pattern"
                                     )
@@ -719,7 +722,10 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm =
                         _ -> empty
             Left (Clash message) ->
                 lift $
-                    explainAndReturnBottom (fromString message) firstTerm secondTerm
+                    debugUnifyBottomAndReturnBottom
+                        (fromString message)
+                        firstTerm
+                        secondTerm
             Left Overloading.NotApplicable -> empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
@@ -810,7 +816,7 @@ unifyDomainValue term1 term2 unifyData
   where
     UnifyDomainValue{val1, val2} = unifyData
 
-cannotUnifyDistinctDomainValues :: Pretty.Doc ()
+cannotUnifyDistinctDomainValues :: Text
 cannotUnifyDistinctDomainValues = "distinct domain values"
 
 cannotUnifyDomainValues ::
@@ -818,7 +824,8 @@ cannotUnifyDomainValues ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier a
-cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
+cannotUnifyDomainValues term1 term2 =
+    debugUnifyBottomAndReturnBottom cannotUnifyDistinctDomainValues term1 term2
 
 -- | @UnifyStringLiteral@ represents unification of two string literals.
 data UnifyStringLiteral = UnifyStringLiteral
@@ -847,7 +854,8 @@ unifyStringLiteral ::
     unifier (Pattern RewritingVariableName)
 unifyStringLiteral term1 term2 unifyData
     | txt1 == txt2 = return $ Pattern.fromTermLike term1
-    | otherwise = explainAndReturnBottom "distinct string literals" term1 term2
+    | otherwise =
+        debugUnifyBottomAndReturnBottom "distinct string literals" term1 term2
   where
     UnifyStringLiteral{txt1, txt2} = unifyData
 

@@ -15,9 +15,7 @@ module Kore.Step.RulePattern (
     applySubstitution,
     topExistsToImplicitForall,
     isFreeOf,
-    Kore.Step.RulePattern.substitute,
     lhsEqualsRhs,
-    rhsSubstitute,
     rhsForgetSimplified,
     rhsToTerm,
     lhsToTerm,
@@ -89,6 +87,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     TermLike,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
@@ -105,14 +104,11 @@ import Kore.Sort (
 import Kore.Step.AntiLeft (
     AntiLeft,
  )
-import qualified Kore.Step.AntiLeft as AntiLeft (
-    mapVariables,
-    substitute,
-    toTermLike,
- )
+import qualified Kore.Step.AntiLeft as AntiLeft
 import Kore.Step.Step (
     UnifyingRule (..),
  )
+import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),
     Id (..),
@@ -146,6 +142,23 @@ data RHS variable = RHS
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance InternalVariable variable => Substitute (RHS variable) where
+    type TermType (RHS variable) = TermLike variable
+
+    type VariableNameType (RHS variable) = variable
+
+    substitute subst RHS{existentials, right, ensures} =
+        RHS
+            { existentials
+            , right = substitute subst' right
+            , ensures = substitute subst' ensures
+            }
+      where
+        subst' = foldr (Map.delete . inject . variableName) subst existentials
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
 {- | Given a collection of 'FreeVariables' and a RHS, it removes
 converts existential quantifications at the top of the term to implicit
 universal quantification,
@@ -158,23 +171,23 @@ topExistsToImplicitForall ::
     RHS variable ->
     Pattern variable
 topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
-    Conditional
-        { term = TermLike.substitute subst right
-        , predicate = Predicate.substitute subst ensures
-        , substitution = mempty
-        }
+    (rename renamed)
+        Conditional
+            { term = right
+            , predicate = ensures
+            , substitution = mempty
+            }
   where
     avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
         freeVariables right <> freeVariables ensures
             & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
             & FreeVariables.toNames
-    rename :: Map (SomeVariableName variable) (SomeVariable variable)
-    rename =
+    renamed :: Map (SomeVariableName variable) (SomeVariable variable)
+    renamed =
         refreshVariables
             (avoid <> bindExistsFreeVariables)
             (Set.fromList $ mkSomeVariable <$> existentials)
-    subst = TermLike.mkVar <$> rename
 
 -- | Normal rewriting axioms
 data RulePattern variable = RulePattern
@@ -226,6 +239,24 @@ instance TopBottom (RulePattern variable) where
 
 instance From (RulePattern variable) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
+
+instance InternalVariable variable => Substitute (RulePattern variable) where
+    type TermType (RulePattern variable) = TermLike variable
+
+    type VariableNameType (RulePattern variable) = variable
+
+    substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
+        rulePattern'
+            { left = substitute subst left
+            , antiLeft = substitute subst <$> antiLeft
+            , requires = substitute subst requires
+            , rhs = substitute subst rhs
+            }
+      where
+        RulePattern{left, antiLeft, requires, rhs} = rulePattern'
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern ::
@@ -354,21 +385,6 @@ isFreeOf rule =
         FreeVariables.toSet $
             freeVariables rule
 
--- | Apply the substitution to the right-hand-side of a rule.
-rhsSubstitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike.TermLike variable) ->
-    RHS variable ->
-    RHS variable
-rhsSubstitute subst RHS{existentials, right, ensures} =
-    RHS
-        { existentials
-        , right = TermLike.substitute subst' right
-        , ensures = Predicate.substitute subst' ensures
-        }
-  where
-    subst' = foldr (Map.delete . inject . variableName) subst existentials
-
 renameExistentials ::
     forall variable.
     HasCallStack =>
@@ -376,12 +392,11 @@ renameExistentials ::
     Map (SomeVariableName variable) (SomeVariable variable) ->
     RHS variable ->
     RHS variable
-renameExistentials rename RHS{existentials, right, ensures} =
+renameExistentials subst RHS{existentials, right, ensures} =
     RHS
-        { existentials =
-            renameVariable <$> existentials
-        , right = TermLike.substitute subst right
-        , ensures = Predicate.substitute subst ensures
+        { existentials = renameVariable <$> existentials
+        , right = rename subst right
+        , ensures = rename subst ensures
         }
   where
     renameVariable ::
@@ -389,9 +404,7 @@ renameExistentials rename RHS{existentials, right, ensures} =
         ElementVariable variable
     renameVariable var =
         let name = SomeVariableNameElement . variableName $ var
-         in maybe var expectElementVariable $
-                Map.lookup name rename
-    subst = TermLike.mkVar <$> rename
+         in maybe var expectElementVariable $ Map.lookup name subst
 
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS{existentials, right, ensures} =
@@ -400,22 +413,6 @@ rhsForgetSimplified RHS{existentials, right, ensures} =
         , right = TermLike.forgetSimplified right
         , ensures = Predicate.forgetSimplified ensures
         }
-
--- | Apply the substitution to the rule.
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike.TermLike variable) ->
-    RulePattern variable ->
-    RulePattern variable
-substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
-    rulePattern'
-        { left = TermLike.substitute subst left
-        , antiLeft = AntiLeft.substitute subst <$> antiLeft
-        , requires = Predicate.substitute subst requires
-        , rhs = rhsSubstitute subst rhs
-        }
-  where
-    RulePattern{left, antiLeft, requires, rhs} = rulePattern'
 
 {- | Applies a substitution to a rule and checks that it was fully applied,
 i.e. there is no substitution variable left in the rule.
@@ -566,13 +563,13 @@ instance UnifyingRule (RulePattern variable) where
             let subst = TermLike.mkVar <$> renaming
                 rule1 =
                     RulePattern
-                        { left = TermLike.substitute subst left
-                        , antiLeft = AntiLeft.substitute subst <$> antiLeft
-                        , requires = Predicate.substitute subst requires
+                        { left = substitute subst left
+                        , antiLeft = substitute subst <$> antiLeft
+                        , requires = substitute subst requires
                         , rhs =
                             rhs
                                 & renameExistentials renamingExists
-                                & rhsSubstitute subst
+                                & substitute subst
                         , attributes
                         }
             -- Only return the renaming of free variables.

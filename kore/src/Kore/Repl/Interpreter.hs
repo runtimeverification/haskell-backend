@@ -1613,10 +1613,10 @@ parseEvalScript file scriptModeOutput = do
                 command
 
 formatUnificationMessage ::
-    Either ReplOutput (NonEmpty (Condition RewritingVariableName)) ->
+    Maybe (NonEmpty (Condition RewritingVariableName)) ->
     ReplOutput
 formatUnificationMessage docOrCondition =
-    either id prettyUnifiers docOrCondition
+    maybe mempty prettyUnifiers docOrCondition
   where
     prettyUnifiers =
         ReplOutput
