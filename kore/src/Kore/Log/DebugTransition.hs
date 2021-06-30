@@ -72,13 +72,13 @@ instance Pretty AfterTransition where
             ApplyClaims -> True
             _ -> False
         prettyRules
-          -- match behavior of DebugAppliedRewriteRules
-          | shouldDisplayRules = case appliedRules of
-            [] -> ["No rules were applied."]
-            rules ->
-                ["The rules at following locations were applied:"]
-                    <> fmap pretty rules
-          | otherwise = []
+            -- match behavior of DebugAppliedRewriteRules
+            | shouldDisplayRules = case appliedRules of
+                [] -> ["No rules were applied."]
+                rules ->
+                    ["The rules at following locations were applied:"]
+                        <> fmap pretty rules
+            | otherwise = []
 
 instance Pretty BeforeTransition where
     pretty BeforeTransition{proofState, transition} =
@@ -92,17 +92,21 @@ instance Pretty BeforeTransition where
 instance Entry DebugTransition where
     entrySeverity _ = Debug
     helpDoc _ = "log proof state"
-    oneLineDoc (DebugAfterTransition
-        AfterTransition{transition, appliedRules}) =
+    oneLineDoc
+        ( DebugAfterTransition
+                AfterTransition{transition, appliedRules}
+            ) =
             Just $
                 transitionHeader
                     <> Pretty.hsep (pretty <$> appliedRules)
-      where
-        transitionHeader = case appliedRules of
-            [] -> pretty transition
-            _otherwise -> pretty transition <> ": "
-    oneLineDoc (DebugBeforeTransition
-        BeforeTransition {transition}) =
+          where
+            transitionHeader = case appliedRules of
+                [] -> pretty transition
+                _otherwise -> pretty transition <> ": "
+    oneLineDoc
+        ( DebugBeforeTransition
+                BeforeTransition{transition}
+            ) =
             Just (pretty transition)
 
 debugBeforeTransition ::
@@ -126,11 +130,12 @@ debugAfterTransition resultState transition rules =
     logEntry $ DebugAfterTransition after
   where
     appliedRules = map from rules
-    after = AfterTransition
-        { resultState = Just resultState
-        , transition
-        , appliedRules
-        }
+    after =
+        AfterTransition
+            { resultState = Just resultState
+            , transition
+            , appliedRules
+            }
 
 debugFinalTransition ::
     MonadLog log =>
@@ -139,8 +144,9 @@ debugFinalTransition ::
 debugFinalTransition transition =
     logEntry $ DebugAfterTransition after
   where
-    after = AfterTransition
-        { resultState = Nothing
-        , transition
-        , appliedRules = []
-        }
+    after =
+        AfterTransition
+            { resultState = Nothing
+            , transition
+            , appliedRules = []
+            }
