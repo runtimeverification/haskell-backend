@@ -6,7 +6,7 @@ module Kore.Substitute (
     Substitute (..),
     NormalSubstitution,
     NormalRenaming,
-    refreshElementBinder,
+    refreshElementBinder
 ) where
 
 import Data.Kind (
@@ -15,19 +15,17 @@ import Data.Kind (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import Data.Set (
-    Set,
- )
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables,
  )
 import Kore.Internal.Variable
-import Kore.Variables.Binding (
-    Binder (..),
- )
-import Kore.Variables.Fresh (refreshElementVariable)
 import Prelude.Kore
+import Data.Set
+    (Set)
+import Kore.Variables.Binding
+    (Binder (..))
+import qualified Data.Map.Strict as Map
+import Kore.Variables.Fresh (refreshElementVariable)
 
 -- | @Substitute@ implements capture-avoiding substitution over many types.
 class HasFreeVariables child (VariableNameType child) => Substitute child where
