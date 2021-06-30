@@ -341,49 +341,7 @@ test_simplify_SideCondition =
 
 test_extractFirstAssignment :: [TestTree]
 test_extractFirstAssignment =
-    [ (test "assignment, on the left" x)
-        [fromEquals_ (mkElemVar x) Mock.a]
-        (Just Mock.a)
-    , (test "assignment, on the right" x)
-        [fromEquals_ Mock.a (mkElemVar x)]
-        (Just Mock.a)
-    , (test "no matching assignment" x)
-        [fromEquals_ (mkElemVar y) Mock.a]
-        Nothing
-    , (test "one of many relevant assignments, on the left" x)
-        [fromEquals_ (mkElemVar x) Mock.a, fromEquals_ (mkElemVar x) Mock.b]
-        (Just Mock.a)
-    , (test "one of many relevant assignments, on the right" x)
-        [fromEquals_ Mock.a (mkElemVar x), fromEquals_ (mkElemVar x) Mock.b]
-        (Just Mock.a)
-    , (test "single relevant assignment, many clauses, on the left" x)
-        [ fromEquals_ (mkElemVar x) Mock.a
-        , fromEquals_ (mkElemVar y) Mock.b
-        , fromCeil_ (Mock.f Mock.a)
-        ]
-        (Just Mock.a)
-    , (test "single relevant assignment, many clauses, on the right" x)
-        [ fromEquals_ Mock.a (mkElemVar x)
-        , fromEquals_ (mkElemVar y) Mock.b
-        , fromCeil_ (Mock.f Mock.a)
-        ]
-        (Just Mock.a)
-    , (test "single relevant assignment, many clauses, on the left" y)
-        [ fromEquals_ (mkElemVar x) Mock.a
-        , fromEquals_ (mkElemVar y) Mock.b
-        , fromCeil_ (Mock.f Mock.a)
-        ]
-        (Just Mock.b)
-    , (test "single relevant assignment, many clauses, on the right" y)
-        [ fromEquals_ Mock.a (mkElemVar x)
-        , fromEquals_ (mkElemVar y) Mock.b
-        , fromCeil_ (Mock.f Mock.a)
-        ]
-        (Just Mock.b)
-    , (test "renaming, on the left" x)
-        [fromEquals_ (mkElemVar x) (mkElemVar y)]
-        (Just (mkElemVar y))
-    , (test "renaming, on the right" y)
+    [ (test "renaming, on the right" y)
         [fromEquals_ (mkElemVar x) (mkElemVar y)]
         (Just (mkElemVar x))
     ]
