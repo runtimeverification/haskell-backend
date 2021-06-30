@@ -15,6 +15,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
+    ElementVariable,
     TermLike,
     mkElemVar,
     mkEquals,
@@ -158,30 +159,61 @@ test_simplify =
             (fromCeil_ (mkEquals Mock.testSort fa fb))
             [[fromEquals_ fa fb]]
         ]
-    , testGroup
-        "\\exists"
-        [ test
-            "irrelevant variable"
-            (fromExists Mock.xConfig faCeil)
+    , (testGroup "\\exists")
+        [ (test "irrelevant variable")
+            (fromExists x faCeil)
             [[faCeil]]
-        , test
-            "single assignment"
-            ( fromExists
-                Mock.xConfig
-                (fromEquals_ (mkElemVar Mock.xConfig) (Mock.f Mock.a))
-            )
-            [[faCeil]]
-        , test
-            "invalid assignment"
-            ( fromExists
-                Mock.xConfig
-                ( fromEquals_
-                    (mkElemVar Mock.xConfig)
-                    (Mock.f $ mkElemVar Mock.xConfig)
+        , (testGroup "assignment for term")
+            [ (test "variable on the left")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar x) Mock.a)
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[faCeil]]
+            , (test "variable on the right")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ Mock.a (mkElemVar x))
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[faCeil]]
+            ]
+        , (testGroup "assignment for variable")
+            [ (test "quantified variable on the left")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar x) (mkElemVar y))
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[fromCeil_ (Mock.f (mkElemVar y))]]
+            , (test "quantified variable on the right")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar y) (mkElemVar x))
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[fromCeil_ (Mock.f (mkElemVar y))]]
+            ]
+        , (test "nested quantifiers")
+            ( (fromExists x) . (fromExists y) $
+                ( fromAnd
+                    (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar t) (mkElemVar x))
+                        (fromEquals_ (mkElemVar u) (mkElemVar y))
+                    )
                 )
             )
+            [[fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar t))]]
+        , (test "invalid assignment")
+            ((fromExists x) (fromEquals_ (mkElemVar x) (Mock.f $ mkElemVar x)))
             [
-                [ (fromExists Mock.xConfig)
+                [ (fromExists x)
                     ( fromAnd
                         (fromCeil_ (Mock.f $ mkElemVar Mock.xConfig))
                         ( fromEquals_
@@ -191,10 +223,8 @@ test_simplify =
                     )
                 ]
             ]
-        , test
-            "apply substitution"
-            ( fromExists
-                Mock.xConfig
+        , (test "apply substitution")
+            ( (fromExists x)
                 ( fromAnd
                     (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
                     (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
@@ -203,8 +233,7 @@ test_simplify =
             [[faCeil]]
         ]
     , (testGroup "\\equals")
-        [ test
-            "invalid assignment"
+        [ (test "invalid assignment")
             ( fromEquals_
                 (mkElemVar Mock.xConfig)
                 (Mock.f $ mkElemVar Mock.xConfig)
@@ -216,6 +245,9 @@ test_simplify =
                 , fromCeil_ (Mock.f $ mkElemVar Mock.xConfig)
                 ]
             ]
+        , (test "variable-variable assignment")
+            (fromEquals_ (mkElemVar x) (mkElemVar y))
+            [[fromEquals_ (mkElemVar x) (mkElemVar y)]]
         ]
     , testGroup
         "Other"
@@ -235,6 +267,12 @@ test_simplify =
         ]
     ]
   where
+    t, u, x, y :: ElementVariable RewritingVariableName
+    t = Mock.tConfig
+    u = Mock.uConfig
+    x = Mock.xConfig
+    y = Mock.yConfig
+
     test ::
         HasCallStack =>
         TestName ->
