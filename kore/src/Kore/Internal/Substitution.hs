@@ -188,10 +188,10 @@ retractAssignmentFor someVariableName predicate =
     case predicate of
         PredicateEquals (Var_ var) term
             | variableName var == someVariableName ->
-                Just (assign var term)
+                Just (Assignment_ var term)
         PredicateEquals term (Var_ var)
             | variableName var == someVariableName ->
-                Just (assign var term)
+                Just (Assignment_ var term)
         _ -> Nothing
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
