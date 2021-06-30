@@ -972,11 +972,10 @@ cacheSimplifiedFunctions =
             TermLike.ApplySymbolF symbolApp ->
                 let symbol = TermLike.applicationSymbolOrAlias symbolApp
                     children = TermLike.applicationChildren symbolApp
+                    childrenSet = foldMap extractSimplifiedFunctions children
                  in if isFunction symbol && not (isConstructor symbol)
-                        then
-                            HashSet.singleton symbolApp
-                                <> foldMap extractSimplifiedFunctions children
-                        else foldMap extractSimplifiedFunctions children
+                        then HashSet.singleton symbolApp <> childrenSet
+                        else childrenSet
             TermLike.AndF and' ->
                 foldMap extractSimplifiedFunctions and'
             TermLike.ApplyAliasF aliasApp ->
