@@ -7,8 +7,8 @@ module Kore.Log.DebugBeginClaim (
     debugBeginClaim,
 ) where
 
-import Kore.Attribute.SourceLocation ( 
-    SourceLocation
+import Kore.Attribute.SourceLocation (
+    SourceLocation,
  )
 import Kore.Reachability.SomeClaim (
     SomeClaim (..),
