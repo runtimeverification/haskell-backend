@@ -1,13 +1,13 @@
 module Test.Kore.Simplify.Rule (test_simplifyRulePattern) where
 
 import Kore.Internal.TermLike
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    mkRewritingTerm,
+ )
 import Kore.Rewrite.RulePattern (
     RulePattern,
     rulePattern,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkRewritingTerm,
  )
 import qualified Kore.Simplify.Rule as Kore
 import Prelude.Kore

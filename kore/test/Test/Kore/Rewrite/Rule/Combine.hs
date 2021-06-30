@@ -40,6 +40,10 @@ import Kore.Rewrite.AntiLeft (
 import qualified Kore.Rewrite.AntiLeft as AntiLeft (
     parse,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+ )
 import Kore.Rewrite.Rule.Combine
 import Kore.Rewrite.RulePattern (
     RHS (..),
@@ -48,10 +52,6 @@ import Kore.Rewrite.RulePattern (
  )
 import qualified Kore.Rewrite.RulePattern as RulePattern (
     RulePattern (..),
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkConfigVariable,
  )
 import Kore.Syntax.Variable
 import Kore.Unparser (

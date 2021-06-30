@@ -25,7 +25,7 @@ import qualified Kore.Internal.Predicate as Predicate (
     markSimplified,
  )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore

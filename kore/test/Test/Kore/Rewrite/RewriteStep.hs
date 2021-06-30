@@ -43,6 +43,7 @@ import Kore.Rewrite.ClaimPattern (
     refreshExistentials,
  )
 import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RHS (..),
     RewriteRule (..),
@@ -53,7 +54,6 @@ import Kore.Rewrite.RulePattern (
  )
 import qualified Kore.Rewrite.RulePattern as RulePattern
 import qualified Kore.Rewrite.Step as Step
-import Kore.Rewriting.RewritingVariable
 import Kore.Variables.Fresh (
     nextName,
  )

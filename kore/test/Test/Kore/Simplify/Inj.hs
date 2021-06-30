@@ -17,7 +17,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import Kore.Internal.Symbol
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkElementConfigVariable,
  )

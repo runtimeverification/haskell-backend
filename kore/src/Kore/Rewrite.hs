@@ -46,6 +46,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Rewrite.Result as Result
 import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
@@ -57,7 +58,6 @@ import Kore.Rewrite.Strategy hiding (
     transitionRule,
  )
 import qualified Kore.Rewrite.Strategy as Strategy
-import Kore.Rewriting.RewritingVariable
 import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
  )

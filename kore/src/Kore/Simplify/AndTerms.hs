@@ -67,7 +67,7 @@ import Kore.Log.DebugUnifyBottom (
     debugUnifyBottom,
     debugUnifyBottomAndReturnBottom,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Exists as Exists

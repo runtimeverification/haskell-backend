@@ -38,7 +38,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.Matcher (
     matchIncremental,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
     mkConfigVariable,

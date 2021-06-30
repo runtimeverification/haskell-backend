@@ -23,7 +23,7 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike
 import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
 import Kore.Rewrite.Axiom.Registry
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
  )
 import Kore.Syntax.Definition hiding (

@@ -41,6 +41,7 @@ import Kore.Rewrite hiding (
     Start,
  )
 import qualified Kore.Rewrite as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     mkRewritingRule,
@@ -49,7 +50,6 @@ import Kore.Rewrite.RulePattern as RulePattern (
     rulePattern,
  )
 import qualified Kore.Rewrite.Strategy as Strategy
-import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.Variable
 import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern

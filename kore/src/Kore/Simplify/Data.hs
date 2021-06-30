@@ -59,7 +59,7 @@ import Kore.Rewrite.Axiom.Registry (
     mkEvaluatorRegistry,
  )
 import qualified Kore.Rewrite.Function.Memo as Memo
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkEquationVariable,
  )

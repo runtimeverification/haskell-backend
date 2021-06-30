@@ -25,7 +25,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkElemVar,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.OrPattern

@@ -23,7 +23,7 @@ import Kore.Internal.TermLike (
     mapVariables,
     pattern ApplyAlias_,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Substitute

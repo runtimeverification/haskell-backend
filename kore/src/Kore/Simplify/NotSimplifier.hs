@@ -12,7 +12,7 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 

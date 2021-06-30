@@ -90,10 +90,10 @@ import Kore.Reachability hiding (
     AppliedRule,
  )
 import qualified Kore.Reachability as Reachability
-import qualified Kore.Rewrite.Strategy as Strategy
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Simplify.Data (
     MonadSimplify (..),
  )

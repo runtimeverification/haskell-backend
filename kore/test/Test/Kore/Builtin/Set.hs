@@ -95,19 +95,19 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+    mkConfigVariable,
+    mkRewritingTerm,
+    mkRuleVariable,
+ )
 import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     injectTermIntoRHS,
  )
 import Kore.Rewrite.RulePattern as RulePattern (
     RulePattern (..),
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    configElementVariableFromId,
-    mkConfigVariable,
-    mkRewritingTerm,
-    mkRuleVariable,
  )
 import Kore.Simplify.AndTerms (
     termUnification,

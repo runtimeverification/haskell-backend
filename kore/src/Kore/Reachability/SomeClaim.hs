@@ -47,13 +47,13 @@ import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Rewrite.Transition (
     TransitionT,
  )
 import qualified Kore.Rewrite.Transition as Transition
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom (
     TopBottom (..),

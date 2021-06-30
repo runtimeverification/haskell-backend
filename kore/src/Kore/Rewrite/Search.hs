@@ -38,15 +38,15 @@ import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
     evaluate,
  )
 import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Rewrite.Substitution (
     mergePredicatesAndSubstitutions,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify

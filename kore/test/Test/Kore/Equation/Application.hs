@@ -25,7 +25,7 @@ import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
 import Kore.Rewrite.Axiom.Registry (
     mkEvaluatorRegistry,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Unparser (

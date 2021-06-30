@@ -96,11 +96,11 @@ import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
     matchIncremental,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT
-import qualified Kore.Rewrite.Substitution as Substitution
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT
+import qualified Kore.Rewrite.Substitution as Substitution
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )

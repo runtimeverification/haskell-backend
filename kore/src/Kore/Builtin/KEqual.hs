@@ -72,7 +72,7 @@ import Kore.Internal.SideCondition (
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.NotSimplifier

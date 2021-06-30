@@ -70,12 +70,12 @@ import Kore.Internal.TermLike (
     mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingTerm,
     resetConfigVariable,
  )
-import Kore.Rewriting.UnifyingRule (
+import Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
  )
 import Kore.Substitute

@@ -27,11 +27,11 @@ import Kore.Internal.TermLike (
     pattern Forall_,
     pattern Implies_,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
     filterMultiOr,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,

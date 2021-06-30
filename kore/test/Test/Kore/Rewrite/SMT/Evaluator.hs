@@ -27,11 +27,11 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Simplify.Data as Kore
 import Prelude.Kore
 import SMT (

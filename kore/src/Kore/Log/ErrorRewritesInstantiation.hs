@@ -43,12 +43,12 @@ import Kore.Rewrite.AxiomPattern (
     AxiomPattern,
     getAxiomPattern,
  )
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Step (
     UnifiedRule,
     UnifyingRule (..),
     wouldNarrowWith,
  )
-import Kore.Rewriting.RewritingVariable
 import Kore.Unparser (
     unparse,
  )

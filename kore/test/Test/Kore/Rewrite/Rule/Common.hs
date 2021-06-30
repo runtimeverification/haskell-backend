@@ -20,15 +20,15 @@ import Kore.Reachability (
     OnePathClaim (..),
     mkOnePathClaim,
  )
+import Kore.Rewrite.RewritingVariable (
+    mkRuleVariable,
+ )
 import Kore.Rewrite.RulePattern (
     RHS (RHS),
     RewriteRule (RewriteRule),
     RulePattern (RulePattern),
  )
 import qualified Kore.Rewrite.RulePattern as OLD
-import Kore.Rewriting.RewritingVariable (
-    mkRuleVariable,
- )
 import Prelude.Kore
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)

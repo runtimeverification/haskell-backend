@@ -19,7 +19,7 @@ import Kore.Internal.OrPattern (
     OrPattern,
  )
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.InjSimplifier (

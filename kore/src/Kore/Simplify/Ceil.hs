@@ -62,7 +62,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Rewrite.Function.Evaluator as Axiom (
     evaluatePattern,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.AndPredicates as And

@@ -44,7 +44,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     simplifierWithFallback,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingTerm,
  )

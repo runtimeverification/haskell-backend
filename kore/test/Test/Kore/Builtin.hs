@@ -29,7 +29,7 @@ import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )

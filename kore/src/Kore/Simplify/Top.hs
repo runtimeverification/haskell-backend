@@ -15,7 +15,7 @@ import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Sort

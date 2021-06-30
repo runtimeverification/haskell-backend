@@ -75,12 +75,12 @@ import Kore.Parser (
  )
 import qualified Kore.Rewrite.Function.Memo as Memo
 import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
 import qualified Kore.Rewrite.Step as Step
-import Kore.Rewriting.RewritingVariable
 import qualified Kore.Simplify.Condition as Simplifier.Condition
 import Kore.Simplify.Data
 import Kore.Simplify.InjSimplifier

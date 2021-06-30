@@ -17,7 +17,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
  )
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Kore.Simplify.Predicate (simplify)
 import Kore.TopBottom
 import Prelude.Kore

@@ -23,7 +23,7 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.InternalMap (

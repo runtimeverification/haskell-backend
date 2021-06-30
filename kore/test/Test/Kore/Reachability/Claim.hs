@@ -42,7 +42,7 @@ import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
     mkRewritingPattern,
  )

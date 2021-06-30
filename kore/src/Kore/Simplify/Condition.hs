@@ -41,7 +41,7 @@ import Kore.Internal.Substitution (
     Assignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Predicate as Predicate

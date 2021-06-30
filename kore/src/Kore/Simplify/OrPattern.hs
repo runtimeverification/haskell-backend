@@ -44,11 +44,11 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     toPredicate,
     top,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
     filterMultiOr,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,

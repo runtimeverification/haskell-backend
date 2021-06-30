@@ -51,6 +51,7 @@ import qualified Kore.Rewrite.ClaimPattern as Claim
 import qualified Kore.Rewrite.Remainder as Remainder
 import qualified Kore.Rewrite.Result as Result
 import qualified Kore.Rewrite.Result as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
@@ -65,7 +66,6 @@ import Kore.Rewrite.Step (
     assertFunctionLikeResults,
     unifyRules,
  )
-import Kore.Rewriting.RewritingVariable
 import Kore.Simplify.Simplify (
     MonadSimplify,
     simplifyCondition,

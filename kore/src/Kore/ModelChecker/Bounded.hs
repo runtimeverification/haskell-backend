@@ -48,6 +48,11 @@ import qualified Kore.ModelChecker.Step as ModelChecker (
 import qualified Kore.ModelChecker.Step as ProofState (
     ProofState (..),
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    getRewritingTerm,
+    resetConfigVariable,
+ )
 import Kore.Rewrite.RulePattern (
     ImplicationRule (ImplicationRule),
     RHS (..),
@@ -61,11 +66,6 @@ import Kore.Rewrite.Strategy (
     Strategy,
     pickFinal,
     runStrategyWithSearchOrder,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    getRewritingTerm,
-    resetConfigVariable,
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,

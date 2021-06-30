@@ -40,12 +40,12 @@ import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import Kore.Rewrite.Axiom.Registry
-import Kore.Rewrite.Rule (
-    extractRewriteAxioms,
- )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
+ )
+import Kore.Rewrite.Rule (
+    extractRewriteAxioms,
  )
 import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify

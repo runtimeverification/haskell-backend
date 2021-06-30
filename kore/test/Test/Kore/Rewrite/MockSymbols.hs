@@ -90,7 +90,7 @@ import qualified Kore.Rewrite.SMT.AST as SMT
 import qualified Kore.Rewrite.SMT.Representation.Resolve as SMT (
     resolve,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
     mkEquationVariable,

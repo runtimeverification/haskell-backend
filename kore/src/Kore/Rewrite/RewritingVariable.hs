@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-module Kore.Rewriting.RewritingVariable (
+module Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     RewritingVariable,
     isEquationVariable,

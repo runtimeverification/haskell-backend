@@ -9,7 +9,7 @@ import Kore.Internal.MultiAnd (
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore

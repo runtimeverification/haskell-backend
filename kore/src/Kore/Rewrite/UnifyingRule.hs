@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-module Kore.Rewriting.UnifyingRule (
+module Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
     InstantiationFailure (..),
     Renaming,

@@ -52,6 +52,11 @@ import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
     mkClaimPattern,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    getRewritingVariable,
+    mkRuleVariable,
+ )
 import Kore.Rewrite.Rule.Simplify
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -59,11 +64,6 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.Transition (
     runTransitionT,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    getRewritingVariable,
-    mkRuleVariable,
  )
 import Kore.Simplify.Data (
     Env (..),

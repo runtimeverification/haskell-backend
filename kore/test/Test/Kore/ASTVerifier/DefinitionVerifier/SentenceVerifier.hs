@@ -27,7 +27,7 @@ import Kore.Rewrite.AxiomPattern (
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     ruleElementVariableFromId,
  )
 import Kore.Syntax

@@ -92,13 +92,13 @@ import Kore.Internal.TermLike hiding (
     asConcrete,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewrite.RulePattern
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
     mkConfigVariable,
     ruleElementVariableFromId,
  )
+import Kore.Rewrite.RulePattern
 import Prelude.Kore hiding (
     concatMap,
  )

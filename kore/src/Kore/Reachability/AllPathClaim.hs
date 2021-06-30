@@ -41,14 +41,14 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
 import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern as ClaimPattern
-import Kore.Rewrite.Transition (
-    TransitionT,
- )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRuleVariable,
  )
-import Kore.Rewriting.UnifyingRule (
+import Kore.Rewrite.Transition (
+    TransitionT,
+ )
+import Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
  )
 import Kore.Simplify.Simplify (

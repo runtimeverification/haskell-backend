@@ -63,7 +63,7 @@ import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
     freeVariablesLeft,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Sort (

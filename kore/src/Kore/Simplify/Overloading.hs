@@ -39,7 +39,7 @@ import Kore.Internal.Condition (
  )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
  )

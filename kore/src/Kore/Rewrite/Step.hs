@@ -65,9 +65,9 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Rewrite.Result as Result
 import qualified Kore.Rewrite.Result as Results
 import qualified Kore.Rewrite.Result as Step
+import Kore.Rewrite.RewritingVariable
 import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
-import Kore.Rewriting.RewritingVariable
-import Kore.Rewriting.UnifyingRule
+import Kore.Rewrite.UnifyingRule
 import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,

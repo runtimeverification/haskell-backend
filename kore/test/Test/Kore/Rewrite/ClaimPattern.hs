@@ -12,8 +12,8 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Rewrite.ClaimPattern
-import Kore.Rewriting.RewritingVariable
-import Kore.Rewriting.UnifyingRule
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.UnifyingRule
 import Prelude.Kore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty

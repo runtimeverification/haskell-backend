@@ -33,11 +33,11 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Function.Evaluator (
     evaluateApplication,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Rewrite.Substitution (
     mergePredicatesAndSubstitutions,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import Kore.Simplify.Simplify as Simplifier
 import Logic (

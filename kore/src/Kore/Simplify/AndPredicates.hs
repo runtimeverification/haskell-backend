@@ -23,10 +23,10 @@ import Kore.Internal.OrCondition (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Rewrite.Substitution as Substitution
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Rewrite.Substitution as Substitution
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )

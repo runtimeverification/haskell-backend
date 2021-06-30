@@ -53,7 +53,7 @@ import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.TopBottom (

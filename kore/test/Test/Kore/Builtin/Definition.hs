@@ -63,7 +63,7 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding (
     Symbol,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Syntax (

@@ -19,7 +19,7 @@ import Kore.Internal.SideCondition (
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import qualified Kore.Rewrite.Function.Memo as Memo
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     getRewritingPattern,
     mkConfigVariable,
     mkRewritingTerm,

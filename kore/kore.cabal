@@ -420,8 +420,8 @@ library
     Kore.Rewrite.Strategy
     Kore.Rewrite.Substitution
     Kore.Rewrite.Transition
-    Kore.Rewriting.RewritingVariable
-    Kore.Rewriting.UnifyingRule
+    Kore.Rewrite.RewritingVariable
+    Kore.Rewrite.UnifyingRule
     Kore.Simplify.And
     Kore.Simplify.AndPredicates
     Kore.Simplify.AndTerms
@@ -739,7 +739,7 @@ test-suite kore-test
     Test.Kore.Rewrite.SMT.Translate
     Test.Kore.Rewrite.Strategy
     Test.Kore.Rewrite.Transition
-    Test.Kore.Rewriting.RewritingVariable
+    Test.Kore.Rewrite.RewritingVariable
     Test.Kore.Simplify
     Test.Kore.Simplify.And
     Test.Kore.Simplify.AndTerms

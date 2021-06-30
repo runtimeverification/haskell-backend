@@ -26,7 +26,7 @@ import Kore.Internal.TermLike as TermLike
 import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Ceil as Ceil (

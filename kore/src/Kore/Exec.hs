@@ -123,6 +123,7 @@ import Kore.Reachability (
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewrite
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
     extractImplicationClaims,
     extractRewriteAxioms,
@@ -156,7 +157,6 @@ import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
  )
-import Kore.Rewriting.RewritingVariable
 import Kore.Simplify.Data (
     evalSimplifier,
  )

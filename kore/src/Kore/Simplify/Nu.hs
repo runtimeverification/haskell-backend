@@ -28,7 +28,7 @@ import qualified Kore.Internal.TermLike as TermLike (
     setSimplified,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore

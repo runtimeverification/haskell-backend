@@ -15,7 +15,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore

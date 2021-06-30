@@ -33,6 +33,9 @@ import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
  )
 import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (RulePattern),
@@ -43,9 +46,6 @@ import qualified Kore.Rewrite.RulePattern as RulePattern (
     applySubstitution,
  )
 import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
 import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,

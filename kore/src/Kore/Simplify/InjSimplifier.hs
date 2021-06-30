@@ -25,7 +25,7 @@ import Kore.IndexedModule.SortGraph (
  )
 import Kore.Internal.Inj
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Pair

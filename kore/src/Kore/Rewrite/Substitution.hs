@@ -28,7 +28,7 @@ import Kore.Internal.SideCondition (
 import Kore.Internal.Substitution (
     Substitution,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify as Simplifier

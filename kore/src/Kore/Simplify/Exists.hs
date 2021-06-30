@@ -64,7 +64,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.Axiom.Matcher (
     matchIncremental,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.AndPredicates as And (

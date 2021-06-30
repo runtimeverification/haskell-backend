@@ -53,7 +53,7 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.AndPredicates as And

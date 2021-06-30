@@ -103,6 +103,7 @@ import Kore.Reachability (
  )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewrite
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     mapRuleVariables,
  )
@@ -114,7 +115,6 @@ import qualified Kore.Rewrite.Search as Search
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
-import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.Definition (
     Definition (Definition),
     Module (Module),

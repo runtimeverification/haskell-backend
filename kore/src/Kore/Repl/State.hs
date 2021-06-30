@@ -136,10 +136,10 @@ import Kore.Repl.Data
 import Kore.Rewrite.AxiomPattern (
     AxiomPattern (..),
  )
-import qualified Kore.Rewrite.Strategy as Strategy
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Simplify.Data (
     MonadSimplify,
  )

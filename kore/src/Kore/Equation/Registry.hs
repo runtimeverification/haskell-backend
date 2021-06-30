@@ -41,7 +41,7 @@ import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
 import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Syntax.Sentence (

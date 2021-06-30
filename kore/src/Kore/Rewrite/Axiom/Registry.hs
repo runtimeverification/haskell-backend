@@ -26,7 +26,7 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (

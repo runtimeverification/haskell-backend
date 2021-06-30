@@ -21,7 +21,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.And as And

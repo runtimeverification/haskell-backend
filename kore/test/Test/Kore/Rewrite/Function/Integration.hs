@@ -74,7 +74,7 @@ import Kore.Rewrite.Axiom.Identifier (
  )
 import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Rewrite.Function.Memo as Memo
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
     mkConfigVariable,

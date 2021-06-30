@@ -64,6 +64,9 @@ import Kore.Rewrite.ClaimPattern (
     parseRightHandSide,
  )
 import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.RewritingVariable (
+    mkRuleVariable,
+ )
 import Kore.Rewrite.RulePattern (
     ImplicationRule (..),
     RewriteRule (..),
@@ -73,9 +76,6 @@ import Kore.Rewrite.RulePattern (
     injectTermIntoRHS,
     rewriteRuleToTerm,
     termToRHS,
- )
-import Kore.Rewriting.RewritingVariable (
-    mkRuleVariable,
  )
 import Kore.Simplify.ExpandAlias (
     substituteInAlias,

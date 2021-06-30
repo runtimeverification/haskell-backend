@@ -97,13 +97,13 @@ import Kore.Rewrite.AntiLeft (
     AntiLeft,
  )
 import qualified Kore.Rewrite.AntiLeft as AntiLeft
-import Kore.Rewrite.Step (
-    UnifyingRule (..),
- )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingVariable,
     mkRuleVariable,
+ )
+import Kore.Rewrite.Step (
+    UnifyingRule (..),
  )
 import Kore.Sort (
     Sort (..),

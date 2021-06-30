@@ -118,6 +118,7 @@ import Kore.Rewrite.Result (
     Results (..),
  )
 import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (..),
@@ -129,7 +130,6 @@ import Kore.Rewrite.Strategy (
  )
 import qualified Kore.Rewrite.Strategy as Strategy
 import qualified Kore.Rewrite.Transition as Transition
-import Kore.Rewriting.RewritingVariable
 import Kore.Simplify.Data (
     MonadSimplify,
  )

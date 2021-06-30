@@ -29,7 +29,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Rewrite.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Condition as Condition

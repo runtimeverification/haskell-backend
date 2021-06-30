@@ -36,6 +36,7 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RulePattern (..),
     injectTermIntoRHS,
@@ -47,7 +48,6 @@ import Kore.Rewrite.Strategy (
     pickFinal,
     runStrategy,
  )
-import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.Variable
 import Numeric.Natural (
     Natural,

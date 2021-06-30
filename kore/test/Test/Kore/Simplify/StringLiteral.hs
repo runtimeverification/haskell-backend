@@ -13,7 +13,7 @@ import Kore.Internal.Predicate (
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.StringLiteral (

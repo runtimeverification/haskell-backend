@@ -58,10 +58,10 @@ import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,
  )
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import Kore.Rewriting.RewritingVariable
 import qualified Kore.Simplify.Data as Kore
 import Kore.Syntax.Module (
     ModuleName (..),

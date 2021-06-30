@@ -8,7 +8,7 @@ import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding (
     Top (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )

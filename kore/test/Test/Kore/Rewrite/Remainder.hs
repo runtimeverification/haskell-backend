@@ -8,7 +8,7 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Rewrite.Remainder as Remainder
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Prelude.Kore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty

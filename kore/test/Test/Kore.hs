@@ -94,7 +94,7 @@ import Kore.Parser (
 import Kore.Parser.Parser (
     parseVariableCounter,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkElementConfigVariable,
  )

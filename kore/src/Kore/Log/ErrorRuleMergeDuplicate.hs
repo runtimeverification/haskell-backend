@@ -32,11 +32,11 @@ import qualified Generics.SOP as SOP
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import Log
 import Prelude.Kore

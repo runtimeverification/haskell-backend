@@ -25,7 +25,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Kore
 import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Rewrite.Function.Evaluator as Kore
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Simplify as Kore

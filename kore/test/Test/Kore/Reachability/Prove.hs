@@ -24,6 +24,11 @@ import Kore.Reachability
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    mkRewritingPattern,
+    mkRuleVariable,
+ )
 import Kore.Rewrite.RulePattern (
     RulePattern (..),
     injectTermIntoRHS,
@@ -32,11 +37,6 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkRewritingPattern,
-    mkRuleVariable,
  )
 import Kore.Unparser (
     unparseToText2,

@@ -16,7 +16,7 @@ import Kore.Internal.OrPattern (
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore

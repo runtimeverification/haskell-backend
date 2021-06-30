@@ -51,7 +51,7 @@ import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
 import qualified Kore.Rewrite.Function.Memo as Memo
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify as AttemptedAxiom (

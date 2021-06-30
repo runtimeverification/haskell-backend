@@ -31,7 +31,7 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
 import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
  )

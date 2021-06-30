@@ -30,10 +30,10 @@ import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
 import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
-import Kore.Rewrite.RulePattern
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Rewrite.RulePattern
 import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,

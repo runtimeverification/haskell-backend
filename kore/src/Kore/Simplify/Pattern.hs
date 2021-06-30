@@ -40,7 +40,7 @@ import Kore.Internal.Substitution (
 import Kore.Internal.TermLike (
     pattern Exists_,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (

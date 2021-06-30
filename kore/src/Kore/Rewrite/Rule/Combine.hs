@@ -48,6 +48,9 @@ import Kore.Internal.Variable (
 import qualified Kore.Rewrite.AntiLeft as AntiLeft (
     antiLeftPredicate,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Rewrite.RulePattern (
     RHS (RHS),
     RewriteRule (RewriteRule),
@@ -62,9 +65,6 @@ import qualified Kore.Rewrite.SMT.Evaluator as SMT (
  )
 import Kore.Rewrite.Step (
     refreshRule,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,

@@ -49,10 +49,10 @@ import Kore.Internal.TermLike (
     pattern Not_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Rewrite.Substitution as Substitution
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Rewrite.Substitution as Substitution
 import Kore.Simplify.AndTerms (
     maybeTermAnd,
  )

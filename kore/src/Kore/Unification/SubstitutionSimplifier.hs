@@ -39,7 +39,7 @@ import Kore.Log.DebugSubstitutionSimplifier (
     debugSubstitutionSimplifierResult,
     whileDebugSubstitutionSimplifier,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.AndTerms (

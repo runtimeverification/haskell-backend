@@ -34,6 +34,7 @@ import Kore.ModelChecker.Simplification (
  )
 import qualified Kore.Rewrite.Result as StepResult
 import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     allPathGlobally,
@@ -46,7 +47,6 @@ import Kore.Rewrite.Strategy (
     TransitionT,
  )
 import qualified Kore.Rewrite.Strategy as Strategy
-import Kore.Rewriting.RewritingVariable
 import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
  )

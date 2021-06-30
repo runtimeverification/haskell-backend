@@ -23,7 +23,7 @@ import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.AndTerms (

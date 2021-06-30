@@ -1,11 +1,11 @@
-module Test.Kore.Rewriting.RewritingVariable (
+module Test.Kore.Rewrite.RewritingVariable (
     test_FreshPartialOrd_RewritingVariableName,
     test_FreshPartialOrd_SomeVariableName_RewritingVariableName,
 ) where
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Kore.Syntax.Variable
 import Pair
 import Prelude.Kore

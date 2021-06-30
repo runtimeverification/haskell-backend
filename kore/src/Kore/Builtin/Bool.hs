@@ -59,7 +59,7 @@ import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
     TermSimplifier,

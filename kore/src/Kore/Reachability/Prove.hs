@@ -100,6 +100,10 @@ import Kore.Reachability.SomeClaim
 import Kore.Rewrite.ClaimPattern (
     mkGoal,
  )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    getRewritingPattern,
+ )
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,
@@ -111,10 +115,6 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import qualified Kore.Rewrite.Transition as Transition
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    getRewritingPattern,
- )
 import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Kore.Unparser

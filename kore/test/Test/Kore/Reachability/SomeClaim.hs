@@ -18,7 +18,7 @@ import Kore.Reachability.SomeClaim
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     mkRuleVariable,
  )
 import Kore.Syntax.Sentence (
