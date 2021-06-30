@@ -354,7 +354,7 @@ boolAnd ::
 boolAnd first second unifyData =
     case unifyData of
         UnifyBoolAndBottom isFirstMatched -> do
-            let (first',second') = if isFirstMatched then (first,second) else (second,first)
+            let (first', second') = if isFirstMatched then (first, second) else (second, first)
             explainBoolAndBottom first' second'
             return $ Pattern.fromTermLike first'
         UnifyBoolAndTop isFirstMatched -> do
@@ -433,9 +433,10 @@ bottomTermEquals
     second =
         do
             -- MonadUnify
-            let (first',second') = if isFirstMatched
-                then (first,second)
-                else (second,first)
+            let (first', second') =
+                    if isFirstMatched
+                        then (first, second)
+                        else (second, first)
             secondCeil <- makeEvaluateTermCeil sideCondition second'
             case toList secondCeil of
                 [] -> return Pattern.top
@@ -563,11 +564,12 @@ variableFunctionEquals
                         <> Condition.fromSingleSubstitution
                             (Substitution.assign (inject var) second')
             return (Pattern.withCondition second' result)
-  where
-    VariableFunctionEquals{isFirstMatched, var} = unifyData
-    (first',second') = if isFirstMatched
-        then (first,second)
-        else (second,first)
+      where
+        VariableFunctionEquals{isFirstMatched, var} = unifyData
+        (first', second') =
+            if isFirstMatched
+                then (first, second)
+                else (second, first)
 
 {- | Matches
 

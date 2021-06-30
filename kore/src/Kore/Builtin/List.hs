@@ -627,9 +627,8 @@ unifyEquals
                 first'
                 second'
             return Pattern.bottom
-        
           where
-            (first',second') = if isFirstMatched then (first,second) else (second,first)
+            (first', second') = if isFirstMatched then (first, second) else (second, first)
 
         unifyEqualsFramedRightRight ::
             TermLike.Symbol ->

@@ -587,7 +587,7 @@ unifyEquals unifyEqualsChildren tools first second unifyData =
                 first'
                 second'
           where
-            (first',second') = if isFirstMatched then (first,second) else (second,first)
+            (first', second') = if isFirstMatched then (first, second) else (second, first)
         NormAc unifyData' ->
             Ac.unifyEqualsNormalized
                 tools
@@ -599,7 +599,7 @@ unifyEquals unifyEqualsChildren tools first second unifyData =
                 acData
           where
             NormAcData{normalized1, normalized2, isFirstMatched, acData} = unifyData'
-            (first',second') = if isFirstMatched then (first,second) else (second,first)
+            (first', second') = if isFirstMatched then (first, second) else (second, first)
 
 data InKeys term = InKeys
     { symbol :: !Symbol

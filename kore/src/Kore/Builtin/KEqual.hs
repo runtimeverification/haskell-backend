@@ -283,8 +283,8 @@ data IfThenElse term = IfThenElse
 
 data UnifyIfThenElse = UnifyIfThenElse
     { ifThenElse :: IfThenElse (TermLike RewritingVariableName)
-    -- The term that was not matched by @matchIfThenElse@
-    , otherTerm :: TermLike RewritingVariableName
+    , -- The term that was not matched by @matchIfThenElse@
+      otherTerm :: TermLike RewritingVariableName
     }
 
 -- | Match the @KEQUAL.eq@ hooked symbol.
@@ -293,10 +293,10 @@ matchIfThenElse ::
     TermLike RewritingVariableName ->
     Maybe UnifyIfThenElse
 matchIfThenElse first second
-    | Just ifThenElse <- match first
-    = Just $ UnifyIfThenElse{ifThenElse, otherTerm = second}
-    | Just ifThenElse <- match second
-    = Just $ UnifyIfThenElse{ifThenElse, otherTerm = first}
+    | Just ifThenElse <- match first =
+        Just $ UnifyIfThenElse{ifThenElse, otherTerm = second}
+    | Just ifThenElse <- match second =
+        Just $ UnifyIfThenElse{ifThenElse, otherTerm = first}
     | otherwise = Nothing
   where
     match (App_ symbol [condition, branch1, branch2]) = do
