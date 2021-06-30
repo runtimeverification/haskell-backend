@@ -2,6 +2,7 @@ module Test.Kore.Internal.Substitution (
     test_substitution,
     test_toPredicate,
     test_substitute,
+    test_retractAssignmentFor,
 
     -- * Re-exports
     TestAssignment,
@@ -12,6 +13,7 @@ module Test.Kore.Internal.Substitution (
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import Kore.Internal.From
 import Kore.Internal.Substitution as Substitution
 import Kore.Substitute
 import Kore.TopBottom (
@@ -456,3 +458,61 @@ test_substitute =
 assertDenormalized :: HasCallStack => Substitution VariableName -> Assertion
 assertDenormalized =
     assertBool "expected denormalized substitution" . (not . isNormalized)
+
+test_retractAssignmentFor :: [TestTree]
+test_retractAssignmentFor =
+    [ (testGroup "X = Y")
+        [ testCase "retract left" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                someVariable = inject Mock.x
+                someVariableName = variableName someVariable
+                expect = assign someVariable (mkElemVar Mock.y)
+                actual = retractAssignmentFor someVariableName input
+            assertEqual "" (Just expect) actual
+        , testCase "retract right" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                someVariable = inject Mock.y
+                someVariableName = variableName someVariable
+                expect = assign someVariable (mkElemVar Mock.x)
+                actual = retractAssignmentFor someVariableName input
+            assertEqual "" (Just expect) actual
+        , testCase "missing" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                someVariable = inject Mock.z
+                someVariableName = variableName someVariable
+                actual = retractAssignmentFor someVariableName input
+            assertEqual "" Nothing actual
+        ]
+    , (testGroup "X = a()")
+        [ testCase "retract left" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) Mock.a
+                someVariable = inject Mock.x
+                someVariableName = variableName someVariable
+                expect = assign someVariable Mock.a
+                actual = retractAssignmentFor someVariableName input
+            assertEqual "" (Just expect) actual
+        , testCase "retract right" $ do
+            let input = fromEquals_ Mock.a (mkElemVar Mock.y)
+                someVariable = inject Mock.y
+                someVariableName = variableName someVariable
+                expect = assign someVariable Mock.a
+                actual = retractAssignmentFor someVariableName input
+            assertEqual "" (Just expect) actual
+        , testCase "missing" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) Mock.a
+                someVariable = inject Mock.z
+                someVariableName = variableName someVariable
+                actual = retractAssignmentFor someVariableName input
+            assertEqual "" Nothing actual
+        ]
+    , testCase "specific case" $ do
+        let input =
+                fromEquals_
+                    (mkElemVar Mock.xConfig)
+                    (mkElemVar Mock.yConfig)
+            someVariable = inject Mock.yConfig
+            someVariableName = variableName someVariable
+            expect = assign someVariable (mkElemVar Mock.xConfig)
+            actual = retractAssignmentFor someVariableName input
+        assertEqual "" (Just expect) actual
+    ]

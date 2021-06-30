@@ -14,6 +14,7 @@ module Kore.Internal.Substitution (
     assignedTerm,
     mapAssignedTerm,
     retractAssignment,
+    retractAssignmentFor,
     singleSubstitutionToPredicate,
     UnwrappedSubstitution,
     mkUnwrappedSubstitution,
@@ -170,6 +171,28 @@ retractAssignment (PredicateEquals (Var_ var) term) =
 retractAssignment (PredicateEquals term (Var_ var)) =
     Just (assign var term)
 retractAssignment _ = Nothing
+
+{- | Extract an 'Assignment' for a /particular/ variable.
+
+Returns 'Nothing' if the 'Predicate' is not in the correct form or the variable
+name does not match.
+
+See alse: 'retractAssignment'
+-}
+retractAssignmentFor ::
+    InternalVariable variable =>
+    SomeVariableName variable ->
+    Predicate variable ->
+    Maybe (Assignment variable)
+retractAssignmentFor someVariableName predicate =
+    case predicate of
+        PredicateEquals (Var_ var) term
+            | variableName var == someVariableName ->
+                Just (assign var term)
+        PredicateEquals term (Var_ var)
+            | variableName var == someVariableName ->
+                Just (assign var term)
+        _ -> Nothing
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
