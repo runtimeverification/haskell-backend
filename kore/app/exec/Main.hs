@@ -65,7 +65,6 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
-    mkOr,
     mkSortVariable,
     mkTop,
     pattern And_,
@@ -719,21 +718,21 @@ koreProve execOptions proveOptions = do
             | noStuckClaims = success
             | otherwise =
                 stuckPatterns
-                    <&> OrPattern.toTermLike
+                    & OrPattern.toTermLike
                     & failure
           where
-            noStuckClaims = all isTop stuckClaims
+            noStuckClaims = isTop stuckClaims
             stuckPatterns =
-                OrPattern.fromPatterns . MultiAnd.map getStuckConfig <$> stuckClaims
+                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
     lift $ for_ saveProofs $ saveProven specModule provenClaims
-    lift $ renderResult execOptions (unparse $ foldr1 mkOr final)
+    lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, exitCode)
   where
     failure pat = (ExitFailure 1, pat)
-    success :: (ExitCode, [TermLike VariableName])
-    success = (ExitSuccess, [mkTop $ mkSortVariable "R"])
+    success :: (ExitCode, TermLike VariableName)
+    success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
     loadProven ::
         FilePath ->

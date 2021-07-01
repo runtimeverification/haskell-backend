@@ -52,7 +52,6 @@ import Data.Limit (
     Limit,
  )
 import qualified Data.Limit as Limit
-import qualified Data.List as List
 import Data.List.Extra (
     groupSortOn,
  )
@@ -160,7 +159,7 @@ lhsClaimStateTransformer =
 The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 -}
-type VerifierT m = StateT [StuckClaims] (ExceptT [StuckClaims] m)
+type VerifierT m = StateT StuckClaims (ExceptT StuckClaims m)
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
@@ -185,7 +184,7 @@ type ProvenClaims = MultiAnd SomeClaim
 data ProveClaimsResult = ProveClaimsResult
     { -- | The conjuction of stuck claims, that is: of claims which must still be
       -- proven. If all claims were proved, then the remaining claims are @\\top@.
-      stuckClaims :: ![StuckClaims]
+      stuckClaims :: !StuckClaims
     , -- | The conjunction of all claims which were proven.
       provenClaims :: !ProvenClaims
     }
@@ -226,7 +225,7 @@ proveClaims
                     & flip runStateT (MultiAnd.make stillProven)
             pure
                 ProveClaimsResult
-                    { stuckClaims = fromLeft [MultiAnd.top] result
+                    { stuckClaims = fromLeft MultiAnd.top result
                     , provenClaims
                     }
       where
@@ -258,7 +257,7 @@ proveClaimsWorker ::
     -- | List of claims, together with a maximum number of verification steps
     -- for each.
     ToProve SomeClaim ->
-    ExceptT [StuckClaims] (StateT ProvenClaims simplifier) ()
+    ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
 proveClaimsWorker
     breadthLimit
     searchOrder
@@ -270,7 +269,7 @@ proveClaimsWorker
       where
         verifyWorker ::
             (SomeClaim, Limit Natural) ->
-            ExceptT [StuckClaims] (StateT ProvenClaims simplifier) ()
+            ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
         verifyWorker unprovenClaim@(claim, _) = do
             proveClaim
                 breadthLimit
@@ -295,7 +294,7 @@ proveClaim ::
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
-    ExceptT [StuckClaims] simplifier ()
+    ExceptT StuckClaims simplifier ()
 proveClaim
     breadthLimit
     searchOrder
@@ -317,7 +316,7 @@ proveClaim
                     & fmap discardStrategy
                     & throwUnproven
                     & handle handleLimitExceeded
-                    & (\s -> evalStateT s [])
+                    & (\s -> evalStateT s mempty)
             let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
             infoProvenDepth maxProofDepth
             warnProvenClaimZeroDepth maxProofDepth goal
@@ -330,7 +329,7 @@ proveClaim
         handleLimitExceeded (Strategy.LimitExceeded states) = do
             let extractStuckClaim = fmap StuckClaim . extractUnproven . snd
                 stuckClaims = mapMaybe extractStuckClaim states
-            Monad.Except.throwError [MultiAnd.make $ toList stuckClaims]
+            Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
 
         updateQueue = \as ->
             Strategy.unfoldSearchOrder searchOrder as
@@ -351,17 +350,13 @@ proveClaim
                 let maybeUnproven = extractUnproven proofState
                 for_ maybeUnproven $ \unproven -> lift $ do
                     infoUnprovenDepth proofDepth
-                    stuckClaimss <- State.get
+                    stuckClaims <- State.get
                     let updatedStuck =
-                            MultiAnd.singleton (StuckClaim unproven) : stuckClaimss
+                            MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
                     when
-                        (List.genericLength updatedStuck >= maxCounterexamples)
+                        (MultiAnd.size updatedStuck >= maxCounterexamples)
                         $ do
-                            Monad.Except.throwError
-                                ( List.genericTake
-                                    maxCounterexamples
-                                    updatedStuck
-                                )
+                            Monad.Except.throwError updatedStuck
                     State.put updatedStuck
                 pure proofDepth
                 & Logic.observeAllT
@@ -548,15 +543,11 @@ throwStuckClaims maxCounterexamples rule prim state = do
         ClaimState.Stuck unproven -> do
             lift $ do
                 infoUnprovenDepth proofDepth'
-                stuckClaimss <- State.get
+                stuckClaims <- State.get
                 let updatedStuck =
-                        MultiAnd.singleton (StuckClaim unproven) : stuckClaimss
-                when (List.genericLength updatedStuck >= maxCounterexamples) $ do
-                    Monad.Except.throwError
-                        ( List.genericTake
-                            maxCounterexamples
-                            updatedStuck
-                        )
+                        MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
+                when (MultiAnd.size updatedStuck >= maxCounterexamples) $ do
+                    Monad.Except.throwError updatedStuck
                 State.put updatedStuck
                 return state'
         _ -> return state'
