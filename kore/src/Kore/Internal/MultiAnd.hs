@@ -56,10 +56,16 @@ import Kore.Internal.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Kore.Unparser (
+    unparseAssoc',
+ )
 import qualified Logic
 import Prelude.Kore hiding (
     map,
     traverse,
+ )
+import Pretty (
+    Pretty (..),
  )
 
 -- | 'MultiAnd' is a Matching logic and of its children
@@ -96,6 +102,10 @@ instance
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
+
+instance Pretty child => Pretty (MultiAnd child) where
+    pretty = unparseAssoc' "\\and{_}" "\\top{_}()" . (<$>) pretty . getMultiAnd
+    {-# INLINE pretty #-}
 
 instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
     (MultiAnd []) <> b = b

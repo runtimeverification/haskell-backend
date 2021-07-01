@@ -160,7 +160,7 @@ simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Equals Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 simplify sideCondition Equals{equalsFirst = first, equalsSecond = second} =
     simplifyEvaluated sideCondition first' second'
   where
@@ -185,9 +185,9 @@ simplifyEvaluated ::
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 simplifyEvaluated sideCondition first second
-    | first == second = return OrPattern.top
+    | first == second = return OrCondition.top
     -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
     | otherwise = do
         let isFunctionConditional Conditional{term} = isFunctionPattern term
@@ -203,6 +203,7 @@ simplifyEvaluated sideCondition first second
             _
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
                     Iff.simplifyEvaluated sideCondition first second
+                        & fmap (MultiOr.map Pattern.withoutTerm)
                 | otherwise ->
                     makeEvaluate
                         (OrPattern.toPattern first)
@@ -218,7 +219,7 @@ makeEvaluateFunctionalOr ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
     firstCeil <- makeEvaluateCeil sideCondition first
     secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
@@ -240,7 +241,9 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
             Not.notSimplifier
             sideCondition
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
-    return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
+    MultiOr.merge allAreBottom oneIsNotBottomEquals
+        & MultiOr.map Pattern.withoutTerm
+        & return
   where
     makeEvaluateEqualsIfSecondNotBottom
         Conditional{term = firstTerm}
@@ -258,16 +261,16 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 makeEvaluate
     first@Conditional{term = Top_ _}
     second@Conditional{term = Top_ _}
     _ =
-        return
-            ( Iff.makeEvaluate
-                first{term = mkTop_} -- remove the term's sort
-                second{term = mkTop_} -- remove the term's sort
-            )
+        Iff.makeEvaluate
+            first{term = mkTop_} -- remove the term's sort
+            second{term = mkTop_} -- remove the term's sort
+            & MultiOr.map Pattern.withoutTerm
+            & return
 makeEvaluate
     Conditional
         { term = firstTerm
@@ -280,9 +283,7 @@ makeEvaluate
         , substitution = (Substitution.unwrap -> [])
         }
     sideCondition =
-        do
-            result <- makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
-            return (MultiOr.map Pattern.fromCondition_ result)
+        makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
 makeEvaluate
     first@Conditional{term = firstTerm}
     second@Conditional{term = secondTerm}
@@ -305,7 +306,9 @@ makeEvaluate
                     Not.notSimplifier
                     sideCondition
                     (MultiAnd.make [termEquality, firstCeil, secondCeil])
-            return $ Or.simplifyEvaluated equalityAnd negationAnd
+            Or.simplifyEvaluated equalityAnd negationAnd
+                & MultiOr.map Pattern.withoutTerm
+                & return
       where
         termsAreEqual = firstTerm == secondTerm
 

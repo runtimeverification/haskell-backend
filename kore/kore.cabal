@@ -335,6 +335,7 @@ library
     Kore.Log.DebugSolver
     Kore.Log.DebugSubstitutionSimplifier
     Kore.Log.DebugUnification
+    Kore.Log.DebugUnifyBottom
     Kore.Log.ErrorBottomTotalFunction
     Kore.Log.ErrorDecidePredicateUnknown
     Kore.Log.ErrorException
@@ -360,7 +361,7 @@ library
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim
-    Kore.Log.DebugUnifyBottom
+    Kore.Log.WarnUnsimplifiedPredicate
     Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step
