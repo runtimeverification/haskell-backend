@@ -1,5 +1,6 @@
 module Test.Kore.Step.Transition (
     test_ifte,
+    test_record,
 ) where
 
 import Kore.Step.Transition
@@ -98,3 +99,62 @@ test_ifte =
         let expect = elseBranch
             actual = ifte condition thenBranch elseBranch
          in check expect actual
+
+test_record :: [TestTree]
+test_record =
+    [ testCase "no results" $ do
+        let expect = []
+            transit = empty
+        check expect transit
+    , testCase "empty record" $ do
+        let expect = [[]]
+            transit = return ()
+        check expect transit
+    , testCase "multiple empty branches" $ do
+        let expect = [[], [], []]
+            transit = return () <|> return () <|> return ()
+        check expect transit
+    , testCase "added rules" $ do
+        let expect = [[1,2,3]]
+            transit = mapM_ addRule [1,2,3]
+        check expect transit
+    , testCase "separate branches" $ do
+        let numbers = [[1,2], [3,4], [5,6]]
+        let expect = numbers
+            transit = asum $ map (mapM_ addRule) numbers
+        check expect transit
+    , testCase "add rule after branching" $ do
+        let before = return () <|> return () <|> return ()
+            expect = [[1], [1], [1]]
+            transit = addRule 1
+        checkWith before expect transit
+    , testCase "common prefix" $ do
+        let expect = [[1,2], [1,3], [1,4]]
+            transit = addRule 1 >> asum (map addRule [2,3,4])
+        check expect transit
+    , testCase "behaves like Control.Monad.Writer.listen" $ do
+        let before = addRule 1
+            expect = [[2,3]]
+            transit = mapM_ addRule [2,3]
+        checkWith before expect transit
+    ]
+  where
+    check ::
+        HasCallStack =>
+        [[Integer]] ->
+        Transition Integer a ->
+        Assertion
+    check = checkWith (return ())
+
+    -- Allows running some Transition action before the recorded action.
+    checkWith ::
+        HasCallStack =>
+        Transition Integer a ->
+        [[Integer]] ->
+        Transition Integer b ->
+        Assertion
+    checkWith before expected transition =
+        let branchResults = runTransition $ before >> record transition
+            branchRecords = map (toList . snd . fst) branchResults
+        in assertEqual "" expected branchRecords
+      
