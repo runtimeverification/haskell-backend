@@ -53,8 +53,6 @@ import Data.Limit (
  )
 import qualified Data.Limit as Limit
 import qualified Data.List as List
-
-import Data.List (genericTake)
 import Data.List.Extra (
     groupSortOn,
  )
@@ -360,7 +358,10 @@ proveClaim
                         (List.genericLength updatedStuck >= maxCounterexamples)
                         $ do
                             Monad.Except.throwError
-                                (genericTake maxCounterexamples updatedStuck)
+                                ( List.genericTake
+                                    maxCounterexamples
+                                    updatedStuck
+                                )
                     State.put updatedStuck
                 pure proofDepth
                 & Logic.observeAllT
@@ -552,7 +553,10 @@ throwStuckClaims maxCounterexamples rule prim state = do
                         MultiAnd.singleton (StuckClaim unproven) : stuckClaimss
                 when (List.genericLength updatedStuck >= maxCounterexamples) $ do
                     Monad.Except.throwError
-                        (genericTake maxCounterexamples updatedStuck)
+                        ( List.genericTake
+                            maxCounterexamples
+                            updatedStuck
+                        )
                 State.put updatedStuck
                 return state'
         _ -> return state'
