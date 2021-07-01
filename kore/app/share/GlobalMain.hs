@@ -102,7 +102,6 @@ import Options.Applicative (
     InfoMod,
     Parser,
     ParserHelp (..),
-    auto,
     defaultPrefs,
     execParserPure,
     flag,
@@ -128,6 +127,7 @@ import Options.Applicative.Help.Chunk (
     vsepChunks,
  )
 import qualified Options.Applicative.Help.Pretty as Pretty
+import Options.SMT (readPositiveIntegral)
 import qualified Paths_kore as MetaData (
     version,
  )
@@ -209,11 +209,12 @@ parseKoreProveOptions =
       where
         counterexamples =
             option
-                auto
+                (readPositiveIntegral id "max-counterexamples")
                 ( metavar "MAX_COUNTEREXAMPLES"
                     <> long "max-counterexamples"
-                    <> help "Specify the max number of counterexamples"
+                    <> help "Specify the maximum number of counterexamples."
                 )
+
     parseGraphSearch =
         option
             readGraphSearch

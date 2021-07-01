@@ -10,6 +10,7 @@ module Options.SMT (
     defaultSmtPreludeFilePath,
     writeKoreSolverFiles,
     ensureSmtPreludeExists,
+    readPositiveIntegral,
 ) where
 
 import Control.Monad.Extra as Monad
@@ -109,20 +110,22 @@ parseKoreSolverOptions =
         } =
             SMT.defaultConfig
 
-    readPositiveInteger ctor optionName = do
-        readInt <- auto
-        when (readInt <= 0) err
-        return . ctor $ readInt
-      where
-        err =
-            readerError
-                . unwords
-                $ [optionName, "must be a positive integer."]
-
-    readTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
-    readRLimit = readPositiveInteger (SMT.RLimit . Limit) "smt-rlimit"
+    readTimeOut = readPositiveIntegral (SMT.TimeOut . Limit) "smt-timeout"
+    readRLimit = readPositiveIntegral (SMT.RLimit . Limit) "smt-rlimit"
     readResetInterval =
-        readPositiveInteger SMT.ResetInterval "smt-reset-interval"
+        readPositiveIntegral SMT.ResetInterval "smt-reset-interval"
+
+readPositiveIntegral ::
+    (Read t, Integral t) =>
+    (t -> b) ->
+    String ->
+    Options.ReadM b
+readPositiveIntegral ctor optionName = do
+    readInt <- auto
+    when (readInt <= 0) err
+    return . ctor $ readInt
+  where
+    err = readerError . unwords $ [optionName, "must be a positive integer."]
 
 unparseKoreSolverOptions :: KoreSolverOptions -> [String]
 unparseKoreSolverOptions

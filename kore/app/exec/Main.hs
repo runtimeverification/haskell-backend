@@ -20,7 +20,6 @@ import Data.Limit (
     maybeLimit,
  )
 import Data.List (
-    genericTake,
     intercalate,
  )
 import Data.Reflection
@@ -729,12 +728,7 @@ koreProve execOptions proveOptions = do
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
     lift $ for_ saveProofs $ saveProven specModule provenClaims
-    let final' = genericTake maxCounterexamples final
-        unparsedResult =
-            case final' of
-                [] -> ""
-                _ -> unparse $ foldr1 mkOr final'
-    lift $ renderResult execOptions unparsedResult
+    lift $ renderResult execOptions (unparse $ foldr1 mkOr final)
     return (kFileLocations definition, exitCode)
   where
     failure pat = (ExitFailure 1, pat)
