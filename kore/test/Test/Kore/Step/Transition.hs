@@ -115,11 +115,11 @@ test_record =
             transit = return () <|> return () <|> return ()
         check expect transit
     , testCase "added rules" $ do
-        let expect = [[1,2,3]]
-            transit = mapM_ addRule [1,2,3]
+        let expect = [[1, 2, 3]]
+            transit = mapM_ addRule [1, 2, 3]
         check expect transit
     , testCase "separate branches" $ do
-        let numbers = [[1,2], [3,4], [5,6]]
+        let numbers = [[1, 2], [3, 4], [5, 6]]
         let expect = numbers
             transit = asum $ map (mapM_ addRule) numbers
         check expect transit
@@ -129,13 +129,13 @@ test_record =
             transit = addRule 1
         checkWith before expect transit
     , testCase "common prefix" $ do
-        let expect = [[1,2], [1,3], [1,4]]
-            transit = addRule 1 >> asum (map addRule [2,3,4])
+        let expect = [[1, 2], [1, 3], [1, 4]]
+            transit = addRule 1 >> asum (map addRule [2, 3, 4])
         check expect transit
     , testCase "behaves like Control.Monad.Writer.listen" $ do
         let before = addRule 1
-            expect = [[2,3]]
-            transit = mapM_ addRule [2,3]
+            expect = [[2, 3]]
+            transit = mapM_ addRule [2, 3]
         checkWith before expect transit
     ]
   where
@@ -156,5 +156,4 @@ test_record =
     checkWith before expected transition =
         let branchResults = runTransition $ before >> record transition
             branchRecords = map (toList . snd . fst) branchResults
-        in assertEqual "" expected branchRecords
-      
+         in assertEqual "" expected branchRecords
