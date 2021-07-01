@@ -2,10 +2,41 @@ module Main (main) where
 
 import qualified Data.Text.IO as Text
 import GlobalMain
-import Kore.Options
-import Kore.Parser (parseKoreDefinition)
-import Kore.Syntax.Definition (definitionModules)
-import Kore.Syntax.Module (Module (..))
+import Kore.Attribute.Function (
+    isDeclaredFunction,
+ )
+import Kore.Attribute.Pattern.Function (
+    isFunction,
+ )
+import Kore.Equation (
+    Equation (Equation),
+    matchEquation,
+    right,
+ )
+import Kore.Options (
+    InfoMod,
+    Parser,
+    argument,
+    fullDesc,
+    header,
+    help,
+    metavar,
+    progDesc,
+    str,
+ )
+import Kore.Parser (
+    parseKoreDefinition,
+ )
+import Kore.Syntax.Definition (
+    definitionModules,
+ )
+import Kore.Syntax.Module (
+    Module (..),
+ )
+import Kore.Syntax.Sentence (
+    projectSentenceAxiom,
+    sentenceAttributes,
+ )
 import Prelude.Kore
 
 -- | modifiers for the command line parser description
@@ -45,5 +76,10 @@ main = do
         mods <- case parseKoreDefinition fileName file of
             Left msg -> error msg
             Right defn -> return $ definitionModules defn
-        forM_ (mods >>= moduleSentences) $ \_ ->
-            return ()
+        forM_ (mods >>= moduleSentences) $ \sentence -> do
+            let attrs = sentenceAttributes sentence
+            forM_ (projectSentenceAxiom sentence) $ \sentenceAxiom -> do
+                case matchEquation attrs sentenceAxiom of
+                    Right Equation{right}
+                        | not (isFunction right) -> error "Function check fail."
+                    Left err -> error err
