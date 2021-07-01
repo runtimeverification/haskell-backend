@@ -324,8 +324,10 @@ data UnifyBoolAnd
 and
 
 @
-\\and{_}(\\top, _)
+\\and{_}(\\top, _),
 @
+
+symmetric in the two arguments.
 -}
 matchBoolAnd ::
     TermLike RewritingVariableName ->
@@ -403,8 +405,10 @@ equalAndEquals first =
 {- | Matches
 
 @
-\\equals{_, _}(\\bottom, _)
+\\equals{_, _}(\\bottom, _),
 @
+
+symmetric in the two arguments.
 -}
 matchBottomTermEquals ::
     TermLike RewritingVariableName ->
@@ -515,8 +519,10 @@ data VariableFunctionEquals = VariableFunctionEquals
 {- | Matches
 
 @
-\\equals{_, _}(x, f(_))
+\\equals{_, _}(x, f(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchVariableFunctionEquals ::
     TermLike RewritingVariableName ->

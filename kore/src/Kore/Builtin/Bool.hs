@@ -225,8 +225,10 @@ data UnifyBoolAnd = UnifyBoolAnd
 and
 
 @
-\\and{_}(\\dv{Bool}("true"), andBool(_,_))
+\\and{_}(\\dv{Bool}("true"), andBool(_,_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyBoolAnd ::
     TermLike RewritingVariableName ->
@@ -299,8 +301,10 @@ data UnifyBoolOr = UnifyBoolOr
 and
 
 @
-\\and{_}(\\dv{Bool}("false"), boolOr(_,_))
+\\and{_}(\\dv{Bool}("false"), boolOr(_,_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyBoolOr ::
     TermLike RewritingVariableName ->
@@ -348,8 +352,10 @@ data UnifyBoolNot = UnifyBoolNot
 and
 
 @
-\\and{_}(notBool(_), \\dv{Bool}(_))
+\\and{_}(notBool(_), \\dv{Bool}(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyBoolNot ::
     TermLike RewritingVariableName ->

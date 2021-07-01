@@ -480,8 +480,10 @@ data UnifyIntEq = UnifyIntEq
 
 {- | Matches
 @
-\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_))
+\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->

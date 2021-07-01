@@ -422,7 +422,7 @@ data UnifyEqualsList
 \\equals{_, _}(list1, concat(args2))
 @
 
-or similarly with \\and.
+or similarly with \\and. Symmetric in the two arguments.
 -}
 matchUnifyEqualsList ::
     SmtMetadataTools Attribute.Symbol ->

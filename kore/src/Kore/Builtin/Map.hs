@@ -642,7 +642,7 @@ data UnifyNotInKeysResult
 \\equals{_, _}(\\dv{Bool}(false), inKeys(map, key))
 @
 
-when @key@ does not belong to the keys of @map@.
+when @key@ does not belong to the keys of @map@. Symmetric in the two arguments.
 -}
 matchUnifyNotInKeys ::
     TermLike RewritingVariableName ->

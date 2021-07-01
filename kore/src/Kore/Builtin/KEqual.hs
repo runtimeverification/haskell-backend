@@ -237,8 +237,10 @@ data UnifyKequalsEq = UnifyKequalsEq
 and
 
 @
-\\and{_}(eq(_,_), \\dv{Bool}(_))
+\\and{_}(eq(_,_), \\dv{Bool}(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
