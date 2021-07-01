@@ -64,7 +64,7 @@ test_proveClaims =
                             [claim]
                             []
                     let expect = MultiAnd.singleton (StuckClaim claim)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -80,7 +80,7 @@ test_proveClaims =
                             [claim]
                             []
                     let expect = MultiAnd.singleton (StuckClaim claim)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -103,7 +103,7 @@ test_proveClaims =
                     -- second step, which does not run here.
                     let stuck = mkSimpleClaim Mock.b Mock.b
                         expect = MultiAnd.singleton (StuckClaim stuck)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -117,7 +117,7 @@ test_proveClaims =
                             []
                             [mkSimpleClaim Mock.a Mock.a]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -133,7 +133,7 @@ test_proveClaims =
                             [claim]
                             []
                     let expect = MultiAnd.singleton (StuckClaim claim)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -157,7 +157,7 @@ test_proveClaims =
                                 []
                             ]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" mkSomeClaimOnePath
             , mkTest "AllPath" mkSomeClaimAllPath
             ]
@@ -171,7 +171,7 @@ test_proveClaims =
                             [simpleAxiom Mock.a Mock.a]
                             [mkSimpleClaim Mock.a Mock.b]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -189,7 +189,7 @@ test_proveClaims =
                             axioms
                             [mkSimpleClaim Mock.a (mkOr Mock.b Mock.c)]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -206,7 +206,7 @@ test_proveClaims =
                             []
                     let stuck = mkSimpleClaim Mock.b Mock.d
                         expect = MultiAnd.singleton (StuckClaim stuck)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -221,7 +221,7 @@ test_proveClaims =
                             axioms
                             [mkSimpleClaim Mock.a Mock.b]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -237,7 +237,7 @@ test_proveClaims =
                             [makeTrusted claim, claim]
                             []
                     let expect = MultiAnd.singleton (StuckClaim claim)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -255,7 +255,7 @@ test_proveClaims =
                             axioms
                             [mkSimpleClaim Mock.a Mock.c]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -274,7 +274,7 @@ test_proveClaims =
                             axioms
                             [mkSimpleClaim Mock.a Mock.c]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -300,7 +300,7 @@ test_proveClaims =
                                 Mock.b
                             ]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -339,7 +339,7 @@ test_proveClaims =
                             []
                     let stuck = mkSomeClaim stuckConfig finalConfigs []
                         expect = MultiAnd.singleton (StuckClaim stuck)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" mkSomeClaimOnePath
             , mkTest "AllPath" mkSomeClaimAllPath
             ]
@@ -386,7 +386,7 @@ test_proveClaims =
                                 (\left -> mkSomeClaim left finalPatterns [])
                                 stuckConfigs
                         expect = MultiAnd.make (StuckClaim <$> stuckClaims)
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
          in [ mkTest "OnePath" mkSomeClaimOnePath
             , mkTest "AllPath" mkSomeClaimAllPath
             ]
@@ -407,7 +407,7 @@ test_proveClaims =
                             , mkSimpleClaim2 Mock.d Mock.e
                             ]
                             []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath, OnePath" simpleOnePathClaim simpleOnePathClaim
             , mkTest "OnePath, AllPath" simpleOnePathClaim simpleAllPathClaim
             , mkTest "AllPath, AllPath" simpleAllPathClaim simpleAllPathClaim
@@ -423,7 +423,7 @@ test_proveClaims =
             mkTest name mkSomeClaim1 mkSomeClaim2 =
                 testCase name $ do
                     actual <- proveClaims_ Unlimited (Limit 3) axioms claims []
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
               where
                 claims =
                     [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) right []
@@ -446,7 +446,7 @@ test_proveClaims =
             mkTest name mkSomeClaim1 mkSomeClaim2 =
                 testCase name $ do
                     actual <- proveClaims_ Unlimited (Limit 3) axioms claims []
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
               where
                 claims =
                     [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) right []
@@ -469,7 +469,7 @@ test_proveClaims =
                             []
                             [mkSimpleClaim Mock.a Mock.b]
                             [mkSimpleClaim Mock.a Mock.b]
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -481,7 +481,7 @@ test_proveClaims =
             mkTest name mkSomeClaim =
                 testCase name $ do
                     actual <- proveClaims_ Unlimited (Limit 4) axioms claims []
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
               where
                 proven =
                     mkSomeClaim
@@ -514,7 +514,7 @@ test_proveClaims =
                             (OrPattern.fromTermLike Mock.d)
                             []
                     expect = MultiAnd.singleton (StuckClaim stuck)
-                assertEqual "" expect actual
+                assertEqual "" [expect] actual
             ]
     , testGroup "proves first claim with trusted circularity" $
         let axioms =
@@ -535,7 +535,7 @@ test_proveClaims =
             mkTest name mkSomeClaim =
                 testCase name $ do
                     actual <- proveClaims_ Unlimited (Limit 4) axioms claims []
-                    assertEqual "" MultiAnd.top actual
+                    assertEqual "" [MultiAnd.top] actual
               where
                 claims = [proven mkSomeClaim, trusted mkSomeClaim]
          in [ mkTest "OnePath" mkSomeClaimOnePath
@@ -554,7 +554,7 @@ test_proveClaims =
                             (OrPattern.fromTermLike Mock.d)
                             []
                     expect = MultiAnd.singleton (StuckClaim stuck)
-                assertEqual "" expect actual
+                assertEqual "" [expect] actual
             ]
     , testGroup "prefer claims over axioms" $
         let axioms =
@@ -581,7 +581,7 @@ test_proveClaims =
                             axioms
                             claims
                             []
-                    assertEqual "" expect actual
+                    assertEqual "" [expect] actual
               where
                 claims = [proveable mkSomeClaim, misdirection mkSomeClaim]
                 stuck =
@@ -608,7 +608,7 @@ test_proveClaims =
             claimsAllPath = claims mkSomeClaimAllPath
          in [ testCase "proves one-path claim" $ do
                 actual <- proveClaims_ Unlimited (Limit 5) axioms claimsOnePath []
-                assertEqual "" MultiAnd.top actual
+                assertEqual "" [MultiAnd.top] actual
             , testCase "does not prove all-path claim" $ do
                 actual <- proveClaims_ Unlimited (Limit 5) axioms claimsAllPath []
                 let stuck =
@@ -617,7 +617,7 @@ test_proveClaims =
                             (OrPattern.fromTermLike Mock.b)
                             []
                     expect = MultiAnd.singleton (StuckClaim stuck)
-                assertEqual "" expect actual
+                assertEqual "" [expect] actual
             ]
     , testGroup "applies axioms in priority order" $
         let mkTest name mkSimpleClaim =
@@ -636,7 +636,7 @@ test_proveClaims =
                             []
                     assertEqual
                         "succeeds with preferred axiom"
-                        MultiAnd.top
+                        [MultiAnd.top]
                         actual1
 
                     actual2 <-
@@ -651,7 +651,7 @@ test_proveClaims =
                             []
                     let stuck = mkSimpleClaim Mock.c Mock.d
                         expect = MultiAnd.singleton (StuckClaim stuck)
-                    assertEqual "fails with preferred axiom" expect actual2
+                    assertEqual "fails with preferred axiom" [expect] actual2
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -666,7 +666,7 @@ test_proveClaims =
                             []
                             claims
                             []
-                    assertEqual "Result is \\top" MultiAnd.top actual
+                    assertEqual "Result is \\top" [MultiAnd.top] actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
@@ -750,6 +750,7 @@ proveClaims breadthLimit depthLimit axioms claims alreadyProven =
     Kore.Reachability.proveClaims
         breadthLimit
         BreadthFirst
+        1
         (AllClaims claims)
         (Axioms axioms)
         (AlreadyProven (map unparseToText2 alreadyProven))
@@ -766,7 +767,7 @@ proveClaims_ ::
     [Rule SomeClaim] ->
     [SomeClaim] ->
     [SomeClaim] ->
-    IO StuckClaims
+    IO [StuckClaims]
 proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
     do
         ProveClaimsResult{stuckClaims} <-

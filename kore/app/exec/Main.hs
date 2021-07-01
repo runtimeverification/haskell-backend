@@ -20,6 +20,7 @@ import Data.Limit (
     maybeLimit,
  )
 import Data.List (
+    genericTake,
     intercalate,
  )
 import Data.Reflection
@@ -65,6 +66,7 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
+    mkOr,
     mkSortVariable,
     mkTop,
     pattern And_,
@@ -700,6 +702,7 @@ koreProve execOptions proveOptions = do
     specModule <- loadModule specMainModule definition
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
+    let KoreProveOptions{maxCounterexamples} = proveOptions
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
@@ -707,6 +710,7 @@ koreProve execOptions proveOptions = do
             graphSearch
             breadthLimit
             depthLimit
+            maxCounterexamples
             mainModule
             specModule
             maybeAlreadyProvenModule
@@ -716,21 +720,26 @@ koreProve execOptions proveOptions = do
             | noStuckClaims = success
             | otherwise =
                 stuckPatterns
-                    & OrPattern.toTermLike
+                    <&> OrPattern.toTermLike
                     & failure
           where
-            noStuckClaims = isTop stuckClaims
+            noStuckClaims = all isTop stuckClaims
             stuckPatterns =
-                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
+                OrPattern.fromPatterns . MultiAnd.map getStuckConfig <$> stuckClaims
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
     lift $ for_ saveProofs $ saveProven specModule provenClaims
-    lift $ renderResult execOptions (unparse final)
+    let final' = genericTake maxCounterexamples final
+        unparsedResult =
+            case final' of
+                [] -> ""
+                _ -> unparse $ foldr1 mkOr final'
+    lift $ renderResult execOptions unparsedResult
     return (kFileLocations definition, exitCode)
   where
     failure pat = (ExitFailure 1, pat)
-    success :: (ExitCode, TermLike VariableName)
-    success = (ExitSuccess, mkTop $ mkSortVariable "R")
+    success :: (ExitCode, [TermLike VariableName])
+    success = (ExitSuccess, [mkTop $ mkSortVariable "R"])
 
     loadProven ::
         FilePath ->

@@ -442,6 +442,7 @@ prove ::
     Strategy.GraphSearchOrder ->
     Limit Natural ->
     Limit Natural ->
+    Natural ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
@@ -453,6 +454,7 @@ prove
     searchOrder
     breadthLimit
     depthLimit
+    maxCounterexamples
     definitionModule
     specModule
     trustedModule =
@@ -466,6 +468,7 @@ prove
             proveClaims
                 breadthLimit
                 searchOrder
+                maxCounterexamples
                 (AllClaims claims)
                 (Axioms axioms)
                 (AlreadyProven (map unparseToText2 alreadyProven))
