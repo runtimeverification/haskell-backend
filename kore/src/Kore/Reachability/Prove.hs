@@ -52,9 +52,8 @@ import Data.Limit (
     Limit,
  )
 import qualified Data.Limit as Limit
-import qualified Data.List as List
-
 import Data.List (genericTake)
+import qualified Data.List as List
 import Data.List.Extra (
     groupSortOn,
  )
