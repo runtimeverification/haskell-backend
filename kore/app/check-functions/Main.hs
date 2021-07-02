@@ -87,7 +87,6 @@ main = do
                 -- need to verify sentenceAxiom
                 case fromSentenceAxiom (attrs, verified) of
                     Right Equation{right}
-                        | isFunctionPattern right -> return ()
-                        | otherwise -> error "Function check fail."
+                        | not (isFunctionPattern right) -> error "Function check fail."
                     Right _ -> return ()
                     Left _ -> error "fromSentenceAxiom error" -- need to correctly handle errors
