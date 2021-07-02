@@ -15,6 +15,7 @@ module Kore.Step.Transition (
     addRule,
     addRules,
     mapRules,
+    record,
     orElse,
     ifte,
 
@@ -30,7 +31,11 @@ import Control.Monad.Except (
     MonadError (..),
  )
 import Control.Monad.Reader
-import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Accum (
+    AccumT (..),
+    mapAccumT,
+    runAccumT,
+ )
 import qualified Control.Monad.Trans.Accum as Accum
 import Data.Functor.Identity (
     Identity,
@@ -160,6 +165,13 @@ mapRules f trans = do
     results <- tryTransitionT trans
     let results' = map (fmap (fmap f)) results
     scatter results'
+
+-- | Get the record of applied rules during an action.
+record :: TransitionT rule m a -> TransitionT rule m (a, Seq rule)
+record action = TransitionT $
+    AccumT $ \w -> do
+        (a, rules) <- runAccumT (getTransitionT action) mempty
+        return ((a, rules), w <> rules)
 
 {- |
 
