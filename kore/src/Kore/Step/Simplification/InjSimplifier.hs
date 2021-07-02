@@ -161,7 +161,7 @@ mkInjSimplifier sortGraph =
         | injFrom inj == injTo inj = injChild inj
         | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
         | otherwise =
-            case injChild inj of
+            synthesize . InjF $ case injChild inj of
                 Inj_ inj'
                     | not ignoreUnorderedInj
                       , not (isOrderedInj inj') ->
@@ -169,8 +169,6 @@ mkInjSimplifier sortGraph =
                     | otherwise ->
                         assert sameConstructor
                             . assert innerSortsAgree
-                            . synthesize
-                            . InjF
                             $ Inj
                                 { injConstructor = injConstructor inj
                                 , injTo = injTo inj
@@ -181,7 +179,7 @@ mkInjSimplifier sortGraph =
                   where
                     sameConstructor = injConstructor inj == injConstructor inj'
                     innerSortsAgree = injFrom inj == injTo inj'
-                _ -> synthesize $ InjF inj
+                _ -> inj
 
     matchInjs ::
         forall variable.

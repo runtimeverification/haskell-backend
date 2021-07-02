@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.48.0.0
+version:        0.49.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -336,6 +336,7 @@ library
     Kore.Log.DebugSubstitutionSimplifier
     Kore.Log.DebugTransition
     Kore.Log.DebugUnification
+    Kore.Log.DebugUnifyBottom
     Kore.Log.ErrorBottomTotalFunction
     Kore.Log.ErrorDecidePredicateUnknown
     Kore.Log.ErrorException
@@ -361,7 +362,7 @@ library
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim
-    Kore.Log.DebugUnifyBottom
+    Kore.Log.WarnUnsimplifiedPredicate
     Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step

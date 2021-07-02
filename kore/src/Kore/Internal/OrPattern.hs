@@ -12,6 +12,7 @@ module Kore.Internal.OrPattern (
     fromPatterns,
     toPatterns,
     fromPattern,
+    fromOrCondition,
     fromTermLike,
     bottom,
     isFalse,
@@ -28,6 +29,7 @@ module Kore.Internal.OrPattern (
     MultiOr.observeAllT,
     MultiOr.map,
     MultiOr.traverse,
+    MultiOr.traverseOr,
 ) where
 
 import Kore.Internal.Condition (
@@ -42,6 +44,9 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -69,6 +74,7 @@ import Kore.Variables.Target (
     mkElementTarget,
     targetIfEqual,
  )
+import qualified Logic
 import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.
@@ -119,6 +125,14 @@ fromPatterns = from . toList
 -- | Examine a disjunction of 'Pattern.Pattern's.
 toPatterns :: OrPattern variable -> [Pattern variable]
 toPatterns = from
+
+fromOrCondition ::
+    InternalVariable variable =>
+    Sort ->
+    OrCondition variable ->
+    OrPattern variable
+fromOrCondition sort conditions =
+    MultiOr.observeAll $ Pattern.fromCondition sort <$> Logic.scatter conditions
 
 {- | A "disjunction" of one 'TermLike'.
 
