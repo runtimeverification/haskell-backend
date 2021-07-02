@@ -117,6 +117,8 @@ import Kore.Unification.Unify (
 import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
+import qualified Pretty
+
 -- | Builtin name of the @Set@ sort.
 sort :: Text
 sort = "SET.Set"
@@ -423,6 +425,11 @@ evalDifference
                               , (not . nullAc) set2' =
                                 differenceSet <$> pat1 <*> pat2
                             | otherwise = pat1
+                    traceM "TRACE::: Symbolic difference application pattern: "
+                    traceM
+                        ( show . Pretty.nest 4 . Pretty.pretty $
+                            pat
+                        )
                     return (Pattern.andCondition pat definedArgs)
 
             rightIdentity <|> bothConcrete <|> symbolic
