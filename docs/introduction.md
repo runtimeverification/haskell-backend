@@ -6,7 +6,7 @@
 
 The external syntax of Kore is represented by types in the `Kore.Syntax` hierarchy.
 The parser produces values of these types from the text of syntactically-valid Kore.
-After parsing, the verifier (`Kore.Validate`) checks that the parsed values are well-formed
+After parsing, the validator (`Kore.Validate`) checks that the parsed values are well-formed
 and converts the external representations into internal representations.
 
 References:
