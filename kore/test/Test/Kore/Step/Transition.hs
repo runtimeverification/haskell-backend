@@ -116,12 +116,12 @@ test_record =
         check expect transit
     , testCase "added rules" $ do
         let expect = [[1, 2, 3]]
-            transit = mapM_ addRule [1, 2, 3]
+            transit = addRules [1, 2, 3]
         check expect transit
     , testCase "separate branches" $ do
         let numbers = [[1, 2], [3, 4], [5, 6]]
         let expect = numbers
-            transit = asum $ map (mapM_ addRule) numbers
+            transit = asum $ map addRules numbers
         check expect transit
     , testCase "add rule after branching" $ do
         let before = return () <|> return () <|> return ()
@@ -135,7 +135,7 @@ test_record =
     , testCase "behaves like Control.Monad.Writer.listen" $ do
         let before = addRule 1
             expect = [[2, 3]]
-            transit = mapM_ addRule [2, 3]
+            transit = addRules [2, 3]
         checkWith before expect transit
     ]
   where
