@@ -524,7 +524,7 @@ checkStuckConfiguration rule prim proofState = do
     isNot_Ceil_ (PredicateNot (PredicateCeil _)) = True
     isNot_Ceil_ _ = False
 
--- | Terminate the prover at the first stuck step.
+-- | Terminate the prover after 'maxCounterexamples' stuck steps.
 throwStuckClaims ::
     forall m rule.
     MonadLog m =>
