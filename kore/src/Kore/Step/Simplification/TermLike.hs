@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.TermLike (
     simplify,
+    simplifyOnly,
 ) where
 
 import qualified Control.Lens.Combinators as Lens
@@ -22,9 +23,8 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional (
-    andCondition,
- )
+import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.From
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
@@ -145,6 +145,12 @@ import qualified Kore.Step.Simplification.Variable as Variable (
     simplify,
  )
 import Kore.Substitute
+import Kore.Syntax (
+    Ceil (..),
+    Equals (..),
+    Floor (..),
+    In (..),
+ )
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -350,6 +356,7 @@ simplify sideCondition = \termLike ->
             avoiding = freeVariables termLike <> freeVariables sideCondition
             refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
+            ~sort = termLikeSort termLike
             (_ :< termLikeF) = Recursive.project termLike
          in case termLikeF of
                 -- Unimplemented cases
@@ -371,10 +378,14 @@ simplify sideCondition = \termLike ->
                         =<< simplifyChildren applySymbolF
                 InjF injF ->
                     Inj.simplify =<< simplifyChildren injF
-                CeilF ceilF ->
-                    Ceil.simplify sideCondition =<< simplifyChildren ceilF
-                EqualsF equalsF ->
-                    Equals.simplify sideCondition =<< simplifyChildren equalsF
+                CeilF ceilF -> do
+                    ceilF' <- simplifyChildren ceilF
+                    conditions <- Ceil.simplify sideCondition ceilF'
+                    pure (OrPattern.fromOrCondition sort conditions)
+                EqualsF equalsF -> do
+                    equalsF' <- simplifyChildren equalsF
+                    conditions <- Equals.simplify sideCondition equalsF'
+                    pure (OrPattern.fromOrCondition sort conditions)
                 ExistsF exists -> do
                     simplifiedChildren <-
                         simplifyChildren (refresh exists)
@@ -385,8 +396,10 @@ simplify sideCondition = \termLike ->
                     Iff.simplify sideCondition =<< simplifyChildren iffF
                 ImpliesF impliesF ->
                     Implies.simplify sideCondition =<< simplifyChildren impliesF
-                InF inF ->
-                    In.simplify sideCondition =<< simplifyChildren inF
+                InF inF -> do
+                    inF' <- simplifyChildren inF
+                    conditions <- In.simplify sideCondition inF'
+                    pure (OrPattern.fromOrCondition sort conditions)
                 NotF notF ->
                     Not.simplify sideCondition =<< simplifyChildren notF
                 --
@@ -472,3 +485,149 @@ ensureSimplifiedCondition repr termLike condition
             , Pretty.indent 2 "while simplifying:"
             , Pretty.indent 4 (unparse termLike)
             ]
+
+-- | Simplify the given 'TermLike'. Do not simplify any side conditions.
+simplifyOnly ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    simplifier (OrPattern RewritingVariableName)
+simplifyOnly sideCondition =
+    loop . OrPattern.fromTermLike
+  where
+    loop ::
+        OrPattern RewritingVariableName ->
+        simplifier (OrPattern RewritingVariableName)
+    loop input = do
+        output <- MultiOr.traverseOr (propagateConditions worker) input
+        if input == output
+            then pure output
+            else loop output
+
+    replaceTerm = SideCondition.replaceTerm sideCondition
+
+    repr = SideCondition.toRepresentation sideCondition
+
+    propagateConditions action input = do
+        results <- action (Conditional.term input)
+        MultiOr.map (input *>) results
+            & return
+    {-# INLINE propagateConditions #-}
+
+    worker ::
+        TermLike RewritingVariableName ->
+        simplifier (OrPattern RewritingVariableName)
+    worker termLike
+        | Just termLike' <- replaceTerm termLike =
+            worker termLike'
+        | TermLike.isSimplified repr termLike =
+            pure (OrPattern.fromTermLike termLike)
+        | otherwise =
+            case termLikeF of
+                -- Not implemented:
+                ApplyAliasF _ -> doNotSimplify
+                -- Not simplifiable:
+                EndiannessF _ -> doNotSimplify
+                SignednessF _ -> doNotSimplify
+                -- Handled elsewhere, not a proper term:
+                RewritesF _ -> doNotSimplify
+                -- Symbols:
+                ApplySymbolF applySymbolF ->
+                    Application.simplify sideCondition
+                        =<< traverse worker applySymbolF
+                InjF injF ->
+                    Inj.simplify =<< traverse worker injF
+                InternalListF internalListF ->
+                    InternalList.simplify <$> traverse worker internalListF
+                InternalMapF internalMapF ->
+                    InternalMap.simplify <$> traverse worker internalMapF
+                InternalSetF internalSetF ->
+                    InternalSet.simplify <$> traverse worker internalSetF
+                -- Domain values:
+                DomainValueF domainValueF ->
+                    DomainValue.simplify <$> traverse worker domainValueF
+                InternalBoolF internalBoolF ->
+                    InternalBool.simplify (getConst internalBoolF)
+                        & return
+                InternalBytesF internalBytesF ->
+                    InternalBytes.simplify (getConst internalBytesF)
+                        & return
+                InternalIntF internalIntF ->
+                    InternalInt.simplify (getConst internalIntF)
+                        & return
+                InternalStringF internalStringF ->
+                    InternalString.simplify (getConst internalStringF)
+                        & return
+                -- Reachability:
+                NextF nextF ->
+                    Next.simplify <$> traverse worker nextF
+                -- Matching Logic:
+                AndF andF -> do
+                    let conjuncts = foldMap MultiAnd.fromTermLike andF
+                    And.simplify Not.notSimplifier sideCondition
+                        =<< MultiAnd.traverse worker conjuncts
+                OrF orF ->
+                    Or.simplify <$> traverse worker orF
+                NotF notF ->
+                    Not.simplify sideCondition
+                        =<< traverse worker notF
+                ImpliesF impliesF ->
+                    Implies.simplify sideCondition
+                        =<< traverse worker impliesF
+                IffF iffF ->
+                    Iff.simplify sideCondition
+                        =<< traverse worker iffF
+                InhabitantF inhF ->
+                    Inhabitant.simplify <$> traverse worker inhF
+                -- Binders:
+                ExistsF existsF ->
+                    Exists.simplify sideCondition
+                        =<< traverse worker (refreshExists existsF)
+                ForallF forallF ->
+                    Forall.simplify <$> traverse worker (refreshForall forallF)
+                MuF muF ->
+                    Mu.simplify <$> traverse worker (refreshMu muF)
+                NuF nuF ->
+                    Nu.simplify <$> traverse worker (refreshNu nuF)
+                VariableF variableF ->
+                    Variable.simplify (getConst variableF)
+                        & return
+                StringLiteralF stringLiteralF ->
+                    StringLiteral.simplify (getConst stringLiteralF)
+                        & return
+                -- Predicates:
+                -- (Predicates are not simplified because this function
+                -- doesn't simplify side conditions.)
+                TopF _ ->
+                    returnPredicate fromTop_
+                BottomF _ ->
+                    returnPredicate fromBottom_
+                CeilF Ceil{ceilChild} ->
+                    returnPredicate (fromCeil_ ceilChild)
+                FloorF Floor{floorChild} ->
+                    returnPredicate (fromFloor_ floorChild)
+                EqualsF Equals{equalsFirst, equalsSecond} ->
+                    returnPredicate (fromEquals_ equalsFirst equalsSecond)
+                InF In{inContainedChild, inContainingChild} ->
+                    returnPredicate
+                        (fromIn_ inContainedChild inContainingChild)
+      where
+        _ :< termLikeF = Recursive.project termLike
+        ~sort = termLikeSort termLike
+
+        ~doNotSimplify = return (OrPattern.fromTermLike termLike)
+
+        ~avoiding = freeVariables termLike <> freeVariables sideCondition
+        refreshElementBinder = TermLike.refreshElementBinder avoiding
+        refreshExists = Lens.over Binding.existsBinder refreshElementBinder
+        refreshForall = Lens.over Binding.forallBinder refreshElementBinder
+        refreshSetBinder = TermLike.refreshSetBinder avoiding
+        refreshMu = Lens.over Binding.muBinder refreshSetBinder
+        refreshNu = Lens.over Binding.nuBinder refreshSetBinder
+
+        returnPredicate =
+            Pattern.fromPredicateSorted sort
+                >>> OrPattern.fromPattern
+                >>> return
