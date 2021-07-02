@@ -9,6 +9,7 @@ module Kore.Internal.OrCondition (
     fromConditions,
     fromCondition,
     fromPredicate,
+    fromPredicates,
     MultiOr.gather,
     MultiOr.observeAllT,
     bottom,
@@ -63,6 +64,12 @@ fromPredicate ::
     Predicate variable ->
     OrCondition variable
 fromPredicate = fromCondition . Condition.fromPredicate
+
+fromPredicates ::
+    InternalVariable variable =>
+    [Predicate variable] ->
+    OrCondition variable
+fromPredicates = fromConditions . map Condition.fromPredicate
 
 {- | @\\bottom@
 

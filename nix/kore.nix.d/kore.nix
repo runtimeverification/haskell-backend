@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.48.0.0"; };
+      identifier = { name = "kore"; version = "0.49.0.0"; };
       license = "NCSA";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -250,12 +250,14 @@
           "Kore/Internal/Variable"
           "Kore/Log"
           "Kore/Log/DebugAppliedRewriteRules"
-          "Kore/Log/DebugClaimState"
+          "Kore/Log/DebugBeginClaim"
           "Kore/Log/DebugEvaluateCondition"
           "Kore/Log/DebugProven"
           "Kore/Log/DebugSolver"
           "Kore/Log/DebugSubstitutionSimplifier"
+          "Kore/Log/DebugTransition"
           "Kore/Log/DebugUnification"
+          "Kore/Log/DebugUnifyBottom"
           "Kore/Log/ErrorBottomTotalFunction"
           "Kore/Log/ErrorDecidePredicateUnknown"
           "Kore/Log/ErrorException"
@@ -281,7 +283,7 @@
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"
-          "Kore/Log/DebugUnifyBottom"
+          "Kore/Log/WarnUnsimplifiedPredicate"
           "Kore/ModelChecker/Bounded"
           "Kore/ModelChecker/Simplification"
           "Kore/ModelChecker/Step"

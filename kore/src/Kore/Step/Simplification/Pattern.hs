@@ -122,8 +122,8 @@ makeEvaluate sideCondition pattern' =
             term' = substitute (toMap $ substitution simplifiedCondition) term
             termSideCondition =
                 SideCondition.addConditionWithReplacements
-                    sideCondition
                     simplifiedCondition
+                    sideCondition
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition

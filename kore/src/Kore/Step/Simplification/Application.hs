@@ -15,6 +15,7 @@ module Kore.Step.Simplification.Application (
 import Control.Monad.Catch (
     MonadThrow,
  )
+import Kore.Attribute.Synthetic (synthesize)
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
@@ -29,6 +30,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -60,9 +62,8 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Application Symbol (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
@@ -84,9 +85,8 @@ simplify sideCondition application = do
         MultiOr.distributeApplication application
 
 makeAndEvaluateApplications ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
@@ -95,9 +95,8 @@ makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
@@ -112,10 +111,13 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
             expandedApplications
     return (MultiOr.mergeAll orResults)
 
+{- | Evaluates function applications, without attempting
+ to reevaluate functions which are known to have been simplified
+ as much as possible inside the current rewrite step.
+-}
 evaluateApplicationFunction ::
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     -- | The predicate from the configuration
     SideCondition RewritingVariableName ->
     -- | The pattern to be evaluated
@@ -123,11 +125,19 @@ evaluateApplicationFunction ::
     simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
-    Conditional{term, predicate, substitution} =
-        evaluateApplication
-            sideCondition
-            Conditional{term = (), predicate, substitution}
-            term
+    expandedApp@Conditional{term, predicate, substitution}
+        | SideCondition.isSimplifiedFunction term sideCondition =
+            let applicationPattern =
+                    synthesize . ApplySymbolF <$> expandedApp
+             in applicationPattern
+                    & Pattern.markSimplified
+                    & OrPattern.fromPattern
+                    & return
+        | otherwise =
+            evaluateApplication
+                sideCondition
+                Conditional{term = (), predicate, substitution}
+                term
 
 makeExpandedApplication ::
     MonadSimplify simplifier =>
