@@ -10,8 +10,13 @@ import Kore.Attribute.Pattern.Function (
  )
 import Kore.Equation (
     Equation (Equation),
-    matchEquation,
     right,
+ )
+import Kore.Equation.Sentence (
+    fromSentenceAxiom,
+ )
+import Kore.Internal.TermLike (
+    isFunctionPattern,
  )
 import Kore.Options (
     InfoMod,
@@ -35,7 +40,8 @@ import Kore.Syntax.Module (
  )
 import Kore.Syntax.Sentence (
     projectSentenceAxiom,
-    sentenceAttributes,
+    sentenceAxiomAttributes,
+    sentenceAxiomPattern,
  )
 import Prelude.Kore
 
@@ -76,10 +82,12 @@ main = do
         mods <- case parseKoreDefinition fileName file of
             Left msg -> error msg
             Right defn -> return $ definitionModules defn
-        forM_ (mods >>= moduleSentences) $ \sentence -> do
-            let attrs = sentenceAttributes sentence
+        forM_ (mods >>= moduleSentences) $ \sentence ->
             forM_ (projectSentenceAxiom sentence) $ \sentenceAxiom -> do
-                case matchEquation attrs sentenceAxiom of
+                -- need to verify sentenceAxiom
+                case fromSentenceAxiom (attrs, verified) of
                     Right Equation{right}
-                        | not (isFunction right) -> error "Function check fail."
-                    Left err -> error err
+                        | isFunctionPattern right -> return ()
+                        | otherwise -> error "Function check fail."
+                    Right _ -> return ()
+                    Left _ -> error "fromSentenceAxiom error" -- need to correctly handle errors
