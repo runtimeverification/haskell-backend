@@ -1,22 +1,37 @@
 module Main (main) where
 
-import qualified Data.Text.IO as Text
-import GlobalMain
-import Kore.Attribute.Function (
-    isDeclaredFunction,
+import Control.Monad (
+    join,
  )
-import Kore.Attribute.Pattern.Function (
-    isFunction,
+import Data.Map.Strict (
+    elems,
+ )
+import GlobalMain (
+    ExeName (..),
+    Main,
+    loadDefinitions,
+    loadModule,
+    localOptions,
+    mainGlobal,
+    parseModuleName,
+ )
+import Kore.BugReport (
+    BugReportOption,
+    ExitCode (ExitFailure, ExitSuccess),
+    parseBugReportOption,
+    withBugReport,
  )
 import Kore.Equation (
-    Equation (Equation),
+    extractEquations,
     right,
- )
-import Kore.Equation.Sentence (
-    fromSentenceAxiom,
  )
 import Kore.Internal.TermLike (
     isFunctionPattern,
+ )
+import Kore.Log (
+    KoreLogOptions,
+    parseKoreLogOptions,
+    runKoreLog,
  )
 import Kore.Options (
     InfoMod,
@@ -29,21 +44,21 @@ import Kore.Options (
     progDesc,
     str,
  )
-import Kore.Parser (
-    parseKoreDefinition,
- )
-import Kore.Syntax.Definition (
-    definitionModules,
- )
 import Kore.Syntax.Module (
-    Module (..),
- )
-import Kore.Syntax.Sentence (
-    projectSentenceAxiom,
-    sentenceAxiomAttributes,
-    sentenceAxiomPattern,
+    ModuleName,
  )
 import Prelude.Kore
+import System.Clock (
+    Clock (Monotonic),
+    TimeSpec,
+    getTime,
+ )
+import System.Exit (
+    exitWith,
+ )
+
+exeName :: ExeName
+exeName = ExeName "kore-check-functions"
 
 -- | modifiers for the command line parser description
 checkerInfoModifiers :: InfoMod options
@@ -55,38 +70,58 @@ checkerInfoModifiers =
             \equation is a function pattern."
         <> header "kore-check-functions - a tool to check function definitions"
 
-newtype KoreCheckerOptions = KoreCheckerOptions
+data KoreCheckerOptions = KoreCheckerOptions
     { -- | Name for a file containing function definitions to verify.
-      fileName :: FilePath
+      fileName :: !FilePath
+    , -- | Name of the main module in the definition
+      mainModuleName :: !ModuleName
+    , bugReportOption :: !BugReportOption
+    , koreLogOptions :: !KoreLogOptions
     }
 
-parseKoreCheckerOptions :: Parser KoreCheckerOptions
-parseKoreCheckerOptions =
+parseKoreCheckerOptions :: TimeSpec -> Parser KoreCheckerOptions
+parseKoreCheckerOptions startTime =
     KoreCheckerOptions
         <$> argument
             str
             ( metavar "FILE"
                 <> help "Kore source file to check."
             )
+        <*> parseMainModuleName
+        <*> parseBugReportOption
+        <*> parseKoreLogOptions exeName startTime
+  where
+    parseMainModuleName =
+        parseModuleName
+            "MODULE"
+            "module"
+            "The name of the main module in the Kore definition."
 
 main :: IO ()
 main = do
+    startTime <- getTime Monotonic
     options <-
         mainGlobal
-            (ExeName "kore-check-functions")
+            exeName
             Nothing -- environment variable name for extra arguments
-            parseKoreCheckerOptions
+            (parseKoreCheckerOptions startTime)
             checkerInfoModifiers
-    forM_ (localOptions options) $ \KoreCheckerOptions{fileName} -> do
-        file <- Text.readFile fileName
-        mods <- case parseKoreDefinition fileName file of
-            Left msg -> error msg
-            Right defn -> return $ definitionModules defn
-        forM_ (mods >>= moduleSentences) $ \sentence ->
-            forM_ (projectSentenceAxiom sentence) $ \sentenceAxiom -> do
-                -- need to verify sentenceAxiom
-                case fromSentenceAxiom (attrs, verified) of
-                    Right Equation{right}
-                        | not (isFunctionPattern right) -> error "Function check fail."
-                    Right _ -> return ()
-                    Left _ -> error "fromSentenceAxiom error" -- need to correctly handle errors
+    mapM_ mainWithOptions $ localOptions options
+
+mainWithOptions :: KoreCheckerOptions -> IO ()
+mainWithOptions opts = do
+    exitCode <-
+        withBugReport exeName (bugReportOption opts) $ \tmpDir ->
+            koreCheckFunctions opts
+                & runKoreLog tmpDir (koreLogOptions opts)
+    exitWith exitCode
+
+koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
+koreCheckFunctions opts = do
+    definition <- loadDefinitions [fileName opts]
+    mainModule <- loadModule (mainModuleName opts) definition
+    let eqns = join $ elems $ extractEquations mainModule
+    return $
+        if all (isFunctionPattern . right) eqns
+            then ExitSuccess
+            else ExitFailure 2 -- What code should this be?
