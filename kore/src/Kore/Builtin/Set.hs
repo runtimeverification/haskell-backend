@@ -79,12 +79,13 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
-    makeMultipleAndPredicate,
+    --    makeMultipleAndPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+
+-- import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     Key,
     TermLike,
@@ -117,7 +118,7 @@ import Kore.Unification.Unify (
 import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
-import qualified Pretty
+-- import qualified Pretty
 
 -- | Builtin name of the @Set@ sort.
 sort :: Text
@@ -353,10 +354,10 @@ evalDifference ::
     TermLike.Application TermLike.Symbol (TermLike variable) ->
     MaybeT simplifier (Pattern variable)
 evalDifference
-    sideCondition
+    _ -- sideCondition
     ( TermLike.Application
-            symbol@TermLike.Symbol{symbolSorts = ApplicationSorts _ resultSort}
-            args@[_set1, _set2]
+            TermLike.Symbol{symbolSorts = ApplicationSorts _ resultSort}
+            [_set1, _set2]
         ) =
         do
             let rightIdentity = do
@@ -368,74 +369,74 @@ evalDifference
                     _set1 <- expectConcreteBuiltinSet ctx _set1
                     _set2 <- expectConcreteBuiltinSet ctx _set2
                     returnConcreteSet resultSort (HashMap.difference _set1 _set2)
-                symbolic = do
-                    _set1 <- expectBuiltinSet ctx _set1
-                    _set2 <- expectBuiltinSet ctx _set2
-                    let definedArgs =
-                            filter (not . SideCondition.isDefined sideCondition) args
-                                & map makeCeilPredicate
-                                & makeMultipleAndPredicate
-                                & Conditional.fromPredicate
-                    let NormalizedAc
-                            { concreteElements = concrete1
-                            , elementsWithVariables = symbolic1'
-                            , opaque = opaque1'
-                            } =
-                                unwrapAc _set1
-                        symbolic1 =
-                            unwrapElement <$> symbolic1'
-                                & HashMap.fromList
-                        opaque1 = HashSet.fromList opaque1'
-                    let NormalizedAc
-                            { concreteElements = concrete2
-                            , elementsWithVariables = symbolic2'
-                            , opaque = opaque2'
-                            } =
-                                unwrapAc _set2
-                        symbolic2 =
-                            unwrapElement <$> symbolic2'
-                                & HashMap.fromList
-                        opaque2 = HashSet.fromList opaque2'
-                    let set1' =
-                            NormalizedAc
-                                { concreteElements =
-                                    HashMap.difference concrete1 concrete2
-                                , elementsWithVariables =
-                                    HashMap.difference symbolic1 symbolic2
-                                        & HashMap.toList
-                                        & map wrapElement
-                                , opaque =
-                                    HashSet.difference opaque1 opaque2 & HashSet.toList
-                                }
-                        set2' =
-                            NormalizedAc
-                                { concreteElements =
-                                    HashMap.difference concrete2 concrete1
-                                , elementsWithVariables =
-                                    HashMap.difference symbolic2 symbolic1
-                                        & HashMap.toList
-                                        & map wrapElement
-                                , opaque =
-                                    HashSet.difference opaque1 opaque1 & HashSet.toList
-                                }
-                    pat1 <- Ac.returnAc resultSort (NormalizedSet set1')
-                    pat2 <- Ac.returnAc resultSort (NormalizedSet set2')
-                    let pat
-                            | (not . nullAc) set1'
-                              , (not . nullAc) set2' =
-                                differenceSet <$> pat1 <*> pat2
-                            | otherwise = pat1
-                    traceM "TRACE::: Symbolic difference application pattern: "
-                    traceM
-                        ( show . Pretty.nest 4 . Pretty.pretty $
-                            pat
-                        )
-                    return (Pattern.andCondition pat definedArgs)
-
-            rightIdentity <|> bothConcrete <|> symbolic
+            -- symbolic = do
+            --     _set1 <- expectBuiltinSet ctx _set1
+            --     _set2 <- expectBuiltinSet ctx _set2
+            --     let definedArgs =
+            --             filter (not . SideCondition.isDefined sideCondition) args
+            --                 & map makeCeilPredicate
+            --                 & makeMultipleAndPredicate
+            --                 & Conditional.fromPredicate
+            --     let NormalizedAc
+            --             { concreteElements = concrete1
+            --             , elementsWithVariables = symbolic1'
+            --             , opaque = opaque1'
+            --             } =
+            --                 unwrapAc _set1
+            --         symbolic1 =
+            --             unwrapElement <$> symbolic1'
+            --                 & HashMap.fromList
+            --         opaque1 = HashSet.fromList opaque1'
+            --     let NormalizedAc
+            --             { concreteElements = concrete2
+            --             , elementsWithVariables = symbolic2'
+            --             , opaque = opaque2'
+            --             } =
+            --                 unwrapAc _set2
+            --         symbolic2 =
+            --             unwrapElement <$> symbolic2'
+            --                 & HashMap.fromList
+            --         opaque2 = HashSet.fromList opaque2'
+            --     let set1' =
+            --             NormalizedAc
+            --                 { concreteElements =
+            --                     HashMap.difference concrete1 concrete2
+            --                 , elementsWithVariables =
+            --                     HashMap.difference symbolic1 symbolic2
+            --                         & HashMap.toList
+            --                         & map wrapElement
+            --                 , opaque =
+            --                     HashSet.difference opaque1 opaque2 & HashSet.toList
+            --                 }
+            --         set2' =
+            --             NormalizedAc
+            --                 { concreteElements =
+            --                     HashMap.difference concrete2 concrete1
+            --                 , elementsWithVariables =
+            --                     HashMap.difference symbolic2 symbolic1
+            --                         & HashMap.toList
+            --                         & map wrapElement
+            --                 , opaque =
+            --                     HashSet.difference opaque1 opaque1 & HashSet.toList
+            --                 }
+            --     pat1 <- Ac.returnAc resultSort (NormalizedSet set1')
+            --     pat2 <- Ac.returnAc resultSort (NormalizedSet set2')
+            --     let pat
+            --             | (not . nullAc) set1'
+            --               , (not . nullAc) set2' =
+            --                 differenceSet <$> pat1 <*> pat2
+            --             | otherwise = pat1
+            -- traceM "TRACE::: Symbolic difference application pattern: "
+            -- traceM
+            --     ( show . Pretty.nest 4 . Pretty.pretty $
+            --         pat
+            --     )x
+            -- return (Pattern.andCondition pat definedArgs)
+            rightIdentity <|> bothConcrete -- <|> symbolic
+            -- rightIdentity <|> bothConcrete <|> symbolic
       where
         ctx = Set.differenceKey
-        differenceSet set1 set2 = TermLike.mkApplySymbol symbol [set1, set2]
+-- differenceSet set1 set2 = TermLike.mkApplySymbol symbol [set1, set2]
 evalDifference _ _ =
     Builtin.wrongArity Set.differenceKey
 
