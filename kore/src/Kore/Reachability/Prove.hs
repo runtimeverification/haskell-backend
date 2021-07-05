@@ -44,9 +44,6 @@ import Control.Monad.State.Strict (
     runStateT,
  )
 import qualified Control.Monad.State.Strict as State
-import Data.Coerce (
-    coerce,
- )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit (
     Limit,
@@ -79,8 +76,13 @@ import Kore.Internal.Predicate (
     pattern PredicateCeil,
     pattern PredicateNot,
  )
-import Kore.Log.DebugClaimState
+import Kore.Log.DebugBeginClaim
 import Kore.Log.DebugProven
+import Kore.Log.DebugTransition (
+    debugAfterTransition,
+    debugBeforeTransition,
+    debugFinalTransition,
+ )
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
@@ -271,6 +273,7 @@ proveClaimsWorker
             (SomeClaim, Limit Natural) ->
             ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
         verifyWorker unprovenClaim@(claim, _) = do
+            debugBeginClaim claim
             proveClaim
                 breadthLimit
                 searchOrder
@@ -576,45 +579,31 @@ trackProofDepth rule prim (!proofDepth, proofState) = do
     isRewritten _ = False
 
 debugClaimStateBracket ::
-    forall monad.
+    forall monad rule.
     MonadLog monad =>
+    From rule Attribute.Axiom.SourceLocation =>
     -- | current proof state
     ClaimState SomeClaim ->
     -- | transition
     Prim ->
     -- | action to be computed
-    monad (ClaimState SomeClaim) ->
-    monad (ClaimState SomeClaim)
-debugClaimStateBracket
-    proofState
-    (coerce -> transition)
-    action =
-        do
-            result <- action
-            logEntry
-                DebugClaimState
-                    { proofState
-                    , transition
-                    , result = Just result
-                    }
-            return result
+    Transition.TransitionT rule monad (ClaimState SomeClaim) ->
+    Transition.TransitionT rule monad (ClaimState SomeClaim)
+debugClaimStateBracket proofState transition action = do
+    debugBeforeTransition proofState transition
+    (result, rules) <- Transition.record action
+    debugAfterTransition result transition $ toList rules
+    return result
 
 debugClaimStateFinal ::
     forall monad.
     Alternative monad =>
     MonadLog monad =>
-    -- | current proof state
-    ClaimState SomeClaim ->
     -- | transition
     Prim ->
     monad (ClaimState SomeClaim)
-debugClaimStateFinal proofState (coerce -> transition) = do
-    logEntry
-        DebugClaimState
-            { proofState
-            , transition
-            , result = Nothing
-            }
+debugClaimStateFinal transition = do
+    debugFinalTransition transition
     empty
 
 withDebugClaimState ::
@@ -630,7 +619,6 @@ withDebugClaimState transitionFunc transition state =
             (transitionFunc transition state)
         )
         ( debugClaimStateFinal
-            state
             transition
         )
 
