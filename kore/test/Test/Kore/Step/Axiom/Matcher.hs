@@ -58,6 +58,9 @@ import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
+import Kore.Unparser
+import Pretty
+
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
     [ testGroup
@@ -883,6 +886,13 @@ test_matching_Set =
             , (sSet, mkSet [mkInt 0] [])
             ]
         ]
+    , matches
+        "testing"
+        (mkSet [mkElemVar Mock.xEquation] [mkElemVar Mock.yEquation])
+        (mkSet [mkElemVar Mock.uRule] [mkElemVar Mock.xRuleSet])
+        [ (inject Mock.xEquation, mkElemVar Mock.uRule)
+        , (inject Mock.yEquation, mkElemVar Mock.xRuleSet)
+        ]
     ]
 
 sSet :: SomeVariable RewritingVariableName
@@ -1180,6 +1190,25 @@ withMatch ::
 withMatch check comment term1 term2 =
     testCase comment $ do
         actual <- match term1 term2
+        case actual of
+            Nothing -> undefined
+            Just (predicate, termMap) ->
+                trace
+                    ( "\npredicate:\n" <> show (pretty predicate)
+                        <> "\nterm map:\n"
+                        <> Map.foldlWithKey
+                            ( \acc var term ->
+                                acc
+                                    <> "("
+                                    <> show var
+                                    <> "|-> "
+                                    <> unparseToString term
+                                    <> ")"
+                            )
+                            ""
+                            termMap
+                    )
+                    (pure ())
         check actual
 
 doesn'tMatch ::

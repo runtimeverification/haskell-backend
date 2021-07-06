@@ -852,6 +852,10 @@ zRule :: MockRewritingElementVariable
 zRule = mkRuleElementVariable (testId "z") mempty testSort
 zConfig :: MockRewritingElementVariable
 zConfig = mkConfigElementVariable (testId "z") mempty testSort
+xEquation :: MockRewritingElementVariable
+xEquation = mkEquationElementVariable (testId "x") mempty testSort
+yEquation :: MockRewritingElementVariable
+yEquation = mkEquationElementVariable (testId "y") mempty setSort
 zEquation :: MockRewritingElementVariable
 zEquation = mkEquationElementVariable (testId "z") mempty testSort
 t :: MockElementVariable
