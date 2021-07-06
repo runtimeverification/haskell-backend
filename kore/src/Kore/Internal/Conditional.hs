@@ -242,7 +242,7 @@ instance
     InternalVariable variable =>
     From (Condition variable) (MultiAnd (Predicate variable))
     where
-    from = Predicate.toMultiAnd . from @(Condition _)
+    from = Predicate.toMultiAnd . from @(Condition _) @(Predicate _)
     {-# INLINE from #-}
 
 instance
