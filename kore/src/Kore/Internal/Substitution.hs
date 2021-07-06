@@ -177,8 +177,8 @@ retractAssignment (PredicateEquals term (Var_ var)) =
 retractAssignment _ = Nothing
 
 -- | Wrapper for 'Assignment's which are unordered.
-newtype UnorderedAssignment variable =
-    UnorderedAssignment_ (Assignment variable)
+newtype UnorderedAssignment variable
+    = UnorderedAssignment_ (Assignment variable)
 
 pattern UnorderedAssignment ::
     SomeVariable variable ->
@@ -188,15 +188,16 @@ pattern UnorderedAssignment assignedVariable assignedTerm <-
     UnorderedAssignment_ Assignment_{assignedVariable, assignedTerm}
 {-# COMPLETE UnorderedAssignment #-}
 
--- | Smart constructor for 'UnorderedAssignment'. Note that it does not enforce
--- the order invariant 'Assignment' does.
+{- | Smart constructor for 'UnorderedAssignment'. Note that it does not enforce
+ the order invariant 'Assignment' does.
+-}
 unorderedAssign ::
     SomeVariable variable ->
     TermLike variable ->
     UnorderedAssignment variable
 unorderedAssign variable term =
-    UnorderedAssignment_
-    $ Assignment_ variable term
+    UnorderedAssignment_ $
+        Assignment_ variable term
 
 {- | Extract an 'UnorderedAssignment' for a /particular/ variable.
 
