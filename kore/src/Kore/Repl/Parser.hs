@@ -325,9 +325,9 @@ log = do
     parseSeverityWithDefault =
         severity <|> pure Log.defaultSeverity
     parseFormatWithDefault =
-        fromMaybe Log.Standard <$> optional parseLogFormat
+        parseLogFormat <|> pure Log.Standard
     parseTimestampSwitchWithDefault =
-        fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
+        parseTimestampSwitch <|> pure Log.TimestampsEnable
 
 debugAttemptEquation :: Parser ReplCommand
 debugAttemptEquation =
