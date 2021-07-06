@@ -331,11 +331,12 @@ library
     Kore.Internal.Variable
     Kore.Log
     Kore.Log.DebugAppliedRewriteRules
-    Kore.Log.DebugClaimState
+    Kore.Log.DebugBeginClaim
     Kore.Log.DebugEvaluateCondition
     Kore.Log.DebugProven
     Kore.Log.DebugSolver
     Kore.Log.DebugSubstitutionSimplifier
+    Kore.Log.DebugTransition
     Kore.Log.DebugUnification
     Kore.Log.DebugUnifyBottom
     Kore.Log.ErrorBottomTotalFunction

@@ -210,6 +210,69 @@ test_proveClaims =
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
+    , testGroup "returns first two stuck claims after disjunction" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c `mkOr` Mock.d)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <-
+                        proveClaimsMaxCounterexamples_
+                            Unlimited
+                            (Limit 1)
+                            2
+                            axioms
+                            [mkSimpleClaim Mock.a Mock.e]
+                            []
+                    let stuck =
+                            [ mkSimpleClaim Mock.b Mock.e
+                            , mkSimpleClaim Mock.c Mock.e
+                            ]
+                        expect = MultiAnd.make (fmap StuckClaim stuck)
+                    assertEqual "" expect actual
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
+    , testGroup "returns both stuck claims after disjunction" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <-
+                        proveClaimsMaxCounterexamples_
+                            Unlimited
+                            (Limit 1)
+                            2
+                            axioms
+                            [mkSimpleClaim Mock.a Mock.d]
+                            []
+                    let stuck =
+                            [ mkSimpleClaim Mock.b Mock.d
+                            , mkSimpleClaim Mock.c Mock.d
+                            ]
+                        expect = MultiAnd.make (fmap StuckClaim stuck)
+                    assertEqual "" expect actual
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
+    , testGroup "returns both stuck claims after disjunction, when asked for three" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <-
+                        proveClaimsMaxCounterexamples_
+                            Unlimited
+                            (Limit 1)
+                            3
+                            axioms
+                            [mkSimpleClaim Mock.a Mock.d]
+                            []
+                    let stuck =
+                            [ mkSimpleClaim Mock.b Mock.d
+                            , mkSimpleClaim Mock.c Mock.d
+                            ]
+                        expect = MultiAnd.make (fmap StuckClaim stuck)
+                    assertEqual "" expect actual
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
     , testGroup "proves one claim" $
         let axioms = [simpleAxiom Mock.a Mock.b]
             mkTest name mkSimpleClaim =
@@ -742,23 +805,57 @@ simpleRewrite left right =
 proveClaims ::
     Limit Natural ->
     Limit Natural ->
+    Natural ->
     [Rule SomeClaim] ->
     [SomeClaim] ->
     [SomeClaim] ->
     IO ProveClaimsResult
-proveClaims breadthLimit depthLimit axioms claims alreadyProven =
-    Kore.Reachability.proveClaims
-        breadthLimit
-        BreadthFirst
-        (AllClaims claims)
-        (Axioms axioms)
-        (AlreadyProven (map unparseToText2 alreadyProven))
-        (ToProve (map applyDepthLimit . selectUntrusted $ claims))
-        & runSimplifierSMT mockEnv
-  where
-    mockEnv = Mock.env
-    applyDepthLimit claim = (claim, depthLimit)
-    selectUntrusted = filter (not . isTrusted)
+proveClaims
+    breadthLimit
+    depthLimit
+    maxCounterexamples
+    axioms
+    claims
+    alreadyProven =
+        Kore.Reachability.proveClaims
+            breadthLimit
+            BreadthFirst
+            maxCounterexamples
+            (AllClaims claims)
+            (Axioms axioms)
+            (AlreadyProven (map unparseToText2 alreadyProven))
+            (ToProve (map applyDepthLimit . selectUntrusted $ claims))
+            & runSimplifierSMT mockEnv
+      where
+        mockEnv = Mock.env
+        applyDepthLimit claim = (claim, depthLimit)
+        selectUntrusted = filter (not . isTrusted)
+
+proveClaimsMaxCounterexamples_ ::
+    Limit Natural ->
+    Limit Natural ->
+    Natural ->
+    [Rule SomeClaim] ->
+    [SomeClaim] ->
+    [SomeClaim] ->
+    IO StuckClaims
+proveClaimsMaxCounterexamples_
+    breadthLimit
+    depthLimit
+    maxCounterexamples
+    axioms
+    claims
+    alreadyProven =
+        do
+            ProveClaimsResult{stuckClaims} <-
+                Test.Kore.Reachability.Prove.proveClaims
+                    breadthLimit
+                    depthLimit
+                    maxCounterexamples
+                    axioms
+                    claims
+                    alreadyProven
+            pure stuckClaims
 
 proveClaims_ ::
     Limit Natural ->
@@ -767,13 +864,5 @@ proveClaims_ ::
     [SomeClaim] ->
     [SomeClaim] ->
     IO StuckClaims
-proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
-    do
-        ProveClaimsResult{stuckClaims} <-
-            Test.Kore.Reachability.Prove.proveClaims
-                breadthLimit
-                depthLimit
-                axioms
-                claims
-                alreadyProven
-        pure stuckClaims
+proveClaims_ breadthLimit depthLimit =
+    proveClaimsMaxCounterexamples_ breadthLimit depthLimit 1
