@@ -464,7 +464,9 @@ data MatchError variable = MatchError
     deriving anyclass (Debug, Diff)
 
 instance Pretty (MatchError RewritingVariableName) where
-    pretty _ = "equation did not match term"
+    pretty (MatchError _ equation) = pretty equation
+
+-- "equation did not match term"
 
 {- | Errors that can occur during 'applyMatchResult'.
 
