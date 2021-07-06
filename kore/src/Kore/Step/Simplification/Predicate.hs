@@ -44,7 +44,7 @@ import Kore.Internal.SideCondition (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Substitution (
-    pattern Assignment,
+    pattern UnorderedAssignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (TermLike)
@@ -449,7 +449,7 @@ extractFirstAssignment someVariableName predicates =
         Predicate RewritingVariableName ->
         Maybe (TermLike RewritingVariableName)
     extractAssignment predicate = do
-        Assignment _ termLike <-
+        UnorderedAssignment _ termLike <-
             Substitution.retractAssignmentFor
                 someVariableName
                 predicate

@@ -48,6 +48,10 @@ module Kore.Internal.Substitution (
     mkNormalization,
     applyNormalized,
     orientSubstitution,
+    -- Constructor for UnorderedAssignment
+    -- not exported on purpose
+    UnorderedAssignment,
+    pattern UnorderedAssignment,
 ) where
 
 import qualified Data.List as List
@@ -172,26 +176,48 @@ retractAssignment (PredicateEquals term (Var_ var)) =
     Just (assign var term)
 retractAssignment _ = Nothing
 
-{- | Extract an 'Assignment' for a /particular/ variable.
+-- | Wrapper for 'Assignment's which are unordered.
+newtype UnorderedAssignment variable =
+    UnorderedAssignment_ (Assignment variable)
+
+pattern UnorderedAssignment ::
+    SomeVariable variable ->
+    TermLike variable ->
+    UnorderedAssignment variable
+pattern UnorderedAssignment assignedVariable assignedTerm <-
+    UnorderedAssignment_ Assignment_{assignedVariable, assignedTerm}
+{-# COMPLETE UnorderedAssignment #-}
+
+-- | Smart constructor for 'UnorderedAssignment'. Note that it does not enforce
+-- the order invariant 'Assignment' does.
+unorderedAssign ::
+    SomeVariable variable ->
+    TermLike variable ->
+    UnorderedAssignment variable
+unorderedAssign variable term =
+    UnorderedAssignment_
+    $ Assignment_ variable term
+
+{- | Extract an 'UnorderedAssignment' for a /particular/ variable.
 
 Returns 'Nothing' if the 'Predicate' is not in the correct form or the variable
 name does not match.
 
-See alse: 'retractAssignment'
+See also: 'retractAssignment'
 -}
 retractAssignmentFor ::
     InternalVariable variable =>
     SomeVariableName variable ->
     Predicate variable ->
-    Maybe (Assignment variable)
+    Maybe (UnorderedAssignment variable)
 retractAssignmentFor someVariableName predicate =
     case predicate of
         PredicateEquals (Var_ var) term
             | variableName var == someVariableName ->
-                Just (Assignment_ var term)
+                Just $ unorderedAssign var term
         PredicateEquals term (Var_ var)
             | variableName var == someVariableName ->
-                Just (Assignment_ var term)
+                Just $ unorderedAssign var term
         _ -> Nothing
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.

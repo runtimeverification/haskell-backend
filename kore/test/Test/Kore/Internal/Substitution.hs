@@ -521,6 +521,7 @@ test_retractAssignmentFor =
     ]
   where
     expectAssignment someVariable termLike actual = do
-        Assignment someVariable' termLike' <- expectJust actual
+        UnorderedAssignment someVariable' termLike' <-
+            expectJust actual
         assertEqual "" someVariable someVariable'
         assertEqual "" termLike termLike'
