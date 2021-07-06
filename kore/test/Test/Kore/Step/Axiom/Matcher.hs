@@ -43,7 +43,9 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Step.Axiom.Matcher (
     matchIncremental,
  )
+import Kore.Unparser
 import Prelude.Kore
+import Pretty
 import Test.Kore (
     testId,
  )
@@ -57,9 +59,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-
-import Kore.Unparser
-import Pretty
 
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
