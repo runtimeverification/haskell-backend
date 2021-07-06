@@ -208,6 +208,7 @@ data GraphView
 -- | Log options which can be changed by the log command.
 data GeneralLogOptions = GeneralLogOptions
     { logType :: !Log.KoreLogType
+    , logFormat :: !Log.KoreLogFormat
     , logLevel :: !Log.Severity
     , timestampsSwitch :: !Log.TimestampsSwitch
     , logEntries :: !Log.EntryTypes
@@ -219,18 +220,20 @@ generalLogOptionsTransformer ::
     Log.KoreLogOptions ->
     Log.KoreLogOptions
 generalLogOptionsTransformer
-    logOptions@(GeneralLogOptions _ _ _ _)
+    logOptions
     koreLogOptions =
         koreLogOptions
             { Log.logLevel = logLevel
             , Log.logEntries = logEntries
             , Log.logType = logType
+            , Log.logFormat = logFormat
             , Log.timestampsSwitch = timestampsSwitch
             }
       where
         GeneralLogOptions
             { logLevel
             , logType
+            , logFormat
             , logEntries
             , timestampsSwitch
             } = logOptions
@@ -442,8 +445,9 @@ helpText =
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log [<severity>] \"[\"<entry>\"]\"           configures logging; <severity> can be debug ... error; [<entry>] is a list formed by types below;\n\
-    \    <type> <switch-timestamp>            <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
+    \log [<severity>] [<format>]              configures logging; <severity> can be debug ... error; <format> can be standard or oneline;\n\
+    \    \"[\"<entry>\"]\"                    [<entry>] is a list formed by types below;\n\
+    \    <type> [<switch-timestamp>]          <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
     \debug[-type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
     \ [-type-] can be '-attempt-', '-apply-' or '-',\n\
     \exit                                     exits the repl\
