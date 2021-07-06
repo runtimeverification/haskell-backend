@@ -114,6 +114,7 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
 import Kore.Unparser (
     Unparse (..),
+    unparseToString,
  )
 import Log (
     Entry (..),
@@ -172,8 +173,14 @@ attemptEquation sideCondition termLike equation =
     match term1 term2 =
         matchIncremental sideCondition term1 term2
             & MaybeT
-            & noteT matchError
-
+            & noteT
+                ( trace
+                    ( "\nterm1\n" <> unparseToString term1
+                        <> "\nterm2\n"
+                        <> unparseToString term2
+                    )
+                    matchError -- matchError
+                )
     matchAndApplyResults left' argument' antiLeft'
         | isNothing argument'
           , isNothing antiLeft' = do
