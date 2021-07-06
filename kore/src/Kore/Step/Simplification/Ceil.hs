@@ -87,8 +87,8 @@ A ceil(or) is equal to or(ceil). We also take into account that
 simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Ceil Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Ceil sort (OrPattern RewritingVariableName) ->
+    simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
     Ceil{ceilChild = child} =
@@ -97,28 +97,13 @@ simplify
 {- | 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
 -}
-
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
-take an argument of type
-
-> CofreeF (Ceil Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
-information besides the pattern sort, which will make it even more useful to
-carry around.
-
--}
 simplifyEvaluated ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 simplifyEvaluated sideCondition child =
-    OrPattern.flatten
-        <$> OrPattern.traverse (makeEvaluate sideCondition) child
+    OrPattern.traverseOr (makeEvaluate sideCondition) child
 
 {- | Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
@@ -127,33 +112,18 @@ makeEvaluate ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 makeEvaluate sideCondition child
-    | Pattern.isTop child = return OrPattern.top
-    | Pattern.isBottom child = return OrPattern.bottom
-    | otherwise = makeEvaluateNonBoolCeil sideCondition child
-
-makeEvaluateNonBoolCeil ::
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
-makeEvaluateNonBoolCeil sideCondition patt@Conditional{term}
-    | isTop term =
-        return $
-            OrPattern.fromPattern
-                patt{term = mkTop_} -- erase the term's sort.
+    | Pattern.isTop child = return OrCondition.top
+    | Pattern.isBottom child = return OrCondition.bottom
+    | isTop term = return $ OrCondition.fromCondition condition
     | otherwise = do
         termCeil <- makeEvaluateTerm sideCondition term
-        result <-
-            And.simplifyEvaluatedMultiPredicate
-                sideCondition
-                ( MultiAnd.make
-                    [ MultiOr.make [Condition.eraseConditionalTerm patt]
-                    , termCeil
-                    ]
-                )
-        return (OrPattern.map Pattern.fromCondition_ result)
+        And.simplifyEvaluatedMultiPredicate
+            sideCondition
+            (MultiAnd.make [MultiOr.make [condition], termCeil])
+  where
+    (term, condition) = Pattern.splitTerm child
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.

@@ -41,8 +41,8 @@ import Kore.Equation.Application (
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
-import Kore.Log.DebugClaimState (
-    DebugClaimState,
+import Kore.Log.DebugBeginClaim (
+    DebugBeginClaim,
  )
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
@@ -57,8 +57,14 @@ import Kore.Log.DebugSolver (
 import Kore.Log.DebugSubstitutionSimplifier (
     DebugSubstitutionSimplifier,
  )
+import Kore.Log.DebugTransition (
+    DebugTransition,
+ )
 import Kore.Log.DebugUnification (
     DebugUnification,
+ )
+import Kore.Log.DebugUnifyBottom (
+    DebugUnifyBottom,
  )
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
@@ -124,6 +130,9 @@ import Kore.Log.WarnSymbolSMTRepresentation (
 import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
  )
+import Kore.Log.WarnUnsimplifiedPredicate (
+    WarnUnsimplifiedPredicate,
+ )
 import Log (
     Entry (..),
     LogMessage,
@@ -176,7 +185,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         (
             [ mk $ Proxy @DebugSolverSend
             , mk $ Proxy @DebugSolverRecv
-            , mk $ Proxy @DebugClaimState
+            , mk $ Proxy @DebugTransition
             , mk $ Proxy @DebugAppliedRewriteRules
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
@@ -187,6 +196,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
             , mk $ Proxy @WarnRetrySolverQuery
+            , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
             , mk $ Proxy @LogMessage
             , mk $ Proxy @InfoAttemptUnification
@@ -197,7 +207,9 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugUnification
             , mk $ Proxy @InfoProofDepth
             , mk $ Proxy @InfoExecDepth
+            , mk $ Proxy @DebugBeginClaim
             , mk $ Proxy @DebugProven
+            , mk $ Proxy @WarnUnsimplifiedPredicate
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction

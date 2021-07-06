@@ -45,6 +45,7 @@ import Kore.Internal.Substitution (
     orientSubstitution,
  )
 import Kore.Internal.TermLike
+import Kore.Substitute
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )

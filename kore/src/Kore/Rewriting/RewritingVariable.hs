@@ -62,6 +62,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike hiding (
     refreshVariables,
  )
+import Kore.Substitute
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Prelude.Kore
@@ -259,7 +260,7 @@ resetResultPattern initial config@Conditional{substitution} =
             . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
             $ refreshVariables avoiding introduced
     renamed :: Pattern RewritingVariableName
-    renamed = filtered & Pattern.substitute renaming
+    renamed = filtered & substitute renaming
 
 -- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName

@@ -13,6 +13,7 @@ module Test.Kore.Internal.Substitution (
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Kore.Internal.Substitution as Substitution
+import Kore.Substitute
 import Kore.TopBottom (
     isBottom,
     isTop,
@@ -38,7 +39,6 @@ import Test.Kore.Internal.TermLike hiding (
     mapVariables,
     markSimplified,
     simplifiedAttribute,
-    substitute,
     test_substitute,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -432,24 +432,24 @@ test_substitute =
         "is denormalized"
         [ testCase "Denormalized" $ do
             let input = wrap [assign (inject Mock.x) Mock.a]
-                actual = Substitution.substitute Map.empty input
+                actual = substitute Map.empty input
             assertDenormalized actual
         , testCase "Normalized" $ do
             let input = unsafeWrap [(inject Mock.x, Mock.a)]
-                actual = Substitution.substitute Map.empty input
+                actual = substitute Map.empty input
             assertDenormalized actual
         ]
     , testCase "applies to right-hand side" $ do
         let input = wrap [assign (inject Mock.x) (Mock.f (mkElemVar Mock.y))]
             subst = Map.singleton (inject $ variableName Mock.y) Mock.a
             expect = wrap [assign (inject Mock.x) (Mock.f Mock.a)]
-            actual = Substitution.substitute subst input
+            actual = substitute subst input
         assertEqual "" expect actual
     , testCase "does not apply to left-hand side" $ do
         let input = wrap [assign (inject Mock.x) (Mock.f (mkElemVar Mock.y))]
             subst = Map.singleton (inject $ variableName Mock.x) Mock.a
             expect = input
-            actual = Substitution.substitute subst input
+            actual = substitute subst input
         assertEqual "" expect actual
     ]
 

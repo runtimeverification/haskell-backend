@@ -44,11 +44,12 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Simplification.Predicate as Predicate
+import {-# SOURCE #-} qualified Kore.Step.Simplification.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
+import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
 import Logic
 import Prelude.Kore
@@ -71,9 +72,8 @@ unmodified.
 -}
 simplify ::
     forall simplifier any.
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
+    HasCallStack =>
+    MonadSimplify simplifier =>
     SubstitutionSimplifier simplifier ->
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
@@ -83,10 +83,10 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
   where
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
-            predicate' = Predicate.substitute substitution' predicate
+            predicate' = substitute substitution' predicate
 
         simplified <-
-            Predicate.simplify sideCondition predicate'
+            simplifyPredicate predicate'
                 >>= Logic.scatter
                 >>= simplifyPredicates sideCondition
         TopBottom.guardAgainstBottom simplified
@@ -103,6 +103,9 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         if fullySimplified simplifiedPattern
             then return (extract simplifiedPattern)
             else worker (extract simplifiedPattern)
+
+    simplifyPredicate predicate =
+        Predicate.simplify sideCondition predicate & lift
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional{predicate, substitution}) =

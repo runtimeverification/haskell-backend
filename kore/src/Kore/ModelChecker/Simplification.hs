@@ -27,7 +27,6 @@ import Kore.Internal.TermLike (
     pattern Forall_,
     pattern Implies_,
  )
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -38,6 +37,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Step.Simplification.Simplify
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -54,10 +54,10 @@ checkImplicationIsTop ::
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         (forallQuantifiers, Implies_ _ implicationLHS implicationRHS) -> do
-            let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkElemVar <$> Map.mapKeys inject rename
-                implicationLHS' = TermLike.substitute subst implicationLHS
-                implicationRHS' = TermLike.substitute subst implicationRHS
+            let rename' = refreshVariables lhsFreeVariables forallQuantifiers
+                subst = mkElemVar <$> Map.mapKeys inject rename'
+                implicationLHS' = substitute subst implicationLHS
+                implicationRHS' = substitute subst implicationRHS
                 resultTerm =
                     mkCeil_
                         ( mkAnd
