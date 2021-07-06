@@ -307,6 +307,7 @@ log :: Parser ReplCommand
 log = do
     literal "log"
     logLevel <- parseSeverityWithDefault
+    logFormat <- parseFormatWithDefault
     logEntries <- parseLogEntries
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
@@ -315,6 +316,7 @@ log = do
         Log
             GeneralLogOptions
                 { logType
+                , logFormat
                 , logLevel
                 , timestampsSwitch
                 , logEntries
@@ -322,6 +324,8 @@ log = do
   where
     parseSeverityWithDefault =
         severity <|> pure Log.defaultSeverity
+    parseFormatWithDefault =
+        fromMaybe Log.Standard <$> optional parseLogFormat
     parseTimestampSwitchWithDefault =
         fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
 
@@ -379,6 +383,12 @@ parseLogType = logStdOut <|> logFile
     logStdOut = Log.LogStdErr <$ literal "stderr"
     logFile =
         Log.LogFileText <$$> literal "file" *> quotedOrWordWithout ""
+
+parseLogFormat :: Parser Log.KoreLogFormat
+parseLogFormat = logStandard <|> logOneline
+  where
+    logStandard = Log.Standard <$ literal "standard"
+    logOneline = Log.OneLine <$ literal "oneline"
 
 parseTimestampSwitch :: Parser Log.TimestampsSwitch
 parseTimestampSwitch = disable <|> enable
