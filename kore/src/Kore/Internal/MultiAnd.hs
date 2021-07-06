@@ -23,14 +23,17 @@ module Kore.Internal.MultiAnd (
     distributeAnd,
     traverseOr,
     traverseOrAnd,
+    size,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import Data.List (genericLength)
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
 import Debug
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
+import GHC.Natural (Natural)
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
@@ -175,6 +178,9 @@ make patts = filterAnd (MultiAnd patts)
 -- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
+
+size :: MultiAnd a -> Natural
+size (MultiAnd list) = genericLength list
 
 {- | Simplify the conjunction.
 

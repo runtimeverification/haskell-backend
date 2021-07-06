@@ -71,7 +71,9 @@ parent to many children. The sequence of rules leading to each child will
 contain all the rules recorded before the branch, but each child keeps a
 separate record of applied rules after the branch.
 -}
-newtype TransitionT rule m a = TransitionT {getTransitionT :: AccumT (Seq rule) (LogicT m) a}
+newtype TransitionT rule m a = TransitionT
+    { getTransitionT :: AccumT (Seq rule) (LogicT m) a
+    }
     deriving stock (Typeable)
     deriving newtype (Applicative, Functor, Monad)
     deriving newtype (Alternative, MonadPlus)
