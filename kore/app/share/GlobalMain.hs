@@ -48,7 +48,6 @@ import qualified Data.Text.IO as Text
 import Data.Version (
     showVersion,
  )
-import GHC.Natural (Natural)
 import GHC.Stack (
     emptyCallStack,
  )
@@ -127,7 +126,6 @@ import Options.Applicative.Help.Chunk (
     vsepChunks,
  )
 import qualified Options.Applicative.Help.Pretty as Pretty
-import Options.SMT (readPositiveIntegral)
 import qualified Paths_kore as MetaData (
     version,
  )
@@ -157,7 +155,6 @@ data KoreProveOptions = KoreProveOptions
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
-    , maxCounterexamples :: Natural
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -203,18 +200,7 @@ parseKoreProveOptions =
                         \in case the prover fails."
                 )
             )
-        <*> parseMaxCounterexamples
   where
-    parseMaxCounterexamples = counterexamples <|> pure 1
-      where
-        counterexamples =
-            option
-                (readPositiveIntegral id "max-counterexamples")
-                ( metavar "MAX_COUNTEREXAMPLES"
-                    <> long "max-counterexamples"
-                    <> help "Specify the maximum number of counterexamples."
-                )
-
     parseGraphSearch =
         option
             readGraphSearch

@@ -353,14 +353,7 @@ proveClaim
                 let maybeUnproven = extractUnproven proofState
                 for_ maybeUnproven $ \unproven -> lift $ do
                     infoUnprovenDepth proofDepth
-                    stuckClaims <- State.get
-                    let updatedStuck =
-                            MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
-                    when
-                        (MultiAnd.size updatedStuck >= maxCounterexamples)
-                        $ do
-                            Monad.Except.throwError updatedStuck
-                    State.put updatedStuck
+                    updateSuckClaimsState unproven maxCounterexamples
                 pure proofDepth
                 & Logic.observeAllT
                 >>= checkLeftUnproven
@@ -546,14 +539,22 @@ throwStuckClaims maxCounterexamples rule prim state = do
         ClaimState.Stuck unproven -> do
             lift $ do
                 infoUnprovenDepth proofDepth'
-                stuckClaims <- State.get
-                let updatedStuck =
-                        MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
-                when (MultiAnd.size updatedStuck >= maxCounterexamples) $ do
-                    Monad.Except.throwError updatedStuck
-                State.put updatedStuck
+                updateSuckClaimsState unproven maxCounterexamples
                 return state'
         _ -> return state'
+
+updateSuckClaimsState ::
+    Monad m =>
+    SomeClaim ->
+    Natural ->
+    VerifierT m ()
+updateSuckClaimsState unproven maxCounterexamples = do
+    stuckClaims <- State.get
+    let updatedStuck =
+            MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
+    when (MultiAnd.size updatedStuck >= maxCounterexamples) $ do
+        Monad.Except.throwError updatedStuck
+    State.put updatedStuck
 
 -- | Modify a 'TransitionRule' to track the depth of a proof.
 trackProofDepth ::

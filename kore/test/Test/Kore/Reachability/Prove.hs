@@ -239,6 +239,27 @@ test_proveClaims =
                         proveClaimsMaxCounterexamples_
                             Unlimited
                             (Limit 1)
+                            2
+                            axioms
+                            [mkSimpleClaim Mock.a Mock.d]
+                            []
+                    let stuck =
+                            [ mkSimpleClaim Mock.b Mock.d
+                            , mkSimpleClaim Mock.c Mock.d
+                            ]
+                        expect = MultiAnd.make (fmap StuckClaim stuck)
+                    assertEqual "" expect actual
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
+    , testGroup "returns both stuck claims after disjunction, when asked for three" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <-
+                        proveClaimsMaxCounterexamples_
+                            Unlimited
+                            (Limit 1)
                             3
                             axioms
                             [mkSimpleClaim Mock.a Mock.d]
