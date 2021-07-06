@@ -1,0 +1,31 @@
+requires "domains.md"
+
+module TEST
+    imports INT
+    imports SET
+
+    configuration <k> $PGM:Step </k>
+
+    // syntax Step ::= run ( Set ) | done ( Set )
+    syntax Step ::= run ( Int ) | done ( Int )
+
+    rule <k> run(S) => done(S) ... </k>
+
+    // rule .Set -Set _ => .Set [simplification]
+    // rule (SetItem(X) REST) -Set SetItem(Y) => SetItem(X) (REST -Set SetItem(Y)) 
+    //   [simplification]
+
+    rule <k> done(1) => done(2) ... </k> // success
+    // rule done(1) => done(2) [simplification]
+    // rule (SetItem(1)) => SetItem(2)
+endmodule
+
+module TEST-SPEC
+    imports TEST
+
+    // claim <k> run(SetItem(1) -Set SetItem(X)) => done(SetItem(1)) ... </k> 
+    //       // requires pred(X)
+    //       requires X =/=Int 1
+    claim <k> run(1) => done(2) ... </k> 
+
+endmodule

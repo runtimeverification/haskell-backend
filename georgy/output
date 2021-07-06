@@ -1,0 +1,161 @@
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))
+TRACE::: Symbolic difference application pattern: 
+\and{SortSet{}}(
+        /* term: */
+        /* Fl Fn D Spa */
+        LblSet'Coln'difference{}(
+            /* Fl Fn D Sfa Cl */
+            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+            ),
+            /* Fl Fn D Spa */
+            /* InternalSet: */ /* element: */ LblSetItem{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        ),
+    \and{SortSet{}}(
+        /* predicate: */
+        /* D Sfa */ \top{SortSet{}}(),
+        /* substitution: */
+        \top{SortSet{}}()
+    ))

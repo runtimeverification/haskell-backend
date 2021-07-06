@@ -1,0 +1,236 @@
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(
+            /* Fl Fn D Spa */
+            /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                /* Fl Fn D Sfa */ EquationVarX:SortInt{}
+            )
+        ),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Spa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ EquationVarY:SortInt{}
+        )
+    )
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(
+            /* Fl Fn D Spa */
+            /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                /* Fl Fn D Sfa */ EquationVarX:SortInt{}
+            )
+        ),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Spa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ EquationVarY:SortInt{}
+        )
+    )
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(
+            /* Fl Fn D Spa */
+            /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                /* Fl Fn D Sfa */ EquationVarX:SortInt{}
+            )
+        ),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Spa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ EquationVarY:SortInt{}
+        )
+    )
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(
+            /* Fl Fn D Spa */
+            /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                /* Fl Fn D Sfa */ EquationVarX:SortInt{}
+            )
+        ),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Spa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ EquationVarY:SortInt{}
+        )
+    )
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */
+    /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1"))
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */
+        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+    )
+)

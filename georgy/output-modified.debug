@@ -1,0 +1,267 @@
+rm: cannot remove 'debug.log': No such file or directory
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ RuleVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ RuleVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ RuleVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ EquationVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ EquationVarY:SortKItem{}
+    )
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ RuleVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ RuleVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ RuleVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ RuleVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ RuleVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ RuleVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ EquationVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ EquationVarY:SortKItem{}
+    )
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ RuleVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ RuleVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ RuleVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ ConfigVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ ConfigVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ EquationVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ EquationVarY:SortKItem{}
+    )
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ ConfigVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ ConfigVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ ConfigVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ ConfigVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ EquationVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ EquationVarY:SortKItem{}
+    )
+)
+term2
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Sfa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ ConfigVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ ConfigVarREST:SortSet{}
+    ),
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa */ ConfigVarREST:SortSet{},
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ EquationVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ EquationVarY:SortKItem{}
+    )
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa */ ConfigVarREST:SortSet{},
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}(),
+    /* Fl Fn D Sfa */ EquationVar'Unds'0:SortSet{}
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa */ ConfigVarREST:SortSet{},
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
+
+term1
+/* Fn Spa */
+LblSet'Coln'difference{}(
+    /* Fn Spa */
+    /* InternalSet: */ Lbl'Unds'Set'Unds'{}(
+        /* element: */ LblSetItem{}(/* Fl Fn D Sfa */ EquationVarX:SortKItem{}),
+        /* opaque child: */ /* Fl Fn D Sfa */ EquationVarREST:SortSet{}
+    ),
+    /* Fl Fn D Spa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ EquationVarY:SortKItem{}
+    )
+)
+term2
+/* Fl Fn D Spa */
+LblSet'Coln'difference{}(
+    /* Fl Fn D Sfa */ ConfigVarREST:SortSet{},
+    /* Fl Fn D Sfa */
+    /* InternalSet: */ /* element: */ LblSetItem{}(
+        /* Fl Fn D Sfa */ ConfigVarY:SortKItem{}
+    )
+)
