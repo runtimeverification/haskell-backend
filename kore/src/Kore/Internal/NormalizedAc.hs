@@ -11,6 +11,7 @@ module Kore.Internal.NormalizedAc (
     nullAc,
     emptyNormalizedAc,
     asSingleOpaqueElem,
+    fromSingleOpaqueElem,
     isSymbolicKeyOfAc,
     lookupSymbolicKeyOfAc,
     removeSymbolicKeyOfAc,
@@ -390,6 +391,12 @@ asSingleOpaqueElem
           , [singleOpaqueElem] <- opaque =
             Just singleOpaqueElem
         | otherwise = Nothing
+
+fromSingleOpaqueElem ::
+    child ->
+    NormalizedAc key valueWrapper child
+fromSingleOpaqueElem opaqueElem =
+    emptyNormalizedAc { opaque = [opaqueElem] }
 
 -- TODO (thomas.tuegel): Change order of parameters.
 
