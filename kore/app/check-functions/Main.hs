@@ -1,11 +1,9 @@
 module Main (main) where
 
 import Control.Monad (
-    join,
+    foldM,
  )
-import Data.Map.Strict (
-    elems,
- )
+import qualified Data.Text as Text
 import GlobalMain (
     ExeName (..),
     Main,
@@ -22,10 +20,12 @@ import Kore.BugReport (
     withBugReport,
  )
 import Kore.Equation (
+    Equation (Equation),
     extractEquations,
     right,
  )
 import Kore.Internal.TermLike (
+    InternalVariable,
     isFunctionPattern,
  )
 import Kore.Log (
@@ -47,7 +47,16 @@ import Kore.Options (
 import Kore.Syntax.Module (
     ModuleName,
  )
+import Log (
+    logError,
+ )
 import Prelude.Kore
+import Pretty (
+    layoutOneLine,
+    pretty,
+    renderText,
+    (<+>),
+ )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -120,8 +129,24 @@ koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
 koreCheckFunctions opts = do
     definition <- loadDefinitions [fileName opts]
     mainModule <- loadModule (mainModuleName opts) definition
-    let eqns = join $ elems $ extractEquations mainModule
-    return $
-        if all (isFunctionPattern . right) eqns
-            then ExitSuccess
-            else ExitFailure 2 -- What code should this be?
+    foldM equationMap ExitSuccess $ extractEquations mainModule
+  where
+    equationMap status eqns = case status of
+        ExitSuccess -> foldM checkEquation ExitSuccess eqns
+        failure -> return failure
+
+checkEquation ::
+    InternalVariable variable =>
+    ExitCode ->
+    Equation variable ->
+    Main ExitCode
+checkEquation failure@(ExitFailure _) _ = return failure
+checkEquation _ eqn@Equation{right}
+    | isFunctionPattern right = return ExitSuccess
+    | otherwise = do
+        logError $ renderText $ layoutOneLine err
+        return $ ExitFailure 3
+  where
+    err =
+        pretty (Text.pack "RHS of equation is not a function pattern:")
+            <+> pretty eqn
