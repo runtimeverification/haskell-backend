@@ -7,7 +7,7 @@ kollect() {
     local name="$1"
     shift
     echo '#!/bin/sh' > "$name.sh"
-    "$@" | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
+    "$@" --save-temps --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
 
