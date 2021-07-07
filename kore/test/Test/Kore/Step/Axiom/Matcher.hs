@@ -359,9 +359,9 @@ test_matcherVariableFunction =
                     mkMatchResult
                         ( makeTruePredicate
                         , [ (inject Mock.xEquationInt, mkElemVar Mock.xRuleInt)
-                          -- I was expecting the following to be:
-                          -- (inject Mock.xEquationSet, mkElemVar Mock.xRuleSet)
-                          , (inject Mock.xEquationSet, Mock.framedSet [] [mkElemVar Mock.xRuleSet])
+                          , -- I was expecting the following to be:
+                            -- (inject Mock.xEquationSet, mkElemVar Mock.xRuleSet)
+                            (inject Mock.xEquationSet, Mock.framedSet [] [mkElemVar Mock.xRuleSet])
                           , (inject Mock.yEquationInt, mkElemVar Mock.yRuleInt)
                           ]
                             & Map.fromList
