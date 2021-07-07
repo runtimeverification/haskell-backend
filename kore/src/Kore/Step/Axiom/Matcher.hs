@@ -841,7 +841,7 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     | length excessAbstract1 == length excessAbstract2
       , length concrete1 == length concrete2
       , length opaque1 == length opaque2 = lift $ do
-        traverse pushValue abstractMerge
+        traverse_ pushValue abstractMerge
         traverse_
             (pushElement . uncurry Pair)
             (zip abstract1 abstract2)
