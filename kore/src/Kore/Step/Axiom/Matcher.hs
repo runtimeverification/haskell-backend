@@ -837,7 +837,7 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                                     removeSymbolicKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     _ -> empty
-    -- Case for syntactically equivalent modulo alpha-renaming
+    -- Case for ACs which are structurally equal:
     | length excessAbstract1 == length excessAbstract2
     , length concrete1 == length concrete2
     , length opaque1 == length opaque2 = lift $ do
