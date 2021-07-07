@@ -76,6 +76,7 @@ bigEndianVerifier = endiannessVerifier BigEndian
 
 data UnifyEqualsEndianness = UnifyEqualsEndianness
     { end1, end2 :: !Endianness
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 -- | Matches two terms having the Endianness constructor.
@@ -83,25 +84,23 @@ matchUnifyEqualsEndianness ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEqualsEndianness
-matchUnifyEqualsEndianness first second
-    | Endianness_ end1 <- first
-      , Endianness_ end2 <- second =
-        Just $ UnifyEqualsEndianness end1 end2
+matchUnifyEqualsEndianness term1 term2
+    | Endianness_ end1 <- term1
+      , Endianness_ end2 <- term2 =
+        Just UnifyEqualsEndianness{end1, end2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchUnifyEqualsEndianness #-}
 
 unifyEquals ::
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyEqualsEndianness ->
     unifier (Pattern RewritingVariableName)
-unifyEquals first second unifyData
-    | end1 == end2 = return (Pattern.fromTermLike first)
+unifyEquals unifyData
+    | end1 == end2 = return (Pattern.fromTermLike term1)
     | otherwise =
         explainAndReturnBottom
             "Cannot unify distinct constructors."
-            first
-            second
+            term1
+            term2
   where
-    UnifyEqualsEndianness{end1, end2} = unifyData
+    UnifyEqualsEndianness{end1, end2, term1, term2} = unifyData

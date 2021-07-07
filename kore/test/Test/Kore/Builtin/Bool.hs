@@ -162,12 +162,12 @@ test_unifyBoolValues =
         testCase testName $ do
             case Bool.matchBools term1 term2 of
                 Just unifyData -> do
-                    actual <- unify term1 term2 unifyData
+                    actual <- unify unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 unifyData =
-        run (lift $ Bool.unifyBool term1 term2 unifyData)
+    unify unifyData =
+        run (lift $ Bool.unifyBool unifyData)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -195,12 +195,12 @@ test_unifyBoolAnd =
         testCase testName $ do
             case Bool.matchUnifyBoolAnd term1 term2 of
                 Just unifyData -> do
-                    actual <- unify term1 term2 unifyData
+                    actual <- unify unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 unifyData =
-        Bool.unifyBoolAnd termSimplifier term1 term2 unifyData
+    unify unifyData =
+        Bool.unifyBoolAnd termSimplifier unifyData
             & lift
             & run
 
@@ -230,12 +230,12 @@ test_unifyBoolOr =
         testCase testName $ do
             case Bool.matchUnifyBoolOr term1 term2 of
                 Just unifyData -> do
-                    actual <- unify term1 term2 unifyData
+                    actual <- unify unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 unifyData =
-        Bool.unifyBoolOr termSimplifier term1 term2 unifyData
+    unify unifyData =
+        Bool.unifyBoolOr termSimplifier unifyData
             & lift
             & run
 

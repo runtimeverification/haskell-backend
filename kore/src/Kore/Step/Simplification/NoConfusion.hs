@@ -100,6 +100,10 @@ equalInjectiveHeadsAndEquals
             , secondChildren
             } = unifyData
 
+data DifferentConstructors = DifferentConstructors
+    { term1, term2 :: !(TermLike RewritingVariableName)
+    }
+
 {- | Matches
 
 @
@@ -118,7 +122,7 @@ matchDifferentConstructors ::
     OverloadSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe ()
+    Maybe DifferentConstructors
 matchDifferentConstructors
     OverloadSimplifier{isOverloaded}
     first
@@ -128,7 +132,7 @@ matchDifferentConstructors
           , firstHead /= secondHead
           , Symbol.isConstructor firstHead || isOverloaded firstHead
           , Symbol.isConstructor secondHead || isOverloaded secondHead =
-            Just ()
+            Just DifferentConstructors{term1 = first, term2 = second}
         | otherwise = empty
 {-# INLINE matchDifferentConstructors #-}
 
@@ -139,16 +143,16 @@ to be different; therefore their conjunction is @\\bottom@.
 -}
 constructorAndEqualsAssumesDifferentHeads ::
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
+    DifferentConstructors ->
     unifier a
 constructorAndEqualsAssumesDifferentHeads
-    first
-    second =
+    unifyData =
         do
             explainBottom
                 "Cannot unify different constructors or incompatible \
                 \sort injections."
-                first
-                second
+                term1
+                term2
             empty
+  where
+    DifferentConstructors{term1, term2} = unifyData

@@ -377,25 +377,25 @@ builtinFunctions =
 
 data FirstElemVarData = FirstElemVarData
     { pat1, pat2 :: !(TermLike RewritingVariableName)
-    , isFirstMatched :: !Bool
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 data AppAppData = AppAppData
     { args1, args2 :: ![TermLike RewritingVariableName]
     , symbol2 :: !Symbol
-    , isFirstMatched :: !Bool
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 data ListListData = ListListData
     { builtin1, builtin2 :: !(InternalList (TermLike RewritingVariableName))
-    , isFirstMatched :: !Bool
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 data ListAppData = ListAppData
     { pat1, pat2 :: !(TermLike RewritingVariableName)
     , args2 :: ![TermLike RewritingVariableName]
     , builtin1 :: !(InternalList (TermLike RewritingVariableName))
-    , isFirstMatched :: !Bool
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 data UnifyEqualsList
@@ -431,29 +431,29 @@ matchUnifyEqualsList ::
     Maybe UnifyEqualsList
 matchUnifyEqualsList tools first second
     | Just True <- isListSort tools sort1 =
-        worker normFirst normSecond True <|> worker normSecond normFirst False
+        worker first second normFirst normSecond <|> worker second first normSecond normFirst
     | otherwise = Nothing
   where
     sort1 = termLikeSort first
     normFirst = normalize first
     normSecond = normalize second
 
-    worker pat1@(ElemVar_ _) pat2 isFirstMatched
+    worker term1 term2 pat1@(ElemVar_ _) pat2
         | TermLike.isFunctionPattern pat2 =
-            Just $ FirstElemVar FirstElemVarData{pat1, pat2, isFirstMatched}
+            Just $ FirstElemVar FirstElemVarData{pat1, pat2, term1, term2}
         | otherwise = Nothing
-    worker (App_ symbol1 args1) (App_ symbol2 args2) isFirstMatched
+    worker term1 term2 (App_ symbol1 args1) (App_ symbol2 args2)
         | isSymbolConcat symbol1
           , isSymbolConcat symbol2 =
-            Just $ AppApp AppAppData{args1, args2, symbol2, isFirstMatched}
-    worker pat1@(InternalList_ builtin1) pat2 isFirstMatched =
+            Just $ AppApp AppAppData{args1, args2, symbol2, term1, term2}
+    worker term1 term2 pat1@(InternalList_ builtin1) pat2 =
         case pat2 of
-            InternalList_ builtin2 -> Just $ ListList ListListData{builtin1, builtin2, isFirstMatched}
+            InternalList_ builtin2 -> Just $ ListList ListListData{builtin1, builtin2, term1, term2}
             App_ symbol2 args2
-                | isSymbolConcat symbol2 -> Just $ ListApp ListAppData{pat1, pat2, args2, builtin1, isFirstMatched}
+                | isSymbolConcat symbol2 -> Just $ ListApp ListAppData{pat1, pat2, args2, builtin1, term1, term2}
                 | otherwise -> Nothing
             _ -> Nothing
-    worker _ _ _ = Nothing
+    worker _ _ _ _ = Nothing
 {-# INLINE matchUnifyEqualsList #-}
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
@@ -474,21 +474,17 @@ unifyEquals ::
       unifier (Pattern RewritingVariableName)
     ) ->
     SmtMetadataTools Attribute.Symbol ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyEqualsList ->
     unifier (Pattern RewritingVariableName)
 unifyEquals
     simplificationType
     simplifyChild
     tools
-    first
-    second
     unifyData =
         case unifyData of
             FirstElemVar FirstElemVarData{pat1, pat2} ->
                 simplifyChild pat1 pat2
-            AppApp AppAppData{args1, args2, symbol2, isFirstMatched} ->
+            AppApp AppAppData{args1, args2, symbol2, term1, term2} ->
                 case (args1, args2) of
                     ( [InternalList_ builtin1, x1@(Var_ _)]
                         , [InternalList_ builtin2, x2@(Var_ _)]
@@ -499,7 +495,7 @@ unifyEquals
                                 x1
                                 builtin2
                                 x2
-                                isFirstMatched
+                                term1 term2
                     ( [x1@(Var_ _), InternalList_ builtin1]
                         , [x2@(Var_ _), InternalList_ builtin2]
                         ) ->
@@ -509,16 +505,17 @@ unifyEquals
                                 builtin1
                                 x2
                                 builtin2
-                                isFirstMatched
+                                term1
+                                term2
                     _ -> empty
-            ListList ListListData{builtin1, builtin2, isFirstMatched} ->
-                unifyEqualsConcrete builtin1 builtin2 isFirstMatched
-            ListApp ListAppData{pat1, pat2, args2, builtin1, isFirstMatched} ->
+            ListList ListListData{builtin1, builtin2, term1, term2} ->
+                unifyEqualsConcrete builtin1 builtin2 term1 term2
+            ListApp ListAppData{pat1, pat2, args2, builtin1, term1, term2} ->
                 case args2 of
                     [InternalList_ builtin2, x@(Var_ _)] ->
-                        unifyEqualsFramedRight builtin1 builtin2 x isFirstMatched
+                        unifyEqualsFramedRight builtin1 builtin2 x term1 term2
                     [x@(Var_ _), InternalList_ builtin2] ->
-                        unifyEqualsFramedLeft builtin1 x builtin2 isFirstMatched
+                        unifyEqualsFramedLeft builtin1 x builtin2 term1 term2
                     [_, _] ->
                         Builtin.unifyEqualsUnsolved
                             simplificationType
@@ -536,10 +533,11 @@ unifyEquals
         unifyEqualsConcrete ::
             InternalList (TermLike RewritingVariableName) ->
             InternalList (TermLike RewritingVariableName) ->
-            Bool ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
-        unifyEqualsConcrete builtin1 builtin2 isFirstMatched
-            | Seq.length list1 /= Seq.length list2 = bottomWithExplanation isFirstMatched
+        unifyEqualsConcrete builtin1 builtin2 term1 term2
+            | Seq.length list1 /= Seq.length list2 = bottomWithExplanation term1 term2
             | otherwise = do
                 Reflection.give tools $ do
                     unified <- sequence $ Seq.zipWith simplifyChild list1 list2
@@ -558,14 +556,16 @@ unifyEquals
             InternalList (TermLike RewritingVariableName) ->
             InternalList (TermLike RewritingVariableName) ->
             TermLike RewritingVariableName ->
-            Bool ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         unifyEqualsFramedRight
             internal1
             internal2
             frame2
-            isFirstMatched
-                | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation isFirstMatched
+            term1
+            term2
+                | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation term1 term2
                 | otherwise =
                     do
                         let listSuffix1 = asInternal tools internalListSort suffix1
@@ -573,7 +573,8 @@ unifyEquals
                             unifyEqualsConcrete
                                 internal1{internalListChild = prefix1}
                                 internal2
-                                isFirstMatched
+                                term1
+                                term2
                         suffixUnified <- simplifyChild frame2 listSuffix1
                         let result =
                                 TermLike.markSimplified (mkInternalList internal1)
@@ -592,14 +593,16 @@ unifyEquals
             InternalList (TermLike RewritingVariableName) ->
             TermLike RewritingVariableName ->
             InternalList (TermLike RewritingVariableName) ->
-            Bool ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         unifyEqualsFramedLeft
             internal1
             frame2
             internal2
-            isFirstMatched
-                | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation isFirstMatched
+            term1
+            term2
+                | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation term1 term2
                 | otherwise =
                     do
                         let listPrefix1 = asInternal tools internalListSort prefix1
@@ -608,7 +611,8 @@ unifyEquals
                             unifyEqualsConcrete
                                 internal1{internalListChild = suffix1}
                                 internal2
-                                isFirstMatched
+                                term1
+                                term2
                         let result =
                                 mkInternalList internal1
                                     <$ prefixUnified
@@ -621,14 +625,12 @@ unifyEquals
                 (prefix1, suffix1) = Seq.splitAt prefixLength list1
                   where
                     prefixLength = Seq.length list1 - Seq.length suffix2
-        bottomWithExplanation isFirstMatched = do
+        bottomWithExplanation term1 term2 = do
             Monad.Unify.explainBottom
                 "Cannot unify lists of different length."
-                first'
-                second'
+                term1
+                term2
             return Pattern.bottom
-          where
-            (first', second') = if isFirstMatched then (first, second) else (second, first)
 
         unifyEqualsFramedRightRight ::
             TermLike.Symbol ->
@@ -636,7 +638,8 @@ unifyEquals
             TermLike RewritingVariableName ->
             InternalList (TermLike RewritingVariableName) ->
             TermLike RewritingVariableName ->
-            Bool ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         unifyEqualsFramedRightRight
             symbol
@@ -644,13 +647,15 @@ unifyEquals
             frame1
             internal2
             frame2
-            isFirstMatched
+            term1
+            term2
                 | length1 < length2 = do
                     prefixUnified <-
                         unifyEqualsConcrete
                             internal1
                             internal2{internalListChild = prefix2}
-                            isFirstMatched
+                            term1
+                            term2
                     let listSuffix2 = asInternal tools internalListSort suffix2
                         suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
                     suffixUnified <-
@@ -664,7 +669,7 @@ unifyEquals
                     return result
                 | length1 == length2 = do
                     prefixUnified <-
-                        unifyEqualsConcrete internal1 internal2 isFirstMatched
+                        unifyEqualsConcrete internal1 internal2 term1 term2
                     suffixUnified <- simplifyChild frame1 frame2
                     let result =
                             TermLike.markSimplified initial
@@ -672,7 +677,7 @@ unifyEquals
                                 <* suffixUnified
                     return result
                 | otherwise =
-                    unifyEqualsFramedRightRight symbol internal2 frame2 internal1 frame1 isFirstMatched
+                    unifyEqualsFramedRightRight symbol internal2 frame2 internal1 frame1 term1 term2
               where
                 initial = mkApplySymbol symbol [mkInternalList internal1, frame1]
                 InternalList{internalListSort} = internal1
@@ -688,7 +693,8 @@ unifyEquals
             InternalList (TermLike RewritingVariableName) ->
             TermLike RewritingVariableName ->
             InternalList (TermLike RewritingVariableName) ->
-            Bool ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         unifyEqualsFramedLeftLeft
             symbol
@@ -696,7 +702,8 @@ unifyEquals
             internal1
             frame2
             internal2
-            isFirstMatched
+            term1
+            term2
                 | length1 < length2 = do
                     let listPrefix2 = asInternal tools internalListSort prefix2
                         frame2Prefix2 = mkApplySymbol symbol [frame2, listPrefix2]
@@ -705,20 +712,21 @@ unifyEquals
                         unifyEqualsConcrete
                             internal1
                             internal2{internalListChild = suffix2}
-                            isFirstMatched
+                            term1
+                            term2
                     let result =
                             TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
                     return result
                 | length1 == length2 = do
                     prefixUnified <- simplifyChild frame1 frame2
-                    suffixUnified <- unifyEqualsConcrete internal1 internal2 isFirstMatched
+                    suffixUnified <- unifyEqualsConcrete internal1 internal2 term1 term2
                     let result =
                             TermLike.markSimplified initial
                                 <$ prefixUnified
                                 <* suffixUnified
                     return result
                 | otherwise =
-                    unifyEqualsFramedLeftLeft symbol frame2 internal2 frame1 internal1 isFirstMatched
+                    unifyEqualsFramedLeftLeft symbol frame2 internal2 frame1 internal1 term1 term2
               where
                 initial = mkApplySymbol symbol [frame1, mkInternalList internal1]
                 InternalList{internalListSort} = internal1

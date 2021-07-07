@@ -521,12 +521,12 @@ internalize tools termLike
 
 data NormAcData = NormAcData
     { normalized1, normalized2 :: !(InternalMap Key (TermLike RewritingVariableName))
-    , isFirstMatched :: !Bool
+    , term1, term2 :: !(TermLike RewritingVariableName)
     , acData :: !(Ac.UnifyEqualsNormAc NormalizedMap RewritingVariableName)
     }
 
 data UnifyEqualsMap
-    = ReturnBottom !Bool
+    = ReturnBottom !(TermLike RewritingVariableName) !(TermLike RewritingVariableName)
     | NormAc !NormAcData
 
 -- | Matches two concrete Map domain values.
@@ -550,20 +550,22 @@ matchUnifyEquals tools first second
     worker a b isFirstMatched
         | InternalMap_ normalized1 <- a
           , InternalMap_ normalized2 <- b =
-            NormAc . NormAcData normalized1 normalized2 isFirstMatched
+            NormAc . NormAcData normalized1 normalized2 term1 term2
                 <$> Ac.matchUnifyEqualsNormalizedAc
                     tools
                     normalized1
                     normalized2
         | otherwise = case normalizedOrBottom a of
-            Ac.Bottom -> Just $ ReturnBottom isFirstMatched
+            Ac.Bottom -> Just $ ReturnBottom term1 term2
             Ac.Normalized normalized1 ->
                 let a' = Ac.asInternal tools sort1 normalized1
                  in case normalizedOrBottom b of
-                        Ac.Bottom -> Just $ ReturnBottom isFirstMatched
+                        Ac.Bottom -> Just $ ReturnBottom term1 term2
                         Ac.Normalized normalized2 ->
                             let b' = Ac.asInternal tools sort1 normalized2
                              in worker a' b' isFirstMatched
+      where
+        (term1, term2) = if isFirstMatched then (a,b) else (b,a)
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
@@ -575,31 +577,26 @@ unifyEquals ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     SmtMetadataTools Attribute.Symbol ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyEqualsMap ->
     unifier (Pattern RewritingVariableName)
-unifyEquals unifyEqualsChildren tools first second unifyData =
+unifyEquals unifyEqualsChildren tools unifyData =
     case unifyData of
-        ReturnBottom isFirstMatched ->
+        ReturnBottom term1 term2 ->
             Monad.Unify.explainAndReturnBottom
                 "Duplicated elements in normalization."
-                first'
-                second'
-          where
-            (first', second') = if isFirstMatched then (first, second) else (second, first)
+                term1
+                term2
         NormAc unifyData' ->
             Ac.unifyEqualsNormalized
                 tools
-                first'
-                second'
+                term1
+                term2
                 unifyEqualsChildren
                 normalized1
                 normalized2
                 acData
           where
-            NormAcData{normalized1, normalized2, isFirstMatched, acData} = unifyData'
-            (first', second') = if isFirstMatched then (first, second) else (second, first)
+            NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'
 
 data InKeys term = InKeys
     { symbol :: !Symbol

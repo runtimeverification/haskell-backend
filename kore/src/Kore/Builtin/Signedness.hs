@@ -75,7 +75,8 @@ unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
 data UnifyEqualsSignedness = UnifyEqualsSignedness
-    { sign1, sign2 :: Signedness
+    { sign1, sign2 :: !Signedness
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 -- | Matches two terms having the Signedness constructor.
@@ -83,26 +84,23 @@ matchUnifyEqualsSignedness ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEqualsSignedness
-matchUnifyEqualsSignedness first second
-    | Signedness_ sign1 <- first
-      , Signedness_ sign2 <- second =
-        Just UnifyEqualsSignedness{sign1, sign2}
+matchUnifyEqualsSignedness term1 term2
+    | Signedness_ sign1 <- term1
+      , Signedness_ sign2 <- term2 =
+        Just UnifyEqualsSignedness{sign1, sign2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchUnifyEqualsSignedness #-}
 
 unifyEquals ::
-    InternalVariable variable =>
     MonadUnify unifier =>
-    TermLike variable ->
-    TermLike variable ->
     UnifyEqualsSignedness ->
-    unifier (Pattern variable)
-unifyEquals termLike1 termLike2 unifyData
-    | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
+    unifier (Pattern RewritingVariableName)
+unifyEquals unifyData
+    | sign1 == sign2 = return (Pattern.fromTermLike term1)
     | otherwise =
         explainAndReturnBottom
             "Cannot unify distinct constructors."
-            termLike1
-            termLike2
+            term1
+            term2
   where
-    UnifyEqualsSignedness{sign1, sign2} = unifyData
+    UnifyEqualsSignedness{sign1, sign2, term1, term2} = unifyData

@@ -554,7 +554,7 @@ unify termPair =
     runSimplifier Mock.env $ return unifyResult
   where
     unifyResult :: Maybe MatchResult
-    unifyResult = unifyOverloading Mock.overloadSimplifier termPair
+    unifyResult = matchResult <$> unifyOverloading Mock.overloadSimplifier termPair
 
 withUnification ::
     (UnificationResult -> Assertion) ->

@@ -6,6 +6,7 @@ module Kore.Step.Simplification.Overloading (
     matchOverloading,
     -- for testing purposes
     unifyOverloading,
+    OverloadingData (..),
     UnifyOverloadingResult,
     MatchOverloadingResult,
     UnifyOverloadingError (..),
@@ -132,9 +133,16 @@ matchOverloading ::
 matchOverloading termPair = do
     overloadSimplifier <- askOverloadSimplifier
     case unifyOverloading overloadSimplifier termPair of
-        Just (Resolution (Simple pair)) -> return pair
-        Just (ClashResult msg) -> throwE $ Clash msg
-        _ -> empty
+        Just OverloadingData{matchResult} -> case matchResult of
+            Resolution (Simple pair) -> return pair
+            ClashResult msg -> throwE $ Clash msg
+            _ -> empty
+        Nothing -> empty
+
+data OverloadingData = OverloadingData
+    { term1, term2 :: !(TermLike RewritingVariableName)
+    , matchResult :: !MatchResult
+    }
 
 {- |
  Tests whether the pair of terms can be coerced to have the same constructors
@@ -152,8 +160,9 @@ matchOverloading termPair = do
 unifyOverloading ::
     OverloadSimplifier ->
     Pair (TermLike RewritingVariableName) ->
-    Maybe MatchResult
-unifyOverloading overloadSimplifier termPair = case termPair of
+    Maybe OverloadingData
+unifyOverloading overloadSimplifier termPair =
+    OverloadingData term1 term2 <$> case termPair of
     Pair
         (Inj_ inj@Inj{injChild = App_ firstHead firstChildren})
         secondTerm@(App_ secondHead _) ->
@@ -187,6 +196,7 @@ unifyOverloading overloadSimplifier termPair = case termPair of
             Nothing -> worker secondTerm firstTerm
             Just result -> Just result
   where
+    Pair term1 term2 = termPair
     worker ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->

@@ -286,7 +286,7 @@ data IfThenElse term = IfThenElse
 data UnifyIfThenElse = UnifyIfThenElse
     { ifThenElse :: IfThenElse (TermLike RewritingVariableName)
     , -- The term that was not matched by @matchIfThenElse@
-      otherTerm :: TermLike RewritingVariableName
+      term :: TermLike RewritingVariableName
     }
 
 -- | Match the @KEQUAL.eq@ hooked symbol.
@@ -296,9 +296,9 @@ matchIfThenElse ::
     Maybe UnifyIfThenElse
 matchIfThenElse first second
     | Just ifThenElse <- match first =
-        Just $ UnifyIfThenElse{ifThenElse, otherTerm = second}
+        Just $ UnifyIfThenElse{ifThenElse, term = second}
     | Just ifThenElse <- match second =
-        Just $ UnifyIfThenElse{ifThenElse, otherTerm = first}
+        Just $ UnifyIfThenElse{ifThenElse, term = first}
     | otherwise = Nothing
   where
     match (App_ symbol [condition, branch1, branch2]) = do
@@ -315,9 +315,9 @@ unifyIfThenElse ::
     UnifyIfThenElse ->
     unifier (Pattern RewritingVariableName)
 unifyIfThenElse unifyChildren unifyData =
-    worker ifThenElse otherTerm
+    worker ifThenElse term
   where
-    UnifyIfThenElse{ifThenElse, otherTerm} = unifyData
+    UnifyIfThenElse{ifThenElse, term} = unifyData
     takeCondition value condition' =
         makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
             & Condition.fromPredicate
