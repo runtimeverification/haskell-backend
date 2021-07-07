@@ -821,6 +821,11 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                                     removeSymbolicKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     _ -> empty
+    | length excessAbstract1 == length excessAbstract2 =
+        traverse_
+            (pushElement . uncurry Pair)
+            (zip excessAbstract1 excessAbstract2)
+            & lift
     | otherwise = empty
   where
     abstract1 = elementsWithVariables normalized1
@@ -880,6 +885,7 @@ data IntersectionDifference a b = IntersectionDifference
     , excessFirst :: ![a]
     , excessSecond :: ![a]
     }
+    deriving stock (Show)
 
 emptyIntersectionDifference :: IntersectionDifference a b
 emptyIntersectionDifference =
