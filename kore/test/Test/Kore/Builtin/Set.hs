@@ -12,7 +12,6 @@ module Test.Kore.Builtin.Set (
     test_concatAssociates,
     test_concatNormalizes,
     test_difference,
-    test_difference_symbolic,
     test_toList,
     test_size,
     test_intersection_unit,
@@ -60,9 +59,6 @@ module Test.Kore.Builtin.Set (
     asInternal,
 ) where
 
-import Control.Error (
-    runMaybeT,
- )
 import qualified Data.Default as Default
 import qualified Data.HashMap.Strict as HashMap
 import Data.HashSet (
@@ -74,7 +70,6 @@ import qualified Data.Maybe as Maybe (
     fromJust,
  )
 import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
 import Hedgehog hiding (
     Concrete,
     opaque,
@@ -83,7 +78,6 @@ import Hedgehog hiding (
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
@@ -91,13 +85,11 @@ import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
-    configElementVariableFromId,
     mkConfigVariable,
     mkRewritingTerm,
     mkRuleVariable,
@@ -132,7 +124,6 @@ import Test.Kore.Builtin.Int (
     genIntegerKey,
     genIntegerPattern,
  )
-import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Internal.OrPattern as OrPattern
@@ -448,78 +439,6 @@ test_difference =
             (===) expect =<< evaluateT patDifference
             (===) OrPattern.top =<< evaluateT predicate
         )
-
-test_difference_symbolic :: [TestTree]
-test_difference_symbolic =
-    [ testCase "[X, 0, 1] -Set [X, 0] = [1]" $ do
-        let args =
-                [ mkSet_ [x, zero, one]
-                , mkSet_ [x, zero]
-                ]
-            expect =
-                makeMultipleAndPredicate (makeCeilPredicate <$> args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition oneSingleton
-        evalDifference (Just expect) args
-    , testCase "[X, 1] -Set [X, Y] = [1] -Set [Y]" $ do
-        let args =
-                [ mkSet_ [x, one]
-                , mkSet_ [x, y]
-                ]
-            expect =
-                makeMultipleAndPredicate (makeCeilPredicate <$> args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition (differenceSet oneSingleton ySingleton)
-        evalDifference (Just expect) args
-    , testCase "[X] -Set [X, Y] = []" $ do
-        let args =
-                [ mkSet_ [x]
-                , mkSet_ [x, y]
-                ]
-            expect =
-                makeMultipleAndPredicate
-                    (makeCeilPredicate <$> tail args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition (mkSet_ [])
-        evalDifference (Just expect) args
-    , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
-        let args =
-                [ mkSet_ [fx, one]
-                , mkSet_ [fx]
-                ]
-            expect =
-                makeCeilPredicate (head args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition oneSingleton
-        evalDifference (Just expect) args
-    ]
-  where
-    x = mkElemVar ("x" `ofSort` intSort)
-    y = mkElemVar ("y" `ofSort` intSort)
-    zero = Int.asInternal 0
-    one = Int.asInternal 1
-    fx = addInt x one
-    ySingleton = mkSet_ [y]
-    oneSingleton = mkSet_ [one]
-
-    ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
-    idName `ofSort` sort = configElementVariableFromId (testId idName) sort
-
-    evalDifference ::
-        HasCallStack =>
-        -- | expected result
-        Maybe (Pattern RewritingVariableName) ->
-        -- | arguments of 'differenceSet'
-        [TermLike RewritingVariableName] ->
-        Assertion
-    evalDifference expect args = do
-        actual <-
-            Set.evalDifference
-                SideCondition.top
-                (Application differenceSetSymbol args)
-                & runMaybeT
-                & runSimplifier testEnv
-        assertEqual "" expect actual
 
 test_toList :: TestTree
 test_toList =

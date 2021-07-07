@@ -10,6 +10,11 @@ Each directory contains a number of tests based on a single K definition.
 The tests require the K frontend to be installed;
 by default a suitable version will be installed at `../.build/k`.
 
+To only run the tests from a specific directory execute:
+```
+make -C test/<directory> test
+```
+from project root.
 
 ## Program tests
 
@@ -167,3 +172,4 @@ Add program or specification tests as described above.
 
 - `make test-kompiled/definition.kore`:
   `kompile` the definition.
+
