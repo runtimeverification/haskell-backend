@@ -359,7 +359,9 @@ test_matcherVariableFunction =
                     mkMatchResult
                         ( makeTruePredicate
                         , [ (inject Mock.xEquationInt, mkElemVar Mock.xRuleInt)
-                          , (inject Mock.xEquationSet, mkElemVar Mock.xRuleSet)
+                          -- I was expecting the following to be:
+                          -- (inject Mock.xEquationSet, mkElemVar Mock.xRuleSet)
+                          , (inject Mock.xEquationSet, Mock.framedSet [] [mkElemVar Mock.xRuleSet])
                           , (inject Mock.yEquationInt, mkElemVar Mock.yRuleInt)
                           ]
                           & Map.fromList
@@ -968,6 +970,16 @@ test_matching_Set =
             , (sSet, mkSet [mkInt 0] [])
             ]
         ]
+    , matches
+        "[y:Int] matches [x:Int]"
+        (mkSet [mkElemVar yInt] [])
+        (mkSet [mkElemVar xInt] [])
+        [(inject yInt, mkElemVar xInt)]
+    , matches
+        "s:Set matches [x:Int]"
+        (mkVar sSet)
+        (mkSet [mkElemVar xInt] [])
+        [(sSet, mkSet [mkElemVar xInt] [])]
     ]
 
 sSet :: SomeVariable RewritingVariableName
