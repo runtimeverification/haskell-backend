@@ -565,7 +565,7 @@ matchUnifyEquals tools first second
                             let b' = Ac.asInternal tools sort1 normalized2
                              in worker a' b' isFirstMatched
       where
-        (term1, term2) = if isFirstMatched then (a,b) else (b,a)
+        (term1, term2) = if isFirstMatched then (a, b) else (b, a)
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 

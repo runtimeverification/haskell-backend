@@ -495,7 +495,8 @@ unifyEquals
                                 x1
                                 builtin2
                                 x2
-                                term1 term2
+                                term1
+                                term2
                     ( [x1@(Var_ _), InternalList_ builtin1]
                         , [x2@(Var_ _), InternalList_ builtin2]
                         ) ->

@@ -450,8 +450,8 @@ bottomTermEquals
                                         OrPattern.map Condition.toPredicate secondCeil
                             , substitution = mempty
                             }
-  where
-    BottomTermEquals{term1, term2} = unifyData
+      where
+        BottomTermEquals{term1, term2} = unifyData
 
 data UnifyVariables = UnifyVariables
     {variable1, variable2 :: !(ElementVariable RewritingVariableName)}
@@ -560,7 +560,6 @@ variableFunctionEquals
       where
         VariableFunctionEquals{term1, term2, var} = unifyData
 
-
 data UnifyInjData = UnifyInjData
     { term1, term2 :: !(TermLike RewritingVariableName)
     , unifyInj :: !(UnifyInj (InjPair RewritingVariableName))
@@ -594,8 +593,8 @@ matchInj ::
 matchInj injSimplifier first second
     | Inj_ inj1 <- first
       , Inj_ inj2 <- second =
-        UnifyInjData first second <$>
-            matchInjs injSimplifier inj1 inj2
+        UnifyInjData first second
+            <$> matchInjs injSimplifier inj1 inj2
     | otherwise = Nothing
 {-# INLINE matchInj #-}
 

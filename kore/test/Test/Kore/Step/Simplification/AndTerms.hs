@@ -56,10 +56,10 @@ import Kore.Step.Simplification.And (
     termAnd,
  )
 import Kore.Step.Simplification.AndTerms (
+    FunctionAnd (..),
     functionAnd,
     matchFunctionAnd,
     termUnification,
-    FunctionAnd (..),
  )
 import Kore.Step.Simplification.Equals (
     termEquals,

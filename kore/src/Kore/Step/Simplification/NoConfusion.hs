@@ -154,5 +154,5 @@ constructorAndEqualsAssumesDifferentHeads
                 term1
                 term2
             empty
-  where
-    DifferentConstructors{term1, term2} = unifyData
+      where
+        DifferentConstructors{term1, term2} = unifyData

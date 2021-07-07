@@ -163,38 +163,38 @@ unifyOverloading ::
     Maybe OverloadingData
 unifyOverloading overloadSimplifier termPair =
     OverloadingData term1 term2 <$> case termPair of
-    Pair
-        (Inj_ inj@Inj{injChild = App_ firstHead firstChildren})
-        secondTerm@(App_ secondHead _) ->
-            flipResult
-                <$> unifyOverloadingVsOverloaded
+        Pair
+            (Inj_ inj@Inj{injChild = App_ firstHead firstChildren})
+            secondTerm@(App_ secondHead _) ->
+                flipResult
+                    <$> unifyOverloadingVsOverloaded
+                        overloadSimplifier
+                        secondHead
+                        secondTerm
+                        (Application firstHead firstChildren)
+                        inj{injChild = ()}
+        Pair
+            firstTerm@(App_ firstHead _)
+            (Inj_ inj@Inj{injChild = App_ secondHead secondChildren}) ->
+                unifyOverloadingVsOverloaded
                     overloadSimplifier
-                    secondHead
-                    secondTerm
-                    (Application firstHead firstChildren)
-                    inj{injChild = ()}
-    Pair
-        firstTerm@(App_ firstHead _)
-        (Inj_ inj@Inj{injChild = App_ secondHead secondChildren}) ->
-            unifyOverloadingVsOverloaded
-                overloadSimplifier
-                firstHead
-                firstTerm
-                (Application secondHead secondChildren)
-                inj{injChild = ()}
-    Pair
-        (Inj_ inj@Inj{injChild = App_ firstHead firstChildren})
-        (Inj_ inj'@Inj{injChild = App_ secondHead secondChildren})
-            | injFrom inj /= injFrom inj' -> -- this case should have been handled by now
-                unifyOverloadingCommonOverload
-                    overloadSimplifier
-                    (Application firstHead firstChildren)
+                    firstHead
+                    firstTerm
                     (Application secondHead secondChildren)
                     inj{injChild = ()}
-    Pair firstTerm secondTerm ->
-        case worker firstTerm secondTerm of
-            Nothing -> worker secondTerm firstTerm
-            Just result -> Just result
+        Pair
+            (Inj_ inj@Inj{injChild = App_ firstHead firstChildren})
+            (Inj_ inj'@Inj{injChild = App_ secondHead secondChildren})
+                | injFrom inj /= injFrom inj' -> -- this case should have been handled by now
+                    unifyOverloadingCommonOverload
+                        overloadSimplifier
+                        (Application firstHead firstChildren)
+                        (Application secondHead secondChildren)
+                        inj{injChild = ()}
+        Pair firstTerm secondTerm ->
+            case worker firstTerm secondTerm of
+                Nothing -> worker secondTerm firstTerm
+                Just result -> Just result
   where
     Pair term1 term2 = termPair
     worker ::
