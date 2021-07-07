@@ -991,16 +991,16 @@ test_matching_Set =
         [ (inject yInt, mkElemVar xInt)
         , (sSet, mkVar s'Set)
         ]
-    -- This should work, but it doesn't with the current
-    -- AC matching algorithm
-    -- , matches
-    --     "[y:Int, 1] s:Set matches [1, x:Int]"
-    --     (mkSet [mkElemVar yInt, mkInt 1] [mkVar sSet])
-    --     (mkSet [mkInt 1, mkElemVar xInt] [])
-    --     [ (inject yInt, mkElemVar xInt)
-    --     , (sSet, mkSet [] [])
-    --     ]
-    , matches
+    , -- This should work, but it doesn't with the current
+      -- AC matching algorithm
+      -- , matches
+      --     "[y:Int, 1] s:Set matches [1, x:Int]"
+      --     (mkSet [mkElemVar yInt, mkInt 1] [mkVar sSet])
+      --     (mkSet [mkInt 1, mkElemVar xInt] [])
+      --     [ (inject yInt, mkElemVar xInt)
+      --     , (sSet, mkSet [] [])
+      --     ]
+      matches
         "s:Set matches [x:Int]"
         (mkVar sSet)
         (mkSet [mkElemVar xInt] [])
