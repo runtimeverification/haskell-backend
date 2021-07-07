@@ -975,6 +975,31 @@ test_matching_Set =
         (mkSet [mkElemVar yInt] [])
         (mkSet [mkElemVar xInt] [])
         [(inject yInt, mkElemVar xInt)]
+    , doesn'tMatch
+        "[y:Int, 1] doesn't match [x:Int]"
+        (mkSet [mkElemVar yInt, mkInt 1] [])
+        (mkSet [mkElemVar xInt] [])
+    , matches
+        "[y:Int, 1] matches [1, x:Int]"
+        (mkSet [mkElemVar yInt, mkInt 1] [])
+        (mkSet [mkInt 1, mkElemVar xInt] [])
+        [(inject yInt, mkElemVar xInt)]
+    , matches
+        "[y:Int, 1] s:Set matches [1, x:Int] s':Set"
+        (mkSet [mkElemVar yInt, mkInt 1] [mkVar sSet])
+        (mkSet [mkInt 1, mkElemVar xInt] [mkVar s'Set])
+        [ (inject yInt, mkElemVar xInt)
+        , (sSet, mkVar s'Set)
+        ]
+    -- This should work, but it doesn't with the current
+    -- AC matching algorithm
+    -- , matches
+    --     "[y:Int, 1] s:Set matches [1, x:Int]"
+    --     (mkSet [mkElemVar yInt, mkInt 1] [mkVar sSet])
+    --     (mkSet [mkInt 1, mkElemVar xInt] [])
+    --     [ (inject yInt, mkElemVar xInt)
+    --     , (sSet, mkSet [] [])
+    --     ]
     , matches
         "s:Set matches [x:Int]"
         (mkVar sSet)
@@ -986,6 +1011,12 @@ sSet :: SomeVariable RewritingVariableName
 sSet =
     inject $
         mkElementVariable (testId "sSet") Test.setSort
+            & mapElementVariable (pure mkConfigVariable)
+
+s'Set :: SomeVariable RewritingVariableName
+s'Set =
+    inject $
+        mkElementVariable (testId "s'Set") Test.setSort
             & mapElementVariable (pure mkConfigVariable)
 
 mkSet ::
