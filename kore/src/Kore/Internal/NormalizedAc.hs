@@ -396,7 +396,7 @@ fromSingleOpaqueElem ::
     child ->
     NormalizedAc key valueWrapper child
 fromSingleOpaqueElem opaqueElem =
-    emptyNormalizedAc { opaque = [opaqueElem] }
+    emptyNormalizedAc{opaque = [opaqueElem]}
 
 -- TODO (thomas.tuegel): Change order of parameters.
 
