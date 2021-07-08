@@ -446,7 +446,7 @@ helpText =
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
     \log [<severity>] [<format>]              configures logging; <severity> can be debug ... error; <format> can be standard or oneline;\n\
-    \    \"[\"<entry>\"]\"                    [<entry>] is a list formed by types below;\n\
+    \    \"[\"<entry>\"]\"                        [<entry>] is a list formed by types below;\n\
     \    <type> [<switch-timestamp>]          <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
     \debug[-type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
     \ [-type-] can be '-attempt-', '-apply-' or '-',\n\
