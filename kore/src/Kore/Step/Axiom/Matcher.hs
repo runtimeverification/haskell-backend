@@ -844,7 +844,7 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
         traverse_ pushValue abstractMerge
         traverse_
             (pushElement . uncurry Pair)
-            (zip abstract1 abstract2)
+            (zip excessAbstract1 excessAbstract2)
         traverse_ pushValue concrete12
         traverse_ (push . uncurry Pair) (zip opaque1ACs opaque2ACs)
     | otherwise = empty
