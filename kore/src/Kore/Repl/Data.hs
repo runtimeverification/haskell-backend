@@ -220,7 +220,9 @@ generalLogOptionsTransformer ::
     Log.KoreLogOptions ->
     Log.KoreLogOptions
 generalLogOptionsTransformer
-    logOptions
+    -- this pattern match is to generate a compile error when GeneralLogOptions
+    -- is changed, so that this function must be changed to match.
+    logOptions@(GeneralLogOptions _ _ _ _ _)
     koreLogOptions =
         koreLogOptions
             { Log.logLevel = logLevel
