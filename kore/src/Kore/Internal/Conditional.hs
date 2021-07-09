@@ -347,6 +347,12 @@ instance
                 <$> Substitution.unwrap substitution
 
 instance
+    InternalVariable variable =>
+    Pretty (Conditional variable (TermLike variable))
+    where
+    pretty = unparse
+
+instance
     ( InternalVariable variable
     , SQL.Column term
     , Typeable term

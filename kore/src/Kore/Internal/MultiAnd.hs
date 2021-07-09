@@ -23,14 +23,17 @@ module Kore.Internal.MultiAnd (
     distributeAnd,
     traverseOr,
     traverseOrAnd,
+    size,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import Data.List (genericLength)
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
 import Debug
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
+import GHC.Natural (Natural)
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
@@ -56,10 +59,16 @@ import Kore.Internal.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Kore.Unparser (
+    unparseAssoc',
+ )
 import qualified Logic
 import Prelude.Kore hiding (
     map,
     traverse,
+ )
+import Pretty (
+    Pretty (..),
  )
 
 -- | 'MultiAnd' is a Matching logic and of its children
@@ -96,6 +105,10 @@ instance
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
+
+instance Pretty child => Pretty (MultiAnd child) where
+    pretty = unparseAssoc' "\\and{_}" "\\top{_}()" . (<$>) pretty . getMultiAnd
+    {-# INLINE pretty #-}
 
 instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
     (MultiAnd []) <> b = b
@@ -165,6 +178,9 @@ make patts = filterAnd (MultiAnd patts)
 -- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
+
+size :: MultiAnd a -> Natural
+size (MultiAnd list) = genericLength list
 
 {- | Simplify the conjunction.
 

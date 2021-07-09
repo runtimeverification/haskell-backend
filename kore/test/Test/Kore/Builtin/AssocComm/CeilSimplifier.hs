@@ -20,7 +20,7 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -302,7 +302,7 @@ makeEvaluate ::
 makeEvaluate termLike = do
     actualPattern <-
         makeEvaluate' termLike
-            >>= (return . OrPattern.toPatterns)
+            >>= (return . OrCondition.toConditions)
             >>= expectSingleResult
     assertBool
         "expected \\top term"
