@@ -34,7 +34,7 @@ import Kore.Internal.Variable (
     SomeVariable,
     SomeVariableName,
     expectElementVariable,
-    variableName,
+    variableName
  )
 import Kore.Substitute
 import Kore.Unparser (
@@ -144,14 +144,21 @@ refresh extraAvoiding multiExists@MultiExists{existsVariables, existsChild} =
 -}
 quantify ::
     forall variable child.
+    Ord variable =>
+    HasFreeVariables child variable =>
     ElementVariable variable ->
     MultiExists variable child ->
     MultiExists variable child
-quantify elementVariable ~MultiExists{existsVariables, existsChild} =
-    MultiExists
-        { existsVariables = elementVariable <| existsVariables
-        , existsChild
-        }
+quantify elementVariable ~original@MultiExists{existsVariables, existsChild}
+  | someVariableName `occursIn` existsChild =
+        MultiExists
+            { existsVariables = elementVariable <| existsVariables
+            , existsChild
+            }
+  | otherwise = original
+  where
+    someVariableName :: SomeVariableName variable
+    someVariableName = inject (variableName elementVariable)
 
 -- | Construct a 'MultiExists' containing @child@ without any quantifiers.
 unquantified :: child -> MultiExists variable child
