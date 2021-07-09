@@ -553,6 +553,7 @@ logUpdatesState = do
                 , logEntries =
                     Map.keysSet . Log.typeToText $ Log.registry
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , timestampsSwitch = Log.TimestampsEnable
                 }
         command = Log options
