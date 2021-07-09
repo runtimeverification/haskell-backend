@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 
 The simplification attribute identifies axioms that are useful for
 simplifying configurations, without being part of the main semantics.

@@ -2,7 +2,7 @@
 Module      : Kore.AST.Error
 Description : Extensions for errors related to the AST.
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.Sort.Unit
 Description : Unit sort attribute
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Sort.Unit (

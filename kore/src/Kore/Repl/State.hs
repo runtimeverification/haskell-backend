@@ -2,7 +2,7 @@
 Module      : Kore.Repl.Data
 Description : REPL data structures.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.State (

@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.HasDomainValues
 Description : Attribute saying whether a sort has domain values.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Attribute.Sort.HasDomainValues (

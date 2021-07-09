@@ -1,7 +1,7 @@
 {- |
 Description : Symbol declaration attributes
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 This module is intended to be imported qualified:
 @
 import qualified Kore.Attribute.Symbol as Attribute

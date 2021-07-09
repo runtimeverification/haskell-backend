@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 
 Unification of rules (used for stepping with rules or equations)
 -}

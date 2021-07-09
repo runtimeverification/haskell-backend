@@ -2,7 +2,7 @@
 Module      : Kore.Step.SMT.AST
 Description : Data types involved in declaring and using SMT symbols.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Step.SMT.AST (

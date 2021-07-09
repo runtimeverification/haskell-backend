@@ -3,7 +3,7 @@ Module      : Kore.Variables.Free
 Description : Specifies the 'TermWithVariablesClass' which is meant to define
               a term with variables and exports 'freeVariables'
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

@@ -2,7 +2,7 @@
 Module      : Kore.Step.SMT.Representation.Symbols
 Description : Builds an SMT representation for symbols.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Step.SMT.Representation.Symbols (

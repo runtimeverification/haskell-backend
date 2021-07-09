@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.SmtLemma
 Description : Mark a rewrite rule as an smt-lemma
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : phillip.harris@runtimeverification.com
 -}
 module Kore.Attribute.SmtLemma (

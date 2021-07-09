@@ -2,7 +2,7 @@
 Module      : Kore.Step.SMT.Resolvers
 Description : Translates sorts and symbols to a SMT representation.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

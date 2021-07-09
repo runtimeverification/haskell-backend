@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 
 A trusted claim is a reachability logic verification claim
 which can be used as a circularity without needing to be proven.

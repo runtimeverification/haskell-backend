@@ -2,7 +2,7 @@
 
 {- |
 Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+License     : BSD-3-Clause
 
 'Table' definitions for 'SOP.Generic' types.
 -}

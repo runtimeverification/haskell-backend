@@ -2,7 +2,7 @@
 
 {- |
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 
 When you have a function whose result is in a monad which is handled by
 the functions below, e.g.

@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.Axiom.Constructor
 Description : Constructor axiom attribute
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Attribute.Axiom.Constructor (

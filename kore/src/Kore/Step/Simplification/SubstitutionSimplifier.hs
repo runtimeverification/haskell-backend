@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Step.Simplification.SubstitutionSimplifier (
     SubstitutionSimplifier (..),

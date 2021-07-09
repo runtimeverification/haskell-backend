@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.String
 Description : Built-in string sort
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable

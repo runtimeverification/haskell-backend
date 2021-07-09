@@ -5,7 +5,7 @@ Module      : Kore.Internal.MultiOr
 Description : Data structures and functions for manipulating
               Or with any number of children.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

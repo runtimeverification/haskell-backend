@@ -2,7 +2,7 @@
 Module      : Kore.Step.Simplification.AndPredicates
 Description : Tools for And Predicate simplification.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

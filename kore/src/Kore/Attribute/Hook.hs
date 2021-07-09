@@ -2,7 +2,7 @@
 Module      : Data.Attribute.Hook
 Description : Representation and parser for hook attributes
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Hook (

@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.List
 Description : Built-in associative lists
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable

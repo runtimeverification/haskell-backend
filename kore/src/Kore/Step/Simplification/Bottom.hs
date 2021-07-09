@@ -2,7 +2,7 @@
 Module      : Kore.Step.Simplification.Bottom
 Description : Tools for Bottom pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

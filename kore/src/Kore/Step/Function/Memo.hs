@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 This module should be imported qualified:
 @
 import qualified Kore.Step.Function.Memo as Memo

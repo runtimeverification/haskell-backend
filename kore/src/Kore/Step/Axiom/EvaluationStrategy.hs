@@ -2,7 +2,7 @@
 Module      : Kore.Step.Axiom.EvaluationStrategy
 Description : Various strategies for axiom/builtin-based simplification.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

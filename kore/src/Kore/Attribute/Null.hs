@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.Null
 Description : Null attribute parser
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 The 'Null' attribute is used when we need a type to satisfy the attribute
 parser, but we do not actually care to parse any attributes. This parser simply

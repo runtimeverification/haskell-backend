@@ -6,7 +6,7 @@ Description : Handles built-in operations which are associative, commutative,
               with neutral elements, key-based, with unique keys, and which
               return bottom when applied to unique keys.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 
 This module is intended to be imported qualified, to avoid collision with other

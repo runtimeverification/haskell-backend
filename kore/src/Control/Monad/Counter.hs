@@ -4,7 +4,7 @@
 Module      : Control.Monad.Counter
 Description : Monads carrying a monotonically-increasing counter
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 The class 'MonadCounter' describes a monad carrying a monotonically-increasing

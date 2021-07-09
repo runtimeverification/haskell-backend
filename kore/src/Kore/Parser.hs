@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 This is a parser for the Kore language. Sample usage:
 @
 import Kore.Parser

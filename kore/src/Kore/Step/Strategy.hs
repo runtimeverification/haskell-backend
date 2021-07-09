@@ -2,7 +2,7 @@
 Module      : Kore.Step.Strategy
 Description : Strategies for pattern rewriting
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 This module should be imported qualified to avoid collisions with "Prelude":
 @

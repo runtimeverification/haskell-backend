@@ -2,7 +2,7 @@
 Module      : Kore.Step.SMT.Lemma
 Description : Declares all rules marked smt-lemma to the SMT solver.
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable

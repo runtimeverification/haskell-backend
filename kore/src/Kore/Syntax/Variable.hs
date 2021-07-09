@@ -2,7 +2,7 @@
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.

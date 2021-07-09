@@ -1,7 +1,7 @@
 {- |
 Description : Parsing axiom patterns into rules (and unparsing)
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Step.Rule (
     AxiomPatternError (..),

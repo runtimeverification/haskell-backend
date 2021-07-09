@@ -3,7 +3,7 @@
 {- |
 Description : Attribute grammars implemented as cofree annotations
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Attribute.Synthetic (
     Synthetic (..),

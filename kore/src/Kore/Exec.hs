@@ -2,7 +2,7 @@
 Module      : Kore.Exec
 Description : Expose concrete execution as a library
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+License     : BSD-3-Clause
 Stability   : experimental
 Portability : portable
 

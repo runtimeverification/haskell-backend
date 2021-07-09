@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.Source
 Description : Source file attribute
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Attribute.Source (

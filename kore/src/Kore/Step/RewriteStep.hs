@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+License     : BSD-3-Clause
 
 Direct interface to rule application (step-wise execution).
 See "Kore.Step" for the high-level strategy-based interface.
