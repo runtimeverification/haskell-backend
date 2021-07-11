@@ -1,2 +1,2 @@
 #!/bin/sh
-${KORE_EXEC:?} test-pop1-definition.kore --module ETHEREUM-SIMULATION --pattern test-pop1-tmp.in.BTxCp6ALSY "$@"
+${KORE_EXEC:?} test-pop1-definition.kore --module ETHEREUM-SIMULATION --pattern test-pop1-tmp.in.v74fjlMkdm "$@"

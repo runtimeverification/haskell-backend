@@ -1,2 +1,2 @@
 #!/bin/sh
-${KORE_EXEC:?} test-straight-line-definition.kore --module ETHEREUM-SIMULATION --pattern test-straight-line-tmp.in.dJtVgaxZYl --searchType FINAL --search test-straight-line-tmp.pattern.uR1lBPiyqM "$@"
+${KORE_EXEC:?} test-straight-line-definition.kore --module ETHEREUM-SIMULATION --pattern test-straight-line-tmp.in.YxkjKCoOLE --searchType FINAL --search test-straight-line-tmp.pattern.BRTI7opaQh "$@"
