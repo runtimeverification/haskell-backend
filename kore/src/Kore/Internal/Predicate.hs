@@ -46,6 +46,7 @@ module Kore.Internal.Predicate (
     forgetSimplified,
     wrapPredicate,
     containsSymbolWithIdPred,
+    traverseVariables,
     pattern PredicateTrue,
     pattern PredicateFalse,
     pattern PredicateAnd,
@@ -60,6 +61,7 @@ module Kore.Internal.Predicate (
 ) where
 
 import qualified Control.Comonad.Trans.Env as Env
+import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
@@ -75,6 +77,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity (
     Identity (..),
  )
+import Data.Generics.Product
 import Data.List.Extra (
     nubOrd,
  )
@@ -126,8 +129,10 @@ import Kore.Internal.TermLike hiding (
     markSimplifiedMaybeConditional,
     setSimplified,
     simplifiedAttribute,
+    traverseVariables,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike.Renaming
 import Kore.Sort (
     predicateSort,
  )
@@ -136,6 +141,10 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import Kore.Variables.Binding (
+    existsBinder,
+    forallBinder,
+ )
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
@@ -1179,6 +1188,99 @@ forgetSimplified = Recursive.fold worker
                     (TermLike.forgetSimplified <$> in')
         _ -> synthesize predF
 
+traverseAttributeVariables ::
+    forall m variable1 variable2.
+    Monad m =>
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    PredicatePattern variable1 ->
+    m (PredicatePattern variable2)
+traverseAttributeVariables adj =
+    field @"freeVariables" (Attribute.traverseFreeVariables adj)
+
+traverseVariables ::
+    forall variable1 variable2 m.
+    Ord variable1 =>
+    FreshPartialOrd variable2 =>
+    Monad m =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    Predicate variable1 ->
+    m (Predicate variable2)
+traverseVariables adj predicate =
+    renameFreeVariables
+        adj
+        (Attribute.freeVariables @_ @variable1 predicate)
+        >>= Reader.runReaderT (Recursive.fold worker predicate)
+  where
+    adjReader = (.) lift <$> adj
+    trElemVar = traverse $ traverseElementVariableName adjReader
+    traverseExists avoiding =
+        existsBinder (renameElementBinder trElemVar avoiding)
+    traverseForall avoiding =
+        forallBinder (renameElementBinder trElemVar avoiding)
+
+    worker ::
+        Base
+            (Predicate variable1)
+            (RenamingT variable1 variable2 m (Predicate variable2)) ->
+        RenamingT variable1 variable2 m (Predicate variable2)
+    worker (attrs :< predicateF) = do
+        ~attrs' <- traverseAttributeVariables askSomeVariableName attrs
+        let ~avoiding = freeVariables attrs'
+        predicateF' <- case predicateF of
+            ExistsF exists -> ExistsF <$> traverseExists avoiding exists
+            ForallF forall -> ForallF <$> traverseForall avoiding forall
+            _ ->
+                sequence predicateF
+                    >>=
+                    -- traverseVariablesF will not actually call the traversals
+                    -- because all the cases with variables are handled above.
+                    traverseVariablesF askSomeVariableName
+        (pure . Recursive.embed) (attrs' :< predicateF')
+
+traverseVariablesF ::
+    Ord variable1 =>
+    FreshPartialOrd variable2 =>
+    Monad m =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    PredicateF variable1 child ->
+    m (PredicateF variable2 child)
+traverseVariablesF adj =
+    \case
+        -- Non-trivial cases
+        ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
+        ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        -- Trivial cases
+        AndF andP -> pure (AndF andP)
+        BottomF botP -> pure (BottomF botP)
+        CeilF ceilP ->
+            let ceilP' = sequenceA (TermLike.traverseVariables adj <$> ceilP)
+             in fmap CeilF ceilP'
+        EqualsF eqP ->
+            let eqP' = sequenceA (TermLike.traverseVariables adj <$> eqP)
+             in fmap EqualsF eqP'
+        FloorF flrP ->
+            let flrP' = sequenceA (TermLike.traverseVariables adj <$> flrP)
+             in fmap FloorF flrP'
+        IffF iffP -> pure (IffF iffP)
+        ImpliesF impP -> pure (ImpliesF impP)
+        InF inP ->
+            let inP' = sequenceA (TermLike.traverseVariables adj <$> inP)
+             in fmap InF inP'
+        NotF notP -> pure (NotF notP)
+        OrF orP -> pure (OrF orP)
+        TopF topP -> pure (TopF topP)
+  where
+    trElemVar = traverse $ traverseElementVariableName adj
+    traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
+        Exists existsSort
+            <$> trElemVar existsVariable
+            <*> pure existsChild
+    traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
+        Forall forallSort
+            <$> trElemVar forallVariable
+            <*> pure forallChild
+
 mapVariables ::
     forall variable1 variable2.
     InternalVariable variable1 =>
@@ -1187,22 +1289,7 @@ mapVariables ::
     Predicate variable1 ->
     Predicate variable2
 mapVariables adj predicate =
-    let termPredicate =
-            TermLike.mapVariables adj
-                . fromPredicate_
-                $ predicate
-     in either
-            errorMappingVariables
-            id
-            (makePredicate termPredicate)
-  where
-    errorMappingVariables termPredicate =
-        error . show . Pretty.vsep $
-            [ "Error when mapping the variables of predicate:"
-            , Pretty.pretty predicate
-            , "The resulting term is not a predicate:"
-            , Pretty.pretty termPredicate
-            ]
+    runIdentity (traverseVariables ((.) pure <$> adj) predicate)
 
 -- |Is the predicate free of the given variables?
 isFreeOf ::
