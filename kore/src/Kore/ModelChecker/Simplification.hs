@@ -27,16 +27,16 @@ import Kore.Internal.TermLike (
     pattern Forall_,
     pattern Implies_,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
     filterMultiOr,
  )
-import qualified Kore.Step.Simplification.Pattern as Pattern (
+import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
  )
-import Kore.Step.Simplification.Simplify
+import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),

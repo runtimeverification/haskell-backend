@@ -52,10 +52,10 @@ import Kore.Internal.TermLike (
     mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort
-import Kore.Step.Step (
+import Kore.Rewrite.Step (
     Renaming,
  )
+import Kore.Sort
 import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),

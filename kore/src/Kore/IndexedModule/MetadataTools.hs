@@ -26,10 +26,10 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute (
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
-import Kore.Sort
-import qualified Kore.Step.SMT.AST as SMT.AST (
+import qualified Kore.Rewrite.SMT.AST as SMT.AST (
     SmtDeclarations,
  )
+import Kore.Sort
 import Kore.Syntax.Application (
     SymbolOrAlias (..),
  )

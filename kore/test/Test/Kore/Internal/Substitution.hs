@@ -41,7 +41,7 @@ import Test.Kore.Internal.TermLike hiding (
     simplifiedAttribute,
     test_substitute,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Terse (

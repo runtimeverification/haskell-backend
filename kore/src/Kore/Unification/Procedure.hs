@@ -23,14 +23,14 @@ import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )

@@ -39,7 +39,7 @@ import Kore.Log.WarnIfLowProductivity (
  )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Repl.Data
-import Kore.Step.SMT.Lemma
+import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (
     ModuleName (..),
  )
