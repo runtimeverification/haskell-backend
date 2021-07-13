@@ -17,6 +17,9 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Condition,
@@ -31,13 +34,18 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Log.WarnUnsimplifiedPredicate (
+    warnUnsimplifiedPredicate,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Simplify.Ceil as Ceil
 import Kore.Simplify.Simplify
 import Kore.Syntax (
     And (..),
     Bottom (..),
+    Ceil (..),
     Iff (..),
     Implies (..),
     Not (..),
@@ -90,21 +98,34 @@ type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
 simplify ::
     forall simplifier.
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
+    HasCallStack =>
+    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
     simplifier NormalForm
-simplify sideCondition =
-    loop . MultiOr.singleton . MultiAnd.singleton
+simplify sideCondition original =
+    loop 0 (mkSingleton original)
   where
-    loop :: NormalForm -> simplifier NormalForm
-    loop input = do
-        output <- MultiAnd.traverseOrAnd worker input
-        (if input == output then pure else loop) output
+    limit :: Int
+    limit = 4
+
+    loop :: Int -> NormalForm -> simplifier NormalForm
+    loop count input
+        | count >= limit = do
+            warnUnsimplifiedPredicate limit original input
+            -- Return the current NormalForm. Do not iterate further.
+            pure input
+        | otherwise = do
+            output <- MultiAnd.traverseOrAnd worker input
+            if input == output
+                then pure output
+                else loop (count + 1) output
 
     replacePredicate = SideCondition.replacePredicate sideCondition
+
+    simplifyTerm = simplifyTermLikeOnly sideCondition
+
+    repr = SideCondition.toRepresentation sideCondition
 
     worker ::
         Predicate RewritingVariableName ->
@@ -112,6 +133,8 @@ simplify sideCondition =
     worker predicate
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
+        | Predicate.isSimplified repr predicate =
+            pure (mkSingleton predicate)
         | otherwise =
             case predicateF of
                 AndF andF -> normalizeAnd =<< traverse worker andF
@@ -121,9 +144,18 @@ simplify sideCondition =
                 NotF notF -> simplifyNot =<< traverse worker notF
                 ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
                 IffF iffF -> simplifyIff =<< traverse worker iffF
+                CeilF ceilF ->
+                    simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
+
+-- | Construct a 'NormalForm' from a single 'Predicate'.
+mkSingleton ::
+    Predicate RewritingVariableName ->
+    NormalForm
+mkSingleton = MultiOr.singleton . MultiAnd.singleton
+{-# INLINE mkSingleton #-}
 
 -- | See 'normalizeMultiAnd'.
 normalizeAnd ::
@@ -282,8 +314,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         MultiAnd.toPredicate predicates
             & fromNot
             & Predicate.markSimplified
-            & MultiAnd.singleton
-            & MultiOr.singleton
+            & mkSingleton
             & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
 
@@ -334,3 +365,11 @@ simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
         normalizeAnd And{andSort = iffSort, andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
         normalizeOr Or{orSort = iffSort, orFirst, orSecond}
+
+simplifyCeil ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Ceil sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyCeil sideCondition =
+    Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))

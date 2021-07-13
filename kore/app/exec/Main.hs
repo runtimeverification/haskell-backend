@@ -95,6 +95,9 @@ import Kore.Parser (
     ParsedPattern,
     parseKorePattern,
  )
+import Kore.Parser.ParserUtils (
+    readPositiveIntegral,
+ )
 import Kore.Reachability (
     ProveClaimsResult (..),
     SomeClaim,
@@ -301,6 +304,7 @@ data KoreExecOptions = KoreExecOptions
     , koreMergeOptions :: !(Maybe KoreMergeOptions)
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
+    , maxCounterexamples :: Natural
     }
     deriving stock (GHC.Generic)
 
@@ -345,7 +349,16 @@ parseKoreExecOptions startTime =
             <*> optional parseKoreMergeOptions
             <*> optional parseRtsStatistics
             <*> parseBugReportOption
-
+            <*> parseMaxCounterexamples
+    parseMaxCounterexamples = counterexamples <|> pure 1
+      where
+        counterexamples =
+            option
+                (readPositiveIntegral id "max-counterexamples")
+                ( metavar "MAX_COUNTEREXAMPLES"
+                    <> long "max-counterexamples"
+                    <> help "Specify the maximum number of counterexamples."
+                )
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
@@ -457,6 +470,7 @@ koreExecSh
                             koreMergeOptions
                             rtsStatistics
                             _
+                            maxCounterexamples
                         ) =
         unlines $
             [ "#!/bin/sh"
@@ -479,6 +493,7 @@ koreExecSh
                     , pure $ unwords ["--strategy", unparseExecutionMode strategy]
                     , rtsStatistics
                         $> unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
+                    , pure $ unwords ["--max-counterexamples", show maxCounterexamples]
                     ]
                 , unparseKoreSolverOptions koreSolverOptions
                 , unparseKoreLogOptions koreLogOptions
@@ -698,6 +713,7 @@ koreProve execOptions proveOptions = do
     specModule <- loadModule specMainModule definition
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
+    let KoreExecOptions{maxCounterexamples} = execOptions
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
@@ -705,6 +721,7 @@ koreProve execOptions proveOptions = do
             graphSearch
             breadthLimit
             depthLimit
+            maxCounterexamples
             mainModule
             specModule
             maybeAlreadyProvenModule

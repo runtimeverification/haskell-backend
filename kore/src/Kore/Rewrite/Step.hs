@@ -107,15 +107,17 @@ unifyRules ::
     MonadSimplify simplifier =>
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
+    -- | SideCondition containing metadata
+    SideCondition RewritingVariableName ->
     -- | Initial configuration
     Pattern RewritingVariableName ->
     -- | Rule
     [rule] ->
     simplifier [UnifiedRule rule]
-unifyRules initial rules =
+unifyRules sideCondition initial rules =
     Logic.observeAllT $ do
         rule <- Logic.scatter rules
-        unifyRule initial rule
+        unifyRule sideCondition initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -133,27 +135,30 @@ unifyRule ::
     RewritingVariableName ~ UnifyingRuleVariable rule =>
     MonadSimplify simplifier =>
     UnifyingRule rule =>
+    -- | SideCondition containing metadata
+    SideCondition RewritingVariableName ->
     -- | Initial configuration
     Pattern RewritingVariableName ->
     -- | Rule
     rule ->
     LogicT simplifier (UnifiedRule rule)
-unifyRule initial rule = do
+unifyRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        sideCondition =
-            SideCondition.fromConditionWithReplacements initialCondition
+        sideCondition' =
+            sideCondition
+                & SideCondition.addConditionWithReplacements initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
     unification <-
-        unificationProcedure sideCondition initialTerm ruleLeft
+        unificationProcedure sideCondition' initialTerm ruleLeft
             & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         Simplifier.simplifyCondition
-            sideCondition
+            sideCondition'
             (unification <> requires')
     return (rule `Conditional.withCondition` unification')
 
@@ -237,6 +242,8 @@ respect to the initial condition.
 applyInitialConditions ::
     forall simplifier.
     MonadSimplify simplifier =>
+    -- | SideCondition containing metadata
+    SideCondition RewritingVariableName ->
     -- | Initial conditions
     Condition RewritingVariableName ->
     -- | Unification conditions
@@ -244,7 +251,7 @@ applyInitialConditions ::
     LogicT simplifier (OrCondition RewritingVariableName)
 -- TODO(virgil): This should take advantage of the LogicT and not return
 -- an OrCondition.
-applyInitialConditions initial unification = do
+applyInitialConditions sideCondition initial unification = do
     -- Combine the initial conditions and the unification conditions. The axiom
     -- requires clause is already included in the unification conditions, and
     -- the conjunction has already been simplified with respect to the initial
@@ -253,7 +260,7 @@ applyInitialConditions initial unification = do
         -- Add the simplified unification solution to the initial conditions. We
         -- must preserve the initial conditions here, so it cannot be used as
         -- the side condition!
-        Simplifier.simplifyCondition SideCondition.top (initial <> unification)
+        Simplifier.simplifyCondition sideCondition (initial <> unification)
             & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
@@ -274,25 +281,28 @@ toConfigurationVariablesCondition =
 applyRemainder ::
     forall simplifier.
     MonadSimplify simplifier =>
+    -- | SideCondition containing metadata
+    SideCondition RewritingVariableName ->
     -- | Initial configuration
     Pattern RewritingVariableName ->
     -- | Remainder
     Condition RewritingVariableName ->
     LogicT simplifier (Pattern RewritingVariableName)
-applyRemainder initial remainder = do
+applyRemainder sideCondition initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level
     -- side conditions because we will not re-evaluate them after they are added
     -- to the top level.
     partial <-
         Simplifier.simplifyCondition
-            ( SideCondition.fromConditionWithReplacements $
-                Pattern.withoutTerm initial
+            ( sideCondition
+                & SideCondition.addConditionWithReplacements
+                    (Pattern.withoutTerm initial)
             )
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!
     Simplifier.simplifyCondition
-        SideCondition.topTODO
+        sideCondition
         (Pattern.andCondition initial partial)
         <&> Pattern.mapVariables resetConfigVariable

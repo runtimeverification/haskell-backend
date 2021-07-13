@@ -12,6 +12,10 @@ module Kore.Simplify.In (
 ) where
 
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -49,36 +53,23 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    In Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    In sort (OrPattern RewritingVariableName) ->
+    simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
     In{inContainedChild = first, inContainingChild = second} =
         simplifyEvaluatedIn sideCondition first second
 
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make
-'simplifyEvaluatedIn' take an argument of type
-
-> CofreeF (In Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of two 'OrPattern' arguments. The type of 'makeEvaluateIn' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
-information besides the pattern sort, which will make it even more useful to
-carry around.
-
--}
 simplifyEvaluatedIn ::
     forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedIn sideCondition first second
-    | OrPattern.isFalse first = return OrPattern.bottom
-    | OrPattern.isFalse second = return OrPattern.bottom
+    | OrPattern.isFalse first = return OrCondition.bottom
+    | OrPattern.isFalse second = return OrCondition.bottom
     | OrPattern.isTrue first = Ceil.simplifyEvaluated sideCondition second
     | OrPattern.isTrue second = Ceil.simplifyEvaluated sideCondition first
     | otherwise =
@@ -92,11 +83,11 @@ makeEvaluateIn ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    simplifier (OrCondition RewritingVariableName)
 makeEvaluateIn sideCondition first second
     | Pattern.isTop first = Ceil.makeEvaluate sideCondition second
     | Pattern.isTop second = Ceil.makeEvaluate sideCondition first
-    | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
+    | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
     | otherwise =
         And.makeEvaluate
             Not.notSimplifier

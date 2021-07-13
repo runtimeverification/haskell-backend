@@ -520,6 +520,7 @@ logTests =
             GeneralLogOptions
                 { logLevel = Log.Debug
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , timestampsSwitch = Log.TimestampsEnable
                 , logEntries = mempty
                 }
@@ -528,6 +529,7 @@ logTests =
             GeneralLogOptions
                 { logLevel = Log.Warning
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , timestampsSwitch = Log.TimestampsEnable
                 , logEntries = mempty
                 }
@@ -536,6 +538,7 @@ logTests =
             GeneralLogOptions
                 { logLevel = Log.Warning
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , logEntries = Set.singleton debugAttemptEquationType
                 , timestampsSwitch = Log.TimestampsEnable
                 }
@@ -544,6 +547,7 @@ logTests =
             GeneralLogOptions
                 { logLevel = Log.Error
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , logEntries = Set.singleton debugAttemptEquationType
                 , timestampsSwitch = Log.TimestampsEnable
                 }
@@ -552,6 +556,7 @@ logTests =
             GeneralLogOptions
                 { logLevel = Log.Info
                 , logType = Log.LogFileText "f s"
+                , logFormat = Log.Standard
                 , logEntries =
                     Set.fromList
                         [debugAttemptEquationType, debugApplyEquationType]
@@ -562,10 +567,47 @@ logTests =
             GeneralLogOptions
                 { logLevel = Log.Info
                 , logType = Log.LogFileText "f s"
+                , logFormat = Log.Standard
                 , logEntries =
                     Set.fromList
                         [debugAttemptEquationType, debugApplyEquationType]
                 , timestampsSwitch = Log.TimestampsEnable
+                }
+    , "log oneline [] stderr"
+        `parsesTo_` Log
+            GeneralLogOptions
+                { logLevel = Log.Warning
+                , logType = Log.LogStdErr
+                , logFormat = Log.OneLine
+                , logEntries = Set.empty
+                , timestampsSwitch = Log.TimestampsEnable
+                }
+    , "log standard [] stderr"
+        `parsesTo_` Log
+            GeneralLogOptions
+                { logLevel = Log.Warning
+                , logType = Log.LogStdErr
+                , logFormat = Log.Standard
+                , logEntries = Set.empty
+                , timestampsSwitch = Log.TimestampsEnable
+                }
+    , "log [] stderr enable-log-timestamps"
+        `parsesTo_` Log
+            GeneralLogOptions
+                { logLevel = Log.Warning
+                , logType = Log.LogStdErr
+                , logFormat = Log.Standard
+                , logEntries = Set.empty
+                , timestampsSwitch = Log.TimestampsEnable
+                }
+    , "log [] stderr disable-log-timestamps"
+        `parsesTo_` Log
+            GeneralLogOptions
+                { logLevel = Log.Warning
+                , logType = Log.LogStdErr
+                , logFormat = Log.Standard
+                , logEntries = Set.empty
+                , timestampsSwitch = Log.TimestampsDisable
                 }
     ]
 

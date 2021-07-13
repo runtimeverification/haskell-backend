@@ -73,9 +73,8 @@ import qualified Pretty
 -- to add memoization to a function evaluator.
 evaluateApplication ::
     forall simplifier.
-    ( MonadSimplify simplifier
-    , MonadThrow simplifier
-    ) =>
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
     -- | The predicate from the configuration
     SideCondition RewritingVariableName ->
     -- | Aggregated children predicate and substitution.

@@ -14,6 +14,7 @@ module Kore.Parser.ParserUtils (
     parseOnly,
     peekChar,
     peekChar',
+    readPositiveIntegral,
 ) where
 
 import Data.Text (
@@ -22,6 +23,11 @@ import Data.Text (
 import Data.Void (
     Void,
  )
+import Options.Applicative (
+    auto,
+    readerError,
+ )
+import qualified Options.Applicative.Types as Options
 import Prelude.Kore hiding (
     takeWhile,
  )
@@ -61,3 +67,15 @@ parseOnly parser filePathForErrors input =
     case parse parser filePathForErrors input of
         Left err -> Left (errorBundlePretty err)
         Right v -> Right v
+
+readPositiveIntegral ::
+    (Read t, Integral t) =>
+    (t -> b) ->
+    String ->
+    Options.ReadM b
+readPositiveIntegral ctor optionName = do
+    readInt <- auto
+    when (readInt <= 0) err
+    return . ctor $ readInt
+  where
+    err = readerError . unwords $ [optionName, "must be a positive integer."]

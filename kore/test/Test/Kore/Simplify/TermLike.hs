@@ -1,5 +1,6 @@
 module Test.Kore.Simplify.TermLike (
     test_simplify_sideConditionReplacements,
+    test_simplifyOnly,
 ) where
 
 import Control.Monad.Catch (
@@ -17,19 +18,27 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+    mkRepresentation,
+ )
 import Kore.Internal.TermLike
 import qualified Kore.Rewrite.Function.Memo as Memo
 import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
     getRewritingPattern,
     mkConfigVariable,
+    mkElementConfigVariable,
     mkRewritingTerm,
  )
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.TermLike as TermLike
 import qualified Logic
 import Prelude.Kore
+
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
+import qualified Pretty
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -119,3 +128,71 @@ instance MonadSimplify TestSimplifier where
 
     -- Throw an error if any term would be simplified.
     simplifyTermLike = undefined
+    simplifyTermLikeOnly = undefined
+
+test_simplifyOnly :: [TestTree]
+test_simplifyOnly =
+    [ (test "LIST.List \\and simplification failure")
+        (mkAnd (Mock.concatList mkTop_ mkTop_) (Mock.builtinList []))
+        expectUnsimplified
+    , (test "Non-function symbol without evaluators")
+        Mock.plain00Subsort
+        (expectTerm Mock.plain00Subsort)
+    , (test "\\rewrites - simplified children")
+        ( mkRewrites
+            (mkBottom Mock.topSort)
+            (mkCeil Mock.topSort Mock.unitSet)
+        )
+        expectUnsimplified
+    , (test "Sort injection")
+        (Mock.sortInjection Mock.topSort (mkElemVar x))
+        (expectTerm $ Mock.sortInjection Mock.topSort (mkElemVar x))
+    , (test "Sort injection - Nested")
+        ( Mock.sortInjection
+            Mock.topSort
+            (Mock.sortInjection Mock.subSort Mock.aSubSubsort)
+        )
+        (expectTerm $ Mock.sortInjection Mock.topSort Mock.aSubSubsort)
+    , (test "Variable")
+        (mkElemVar x)
+        (expectTerm $ mkElemVar x)
+    ]
+  where
+    expectUnsimplified = Nothing
+    expectTerm termLike = Just (OrPattern.fromTermLike termLike)
+
+    x = mkElementConfigVariable Mock.x
+
+    test ::
+        HasCallStack =>
+        TestName ->
+        TermLike RewritingVariableName ->
+        -- | Expected output, if simplified.
+        Maybe (OrPattern RewritingVariableName) ->
+        TestTree
+    test testName input maybeExpect =
+        testCase testName $ do
+            let expect = fromMaybe (OrPattern.fromTermLike input) maybeExpect
+            actual <- simplifyOnly input
+            let message =
+                    (show . Pretty.vsep)
+                        [ "Expected:"
+                        , (Pretty.indent 4) (Pretty.pretty expect)
+                        , "Actually:"
+                        , (Pretty.indent 4) (Pretty.pretty actual)
+                        ]
+            assertEqual message expect actual
+            (assertBool "Expected simplified pattern")
+                (isNothing maybeExpect || OrPattern.isSimplified repr actual)
+
+    repr :: SideCondition.Representation
+    repr =
+        SideCondition.mkRepresentation
+            (SideCondition.top @RewritingVariableName)
+
+simplifyOnly ::
+    TermLike RewritingVariableName ->
+    IO (OrPattern RewritingVariableName)
+simplifyOnly =
+    runSimplifier Mock.env
+        . TermLike.simplifyOnly SideCondition.top

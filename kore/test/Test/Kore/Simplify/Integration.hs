@@ -539,10 +539,30 @@ test_simplificationIntegration =
                             . MultiAnd.make
                         )
                 )
-                    [ [fromNot cfCeil, fromNot chCeil]
-                    , [chCeil, cgCeil, cfCeil]
-                    , [chCeil, cfCeil, fromNot cgCeil]
+                    [
+                        [ fromImplies (fromAnd cfCeil cgCeil) chCeil
+                        , fromImplies cfCeil chCeil
+                        , fromImplies chCeil (fromAnd cfCeil cgCeil)
+                        ]
+                    ,
+                        [ fromImplies (fromAnd cfCeil cgCeil) chCeil
+                        , fromImplies cfCeil chCeil
+                        , fromImplies chCeil cfCeil
+                        ]
                     ]
+            -- Uncomment when using the new Iff simplifier:
+            -- ( OrPattern.fromPatterns
+            --     . map
+            --         ( Pattern.fromCondition Mock.boolSort
+            --             . Condition.fromPredicate
+            --             . MultiAnd.toPredicate
+            --             . MultiAnd.make
+            --         )
+            -- )
+            --     [ [fromNot cfCeil, fromNot chCeil]
+            --     , [chCeil, cgCeil, cfCeil]
+            --     , [chCeil, cfCeil, fromNot cgCeil]
+            --     ]
             cfCeil = makeCeilPredicate Mock.cf
             cgCeil = makeCeilPredicate Mock.cg
             chCeil = makeCeilPredicate Mock.ch
