@@ -1232,10 +1232,7 @@ traverseVariables adj predicate =
             ForallF forall -> ForallF <$> traverseForall avoiding forall
             _ ->
                 sequence predicateF
-                    >>=
-                    -- traverseVariablesF will not actually call the traversals
-                    -- because all the cases with variables are handled above.
-                    traverseVariablesF askSomeVariableName
+                    >>= traverseVariablesF askSomeVariableName
         (pure . Recursive.embed) (attrs' :< predicateF')
 
 traverseVariablesF ::
@@ -1247,25 +1244,23 @@ traverseVariablesF ::
     m (PredicateF variable2 child)
 traverseVariablesF adj =
     \case
-        -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
-        -- Trivial cases
         AndF andP -> pure (AndF andP)
         BottomF botP -> pure (BottomF botP)
         CeilF ceilP ->
-            let ceilP' = sequenceA (TermLike.traverseVariables adj <$> ceilP)
+            let ceilP' = (traverse . TermLike.traverseVariables) adj ceilP
              in fmap CeilF ceilP'
         EqualsF eqP ->
-            let eqP' = sequenceA (TermLike.traverseVariables adj <$> eqP)
+            let eqP' = (traverse . TermLike.traverseVariables) adj eqP
              in fmap EqualsF eqP'
         FloorF flrP ->
-            let flrP' = sequenceA (TermLike.traverseVariables adj <$> flrP)
+            let flrP' = (traverse . TermLike.traverseVariables) adj flrP
              in fmap FloorF flrP'
         IffF iffP -> pure (IffF iffP)
         ImpliesF impP -> pure (ImpliesF impP)
         InF inP ->
-            let inP' = sequenceA (TermLike.traverseVariables adj <$> inP)
+            let inP' = (traverse . TermLike.traverseVariables) adj inP
              in fmap InF inP'
         NotF notP -> pure (NotF notP)
         OrF orP -> pure (OrF orP)
