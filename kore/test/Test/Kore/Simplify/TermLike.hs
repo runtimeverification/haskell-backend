@@ -35,10 +35,9 @@ import Kore.Simplify.Simplify
 import qualified Kore.Simplify.TermLike as TermLike
 import qualified Logic
 import Prelude.Kore
-
+import qualified Pretty
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
-import qualified Pretty
 import Test.Tasty
 import Test.Tasty.HUnit
 
