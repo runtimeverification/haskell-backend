@@ -9,7 +9,7 @@ module Kore.Log.WarnBoundedModelChecker (
 
 import Kore.Attribute.SourceLocation
 import Kore.Internal.TermLike
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     ImplicationRule,
  )
 import Log

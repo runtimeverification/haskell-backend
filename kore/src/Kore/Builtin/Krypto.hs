@@ -70,7 +70,7 @@ import Kore.Builtin.Encoding (
  )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Prelude.Kore

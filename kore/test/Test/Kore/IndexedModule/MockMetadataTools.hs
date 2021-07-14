@@ -30,11 +30,11 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools (
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts,
  )
+import qualified Kore.Rewrite.SMT.AST as SMT.AST (
+    SmtDeclarations,
+ )
 import Kore.Sort (
     Sort,
- )
-import qualified Kore.Step.SMT.AST as SMT.AST (
-    SmtDeclarations,
  )
 import Kore.Syntax.Application (
     SymbolOrAlias (..),

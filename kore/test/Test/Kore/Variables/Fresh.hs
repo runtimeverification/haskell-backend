@@ -39,7 +39,7 @@ import Test.Kore (
     idGen,
     testId,
  )
-import Test.Kore.Step.MockSymbols (
+import Test.Kore.Rewrite.MockSymbols (
     testSort0,
     testSort1,
  )

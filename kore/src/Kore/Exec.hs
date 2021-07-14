@@ -122,49 +122,49 @@ import Kore.Reachability (
  )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
-import Kore.Rewriting.RewritingVariable
-import Kore.Step
-import Kore.Step.Rule (
+import Kore.Rewrite
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.Rule (
     extractImplicationClaims,
     extractRewriteAxioms,
  )
-import qualified Kore.Step.Rule.Combine as Rules (
+import qualified Kore.Rewrite.Rule.Combine as Rules (
     mergeRules,
     mergeRulesConsecutiveBatches,
  )
-import Kore.Step.Rule.Expand (
+import Kore.Rewrite.Rule.Expand (
     ExpandSingleConstructors (..),
  )
-import Kore.Step.Rule.Simplify (
+import Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     ImplicationRule (..),
     RewriteRule (..),
     getRewriteRule,
     lhsEqualsRhs,
     mapRuleVariables,
  )
-import Kore.Step.RulePattern as RulePattern (
+import Kore.Rewrite.RulePattern as RulePattern (
     RulePattern (..),
  )
-import Kore.Step.Search (
+import Kore.Rewrite.Search (
     searchGraph,
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Simplification.Data (
-    evalSimplifier,
- )
-import qualified Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Rule as Rule
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition (
+import qualified Kore.Rewrite.Search as Search
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
+ )
+import Kore.Simplify.Data (
+    evalSimplifier,
+ )
+import qualified Kore.Simplify.Data as Simplifier
+import qualified Kore.Simplify.Pattern as Pattern
+import qualified Kore.Simplify.Rule as Rule
+import Kore.Simplify.Simplify (
+    MonadSimplify,
  )
 import Kore.Syntax.Module (
     ModuleName,
