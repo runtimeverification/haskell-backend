@@ -18,7 +18,7 @@ import Data.These
 import Debug
 import Kore.Internal.InternalBool
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.TopBottom

@@ -4,7 +4,7 @@ module Test.Kore.Log.WarnFunctionWithoutEvaluators (
 
 import Kore.Log.WarnFunctionWithoutEvaluators
 import Prelude.Kore ()
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.SQL
 import Test.Tasty
 

@@ -21,21 +21,21 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.ClaimPattern (
+    ClaimPattern (..),
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
     mkRuleVariable,
  )
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
- )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RulePattern (..),
     injectTermIntoRHS,
     mkRewritingRule,
     rulePattern,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Unparser (
@@ -45,8 +45,8 @@ import Numeric.Natural (
     Natural,
  )
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

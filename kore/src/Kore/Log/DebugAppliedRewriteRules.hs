@@ -19,7 +19,7 @@ import Kore.Internal.Variable (
     VariableName,
     toVariableName,
  )
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Kore.Unparser
 import Log
 import Prelude.Kore

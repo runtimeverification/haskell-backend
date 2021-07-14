@@ -39,12 +39,12 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (
     SomeVariableName,
  )
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern (
+import Kore.Rewrite.AxiomPattern (
     AxiomPattern,
     getAxiomPattern,
  )
-import Kore.Step.Step (
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.Step (
     UnifiedRule,
     UnifyingRule (..),
     wouldNarrowWith,

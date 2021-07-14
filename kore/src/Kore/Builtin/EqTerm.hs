@@ -21,13 +21,13 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier (
+import Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     TermSimplifier,
  )
 import Kore.Unification.Unify as Unify

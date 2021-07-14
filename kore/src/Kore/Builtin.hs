@@ -69,13 +69,13 @@ import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
 import Kore.Internal.TermLike
-import Kore.Step.Axiom.Identifier (
+import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Prelude.Kore

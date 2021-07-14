@@ -64,10 +64,10 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Module (
     ModuleName (..),
  )

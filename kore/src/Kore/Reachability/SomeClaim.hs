@@ -43,17 +43,17 @@ import Kore.Internal.TermLike (
 import Kore.Reachability.AllPathClaim
 import Kore.Reachability.Claim
 import Kore.Reachability.OnePathClaim
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.AxiomPattern
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.AxiomPattern
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
  )
-import Kore.Step.Transition (
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Rewrite.Transition (
     TransitionT,
  )
-import qualified Kore.Step.Transition as Transition
+import qualified Kore.Rewrite.Transition as Transition
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom (
     TopBottom (..),

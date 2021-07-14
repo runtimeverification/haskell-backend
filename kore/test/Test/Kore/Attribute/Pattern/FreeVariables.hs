@@ -16,7 +16,7 @@ import Kore.Syntax hiding (
     PatternF (..),
  )
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 
