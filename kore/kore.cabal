@@ -140,6 +140,7 @@ common library
   build-depends: logict >=0.7
   build-depends: megaparsec >=7.0.4
   build-depends: mmorph >=1.1
+  build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: optparse-applicative >=0.14
   build-depends: parser-combinators >=1.1
@@ -303,6 +304,7 @@ library
     Kore.Internal.InternalString
     Kore.Internal.Key
     Kore.Internal.MultiAnd
+    Kore.Internal.MultiExists
     Kore.Internal.MultiOr
     Kore.Internal.NormalizedAc
     Kore.Internal.OrCondition
@@ -677,6 +679,7 @@ test-suite kore-test
     Test.Kore.Internal.From
     Test.Kore.Internal.Key
     Test.Kore.Internal.MultiAnd
+    Test.Kore.Internal.MultiExists
     Test.Kore.Internal.OrCondition
     Test.Kore.Internal.OrPattern
     Test.Kore.Internal.Pattern

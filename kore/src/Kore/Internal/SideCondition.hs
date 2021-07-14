@@ -200,7 +200,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             (Pretty.vsep . concat)
                 [ ["Assumed true condition:"]
                 , (pure . Pretty.indent 4 . Pretty.pretty)
-                    (MultiAnd.toPredicate assumedTrue)
+                    (Predicate.fromMultiAnd assumedTrue)
                 , ["TermLike replacements:"]
                 , HashMap.foldlWithKey' (acc unparse) [] replacementsTermLike
                 , ["Predicate replacements:"]
@@ -380,13 +380,13 @@ toPredicate condition@(SideCondition _ _ _ _ _) =
         definedPredicate
   where
     SideCondition{assumedTrue, definedTerms} = condition
-    assumedTruePredicate = MultiAnd.toPredicate assumedTrue
+    assumedTruePredicate = Predicate.fromMultiAnd assumedTrue
     definedPredicate =
         definedTerms
             & HashSet.toList
             & fmap Predicate.makeCeilPredicate
             & MultiAnd.make
-            & MultiAnd.toPredicate
+            & Predicate.fromMultiAnd
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>

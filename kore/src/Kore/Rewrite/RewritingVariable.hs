@@ -258,7 +258,7 @@ resetResultPattern initial config@Conditional{substitution} =
     renaming =
         Map.mapKeys (fmap RuleVariableName)
             . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
-            $ refreshVariables avoiding introduced
+            $ refreshVariablesSet avoiding introduced
     renamed :: Pattern RewritingVariableName
     renamed = filtered & substitute renaming
 

@@ -10,6 +10,7 @@ module Kore.Variables.Fresh (
     refreshElementVariable,
     refreshSetVariable,
     refreshVariables,
+    refreshVariablesSet,
     refreshVariables',
 
     -- * Re-exports
@@ -18,6 +19,10 @@ module Kore.Variables.Fresh (
 
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import Control.Monad.State.Strict (
+    runState,
+ )
+import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product (
     field,
  )
@@ -25,6 +30,7 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
+import Data.MonoTraversable
 import Data.Set (
     Set,
  )
@@ -250,36 +256,57 @@ result with 'Kore.Internal.TermLike.mkVar':
 -}
 refreshVariables ::
     FreshName variable =>
+    MonoTraversable variables =>
+    Element variables ~ Variable variable =>
     -- | variables to avoid
     Set variable ->
     -- | variables to rename
-    Set (Variable variable) ->
+    variables ->
     Map variable (Variable variable)
-refreshVariables avoid rename =
-    Map.mapKeys variableName $
-        refreshVariables' avoid rename
+refreshVariables avoid variables =
+    let (_, refreshed) = refreshVariables' avoid variables
+     in Map.mapKeys variableName refreshed
 
-refreshVariables' ::
+refreshVariablesSet ::
     FreshName variable =>
     -- | variables to avoid
     Set variable ->
     -- | variables to rename
     Set (Variable variable) ->
-    Map (Variable variable) (Variable variable)
-refreshVariables' avoid0 =
-    snd <$> foldl' refreshVariablesWorker (avoid0, Map.empty)
+    Map variable (Variable variable)
+refreshVariablesSet avoid = refreshVariables avoid . Set.toList
+
+refreshVariables' ::
+    FreshName variable =>
+    MonoTraversable variables =>
+    Element variables ~ Variable variable =>
+    -- | variables to avoid
+    Set variable ->
+    -- | variables to rename
+    variables ->
+    (variables, Map (Variable variable) (Variable variable))
+refreshVariables' avoid0 variables =
+    let (variables', (_, rename)) =
+            runState (otraverse worker variables) (avoid0, Map.empty)
+     in (variables', rename)
   where
-    refreshVariablesWorker (avoid, rename) var
-        | Just var' <- refreshVariable avoid var =
-            let avoid' =
-                    -- Avoid the freshly-generated variable in future renamings.
-                    Set.insert (variableName var') avoid
-                rename' =
-                    -- Record a mapping from the original variable to the
-                    -- freshly-generated variable.
-                    Map.insert var var' rename
-             in (avoid', rename')
-        | otherwise =
-            -- The variable does not collide with any others, so renaming is not
-            -- necessary.
-            (Set.insert (variableName var) avoid, rename)
+    worker var = do
+        (avoid, rename) <- State.get
+        case refreshVariable avoid var of
+            Just var' -> do
+                let avoid' =
+                        -- Avoid the freshly-generated variable in future
+                        -- renamings.
+                        Set.insert (variableName var') avoid
+                    rename' =
+                        -- Record a mapping from the original variable to the
+                        -- freshly-generated variable.
+                        Map.insert var var' rename
+                State.put (avoid', rename')
+                pure var'
+            _ -> do
+                -- The variable does not collide with any others, so renaming is
+                -- not necessary.
+                let avoid' = Set.insert (variableName var) avoid
+                State.put (avoid', rename)
+                pure var

@@ -152,15 +152,15 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
         predicates :: MultiAnd (Predicate RewritingVariableName)
         predicates =
             mconcat
-                [ MultiAnd.fromPredicate (predicate unified)
-                , MultiAnd.fromPredicate (predicate normalized)
+                [ Predicate.toMultiAnd (predicate unified)
+                , Predicate.toMultiAnd (predicate normalized)
                 , foldMap (from @(Predicate _) . predicate) patterns
                 ]
         term =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term unified)
     let predicate =
-            MultiAnd.toPredicate predicates
+            Predicate.fromMultiAnd predicates
                 & Predicate.setSimplified simplified
         simplified = foldMap Predicate.simplifiedAttribute predicates
      in Pattern.withCondition term (from substitution <> from predicate)

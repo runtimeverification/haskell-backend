@@ -54,7 +54,7 @@ checkImplicationIsTop ::
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         (forallQuantifiers, Implies_ _ implicationLHS implicationRHS) -> do
-            let rename' = refreshVariables lhsFreeVariables forallQuantifiers
+            let rename' = refreshVariablesSet lhsFreeVariables forallQuantifiers
                 subst = mkElemVar <$> Map.mapKeys inject rename'
                 implicationLHS' = substitute subst implicationLHS
                 implicationRHS' = substitute subst implicationRHS
