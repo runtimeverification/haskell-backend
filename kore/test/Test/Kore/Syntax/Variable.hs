@@ -14,7 +14,7 @@ import Test.Injection
 import Test.Kore (
     testId,
  )
-import Test.Kore.Step.MockSymbols (
+import Test.Kore.Rewrite.MockSymbols (
     testSort,
  )
 import Test.Tasty

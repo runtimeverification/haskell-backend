@@ -86,18 +86,18 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike as TermLike
-import Kore.Sort (
-    predicateSort,
- )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (AttemptedAxiomResults),
     BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
     MonadSimplify,
     applicationAxiomSimplifier,
  )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults (
+import qualified Kore.Simplify.Simplify as AttemptedAxiomResults (
     AttemptedAxiomResults (..),
+ )
+import Kore.Sort (
+    predicateSort,
  )
 import Kore.Unparser
 import Prelude.Kore

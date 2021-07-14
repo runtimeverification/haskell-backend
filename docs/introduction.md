@@ -6,14 +6,14 @@
 
 The external syntax of Kore is represented by types in the `Kore.Syntax` hierarchy.
 The parser produces values of these types from the text of syntactically-valid Kore.
-After parsing, the verifier (`Kore.ASTVerifier`) checks that the parsed values are well-formed
+After parsing, the validator (`Kore.Validate`) checks that the parsed values are well-formed
 and converts the external representations into internal representations.
 
 References:
 
 - `Kore.Syntax.Pattern`
 - `Kore.Syntax.Definition`
-- `Kore.ASTVerifier.DefinitionVerifier`
+- `Kore.Validate.DefinitionVerifier`
 
 ### `TermLike`
 
@@ -155,7 +155,7 @@ The substitution normalization step is discussed below.
 
 References:
 
-- `Kore.Step.Simplification.AndTerms`
+- `Kore.Simplify.AndTerms`
 - `Kore.Builtin.List`
 - `Kore.Builtin.Map`
 - `Kore.Builtin.Set`
@@ -199,7 +199,7 @@ it is entirely reasonable to generate conditions such as `x = x + y` in this con
 References:
 
 - `Kore.Unification.SubstitutionNormalization`
-- `Kore.Step.Simplification.SubstitutionSimplifier`
+- `Kore.Simplify.SubstitutionSimplifier`
 
 ### Matching
 
@@ -208,7 +208,7 @@ Matching is implemented sequentially, so there is no separate substitution norma
 
 References:
 
-- `Kore.Step.Axiom.Matcher`
+- `Kore.Rewrite.Axiom.Matcher`
 
 ### Semantic rules
 
@@ -226,7 +226,7 @@ The procedures to apply one-path and all-path reachability claims is described i
 
 References:
 
-- `Kore.Step.Step`
+- `Kore.Rewrite.Step`
 
 ### Function rules
 
@@ -238,8 +238,8 @@ this point is planned to change.
 
 References:
 
-- `Kore.Step.Function.Evaluator`
-- `Kore.Step.Axiom.EvaluationStrategy`
+- `Kore.Rewrite.Function.Evaluator`
+- `Kore.Rewrite.Axiom.EvaluationStrategy`
 
 ### Simplification
 
@@ -252,8 +252,8 @@ requiring substitution normalization at the top.
 
 References:
 
-- `Kore.Step.Simplification.TermLike`
-- `Kore.Step.Simplification.Condition`
+- `Kore.Simplify.TermLike`
+- `Kore.Simplify.Condition`
 
 ### Refuting predicates
 
@@ -278,5 +278,5 @@ avoiding the overhead of restarting the solver for each query.
 
 References:
 
-- `Kore.Step.SMT.Translate`
-- `Kore.Step.SMT.Evaluator`
+- `Kore.Rewrite.SMT.Translate`
+- `Kore.Rewrite.SMT.Evaluator`

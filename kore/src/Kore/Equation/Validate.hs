@@ -14,7 +14,6 @@ import Data.Text (
     pack,
  )
 import Kore.AST.Error
-import Kore.ASTVerifier.Verifier
 import Kore.Attribute.Axiom (
     Assoc (..),
     Comm (..),
@@ -48,6 +47,7 @@ import Kore.Syntax.Variable
 import Kore.Unparser (
     unparse,
  )
+import Kore.Validate.Verifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 import qualified Pretty

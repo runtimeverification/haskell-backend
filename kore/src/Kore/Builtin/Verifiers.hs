@@ -58,15 +58,6 @@ import Data.Void (
  )
 import qualified GHC.Generics as GHC
 import qualified Kore.AST.Error as Kore.Error
-import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
-import Kore.ASTVerifier.Error (
-    VerifyError,
- )
-import Kore.ASTVerifier.PatternVerifier.PatternVerifier (
-    PatternVerifier,
-    PatternVerifierHook (..),
- )
-import qualified Kore.ASTVerifier.PatternVerifier.PatternVerifier as PatternVerifier
 import Kore.Attribute.Attributes (
     Attributes (..),
  )
@@ -104,6 +95,15 @@ import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
 import Kore.Unparser
+import qualified Kore.Validate.AttributesVerifier as Verifier.Attributes
+import Kore.Validate.Error (
+    VerifyError,
+ )
+import Kore.Validate.PatternVerifier.PatternVerifier (
+    PatternVerifier,
+    PatternVerifierHook (..),
+ )
+import qualified Kore.Validate.PatternVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 import Text.Megaparsec (

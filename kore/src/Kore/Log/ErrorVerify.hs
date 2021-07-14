@@ -12,10 +12,10 @@ import Control.Monad.Catch (
     MonadThrow,
     throwM,
  )
-import Kore.ASTVerifier.Error (
+import qualified Kore.Error as Kore
+import Kore.Validate.Error (
     VerifyError,
  )
-import qualified Kore.Error as Kore
 import Log
 import Prelude.Kore
 import Pretty

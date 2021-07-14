@@ -53,14 +53,14 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Simplification.AndPredicates as And
-import Kore.Step.Simplification.CeilSimplifier
-import qualified Kore.Step.Simplification.Equals as Equals
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.AndPredicates as And
+import Kore.Simplify.CeilSimplifier
+import qualified Kore.Simplify.Equals as Equals
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Simplify (
     MonadSimplify,
     makeEvaluateTermCeil,
  )

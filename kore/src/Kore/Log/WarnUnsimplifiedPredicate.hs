@@ -16,7 +16,7 @@ import Kore.Internal.MultiOr (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Log
 import Prelude.Kore
 import Pretty (

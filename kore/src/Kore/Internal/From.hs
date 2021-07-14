@@ -48,7 +48,7 @@ import Prelude.Kore
   always quantify over @a@; it is only visible here to avoid a quantified
   constraint.
 * @v :: Type@ is the type of variable names in the pattern, for example:
-  'VariableName' or 'Kore.Rewriting.RewritingVariable.RewritingVariableName'.
+  'VariableName' or 'Kore.Rewrite.RewritingVariable.RewritingVariableName'.
   @v@ should not appear by itself, but only as the argument of another type. It
   is visible here to aid type inference.
 * @p :: Type -> Type@ is the pattern type, for example: 'Predicate' or

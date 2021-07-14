@@ -32,14 +32,14 @@ import Kore.Reachability.Claim (
 import qualified Kore.Reachability.Claim as Claim
 import qualified Kore.Reachability.ClaimState as ClaimState
 import qualified Kore.Reachability.Prim as Prim
-import Kore.Step.Simplification.Data (
-    MonadSimplify (..),
- )
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition (
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import qualified Kore.Step.Transition as Transition
+import qualified Kore.Rewrite.Transition as Transition
+import Kore.Simplify.Data (
+    MonadSimplify (..),
+ )
 import Kore.TopBottom (
     TopBottom (..),
  )

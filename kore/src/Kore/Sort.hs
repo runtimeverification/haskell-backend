@@ -231,7 +231,7 @@ the user tries to define a sort named _PREDICATE{}. (At least, this is not
 actually a valid identifier in Kore.)
 
 Until this is fixed, the identifier _PREDICATE is reserved in
-Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
+Kore.Validate.DefinitionVerifier.indexImplicitModule.
 
 -}
 predicateSort = SortActualSort predicateSortActual

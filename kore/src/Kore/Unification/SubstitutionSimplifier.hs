@@ -7,7 +7,7 @@ module Kore.Unification.SubstitutionSimplifier (
     unificationMakeAnd,
 
     -- * Re-exports
-    module Kore.Step.Simplification.SubstitutionSimplifier,
+    module Kore.Simplify.SubstitutionSimplifier,
 ) where
 
 import Control.Error (
@@ -39,15 +39,15 @@ import Kore.Log.DebugSubstitutionSimplifier (
     debugSubstitutionSimplifierResult,
     whileDebugSubstitutionSimplifier,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Step.Simplification.NotSimplifier
-import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Simplification.SubstitutionSimplifier (
+import Kore.Simplify.NotSimplifier
+import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
     SubstitutionSimplifier (..),
     deduplicateSubstitution,

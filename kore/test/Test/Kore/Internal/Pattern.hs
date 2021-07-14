@@ -65,7 +65,7 @@ import Test.Kore.Internal.TermLike hiding (
     markSimplified,
     simplifiedAttribute,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty

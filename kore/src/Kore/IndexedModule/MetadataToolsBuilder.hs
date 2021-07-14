@@ -24,7 +24,7 @@ import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
     extractMetadataTools,
  )
-import qualified Kore.Step.SMT.Representation.All as SMT.Representation (
+import qualified Kore.Rewrite.SMT.Representation.All as SMT.Representation (
     build,
  )
 import Prelude.Kore ()
