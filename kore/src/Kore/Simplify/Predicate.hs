@@ -9,6 +9,7 @@ module Kore.Simplify.Predicate (
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
+import qualified Kore.Simplify.Not as Not
 import Data.Monoid (
     First (..),
  )
@@ -63,6 +64,7 @@ import Kore.Syntax (
     Bottom (..),
     Ceil (..),
     Exists (..),
+    Floor (..),
     Iff (..),
     Implies (..),
     Not (..),
@@ -166,6 +168,8 @@ simplify sideCondition original =
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
+                FloorF floorF ->
+                    simplifyFloor sideCondition =<< traverse simplifyTerm floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
@@ -397,6 +401,30 @@ simplifyCeil ::
     simplifier NormalForm
 simplifyCeil sideCondition =
     Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
+
+simplifyFloor ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Floor sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyFloor sideCondition floor' = do
+    notTerm <- mkNotSimplifiedTerm floorChild
+    ceilNotTerm <- mkCeilSimplified notTerm
+    mkNotSimplified ceilNotTerm
+  where
+    Floor { floorOperandSort, floorResultSort, floorChild } = floor'
+    mkNotSimplified notChild =
+        simplifyNot Not{notSort = floorResultSort, notChild}
+    mkNotSimplifiedTerm notChild =
+        Not.simplify sideCondition Not{notSort = floorResultSort, notChild}
+    mkCeilSimplified ceilChild =
+        simplifyCeil
+            sideCondition
+            Ceil
+                { ceilOperandSort = floorOperandSort
+                , ceilResultSort = floorResultSort
+                , ceilChild
+                }
 
 simplifyExists ::
     forall simplifier.
