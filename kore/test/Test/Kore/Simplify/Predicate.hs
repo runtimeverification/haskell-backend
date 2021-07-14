@@ -22,6 +22,7 @@ import Kore.Internal.TermLike (
     mkEquals,
     mkOr,
     variableName,
+    mkBottom, mkTop, mkAnd, mkNot
  )
 import Kore.Rewrite.RewritingVariable
 import Kore.Simplify.Predicate (extractFirstAssignment, simplify)
@@ -161,6 +162,24 @@ test_simplify =
             "Predicate"
             (fromCeil_ (mkEquals Mock.testSort fa fb))
             [[fromEquals_ fa fb]]
+        ]
+    , testGroup
+        "\\floor"
+        [ test
+            "\\bottom"
+            (fromFloor_ (mkBottom Mock.testSort))
+            []
+        , test
+            "\\top"
+            (fromFloor_ (mkTop Mock.testSort))
+            [[]]
+        , test
+            "\\and"
+            (fromFloor_ (mkAnd fa fb))
+            [ [ fromNot (fromCeil_ (mkNot fa))
+              , fromEquals_ fa fb
+              ]
+            ]
         ]
     , (testGroup "\\exists")
         [ (test "irrelevant variable")
