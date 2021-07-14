@@ -24,7 +24,7 @@ import Kore.Internal.TermLike (
     variableName,
  )
 import Kore.Rewrite.RewritingVariable
-import Kore.Simplify.Predicate (simplify, extractFirstAssignment)
+import Kore.Simplify.Predicate (extractFirstAssignment, simplify)
 import Kore.TopBottom
 import Kore.Unparser (unparse)
 import Prelude.Kore

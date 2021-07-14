@@ -31,8 +31,8 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Variables.Fresh (refreshElementVariable)
 import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Variables.Fresh (refreshElementVariable)
 import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
