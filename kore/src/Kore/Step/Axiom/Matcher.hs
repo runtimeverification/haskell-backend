@@ -852,11 +852,11 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     abstract1 = elementsWithVariables normalized1
     concrete1 = concreteElements normalized1
     opaque1 = opaque normalized1
-    opaque1ACs = wrapTermLike . fromSingleOpaqueElem <$> opaque1
+    opaque1ACs = wrapTermLike . toSingleOpaqueElem <$> opaque1
     abstract2 = elementsWithVariables normalized2
     concrete2 = concreteElements normalized2
     opaque2 = opaque normalized2
-    opaque2ACs = wrapTermLike . fromSingleOpaqueElem <$> opaque2
+    opaque2ACs = wrapTermLike . toSingleOpaqueElem <$> opaque2
 
     excessConcrete1 = HashMap.difference concrete1 concrete2
     excessConcrete2 = HashMap.difference concrete2 concrete1
