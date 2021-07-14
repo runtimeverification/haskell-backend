@@ -55,9 +55,9 @@ import Kore.Log.WarnUnsimplifiedPredicate (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Substitute
 import qualified Kore.Simplify.Ceil as Ceil
 import Kore.Simplify.Simplify
+import Kore.Substitute
 import Kore.Syntax (
     And (..),
     Bottom (..),
