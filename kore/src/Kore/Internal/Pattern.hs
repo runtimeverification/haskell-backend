@@ -62,7 +62,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -149,7 +148,7 @@ hasSimplifiedChildren sideCondition patt =
         && Substitution.isSimplified sideCondition substitution
   where
     Conditional{term, predicate, substitution} = patt
-    clauses = MultiAnd.fromPredicate predicate
+    clauses = Predicate.toMultiAnd predicate
 
 {- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
 used to simplify the children.
@@ -164,7 +163,7 @@ hasSimplifiedChildrenIgnoreConditions patt =
         && Substitution.isSimplifiedSomeCondition substitution
   where
     Conditional{term, predicate, substitution} = patt
-    clauses = MultiAnd.fromPredicate predicate
+    clauses = Predicate.toMultiAnd predicate
 
 forgetSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable

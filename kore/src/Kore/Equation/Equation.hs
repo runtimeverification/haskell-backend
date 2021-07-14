@@ -350,7 +350,7 @@ refreshVariables
         let rename' :: Map (SomeVariableName variable) (SomeVariable variable)
             rename' =
                 FreeVariables.toSet originalFreeVariables
-                    & Fresh.refreshVariables avoid
+                    & Fresh.refreshVariablesSet avoid
             lookupSomeVariableName ::
                 forall variable'.
                 Injection (SomeVariableName variable) variable' =>

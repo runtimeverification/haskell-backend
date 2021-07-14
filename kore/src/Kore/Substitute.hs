@@ -6,6 +6,7 @@ module Kore.Substitute (
     Substitute (..),
     NormalSubstitution,
     NormalRenaming,
+    refreshElementBinder,
 ) where
 
 import Data.Kind (
@@ -14,10 +15,19 @@ import Data.Kind (
 import Data.Map.Strict (
     Map,
  )
+import qualified Data.Map.Strict as Map
+import Data.Set (
+    Set,
+ )
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables,
  )
 import Kore.Internal.Variable
+import Kore.Variables.Binding (
+    Binder (..),
+ )
+import Kore.Variables.Fresh (refreshElementVariable)
+import Prelude.Kore
 
 -- | @Substitute@ implements capture-avoiding substitution over many types.
 class HasFreeVariables child (VariableNameType child) => Substitute child where
@@ -54,3 +64,42 @@ type NormalRenaming child =
         -- TODO (thomas.tuegel): Arguably, the values below should be only
         -- 'SomeVariableName' and not 'SomeVariable'.
         (SomeVariable (VariableNameType child))
+
+instance
+    (Substitute child, Ord (VariableNameType child)) =>
+    Substitute [child]
+    where
+    type TermType [child] = TermType child
+    type VariableNameType [child] = VariableNameType child
+
+    substitute subst = fmap (substitute subst)
+    {-# INLINE substitute #-}
+
+    rename renaming = fmap (rename renaming)
+    {-# INLINE rename #-}
+
+refreshElementBinder ::
+    forall variable child.
+    Substitute child =>
+    VariableNameType child ~ variable =>
+    FreshPartialOrd variable =>
+    Set (SomeVariableName variable) ->
+    Binder (ElementVariable variable) child ->
+    Binder (ElementVariable variable) child
+refreshElementBinder avoiding binder =
+    do
+        binderVariable' <- refreshElementVariable avoiding binderVariable
+        let someVariableName =
+                inject @(SomeVariableName variable)
+                    (variableName binderVariable)
+            someVariable' = inject @(SomeVariable _) binderVariable'
+            renaming = Map.singleton someVariableName someVariable'
+            binderChild' = rename renaming binderChild
+        return
+            Binder
+                { binderVariable = binderVariable'
+                , binderChild = binderChild'
+                }
+        & fromMaybe binder
+  where
+    Binder{binderVariable, binderChild} = binder

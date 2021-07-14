@@ -32,6 +32,7 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
@@ -138,7 +139,7 @@ test_equalsSimplification_Or_Pattern =
     , testCase "f vs g or h" $ do
         let expectEvaluateEquals =
                 OrCondition.fromPredicates
-                    [ (MultiAnd.toPredicate . MultiAnd.make)
+                    [ (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeCeilPredicate Mock.cf
                         , makeCeilPredicate Mock.cg
                         , makeImpliesPredicate
@@ -148,7 +149,7 @@ test_equalsSimplification_Or_Pattern =
                             (makeCeilPredicate Mock.ch)
                             (makeEqualsPredicate Mock.cf Mock.ch)
                         ]
-                    , (MultiAnd.toPredicate . MultiAnd.make)
+                    , (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeCeilPredicate Mock.cf
                         , makeCeilPredicate Mock.ch
                         , makeImpliesPredicate
@@ -158,7 +159,7 @@ test_equalsSimplification_Or_Pattern =
                             (makeCeilPredicate Mock.ch)
                             (makeEqualsPredicate Mock.cf Mock.ch)
                         ]
-                    , (MultiAnd.toPredicate . MultiAnd.make)
+                    , (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeNotPredicate $ makeCeilPredicate Mock.cf
                         , makeNotPredicate $ makeCeilPredicate Mock.cg
                         , makeNotPredicate $ makeCeilPredicate Mock.ch
@@ -183,7 +184,7 @@ test_equalsSimplification_Or_Pattern =
     , testCase "f vs g or h where f /= g" $ do
         let expectEvaluateEquals =
                 OrCondition.fromPredicates
-                    [ (MultiAnd.toPredicate . MultiAnd.make)
+                    [ (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeCeilPredicate Mock.cf
                         , makeCeilPredicate Mock.cg
                         , makeImpliesPredicate
@@ -191,7 +192,7 @@ test_equalsSimplification_Or_Pattern =
                             (makeEqualsPredicate Mock.cf Mock.ch)
                         , makeNotPredicate (makeCeilPredicate Mock.cg)
                         ]
-                    , (MultiAnd.toPredicate . MultiAnd.make)
+                    , (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeCeilPredicate Mock.cf
                         , makeCeilPredicate Mock.ch
                         , makeImpliesPredicate
@@ -199,7 +200,7 @@ test_equalsSimplification_Or_Pattern =
                             (makeEqualsPredicate Mock.cf Mock.ch)
                         , makeNotPredicate $ makeCeilPredicate Mock.cg
                         ]
-                    , (MultiAnd.toPredicate . MultiAnd.make)
+                    , (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeNotPredicate $ makeCeilPredicate Mock.cf
                         , makeNotPredicate $ makeCeilPredicate Mock.cg
                         , makeNotPredicate $ makeCeilPredicate Mock.ch
@@ -242,7 +243,7 @@ test_equalsSimplification_Or_Pattern =
                 OrCondition.fromConditions
                     [ mconcat
                         [ ( Condition.fromPredicate
-                                . MultiAnd.toPredicate
+                                . Predicate.fromMultiAnd
                                 . MultiAnd.make
                           )
                             [ definedF
@@ -257,7 +258,7 @@ test_equalsSimplification_Or_Pattern =
                         , Condition.assign (inject Mock.xConfig) Mock.a
                         ]
                     , ( Condition.fromPredicate
-                            . MultiAnd.toPredicate
+                            . Predicate.fromMultiAnd
                             . MultiAnd.make
                       )
                         [ definedF
@@ -270,7 +271,7 @@ test_equalsSimplification_Or_Pattern =
                             (makeEqualsPredicate Mock.cf Mock.ch)
                         ]
                     , ( Condition.fromPredicate
-                            . MultiAnd.toPredicate
+                            . Predicate.fromMultiAnd
                             . MultiAnd.make
                       )
                         [ makeNotPredicate definedGWithSubstitution
@@ -333,7 +334,7 @@ test_equalsSimplification_Pattern =
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
                 OrCondition.fromPredicates
-                    [ (MultiAnd.toPredicate . MultiAnd.make)
+                    [ (Predicate.fromMultiAnd . MultiAnd.make)
                         [ makeCeilPredicate hOfA
                         , makeCeilPredicate hOfB
                         , makeEqualsPredicate fOfA fOfB

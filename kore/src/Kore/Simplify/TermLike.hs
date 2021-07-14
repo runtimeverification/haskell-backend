@@ -14,6 +14,7 @@ import Control.Monad.Catch (
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import Kore.Attribute.Pattern.FreeVariables (
+    freeVariableNames,
     freeVariables,
  )
 import Kore.Internal.Condition (
@@ -150,6 +151,8 @@ import Kore.Syntax (
     Equals (..),
     Floor (..),
     In (..),
+    refreshExists,
+    refreshForall,
  )
 import Kore.TopBottom (
     TopBottom (..),
@@ -354,7 +357,6 @@ simplify sideCondition = \termLike ->
                     return
                     (OrPattern.fromTermLike termLike)
             avoiding = freeVariables termLike <> freeVariables sideCondition
-            refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
             ~sort = termLikeSort termLike
             (_ :< termLikeF) = Recursive.project termLike
@@ -391,7 +393,10 @@ simplify sideCondition = \termLike ->
                         simplifyChildren (refresh exists)
                     Exists.simplify sideCondition simplifiedChildren
                   where
-                    refresh = Lens.over Binding.existsBinder refreshElementBinder
+                    avoid =
+                        freeVariableNames termLike
+                            <> freeVariableNames sideCondition
+                    refresh = refreshExists avoid
                 IffF iffF ->
                     Iff.simplify sideCondition =<< simplifyChildren iffF
                 ImpliesF impliesF ->
@@ -417,7 +422,10 @@ simplify sideCondition = \termLike ->
                 ForallF forall ->
                     Forall.simplify <$> simplifyChildren (refresh forall)
                   where
-                    refresh = Lens.over Binding.forallBinder refreshElementBinder
+                    avoid =
+                        freeVariableNames termLike
+                            <> freeVariableNames sideCondition
+                    refresh = refreshForall avoid
                 InhabitantF inhF ->
                     Inhabitant.simplify <$> simplifyChildren inhF
                 MuF mu ->
@@ -584,9 +592,19 @@ simplifyOnly sideCondition =
                 -- Binders:
                 ExistsF existsF ->
                     Exists.simplify sideCondition
-                        =<< traverse worker (refreshExists existsF)
+                        =<< traverse worker (refresh existsF)
+                  where
+                    avoid =
+                        freeVariableNames termLike
+                            <> freeVariableNames sideCondition
+                    refresh = refreshExists avoid
                 ForallF forallF ->
-                    Forall.simplify <$> traverse worker (refreshForall forallF)
+                    Forall.simplify <$> traverse worker (refresh forallF)
+                  where
+                    avoid =
+                        freeVariableNames termLike
+                            <> freeVariableNames sideCondition
+                    refresh = refreshForall avoid
                 MuF muF ->
                     Mu.simplify <$> traverse worker (refreshMu muF)
                 NuF nuF ->
@@ -620,9 +638,6 @@ simplifyOnly sideCondition =
         ~doNotSimplify = return (OrPattern.fromTermLike termLike)
 
         ~avoiding = freeVariables termLike <> freeVariables sideCondition
-        refreshElementBinder = TermLike.refreshElementBinder avoiding
-        refreshExists = Lens.over Binding.existsBinder refreshElementBinder
-        refreshForall = Lens.over Binding.forallBinder refreshElementBinder
         refreshSetBinder = TermLike.refreshSetBinder avoiding
         refreshMu = Lens.over Binding.muBinder refreshSetBinder
         refreshNu = Lens.over Binding.nuBinder refreshSetBinder

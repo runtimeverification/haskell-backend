@@ -14,8 +14,6 @@ module Kore.Internal.MultiAnd (
     MultiAnd,
     top,
     make,
-    toPredicate,
-    fromPredicate,
     fromTermLike,
     singleton,
     map,
@@ -38,19 +36,10 @@ import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
-import Kore.Internal.Condition (
-    Condition,
- )
 import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.Predicate (
-    Predicate,
-    getMultiAndPredicate,
-    makeAndPredicate,
-    makeTruePredicate,
- )
 import Kore.Internal.TermLike (
     TermLike,
     TermLikeF (..),
@@ -117,27 +106,6 @@ instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
 
 instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
     mempty = make []
-
-instance
-    InternalVariable variable =>
-    From (MultiAnd (Predicate variable)) (Predicate variable)
-    where
-    from = toPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Predicate variable) (MultiAnd (Predicate variable))
-    where
-    from = fromPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Condition variable) (MultiAnd (Predicate variable))
-    where
-    from = fromPredicate . from @_ @(Predicate _)
-    {-# INLINE from #-}
 
 instance
     InternalVariable variable =>
@@ -232,21 +200,6 @@ filterGeneric andFilter (MultiAnd patts) =
             AndFalse -> MultiAnd [element]
             AndTrue -> go filterAnd' filtered unfiltered
             AndUnknown -> go filterAnd' (element : filtered) unfiltered
-
-toPredicate ::
-    InternalVariable variable =>
-    MultiAnd (Predicate variable) ->
-    Predicate variable
-toPredicate (MultiAnd predicates) =
-    case predicates of
-        [] -> makeTruePredicate
-        _ -> foldr1 makeAndPredicate predicates
-
-fromPredicate ::
-    Ord variable =>
-    Predicate variable ->
-    MultiAnd (Predicate variable)
-fromPredicate = make . getMultiAndPredicate
 
 fromTermLike ::
     InternalVariable variable =>

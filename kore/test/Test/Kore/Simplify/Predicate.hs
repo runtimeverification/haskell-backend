@@ -1,6 +1,7 @@
 module Test.Kore.Simplify.Predicate (
     test_simplify,
     test_simplify_SideCondition,
+    test_extractFirstAssignment,
 ) where
 
 import Kore.Internal.From
@@ -15,13 +16,17 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
+    ElementVariable,
     TermLike,
+    mkElemVar,
     mkEquals,
     mkOr,
+    variableName,
  )
 import Kore.Rewrite.RewritingVariable
-import Kore.Simplify.Predicate (simplify)
+import Kore.Simplify.Predicate (extractFirstAssignment, simplify)
 import Kore.TopBottom
+import Kore.Unparser (unparse)
 import Prelude.Kore
 import qualified Pretty
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
@@ -157,6 +162,96 @@ test_simplify =
             (fromCeil_ (mkEquals Mock.testSort fa fb))
             [[fromEquals_ fa fb]]
         ]
+    , (testGroup "\\exists")
+        [ (test "irrelevant variable")
+            (fromExists x faCeil)
+            [[faCeil]]
+        , (testGroup "assignment for term")
+            [ (test "variable on the left")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar x) Mock.a)
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[faCeil]]
+            , (test "variable on the right")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ Mock.a (mkElemVar x))
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[faCeil]]
+            ]
+        , (testGroup "assignment for variable")
+            [ (test "quantified variable on the left")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar x) (mkElemVar y))
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[fromCeil_ (Mock.f (mkElemVar y))]]
+            , (test "quantified variable on the right")
+                ( (fromExists x)
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar y) (mkElemVar x))
+                        (fromCeil_ (Mock.f (mkElemVar x)))
+                    )
+                )
+                [[fromCeil_ (Mock.f (mkElemVar y))]]
+            ]
+        , (test "nested quantifiers")
+            ( (fromExists x) . (fromExists y) $
+                ( fromAnd
+                    (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar t) (mkElemVar x))
+                        (fromEquals_ (mkElemVar u) (mkElemVar y))
+                    )
+                )
+            )
+            [[fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar t))]]
+        , (test "invalid assignment")
+            ((fromExists x) (fromEquals_ (mkElemVar x) (Mock.f $ mkElemVar x)))
+            [
+                [ (fromExists x)
+                    ( fromAnd
+                        (fromCeil_ (Mock.f $ mkElemVar Mock.xConfig))
+                        ( fromEquals_
+                            (mkElemVar Mock.xConfig)
+                            (Mock.f $ mkElemVar Mock.xConfig)
+                        )
+                    )
+                ]
+            ]
+        , (test "apply substitution")
+            ( (fromExists x)
+                ( fromAnd
+                    (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                    (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
+                )
+            )
+            [[faCeil]]
+        ]
+    , (testGroup "\\equals")
+        [ (test "invalid assignment")
+            ( fromEquals_
+                (mkElemVar Mock.xConfig)
+                (Mock.f $ mkElemVar Mock.xConfig)
+            )
+            [
+                [ fromEquals_
+                    (mkElemVar Mock.xConfig)
+                    (Mock.f $ mkElemVar Mock.xConfig)
+                , fromCeil_ (Mock.f $ mkElemVar Mock.xConfig)
+                ]
+            ]
+        , (test "variable-variable assignment")
+            (fromEquals_ (mkElemVar x) (mkElemVar y))
+            [[fromEquals_ (mkElemVar x) (mkElemVar y)]]
+        ]
     , testGroup
         "Other"
         [ test
@@ -175,6 +270,12 @@ test_simplify =
         ]
     ]
   where
+    t, u, x, y :: ElementVariable RewritingVariableName
+    t = Mock.tConfig
+    u = Mock.uConfig
+    x = Mock.xConfig
+    y = Mock.yConfig
+
     test ::
         HasCallStack =>
         TestName ->
@@ -238,17 +339,106 @@ test_simplify_SideCondition =
     test testName replacements input expect =
         testCase testName $ simplifyExpect replacements input expect
 
+test_extractFirstAssignment :: [TestTree]
+test_extractFirstAssignment =
+    [ (test "assignment, on the left" x)
+        [fromEquals_ (mkElemVar x) Mock.a]
+        (Just Mock.a)
+    , (test "assignment, on the right" x)
+        [fromEquals_ Mock.a (mkElemVar x)]
+        (Just Mock.a)
+    , (test "no matching assignment" x)
+        [fromEquals_ (mkElemVar y) Mock.a]
+        Nothing
+    , (test "one of many relevant assignments, on the left" x)
+        [fromEquals_ (mkElemVar x) Mock.a, fromEquals_ (mkElemVar x) Mock.b]
+        (Just Mock.a)
+    , (test "one of many relevant assignments, on the right" x)
+        [fromEquals_ Mock.a (mkElemVar x), fromEquals_ (mkElemVar x) Mock.b]
+        (Just Mock.a)
+    , (test "single relevant assignment, many clauses, on the left" x)
+        [ fromEquals_ (mkElemVar x) Mock.a
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.a)
+    , (test "single relevant assignment, many clauses, on the right" x)
+        [ fromEquals_ Mock.a (mkElemVar x)
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.a)
+    , (test "single relevant assignment, many clauses, on the left" y)
+        [ fromEquals_ (mkElemVar x) Mock.a
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.b)
+    , (test "single relevant assignment, many clauses, on the right" y)
+        [ fromEquals_ Mock.a (mkElemVar x)
+        , fromEquals_ (mkElemVar y) Mock.b
+        , fromCeil_ (Mock.f Mock.a)
+        ]
+        (Just Mock.b)
+    , (test "renaming, on the left" x)
+        [fromEquals_ (mkElemVar x) (mkElemVar y)]
+        (Just (mkElemVar y))
+    , (test "renaming, on the right" y)
+        [fromEquals_ (mkElemVar x) (mkElemVar y)]
+        (Just (mkElemVar x))
+    ]
+  where
+    x, y :: ElementVariable RewritingVariableName
+    x = Mock.xConfig
+    y = Mock.yConfig
+
+    test ::
+        HasCallStack =>
+        TestName ->
+        ElementVariable RewritingVariableName ->
+        [Predicate RewritingVariableName] ->
+        Maybe (TermLike RewritingVariableName) ->
+        TestTree
+    test testName elementVariable predicates expect =
+        testCase testName $ do
+            let someVariableName = inject (variableName elementVariable)
+                multiAnd = MultiAnd.make predicates
+                actual = extractFirstAssignment someVariableName multiAnd
+            case expect of
+                Nothing ->
+                    case actual of
+                        Nothing -> pure ()
+                        Just actual' -> assertFailure message
+                          where
+                            message =
+                                (show . Pretty.vsep)
+                                    [ "Expected: Nothing"
+                                    , "but found:"
+                                    , Pretty.indent 4 (unparse actual')
+                                    ]
+                Just expect' ->
+                    case actual of
+                        Nothing -> assertFailure message
+                          where
+                            message =
+                                (show . Pretty.vsep)
+                                    [ "Expected:"
+                                    , Pretty.indent 4 (unparse expect')
+                                    , "but found: Nothing"
+                                    ]
+                        Just actual' ->
+                            assertEqual message expect' actual'
+                          where
+                            message =
+                                (show . Pretty.vsep)
+                                    [ "Expected:"
+                                    , Pretty.indent 4 (unparse expect')
+                                    , "but found:"
+                                    , Pretty.indent 4 (unparse actual')
+                                    ]
+
 mkDisjunctiveNormalForm :: Ord a => TopBottom a => [[a]] -> MultiOr (MultiAnd a)
 mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make
-
-unparseDisjunctiveNormalForm ::
-    MultiOr (MultiAnd (Predicate RewritingVariableName)) ->
-    Pretty.Doc ann
-unparseDisjunctiveNormalForm =
-    Pretty.indent 2
-        . Pretty.pretty
-        . map MultiAnd.toPredicate
-        . toList
 
 fa, fb, ga, gb :: TermLike RewritingVariableName
 fa = Mock.f Mock.a
@@ -279,8 +469,8 @@ simplifyExpect replacements input expect = do
     let message =
             (show . Pretty.vsep)
                 [ "Expected:"
-                , unparseDisjunctiveNormalForm expect'
+                , Pretty.indent 2 (Pretty.pretty expect')
                 , "but found:"
-                , unparseDisjunctiveNormalForm actual
+                , Pretty.indent 2 (Pretty.pretty actual)
                 ]
     assertEqual message expect' actual
