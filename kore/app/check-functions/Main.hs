@@ -1,3 +1,7 @@
+{- |
+Copyright : (c) Runtime Verification, 2021
+License   : BSD-3-Clause
+-}
 module Main (main) where
 
 import Control.Monad (
