@@ -5,7 +5,7 @@ Description : Data structures and manipulation helpers used for axiom
               The expectation is that an axiom can be applied to a term
               only if the identifier of its left-hand-side is the same
               as the term's identifier.
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental

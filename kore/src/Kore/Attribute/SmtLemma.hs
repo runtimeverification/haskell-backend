@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Attribute.SmtLemma
 Description : Mark a rewrite rule as an smt-lemma
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 Maintainer  : phillip.harris@runtimeverification.com
 -}

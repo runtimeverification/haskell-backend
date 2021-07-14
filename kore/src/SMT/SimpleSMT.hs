@@ -2,7 +2,7 @@
 Module      : SimpleSMT
 Description : Simple SMT-LIB 2 interface
 Copyright   : (c) Iavor S. Diatchki, 2014
-              (c) Runtime Verification, 2018
+              (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 

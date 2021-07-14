@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Step.Simplification.Variable
 Description : Tools for Variable pattern simplification.
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental

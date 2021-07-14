@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Step.SMT.Evaluator
 Description : Uses a SMT solver for evaluating predicates.
-Copyright   : (c) Runtime Verification, 2018-2019
+Copyright   : (c) Runtime Verification, 2018-2019-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}

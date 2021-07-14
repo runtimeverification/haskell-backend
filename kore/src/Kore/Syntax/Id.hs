@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 
 Please refer to Section 9 (The Kore Language) of the

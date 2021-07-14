@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Builtin.Krypto
 Description : Built-in cryptographic functions.
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental

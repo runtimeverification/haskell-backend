@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Step.SMT.Declaration.Symbols
 Description : Declares sorts to the SMT solver.
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}

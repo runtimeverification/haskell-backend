@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 
 This module contains parsers for Kore patterns, sentences, modules, and

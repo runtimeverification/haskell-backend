@@ -2,7 +2,7 @@
 Module      : SMT.AST
 Description : AST for (parts of) the SMT commands
 Copyright   : (c) Iavor S. Diatchki, 2014
-              (c) Runtime Verification, 2019
+              (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 

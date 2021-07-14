@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Repl.Parser
 Description : REPL parser.
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}

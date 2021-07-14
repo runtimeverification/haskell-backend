@@ -1,6 +1,6 @@
 {- |
 Description : Symbol declaration attributes
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 This module is intended to be imported qualified:
 @

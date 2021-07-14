@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Step.Search
 Description : Search functionality matching krun API
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 -}

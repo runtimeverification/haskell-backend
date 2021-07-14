@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Attribute.Smtlib.Smtlib
 Description : SMT-HOOK translation attribute
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 -}

@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Step.Simplification.Inhabitant
 Description : Tools for Inhabitant pattern simplification.
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 -}
 module Kore.Step.Simplification.Inhabitant (
     simplify,

@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Unparser
 Description : Render abstract to concrete Kore syntax
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental

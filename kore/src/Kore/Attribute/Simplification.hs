@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 
 The simplification attribute identifies axioms that are useful for

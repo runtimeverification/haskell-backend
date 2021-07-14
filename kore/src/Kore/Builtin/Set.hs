@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 

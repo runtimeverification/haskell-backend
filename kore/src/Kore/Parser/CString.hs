@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.Parser.CString
 Description : Unescaping for C-style strings. Meant for internal use only.
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental

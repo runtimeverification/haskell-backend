@@ -1,7 +1,7 @@
 {- |
 Module      : Kore.AST.AstWithLocation
 Description : Class for extracting locations from AST terms.
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
