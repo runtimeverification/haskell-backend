@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 
 When you have a function whose result is in a monad which is handled by
 the functions below, e.g.

@@ -6,9 +6,9 @@ category:       Language
 homepage:       https://github.com/kframework/kore#readme
 bug-reports:    https://github.com/kframework/kore/issues
 author:         Runtime Verification Inc
-maintainer:     thomas.tuegel@runtimeverification.com
+maintainer:     ana.pantilie@runtimeverification.com
 copyright:      2018-2021 Runtime Verification Inc
-license:        NCSA
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:

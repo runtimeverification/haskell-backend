@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 This module should be imported qualified:
 @
 import qualified Kore.Rewrite.Function.Memo as Memo

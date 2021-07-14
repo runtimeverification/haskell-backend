@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Attribute.SourceLocation
 Description : Source and location attribute
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Attribute.SourceLocation (
