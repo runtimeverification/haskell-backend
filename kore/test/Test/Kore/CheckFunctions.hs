@@ -29,8 +29,8 @@ test_checkFunctions =
                                 ]
                             , moduleAttributes = Attributes []
                             }
-                expected = ExitSuccess
                 actual = _
+                expected = ExitSuccess
             assertEqual "" expected actual
         , testCase "Not every equation RHS is a function pattern." $ do
             let verifiedModule =
@@ -40,7 +40,7 @@ test_checkFunctions =
                             , moduleSentences = _
                             , moduleAttributes = Attributes []
                             }
-                expected = ExitFailure _
                 actual = _
+                expected = ExitFailure 3
             assertEqual "" expected actual
         ]
