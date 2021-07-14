@@ -94,11 +94,11 @@ import Kore.Parser (
 import Kore.Parser.Parser (
     parseVariableCounter,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkElementConfigVariable,
  )
-import qualified Kore.Step.Simplification.Simplify as SMT
+import qualified Kore.Simplify.Simplify as SMT
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Variables.Target (

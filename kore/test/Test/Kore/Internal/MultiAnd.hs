@@ -13,12 +13,12 @@ import Kore.Internal.MultiAnd (
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.TermLike (ElementVariable, mkElemVar)
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.TopBottom (
     TopBottom (..),
  )
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

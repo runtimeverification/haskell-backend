@@ -21,10 +21,10 @@ import GHC.Stack (
 import Kore.Attribute.Axiom (
     Axiom (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RewriteRule,
     RulePattern (..),
     getRewriteRule,

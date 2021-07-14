@@ -18,7 +18,7 @@ import Prelude.Kore hiding (
     floor,
     or,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import qualified Test.Tasty as Tasty
 import qualified Test.Terse as Terse
 

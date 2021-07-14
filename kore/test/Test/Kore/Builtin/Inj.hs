@@ -2,11 +2,6 @@ module Test.Kore.Builtin.Inj (
     test_patternVerifierHook,
 ) where
 
-import Kore.ASTVerifier.PatternVerifier (
-    verifyStandalonePattern,
-    withBuiltinVerifiers,
- )
-import Kore.ASTVerifier.PatternVerifier.PatternVerifier
 import qualified Kore.Builtin as Builtin
 import Kore.Builtin.Inj
 import Kore.Builtin.Verifiers
@@ -17,6 +12,11 @@ import Kore.Internal.TermLike
 import Kore.Unparser (
     unparse,
  )
+import Kore.Validate.PatternVerifier (
+    verifyStandalonePattern,
+    withBuiltinVerifiers,
+ )
+import Kore.Validate.PatternVerifier.PatternVerifier
 import Prelude.Kore
 import qualified Pretty
 import Test.Kore.Builtin.Builtin

@@ -7,9 +7,6 @@ module Test.Kore.IndexedModule.OverloadGraph (
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
- )
 import Kore.Attribute.Overload (
     overloadAttribute,
  )
@@ -31,11 +28,14 @@ import Kore.Syntax.Definition (
     Sentence (..),
     SentenceAxiom (..),
  )
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
 import Prelude.Kore
 import Test.Kore
 import qualified Test.Kore.Builtin.Definition as Definition
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

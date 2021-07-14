@@ -63,7 +63,7 @@
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
 
 # This warning should apply to Control.Exception.evaluate, but is mistakenly
-# applied to Kore.Step.SMT.Evaluator.evaluate.
+# applied to Kore.Rewrite.SMT.Evaluator.evaluate.
 - ignore: {name: "Redundant evaluate"}
 
 # Corporate style
@@ -113,9 +113,9 @@
     name: Use camelCase
     within:
       - Test.Terse
-      - Test.Kore.Step.Axiom.Evaluate
-      - Test.Kore.Step.Axiom.Matcher
-      - Test.Kore.Step.Simplification.Overloading
+      - Test.Kore.Rewrite.Axiom.Evaluate
+      - Test.Kore.Rewrite.Axiom.Matcher
+      - Test.Kore.Simplify.Overloading
 
 
 # Unsuitable suggestions
@@ -128,16 +128,16 @@
       - Kore.Domain.Builtin
       - Kore.Exec
       - Kore.Internal.Conditional
-      - Kore.Step.Axiom.Matcher
-      - Kore.Step.Simplification.AndTerms
+      - Kore.Rewrite.Axiom.Matcher
+      - Kore.Simplify.AndTerms
       - Kore.Parser.Parser
       - Main
 - ignore:
     name: "Use fmap"
     within:
-      - Kore.Step.Step
+      - Kore.Rewrite.Step
       - SQL.SOP
-- ignore: {name: "Avoid lambda", within: [Kore.Step.Function.Memo]}
+- ignore: {name: "Avoid lambda", within: [Kore.Rewrite.Function.Memo]}
 - ignore:
     name: "Redundant bracket"
     within:
@@ -163,7 +163,7 @@
 - ignore:
     name: "Use void"
     within:
-      - Test.Kore.Step.Transition
+      - Test.Kore.Rewrite.Transition
 
 
 # Define some custom infix operators

@@ -163,15 +163,15 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.RulePattern as RulePattern
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id (
     Id (..),
