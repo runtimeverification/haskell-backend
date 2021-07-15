@@ -18,11 +18,14 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     ElementVariable,
     TermLike,
+    mkAnd,
+    mkBottom,
     mkElemVar,
     mkEquals,
+    mkNot,
     mkOr,
+    mkTop,
     variableName,
-    mkBottom, mkTop, mkAnd, mkNot
  )
 import Kore.Rewrite.RewritingVariable
 import Kore.Simplify.Predicate (extractFirstAssignment, simplify)
@@ -176,9 +179,10 @@ test_simplify =
         , test
             "\\and"
             (fromFloor_ (mkAnd fa fb))
-            [ [ fromNot (fromCeil_ (mkNot fa))
-              , fromEquals_ fa fb
-              ]
+            [
+                [ fromNot (fromCeil_ (mkNot fa))
+                , fromEquals_ fa fb
+                ]
             ]
         ]
     , (testGroup "\\exists")

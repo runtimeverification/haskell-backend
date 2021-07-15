@@ -9,7 +9,6 @@ module Kore.Simplify.Predicate (
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
-import qualified Kore.Simplify.Not as Not
 import Data.Monoid (
     First (..),
  )
@@ -57,6 +56,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Ceil as Ceil
+import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
@@ -412,7 +412,7 @@ simplifyFloor sideCondition floor' = do
     ceilNotTerm <- mkCeilSimplified notTerm
     mkNotSimplified ceilNotTerm
   where
-    Floor { floorOperandSort, floorResultSort, floorChild } = floor'
+    Floor{floorOperandSort, floorResultSort, floorChild} = floor'
     mkNotSimplified notChild =
         simplifyNot Not{notSort = floorResultSort, notChild}
     mkNotSimplifiedTerm notChild =
