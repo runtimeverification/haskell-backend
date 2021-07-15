@@ -767,19 +767,24 @@ matchNormalizedAc ::
     NormalizedAc normalized variable ->
     MaybeT (MatcherT variable simplifier) ()
 matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
+    -- Case for when all symbolic elements in normalized1 appear in normalized2:
     | [] <- excessAbstract1 =
         do
+            -- All concrete elements in normalized1 appear in normalized2
             Monad.guard (null excessConcrete1)
             case opaque1 of
+                -- Without opaques and syntactically equal
                 [] -> do
                     Monad.guard (null opaque2)
                     Monad.guard (null excessConcrete2)
                     Monad.guard (null excessAbstract2)
                 [frame1]
+                    -- One opaque each, rest are syntactically equal
                     | null excessAbstract2
                       , null excessConcrete2
                       , [frame2] <- opaque2 ->
                         push (Pair frame1 frame2)
+                    -- Match singular opaque1 with excess part of normalized2
                     | otherwise ->
                         let normalized2' =
                                 wrapTermLike
@@ -791,12 +796,17 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                 _ -> empty
             lift $ traverse_ pushValue concrete12
             lift $ traverse_ pushValue abstractMerge
+    -- Case for AC iteration:
+    -- Normalized1 looks like K |-> V M:Map
     | [element1] <- abstract1
       , [frame1] <- opaque1
       , null concrete1 = do
         let (key1, value1) = unwrapElement element1
         case lookupSymbolicKeyOfAc key1 normalized2 of
+            -- If K in_keys(normalized2)
             Just value2 -> lift $ do
+                -- Match corresp. values
+                -- Match M with remove(normalized2, K)
                 pushValue (Pair value1 value2)
                 let normalized2' =
                         wrapTermLike $
@@ -804,6 +814,9 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                 push (Pair frame1 normalized2')
             Nothing ->
                 case (headMay . HashMap.toList $ concrete2, headMay abstract2) of
+                    -- Select first concrete element of normalized2, concrete2
+                    -- Match K |-> V with concrete2
+                    -- Match M with remove(normalized2, concrete2)
                     (Just concreteElement2, _) -> lift $ do
                         let liftedConcreteElement2 =
                                 Bifunctor.first (from @Key) concreteElement2
@@ -814,6 +827,9 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                                 wrapTermLike $
                                     removeConcreteKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
+                    -- Select first symbolic element of normalized2, symbolic2
+                    -- Match K |-> V with symbolic2
+                    -- Match M with remove(normalized2, symbolic2)
                     (_, Just abstractElement2) -> lift $ do
                         pushElement (Pair element1 abstractElement2)
                         let (key2, _) = unwrapElement abstractElement2
@@ -822,14 +838,26 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                                     removeSymbolicKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     _ -> empty
+    -- Case for ACs which are structurally equal:
+    | length excessAbstract1 == length excessAbstract2
+      , length concrete1 == length concrete2
+      , length opaque1 == length opaque2 = lift $ do
+        traverse_ pushValue abstractMerge
+        traverse_
+            (pushElement . uncurry Pair)
+            (zip excessAbstract1 excessAbstract2)
+        traverse_ pushValue concrete12
+        traverse_ (push . uncurry Pair) (zip opaque1ACs opaque2ACs)
     | otherwise = empty
   where
     abstract1 = elementsWithVariables normalized1
     concrete1 = concreteElements normalized1
     opaque1 = opaque normalized1
+    opaque1ACs = wrapTermLike . toSingleOpaqueElem <$> opaque1
     abstract2 = elementsWithVariables normalized2
     concrete2 = concreteElements normalized2
     opaque2 = opaque normalized2
+    opaque2ACs = wrapTermLike . toSingleOpaqueElem <$> opaque2
 
     excessConcrete1 = HashMap.difference concrete1 concrete2
     excessConcrete2 = HashMap.difference concrete2 concrete1
@@ -881,6 +909,7 @@ data IntersectionDifference a b = IntersectionDifference
     , excessFirst :: ![a]
     , excessSecond :: ![a]
     }
+    deriving stock (Show)
 
 emptyIntersectionDifference :: IntersectionDifference a b
 emptyIntersectionDifference =

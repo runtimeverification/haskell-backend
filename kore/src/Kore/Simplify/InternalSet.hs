@@ -47,5 +47,5 @@ normalizeInternalSet map' =
                 & fromMaybe (mkInternalSet normalizedSet)
         _ -> mkBottom_
   where
-    getSingleOpaque = asSingleOpaqueElem . getNormalizedAc
+    getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
     getNormalizedAc = getNormalizedSet . builtinAcChild
