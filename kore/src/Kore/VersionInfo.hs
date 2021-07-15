@@ -4,7 +4,7 @@
 
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.VersionInfo (
     VersionInfo (..),

@@ -2,6 +2,7 @@ module Test.Expect (
     expectRight,
     expectLeft,
     expectJust,
+    expectNothing,
     expectThese,
     expectOne,
     assertNull,
@@ -33,6 +34,10 @@ expectLeft = either return (assertFailure . show . debug)
 
 expectJust :: HasCallStack => Maybe a -> IO a
 expectJust = maybe (assertFailure "expected Just _, found Nothing") return
+
+expectNothing :: HasCallStack => Maybe a -> IO ()
+expectNothing (Just _) = assertFailure "expected Nothing, found Just _"
+expectNothing Nothing = pure ()
 
 expectThese :: HasCallStack => These a b -> IO (a, b)
 expectThese =

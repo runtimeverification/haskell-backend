@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Rewrite.Implication (
     Implication (..),
@@ -87,6 +87,7 @@ import Kore.Unparser (
  )
 import Kore.Variables.Fresh (
     refreshVariables,
+    refreshVariablesSet,
  )
 import Prelude.Kore
 import Pretty (
@@ -263,7 +264,7 @@ substituteRight subst0 implication'@Implication{right, existentials} =
     freeVars = FreeVariables.toNames $ freeVariablesRight implication'
 
     avoid = Set.union newFreeVars (freeVars Set.\\ Map.keysSet subst)
-    subst' = refreshVariables avoid (Set.fromList $ inject <$> existentials)
+    subst' = refreshVariables avoid (inject <$> existentials)
     newSubst = Map.union subst (TermLike.mkVar <$> subst')
 
     renameVariable ::
@@ -365,7 +366,7 @@ instance UnifyingRule (Implication modality) where
       where
         refreshVariables' variables = do
             staleNames <- State.get
-            let renaming = refreshVariables staleNames variables
+            let renaming = refreshVariablesSet staleNames variables
                 staleNames' = Set.map variableName variables
                 staleNames'' =
                     Map.elems renaming

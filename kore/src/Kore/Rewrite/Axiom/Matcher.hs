@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Rewrite.Axiom.Matcher (
     MatchingVariable,
@@ -78,6 +78,7 @@ import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Symbol
@@ -239,7 +240,7 @@ matchIncremental sideCondition termLike1 termLike2 =
     assembleResult = do
         final <- Monad.State.get
         let MatcherState{predicate, substitution} = final
-            predicate' = MultiAnd.toPredicate predicate
+            predicate' = Predicate.fromMultiAnd predicate
         return (predicate', substitution)
 
 matchEqualHeads ::

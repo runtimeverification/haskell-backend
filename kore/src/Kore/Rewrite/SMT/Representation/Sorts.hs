@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Rewrite.SMT.Representation.Sorts
 Description : Builds an SMT representation for sorts.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Rewrite.SMT.Representation.Sorts (

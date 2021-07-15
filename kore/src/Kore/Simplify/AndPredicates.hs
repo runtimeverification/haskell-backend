@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Simplify.AndPredicates
 Description : Tools for And Predicate simplification.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

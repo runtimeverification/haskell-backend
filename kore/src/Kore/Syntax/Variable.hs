@@ -1,8 +1,8 @@
 {-# LANGUAGE EmptyDataDeriving #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
