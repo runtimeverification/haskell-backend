@@ -71,7 +71,7 @@ import Kore.Syntax (
     Or (..),
     SomeVariableName,
     Top (..),
-    variableName,
+    variableName, Forall (Forall)
  )
 import qualified Kore.Syntax.Exists as Exists
 import qualified Kore.TopBottom as TopBottom
@@ -464,6 +464,29 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             existsChild' = MultiAnd.map (substitute substitution) predicates
             valueCeil = MultiAnd.singleton (fromCeil_ termLike)
          in existsChild' <> valueCeil
+
+simplifyForall ::
+    forall simplifier.
+    Monad simplifier =>
+    SideCondition RewritingVariableName ->
+    Forall () RewritingVariableName NormalForm ->
+    simplifier NormalForm
+simplifyForall sideCondition forall' = do
+    notChild <- mkNotSimplified forallChild
+    existsNotChild <- mkExistsSimplified notChild
+    mkNotSimplified existsNotChild
+  where
+    Forall { forallSort, forallVariable, forallChild } = forall'
+    mkNotSimplified notChild =
+        simplifyNot Not{notSort = forallSort, notChild}
+    mkExistsSimplified existsChild =
+        simplifyExists
+            sideCondition
+            Exists
+                { existsSort = forallSort
+                , existsVariable = forallVariable
+                , existsChild
+                }
 
 extractFirstAssignment ::
     SomeVariableName RewritingVariableName ->
