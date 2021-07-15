@@ -65,13 +65,14 @@ import Kore.Syntax (
     Ceil (..),
     Exists (..),
     Floor (..),
+    Forall (Forall),
     Iff (..),
     Implies (..),
     Not (..),
     Or (..),
     SomeVariableName,
     Top (..),
-    variableName, Forall (Forall)
+    variableName,
  )
 import qualified Kore.Syntax.Exists as Exists
 import qualified Kore.TopBottom as TopBottom
@@ -476,7 +477,7 @@ simplifyForall sideCondition forall' = do
     existsNotChild <- mkExistsSimplified notChild
     mkNotSimplified existsNotChild
   where
-    Forall { forallSort, forallVariable, forallChild } = forall'
+    Forall{forallSort, forallVariable, forallChild} = forall'
     mkNotSimplified notChild =
         simplifyNot Not{notSort = forallSort, notChild}
     mkExistsSimplified existsChild =
