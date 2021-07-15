@@ -277,8 +277,8 @@ test_simplify =
         , test
             "desugaring"
             ( fromNot
-                (fromFloor_
-                    (mkNot
+                ( fromFloor_
+                    ( mkNot
                         (mkOr fa fb)
                     )
                 )
@@ -290,7 +290,6 @@ test_simplify =
                         (fromNot faCeil)
                         (fromNot fbCeil)
                     )
-
                 ]
             ]
         ]
@@ -367,40 +366,40 @@ test_simplify =
             )
             [[faCeil]]
         ]
-    , (testGroup
-        "\\forall"
-        [ test
-            "\\top"
-            ( (fromForall x)
-                fromTop_
-            )
-            [[]]
-        , test
-            "\\bottom"
-            ( (fromForall x)
-                fromBottom_
-            )
-            []
-        , test
-            "irrelevant variable"
-            ( (fromForall x)
-                faCeil
-            )
-            [[faCeil]]
-        , test
-            "desugaring"
-            ( fromNot
+    , ( testGroup
+            "\\forall"
+            [ test
+                "\\top"
                 ( (fromForall x)
-                    (fromNot
-                        ( fromAnd
-                            (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
-                            (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                    fromTop_
+                )
+                [[]]
+            , test
+                "\\bottom"
+                ( (fromForall x)
+                    fromBottom_
+                )
+                []
+            , test
+                "irrelevant variable"
+                ( (fromForall x)
+                    faCeil
+                )
+                [[faCeil]]
+            , test
+                "desugaring"
+                ( fromNot
+                    ( (fromForall x)
+                        ( fromNot
+                            ( fromAnd
+                                (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
+                                (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                            )
                         )
                     )
                 )
-            )
-            [[faCeil]]
-        ]
+                [[faCeil]]
+            ]
       )
     , (testGroup "\\equals")
         [ (test "invalid assignment")
