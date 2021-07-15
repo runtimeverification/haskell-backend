@@ -332,8 +332,7 @@ unifyBoolOr unifyChildren unifyData =
 
 data UnifyBoolNot = UnifyBoolNot
     { boolNot :: !BoolNot
-    , value :: !Bool
-    , term :: !(TermLike RewritingVariableName)
+    , value :: !InternalBool
     }
 
 {- | Matches
@@ -357,12 +356,12 @@ matchUnifyBoolNot ::
 matchUnifyBoolNot first second
     | Just boolNot <- matchBoolNot first
       , isFunctionPattern first
-      , Just value <- matchBool second =
-        Just UnifyBoolNot{boolNot, value, term = second}
+      , Just value <- matchInternalBool second =
+        Just UnifyBoolNot{boolNot, value}
     | Just boolNot <- matchBoolNot second
       , isFunctionPattern second
-      , Just value <- matchBool first =
-        Just UnifyBoolNot{boolNot, value, term = first}
+      , Just value <- matchInternalBool first =
+        Just UnifyBoolNot{boolNot, value}
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolNot #-}
 
@@ -372,11 +371,17 @@ unifyBoolNot ::
     UnifyBoolNot ->
     unifier (Pattern RewritingVariableName)
 unifyBoolNot unifyChildren unifyData =
-    let notValue = asInternal (termLikeSort term) (not value)
+    let notValue = asInternal internalBoolSort (not internalBoolValue)
      in unifyChildren notValue operand
   where
-    UnifyBoolNot{boolNot, value, term} = unifyData
+    UnifyBoolNot{boolNot, value} = unifyData
+    InternalBool{internalBoolValue, internalBoolSort} = value
     BoolNot{operand} = boolNot
+
+matchInternalBool :: TermLike variable -> Maybe InternalBool
+matchInternalBool (InternalBool_ internalBool) =
+    Just internalBool
+matchInternalBool _ = Nothing
 
 -- | Match a @BOOL.Bool@ builtin value.
 matchBool :: TermLike variable -> Maybe Bool

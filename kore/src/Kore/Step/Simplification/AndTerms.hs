@@ -192,7 +192,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- Builtin.Map.matchUnifyEquals tools first second =
             lift $ Builtin.Map.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.Map.matchUnifyNotInKeys first second =
-            lift $ Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second unifyData
+            lift $ Builtin.Map.unifyNotInKeys childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Set.matchUnifyEquals tools first second =
             lift $ Builtin.Set.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
@@ -309,7 +309,7 @@ type TermTransformationOld variable unifier =
     MaybeT unifier (Pattern variable)
 
 data UnifyBoolAnd
-    = UnifyBoolAndBottom !(TermLike RewritingVariableName) !(TermLike RewritingVariableName)
+    = UnifyBoolAndBottom !Sort !(TermLike RewritingVariableName)
     | UnifyBoolAndTop !(TermLike RewritingVariableName)
 
 {- | Matches
@@ -332,11 +332,13 @@ matchBoolAnd ::
     Maybe UnifyBoolAnd
 matchBoolAnd term1 term2
     | Pattern.isBottom term1 =
-        Just $ UnifyBoolAndBottom term1 term2 --first, second
+        let sort = termLikeSort term1 in
+          Just $ UnifyBoolAndBottom sort term2
     | Pattern.isTop term1 =
         Just $ UnifyBoolAndTop term2
     | Pattern.isBottom term2 =
-        Just $ UnifyBoolAndBottom term2 term1 --second, first
+        let sort = termLikeSort term2 in
+          Just $ UnifyBoolAndBottom sort term1
     | Pattern.isTop term2 =
         Just $ UnifyBoolAndTop term1
     | otherwise =
@@ -350,19 +352,19 @@ boolAnd ::
     unifier (Pattern RewritingVariableName)
 boolAnd unifyData =
     case unifyData of
-        UnifyBoolAndBottom term1 term2 -> do
-            explainBoolAndBottom term1 term2
-            return $ Pattern.fromTermLike term1
+        UnifyBoolAndBottom sort term -> do
+            explainBoolAndBottom term sort
+            return $ Pattern.fromTermLike $ mkBottom sort
         UnifyBoolAndTop term -> do
             return $ Pattern.fromTermLike term
 
 explainBoolAndBottom ::
     MonadUnify unifier =>
     TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
+    Sort ->
     unifier ()
-explainBoolAndBottom term1 term2 =
-    explainBottom "Cannot unify bottom." term1 term2
+explainBoolAndBottom term sort =
+    explainBottom "Cannot unify bottom." (mkBottom sort) term
 
 {- | Matches
 
@@ -396,7 +398,8 @@ equalAndEquals term =
     return (Pattern.fromTermLike term)
 
 data BottomTermEquals = BottomTermEquals
-    { term1, term2 :: !(TermLike RewritingVariableName)
+    { sort :: !Sort
+    , term :: !(TermLike RewritingVariableName)
     }
 
 {- | Matches
@@ -412,10 +415,10 @@ matchBottomTermEquals ::
     TermLike RewritingVariableName ->
     Maybe BottomTermEquals
 matchBottomTermEquals first second
-    | Bottom_ _ <- first =
-        Just BottomTermEquals{term1 = first, term2 = second}
-    | Bottom_ _ <- second =
-        Just BottomTermEquals{term1 = second, term2 = first}
+    | Bottom_ sort <- first =
+        Just BottomTermEquals{sort, term = second}
+    | Bottom_ sort <- second =
+        Just BottomTermEquals{sort, term = first}
     | otherwise = Nothing
 {-# INLINE matchBottomTermEquals #-}
 
@@ -430,15 +433,15 @@ bottomTermEquals
     unifyData =
         do
             -- MonadUnify
-            secondCeil <- makeEvaluateTermCeil sideCondition term2
+            secondCeil <- makeEvaluateTermCeil sideCondition term
             case toList secondCeil of
                 [] -> return Pattern.top
                 [Conditional{predicate = PredicateTrue, substitution}]
                     | substitution == mempty -> do
                         explainBottom
                             "Cannot unify bottom with non-bottom pattern."
-                            term1
-                            term2
+                            (mkBottom sort)
+                            term
                         empty
                 _ ->
                     return
@@ -451,7 +454,7 @@ bottomTermEquals
                             , substitution = mempty
                             }
       where
-        BottomTermEquals{term1, term2} = unifyData
+        BottomTermEquals{sort, term} = unifyData
 
 data UnifyVariables = UnifyVariables
     {variable1, variable2 :: !(ElementVariable RewritingVariableName)}
@@ -640,24 +643,24 @@ data ConstructorSortInjectionAndEquals = ConstructorSortInjectionAndEquals
 {- | Matches
 
 @
-\\equals{_, _}(inj{_,_}(_), f(_))
+\\equals{_, _}(inj{_,_}(_), c(_))
 @
 
 @
-\\equals{_, _}(f(_), inj{_,_}(_))
+\\equals{_, _}(c(_), inj{_,_}(_))
 @
 
 and
 
 @
-\\and{_}(inj{_,_}(_), f(_))
+\\and{_}(inj{_,_}(_), c(_))
 @
 
 @
-\\and{_}(f(_), inj{_,_}(_))
+\\and{_}(c(_), inj{_,_}(_))
 @
 
-when @f@ has the @constructor@ attribute.
+when @c@ has the @constructor@ attribute.
 -}
 matchConstructorSortInjectionAndEquals ::
     TermLike RewritingVariableName ->
@@ -746,22 +749,22 @@ data DVConstrError
 {- | Matches
 
 @
-\\equals{_, _}(\\dv{_}(_), f(_))
+\\equals{_, _}(\\dv{_}(_), c(_))
 @
 
 @
-\\equals{_, _}(f(_), \\dv{_}(_))
+\\equals{_, _}(c(_), \\dv{_}(_))
 @
 
 @
-\\and{_}(\\dv{_}(_), f(_))
+\\and{_}(\\dv{_}(_), c(_))
 @
 
 @
-\\and{_}(f(_), \\dv{_}(_))
+\\and{_}(c(_), \\dv{_}(_))
 @
 
-when @f@ is a constructor.
+when @c@ is a constructor.
 -}
 matchDomainValueAndConstructorErrors ::
     TermLike RewritingVariableName ->

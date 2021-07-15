@@ -289,23 +289,30 @@ data UnifyIfThenElse = UnifyIfThenElse
       term :: TermLike RewritingVariableName
     }
 
--- | Match the @KEQUAL.eq@ hooked symbol.
+{- | Matches
+
+@
+\\and{_}(ite(_,_,_), _)
+@
+
+symmetric in the two arguments.
+-}
 matchIfThenElse ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyIfThenElse
 matchIfThenElse first second
-    | Just ifThenElse <- match first =
+    | Just ifThenElse <- matchITE first =
         Just $ UnifyIfThenElse{ifThenElse, term = second}
-    | Just ifThenElse <- match second =
+    | Just ifThenElse <- matchITE second =
         Just $ UnifyIfThenElse{ifThenElse, term = first}
     | otherwise = Nothing
   where
-    match (App_ symbol [condition, branch1, branch2]) = do
+    matchITE (App_ symbol [condition, branch1, branch2]) = do
         hook' <- (getHook . symbolHook) symbol
         Monad.guard (hook' == iteKey)
         return IfThenElse{symbol, condition, branch1, branch2}
-    match _ = Nothing
+    matchITE _ = Nothing
 {-# INLINE matchIfThenElse #-}
 
 unifyIfThenElse ::

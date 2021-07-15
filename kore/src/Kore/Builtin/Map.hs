@@ -624,9 +624,8 @@ matchInKeys = retract
 
 data UnifyNotInKeys = UnifyNotInKeys
     { inKeys :: !(InKeys (TermLike RewritingVariableName))
-    , keyTerm, mapTerm :: !(TermLike RewritingVariableName)
     , concreteKeys, mapKeys, opaqueElements :: ![TermLike RewritingVariableName]
-    , isFirstMatched :: !Bool
+    , term :: !(TermLike RewritingVariableName)
     }
 
 data UnifyNotInKeysResult
@@ -647,7 +646,7 @@ matchUnifyNotInKeys ::
     Maybe UnifyNotInKeysResult
 matchUnifyNotInKeys first second
     | Just False <- Bool.matchBool first
-      , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys second
+      , Just inKeys@InKeys{mapTerm} <- matchInKeys second
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
         let symbolicKeys = getSymbolicKeysOfAc normalizedMap
             concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
@@ -657,12 +656,10 @@ matchUnifyNotInKeys first second
                 NonNullKeysOrMultipleOpaques
                     UnifyNotInKeys
                         { inKeys
-                        , keyTerm
-                        , mapTerm
                         , concreteKeys
                         , mapKeys
                         , opaqueElements
-                        , isFirstMatched = True
+                        , term = first
                         }
          in case (mapKeys, opaqueElements) of
                 -- null mapKeys && null opaqueElements
@@ -673,7 +670,7 @@ matchUnifyNotInKeys first second
                 -- otherwise
                 _ -> Nothing
     | Just False <- Bool.matchBool second
-      , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys first
+      , Just inKeys@InKeys{mapTerm} <- matchInKeys first
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
         let symbolicKeys = getSymbolicKeysOfAc normalizedMap
             concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
@@ -683,12 +680,10 @@ matchUnifyNotInKeys first second
                 NonNullKeysOrMultipleOpaques
                     UnifyNotInKeys
                         { inKeys
-                        , keyTerm
-                        , mapTerm
                         , concreteKeys
                         , mapKeys
                         , opaqueElements
-                        , isFirstMatched = False
+                        , term = second
                         }
          in case (mapKeys, opaqueElements) of
                 -- null mapKeys && null opaqueElements
@@ -712,11 +707,9 @@ unifyNotInKeys ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyNotInKeysResult ->
     unifier (Pattern RewritingVariableName)
-unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) termLike1 termLike2 unifyData =
+unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) unifyData =
     case unifyData of
         NullKeysNullOpaques -> return Pattern.top
         NonNullKeysOrMultipleOpaques unifyData' ->
@@ -728,11 +721,11 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) termLike1 termLike2 u
                 keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
 
                 let keyInKeysOpaque =
-                        (\term -> inject @(TermLike _) (inKeys :: InKeys (TermLike RewritingVariableName)){mapTerm = term})
+                        (\term' -> inject @(TermLike _) (inKeys :: InKeys (TermLike RewritingVariableName)){mapTerm = term'})
                             <$> opaqueElements
 
                 opaqueConditions <-
-                    traverse (unifyChildren termLike) keyInKeysOpaque
+                    traverse (unifyChildren term) keyInKeysOpaque
                 let conditions =
                         fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
                             <> [definedKey, definedMap]
@@ -740,14 +733,12 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) termLike1 termLike2 u
           where
             UnifyNotInKeys
                 { inKeys
-                , keyTerm
-                , mapTerm
                 , concreteKeys
                 , mapKeys
                 , opaqueElements
-                , isFirstMatched
+                , term
                 } = unifyData'
-            termLike = if isFirstMatched then termLike1 else termLike2
+            InKeys{keyTerm, mapTerm} = inKeys
   where
     defineTerm ::
         TermLike RewritingVariableName ->
