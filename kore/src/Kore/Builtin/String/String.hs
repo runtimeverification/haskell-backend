@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.String.String (
     sort,
@@ -19,6 +19,7 @@ module Kore.Builtin.String.String (
     lengthKey,
     findKey,
     string2BaseKey,
+    base2StringKey,
     chrKey,
     ordKey,
     token2StringKey,
@@ -118,6 +119,9 @@ findKey = "STRING.find"
 
 string2BaseKey :: IsString s => s
 string2BaseKey = "STRING.string2base"
+
+base2StringKey :: IsString s => s
+base2StringKey = "STRING.base2string"
 
 chrKey :: IsString s => s
 chrKey = "STRING.chr"

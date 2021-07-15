@@ -4,8 +4,8 @@
 Module      : Kore.Internal.MultiAnd
 Description : Data structures and functions for manipulating
               And with any number of children.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -14,33 +14,32 @@ module Kore.Internal.MultiAnd (
     MultiAnd,
     top,
     make,
-    toPredicate,
-    fromPredicate,
     fromTermLike,
     singleton,
     map,
     traverse,
+    distributeAnd,
+    traverseOr,
+    traverseOrAnd,
+    size,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import Data.List (genericLength)
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
 import Debug
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
+import GHC.Natural (Natural)
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
-import Kore.Internal.Condition (
-    Condition,
+import Kore.Internal.MultiOr (
+    MultiOr,
  )
-import Kore.Internal.Predicate (
-    Predicate,
-    getMultiAndPredicate,
-    makeAndPredicate,
-    makeTruePredicate,
- )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.TermLike (
     TermLike,
     TermLikeF (..),
@@ -49,9 +48,16 @@ import Kore.Internal.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Kore.Unparser (
+    unparseAssoc',
+ )
+import qualified Logic
 import Prelude.Kore hiding (
     map,
     traverse,
+ )
+import Pretty (
+    Pretty (..),
  )
 
 -- | 'MultiAnd' is a Matching logic and of its children
@@ -89,6 +95,10 @@ instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
 
+instance Pretty child => Pretty (MultiAnd child) where
+    pretty = unparseAssoc' "\\and{_}" "\\top{_}()" . (<$>) pretty . getMultiAnd
+    {-# INLINE pretty #-}
+
 instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
     (MultiAnd []) <> b = b
     a <> (MultiAnd []) = a
@@ -96,27 +106,6 @@ instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
 
 instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
     mempty = make []
-
-instance
-    InternalVariable variable =>
-    From (MultiAnd (Predicate variable)) (Predicate variable)
-    where
-    from = toPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Predicate variable) (MultiAnd (Predicate variable))
-    where
-    from = fromPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Condition variable) (MultiAnd (Predicate variable))
-    where
-    from = fromPredicate . from @_ @(Predicate _)
-    {-# INLINE from #-}
 
 instance
     InternalVariable variable =>
@@ -157,6 +146,9 @@ make patts = filterAnd (MultiAnd patts)
 -- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
+
+size :: MultiAnd a -> Natural
+size (MultiAnd list) = genericLength list
 
 {- | Simplify the conjunction.
 
@@ -209,21 +201,6 @@ filterGeneric andFilter (MultiAnd patts) =
             AndTrue -> go filterAnd' filtered unfiltered
             AndUnknown -> go filterAnd' (element : filtered) unfiltered
 
-toPredicate ::
-    InternalVariable variable =>
-    MultiAnd (Predicate variable) ->
-    Predicate variable
-toPredicate (MultiAnd predicates) =
-    case predicates of
-        [] -> makeTruePredicate
-        _ -> foldr1 makeAndPredicate predicates
-
-fromPredicate ::
-    Ord variable =>
-    Predicate variable ->
-    MultiAnd (Predicate variable)
-fromPredicate = make . getMultiAndPredicate
-
 fromTermLike ::
     InternalVariable variable =>
     TermLike variable ->
@@ -251,3 +228,32 @@ traverse ::
     f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}
+
+distributeAnd ::
+    Ord term =>
+    TopBottom term =>
+    MultiAnd (MultiOr term) ->
+    MultiOr (MultiAnd term)
+distributeAnd multiAnd =
+    MultiOr.observeAll $ traverse Logic.scatter multiAnd
+{-# INLINE distributeAnd #-}
+
+traverseOr ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr child2)) ->
+    MultiAnd child1 ->
+    f (MultiOr (MultiAnd child2))
+traverseOr f = fmap distributeAnd . traverse f
+{-# INLINE traverseOr #-}
+
+traverseOrAnd ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr (MultiAnd child2))) ->
+    MultiOr (MultiAnd child1) ->
+    f (MultiOr (MultiAnd child2))
+traverseOrAnd f = MultiOr.traverseOr (fmap (MultiOr.map fold) . traverseOr f)
+{-# INLINE traverseOrAnd #-}

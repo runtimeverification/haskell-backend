@@ -21,12 +21,15 @@ import Kore.Equation.Application hiding (
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Rewriting.RewritingVariable (
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.Axiom.Registry (
+    mkEvaluatorRegistry,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.Axiom.Registry (
-    mkEvaluatorRegistry,
+import Kore.Unparser (
+    unparse,
  )
 import Prelude.Kore
 import qualified Pretty
@@ -35,8 +38,8 @@ import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -164,9 +167,17 @@ test_attemptEquation =
                             (Mock.functional10 (mkElemVar Mock.yConfig))
             initial = mkElemVar Mock.yConfig
             equation = equationId{ensures}
-        attemptEquation SideCondition.top initial equation
-            >>= expectRight
-            >>= assertEqual "" expect
+        actual <-
+            attemptEquation SideCondition.top initial equation
+                >>= expectRight
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , Pretty.indent 4 (unparse expect)
+                    , "but found:"
+                    , Pretty.indent 4 (unparse actual)
+                    ]
+        assertEqual message expect actual
     , testCase "equation requirement" $ do
         let requires =
                 makeEqualsPredicate
@@ -178,23 +189,17 @@ test_attemptEquation =
                 makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
-            expect1 =
-                WhileCheckRequires
-                    CheckRequiresError
-                        { matchPredicate = makeTruePredicate
-                        , equationRequires = requires1
-                        , sideCondition = SideCondition.top
-                        }
-        attemptEquation SideCondition.top initial equation
-            >>= expectLeft
-            >>= assertEqual "" expect1
+        checkRequiresError <-
+            attemptEquation SideCondition.top initial equation
+                >>= expectLeft
+                >>= expectCheckRequiresError
+        assertEqual "" requires1 (equationRequires checkRequiresError)
         let requires2 =
                 makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
             sideCondition2 =
-                SideCondition.fromCondition . Condition.fromPredicate $
-                    requires2
+                SideCondition.fromPredicateWithReplacements requires2
             expect2 = Pattern.fromTermLike initial
         attemptEquation sideCondition2 initial equation
             >>= expectRight
@@ -218,17 +223,12 @@ test_attemptEquation =
             >>= expectRight
             >>= assertEqual "" expect
     , testCase "rule a => b requires \\bottom" $ do
-        let expect =
-                WhileCheckRequires
-                    CheckRequiresError
-                        { matchPredicate = makeTruePredicate
-                        , equationRequires = makeFalsePredicate
-                        , sideCondition = SideCondition.top
-                        }
-            initial = Mock.a
-        attemptEquation SideCondition.top initial equationRequiresBottom
-            >>= expectLeft
-            >>= assertEqual "" expect
+        let initial = Mock.a
+        checkRequiresError <-
+            attemptEquation SideCondition.top initial equationRequiresBottom
+                >>= expectLeft
+                >>= expectCheckRequiresError
+        assertEqual "" makeFalsePredicate (equationRequires checkRequiresError)
     , testCase "rule a => \\bottom does not apply to c" $ do
         let initial = Mock.c
         attemptEquation SideCondition.top initial equationRequiresBottom
@@ -303,7 +303,9 @@ test_attemptEquation =
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         (axiom (sigma x y) a (positive x `orNot` positive y))
-        (SideCondition.fromPredicate $ positive a)
+        ( SideCondition.fromPredicateWithReplacements $
+            positive a
+        )
         (sigma a a)
         -- SMT not used to simplify trivial constraints
         (Pattern.fromTermLike a)
@@ -311,13 +313,17 @@ test_attemptEquation =
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
         (axiom (f x) a (positive x))
-        (SideCondition.fromPredicate $ makeNotPredicate (positive z))
+        ( SideCondition.fromPredicateWithReplacements $
+            makeNotPredicate (positive z)
+        )
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (axiom (f x) a (positive x))
-        (SideCondition.fromPredicate $ positive z)
+        ( SideCondition.fromPredicateWithReplacements $
+            positive z
+        )
         (f z)
         (Pattern.fromTermLike a)
     , testCase "X => X does not apply to X / X" $ do
@@ -329,7 +335,7 @@ test_attemptEquation =
         let initial = tdivInt xInt xInt
             sideCondition =
                 makeCeilPredicate initial
-                    & SideCondition.fromPredicate
+                    & SideCondition.fromPredicateWithReplacements
             expect = Pattern.fromTermLike initial
         attemptEquation sideCondition initial equationId
             >>= expectRight
@@ -512,7 +518,9 @@ test_attemptEquationUnification =
             a
             (positive x `orNot` positive y)
         )
-        (SideCondition.fromPredicate $ positive a)
+        ( SideCondition.fromPredicateWithReplacements $
+            positive a
+        )
         (sigma a a)
         -- SMT not used to simplify trivial constraints
         (Pattern.fromTermLike a)
@@ -520,13 +528,17 @@ test_attemptEquationUnification =
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
         (functionAxiomUnification fSymbol [x] a (positive x))
-        (SideCondition.fromPredicate $ makeNotPredicate (positive z))
+        ( SideCondition.fromPredicateWithReplacements $
+            makeNotPredicate (positive z)
+        )
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (functionAxiomUnification fSymbol [x] a (positive x))
-        (SideCondition.fromPredicate $ positive z)
+        ( SideCondition.fromPredicateWithReplacements $
+            positive z
+        )
         (f z)
         (Pattern.fromTermLike a)
     , notInstantiated
@@ -705,3 +717,13 @@ requiresNotMet ::
     TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)
+
+expectCheckRequiresError ::
+    AttemptEquationError variable ->
+    IO (CheckRequiresError variable)
+expectCheckRequiresError (WhileCheckRequires checkRequiresError) =
+    pure checkRequiresError
+expectCheckRequiresError (WhileMatch _) =
+    assertFailure "Expected WhileCheckRequires, but found WhileMatch"
+expectCheckRequiresError (WhileApplyMatchResult _) =
+    assertFailure "Expected WhileCheckRequires, but found WhileApplyMatchResult"

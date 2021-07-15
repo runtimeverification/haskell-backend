@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Repl
 Description : Proof REPL
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl (
@@ -13,7 +13,6 @@ import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad (
     forever,
-    void,
  )
 import Control.Monad.Catch (
     MonadMask,
@@ -40,6 +39,7 @@ import Data.List (
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import Kore.Attribute.Definition
 import Kore.Attribute.RuleIndex (
     RuleIndex (..),
  )
@@ -64,10 +64,10 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -122,8 +122,9 @@ runRepl ::
     OutputFile ->
     ModuleName ->
     Log.KoreLogOptions ->
+    KFileLocations ->
     m ()
-runRepl _ [] _ _ _ _ outputFile _ _ =
+runRepl _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -138,7 +139,8 @@ runRepl
     scriptModeOutput
     outputFile
     mainModuleName
-    logOptions =
+    logOptions
+    kFileLocations =
         do
             startTime <- liftIO $ getTime Monotonic
             (newState, _) <-
@@ -175,7 +177,9 @@ runRepl
             str <- prompt
             let command =
                     fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
+                silent = pure ()
             when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
+            saveSessionWithMessage silent ".sessionCommands"
             void $ replInterpreter printIfNotEmpty command
 
         state :: TimeSpec -> ReplState
@@ -208,6 +212,7 @@ runRepl
                 , logger
                 , outputFile
                 , mainModuleName
+                , kFileLocations
                 }
 
         firstClaimIndex :: ClaimIndex

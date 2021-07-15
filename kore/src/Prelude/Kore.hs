@@ -1,6 +1,6 @@
 {- |
 Copyright : (c) 2020 Runtime Verification
-License   : NCSA
+License   : BSD-3-Clause
 -}
 module Prelude.Kore (
     module Prelude,
@@ -13,6 +13,7 @@ module Prelude.Kore (
     -- * Functions
     (&),
     on,
+    (<&>),
 
     -- * Maybe
     isJust,
@@ -62,6 +63,7 @@ module Prelude.Kore (
     MonadPlus (..),
     MonadIO (..),
     MonadTrans (..),
+    void,
     unless,
     when,
 
@@ -142,6 +144,10 @@ import Data.Foldable
 import Data.Function (
     on,
     (&),
+ )
+import Data.Functor (
+    void,
+    (<&>),
  )
 import Data.Hashable (
     Hashable (..),

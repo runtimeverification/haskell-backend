@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.InfoAttemptUnification (
     InfoAttemptUnification (..),
@@ -33,7 +33,7 @@ data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike V
 
 instance Entry InfoAttemptUnification where
     entrySeverity _ = Info
-    shortDoc _ = Just "while attempting unification"
+    contextDoc _ = Just "while attempting unification"
     helpDoc _ = "log unification attempts"
 
 instance Pretty InfoAttemptUnification where

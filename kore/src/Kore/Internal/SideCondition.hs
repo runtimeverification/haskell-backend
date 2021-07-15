@@ -1,14 +1,16 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.SideCondition (
     SideCondition, -- Constructor not exported on purpose
-    fromCondition,
-    fromPredicate,
-    andCondition,
-    assumeTrueCondition,
-    assumeTruePredicate,
+    addAssumption,
+    addAssumptions,
+    assumeTrue,
+    constructReplacements,
+    fromConditionWithReplacements,
+    fromPredicateWithReplacements,
+    addConditionWithReplacements,
     mapVariables,
     top,
     topTODO,
@@ -16,11 +18,16 @@ module Kore.Internal.SideCondition (
     toRepresentation,
     replaceTerm,
     cannotReplaceTerm,
+    replacePredicate,
+    cannotReplacePredicate,
     assumeDefined,
     isDefined,
     fromDefinedTerms,
     generateNormalizedAcs,
     simplifyConjunctionByAssumption,
+    cacheSimplifiedFunctions,
+    isSimplifiedFunction,
+    fromSimplifiedFunctions,
 ) where
 
 import Changed
@@ -49,8 +56,7 @@ import Data.List (
 import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Attribute.Pattern.Defined as Pattern
+import qualified Kore.Attribute.Pattern.Defined as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
@@ -93,14 +99,15 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol (
+    Symbol,
     isConstructor,
     isFunction,
     isFunctional,
  )
 import Kore.Internal.TermLike (
+    Application,
     Key,
     TermLike,
-    extractAttributes,
     pattern App_,
     pattern Equals_,
     pattern Exists_,
@@ -138,9 +145,12 @@ import qualified SQL
 
 {- | Side condition used in the evaluation context.
 
-It contains a predicate assumed to be true, and a table of term replacements,
-which is used when simplifying terms. The table is constructed from the predicate,
-see 'simplifyConjunctionByAssumption'.
+It contains:
+* a predicate assumed to be true
+* a table of term replacements which is used when simplifying terms
+* a set of terms which are assumed to be defined
+* a set of terms with function application at the top which are known to have been
+  simplified as much as possible during the current rewrite step
 
 Warning! When simplifying a pattern, extra care should be taken that the
 'SideCondition' sent to the simplifier isn't created from the same 'Condition'
@@ -150,12 +160,14 @@ The predicate is usually used to remove infeasible branches, but it may also
 be used for other purposes, say, to remove redundant parts of the result predicate.
 -}
 data SideCondition variable = SideCondition
-    { assumedTrue ::
-        !(MultiAnd (Predicate variable))
-    , replacements ::
+    { assumedTrue :: !(MultiAnd (Predicate variable))
+    , replacementsTermLike ::
         !(HashMap (TermLike variable) (TermLike variable))
-    , definedTerms ::
-        !(HashSet (TermLike variable))
+    , replacementsPredicate ::
+        !(HashMap (Predicate variable) (Predicate variable))
+    , definedTerms :: !(HashSet (TermLike variable))
+    , simplifiedFunctions ::
+        !(HashSet (Application Symbol (TermLike variable)))
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -168,27 +180,37 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable where
-    freeVariables sideCondition@(SideCondition _ _ _) =
+    freeVariables sideCondition@(SideCondition _ _ _ _ _) =
         freeVariables assumedTrue
             <> foldMap freeVariables definedTerms
       where
-        SideCondition{assumedTrue, definedTerms} = sideCondition
+        SideCondition
+            { assumedTrue
+            , definedTerms
+            } = sideCondition
 
 instance InternalVariable variable => Pretty (SideCondition variable) where
     pretty
         SideCondition
             { assumedTrue
             , definedTerms
-            , replacements
+            , replacementsTermLike
+            , replacementsPredicate
             } =
-            Pretty.vsep $
-                [ "Assumed true condition:"
-                , Pretty.indent 4 (Pretty.pretty . MultiAnd.toPredicate $ assumedTrue)
-                , "Term replacements:"
+            (Pretty.vsep . concat)
+                [ ["Assumed true condition:"]
+                , (pure . Pretty.indent 4 . Pretty.pretty)
+                    (Predicate.fromMultiAnd assumedTrue)
+                , ["TermLike replacements:"]
+                , HashMap.foldlWithKey' (acc unparse) [] replacementsTermLike
+                , ["Predicate replacements:"]
+                , HashMap.foldlWithKey'
+                    (acc Pretty.pretty)
+                    []
+                    replacementsPredicate
+                , ["Assumed to be defined:"]
+                , unparse <$> HashSet.toList definedTerms
                 ]
-                    <> HashMap.foldlWithKey' (acc unparse) [] replacements
-                    <> ["Assumed to be defined:"]
-                    <> (unparse <$> HashSet.toList definedTerms)
           where
             acc showFunc result key value =
                 result
@@ -199,29 +221,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
                        ]
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable)) where
-    from condition@(SideCondition _ _ _) = assumedTrue condition
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (MultiAnd (Predicate variable)) (SideCondition variable)
-    where
-    from multiAnd =
-        let (assumedTrue, Assumptions termReplacements predicateReplacements) =
-                simplifyConjunctionByAssumption multiAnd
-                    & extract
-            predicateReplacementsAsTerms =
-                mapKeysAndValues
-                    Predicate.fromPredicate_
-                    predicateReplacements
-            replacements =
-                termReplacements
-                    <> predicateReplacementsAsTerms
-         in SideCondition
-                { assumedTrue
-                , replacements
-                , definedTerms = mempty
-                }
+    from condition@(SideCondition _ _ _ _ _) = assumedTrue condition
     {-# INLINE from #-}
 
 instance
@@ -233,31 +233,135 @@ instance
 
 instance
     InternalVariable variable =>
-    From (Predicate variable) (SideCondition variable)
-    where
-    from = fromPredicate
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
-    From (Condition variable) (SideCondition variable)
-    where
-    from = fromCondition
-    {-# INLINE from #-}
-
-instance
-    InternalVariable variable =>
     From (SideCondition variable) (Condition variable)
     where
     from = Condition.fromPredicate . toPredicate
     {-# INLINE from #-}
 
+{- | Smart constructor for creating a 'SideCondition' by just assuming
+ a conjunction of predicates to be true.
+-}
+assumeTrue ::
+    MultiAnd (Predicate variable) ->
+    SideCondition variable
+assumeTrue assumedTrue =
+    SideCondition
+        { assumedTrue
+        , replacementsTermLike = HashMap.empty
+        , replacementsPredicate = HashMap.empty
+        , definedTerms = HashSet.empty
+        , simplifiedFunctions = HashSet.empty
+        }
+
+{- | Assumes a single 'Predicate' to be true in the context of another
+ 'SideCondition'.
+ Does not modify the replacement table or the set of defined terms.
+-}
+addAssumption ::
+    Ord variable =>
+    Predicate variable ->
+    SideCondition variable ->
+    SideCondition variable
+addAssumption predicate =
+    addAssumptions (MultiAnd.singleton predicate)
+
+{- | Assumes a conjunction of 'Predicate's to be true in the context
+ of another 'SideCondition'.
+ Does not modify the replacement table or the set of defined terms.
+-}
+addAssumptions ::
+    Ord variable =>
+    MultiAnd (Predicate variable) ->
+    SideCondition variable ->
+    SideCondition variable
+addAssumptions predicates sideCondition =
+    sideCondition
+        { assumedTrue =
+            predicates <> assumedTrue sideCondition
+        }
+
+{- | Assumes a 'Condition' to be true in the context of another
+'SideCondition' and recalculates the term replacements table
+from the combined predicate.
+-}
+addConditionWithReplacements ::
+    InternalVariable variable =>
+    Condition variable ->
+    SideCondition variable ->
+    SideCondition variable
+addConditionWithReplacements
+    (from @(Condition _) @(MultiAnd _) -> newCondition)
+    sideCondition =
+        let combinedConditions = oldCondition <> newCondition
+            (assumedTrue, assumptions) =
+                simplifyConjunctionByAssumption combinedConditions
+                    & extract
+            Assumptions replacementsTermLike replacementsPredicate = assumptions
+         in SideCondition
+                { assumedTrue
+                , replacementsTermLike
+                , replacementsPredicate
+                , definedTerms
+                , simplifiedFunctions
+                }
+      where
+        SideCondition
+            { assumedTrue = oldCondition
+            , definedTerms
+            , simplifiedFunctions
+            } = sideCondition
+
+{- | Smart constructor for creating a 'SideCondition' by just constructing
+ the replacement table from a conjunction of predicates.
+-}
+constructReplacements ::
+    InternalVariable variable =>
+    MultiAnd (Predicate variable) ->
+    SideCondition variable
+constructReplacements predicates =
+    let (_, assumptions) =
+            simplifyConjunctionByAssumption predicates
+                & extract
+        Assumptions replacementsTermLike replacementsPredicate =
+            assumptions
+     in SideCondition
+            { assumedTrue = MultiAnd.top
+            , replacementsTermLike
+            , replacementsPredicate
+            , definedTerms = HashSet.empty
+            , simplifiedFunctions = HashSet.empty
+            }
+
+{- | Smart constructor for creating a `SideCondition` by assuming
+ a 'Condition' to be true and building its term replacement table.
+-}
+fromConditionWithReplacements ::
+    InternalVariable variable =>
+    Condition variable ->
+    SideCondition variable
+fromConditionWithReplacements (from -> predicates) =
+    constructReplacements predicates
+        & Lens.set (field @"assumedTrue") predicates
+
+{- | Smart constructor for creating a `SideCondition` by assuming
+ a 'Predicate' to be true and building its term replacement table.
+-}
+fromPredicateWithReplacements ::
+    InternalVariable variable =>
+    Predicate variable ->
+    SideCondition variable
+fromPredicateWithReplacements (from -> predicates) =
+    constructReplacements predicates
+        & Lens.set (field @"assumedTrue") predicates
+
 top :: InternalVariable variable => SideCondition variable
 top =
     SideCondition
         { assumedTrue = MultiAnd.top
+        , replacementsTermLike = mempty
+        , replacementsPredicate = mempty
         , definedTerms = mempty
-        , replacements = mempty
+        , simplifiedFunctions = mempty
         }
 
 -- TODO(ana.pantilie): Should we look into removing this?
@@ -266,95 +370,54 @@ top =
 topTODO :: InternalVariable variable => SideCondition variable
 topTODO = top
 
-{- | A 'SideCondition' and a 'Condition' are combined by assuming
-their conjunction to be true, and creating a new table of replacements
-from the new predicate.
--}
-andCondition ::
-    InternalVariable variable =>
-    SideCondition variable ->
-    Condition variable ->
-    SideCondition variable
-andCondition
-    sideCondition
-    (from @(Condition _) @(MultiAnd _) -> newCondition) =
-        let combinedConditions = oldCondition <> newCondition
-            (assumedTrue, Assumptions termReplacements predicateReplacements) =
-                simplifyConjunctionByAssumption combinedConditions
-                    & extract
-            predicateReplacementsAsTerms =
-                mapKeysAndValues
-                    Predicate.fromPredicate_
-                    predicateReplacements
-            replacements =
-                termReplacements
-                    <> predicateReplacementsAsTerms
-         in SideCondition
-                { assumedTrue
-                , definedTerms
-                , replacements
-                }
-      where
-        SideCondition{assumedTrue = oldCondition, definedTerms} = sideCondition
-
-assumeTrueCondition ::
-    InternalVariable variable =>
-    Condition variable ->
-    SideCondition variable
-assumeTrueCondition = fromCondition
-
-assumeTruePredicate ::
-    InternalVariable variable =>
-    Predicate variable ->
-    SideCondition variable
-assumeTruePredicate = fromPredicate
-
 toPredicate ::
     InternalVariable variable =>
     SideCondition variable ->
     Predicate variable
-toPredicate condition@(SideCondition _ _ _) =
+toPredicate condition@(SideCondition _ _ _ _ _) =
     Predicate.makeAndPredicate
         assumedTruePredicate
         definedPredicate
   where
     SideCondition{assumedTrue, definedTerms} = condition
-    assumedTruePredicate = MultiAnd.toPredicate assumedTrue
+    assumedTruePredicate = Predicate.fromMultiAnd assumedTrue
     definedPredicate =
         definedTerms
             & HashSet.toList
             & fmap Predicate.makeCeilPredicate
             & MultiAnd.make
-            & MultiAnd.toPredicate
-
-fromPredicate ::
-    InternalVariable variable =>
-    Predicate variable ->
-    SideCondition variable
-fromPredicate = from @(MultiAnd _) . MultiAnd.fromPredicate
+            & Predicate.fromMultiAnd
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>
     AdjSomeVariableName (variable1 -> variable2) ->
     SideCondition variable1 ->
     SideCondition variable2
-mapVariables adj condition@(SideCondition _ _ _) =
+mapVariables adj condition@(SideCondition _ _ _ _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
-        replacements' =
-            mapKeysAndValues (TermLike.mapVariables adj) replacements
+        replacementsTermLike' =
+            mapKeysAndValues (TermLike.mapVariables adj) replacementsTermLike
+        replacementsPredicate' =
+            mapKeysAndValues (Predicate.mapVariables adj) replacementsPredicate
         definedTerms' =
             HashSet.map (TermLike.mapVariables adj) definedTerms
+        simplifiedFunctions' =
+            (HashSet.map . fmap) (TermLike.mapVariables adj) simplifiedFunctions
      in SideCondition
             { assumedTrue = assumedTrue'
-            , replacements = replacements'
+            , replacementsTermLike = replacementsTermLike'
+            , replacementsPredicate = replacementsPredicate'
             , definedTerms = definedTerms'
+            , simplifiedFunctions = simplifiedFunctions'
             }
   where
     SideCondition
         { assumedTrue
+        , replacementsTermLike
+        , replacementsPredicate
         , definedTerms
-        , replacements
+        , simplifiedFunctions
         } = condition
 
 -- | Utility function for mapping on the keys and values of a 'HashMap'.
@@ -369,12 +432,6 @@ mapKeysAndValues f hashMap =
         Bifunctor.bimap f f
             <$> HashMap.toList hashMap
 
-fromCondition ::
-    InternalVariable variable =>
-    Condition variable ->
-    SideCondition variable
-fromCondition = fromPredicate . Condition.toPredicate
-
 fromDefinedTerms ::
     InternalVariable variable =>
     HashSet (TermLike variable) ->
@@ -382,11 +439,18 @@ fromDefinedTerms ::
 fromDefinedTerms definedTerms =
     top{definedTerms}
 
+{- | Prepares the 'SideCondition' for storing in the term attributes.
+ Any metadata information used only in particular places during execution
+ is erased.
+-}
 toRepresentation ::
     InternalVariable variable =>
     SideCondition variable ->
     SideCondition.Representation
-toRepresentation = mkRepresentation
+toRepresentation sideCondition =
+    let sideCondition' =
+            sideCondition{simplifiedFunctions = HashSet.empty}
+     in mkRepresentation sideCondition'
 
 -- | Looks up the term in the table of replacements.
 replaceTerm ::
@@ -394,8 +458,8 @@ replaceTerm ::
     SideCondition variable ->
     TermLike variable ->
     Maybe (TermLike variable)
-replaceTerm SideCondition{replacements} original =
-    HashMap.lookup original replacements
+replaceTerm SideCondition{replacementsTermLike} original =
+    HashMap.lookup original replacementsTermLike
 
 {- | If the term isn't a key in the table of replacements
 then it cannot be replaced.
@@ -405,8 +469,28 @@ cannotReplaceTerm ::
     SideCondition variable ->
     TermLike variable ->
     Bool
-cannotReplaceTerm SideCondition{replacements} term =
-    HashMap.lookup term replacements & isNothing
+cannotReplaceTerm SideCondition{replacementsTermLike} term =
+    HashMap.lookup term replacementsTermLike & isNothing
+
+-- | Looks up the predicate in the table of replacements.
+replacePredicate ::
+    InternalVariable variable =>
+    SideCondition variable ->
+    Predicate variable ->
+    Maybe (Predicate variable)
+replacePredicate SideCondition{replacementsPredicate} original =
+    HashMap.lookup original replacementsPredicate
+
+{- | If the predicate isn't a key in the table of replacements
+then it cannot be replaced.
+-}
+cannotReplacePredicate ::
+    InternalVariable variable =>
+    SideCondition variable ->
+    Predicate variable ->
+    Bool
+cannotReplacePredicate SideCondition{replacementsPredicate} term =
+    HashMap.lookup term replacementsPredicate & isNothing
 
 data Assumptions variable = Assumptions
     { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
@@ -855,4 +939,115 @@ generateNormalizedAcs internalAc =
 -}
 isDefinedInternal :: TermLike variable -> Bool
 isDefinedInternal =
-    Pattern.isDefined . Attribute.defined . extractAttributes
+    Attribute.isDefined . TermLike.termDefined . TermLike.extractAttributes
+
+fromSimplifiedFunctions ::
+    InternalVariable variable =>
+    HashSet (Application Symbol (TermLike variable)) ->
+    SideCondition variable
+fromSimplifiedFunctions simplifiedFunctions =
+    top{simplifiedFunctions}
+
+{- | Stores all non-constructor function symbols appearing in a term.
+ Inside a rewrite step, this information is used to avoid trying to
+ reevaluate functions which could not be evaluated during the 'Simplify'
+ stage of execution.
+
+ See 'isSimplifiedFunction'.
+-}
+cacheSimplifiedFunctions ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    SideCondition variable
+cacheSimplifiedFunctions =
+    fromSimplifiedFunctions
+        . extractSimplifiedFunctions
+  where
+    extractSimplifiedFunctions ::
+        TermLike variable ->
+        HashSet (Application Symbol (TermLike variable))
+    extractSimplifiedFunctions (Recursive.project -> _ :< termF) =
+        case termF of
+            TermLike.ApplySymbolF symbolApp ->
+                let symbol = TermLike.applicationSymbolOrAlias symbolApp
+                    children = TermLike.applicationChildren symbolApp
+                    childrenSet = foldMap extractSimplifiedFunctions children
+                 in if isFunction symbol && not (isConstructor symbol)
+                        then HashSet.singleton symbolApp <> childrenSet
+                        else childrenSet
+            TermLike.AndF and' ->
+                foldMap extractSimplifiedFunctions and'
+            TermLike.ApplyAliasF aliasApp ->
+                foldMap extractSimplifiedFunctions aliasApp
+            TermLike.BottomF bottom ->
+                foldMap extractSimplifiedFunctions bottom
+            TermLike.CeilF ceil ->
+                foldMap extractSimplifiedFunctions ceil
+            TermLike.DomainValueF dv ->
+                foldMap extractSimplifiedFunctions dv
+            TermLike.EqualsF equals ->
+                foldMap extractSimplifiedFunctions equals
+            TermLike.ExistsF exists ->
+                foldMap extractSimplifiedFunctions exists
+            TermLike.FloorF floor' ->
+                foldMap extractSimplifiedFunctions floor'
+            TermLike.ForallF forall' ->
+                foldMap extractSimplifiedFunctions forall'
+            TermLike.IffF iff ->
+                foldMap extractSimplifiedFunctions iff
+            TermLike.ImpliesF implies ->
+                foldMap extractSimplifiedFunctions implies
+            TermLike.InF in' ->
+                foldMap extractSimplifiedFunctions in'
+            TermLike.MuF mu ->
+                foldMap extractSimplifiedFunctions mu
+            TermLike.NextF next ->
+                foldMap extractSimplifiedFunctions next
+            TermLike.NotF not' ->
+                foldMap extractSimplifiedFunctions not'
+            TermLike.NuF nu ->
+                foldMap extractSimplifiedFunctions nu
+            TermLike.OrF or' ->
+                foldMap extractSimplifiedFunctions or'
+            TermLike.RewritesF rewrites ->
+                foldMap extractSimplifiedFunctions rewrites
+            TermLike.TopF top' ->
+                foldMap extractSimplifiedFunctions top'
+            TermLike.InhabitantF inh ->
+                foldMap extractSimplifiedFunctions inh
+            TermLike.StringLiteralF stringLit ->
+                foldMap extractSimplifiedFunctions stringLit
+            TermLike.InternalBoolF bool ->
+                foldMap extractSimplifiedFunctions bool
+            TermLike.InternalBytesF bytes ->
+                foldMap extractSimplifiedFunctions bytes
+            TermLike.InternalIntF int ->
+                foldMap extractSimplifiedFunctions int
+            TermLike.InternalStringF string ->
+                foldMap extractSimplifiedFunctions string
+            TermLike.InternalListF list ->
+                foldMap extractSimplifiedFunctions list
+            TermLike.InternalMapF map' ->
+                foldMap extractSimplifiedFunctions map'
+            TermLike.InternalSetF set ->
+                foldMap extractSimplifiedFunctions set
+            TermLike.VariableF var ->
+                foldMap extractSimplifiedFunctions var
+            TermLike.EndiannessF end ->
+                foldMap extractSimplifiedFunctions end
+            TermLike.SignednessF sign ->
+                foldMap extractSimplifiedFunctions sign
+            TermLike.InjF inj ->
+                foldMap extractSimplifiedFunctions inj
+
+{- | Decides whether a function can be further simplified or not.
+ See also 'cacheSimplifiedFunctions'.
+-}
+isSimplifiedFunction ::
+    InternalVariable variable =>
+    Application Symbol (TermLike variable) ->
+    SideCondition variable ->
+    Bool
+isSimplifiedFunction app SideCondition{simplifiedFunctions} =
+    HashSet.member app simplifiedFunctions

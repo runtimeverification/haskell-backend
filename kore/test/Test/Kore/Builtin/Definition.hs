@@ -63,7 +63,7 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding (
     Symbol,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Syntax (
@@ -74,7 +74,7 @@ import qualified Kore.Syntax.PatternF as PatternF
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 
 -- -------------------------------------------------------------
 
@@ -692,6 +692,10 @@ string2BaseStringSymbol :: Internal.Symbol
 string2BaseStringSymbol =
     builtinSymbol "string2baseString" intSort [stringSort, intSort]
         & hook "STRING.string2base"
+base2StringStringSymbol :: Internal.Symbol
+base2StringStringSymbol =
+    builtinSymbol "base2stringString" stringSort [intSort, intSort]
+        & hook "STRING.base2string"
 string2IntStringSymbol :: Internal.Symbol
 string2IntStringSymbol =
     builtinSymbol "string2intString" intSort [stringSort]
@@ -756,6 +760,14 @@ string2bytesBytesSymbol :: Internal.Symbol
 string2bytesBytesSymbol =
     builtinSymbol "string2bytesBytes" bytesSort [stringSort]
         & hook "BYTES.string2bytes"
+decodeBytesBytesSymbol :: Internal.Symbol
+decodeBytesBytesSymbol =
+    builtinSymbol "decodeBytesBytes" stringSort [stringSort, bytesSort]
+        & hook "BYTES.decodeBytes"
+encodeBytesBytesSymbol :: Internal.Symbol
+encodeBytesBytesSymbol =
+    builtinSymbol "encodeBytesBytes" bytesSort [stringSort, stringSort]
+        & hook "BYTES.encodeBytes"
 updateBytesSymbol :: Internal.Symbol
 updateBytesSymbol =
     builtinSymbol "updateBytes" bytesSort [bytesSort, intSort, intSort]
@@ -1648,6 +1660,7 @@ stringModule =
             , hookedSymbolDecl ordStringSymbol
             , hookedSymbolDecl findStringSymbol
             , hookedSymbolDecl string2BaseStringSymbol
+            , hookedSymbolDecl base2StringStringSymbol
             , hookedSymbolDecl string2IntStringSymbol
             , hookedSymbolDecl int2StringStringSymbol
             , hookedSymbolDecl token2StringStringSymbol
@@ -1672,6 +1685,8 @@ bytesModule =
             , bytesSortDecl
             , hookedSymbolDecl bytes2stringBytesSymbol
             , hookedSymbolDecl string2bytesBytesSymbol
+            , hookedSymbolDecl decodeBytesBytesSymbol
+            , hookedSymbolDecl encodeBytesBytesSymbol
             , hookedSymbolDecl updateBytesSymbol
             , hookedSymbolDecl getBytesSymbol
             , hookedSymbolDecl substrBytesSymbol

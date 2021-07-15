@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Application (
     attemptEquation,
@@ -62,6 +62,9 @@ import Kore.Internal.Condition (
     Condition,
  )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -77,7 +80,6 @@ import Kore.Internal.Predicate (
     makeAndPredicate,
     makeNotPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -90,19 +92,20 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.Axiom.Matcher (
+import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
     matchIncremental,
  )
-import qualified Kore.Step.SMT.Evaluator as SMT
-import Kore.Step.Simplification.Simplify (
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import qualified Kore.Rewrite.SMT.Evaluator as SMT
+import qualified Kore.Rewrite.Substitution as Substitution
+import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.Step.Substitution as Substitution
+import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),
     FileLocation (..),
@@ -290,10 +293,8 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
                     , applyMatchErrors = x :| xs
                     }
         _ -> return ()
-    let predicate' =
-            Predicate.substitute orientedSubstitution predicate
-        equation' =
-            Equation.substitute orientedSubstitution equation
+    let predicate' = substitute orientedSubstitution predicate
+        equation' = substitute orientedSubstitution equation
     return (equation', predicate')
   where
     orientedSubstitution = Substitution.orientSubstitution occursInEquation substitution
@@ -382,16 +383,17 @@ checkRequires sideCondition predicate requires =
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
-    assertBottom orCondition
-        | isBottom orCondition = done
-        | otherwise = requiresNotMet
+    assertBottom negatedImplication
+        | isBottom negatedImplication = done
+        | otherwise = requiresNotMet negatedImplication
     done = return ()
-    requiresNotMet =
+    requiresNotMet negatedImplication =
         throwE
             CheckRequiresError
                 { matchPredicate = predicate
                 , equationRequires = requires
                 , sideCondition
+                , negatedImplication
                 }
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
@@ -530,6 +532,7 @@ data CheckRequiresError variable = CheckRequiresError
     { matchPredicate :: !(Predicate variable)
     , equationRequires :: !(Predicate variable)
     , sideCondition :: !(SideCondition variable)
+    , negatedImplication :: !(OrCondition variable)
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -539,16 +542,22 @@ data CheckRequiresError variable = CheckRequiresError
 instance Pretty (CheckRequiresError RewritingVariableName) where
     pretty checkRequiresError =
         Pretty.vsep
-            [ "could not infer the equation requirement:"
+            [ "Could not infer the equation requirement:"
             , Pretty.indent 4 (pretty equationRequires)
             , "and the matching requirement:"
             , Pretty.indent 4 (pretty matchPredicate)
             , "from the side condition:"
             , Pretty.indent 4 (pretty sideCondition)
+            , "The negated implication is:"
+            , Pretty.indent 4 (pretty negatedImplication)
             ]
       where
-        CheckRequiresError{matchPredicate, equationRequires, sideCondition} =
-            checkRequiresError
+        CheckRequiresError
+            { matchPredicate
+            , equationRequires
+            , sideCondition
+            , negatedImplication
+            } = checkRequiresError
 
 -- * Logging
 
@@ -585,13 +594,18 @@ instance Pretty DebugAttemptEquation where
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
-    shortDoc (DebugAttemptEquation equation _) =
+    contextDoc (DebugAttemptEquation equation _) =
         (Just . Pretty.hsep . catMaybes)
             [ Just "while applying equation"
             , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
             ]
-    shortDoc _ = Nothing
+    contextDoc _ = Nothing
     helpDoc _ = "log equation application attempts"
+    oneLineDoc (DebugAttemptEquation equation _) =
+        (\loc -> Pretty.hsep ["applying equation at", pretty loc])
+            <$> srcLoc equation
+    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = Just "equation is not applicable"
+    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = Just "equation is applicable"
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::

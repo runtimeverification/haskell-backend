@@ -14,6 +14,48 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.49.0.0] - 2021-06-30
+
+### Added
+
+- Added option to output logs in one-line format (#2596).
+- Improved performance of simplification (#2520).
+
+### Fixed
+
+- Fixed issue with `unifyStringEq` (#2586).
+
+## [0.48.0.0] - 2021-06-16
+
+### Added
+
+- Adds support for Z3's `:rlimit` with `--smt-rlimit` CL option (#2407).
+- Enables building with `-eventlog` by default (#2658).
+- Adds option `--not-matching-children` to `kore-prof` (#2631).
+
+### Fixed
+
+- The `SideCondition.andCondition` performance regression is fixed (#2454).
+- Decoding bytes is improved (fixes added in relation to #2591).
+
+## [0.47.0.0] - 2021-06-02
+
+### Added
+
+- The hook `KEQUALS.neq` eagerly returns `false` when two symbolic patterns are
+  equal. (#2634)
+- The hooks `BYTES.decodeBytes` and `BYTES.encodeBytes` are implemented. (#2619)
+- The warning `WarnIfLowProductivity` indicates the definition where the warning
+  occurred. (#2594)
+- `kore-repl` records effect-ful commands from the current session when it
+  saves a bug report. (#2614)
+
+### Fixed
+
+- The definitions of functions in `prelude.kore` are rewritten in the format
+  expected by the LLVM backend. (#2629)
+- `\next` is correctly distributed over `\or` during simplification. (#2608)
+
 ## [0.45.0.0] - 2021-05-10
 
 ### Fixed

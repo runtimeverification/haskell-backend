@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules (..),
@@ -19,7 +19,7 @@ import Kore.Internal.Variable (
     VariableName,
     toVariableName,
  )
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Kore.Unparser
 import Log
 import Prelude.Kore
@@ -53,6 +53,8 @@ instance Pretty DebugAppliedRewriteRules where
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
+    oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules} =
+        Just $ Pretty.hsep $ pretty <$> appliedRewriteRules
 
 debugAppliedRewriteRules ::
     MonadLog log =>

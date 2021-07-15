@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.String
 Description : Built-in string sort
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -26,6 +26,8 @@ module Kore.Builtin.String (
     parse,
     unifyString,
     unifyStringEq,
+    matchString,
+    matchUnifyStringEq,
 
     -- * keys
     ltKey,
@@ -76,29 +78,41 @@ import qualified Kore.Error
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalString
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Log.WarnNotImplemented
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier (
+import Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
     TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
 import Numeric (
-    readOct,
+    readInt,
+    showIntAtBase,
+    showSigned,
  )
 import Prelude.Kore
 import qualified Text.Megaparsec as Parsec
@@ -165,6 +179,12 @@ symbolVerifiers =
             , Builtin.verifySymbol
                 Int.assertSort
                 [assertSort, Int.assertSort]
+            )
+        ,
+            ( base2StringKey
+            , Builtin.verifySymbol
+                assertSort
+                [Int.assertSort, Int.assertSort]
             )
         ,
             ( string2IntKey
@@ -308,20 +328,50 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
                 resultSort = symbolSorts symbol & applicationSortsResult
             _str <- expectBuiltinString string2BaseKey _strTerm
             _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
-            packedResult <-
-                case _base of
-                    -- no builtin reader for number in octal notation
-                    8 -> return $ case readOct $ Text.unpack _str of
-                        [(result, "")] -> Right (result, "")
-                        _ -> Left ""
-                    10 -> return $ Text.signed Text.decimal _str
-                    16 -> return $ Text.signed Text.hexadecimal _str
-                    _ -> warnNotImplemented app >> empty
-            case packedResult of
-                Right (result, Text.unpack -> "") ->
-                    return (Int.asPattern resultSort result)
-                _ -> return (Pattern.bottomOf resultSort)
+            unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
+            return $ case readWithBase _base (Text.unpack _str) of
+                [(result, "")] -> Int.asPattern resultSort result
+                _ -> Pattern.bottomOf resultSort
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
+
+readWithBase :: Integer -> ReadS Integer
+readWithBase base = sign $ readInt base isDigit valDigit
+  where
+    sign p ('-' : cs) = do
+        (a, str') <- p cs
+        return (negate a, str')
+    sign p ('+' : cs) = p cs
+    sign p cs = p cs
+    isDigit = maybe False (< base) . valDig
+    valDigit = fromMaybe 0 . valDig
+    valDig c
+        | '0' <= c && c <= '9' = Just $ fromIntegral $ ord c - ord '0'
+        | 'a' <= c && c <= 'z' = Just $ fromIntegral $ ord c - ord 'a' + 10
+        | 'A' <= c && c <= 'Z' = Just $ fromIntegral $ ord c - ord 'A' + 10
+        | otherwise = Nothing
+
+evalBase2String :: BuiltinAndAxiomSimplifier
+evalBase2String = Builtin.applicationEvaluator evalBase2String0
+  where
+    evalBase2String0 _ app
+        | [_intTerm, _baseTerm] <- applicationChildren app = do
+            let Application{applicationSymbolOrAlias = symbol} = app
+                resultSort = symbolSorts symbol & applicationSortsResult
+            _int <- Int.expectBuiltinInt base2StringKey _intTerm
+            _base <- Int.expectBuiltinInt base2StringKey _baseTerm
+            unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
+            Text.pack (showWithBase _int _base)
+                & asPattern resultSort
+                & return
+    evalBase2String0 _ _ = Builtin.wrongArity base2StringKey
+
+showWithBase :: Integer -> Integer -> String
+showWithBase int base = showSigned (showIntAtBase base toChar) 0 int ""
+  where
+    -- chr 48 == '0', chr 97 == 'a'
+    toChar digit
+        | 0 <= digit && digit <= 9 = chr $ digit + 48
+        | otherwise = chr $ digit + 87
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
@@ -398,6 +448,7 @@ builtinFunctions =
         , (lengthKey, evalLength)
         , (findKey, evalFind)
         , (string2BaseKey, evalString2Base)
+        , (base2StringKey, evalBase2String)
         , (string2IntKey, evalString2Int)
         , (int2StringKey, evalInt2String)
         , (chrKey, evalChr)
@@ -432,24 +483,68 @@ matchStringEqual =
             Monad.guard (hook2 == eqKey)
             & isJust
 
+data UnifyString = UnifyString
+    { string1, string2 :: !InternalString
+    }
+
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{String}(_), \\dv{String}(_))
+@
+
+and
+
+@
+\\and{_}(\\dv{String}(_), \\dv{String}}(_))
+@
+-}
+matchString ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyString
+matchString first second
+    | InternalString_ string1 <- first
+      , InternalString_ string2 <- second =
+        Just UnifyString{string1, string2}
+    | otherwise = Nothing
+{-# INLINE matchString #-}
+
 -- | Unification of String values.
 unifyString ::
-    forall unifier variable.
-    InternalVariable variable =>
+    forall unifier.
     MonadUnify unifier =>
-    HasCallStack =>
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyString term1@(InternalString_ int1) term2@(InternalString_ int2) =
-    assert (on (==) internalStringSort int1 int2) $ lift worker
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    UnifyString ->
+    unifier (Pattern RewritingVariableName)
+unifyString term1 term2 unifyData =
+    assert (on (==) internalStringSort string1 string2) worker
   where
-    worker :: unifier (Pattern variable)
+    worker :: unifier (Pattern RewritingVariableName)
     worker
-        | on (==) internalStringValue int1 int2 =
+        | on (==) internalStringValue string1 string2 =
             return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct strings" term1 term2
-unifyString _ _ = empty
+        | otherwise =
+            debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
+    UnifyString{string1, string2} = unifyData
+
+data UnifyStringEq = UnifyStringEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , internalBool :: !InternalBool
+    }
+
+matchUnifyStringEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyStringEq
+matchUnifyStringEq first second
+    | Just eqTerm <- matchStringEqual first
+      , isFunctionPattern first
+      , InternalBool_ internalBool <- second =
+        Just UnifyStringEq{eqTerm, internalBool}
+    | otherwise = Nothing
+{-# INLINE matchUnifyStringEq #-}
 
 {- | Unification of the @STRING.eq@ symbol
 
@@ -460,14 +555,19 @@ unifyStringEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyStringEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyStringEq ->
+    unifier (Pattern RewritingVariableName)
+unifyStringEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else notSimplifier SideCondition.top
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchStringEqual termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyStringEq{eqTerm, internalBool} = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm

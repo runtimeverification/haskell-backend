@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.InternalBytes (
     sort,
@@ -10,10 +10,15 @@ module Kore.Builtin.InternalBytes (
     asInternal,
     internalize,
     asPattern,
+    UnifyBytes (..),
+    matchBytes,
+    unifyBytes,
 
     -- * Keys
     bytes2StringKey,
     string2BytesKey,
+    decodeBytesKey,
+    encodeBytesKey,
     updateKey,
     getKey,
     substrKey,
@@ -28,11 +33,16 @@ module Kore.Builtin.InternalBytes (
 import Control.Error (
     MaybeT,
  )
+import Control.Exception (
+    evaluate,
+    try,
+ )
 import Data.ByteString (
     ByteString,
  )
 import qualified Data.ByteString as ByteString
 import Data.Functor.Const
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
@@ -44,6 +54,9 @@ import Data.String (
 import Data.Text (
     Text,
  )
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
 import Data.Word (
     Word8,
  )
@@ -58,13 +71,27 @@ import qualified Kore.Error
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Simplify (
+import Kore.Log.WarnNotImplemented
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
+import Kore.Unification.Unify (
+    MonadUnify,
+ )
 import qualified Kore.Verified as Verified
+import Log (MonadLog)
 import Prelude.Kore
+import System.IO.Unsafe (
+    unsafeDupablePerformIO,
+ )
 
 {- | Verify that the sort is hooked to the @Bytes@ sort.
  | See also: 'sort', 'Builtin.verifySort'.
@@ -99,6 +126,14 @@ symbolVerifiers =
         ,
             ( string2BytesKey
             , Builtin.verifySymbol bytes [string]
+            )
+        ,
+            ( decodeBytesKey
+            , Builtin.verifySymbol string [string, bytes]
+            )
+        ,
+            ( encodeBytesKey
+            , Builtin.verifySymbol bytes [string, string]
             )
         ,
             ( updateKey
@@ -213,6 +248,66 @@ evalString2Bytes =
             & asPattern resultSort
             & return
     evalString2Bytes0 _ _ _ = Builtin.wrongArity string2BytesKey
+
+evalDecodeBytes :: BuiltinAndAxiomSimplifier
+evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
+  where
+    evalDecodeBytes0 _ app
+        | [_strTerm, _bytesTerm] <- applicationChildren app = do
+            let Application{applicationSymbolOrAlias = symbol} = app
+                resultSort = symbolSorts symbol & applicationSortsResult
+            _str <- String.expectBuiltinString decodeBytesKey _strTerm
+            _bytes <- matchBuiltinBytes _bytesTerm
+            decodeUtf app resultSort (Text.unpack _str) _bytes
+    evalDecodeBytes0 _ _ = Builtin.wrongArity decodeBytesKey
+
+{- | Decode a ByteString using UTF-8, UTF-16LE, UTF-16BE,
+ UTF-32LE or UTF-32BE. If the decoding format is invalid,
+ warn not implemented. If the ByteString contains any invalid
+ UTF-* data, bottom is returned, otherwise the decoded text.
+ See <https://hackage.haskell.org/package/text-1.2.4.1/docs/Data-Text-Encoding.html#v:decodeUtf8-39- decodeUtf8'>
+ implementation for more information about 'tryDecode'.
+-}
+decodeUtf ::
+    MonadLog unify =>
+    InternalVariable variable =>
+    Application Symbol (TermLike variable) ->
+    Sort ->
+    String ->
+    ByteString ->
+    MaybeT unify (Pattern.Pattern variable)
+decodeUtf app resultSort = \case
+    "UTF-8" -> return . handleError . tryDecode . Text.decodeUtf8
+    "UTF-16LE" -> return . handleError . tryDecode . Text.decodeUtf16LE
+    "UTF-16BE" -> return . handleError . tryDecode . Text.decodeUtf16BE
+    "UTF-32LE" -> return . handleError . tryDecode . Text.decodeUtf32LE
+    "UTF-32BE" -> return . handleError . tryDecode . Text.decodeUtf32BE
+    _ -> const (warnNotImplemented app >> empty)
+  where
+    tryDecode :: Text -> Either Text.UnicodeException Text
+    tryDecode = unsafeDupablePerformIO . try . evaluate
+    handleError = \case
+        Right str -> String.asPattern resultSort str
+        Left _ -> Pattern.bottomOf resultSort
+
+evalEncodeBytes :: BuiltinAndAxiomSimplifier
+evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
+  where
+    evalEncodeBytes0 _ app
+        | [_encodingTerm, _contentsTerm] <- applicationChildren app = do
+            let Application{applicationSymbolOrAlias = symbol} = app
+                resultSort = symbolSorts symbol & applicationSortsResult
+                returnResult = return . asPattern resultSort
+            _encoding <- String.expectBuiltinString encodeBytesKey _encodingTerm
+            _contents <- String.expectBuiltinString encodeBytesKey _contentsTerm
+            case Text.unpack _encoding of
+                "UTF-8" -> returnResult $ Text.encodeUtf8 _contents
+                "UTF-16LE" -> returnResult $ Text.encodeUtf16LE _contents
+                "UTF-16BE" -> returnResult $ Text.encodeUtf16BE _contents
+                "UTF-32LE" -> returnResult $ Text.encodeUtf32LE _contents
+                "UTF-32BE" -> returnResult $ Text.encodeUtf32BE _contents
+                _ -> warnNotImplemented app >> empty
+    evalEncodeBytes0 _ _ = Builtin.wrongArity encodeBytesKey
 
 evalUpdate :: BuiltinAndAxiomSimplifier
 evalUpdate =
@@ -450,6 +545,8 @@ builtinFunctions =
     Map.fromList
         [ (bytes2StringKey, evalBytes2String)
         , (string2BytesKey, evalString2Bytes)
+        , (decodeBytesKey, evalDecodeBytes)
+        , (encodeBytesKey, evalEncodeBytes)
         , (updateKey, evalUpdate)
         , (getKey, evalGet)
         , (substrKey, evalSubstr)
@@ -462,3 +559,32 @@ builtinFunctions =
         , (int2bytesKey, evalInt2bytes)
         , (bytes2intKey, evalBytes2int)
         ]
+
+-- | @UnifyBytes@ matches unification problems on @\\dv{Bytes}(_)@ itself.
+data UnifyBytes = UnifyBytes
+    { bytes1, bytes2 :: InternalBytes
+    }
+
+{- | Matches the unification problem:
+
+@\\dv{Bytes}(bytes1)@ with @\\dv{Bytes}(bytes2)@.
+-}
+matchBytes ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyBytes
+matchBytes first second
+    | _ :< InternalBytesF (Const bytes1) <- Recursive.project first
+      , _ :< InternalBytesF (Const bytes2) <- Recursive.project second =
+        Just UnifyBytes{bytes1, bytes2}
+    | otherwise = Nothing
+{-# INLINE matchBytes #-}
+
+unifyBytes ::
+    MonadUnify unifier =>
+    UnifyBytes ->
+    unifier (Pattern RewritingVariableName)
+unifyBytes UnifyBytes{bytes1, bytes2}
+    | bytes1 == bytes2 = return $ Pattern.fromTermLike $ mkInternalBytes' bytes1
+    | otherwise = empty
+{-# INLINE unifyBytes #-}

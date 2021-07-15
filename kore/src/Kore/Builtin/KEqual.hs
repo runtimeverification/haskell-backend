@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.KEqual
 Description : Built-in KEQUAL operations
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -19,6 +19,7 @@ module Kore.Builtin.KEqual (
     builtinFunctions,
     unifyKequalsEq,
     unifyIfThenElse,
+    matchUnifyKequalsEq,
 
     -- * keys
     eqKey,
@@ -44,7 +45,6 @@ import Data.Text (
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
     acceptAnySort,
@@ -53,6 +53,12 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -66,11 +72,11 @@ import Kore.Internal.SideCondition (
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Simplify
+import Kore.Simplify.NotSimplifier
+import Kore.Simplify.Simplify
 import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
@@ -152,7 +158,7 @@ evalKEq ::
     SideCondition variable ->
     CofreeF
         (Application Symbol)
-        (Attribute.Pattern variable)
+        (TermAttributes variable)
         (TermLike variable) ->
     simplifier (AttemptedAxiom variable)
 evalKEq true _ (valid :< app) =
@@ -160,24 +166,22 @@ evalKEq true _ (valid :< app) =
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
-    sort = Attribute.patternSort valid
+    sort = termSort valid
     Application{applicationChildren} = app
-    comparison x y
-        | true = x == y
-        | otherwise = x /= y
     evalEq ::
         TermLike variable ->
         TermLike variable ->
         MaybeT simplifier (AttemptedAxiom variable)
-    evalEq termLike1 termLike2 = do
-        -- Here we handle the case when both patterns are constructor-like
-        -- (so that equality is syntactic). If either pattern is not
-        -- constructor-like, we postpone evaluation until we know more.
-        Monad.guard (TermLike.isConstructorLike termLike1)
-        Monad.guard (TermLike.isConstructorLike termLike2)
-        Builtin.appliedFunction $
-            Bool.asPattern sort $
-                comparison termLike1 termLike2
+    evalEq termLike1 termLike2
+        | termLike1 == termLike2 =
+            Builtin.appliedFunction $ Bool.asPattern sort true
+        | otherwise = do
+            -- Here we handle the case when both patterns are constructor-like
+            -- (so that equality is syntactic). If either pattern is not
+            -- constructor-like, we postpone evaluation until we know more.
+            Monad.guard (TermLike.isConstructorLike termLike1)
+            Monad.guard (TermLike.isConstructorLike termLike2)
+            Builtin.appliedFunction $ Bool.asPattern sort (not true)
 
 evalKIte ::
     forall simplifier.
@@ -185,7 +189,7 @@ evalKIte ::
     SideCondition RewritingVariableName ->
     CofreeF
         (Application Symbol)
-        (Attribute.Pattern RewritingVariableName)
+        (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
     simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte _ (_ :< app) =
@@ -222,22 +226,61 @@ matchKequalEq =
             Monad.guard (hook2 == eqKey)
             & isJust
 
+data UnifyKequalsEq = UnifyKequalsEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , internalBool :: !InternalBool
+    }
+
+{- | Matches two terms when second is a bool term
+    and the first is a function pattern matching
+    the @KEQUAL.eq@ hooked symbol.
+-}
+
+{- | Matches
+
+@
+\\equals{_, _}(eq(_,_), \\dv{Bool}(_))
+@
+
+and
+
+@
+\\and{_}(eq(_,_), \\dv{Bool}(_))
+@
+-}
+matchUnifyKequalsEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyKequalsEq
+matchUnifyKequalsEq first second
+    | Just eqTerm <- matchKequalEq first
+      , isFunctionPattern first
+      , InternalBool_ internalBool <- second =
+        Just UnifyKequalsEq{eqTerm, internalBool}
+    | otherwise = Nothing
+{-# INLINE matchUnifyKequalsEq #-}
+
 unifyKequalsEq ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyKequalsEq ->
+    unifier (Pattern RewritingVariableName)
+unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else notSimplifier SideCondition.top
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchKequalEq termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyKequalsEq{eqTerm, internalBool} = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

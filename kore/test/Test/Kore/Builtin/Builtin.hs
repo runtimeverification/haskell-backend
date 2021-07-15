@@ -31,15 +31,6 @@ import Data.Text (
     Text,
  )
 import qualified Hedgehog
-import Kore.ASTVerifier.DefinitionVerifier
-import Kore.ASTVerifier.Error (
-    VerifyError,
- )
-import Kore.ASTVerifier.PatternVerifier (
-    runPatternVerifier,
-    verifyStandalonePattern,
- )
-import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -60,7 +51,6 @@ import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -74,21 +64,21 @@ import Kore.Internal.TermLike
 import Kore.Parser (
     parseKorePattern,
  )
-import Kore.Rewriting.RewritingVariable
-import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern (
+import qualified Kore.Rewrite.Function.Memo as Memo
+import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
-import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
-import Kore.Step.Simplification.Data
-import Kore.Step.Simplification.InjSimplifier
-import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Step.Simplification.TermLike as TermLike
-import qualified Kore.Step.Step as Step
+import qualified Kore.Rewrite.Step as Step
+import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.Data
+import Kore.Simplify.InjSimplifier
+import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Simplify
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Simplify.TermLike as TermLike
 import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
@@ -96,6 +86,15 @@ import Kore.Syntax.Definition (
 import Kore.Unparser (
     unparseToText,
  )
+import Kore.Validate.DefinitionVerifier
+import Kore.Validate.Error (
+    VerifyError,
+ )
+import Kore.Validate.PatternVerifier (
+    runPatternVerifier,
+    verifyStandalonePattern,
+ )
+import qualified Kore.Validate.PatternVerifier as PatternVerifier
 import qualified Logic
 import Prelude.Kore
 import SMT (
@@ -128,7 +127,7 @@ testSymbolWithoutSolver ::
     forall p expanded.
     ( HasCallStack
     , p ~ TermLike RewritingVariableName
-    , expanded ~ Pattern RewritingVariableName
+    , expanded ~ OrPattern RewritingVariableName
     ) =>
     -- | evaluator function for the builtin
     (p -> NoSMT expanded) ->
@@ -244,17 +243,16 @@ simplify =
 evaluate ::
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    smt (Pattern RewritingVariableName)
+    smt (OrPattern RewritingVariableName)
 evaluate termLike =
     runSimplifier testEnv $ do
-        patterns <- TermLike.simplify SideCondition.top termLike
-        pure (OrPattern.toPattern patterns)
+        TermLike.simplify SideCondition.top termLike
 
 evaluateT ::
     MonadTrans t =>
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    t smt (Pattern RewritingVariableName)
+    t smt (OrPattern RewritingVariableName)
 evaluateT = lift . evaluate
 
 evaluateToList ::

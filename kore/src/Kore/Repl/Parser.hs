@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Repl.Parser
 Description : REPL parser.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.Parser (
@@ -11,9 +11,6 @@ module Kore.Repl.Parser (
     ReplParseError (..),
 ) where
 
-import Data.Functor (
-    void,
- )
 import Data.GraphViz (
     GraphvizOutput,
  )
@@ -310,6 +307,7 @@ log :: Parser ReplCommand
 log = do
     literal "log"
     logLevel <- parseSeverityWithDefault
+    logFormat <- parseFormatWithDefault
     logEntries <- parseLogEntries
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
@@ -318,6 +316,7 @@ log = do
         Log
             GeneralLogOptions
                 { logType
+                , logFormat
                 , logLevel
                 , timestampsSwitch
                 , logEntries
@@ -325,8 +324,10 @@ log = do
   where
     parseSeverityWithDefault =
         severity <|> pure Log.defaultSeverity
+    parseFormatWithDefault =
+        parseLogFormat <|> pure Log.Standard
     parseTimestampSwitchWithDefault =
-        fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
+        parseTimestampSwitch <|> pure Log.TimestampsEnable
 
 debugAttemptEquation :: Parser ReplCommand
 debugAttemptEquation =
@@ -382,6 +383,12 @@ parseLogType = logStdOut <|> logFile
     logStdOut = Log.LogStdErr <$ literal "stderr"
     logFile =
         Log.LogFileText <$$> literal "file" *> quotedOrWordWithout ""
+
+parseLogFormat :: Parser Log.KoreLogFormat
+parseLogFormat = logStandard <|> logOneline
+  where
+    logStandard = Log.Standard <$ literal "standard"
+    logOneline = Log.OneLine <$ literal "oneline"
 
 parseTimestampSwitch :: Parser Log.TimestampsSwitch
 parseTimestampSwitch = disable <|> enable

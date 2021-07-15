@@ -4,8 +4,8 @@
 Module      : Kore.Internal.MultiOr
 Description : Data structures and functions for manipulating
               Or with any number of children.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -15,7 +15,6 @@ module Kore.Internal.MultiOr (
     bottom,
     filterOr,
     flatten,
-    distributeAnd,
     distributeApplication,
     gather,
     observeAllT,
@@ -26,6 +25,7 @@ module Kore.Internal.MultiOr (
     singleton,
     map,
     traverse,
+    traverseOr,
 
     -- * Re-exports
     Alternative (..),
@@ -42,16 +42,22 @@ import GHC.Exts (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Kore.Debug
-import Kore.Internal.MultiAnd (
-    MultiAnd,
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Debug
+import Kore.Internal.Variable (
+    InternalVariable,
+ )
+import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),
  )
 import Kore.TopBottom (
     TopBottom (..),
+ )
+import Kore.Unparser (
+    unparseAssoc',
  )
 import Logic (
     Logic,
@@ -63,19 +69,11 @@ import Prelude.Kore hiding (
     map,
     traverse,
  )
+import Pretty (
+    Pretty (..),
+ )
 
 -- | 'MultiOr' is a Matching logic or of its children
-
-{- TODO (virgil): Make 'getMultiOr' a non-empty list ("Data.NonEmpty").
-
-An empty 'MultiOr' corresponding to 'Bottom' actually discards information about
-the sort of its child patterns! That is a problem for simplification, which
-should preserve pattern sorts.
-
-A non-empty 'MultiOr' would also have a nice symmetry between 'Top' and 'Bottom'
-patterns.
-
--}
 newtype MultiOr child = MultiOr {getMultiOr :: [child]}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -87,6 +85,10 @@ newtype MultiOr child = MultiOr {getMultiOr :: [child]}
 instance Debug child => Debug (MultiOr child)
 
 instance (Debug child, Diff child) => Diff (MultiOr child)
+
+instance Pretty child => Pretty (MultiOr child) where
+    pretty = unparseAssoc' "\\or{_}" "\\bottom{_}()" . (<$>) pretty . getMultiOr
+    {-# INLINE pretty #-}
 
 instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
     (MultiOr []) <> b = b
@@ -110,6 +112,31 @@ instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
 
 instance From (MultiOr child) [child] where
     from = getMultiOr
+
+instance
+    (Ord variable, HasFreeVariables child variable) =>
+    HasFreeVariables (MultiOr child) variable
+    where
+    freeVariables = foldMap freeVariables
+    {-# INLINE freeVariables #-}
+
+instance
+    ( InternalVariable (VariableNameType child)
+    , Ord child
+    , TopBottom child
+    , Substitute child
+    ) =>
+    Substitute (MultiOr child)
+    where
+    type TermType (MultiOr child) = TermType child
+
+    type VariableNameType (MultiOr child) = VariableNameType child
+
+    substitute = map . substitute
+    {-# INLINE substitute #-}
+
+    rename = map . rename
+    {-# INLINE rename #-}
 
 bottom :: MultiOr term
 bottom = MultiOr []
@@ -162,17 +189,6 @@ singleton ::
 singleton term
     | isBottom term = MultiOr []
     | otherwise = MultiOr [term]
-
-distributeAnd ::
-    Ord term =>
-    TopBottom term =>
-    MultiAnd (MultiOr term) ->
-    MultiOr (MultiAnd term)
-distributeAnd =
-    foldr (crossProductGeneric and') (singleton MultiAnd.top)
-  where
-    and' term ma =
-        MultiAnd.singleton term <> ma
 
 distributeApplication ::
     Ord head =>
@@ -344,3 +360,14 @@ traverse ::
     f (MultiOr child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}
+
+-- | Traverse a @MultiOr@ using an action that returns a disjunction.
+traverseOr ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f (MultiOr child2)) ->
+    MultiOr child1 ->
+    f (MultiOr child2)
+traverseOr f = fmap fold . traverse f
+{-# INLINE traverseOr #-}

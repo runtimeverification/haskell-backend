@@ -20,7 +20,7 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -33,15 +33,15 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Simplification.Ceil as Ceil (
+import qualified Kore.Simplify.Ceil as Ceil (
     makeEvaluate,
  )
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -302,7 +302,7 @@ makeEvaluate ::
 makeEvaluate termLike = do
     actualPattern <-
         makeEvaluate' termLike
-            >>= (return . OrPattern.toPatterns)
+            >>= (return . OrCondition.toConditions)
             >>= expectSingleResult
     assertBool
         "expected \\top term"

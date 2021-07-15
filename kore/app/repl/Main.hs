@@ -39,7 +39,7 @@ import Kore.Log.WarnIfLowProductivity (
  )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Repl.Data
-import Kore.Step.SMT.Lemma
+import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -215,13 +215,15 @@ mainWithOptions
                         let swapLogAction = swappableLogger mvarLogAction
                         flip runLoggerT swapLogAction $
                             runExceptionHandlers $ do
-                                definition <- loadDefinitions [definitionFileName, specFile]
+                                definition <-
+                                    loadDefinitions [definitionFileName, specFile]
                                 indexedModule <- loadModule mainModuleName definition
                                 specDefIndexedModule <- loadModule specModule definition
 
                                 let smtConfig =
                                         SMT.defaultConfig
                                             { SMT.timeOut = smtTimeOut
+                                            , SMT.rLimit = smtRLimit
                                             , SMT.resetInterval = smtResetInterval
                                             , SMT.prelude = smtPrelude
                                             }
@@ -265,8 +267,10 @@ mainWithOptions
                                         outputFile
                                         mainModuleName
                                         koreLogOptions
+                                        (GlobalMain.kFileLocations definition)
 
                                 warnIfLowProductivity
+                                    (GlobalMain.kFileLocations definition)
                                 pure ExitSuccess
             exitWith exitCode
       where
@@ -310,6 +314,9 @@ mainWithOptions
 
         smtTimeOut :: SMT.TimeOut
         smtTimeOut = timeOut smtOptions
+
+        smtRLimit :: SMT.RLimit
+        smtRLimit = rLimit smtOptions
 
         smtResetInterval :: SMT.ResetInterval
         smtResetInterval = resetInterval smtOptions

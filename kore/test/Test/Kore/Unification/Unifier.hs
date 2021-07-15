@@ -14,6 +14,7 @@ import Data.Text (
     Text,
  )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -21,20 +22,20 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     top,
     topTODO,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     Env (..),
     runSimplifier,
  )
-import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.Not as Not
+import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     MonadSimplify,
  )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -46,7 +47,7 @@ import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Internal.TermLike as TermLike
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.SMT (
@@ -187,12 +188,13 @@ andSimplify ::
     [UnificationResult] ->
     Assertion
 andSimplify term1 term2 results = do
-    let expect = map unificationResult results
+    let expect = OrPattern.fromPatterns $ map unificationResult results
     subst' <-
-        runNoSMT $
-            runSimplifier testEnv $
-                Monad.Unify.runUnifierT Not.notSimplifier $
-                    simplifyAnds (unificationProblem term1 term2 :| [])
+        simplifyAnds (unificationProblem term1 term2 :| [])
+            & Monad.Unify.runUnifierT Not.notSimplifier
+            & runSimplifier testEnv
+            & runNoSMT
+            & fmap OrPattern.fromPatterns
     assertEqual (message expect subst') expect subst'
   where
     message expected actual =
@@ -201,11 +203,12 @@ andSimplify term1 term2 results = do
             , Pretty.indent 4 (unparse term1)
             , "with term:"
             , Pretty.indent 4 (unparse term2)
-            , "expected="
-            , Pretty.indent 4 (foldMap unparse expected)
-            , "actual="
-            , Pretty.indent 4 (foldMap unparse actual)
+            , "expected:"
+            , Pretty.indent 4 (unparseOrPattern expected)
+            , "actual:"
+            , Pretty.indent 4 (unparseOrPattern actual)
             ]
+    unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns
 
 andSimplifyException ::
     HasCallStack =>

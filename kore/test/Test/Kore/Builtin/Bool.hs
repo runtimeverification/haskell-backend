@@ -15,6 +15,7 @@ module Test.Kore.Builtin.Bool (
     test_contradiction,
     --
     asPattern,
+    asOrPattern,
     asInternal,
 ) where
 
@@ -26,6 +27,8 @@ import Hedgehog hiding (
 import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -33,17 +36,17 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     SimplifierT,
     runSimplifier,
     runSimplifierBranch,
     simplifyCondition,
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
 import Kore.Unification.UnifierT (
     UnifierT,
     runUnifierT,
@@ -93,9 +96,11 @@ asInternal ::
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern ::
-    InternalVariable variable => Bool -> Pattern variable
+asPattern :: InternalVariable variable => Bool -> Pattern variable
 asPattern = Bool.asPattern boolSort
+
+asOrPattern :: InternalVariable variable => Bool -> OrPattern variable
+asOrPattern = MultiOr.singleton . asPattern
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary ::
@@ -108,7 +113,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = asPattern $ impl a b
+        let expect = asOrPattern $ impl a b
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -124,7 +129,7 @@ testUnary ::
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
-        let expect = asPattern $ impl a
+        let expect = asOrPattern $ impl a
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -155,11 +160,14 @@ test_unifyBoolValues =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchBools term1 term2 of
+                Just unifyData -> do
+                    actual <- unify term1 term2 unifyData
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBool term1 term2)
+    unify term1 term2 unifyData =
+        run (lift $ Bool.unifyBool term1 term2 unifyData)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -185,11 +193,16 @@ test_unifyBoolAnd =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchUnifyBoolAnd term1 term2 of
+                Just boolAnd -> do
+                    actual <- unify term1 boolAnd
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBoolAnd termSimplifier term1 term2)
+    unify term boolAnd =
+        Bool.unifyBoolAnd termSimplifier term boolAnd
+            & lift
+            & run
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -215,11 +228,16 @@ test_unifyBoolOr =
         TestTree
     test testName term1 term2 expected =
         testCase testName $ do
-            actual <- unify term1 term2
-            assertEqual "" expected actual
+            case Bool.matchUnifyBoolOr term1 term2 of
+                Just boolOr -> do
+                    actual <- unify term1 boolOr
+                    assertEqual "" expected actual
+                Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 =
-        run (Bool.unifyBoolOr termSimplifier term1 term2)
+    unify term boolOr =
+        Bool.unifyBoolOr termSimplifier term boolOr
+            & lift
+            & run
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =

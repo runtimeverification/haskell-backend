@@ -401,18 +401,27 @@ Convert an integer value to its base10 string representation.
 
 ~~~
     hooked-symbol int2string{}(Int{}) : String{}
-        [hook{}("STRING.string2int")]
+        [hook{}("STRING.int2string")]
 ~~~
 
 ### STRING.string2base
 
 Takes a string and a base and converts the string from `base` to its integer
 value.
-Currently only works for base 8, 10, and 16.
+Supports bases 2 to 36 inclusive.
 
 ~~~
     hooked-symbol string2base{}(String{}, Int{}) : Int{}
         [hook{}("STRING.string2base")]
+~~~
+
+### STRING.base2string
+
+Convert an integer value to its base string representation.
+
+~~~
+    hooked-symbol base2string{}(/* value */ Int{}, /* base */ Int{}) : String{}
+        [hook{}("STRING.base2string")]
 ~~~
 
 ### STRING.substr
@@ -988,4 +997,22 @@ using the provided value.
 ~~~
     hooked-symbol bytes2int{}(Bytes{}, Endianness{}, Signedness{}) : Int{}
         [hook{}("BYTES.bytes2int")]
+~~~
+
+### BYTES.decodeBytes
+
+`BYTES.decodeBytes` supports `"UTF-8"`, `"UTF-16LE"`, `"UTF-16BE"`, `"UTF-32LE"`, and `"UTF-32BE"` as the first argument. If decoding and the input contains any invalid data then `bottom` is returned.
+
+~~~
+    hooked-symbol decodeBytes{}(/* decoding */ String{}, /* contents */ Bytes{}) : String{}
+        [hook{}("BYTES.decodeBytes")]
+~~~
+
+### BYTES.encodeBytes
+
+`BYTES.encodeBytes` supports `"UTF-8"`, `"UTF-16LE"`, `"UTF-16BE"`, `"UTF-32LE"`, and `"UTF-32BE"` as the first argument.
+
+~~~
+    hooked-symbol encodeBytes{}(/* encoding */ String{}, /* contents */ String{}) : Bytes{}
+        [hook{}("BYTES.encodeBytes")]
 ~~~

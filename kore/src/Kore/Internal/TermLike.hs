@@ -1,27 +1,29 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.TermLike (
     TermLikeF (..),
+    TermAttributes (..),
     TermLike (..),
     extractAttributes,
     isSimplified,
     isSimplifiedSomeCondition,
-    Pattern.isConstructorLike,
+    Attribute.isConstructorLike,
     assertConstructorLikeKeys,
     markSimplified,
     markSimplifiedConditional,
     markSimplifiedMaybeConditional,
     setSimplified,
+    setAttributeSimplified,
     forgetSimplified,
     simplifiedAttribute,
+    attributeSimplifiedAttribute,
     isFunctionPattern,
     isFunctionalPattern,
     hasConstructorLikeTop,
-    freeVariables,
     refreshVariables,
     termLikeSort,
     hasFreeVariable,
@@ -32,8 +34,6 @@ module Kore.Internal.TermLike (
     isConcrete,
     fromConcrete,
     retractKey,
-    Substitute.substitute,
-    refreshElementBinder,
     refreshSetBinder,
     depth,
     makeSortsAgree,
@@ -160,6 +160,7 @@ module Kore.Internal.TermLike (
     SortActual (..),
     SortVariable (..),
     stringMetaSort,
+    Attribute.freeVariables,
     module Kore.Internal.Inj,
     module Kore.Internal.InternalBytes,
     module Kore.Syntax.And,
@@ -216,13 +217,15 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import Data.These
-import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
-import Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Function as Pattern
-import qualified Kore.Attribute.Pattern.Functional as Pattern
-import qualified Kore.Attribute.Pattern.Simplified as Pattern
+import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables (
+    toNames,
+    toSet,
+ )
+import qualified Kore.Attribute.Pattern.Function as Attribute
+import qualified Kore.Attribute.Pattern.Functional as Attribute
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -246,13 +249,14 @@ import Kore.Internal.Key (
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import Kore.Internal.Symbol hiding (
-    isConstructorLike,
+import Kore.Internal.Symbol (
+    Symbol (..),
  )
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
-import qualified Kore.Substitute as Substitute
+import Kore.Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
@@ -288,7 +292,6 @@ import Kore.Unparser (
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (
-    refreshElementVariable,
     refreshSetVariable,
  )
 import qualified Kore.Variables.Fresh as Fresh
@@ -300,24 +303,26 @@ hasFreeVariable ::
     SomeVariableName variable ->
     TermLike variable ->
     Bool
-hasFreeVariable variable = isFreeVariable variable . freeVariables
+hasFreeVariable variable =
+    Attribute.isFreeVariable variable
+        . Attribute.freeVariables
 
 refreshVariables ::
     InternalVariable variable =>
-    FreeVariables variable ->
+    Attribute.FreeVariables variable ->
     TermLike variable ->
     TermLike variable
-refreshVariables (FreeVariables.toNames -> avoid) term =
-    Substitute.substitute subst term
+refreshVariables (Attribute.FreeVariables.toNames -> avoid) term =
+    rename renamed term
   where
-    rename = Fresh.refreshVariables avoid originalFreeVariables
-    originalFreeVariables = FreeVariables.toSet (freeVariables term)
-    subst = mkVar <$> rename
+    renamed = Fresh.refreshVariablesSet avoid originalFreeVariables
+    originalFreeVariables =
+        Attribute.FreeVariables.toSet (Attribute.freeVariables term)
 
 -- | Is the 'TermLike' a function pattern?
 isFunctionPattern :: TermLike variable -> Bool
 isFunctionPattern =
-    Pattern.isFunction . Attribute.function . extractAttributes
+    Attribute.isFunction . termFunction . extractAttributes
 
 {- | Does the 'TermLike' have a constructor-like top?
 
@@ -330,7 +335,7 @@ A pattern is 'ConstructorLikeTop' if it is one of the following:
 -}
 hasConstructorLikeTop :: TermLike variable -> Bool
 hasConstructorLikeTop = \case
-    App_ symbol _ -> isConstructor symbol
+    App_ symbol _ -> Symbol.isConstructor symbol
     DV_ _ _ -> True
     InternalBool_ _ -> True
     InternalInt_ _ -> True
@@ -344,7 +349,7 @@ hasConstructorLikeTop = \case
 -- | Is the 'TermLike' functional?
 isFunctionalPattern :: TermLike variable -> Bool
 isFunctionalPattern =
-    Pattern.isFunctional . Attribute.functional . extractAttributes
+    Attribute.isFunctional . termFunctional . extractAttributes
 
 {- | Throw an error if the variable occurs free in the pattern.
 
@@ -409,7 +414,7 @@ See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
 -}
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
-    Attribute.isSimplified sideCondition . extractAttributes
+    isAttributeSimplified sideCondition . extractAttributes
 
 {- | Is the 'TermLike' fully simplified under any side condition?
 
@@ -417,7 +422,7 @@ See also: 'isSimplified', 'isSimplifiedSomeCondition'.
 -}
 isSimplifiedAnyCondition :: TermLike variable -> Bool
 isSimplifiedAnyCondition =
-    Attribute.isSimplifiedAnyCondition . extractAttributes
+    isAttributeSimplifiedAnyCondition . extractAttributes
 
 {- | Is the 'TermLike' fully simplified under some side condition?
 
@@ -425,7 +430,7 @@ See also: 'isSimplified', 'isSimplifiedAnyCondition'.
 -}
 isSimplifiedSomeCondition :: TermLike variable -> Bool
 isSimplifiedSomeCondition =
-    Attribute.isSimplifiedSomeCondition . extractAttributes
+    isAttributeSimplifiedSomeCondition . extractAttributes
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
 
@@ -439,8 +444,8 @@ forgetSimplified ::
     TermLike variable
 forgetSimplified = resynthesize
 
-simplifiedAttribute :: TermLike variable -> Pattern.Simplified
-simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
+simplifiedAttribute :: TermLike variable -> Attribute.Simplified
+simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys ::
     HasCallStack =>
@@ -450,9 +455,9 @@ assertConstructorLikeKeys ::
     a ->
     a
 assertConstructorLikeKeys keys a
-    | any (not . Pattern.isConstructorLike) keys =
+    | any (not . Attribute.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . Pattern.isConstructorLike) $
+                filter (not . Attribute.isConstructorLike) $
                     Prelude.Kore.toList keys
          in (error . show . Pretty.vsep) $
                 [ "Internal error: expected constructor-like patterns,\
@@ -489,7 +494,7 @@ markSimplified ::
     TermLike variable
 markSimplified (Recursive.project -> attrs :< termLikeF) =
     Recursive.embed
-        ( Attribute.setSimplified
+        ( setAttributeSimplified
             (checkedSimplifiedFromChildren termLikeF)
             attrs
             :< termLikeF
@@ -519,22 +524,25 @@ cannotSimplifyNotSimplifiedError termLikeF =
 
 setSimplified ::
     (HasCallStack, InternalVariable variable) =>
-    Pattern.Simplified ->
+    Attribute.Simplified ->
     TermLike variable ->
     TermLike variable
 setSimplified
     simplified
     (Recursive.project -> attrs :< termLikeF) =
         Recursive.embed
-            ( Attribute.setSimplified mergedSimplified attrs
+            ( setAttributeSimplified mergedSimplified attrs
                 :< termLikeF
             )
       where
         childSimplified = simplifiedFromChildren termLikeF
         mergedSimplified = case (childSimplified, simplified) of
-            (Pattern.NotSimplified, Pattern.NotSimplified) -> Pattern.NotSimplified
-            (Pattern.NotSimplified, _) -> cannotSimplifyNotSimplifiedError termLikeF
-            (_, Pattern.NotSimplified) -> Pattern.NotSimplified
+            (Attribute.NotSimplified, Attribute.NotSimplified) ->
+                Attribute.NotSimplified
+            (Attribute.NotSimplified, _) ->
+                cannotSimplifyNotSimplifiedError termLikeF
+            (_, Attribute.NotSimplified) ->
+                Attribute.NotSimplified
             _ -> childSimplified <> simplified
 
 {- |Marks a term as being simplified as long as the side condition stays
@@ -549,9 +557,9 @@ markSimplifiedConditional
     condition
     (Recursive.project -> attrs :< termLikeF) =
         Recursive.embed
-            ( Attribute.setSimplified
+            ( setAttributeSimplified
                 ( checkedSimplifiedFromChildren termLikeF
-                    <> Pattern.simplifiedConditionally condition
+                    <> Attribute.simplifiedConditionally condition
                 )
                 attrs
                 :< termLikeF
@@ -560,27 +568,27 @@ markSimplifiedConditional
 simplifiedFromChildren ::
     HasCallStack =>
     TermLikeF variable (TermLike variable) ->
-    Pattern.Simplified
+    Attribute.Simplified
 simplifiedFromChildren termLikeF =
     case mergedSimplified of
-        Pattern.NotSimplified -> Pattern.NotSimplified
-        _ -> mergedSimplified `Pattern.simplifiedTo` Pattern.fullySimplified
+        Attribute.NotSimplified -> Attribute.NotSimplified
+        _ -> mergedSimplified `Attribute.simplifiedTo` Attribute.fullySimplified
   where
     mergedSimplified =
-        foldMap (Attribute.simplifiedAttribute . extractAttributes) termLikeF
+        foldMap (attributeSimplifiedAttribute . extractAttributes) termLikeF
 
 checkedSimplifiedFromChildren ::
     (HasCallStack, InternalVariable variable) =>
     TermLikeF variable (TermLike variable) ->
-    Pattern.Simplified
+    Attribute.Simplified
 checkedSimplifiedFromChildren termLikeF =
     case simplifiedFromChildren termLikeF of
-        Pattern.NotSimplified -> cannotSimplifyNotSimplifiedError termLikeF
+        Attribute.NotSimplified -> cannotSimplifyNotSimplifiedError termLikeF
         simplified -> simplified
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort
-termLikeSort = Attribute.patternSort . extractAttributes
+termLikeSort = termSort . extractAttributes
 
 -- | Attempts to modify p to have sort s.
 forceSort ::
@@ -595,9 +603,9 @@ forceSort forcedSort =
   where
     forceSortWorker original@(Recursive.project -> attrs :< pattern') =
         (:<)
-            (attrs{Attribute.patternSort = forcedSort})
+            (attrs{termSort = forcedSort})
             ( case attrs of
-                Attribute.Pattern{patternSort = sort}
+                TermAttributes{termSort = sort}
                     | sort == forcedSort -> Left <$> pattern'
                     | sort == predicateSort ->
                         forceSortPredicate forcedSort original
@@ -622,7 +630,7 @@ fullyOverrideSort forcedSort = Recursive.apo overrideSortWorker
             (Either (TermLike variable) (TermLike variable))
     overrideSortWorker original@(Recursive.project -> attrs :< _) =
         (:<)
-            (attrs{Attribute.patternSort = forcedSort})
+            (attrs{termSort = forcedSort})
             (forceSortPredicate forcedSort original)
 
 illSorted ::
@@ -1845,38 +1853,34 @@ refreshBinder ::
     forall bound variable.
     (InternalVariable variable, Injection (SomeVariableName variable) bound) =>
     (Set (SomeVariableName variable) -> Variable bound -> Maybe (Variable bound)) ->
-    FreeVariables variable ->
+    Attribute.FreeVariables variable ->
     Binder (Variable bound) (TermLike variable) ->
     Binder (Variable bound) (TermLike variable)
-refreshBinder refreshBound (FreeVariables.toNames -> avoiding) binder =
-    do
-        binderVariable' <- refreshBound avoiding binderVariable
-        let renaming =
-                Map.singleton
-                    ( inject @(SomeVariableName variable)
-                        (variableName binderVariable)
-                    )
-                    (mkVar $ inject @(SomeVariable _) binderVariable')
-            binderChild' = Substitute.substitute renaming binderChild
-        return
-            Binder
-                { binderVariable = binderVariable'
-                , binderChild = binderChild'
-                }
-        & fromMaybe binder
-  where
-    Binder{binderVariable, binderChild} = binder
-
-refreshElementBinder ::
-    InternalVariable variable =>
-    FreeVariables variable ->
-    Binder (ElementVariable variable) (TermLike variable) ->
-    Binder (ElementVariable variable) (TermLike variable)
-refreshElementBinder = refreshBinder refreshElementVariable
+refreshBinder
+    refreshBound
+    (Attribute.FreeVariables.toNames -> avoiding)
+    binder =
+        do
+            binderVariable' <- refreshBound avoiding binderVariable
+            let renaming =
+                    Map.singleton
+                        ( inject @(SomeVariableName variable)
+                            (variableName binderVariable)
+                        )
+                        (inject @(SomeVariable _) binderVariable')
+                binderChild' = rename renaming binderChild
+            return
+                Binder
+                    { binderVariable = binderVariable'
+                    , binderChild = binderChild'
+                    }
+            & fromMaybe binder
+      where
+        Binder{binderVariable, binderChild} = binder
 
 refreshSetBinder ::
     InternalVariable variable =>
-    FreeVariables variable ->
+    Attribute.FreeVariables variable ->
     Binder (SetVariable variable) (TermLike variable) ->
     Binder (SetVariable variable) (TermLike variable)
 refreshSetBinder = refreshBinder refreshSetVariable

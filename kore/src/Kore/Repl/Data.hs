@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Repl.Data
 Description : REPL data structures.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.Data (
@@ -31,8 +31,7 @@ module Kore.Repl.Data (
     InnerGraph,
     shouldStore,
     commandSet,
-    UnifierWithExplanation (..),
-    runUnifierWithExplanation,
+    runUnifierWithoutExplanation,
     StepResult (..),
     LogType (..),
     ReplScript (..),
@@ -52,12 +51,6 @@ module Kore.Repl.Data (
 ) where
 
 import Control.Concurrent.MVar
-import Control.Monad.Trans.Accum (
-    AccumT,
-    runAccumT,
- )
-import qualified Control.Monad.Trans.Accum as Monad.Accum
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -69,9 +62,6 @@ import Data.List (
 import Data.Map.Strict (
     Map,
  )
-import Data.Monoid (
-    First (..),
- )
 import Data.Sequence (
     Seq,
  )
@@ -80,6 +70,7 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
+import Kore.Attribute.Definition
 import Kore.Internal.Condition (
     Condition,
  )
@@ -92,7 +83,6 @@ import Kore.Internal.TermLike (
 import Kore.Log (
     ActualEntry (..),
     LogAction (..),
-    MonadLog (..),
  )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
@@ -100,32 +90,24 @@ import Kore.Reachability hiding (
     AppliedRule,
  )
 import qualified Kore.Reachability as Reachability
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify (..),
  )
-import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Simplify.Not as Not
 import Kore.Syntax.Module (
     ModuleName (..),
  )
 import Kore.Unification.UnifierT (
-    MonadUnify,
     UnifierT (..),
  )
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Unparser (
-    unparse,
- )
 import Logic
 import Numeric.Natural
 import Prelude.Kore
-import qualified Pretty
-import SMT (
-    MonadSMT,
- )
 
 {- | Represents an optional file name which contains a sequence of
  repl commands.
@@ -226,6 +208,7 @@ data GraphView
 -- | Log options which can be changed by the log command.
 data GeneralLogOptions = GeneralLogOptions
     { logType :: !Log.KoreLogType
+    , logFormat :: !Log.KoreLogFormat
     , logLevel :: !Log.Severity
     , timestampsSwitch :: !Log.TimestampsSwitch
     , logEntries :: !Log.EntryTypes
@@ -237,18 +220,22 @@ generalLogOptionsTransformer ::
     Log.KoreLogOptions ->
     Log.KoreLogOptions
 generalLogOptionsTransformer
-    logOptions@(GeneralLogOptions _ _ _ _)
+    -- this pattern match is to generate a compile error when GeneralLogOptions
+    -- is changed, so that this function must be changed to match.
+    logOptions@(GeneralLogOptions _ _ _ _ _)
     koreLogOptions =
         koreLogOptions
             { Log.logLevel = logLevel
             , Log.logEntries = logEntries
             , Log.logType = logType
+            , Log.logFormat = logFormat
             , Log.timestampsSwitch = timestampsSwitch
             }
       where
         GeneralLogOptions
             { logLevel
             , logType
+            , logFormat
             , logEntries
             , timestampsSwitch
             } = logOptions
@@ -460,8 +447,9 @@ helpText =
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log [<severity>] \"[\"<entry>\"]\"           configures logging; <severity> can be debug ... error; [<entry>] is a list formed by types below;\n\
-    \    <type> <switch-timestamp>            <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
+    \log [<severity>] [<format>]              configures logging; <severity> can be debug ... error; <format> can be standard or oneline;\n\
+    \    \"[\"<entry>\"]\"                        [<entry>] is a list formed by types below;\n\
+    \    <type> [<switch-timestamp>]          <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
     \debug[-type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
     \ [-type-] can be '-attempt-', '-apply-' or '-',\n\
     \exit                                     exits the repl\
@@ -596,62 +584,15 @@ data Config m = Config
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        UnifierWithExplanation m (Condition RewritingVariableName)
+        UnifierT m (Condition RewritingVariableName)
     , -- | Logger function, see 'logging'.
       logger :: MVar (LogAction IO ActualEntry)
     , -- | Output resulting pattern to this file.
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
+    , kFileLocations :: KFileLocations
     }
     deriving stock (GHC.Generic)
-
-{- | Unifier that stores the first 'explainBottom'.
- See 'runUnifierWithExplanation'.
--}
-newtype UnifierWithExplanation m a = UnifierWithExplanation
-    { getUnifierWithExplanation ::
-        UnifierT (AccumT (First ReplOutput) m) a
-    }
-    deriving newtype (Alternative, Applicative, Functor, Monad, MonadPlus)
-
-instance Monad m => MonadLogic (UnifierWithExplanation m) where
-    msplit act =
-        UnifierWithExplanation $
-            msplit (getUnifierWithExplanation act) >>= return . wrapNext
-      where
-        wrapNext = (fmap . fmap) UnifierWithExplanation
-
-deriving newtype instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
-
-instance MonadTrans UnifierWithExplanation where
-    lift = UnifierWithExplanation . lift . lift
-    {-# INLINE lift #-}
-
-instance MonadLog m => MonadLog (UnifierWithExplanation m) where
-    logEntry entry = UnifierWithExplanation $ logEntry entry
-    {-# INLINE logEntry #-}
-    logWhile entry ma =
-        UnifierWithExplanation $ logWhile entry (getUnifierWithExplanation ma)
-    {-# INLINE logWhile #-}
-
-instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
-
-instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    explainBottom info first second =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Accum.add
-            . First
-            . Just
-            $ ReplOutput
-                [ AuxOut . show $ info <> "\n"
-                , AuxOut "When unifying:\n"
-                , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
-                , AuxOut "With:\n"
-                , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
-                ]
 
 -- | Result after running one or multiple proof steps.
 data StepResult
@@ -686,31 +627,21 @@ makeKoreReplOutput :: String -> ReplOutput
 makeKoreReplOutput str =
     ReplOutput . return . KoreOut $ str <> "\n"
 
-runUnifierWithExplanation ::
+runUnifierWithoutExplanation ::
     forall m a.
     MonadSimplify m =>
-    UnifierWithExplanation m a ->
-    m (Either ReplOutput (NonEmpty a))
-runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    failWithExplanation <$> unificationResults
+    UnifierT m a ->
+    m (Maybe (NonEmpty a))
+runUnifierWithoutExplanation unifier =
+    failEmptyList <$> unificationResults
   where
-    unificationResults ::
-        m ([a], First ReplOutput)
-    unificationResults =
-        flip runAccumT mempty
-            . Monad.Unify.runUnifierT Not.notSimplifier
-            $ unifier
-    failWithExplanation ::
-        ([a], First ReplOutput) ->
-        Either ReplOutput (NonEmpty a)
-    failWithExplanation (results, explanation) =
+    unificationResults :: m [a]
+    unificationResults = Monad.Unify.runUnifierT Not.notSimplifier unifier
+    failEmptyList :: [a] -> Maybe (NonEmpty a)
+    failEmptyList results =
         case results of
-            [] ->
-                Left $
-                    fromMaybe
-                        (makeAuxReplOutput "No explanation given")
-                        (getFirst explanation)
-            r : rs -> Right (r :| rs)
+            [] -> Nothing
+            r : rs -> Just (r :| rs)
 
 data TryApplyRuleResult
     = DoesNotApply

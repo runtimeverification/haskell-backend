@@ -1,5 +1,7 @@
 # Interpretation of function rules
 
+Applying function rules in the form of equations is implemented in [`Kore.Equation.Application`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Equation/Application.hs).
+
 ## Purpose
 
 This document
@@ -30,7 +32,7 @@ rule fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) => ψᵢ({Y}) requires Preᵢ({Y}) e
 Each rule is interpreted in Kore as an axiom,
 
 ```.kore
-axiom \implies(Preᵢ({Y}), (fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) = ψᵢ({Y})) ∧ Postᵢ({Y})).
+axiom \implies(Preᵢ({Y}), (fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) = (ψᵢ({Y}) ∧ Postᵢ({Y})))).
 ```
 
 ## Problems
@@ -80,8 +82,8 @@ rule fun(B) => C
 which is interpreted in Kore as two axioms,
 
 ```.kore
-axiom \implies(\top, (fun(A) = C) ∧ \top)
-axiom \implies(\top, (fun(B) = C) ∧ \top).
+axiom \implies(\top, (fun(A) = (C ∧ \top)))
+axiom \implies(\top, (fun(B) = (C ∧ \top))).
 ```
 
 The K language offers a shorthand notation,
@@ -94,7 +96,7 @@ which is intended to be equivalent to the pair of rules above.
 Under the current interpretation, this rule produces an axiom,
 
 ```.kore
-axiom \implies(\top, (fun(A ∨ B) = C) ∧ \top)
+axiom \implies(\top, (fun(A ∨ B) = (C ∧ \top)))
 ```
 
 which is **not** equivalent to the first interpretation.
@@ -124,7 +126,7 @@ rule fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) => ψᵢ({Y}) requires Preᵢ({Y}) e
 will be interpreted in Kore as
 
 ```.kore
-axiom \implies(Preᵢ({Y}) ∧ Argsᵢ({X}, {Y}) ∧ Prioᵢ({X}), (fun(X₁, X₂, ...) = ψᵢ({Y})) ∧ Postᵢ({Y}))
+axiom \implies(Preᵢ({Y}) ∧ Argsᵢ({X}, {Y}) ∧ Prioᵢ({X}), (fun(X₁, X₂, ...) = (ψᵢ({Y}) ∧ Postᵢ({Y}))))
 ```
 
 where
@@ -214,8 +216,8 @@ axiom
             true = notBool(<=Int(L, X)),
             (X₁ ∈ L) ∧ (X₂ ∈ X)
         ),
-        \and(
-            _<=_<_(X₁, X₂, X₃) = false,
+        _<=_<_(X₁, X₂, X₃) = \and (
+            false,
             \top
         )
     )
@@ -230,8 +232,8 @@ axiom
                     (X₁ ∈ L) ∧ (X₂ ∈ X)
                 )
         ),
-        \and(
-            _<=_<_(X₁, X₂, X₃) = false,
+        _<=_<_(X₁, X₂, X₃) = \and(
+            false,
             \top
         )
     )
@@ -253,8 +255,8 @@ axiom
                     )
             )
         ),
-        \and(
-            _<=_<_(X₁, X₂, X₃) = true,
+        _<=_<_(X₁, X₂, X₃) = \and(
+            true,
             \top
         )
     )

@@ -18,7 +18,7 @@ module GlobalMain (
     verifyDefinitionWithBase,
     mainParse,
     lookupMainModule,
-    LoadedDefinition,
+    LoadedDefinition (..),
     LoadedModule,
     loadDefinitions,
     loadModule,
@@ -32,11 +32,9 @@ import Control.Lens (
  )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import Data.Functor (
-    (<&>),
- )
 import Data.List (
     intercalate,
+    nub,
  )
 import Data.Map.Strict (
     Map,
@@ -53,11 +51,13 @@ import Data.Version (
 import GHC.Stack (
     emptyCallStack,
  )
-import Kore.ASTVerifier.DefinitionVerifier (
-    sortModuleClaims,
-    verifyAndIndexDefinitionWithBase,
+import Kore.Attribute.Definition (
+    KFileLocations (..),
+    parseKFileAttributes,
  )
-import Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.Attribute.SourceLocation (
+    notDefault,
+ )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -80,15 +80,21 @@ import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils (
     parseOnly,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Syntax
 import Kore.Syntax.Definition (
     ModuleName (..),
     ParsedDefinition,
+    definitionAttributes,
     getModuleNameForError,
  )
+import Kore.Validate.DefinitionVerifier (
+    sortModuleClaims,
+    verifyAndIndexDefinitionWithBase,
+ )
+import Kore.Validate.PatternVerifier as PatternVerifier
 import qualified Kore.Verified as Verified
 import Kore.VersionInfo
 import Options.Applicative (
@@ -476,18 +482,34 @@ mainParse parser fileName = do
 
 type LoadedModule = VerifiedModule Attribute.Symbol
 
-type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
+data LoadedDefinition = LoadedDefinition
+    { indexedModules :: Map ModuleName LoadedModule
+    , definedNames :: Map Text AstLocation
+    , kFileLocations :: KFileLocations
+    }
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    loadedDefinitions <&> sortClaims
+    do
+        loadedDefinitions & fmap sortClaims
   where
-    loadedDefinitions =
-        Monad.foldM verifyDefinitionWithBase mempty
-            =<< traverse parseDefinition filePaths
+    loadedDefinitions = do
+        parsedDefinitions <- traverse parseDefinition filePaths
+        let attributes = fmap definitionAttributes parsedDefinitions
+        sources <- traverse parseKFileAttributes attributes
+        let sources' = filter notDefault (nub sources)
+        (indexedModules, definedNames) <-
+            Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
+        return $
+            LoadedDefinition
+                indexedModules
+                definedNames
+                (KFileLocations sources')
 
     sortClaims :: LoadedDefinition -> LoadedDefinition
-    sortClaims = Lens._1 . Lens.traversed %~ sortModuleClaims
+    sortClaims def@LoadedDefinition{indexedModules} =
+        let indexedModules' = indexedModules & Lens.traversed %~ sortModuleClaims
+         in def{indexedModules = indexedModules'}
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
-loadModule moduleName = lookupMainModule moduleName . fst
+loadModule moduleName = lookupMainModule moduleName . indexedModules

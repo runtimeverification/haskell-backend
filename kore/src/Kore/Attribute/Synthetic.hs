@@ -2,13 +2,14 @@
 
 {- |
 Description : Attribute grammars implemented as cofree annotations
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Attribute.Synthetic (
     Synthetic (..),
     resynthesize,
     resynthesizeAux,
+    Synthesize,
     synthesize,
     synthesizeAux,
 ) where
@@ -87,6 +88,13 @@ resynthesizeAux synth =
   where
     worker (_ :< ft) = synthesizeAux synth ft
 {-# INLINE resynthesizeAux #-}
+
+type Synthesize a f t =
+    ( Synthetic a f
+    , Corecursive t
+    , Recursive t
+    , Base t ~ CofreeF f a
+    )
 
 -- | @/synthesize/@ an attribute @a@ from one level of a tree @s@.
 synthesize ::

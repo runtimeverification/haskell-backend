@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.InfoReachability (
     InfoReachability (..),
@@ -8,7 +8,7 @@ module Kore.Log.InfoReachability (
 ) where
 
 import Kore.Reachability.Prim
-import Log
+import qualified Log
 import Prelude.Kore
 import Pretty (
     Doc,
@@ -24,9 +24,9 @@ instance Pretty InfoReachability where
     pretty InfoReachability{prim} =
         (Pretty.hsep . catMaybes) [primDoc prim]
 
-instance Entry InfoReachability where
-    entrySeverity _ = Info
-    shortDoc InfoReachability{prim} = (<+>) "while" <$> primDoc prim
+instance Log.Entry InfoReachability where
+    entrySeverity _ = Log.Info
+    contextDoc InfoReachability{prim} = (<+>) "while" <$> primDoc prim
     helpDoc _ = "log reachability proof steps"
 
 primDoc :: Prim -> Maybe (Doc ann)
@@ -37,10 +37,10 @@ primDoc ApplyAxioms = Just "applying axioms"
 primDoc _ = Nothing
 
 whileReachability ::
-    MonadLog log =>
+    Log.MonadLog log =>
     Prim ->
     log a ->
     log a
-whileReachability prim
-    | Just _ <- primDoc prim = logWhile InfoReachability{prim}
-    | otherwise = id
+whileReachability prim log
+    | Just _ <- primDoc prim = Log.logWhile InfoReachability{prim} log
+    | otherwise = log

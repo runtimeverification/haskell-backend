@@ -1,8 +1,8 @@
 {- |
 Module      : SMT
 Description : Thread-safe SMT interface
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module SMT (
@@ -15,6 +15,7 @@ module SMT (
     Config (..),
     defaultConfig,
     TimeOut (..),
+    RLimit (..),
     ResetInterval (..),
     Prelude (..),
     Result (..),
@@ -425,6 +426,10 @@ instance MonadSMT m => MonadSMT (RWST r () s m)
 newtype TimeOut = TimeOut {getTimeOut :: Limit Integer}
     deriving stock (Eq, Ord, Read, Show)
 
+-- | Resource-limit for SMT queries.
+newtype RLimit = RLimit {getRLimit :: Limit Integer}
+    deriving stock (Eq, Ord, Read, Show)
+
 -- | Reset interval for solver.
 newtype ResetInterval = ResetInterval {getResetInterval :: Integer}
     deriving stock (Eq, Ord, Read, Show)
@@ -444,6 +449,8 @@ data Config = Config
       logFile :: !(Maybe FilePath)
     , -- | query time limit
       timeOut :: !TimeOut
+    , -- | query resource limit
+      rLimit :: !RLimit
     , -- | reset solver after this number of queries
       resetInterval :: !ResetInterval
     }
@@ -460,12 +467,14 @@ defaultConfig =
         , prelude = Prelude Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
+        , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
         }
 
 initSolver :: Config -> SMT ()
-initSolver Config{timeOut, prelude} = do
+initSolver Config{timeOut, rLimit, prelude} = do
     setTimeOut timeOut
+    setRLimit rLimit
     traverse_ loadFile preludeFile
     join $ SMT (Reader.asks userInit)
   where
@@ -549,6 +558,15 @@ setTimeOut TimeOut{getTimeOut} =
     case getTimeOut of
         Limit timeOut ->
             setOption ":timeout" (SimpleSMT.int timeOut)
+        Unlimited ->
+            return ()
+
+-- | Set the query resource limit.
+setRLimit :: MonadSMT m => RLimit -> m ()
+setRLimit RLimit{getRLimit} =
+    case getRLimit of
+        Limit rLimit ->
+            setOption ":rlimit" (SimpleSMT.int rLimit)
         Unlimited ->
             return ()
 

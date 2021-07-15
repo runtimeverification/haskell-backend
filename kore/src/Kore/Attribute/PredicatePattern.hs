@@ -1,8 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Attribute.PredicatePattern (
     PredicatePattern (PredicatePattern, freeVariables),
@@ -15,7 +15,6 @@ module Kore.Attribute.PredicatePattern (
     mapVariables,
     traverseVariables,
     deleteFreeVariable,
-    fromPattern,
 
     -- * Re-exports
     module Kore.Attribute.Pattern.FreeVariables,
@@ -25,10 +24,6 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Kore.Attribute.Pattern (
-    Pattern,
- )
-import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.FreeVariables hiding (
     freeVariables,
  )
@@ -150,7 +145,3 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (PredicatePattern variable) variable where
     freeVariables = freeVariables
-
-fromPattern :: Pattern variable -> PredicatePattern variable
-fromPattern p =
-    PredicatePattern (Pattern.freeVariables p) (Pattern.simplifiedAttribute p)

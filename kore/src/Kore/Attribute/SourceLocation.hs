@@ -1,14 +1,15 @@
 {- |
 Module      : Kore.Attribute.SourceLocation
 Description : Source and location attribute
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Attribute.SourceLocation (
     SourceLocation (..),
     Source (..),
     Location (..),
+    notDefault,
 ) where
 
 import Control.Monad (
@@ -52,6 +53,8 @@ data SourceLocation = SourceLocation
 instance Default SourceLocation where
     def = SourceLocation def def
 
+notDefault :: SourceLocation -> Bool
+notDefault = (/=) def
 instance ParseAttributes SourceLocation where
     parseAttribute attr =
         typed @Location (parseAttribute attr)

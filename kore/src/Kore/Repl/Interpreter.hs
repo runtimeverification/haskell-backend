@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Interpreter
 Description : REPL interpreter
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.Interpreter (
@@ -16,6 +16,7 @@ module Kore.Repl.Interpreter (
     showRewriteRule,
     parseEvalScript,
     showAliasError,
+    saveSessionWithMessage,
     formatUnificationMessage,
     allProofs,
     ReplStatus (..),
@@ -28,7 +29,6 @@ import Control.Lens (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
-    void,
     (<=<),
  )
 import Control.Monad.Extra (
@@ -123,6 +123,10 @@ import Kore.Attribute.RuleIndex (
 import Kore.Internal.Condition (
     Condition,
  )
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -132,14 +136,16 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition (
-    assumeTrueCondition,
+    fromConditionWithReplacements,
  )
 import Kore.Internal.TermLike (
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import Kore.Log.WarnIfLowProductivity (warnIfLowProductivity)
+import Kore.Log.WarnIfLowProductivity (
+    warnIfLowProductivity,
+ )
 import Kore.Reachability (
     ClaimState (..),
     ClaimStateTransformer (..),
@@ -157,15 +163,15 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.RulePattern as RulePattern
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id (
     Id (..),
@@ -307,12 +313,16 @@ replInterpreter0 printAux printKore replCmd = do
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> do
-            warnIfLowProductivity
+            warnProductivity
             liftIO exitSuccess
         FailStop -> do
-            warnIfLowProductivity
+            warnProductivity
             liftIO . exitWith $ ExitFailure 2
   where
+    warnProductivity = do
+        Config{kFileLocations} <- ask
+        warnIfLowProductivity kFileLocations
+
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
     -- monadic result.
@@ -589,7 +599,7 @@ showConfig ::
     Maybe ReplNode ->
     ReplM m ()
 showConfig =
-    showClaimStateComponent "Config" getConfiguration
+    showClaimStateComponent "Config" (from @_ @(OrPattern _) . getConfiguration)
 
 -- | Shows destination at node 'n', or current node if 'Nothing' is passed.
 showDest ::
@@ -600,13 +610,13 @@ showDest ::
 showDest =
     showClaimStateComponent
         "Destination"
-        (OrPattern.toPattern . getDestination)
+        getDestination
 
 showClaimStateComponent ::
     Monad m =>
     -- | component name
     String ->
-    (SomeClaim -> Pattern RewritingVariableName) ->
+    (SomeClaim -> OrPattern RewritingVariableName) ->
     Maybe ReplNode ->
     ReplM m ()
 showClaimStateComponent name transformer maybeNode = do
@@ -1006,7 +1016,8 @@ tryAxiomClaimWorker mode ref = do
                         runUnifier' sideCondition first secondTerm
                       where
                         sideCondition =
-                            SideCondition.assumeTrueCondition secondCondition
+                            SideCondition.fromConditionWithReplacements
+                                secondCondition
 
     tryForceAxiomOrClaim ::
         Either Axiom SomeClaim ->
@@ -1089,7 +1100,7 @@ clear maybeNode = do
         let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
          in length childrenOfParent /= 1
 
--- | Save this sessions' commands to the specified file.
+-- | Save this sessions' commands to the specified file and tell "Done." after that.
 saveSession ::
     forall m.
     MonadState ReplState m =>
@@ -1098,14 +1109,27 @@ saveSession ::
     -- | path to file
     FilePath ->
     m ()
-saveSession path =
+saveSession path = saveSessionWithMessage notifySuccess path
+  where
+    notifySuccess = putStrLn' "Done."
+
+-- | Save this sessions' commands to the specified file and tell a message after that.
+saveSessionWithMessage ::
+    forall m.
+    MonadState ReplState m =>
+    MonadIO m =>
+    -- | path to file
+    m () ->
+    FilePath ->
+    m ()
+saveSessionWithMessage notifySuccess path =
     withExistingDirectory path saveToFile
   where
     saveToFile :: FilePath -> m ()
     saveToFile file = do
         content <- seqUnlines <$> Lens.use (field @"commands")
         liftIO $ writeFile file content
-        putStrLn' "Done."
+        notifySuccess
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
 
@@ -1348,7 +1372,7 @@ showRewriteRule rule =
 
 -- | Pretty prints a strategy node, using an omit list to hide specified children.
 prettyClaimStateComponent ::
-    (SomeClaim -> Pattern RewritingVariableName) ->
+    (SomeClaim -> OrPattern RewritingVariableName) ->
     -- | omit list
     Set String ->
     -- | pattern
@@ -1370,7 +1394,8 @@ prettyClaimStateComponent transformation omitList =
             }
   where
     prettyComponent =
-        unparseToString . fmap hide . getRewritingPattern
+        unparseToString . OrPattern.toTermLike
+            . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::
         TermLike VariableName ->
@@ -1588,10 +1613,10 @@ parseEvalScript file scriptModeOutput = do
                 command
 
 formatUnificationMessage ::
-    Either ReplOutput (NonEmpty (Condition RewritingVariableName)) ->
+    Maybe (NonEmpty (Condition RewritingVariableName)) ->
     ReplOutput
 formatUnificationMessage docOrCondition =
-    either id prettyUnifiers docOrCondition
+    maybe mempty prettyUnifiers docOrCondition
   where
     prettyUnifiers =
         ReplOutput

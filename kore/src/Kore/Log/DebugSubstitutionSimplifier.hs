@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.DebugSubstitutionSimplifier (
     DebugSubstitutionSimplifier (..),
@@ -33,7 +33,7 @@ instance Pretty DebugSubstitutionSimplifier where
 
 instance Entry DebugSubstitutionSimplifier where
     entrySeverity _ = Debug
-    shortDoc _ = Just "while simplifying substitution"
+    contextDoc _ = Just "while simplifying substitution"
     helpDoc _ = "log non-\\bottom results when normalizing unification solutions"
 
 instance SQL.Table DebugSubstitutionSimplifier

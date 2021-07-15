@@ -27,7 +27,7 @@ import Kore.Attribute.Axiom.Symbolic (
  )
 import Kore.Equation.Equation
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRuleVariable,
  )

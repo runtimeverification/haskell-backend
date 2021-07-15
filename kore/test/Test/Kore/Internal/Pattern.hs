@@ -3,8 +3,10 @@ module Test.Kore.Internal.Pattern (
     test_hasSimplifiedChildren,
     internalPatternGen,
     assertEquivalent,
+    assertEquivalent',
     assertEquivalentPatterns,
     assertEquivalentPatterns',
+    normalizeConj,
 
     -- * Re-exports
     TestPattern,
@@ -27,7 +29,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -49,6 +51,7 @@ import Kore.Internal.Substitution (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import Prelude.Kore
+import qualified Pretty
 import Test.Expect
 import Test.Kore (
     Gen,
@@ -60,9 +63,8 @@ import Test.Kore.Internal.TermLike hiding (
     mapVariables,
     markSimplified,
     simplifiedAttribute,
-    substitute,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty
@@ -349,7 +351,7 @@ test_hasSimplifiedChildren =
             (Mock.f (mkElemVar Mock.x))
             Mock.a
             & Condition.fromPredicate
-            & SideCondition.fromCondition
+            & SideCondition.fromConditionWithReplacements
             & SideCondition.mkRepresentation
 
     setSimplifiedTerm = TermLike.setSimplified
@@ -391,21 +393,28 @@ normalizeConj ::
 normalizeConj Conditional{term, predicate, substitution} =
     NormalizedAndPattern
         { term
-        , predicate = MultiAnd.fromPredicate predicate
+        , predicate = Predicate.toMultiAnd predicate
         , substitution
         }
 
 assertEquivalentPatterns ::
-    Foldable t =>
     InternalVariable variable =>
     Diff variable =>
-    t (Pattern variable) ->
-    t (Pattern variable) ->
+    HasCallStack =>
+    MultiOr (Pattern variable) ->
+    MultiOr (Pattern variable) ->
     IO ()
 assertEquivalentPatterns expects actuals =
     for_ (align (toList expects) (toList actuals)) $ \these -> do
         (expect, actual) <- expectThese these
-        assertEquivalent (assertEqual "") expect actual
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , (Pretty.indent 4) (Pretty.pretty expects)
+                    , "but found:"
+                    , (Pretty.indent 4) (Pretty.pretty actuals)
+                    ]
+        assertEquivalent (assertEqual message) expect actual
 
 assertEquivalentPatterns' ::
     Foldable t =>
@@ -421,10 +430,11 @@ assertEquivalentPatterns' expects actuals =
         assertEquivalent' (assertEqual "") expect actual
 
 assertEquivalent ::
-    forall m variable.
     InternalVariable variable =>
-    Diff variable =>
-    (forall a. (Eq a, Show a, Diff a) => a -> a -> m ()) ->
+    ( NormalizedAndPattern variable ->
+      NormalizedAndPattern variable ->
+      m ()
+    ) ->
     Pattern variable ->
     Pattern variable ->
     m ()
@@ -432,11 +442,12 @@ assertEquivalent assertion expect actual =
     on assertion normalizeConj expect actual
 
 assertEquivalent' ::
-    forall m f variable.
     Functor f =>
     InternalVariable variable =>
-    Diff (f (NormalizedAndPattern variable)) =>
-    (forall a. Diff a => a -> a -> m ()) ->
+    ( f (NormalizedAndPattern variable) ->
+      f (NormalizedAndPattern variable) ->
+      m ()
+    ) ->
     f (Pattern variable) ->
     f (Pattern variable) ->
     m ()
