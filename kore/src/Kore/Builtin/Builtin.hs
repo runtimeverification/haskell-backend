@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.Builtin
 Description : Built-in sort, symbol, and pattern verifiers
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : UIUC/BSD-3-Clause
 -}
 module Kore.Variables.Fresh (
     FreshPartialOrd (..),

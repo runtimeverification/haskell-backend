@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Rewrite.SMT.Lemma
 Description : Declares all rules marked smt-lemma to the SMT solver.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable

@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Rewrite.SMT.Resolvers
 Description : Translates sorts and symbols to a SMT representation.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

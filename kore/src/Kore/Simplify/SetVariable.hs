@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Simplify.SetVariable
 Description : Tools for SetVariable pattern simplification.
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

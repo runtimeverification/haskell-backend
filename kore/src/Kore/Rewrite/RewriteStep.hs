@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 
 Direct interface to rule application (step-wise execution).
 See "Kore.Rewrite" for the high-level strategy-based interface.
