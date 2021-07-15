@@ -184,6 +184,25 @@ test_simplify =
                 , fromEquals_ fa fb
                 ]
             ]
+        , test
+            "desugaring"
+            ( fromNot
+                (fromFloor_
+                    (mkNot
+                        (mkOr fa fb)
+                    )
+                )
+            )
+            -- Note: simplifyNot does not evaluate \\not(\\and) to \\or
+            [
+                [ fromNot
+                    ( fromAnd
+                        (fromNot faCeil)
+                        (fromNot fbCeil)
+                    )
+
+                ]
+            ]
         ]
     , (testGroup "\\exists")
         [ (test "irrelevant variable")
@@ -258,6 +277,41 @@ test_simplify =
             )
             [[faCeil]]
         ]
+    , (testGroup
+        "\\forall"
+        [ test
+            "\\top"
+            ( (fromForall x)
+                fromTop_
+            )
+            [[]]
+        , test
+            "\\bottom"
+            ( (fromForall x)
+                fromBottom_
+            )
+            []
+        , test
+            "irrelevant variable"
+            ( (fromForall x)
+                faCeil
+            )
+            [[faCeil]]
+        , test
+            "desugaring"
+            ( fromNot
+                ( (fromForall x)
+                    (fromNot
+                        ( fromAnd
+                            (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
+                            (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                        )
+                    )
+                )
+            )
+            [[faCeil]]
+        ]
+      )
     , (testGroup "\\equals")
         [ (test "invalid assignment")
             ( fromEquals_
