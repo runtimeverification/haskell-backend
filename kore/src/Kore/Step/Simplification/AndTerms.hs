@@ -332,13 +332,13 @@ matchBoolAnd ::
     Maybe UnifyBoolAnd
 matchBoolAnd term1 term2
     | Pattern.isBottom term1 =
-        let sort = termLikeSort term1 in
-          Just $ UnifyBoolAndBottom sort term2
+        let sort = termLikeSort term1
+         in Just $ UnifyBoolAndBottom sort term2
     | Pattern.isTop term1 =
         Just $ UnifyBoolAndTop term2
     | Pattern.isBottom term2 =
-        let sort = termLikeSort term2 in
-          Just $ UnifyBoolAndBottom sort term1
+        let sort = termLikeSort term2
+         in Just $ UnifyBoolAndBottom sort term1
     | Pattern.isTop term2 =
         Just $ UnifyBoolAndTop term1
     | otherwise =
