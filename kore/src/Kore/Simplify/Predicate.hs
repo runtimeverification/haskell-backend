@@ -74,6 +74,7 @@ import Kore.Syntax (
     variableName, Forall (Forall)
  )
 import qualified Kore.Syntax.Exists as Exists
+import qualified Kore.Syntax.Forall as Forall
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -173,6 +174,9 @@ simplify sideCondition original =
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
+                ForallF forallF ->
+                    traverse worker (Forall.refreshForall avoid forallF)
+                        >>= simplifyForall sideCondition
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -402,6 +406,11 @@ simplifyCeil ::
 simplifyCeil sideCondition =
     Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
 
+{- |
+ @
+ \\floor(T) = \\not(\\ceil(\\not(T)))
+ @
+-}
 simplifyFloor ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
@@ -465,6 +474,11 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             valueCeil = MultiAnd.singleton (fromCeil_ termLike)
          in existsChild' <> valueCeil
 
+{- |
+ @
+ \\forall(x, P) = \\not(\\exists(x, \\not(P)))
+ @
+-}
 simplifyForall ::
     forall simplifier.
     Monad simplifier =>

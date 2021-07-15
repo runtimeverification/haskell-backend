@@ -81,6 +81,13 @@ instance
         bindVariable (inject forallVariable) forallChild
     {-# INLINE synthetic #-}
 
+instance
+    (Ord variable, HasFreeVariables child variable) =>
+    HasFreeVariables (Forall sort variable child) variable
+    where
+    freeVariables Forall{forallVariable, forallChild} =
+        bindVariable (inject forallVariable) (freeVariables forallChild)
+
 instance Synthetic Sort (Forall Sort variable) where
     synthetic Forall{forallSort, forallChild} =
         forallSort `matchSort` forallChild
@@ -117,5 +124,8 @@ refreshForall ::
     Set (SomeVariableName variable) ->
     Forall sort variable child ->
     Forall sort variable child
-refreshForall avoid = Lens.over forallBinder (refreshElementBinder avoid)
+refreshForall extraAvoid forallF =
+    Lens.over forallBinder (refreshElementBinder avoid) forallF
+  where
+    avoid = freeVariableNames forallF <> extraAvoid
 {-# INLINE refreshForall #-}
