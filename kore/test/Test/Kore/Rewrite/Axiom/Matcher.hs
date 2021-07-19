@@ -344,6 +344,93 @@ test_matcherVariableFunction =
                     (Mock.constr10 Mock.cf)
             assertEqual "" expect actual
         ]
+    , testGroup
+        "AC (Set) under function"
+        [ testCase "Syntactically equivalent" $ do
+            let config =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xRuleInt] [mkElemVar Mock.xRuleSet])
+                        (Mock.framedSet [mkElemVar Mock.yRuleInt] [])
+                ruleLHS =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xEquationInt] [mkElemVar Mock.xEquationSet])
+                        (Mock.framedSet [mkElemVar Mock.yEquationInt] [])
+                expected =
+                    mkMatchResult
+                        ( makeTruePredicate
+                        , [ (inject Mock.xEquationInt, mkElemVar Mock.xRuleInt)
+                          , -- I was expecting the following to be:
+                            -- (inject Mock.xEquationSet, mkElemVar Mock.xRuleSet)
+                            (inject Mock.xEquationSet, Mock.framedSet [] [mkElemVar Mock.xRuleSet])
+                          , (inject Mock.yEquationInt, mkElemVar Mock.yRuleInt)
+                          ]
+                            & Map.fromList
+                        )
+            actual <- match ruleLHS config
+            assertEqual "" expected actual
+        , testCase "Second set matches variable" $ do
+            let config =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xRuleInt] [mkElemVar Mock.xRuleSet])
+                        (Mock.framedSet [mkElemVar Mock.yRuleInt] [])
+                ruleLHS =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xEquationInt] [mkElemVar Mock.xEquationSet])
+                        (mkElemVar Mock.yEquationSet)
+                expected =
+                    mkMatchResult
+                        ( makeTruePredicate
+                        , [ (inject Mock.xEquationInt, mkElemVar Mock.xRuleInt)
+                          , -- I was expecting the following to be:
+                            -- (inject Mock.xEquationSet, mkElemVar Mock.xRuleSet)
+                            (inject Mock.xEquationSet, Mock.framedSet [] [mkElemVar Mock.xRuleSet])
+                          , (inject Mock.yEquationSet, Mock.framedSet [mkElemVar Mock.yRuleInt] [])
+                          ]
+                            & Map.fromList
+                        )
+            actual <- match ruleLHS config
+            assertEqual "" expected actual
+        , testCase "Concrete first set" $ do
+            let config =
+                    Mock.fSet2
+                        (Mock.framedSet [Mock.builtinInt 1] [])
+                        (Mock.framedSet [mkElemVar Mock.yRuleInt] [])
+                ruleLHS =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xEquationInt] [mkElemVar Mock.xEquationSet])
+                        (Mock.framedSet [mkElemVar Mock.yEquationInt] [])
+                expected =
+                    mkMatchResult
+                        ( makeTruePredicate
+                        , [ (inject Mock.xEquationInt, Mock.builtinInt 1)
+                          , (inject Mock.xEquationSet, Mock.framedSet [] [])
+                          , (inject Mock.yEquationInt, mkElemVar Mock.yRuleInt)
+                          ]
+                            & Map.fromList
+                        )
+            actual <- match ruleLHS config
+            assertEqual "" expected actual
+        , testCase "Concrete first set, second matches variable" $ do
+            let config =
+                    Mock.fSet2
+                        (Mock.framedSet [Mock.builtinInt 1] [])
+                        (Mock.framedSet [mkElemVar Mock.yRuleInt] [])
+                ruleLHS =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xEquationInt] [mkElemVar Mock.xEquationSet])
+                        (mkElemVar Mock.yEquationSet)
+                expected =
+                    mkMatchResult
+                        ( makeTruePredicate
+                        , [ (inject Mock.xEquationInt, Mock.builtinInt 1)
+                          , (inject Mock.xEquationSet, Mock.framedSet [] [])
+                          , (inject Mock.yEquationSet, Mock.framedSet [mkElemVar Mock.yRuleInt] [])
+                          ]
+                            & Map.fromList
+                        )
+            actual <- match ruleLHS config
+            assertEqual "" expected actual
+        ]
     ]
   where
     aSubSub = Mock.functional00SubSubSort
@@ -883,12 +970,53 @@ test_matching_Set =
             , (sSet, mkSet [mkInt 0] [])
             ]
         ]
+    , matches
+        "[y:Int] matches [x:Int]"
+        (mkSet [mkElemVar yInt] [])
+        (mkSet [mkElemVar xInt] [])
+        [(inject yInt, mkElemVar xInt)]
+    , doesn'tMatch
+        "[y:Int, 1] doesn't match [x:Int]"
+        (mkSet [mkElemVar yInt, mkInt 1] [])
+        (mkSet [mkElemVar xInt] [])
+    , matches
+        "[y:Int, 1] matches [1, x:Int]"
+        (mkSet [mkElemVar yInt, mkInt 1] [])
+        (mkSet [mkInt 1, mkElemVar xInt] [])
+        [(inject yInt, mkElemVar xInt)]
+    , matches
+        "[y:Int, 1] s:Set matches [1, x:Int] s':Set"
+        (mkSet [mkElemVar yInt, mkInt 1] [mkVar sSet])
+        (mkSet [mkInt 1, mkElemVar xInt] [mkVar s'Set])
+        [ (inject yInt, mkElemVar xInt)
+        , (sSet, mkVar s'Set)
+        ]
+    , -- This should work, but it doesn't with the current
+      -- AC matching algorithm
+      -- , matches
+      --     "[y:Int, 1] s:Set matches [1, x:Int]"
+      --     (mkSet [mkElemVar yInt, mkInt 1] [mkVar sSet])
+      --     (mkSet [mkInt 1, mkElemVar xInt] [])
+      --     [ (inject yInt, mkElemVar xInt)
+      --     , (sSet, mkSet [] [])
+      --     ]
+      matches
+        "s:Set matches [x:Int]"
+        (mkVar sSet)
+        (mkSet [mkElemVar xInt] [])
+        [(sSet, mkSet [mkElemVar xInt] [])]
     ]
 
 sSet :: SomeVariable RewritingVariableName
 sSet =
     inject $
         mkElementVariable (testId "sSet") Test.setSort
+            & mapElementVariable (pure mkConfigVariable)
+
+s'Set :: SomeVariable RewritingVariableName
+s'Set =
+    inject $
+        mkElementVariable (testId "s'Set") Test.setSort
             & mapElementVariable (pure mkConfigVariable)
 
 mkSet ::
