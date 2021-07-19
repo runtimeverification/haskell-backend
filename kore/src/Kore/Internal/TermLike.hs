@@ -1,8 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.TermLike (
     TermLikeF (..),
@@ -34,8 +34,6 @@ module Kore.Internal.TermLike (
     isConcrete,
     fromConcrete,
     retractKey,
-    Substitute.substitute,
-    refreshElementBinder,
     refreshSetBinder,
     depth,
     makeSortsAgree,
@@ -258,7 +256,7 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
-import qualified Kore.Substitute as Substitute
+import Kore.Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
@@ -294,7 +292,6 @@ import Kore.Unparser (
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (
-    refreshElementVariable,
     refreshSetVariable,
  )
 import qualified Kore.Variables.Fresh as Fresh
@@ -316,12 +313,11 @@ refreshVariables ::
     TermLike variable ->
     TermLike variable
 refreshVariables (Attribute.FreeVariables.toNames -> avoid) term =
-    Substitute.substitute subst term
+    rename renamed term
   where
-    rename = Fresh.refreshVariables avoid originalFreeVariables
+    renamed = Fresh.refreshVariablesSet avoid originalFreeVariables
     originalFreeVariables =
         Attribute.FreeVariables.toSet (Attribute.freeVariables term)
-    subst = mkVar <$> rename
 
 -- | Is the 'TermLike' a function pattern?
 isFunctionPattern :: TermLike variable -> Bool
@@ -1871,8 +1867,8 @@ refreshBinder
                         ( inject @(SomeVariableName variable)
                             (variableName binderVariable)
                         )
-                        (mkVar $ inject @(SomeVariable _) binderVariable')
-                binderChild' = Substitute.substitute renaming binderChild
+                        (inject @(SomeVariable _) binderVariable')
+                binderChild' = rename renaming binderChild
             return
                 Binder
                     { binderVariable = binderVariable'
@@ -1881,13 +1877,6 @@ refreshBinder
             & fromMaybe binder
       where
         Binder{binderVariable, binderChild} = binder
-
-refreshElementBinder ::
-    InternalVariable variable =>
-    Attribute.FreeVariables variable ->
-    Binder (ElementVariable variable) (TermLike variable) ->
-    Binder (ElementVariable variable) (TermLike variable)
-refreshElementBinder = refreshBinder refreshElementVariable
 
 refreshSetBinder ::
     InternalVariable variable =>

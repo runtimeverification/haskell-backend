@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Interpreter
 Description : REPL interpreter
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.Interpreter (
@@ -163,15 +163,15 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.RulePattern as RulePattern
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id (
     Id (..),
@@ -1613,10 +1613,10 @@ parseEvalScript file scriptModeOutput = do
                 command
 
 formatUnificationMessage ::
-    Either ReplOutput (NonEmpty (Condition RewritingVariableName)) ->
+    Maybe (NonEmpty (Condition RewritingVariableName)) ->
     ReplOutput
 formatUnificationMessage docOrCondition =
-    either id prettyUnifiers docOrCondition
+    maybe mempty prettyUnifiers docOrCondition
   where
     prettyUnifiers =
         ReplOutput

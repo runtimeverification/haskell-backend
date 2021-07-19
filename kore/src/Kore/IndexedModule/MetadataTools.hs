@@ -2,8 +2,8 @@
 Module      : Kore.IndexedModule.MetadataTools
 Description : Datastructures and functionality for retrieving metadata
               information from patterns
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -26,10 +26,10 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute (
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
-import Kore.Sort
-import qualified Kore.Step.SMT.AST as SMT.AST (
+import qualified Kore.Rewrite.SMT.AST as SMT.AST (
     SmtDeclarations,
  )
+import Kore.Sort
 import Kore.Syntax.Application (
     SymbolOrAlias (..),
  )

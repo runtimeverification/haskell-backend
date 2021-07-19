@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.List
 Description : Built-in associative lists
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -100,17 +100,19 @@ import qualified Kore.Internal.TermLike as TermLike (
     isFunctionPattern,
     markSimplified,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottom,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Syntax.Sentence (
     SentenceSort (..),
  )
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
@@ -549,7 +551,7 @@ unifyEquals
                   where
                     prefixLength = Seq.length list1 - Seq.length suffix2
         bottomWithExplanation = do
-            Monad.Unify.explainBottom
+            debugUnifyBottom
                 "Cannot unify lists of different length."
                 first
                 second

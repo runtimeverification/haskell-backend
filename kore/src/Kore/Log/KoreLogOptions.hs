@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
@@ -39,6 +39,7 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
+import qualified GHC.Generics as GHC
 import Kore.Equation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
@@ -97,7 +98,7 @@ data KoreLogOptions = KoreLogOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
     }
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, GHC.Generic)
 
 defaultSeverity :: Severity
 defaultSeverity = Warning

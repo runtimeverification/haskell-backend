@@ -2,6 +2,7 @@ module Test.Kore.Internal.Substitution (
     test_substitution,
     test_toPredicate,
     test_substitute,
+    test_retractAssignmentFor,
 
     -- * Re-exports
     TestAssignment,
@@ -12,7 +13,9 @@ module Test.Kore.Internal.Substitution (
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import Kore.Internal.From
 import Kore.Internal.Substitution as Substitution
+import Kore.Substitute
 import Kore.TopBottom (
     isBottom,
     isTop,
@@ -24,6 +27,7 @@ import Kore.Variables.Target (
 import Prelude.Kore hiding (
     null,
  )
+import Test.Expect
 import Test.Kore
 import Test.Kore.Internal.Predicate (
     TestPredicate,
@@ -38,10 +42,9 @@ import Test.Kore.Internal.TermLike hiding (
     mapVariables,
     markSimplified,
     simplifiedAttribute,
-    substitute,
     test_substitute,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Terse (
@@ -432,27 +435,93 @@ test_substitute =
         "is denormalized"
         [ testCase "Denormalized" $ do
             let input = wrap [assign (inject Mock.x) Mock.a]
-                actual = Substitution.substitute Map.empty input
+                actual = substitute Map.empty input
             assertDenormalized actual
         , testCase "Normalized" $ do
             let input = unsafeWrap [(inject Mock.x, Mock.a)]
-                actual = Substitution.substitute Map.empty input
+                actual = substitute Map.empty input
             assertDenormalized actual
         ]
     , testCase "applies to right-hand side" $ do
         let input = wrap [assign (inject Mock.x) (Mock.f (mkElemVar Mock.y))]
             subst = Map.singleton (inject $ variableName Mock.y) Mock.a
             expect = wrap [assign (inject Mock.x) (Mock.f Mock.a)]
-            actual = Substitution.substitute subst input
+            actual = substitute subst input
         assertEqual "" expect actual
     , testCase "does not apply to left-hand side" $ do
         let input = wrap [assign (inject Mock.x) (Mock.f (mkElemVar Mock.y))]
             subst = Map.singleton (inject $ variableName Mock.x) Mock.a
             expect = input
-            actual = Substitution.substitute subst input
+            actual = substitute subst input
         assertEqual "" expect actual
     ]
 
 assertDenormalized :: HasCallStack => Substitution VariableName -> Assertion
 assertDenormalized =
     assertBool "expected denormalized substitution" . (not . isNormalized)
+
+test_retractAssignmentFor :: [TestTree]
+test_retractAssignmentFor =
+    [ (testGroup "X = Y")
+        [ testCase "retract left" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                someVariable = inject Mock.x
+                someVariableName = variableName someVariable
+            expectAssignment
+                someVariable
+                (mkElemVar Mock.y)
+                (retractAssignmentFor someVariableName input)
+        , testCase "retract right" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                someVariable = inject Mock.y
+                someVariableName = variableName someVariable
+            expectAssignment
+                someVariable
+                (mkElemVar Mock.x)
+                (retractAssignmentFor someVariableName input)
+        , testCase "missing" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                someVariable = inject Mock.z
+                someVariableName = variableName someVariable
+            expectNothing (retractAssignmentFor someVariableName input)
+        ]
+    , (testGroup "X = a()")
+        [ testCase "retract left" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) Mock.a
+                someVariable = inject Mock.x
+                someVariableName = variableName someVariable
+            expectAssignment
+                someVariable
+                Mock.a
+                (retractAssignmentFor someVariableName input)
+        , testCase "retract right" $ do
+            let input = fromEquals_ Mock.a (mkElemVar Mock.y)
+                someVariable = inject Mock.y
+                someVariableName = variableName someVariable
+            expectAssignment
+                someVariable
+                Mock.a
+                (retractAssignmentFor someVariableName input)
+        , testCase "missing" $ do
+            let input = fromEquals_ (mkElemVar Mock.x) Mock.a
+                someVariable = inject Mock.z
+                someVariableName = variableName someVariable
+            expectNothing (retractAssignmentFor someVariableName input)
+        ]
+    , testCase "specific case" $ do
+        let input =
+                fromEquals_
+                    (mkElemVar Mock.xConfig)
+                    (mkElemVar Mock.yConfig)
+            someVariableName = variableName (inject Mock.yConfig)
+        expectAssignment
+            (inject Mock.yConfig)
+            (mkElemVar Mock.xConfig)
+            (retractAssignmentFor someVariableName input)
+    ]
+  where
+    expectAssignment someVariable termLike actual = do
+        UnorderedAssignment someVariable' termLike' <-
+            expectJust actual
+        assertEqual "" someVariable someVariable'
+        assertEqual "" termLike termLike'

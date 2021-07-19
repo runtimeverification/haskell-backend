@@ -1,16 +1,16 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Equation (
     Equation (..),
     mkEquation,
     toTermLike,
+    toTermLikeOld,
     mapVariables,
     refreshVariables,
     isSimplificationRule,
     equationPriority,
-    substitute,
     identifiers,
 ) where
 
@@ -49,12 +49,14 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
+    mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort
-import Kore.Step.Step (
+import Kore.Rewrite.Step (
     Renaming,
  )
+import Kore.Sort
+import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),
  )
@@ -142,12 +144,32 @@ instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
-toTermLike ::
+instance InternalVariable variable => Substitute (Equation variable) where
+    type TermType (Equation variable) = TermLike variable
+
+    type VariableNameType (Equation variable) = variable
+
+    substitute assignments equation =
+        Equation
+            { requires = substitute assignments (requires equation)
+            , argument = substitute assignments <$> argument equation
+            , antiLeft = substitute assignments <$> antiLeft equation
+            , left = substitute assignments (left equation)
+            , right = substitute assignments (right equation)
+            , ensures = substitute assignments (ensures equation)
+            , attributes = attributes equation
+            }
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
+-- This function must be removed as part of https://github.com/kframework/kore/issues/2593
+toTermLikeOld ::
     InternalVariable variable =>
     Sort ->
     Equation variable ->
     TermLike variable
-toTermLike sort equation
+toTermLikeOld sort equation
     -- \ceil axiom
     | isTop requires
       , isTop ensures
@@ -208,6 +230,70 @@ toTermLike sort equation
         , ensures
         } = equation
 
+toTermLike ::
+    InternalVariable variable =>
+    Sort ->
+    Equation variable ->
+    TermLike variable
+toTermLike sort equation
+    -- \ceil axiom
+    | isTop requires
+      , isTop ensures
+      , TermLike.Ceil_ _ sort1 _ <- left
+      , TermLike.Top_ sort2 <- right
+      , sort1 == sort2 =
+        left
+    -- function rule
+    | Just argument' <- argument
+      , Just antiLeft' <- antiLeft =
+        let antiLeftTerm = fromPredicate sort antiLeft'
+            argumentTerm = fromPredicate sort argument'
+         in TermLike.mkImplies
+                ( TermLike.mkAnd
+                    antiLeftTerm
+                    ( TermLike.mkAnd
+                        requires'
+                        argumentTerm
+                    )
+                )
+                ( TermLike.mkEquals sort left $
+                    TermLike.mkAnd right ensures'
+                )
+    -- function rule without priority
+    | Just argument' <- argument =
+        let argumentTerm = fromPredicate sort argument'
+         in TermLike.mkImplies
+                ( TermLike.mkAnd
+                    requires'
+                    (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
+                )
+                ( TermLike.mkEquals sort left $
+                    TermLike.mkAnd right ensures'
+                )
+    -- unconditional equation
+    | isTop requires
+      , isTop ensures =
+        TermLike.mkEquals sort left right
+    -- conditional equation
+    | otherwise =
+        TermLike.mkImplies
+            requires'
+            ( TermLike.mkEquals sort left $
+                TermLike.mkAnd right ensures'
+            )
+  where
+    requires' = fromPredicate sort requires
+    ensures' = fromPredicate rightSort ensures
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        } = equation
+    rightSort = TermLike.termLikeSort right
+
 instance
     InternalVariable variable =>
     HasFreeVariables (Equation variable) variable
@@ -261,10 +347,10 @@ refreshVariables ::
 refreshVariables
     (FreeVariables.toNames -> avoid)
     equation@(Equation _ _ _ _ _ _ _) =
-        let rename :: Map (SomeVariableName variable) (SomeVariable variable)
-            rename =
+        let rename' :: Map (SomeVariableName variable) (SomeVariable variable)
+            rename' =
                 FreeVariables.toSet originalFreeVariables
-                    & Fresh.refreshVariables avoid
+                    & Fresh.refreshVariablesSet avoid
             lookupSomeVariableName ::
                 forall variable'.
                 Injection (SomeVariableName variable) variable' =>
@@ -273,7 +359,7 @@ refreshVariables
             lookupSomeVariableName variable =
                 do
                     let injected = inject @(SomeVariableName _) variable
-                    someVariableName <- variableName <$> Map.lookup injected rename
+                    someVariableName <- variableName <$> Map.lookup injected rename'
                     retract someVariableName
                     & fromMaybe variable
             adj :: AdjSomeVariableName (variable -> variable)
@@ -295,12 +381,12 @@ refreshVariables
                 ( variableName variable
                 , TermLike.mkVar (mapSomeVariable adj variable)
                 )
-            left' = TermLike.substitute subst left
-            requires' = Predicate.substitute subst requires
-            argument' = Predicate.substitute subst <$> argument
-            antiLeft' = Predicate.substitute subst <$> antiLeft
-            right' = TermLike.substitute subst right
-            ensures' = Predicate.substitute subst ensures
+            left' = substitute subst left
+            requires' = substitute subst requires
+            argument' = substitute subst <$> argument
+            antiLeft' = substitute subst <$> antiLeft
+            right' = substitute subst right
+            ensures' = substitute subst ensures
             attributes' = Attribute.mapAxiomVariables adj attributes
             equation' =
                 equation
@@ -312,7 +398,7 @@ refreshVariables
                     , ensures = ensures'
                     , attributes = attributes'
                     }
-         in (rename, equation')
+         in (rename', equation')
       where
         Equation
             { requires
@@ -333,32 +419,6 @@ isSimplificationRule Equation{attributes} =
 
 equationPriority :: Equation variable -> Integer
 equationPriority = Attribute.getPriorityOfAxiom . attributes
-
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    Equation variable ->
-    Equation variable
-substitute assignments equation =
-    Equation
-        { requires = Predicate.substitute assignments requires
-        , argument = Predicate.substitute assignments <$> argument
-        , antiLeft = Predicate.substitute assignments <$> antiLeft
-        , left = TermLike.substitute assignments left
-        , right = TermLike.substitute assignments right
-        , ensures = Predicate.substitute assignments ensures
-        , attributes
-        }
-  where
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        , attributes
-        } = equation
 
 {- | The list of identifiers for an 'Equation'.
 

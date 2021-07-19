@@ -6,12 +6,12 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-import qualified Kore.Step.SMT.AST as AST (
+import qualified Kore.Rewrite.SMT.AST as AST (
     Declarations (Declarations),
     Sort,
     Symbol,
  )
-import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import qualified Kore.Rewrite.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )

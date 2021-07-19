@@ -1,18 +1,16 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2021
+License     : BSD-3-Clause
 -}
 module Kore.Substitute (
-    substitute,
+    Substitute (..),
+    NormalSubstitution,
+    NormalRenaming,
+    refreshElementBinder,
 ) where
 
-import Data.Functor.Foldable (
-    Corecursive,
-    Recursive,
- )
-import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity (
-    Identity (runIdentity),
+import Data.Kind (
+    Type,
  )
 import Data.Map.Strict (
     Map,
@@ -21,139 +19,87 @@ import qualified Data.Map.Strict as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
 import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
+    HasFreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Attribute.Synthetic
 import Kore.Internal.Variable
-import Kore.Syntax
-import Kore.Variables.Binding
-import Kore.Variables.Fresh
+import Kore.Variables.Binding (
+    Binder (..),
+ )
+import Kore.Variables.Fresh (refreshElementVariable)
 import Prelude.Kore
 
-{- | Traverse the pattern from the top down and apply substitutions.
+-- | @Substitute@ implements capture-avoiding substitution over many types.
+class HasFreeVariables child (VariableNameType child) => Substitute child where
+    -- | The type of terms used to replace variables under substitution.
+    type TermType child :: Type
 
-The 'freeVariables' annotation is used to avoid traversing subterms that
-contain none of the targeted variables.
+    -- | The type of variable names to be replaced under substitution.
+    type VariableNameType child :: Type
 
-The substitution must be normalized, i.e. no target (left-hand side) variable
-may appear in the right-hand side of any substitution, but this is not checked.
+    -- | Apply a substitution: replace variables with terms from a 'Map'. The
+    -- 'NormalSubstitution' is assumed to be proper (none of the variables on
+    -- the left appear in any term on the right), but this is not checked.
+    substitute :: NormalSubstitution child -> child -> child
+
+    -- | Rename variables from a 'Map'. The 'NormalRenaming' is assumed to be
+    -- proper (none of the variables on the left appear on the right), but this
+    -- is not checked.
+    rename :: NormalRenaming child -> child -> child
+
+{- | A @NormalSubstitution@ maps variable names to terms so that the former may
+ be replaced by the latter. In a proper @NormalSubstitution@, none of the
+ variables on the left appear in any of the terms on the right.
 -}
-substitute ::
-    forall patternType patternBase attribute variable.
-    ( InternalVariable variable
-    , Corecursive patternType
-    , Recursive patternType
-    , CofreeF patternBase attribute ~ Base patternType
-    , Binding patternType
-    , VariableType patternType ~ variable
-    , Synthetic attribute patternBase
-    , HasFreeVariables patternType variable
-    ) =>
-    -- | Substitution
-    Map (SomeVariableName variable) patternType ->
-    -- | Original pattern
-    patternType ->
-    patternType
-substitute =
-    substituteWorker . Map.map Left
+type NormalSubstitution child =
+    Map (SomeVariableName (VariableNameType child)) (TermType child)
+
+{- | A @NormalRenaming@ maps variable names to variables so that the former may
+ be renamed based on the latter. In a proper @NormalRenaming@, none of the
+ variable on the left appear in any of the terms on the right.
+-}
+type NormalRenaming child =
+    Map
+        (SomeVariableName (VariableNameType child))
+        -- TODO (thomas.tuegel): Arguably, the values below should be only
+        -- 'SomeVariableName' and not 'SomeVariable'.
+        (SomeVariable (VariableNameType child))
+
+instance
+    (Substitute child, Ord (VariableNameType child)) =>
+    Substitute [child]
+    where
+    type TermType [child] = TermType child
+    type VariableNameType [child] = VariableNameType child
+
+    substitute subst = fmap (substitute subst)
+    {-# INLINE substitute #-}
+
+    rename renaming = fmap (rename renaming)
+    {-# INLINE rename #-}
+
+refreshElementBinder ::
+    forall variable child.
+    Substitute child =>
+    VariableNameType child ~ variable =>
+    FreshPartialOrd variable =>
+    Set (SomeVariableName variable) ->
+    Binder (ElementVariable variable) child ->
+    Binder (ElementVariable variable) child
+refreshElementBinder avoiding binder =
+    do
+        binderVariable' <- refreshElementVariable avoiding binderVariable
+        let someVariableName =
+                inject @(SomeVariableName variable)
+                    (variableName binderVariable)
+            someVariable' = inject @(SomeVariable _) binderVariable'
+            renaming = Map.singleton someVariableName someVariable'
+            binderChild' = rename renaming binderChild
+        return
+            Binder
+                { binderVariable = binderVariable'
+                , binderChild = binderChild'
+                }
+        & fromMaybe binder
   where
-    extractFreeVariables :: patternType -> Set (SomeVariableName variable)
-    extractFreeVariables = FreeVariables.toNames . freeVariables
-
-    getTargetFreeVariables ::
-        Either patternType (SomeVariable variable) ->
-        Set (SomeVariableName variable)
-    getTargetFreeVariables =
-        either extractFreeVariables (Set.singleton . variableName)
-
-    renaming ::
-        -- | Original variable
-        SomeVariable variable ->
-        -- | Renamed variable
-        Maybe (SomeVariable variable) ->
-        -- | Substitution
-        Map
-            (SomeVariableName variable)
-            (Either patternType (SomeVariable variable)) ->
-        Map
-            (SomeVariableName variable)
-            (Either patternType (SomeVariable variable))
-    renaming Variable{variableName} =
-        maybe id (Map.insert variableName . Right)
-
-    substituteWorker ::
-        Map
-            (SomeVariableName variable)
-            (Either patternType (SomeVariable variable)) ->
-        patternType ->
-        patternType
-    substituteWorker subst termLike =
-        substituteNone <|> substituteBinder <|> substituteVariable
-            & fromMaybe substituteDefault
-      where
-        substituteNone :: Maybe patternType
-        substituteNone
-            | Map.null subst' = pure termLike
-            | otherwise = empty
-
-        substituteBinder :: Maybe patternType
-        substituteBinder =
-            runIdentity <$> matchWith traverseBinder worker termLike
-          where
-            worker ::
-                Binder (SomeVariable variable) patternType ->
-                Identity (Binder (SomeVariable variable) patternType)
-            worker Binder{binderVariable, binderChild} = do
-                let binderVariable' = avoidCapture binderVariable
-                    -- Rename the freshened bound variable in the subterms.
-                    subst'' = renaming binderVariable binderVariable' subst'
-                return
-                    Binder
-                        { binderVariable = fromMaybe binderVariable binderVariable'
-                        , binderChild = substituteWorker subst'' binderChild
-                        }
-
-        substituteVariable :: Maybe patternType
-        substituteVariable =
-            either id id <$> matchWith traverseVariable worker termLike
-          where
-            worker ::
-                SomeVariable variable ->
-                Either patternType (SomeVariable variable)
-            worker Variable{variableName} =
-                -- If the variable is not substituted or renamed, return the
-                -- original pattern.
-                fromMaybe
-                    (Left termLike)
-                    -- If the variable is renamed, 'Map.lookup' returns a
-                    -- 'Right' which @traverseVariable@ embeds into
-                    -- @patternType@. If the variable is substituted,
-                    -- 'Map.lookup' returns a 'Left' which is used directly as
-                    -- the result, exiting early from @traverseVariable@.
-                    (Map.lookup variableName subst')
-
-        substituteDefault =
-            synthesize termLikeHead'
-          where
-            _ :< termLikeHead = Recursive.project termLike
-            termLikeHead' = substituteWorker subst' <$> termLikeHead
-
-        freeVars = extractFreeVariables termLike
-
-        subst' = Map.intersection subst (Map.fromSet id freeVars)
-
-        originalVariables = Set.difference freeVars (Map.keysSet subst')
-
-        freeVariables' = Set.union originalVariables targetFreeVariables
-          where
-            targetFreeVariables =
-                foldl'
-                    Set.union
-                    Set.empty
-                    (getTargetFreeVariables <$> subst')
-
-        avoidCapture = refreshVariable freeVariables'
-{-# INLINE substitute #-}
+    Binder{binderVariable, binderChild} = binder

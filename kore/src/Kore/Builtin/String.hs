@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.String
 Description : Built-in string sort
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -27,6 +27,7 @@ module Kore.Builtin.String (
     unifyString,
     unifyStringEq,
     matchString,
+    matchUnifyStringEq,
 
     -- * keys
     ltKey,
@@ -77,23 +78,33 @@ import qualified Kore.Error
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalString
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Log.WarnNotImplemented
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier (
+import Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
     TermSimplifier,
  )
@@ -514,8 +525,26 @@ unifyString term1 term2 unifyData =
     worker
         | on (==) internalStringValue string1 string2 =
             return $ Pattern.fromTermLike term1
-        | otherwise = explainAndReturnBottom "distinct strings" term1 term2
+        | otherwise =
+            debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2} = unifyData
+
+data UnifyStringEq = UnifyStringEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , internalBool :: !InternalBool
+    }
+
+matchUnifyStringEq ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyStringEq
+matchUnifyStringEq first second
+    | Just eqTerm <- matchStringEqual first
+      , isFunctionPattern first
+      , InternalBool_ internalBool <- second =
+        Just UnifyStringEq{eqTerm, internalBool}
+    | otherwise = Nothing
+{-# INLINE matchUnifyStringEq #-}
 
 {- | Unification of the @STRING.eq@ symbol
 
@@ -526,14 +555,19 @@ unifyStringEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyStringEq unifyChildren notSimplifier a b =
-    worker a b <|> worker b a
+    UnifyStringEq ->
+    unifier (Pattern RewritingVariableName)
+unifyStringEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else notSimplifier SideCondition.top
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    worker termLike1 termLike2
-        | Just eqTerm <- matchStringEqual termLike1
-          , isFunctionPattern termLike1 =
-            unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
-        | otherwise = empty
+    UnifyStringEq{eqTerm, internalBool} = unifyData
+    EqTerm{operand1, operand2} = eqTerm
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
