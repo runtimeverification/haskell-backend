@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorVerify (
     ErrorVerify (..),
@@ -12,10 +12,10 @@ import Control.Monad.Catch (
     MonadThrow,
     throwM,
  )
-import Kore.ASTVerifier.Error (
+import qualified Kore.Error as Kore
+import Kore.Validate.Error (
     VerifyError,
  )
-import qualified Kore.Error as Kore
 import Log
 import Prelude.Kore
 import Pretty

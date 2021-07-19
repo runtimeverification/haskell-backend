@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.Endianness (
     verifiers,
@@ -26,10 +26,12 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Unification.Unify (
     MonadUnify,
-    explainAndReturnBottom,
  )
 import qualified Kore.Verified as Verified
 import Prelude.Kore
@@ -98,7 +100,7 @@ unifyEquals ::
 unifyEquals unifyData
     | end1 == end2 = return (Pattern.fromTermLike term1)
     | otherwise =
-        explainAndReturnBottom
+        debugUnifyBottomAndReturnBottom
             "Cannot unify distinct constructors."
             term1
             term2

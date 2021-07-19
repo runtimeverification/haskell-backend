@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.List
 Description : Built-in associative lists
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -103,20 +103,19 @@ import qualified Kore.Internal.TermLike as TermLike (
     isFunctionPattern,
     markSimplified,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottom,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.SimplificationType (
-    SimplificationType,
- )
-import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Syntax.Sentence (
     SentenceSort (..),
  )
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
@@ -391,18 +390,19 @@ data ListListData = ListListData
     , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
-data ListAppData = ListAppData
-    { pat1, pat2 :: !(TermLike RewritingVariableName)
-    , args2 :: ![TermLike RewritingVariableName]
-    , builtin1 :: !(InternalList (TermLike RewritingVariableName))
+data FramedData = FramedData
+    { builtin1, builtin2 :: !(InternalList (TermLike RewritingVariableName))
     , term1, term2 :: !(TermLike RewritingVariableName)
+    , var :: !(TermLike RewritingVariableName)
     }
 
 data UnifyEqualsList
     = FirstElemVar !FirstElemVarData
     | AppApp !AppAppData
     | ListList !ListListData
-    | ListApp !ListAppData
+    | FramedRight !FramedData
+    | FramedLeft !FramedData
+    | WrongArity
 
 {- | Matches two lists of the following patterns:
 
@@ -446,11 +446,18 @@ matchUnifyEqualsList tools first second
         | isSymbolConcat symbol1
           , isSymbolConcat symbol2 =
             Just $ AppApp AppAppData{args1, args2, symbol2, term1, term2}
-    worker term1 term2 pat1@(InternalList_ builtin1) pat2 =
+    worker term1 term2 (InternalList_ builtin1) pat2 =
         case pat2 of
             InternalList_ builtin2 -> Just $ ListList ListListData{builtin1, builtin2, term1, term2}
             App_ symbol2 args2
-                | isSymbolConcat symbol2 -> Just $ ListApp ListAppData{pat1, pat2, args2, builtin1, term1, term2}
+                | isSymbolConcat symbol2 ->
+                    case args2 of
+                        [InternalList_ builtin2, var@(Var_ _)] ->
+                            Just $ FramedRight FramedData{builtin1, builtin2, term1, term2, var}
+                        [var@(Var_ _), InternalList_ builtin2] ->
+                            Just $ FramedLeft FramedData{builtin1, builtin2, term1, term2, var}
+                        [_, _] -> Nothing
+                        _ -> Just WrongArity 
                 | otherwise -> Nothing
             _ -> Nothing
     worker _ _ _ _ = Nothing
@@ -468,7 +475,6 @@ matchUnifyEqualsList tools first second
 unifyEquals ::
     forall unifier.
     MonadUnify unifier =>
-    SimplificationType ->
     ( TermLike RewritingVariableName ->
       TermLike RewritingVariableName ->
       unifier (Pattern RewritingVariableName)
@@ -477,7 +483,6 @@ unifyEquals ::
     UnifyEqualsList ->
     unifier (Pattern RewritingVariableName)
 unifyEquals
-    simplificationType
     simplifyChild
     tools
     unifyData =
@@ -511,18 +516,11 @@ unifyEquals
                     _ -> empty
             ListList ListListData{builtin1, builtin2, term1, term2} ->
                 unifyEqualsConcrete builtin1 builtin2 term1 term2
-            ListApp ListAppData{pat1, pat2, args2, builtin1, term1, term2} ->
-                case args2 of
-                    [InternalList_ builtin2, x@(Var_ _)] ->
-                        unifyEqualsFramedRight builtin1 builtin2 x term1 term2
-                    [x@(Var_ _), InternalList_ builtin2] ->
-                        unifyEqualsFramedLeft builtin1 x builtin2 term1 term2
-                    [_, _] ->
-                        Builtin.unifyEqualsUnsolved
-                            simplificationType
-                            pat1
-                            pat2
-                    _ -> Builtin.wrongArity concatKey
+            FramedRight FramedData{builtin1, builtin2, term1, term2, var} ->
+                unifyEqualsFramedRight builtin1 builtin2 var term1 term2
+            FramedLeft FramedData{builtin1, builtin2, term1, term2, var} ->
+                unifyEqualsFramedLeft builtin1 var builtin2 term1 term2
+            WrongArity -> Builtin.wrongArity concatKey
       where
         propagateConditions ::
             InternalVariable variable =>
@@ -627,7 +625,7 @@ unifyEquals
                   where
                     prefixLength = Seq.length list1 - Seq.length suffix2
         bottomWithExplanation term1 term2 = do
-            Monad.Unify.explainBottom
+            debugUnifyBottom
                 "Cannot unify lists of different length."
                 term1
                 term2

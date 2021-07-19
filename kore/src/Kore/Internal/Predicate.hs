@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.Predicate (
     Predicate, -- Constructor not exported on purpose
@@ -38,7 +38,6 @@ module Kore.Internal.Predicate (
     freeElementVariables,
     hasFreeVariable,
     mapVariables,
-    substitute,
     depth,
     markSimplified,
     markSimplifiedConditional,
@@ -47,6 +46,9 @@ module Kore.Internal.Predicate (
     forgetSimplified,
     wrapPredicate,
     containsSymbolWithIdPred,
+    refreshExists,
+    toMultiAnd,
+    fromMultiAnd,
     pattern PredicateTrue,
     pattern PredicateFalse,
     pattern PredicateAnd,
@@ -67,9 +69,6 @@ import qualified Data.Foldable as Foldable
 import Data.Functor.Compose (
     Compose (..),
  )
-import Data.Functor.Const (
-    Const (Const),
- )
 import Data.Functor.Foldable (
     Base,
     Corecursive,
@@ -81,9 +80,6 @@ import Data.Functor.Identity (
  )
 import Data.List.Extra (
     nubOrd,
- )
-import Data.Map.Strict (
-    Map,
  )
 import qualified Data.Map.Strict as Map
 import Data.Set (
@@ -104,6 +100,10 @@ import Kore.Attribute.PredicatePattern (
 import qualified Kore.Attribute.PredicatePattern as PredicatePattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
@@ -133,12 +133,12 @@ import Kore.Internal.TermLike hiding (
     markSimplifiedMaybeConditional,
     setSimplified,
     simplifiedAttribute,
-    substitute,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort (
     predicateSort,
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -258,6 +258,7 @@ instance From (Not () child) (PredicateF variable child) where
     from = NotF
     {-# INLINE from #-}
 
+-- | @Predicate@ is the internal form of Kore predicates.
 newtype Predicate variable = Predicate
     { getPredicate ::
         Cofree (PredicateF variable) (PredicatePattern variable)
@@ -411,6 +412,96 @@ instance TopBottom (Predicate variable) where
     isTop _ = False
     isBottom PredicateFalse = True
     isBottom _ = False
+
+instance InternalVariable variable => Substitute (Predicate variable) where
+    type TermType (Predicate variable) = TermLike variable
+
+    type VariableNameType (Predicate variable) = variable
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
+    substitute subst predicate =
+        substituteNone <|> substituteBinder <|> substituteTermLike
+            & fromMaybe substituteDefault
+      where
+        freeVars =
+            Attribute.FreeVariables.toNames
+                (Attribute.freeVariables predicate)
+        subst' = Map.intersection subst (Map.fromSet id freeVars)
+        originalVariables = Set.difference freeVars (Map.keysSet subst')
+        targetFreeVariables =
+            (Foldable.foldl' Set.union Set.empty)
+                ( Attribute.FreeVariables.toNames
+                    . Attribute.freeVariables
+                    <$> subst'
+                )
+        freeVariables' = Set.union originalVariables targetFreeVariables
+        avoidCapture = refreshElementVariable freeVariables'
+
+        substituteNone
+            | Map.null subst' = pure predicate
+            | otherwise = empty
+
+        substituteBinder = case predF of
+            ExistsF exists'@Exists{existsVariable = var, existsChild = child} -> do
+                var' <- avoidCapture var
+                let subst'' =
+                        Map.insert
+                            (inject (variableName var))
+                            (TermLike.mkVar $ mkSomeVariable var')
+                            subst'
+                (return . synthesize . ExistsF)
+                    exists'
+                        { existsVariable = var'
+                        , existsChild = substitute subst'' child
+                        }
+            ForallF forall'@Forall{forallVariable = var, forallChild = child} -> do
+                var' <- avoidCapture var
+                let subst'' =
+                        Map.insert
+                            (inject (variableName var))
+                            (TermLike.mkVar $ mkSomeVariable var')
+                            subst'
+                (return . synthesize . ForallF)
+                    forall'
+                        { forallVariable = var'
+                        , forallChild = substitute subst'' child
+                        }
+            _ -> empty
+          where
+            _ :< predF = Recursive.project predicate
+
+        substituteTermLike = case predF of
+            CeilF ceilF ->
+                (pure . synthesize . CeilF) (substitute subst' <$> ceilF)
+            EqualsF equalsF ->
+                (pure . synthesize . EqualsF) (substitute subst' <$> equalsF)
+            FloorF floorF ->
+                (pure . synthesize . FloorF) (substitute subst' <$> floorF)
+            InF inF ->
+                (pure . synthesize . InF) (substitute subst' <$> inF)
+            _ -> empty
+          where
+            _ :< predF = Recursive.project predicate
+
+        substituteDefault = synthesize (substitute subst' <$> predF)
+          where
+            _ :< predF = Recursive.project predicate
+
+instance
+    InternalVariable variable =>
+    From (MultiAnd (Predicate variable)) (Predicate variable)
+    where
+    from = fromMultiAnd
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable =>
+    From (Predicate variable) (MultiAnd (Predicate variable))
+    where
+    from = toMultiAnd
+    {-# INLINE from #-}
 
 unparseWithSort ::
     forall variable ann.
@@ -1174,116 +1265,6 @@ wrapPredicate =
         id
         . makePredicate
 
-{- | Traverse the predicate from the top down and apply substitutions.
-
-The 'freeVariables' annotation is used to avoid traversing subterms that
-contain none of the targeted variables.
--}
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    Predicate variable ->
-    Predicate variable
-substitute subst predicate =
-    substituteNone <|> substituteBinder <|> substituteTermLike
-        & fromMaybe substituteDefault
-  where
-    freeVars =
-        Attribute.FreeVariables.toNames
-            (Attribute.freeVariables predicate)
-    subst' = Map.intersection subst (Map.fromSet id freeVars)
-    originalVariables = Set.difference freeVars (Map.keysSet subst')
-    targetFreeVariables =
-        Foldable.foldl'
-            Set.union
-            Set.empty
-            ( Attribute.FreeVariables.toNames
-                . Attribute.freeVariables
-                <$> subst'
-            )
-    freeVariables' = Set.union originalVariables targetFreeVariables
-    avoidCapture = refreshElementVariable freeVariables'
-
-    substituteNone
-        | Map.null subst' = pure predicate
-        | otherwise = empty
-
-    substituteBinder = case predF of
-        ExistsF exists'@Exists{existsVariable = var, existsChild = child} -> do
-            newVar <- avoidCapture var
-            return $
-                synthesize $
-                    ExistsF $
-                        exists'
-                            { existsVariable = newVar
-                            , existsChild =
-                                substitute
-                                    ( Map.insert
-                                        (inject (variableName var))
-                                        (synthesize $ TermLike.VariableF $ Const $ mkSomeVariable newVar)
-                                        subst'
-                                    )
-                                    child
-                            }
-        ForallF forall'@Forall{forallVariable = var, forallChild = child} -> do
-            newVar <- avoidCapture var
-            return $
-                synthesize $
-                    ForallF $
-                        forall'
-                            { forallVariable = newVar
-                            , forallChild =
-                                substitute
-                                    ( Map.insert
-                                        (inject (variableName var))
-                                        (synthesize $ TermLike.VariableF $ Const $ mkSomeVariable newVar)
-                                        subst'
-                                    )
-                                    child
-                            }
-        _ -> empty
-      where
-        _ :< predF = Recursive.project predicate
-
-    substituteTermLike = case predF of
-        CeilF ceil'@Ceil{ceilChild} ->
-            pure $
-                synthesize $
-                    CeilF $
-                        ceil'
-                            { ceilChild = TermLike.substitute subst' ceilChild
-                            }
-        EqualsF equals'@Equals{equalsFirst, equalsSecond} ->
-            pure $
-                synthesize $
-                    EqualsF $
-                        equals'
-                            { equalsFirst = TermLike.substitute subst' equalsFirst
-                            , equalsSecond = TermLike.substitute subst' equalsSecond
-                            }
-        FloorF floor'@Floor{floorChild} ->
-            pure $
-                synthesize $
-                    FloorF $
-                        floor'
-                            { floorChild = TermLike.substitute subst' floorChild
-                            }
-        InF in'@In{inContainedChild, inContainingChild} ->
-            pure $
-                synthesize $
-                    InF $
-                        in'
-                            { inContainedChild = TermLike.substitute subst' inContainedChild
-                            , inContainingChild = TermLike.substitute subst' inContainingChild
-                            }
-        _ -> empty
-      where
-        _ :< predF = Recursive.project predicate
-
-    substituteDefault = synthesize (substitute subst' <$> predF)
-      where
-        _ :< predF = Recursive.project predicate
-
 depth :: Predicate variable -> Int
 depth = Recursive.fold levelDepth
   where
@@ -1302,3 +1283,18 @@ containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =
         CeilF x -> any (containsSymbolWithId symId) x
         FloorF x -> any (containsSymbolWithId symId) x
         _ -> any (containsSymbolWithIdPred symId) predicate
+
+fromMultiAnd ::
+    InternalVariable variable =>
+    MultiAnd (Predicate variable) ->
+    Predicate variable
+fromMultiAnd predicates =
+    case toList predicates of
+        [] -> makeTruePredicate
+        _ -> foldr1 makeAndPredicate predicates
+
+toMultiAnd ::
+    Ord variable =>
+    Predicate variable ->
+    MultiAnd (Predicate variable)
+toMultiAnd = MultiAnd.make . getMultiAndPredicate

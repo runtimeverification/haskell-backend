@@ -5,8 +5,8 @@ Module      : Kore.Builtin.AssociativeCommutative
 Description : Handles built-in operations which are associative, commutative,
               with neutral elements, key-based, with unique keys, and which
               return bottom when applied to unique keys.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 
 This module is intended to be imported qualified, to avoid collision with other
@@ -57,6 +57,7 @@ import Data.Reflection (
     Given,
  )
 import qualified Data.Reflection as Reflection
+import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Pattern.Simplified as Attribute (
@@ -105,18 +106,20 @@ import Kore.Internal.TermLike (
     pattern InternalSet_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Sort (
     Sort,
  )
-import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Variable
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser (
     unparse,
     unparseToString,
@@ -124,9 +127,6 @@ import Kore.Unparser (
 import qualified Kore.Unparser as Unparser
 import Logic
 import Prelude.Kore
-import Pretty (
-    Doc,
- )
 import qualified Pretty
 
 -- | Any @TermWrapper@ may be inside of an 'InternalAc'.
@@ -766,10 +766,10 @@ unifyEqualsNormalized
         normalize1 patt =
             case toNormalized patt of
                 Bottom ->
-                    Monad.Unify.explainAndReturnBottom
-                        "Duplicated elements in normalization."
-                        first
-                        second
+                    debugUnifyBottomAndReturnBottom
+                            "Duplicated elements in normalization."
+                            first
+                            second
                 Normalized n -> return n
 
 data UnifyEqualsElementListsData normalized = UnifyEqualsElementListsData
@@ -995,9 +995,9 @@ unifyEqualsNormalizedAc
                 (\key count result -> replicate count key ++ result)
                 []
 
-        bottomWithExplanation :: Doc () -> unifier a
+        bottomWithExplanation :: Text -> unifier a
         bottomWithExplanation explanation =
-            Monad.Unify.explainAndReturnBottom explanation first second
+            debugUnifyBottomAndReturnBottom explanation first second
 
         unifyEqualsElementLists' =
             unifyEqualsElementLists
@@ -1130,7 +1130,7 @@ buildResultFromUnifiers ::
     , InternalVariable variable
     , TermWrapper normalized
     ) =>
-    (forall result. Doc () -> unifier result) ->
+    (forall result. Text -> unifier result) ->
     [(Key, Value normalized (TermLike variable))] ->
     [(TermLike variable, Value normalized (TermLike variable))] ->
     [TermLike variable] ->
@@ -1221,7 +1221,7 @@ buildResultFromUnifiers
 
 addAllDisjoint ::
     (Monad unifier, Ord a, Hashable a) =>
-    (forall result. Doc () -> unifier result) ->
+    (forall result. Text -> unifier result) ->
     HashMap a b ->
     [(a, b)] ->
     unifier (HashMap a b)
@@ -1331,7 +1331,7 @@ unifyEqualsElementLists
             --
             -- Since the two lists have different counts, their structures can
             -- never unify.
-            Monad.Unify.explainAndReturnBottom
+            debugUnifyBottomAndReturnBottom
                 "Cannot unify ac structures with different sizes."
                 first
                 second
@@ -1384,7 +1384,7 @@ unifyEqualsElementLists
             -- The second structure does not include an opaque term, so all the
             -- elements in the first structure must be matched by elements in the second
             -- one. Since we don't have enough, we return bottom.
-            Monad.Unify.explainAndReturnBottom
+            debugUnifyBottomAndReturnBottom
                 "Cannot unify ac structures with different sizes."
                 first
                 second
@@ -1402,7 +1402,7 @@ unifyEqualsElementLists
 
             case elementListAsInternal tools (termLikeSort first) remainder2Terms of
                 Nothing ->
-                    Monad.Unify.explainAndReturnBottom
+                    debugUnifyBottomAndReturnBottom
                         "Duplicated element in unification results"
                         first
                         second
@@ -1483,7 +1483,7 @@ unifyOpaqueVariable ::
     ( MonadUnify unifier
     , InternalVariable variable
     ) =>
-    (forall a. Doc () -> unifier a) ->
+    (forall a. Text -> unifier a) ->
     -- | unifier function
     (TermLike variable -> TermLike variable -> unifier (Pattern variable)) ->
     UnifyOpVarResult variable ->

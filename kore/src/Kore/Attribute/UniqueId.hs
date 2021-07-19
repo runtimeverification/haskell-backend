@@ -1,6 +1,6 @@
 {- |
 Module      : Kore.Attribute.UniqueId
-License     : NCSA
+License     : BSD-3-Clause
 
 The unique id attribute identifies symbols, sorts, axioms and
 various other things.

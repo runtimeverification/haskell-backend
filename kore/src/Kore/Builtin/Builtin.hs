@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.Builtin
 Description : Built-in sort, symbol, and pattern verifiers
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -39,7 +39,6 @@ module Kore.Builtin.Builtin (
     makeDomainValuePattern,
 
     -- * Implementing builtin unification
-    unifyEqualsUnsolved,
     module Kore.Builtin.Verifiers,
 ) where
 
@@ -78,50 +77,27 @@ import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
-    Conditional (..),
     Pattern,
  )
 import Kore.Internal.Pattern as Pattern (
     fromTermLike,
-    top,
-    withCondition,
  )
-import Kore.Internal.Predicate (
-    makeEqualsPredicate,
- )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
-    topTODO,
- )
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Sort (
-    predicateSort,
- )
-import Kore.Step.Simplification.SimplificationType as SimplificationType (
-    SimplificationType (..),
- )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (AttemptedAxiomResults),
     BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
     MonadSimplify,
     applicationAxiomSimplifier,
-    makeEvaluateTermCeil,
  )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults (
+import qualified Kore.Simplify.Simplify as AttemptedAxiomResults (
     AttemptedAxiomResults (..),
  )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
-import qualified Kore.Unification.Unify as Monad.Unify (
-    scatter,
+import Kore.Sort (
+    predicateSort,
  )
 import Kore.Unparser
 import Prelude.Kore
@@ -493,27 +469,6 @@ getAttemptedAxiom ::
     m (AttemptedAxiom variable)
 getAttemptedAxiom attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
-
--- | Return an unsolved unification problem.
-unifyEqualsUnsolved ::
-    MonadUnify unifier =>
-    SimplificationType ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    unifier (Pattern RewritingVariableName)
-unifyEqualsUnsolved SimplificationType.And a b = do
-    let unified = TermLike.markSimplified $ mkAnd a b
-    orCondition <-
-        makeEvaluateTermCeil
-            SideCondition.topTODO
-            unified
-    predicate <- Monad.Unify.scatter orCondition
-    return (unified `Pattern.withCondition` predicate)
-unifyEqualsUnsolved SimplificationType.Equals a b =
-    return
-        Pattern.top
-            { predicate = Predicate.markSimplified $ makeEqualsPredicate a b
-            }
 
 makeDomainValueTerm ::
     InternalVariable variable =>

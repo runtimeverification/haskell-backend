@@ -14,6 +14,30 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.49.0.0] - 2021-06-30
+
+### Added
+
+- Added option to output logs in one-line format (#2596).
+- Improved performance of simplification (#2520).
+
+### Fixed
+
+- Fixed issue with `unifyStringEq` (#2586).
+
+## [0.48.0.0] - 2021-06-16
+
+### Added
+
+- Adds support for Z3's `:rlimit` with `--smt-rlimit` CL option (#2407).
+- Enables building with `-eventlog` by default (#2658).
+- Adds option `--not-matching-children` to `kore-prof` (#2631).
+
+### Fixed
+
+- The `SideCondition.andCondition` performance regression is fixed (#2454).
+- Decoding bytes is improved (fixes added in relation to #2591).
+
 ## [0.47.0.0] - 2021-06-02
 
 ### Added

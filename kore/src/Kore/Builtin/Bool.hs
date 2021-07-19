@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.Bool (
     sort,
@@ -56,15 +56,17 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.Simplification.Simplify (
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
+import Kore.Rewrite.RewritingVariable
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
     TermSimplifier,
  )
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Unify
 import Prelude.Kore
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
@@ -203,7 +205,7 @@ unifyBool unifyData
     | bool1 == bool2 =
         return (Pattern.fromTermLike term1)
     | otherwise =
-        Unify.explainAndReturnBottom
+        debugUnifyBottomAndReturnBottom
             "different Bool domain values"
             term1
             term2

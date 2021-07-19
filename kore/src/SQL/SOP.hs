@@ -1,8 +1,8 @@
 {-# LANGUAGE PolyKinds #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 
 'Table' definitions for 'SOP.Generic' types.
 -}

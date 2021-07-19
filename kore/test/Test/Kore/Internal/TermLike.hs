@@ -45,6 +45,7 @@ import Kore.Internal.Substitution (
     orientSubstitution,
  )
 import Kore.Internal.TermLike
+import Kore.Substitute
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
@@ -53,7 +54,7 @@ import Test.Kore hiding (
     symbolGen,
  )
 import Test.Kore.Internal.Symbol
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Terse

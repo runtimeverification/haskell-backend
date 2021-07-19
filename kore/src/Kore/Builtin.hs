@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin
 Description : Built-in sorts and symbols
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -69,13 +69,13 @@ import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
 import Kore.Internal.TermLike
-import Kore.Step.Axiom.Identifier (
+import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Prelude.Kore

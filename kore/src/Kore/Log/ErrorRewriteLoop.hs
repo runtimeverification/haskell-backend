@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorRewriteLoop (
     ErrorRewriteLoop,
@@ -21,10 +21,10 @@ import GHC.Stack (
 import Kore.Attribute.Axiom (
     Axiom (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RewriteRule,
     RulePattern (..),
     getRewriteRule,

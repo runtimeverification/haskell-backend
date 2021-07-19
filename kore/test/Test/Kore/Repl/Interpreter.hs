@@ -43,6 +43,10 @@ import Kore.Internal.TermLike (
     mkElemVar,
  )
 import qualified Kore.Log as Log
+import Kore.Log.DebugUnifyBottom (
+    DebugUnifyBottom (..),
+    mkDebugUnifyBottom,
+ )
 import qualified Kore.Log.Registry as Log
 import Kore.Reachability hiding (
     AppliedRule,
@@ -50,38 +54,38 @@ import Kore.Reachability hiding (
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import qualified Kore.Step.Simplification.Data as Kore
+import qualified Kore.Simplify.Data as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
  )
 import Kore.Unification.Procedure (
     unificationProcedure,
  )
-import Kore.Unification.Unify (
-    explainBottom,
- )
 import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-import qualified Pretty
 import qualified SMT
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
  )
+import Test.Kore (
+    TestLog,
+    runTestLog,
+ )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Step.Simplification
+import Test.Kore.Simplify
 import Test.Tasty (
     TestTree,
  )
@@ -316,31 +320,39 @@ tryAlias =
 
 unificationFailure :: IO ()
 unificationFailure =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkAxiom one one
         axioms = [impossibleAxiom]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    mkDebugUnifyBottom "distinct integers" one zero
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
 unificationFailureWithName :: IO ()
 unificationFailureWithName =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [impossibleAxiom]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "impossible"
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    mkDebugUnifyBottom "distinct integers" one zero
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -376,31 +388,39 @@ unificationSuccessWithName = do
 
 forceFailure :: IO ()
 forceFailure =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkAxiom one one
         axioms = [impossibleAxiom]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    mkDebugUnifyBottom "distinct integers" one zero
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
 forceFailureWithName :: IO ()
 forceFailureWithName =
-    let zero = Int.asInternal intSort 0
+    let zero :: TermLike RewritingVariableName
+        zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
         impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [impossibleAxiom]
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "impossible"
      in do
-            Result{output, continue, state} <- run command axioms [claim] claim
-            expectedOutput <- formatUnificationError "distinct integers" one zero
-            output `equalsOutput` expectedOutput
+            Result{logEntries, continue, state} <- run command axioms [claim] claim
+            let expectedLogEntry =
+                    mkDebugUnifyBottom "distinct integers" one zero
+                actualdebugUnifyBottom =
+                    catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
+            head actualdebugUnifyBottom `equals` expectedLogEntry
             continue `equals` Continue
             state `hasCurrentNode` ReplNode 0
 
@@ -533,6 +553,7 @@ logUpdatesState = do
                 , logEntries =
                     Map.keysSet . Log.typeToText $ Log.registry
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , timestampsSwitch = Log.TimestampsEnable
                 }
         command = Log options
@@ -712,17 +733,20 @@ runWithState command axioms claims claim stateTransformer = do
     mvar <- newMVar logger
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar
-    (c, s) <-
-        flip Log.runLoggerT (Log.swappableLogger mvar) $
-            liftSimplifier $
-                flip runStateT state $
-                    flip runReaderT config $
-                        replInterpreter0
-                            (PrintAuxOutput . modifyAuxOutput $ output)
-                            (PrintKoreOutput . modifyKoreOutput $ output)
-                            command
+        runLogger =
+            runTestLog (flip Log.runLoggerT mempty . liftSimplifier)
+                . flip runStateT state
+                . flip runReaderT config
+    ((c, s), logEntries) <-
+        runLogger $
+            replInterpreter0
+                @(TestLog (SimplifierT NoSMT))
+                (PrintAuxOutput . modifyAuxOutput $ output)
+                (PrintKoreOutput . modifyKoreOutput $ output)
+                command
+
     output' <- readIORef output
-    return $ Result output' c s
+    return $ Result output' c s logEntries
   where
     liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
@@ -736,6 +760,7 @@ data Result = Result
     { output :: ReplOutput
     , continue :: ReplStatus
     , state :: ReplState
+    , logEntries :: [Log.SomeEntry]
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -801,7 +826,7 @@ mkState startTime axioms claims claim =
 
 mkConfig ::
     MVar (Log.LogAction IO Log.ActualEntry) ->
-    Config (SimplifierT NoSMT)
+    Config (TestLog (SimplifierT NoSMT))
 mkConfig logger =
     Config
         { stepper = stepper0
@@ -817,22 +842,11 @@ mkConfig logger =
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        SimplifierT NoSMT ExecutionGraph
+        TestLog (SimplifierT NoSMT) ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
         proveClaimStep claims' axioms' graph node
-
-formatUnificationError ::
-    Pretty.Doc () ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    IO ReplOutput
-formatUnificationError info first second = do
-    res <- runSimplifier testEnv . runUnifierWithExplanation $ do
-        explainBottom info first second
-        empty
-    return $ formatUnificationMessage res
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->
     ReplOutput
-formatUnifiers = formatUnificationMessage . Right
+formatUnifiers = formatUnificationMessage . Just
