@@ -9,6 +9,9 @@ module Test.Kore.CheckFunctions (
 import qualified Data.Map.Strict as Map (
     lookup,
  )
+import Data.Text (
+    Text,
+ )
 import Kore.Attribute.Attributes (
     Attributes (..),
  )
@@ -27,13 +30,28 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Syntax.Definition (
     Definition (..),
+    SentenceSort (..),
+    asSentence,
+ )
+import Kore.Syntax.Id (
+    AstLocation (AstLocationTest),
+    Id (..),
  )
 import Kore.Syntax.Module (
     Module (..),
     ModuleName (..),
  )
+import Kore.Syntax.Sentence (
+    SentenceAxiom (..),
+    SentenceSymbol (..),
+ )
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
 import qualified Kore.Verified as Verified (
     Sentence,
+    SentenceSort,
+    SentenceSymbol,
  )
 import Prelude.Kore
 import Test.Kore
@@ -102,3 +120,54 @@ verifiedMyModule module_ = indexedModule
             , definitionModules =
                 [(fmap . fmap) externalize module_]
             }
+
+mySortName :: Id
+mySortName = Id "MySort" AstLocationTest
+
+mySortDecl :: Verified.SentenceSort
+mySortDecl =
+    SentenceSort
+        { sentenceSortName = mySortName
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes []
+        }
+
+-- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
+constructorDecl :: Text -> Verified.SentenceSymbol
+constructorDecl name =
+    (mkSymbol_ (testId name) [] mySort)
+        { sentenceSymbolAttributes =
+            Attributes
+                [ functionalAttribute
+                , constructorAttribute
+                ]
+        }
+
+{- |
+  axiom{R}
+      \exists{R}(
+          V:MySort{},
+          \equals{MySort{}, R}(
+              V:MySort{},
+              a{}()))
+  [functional{}()]
+-}
+functionalAxiom :: Text -> Verified.Sentence
+functionalAxiom name =
+    SentenceAxiomSentence
+        ( mkAxiom
+            [r]
+            ( mkExists
+                v
+                ( mkEquals
+                    (SortVariableSort r)
+                    (mkElemVar v)
+                    (applyToNoArgs mySort name)
+                )
+            )
+        )
+            { sentenceAxiomAttributes = Attributes [functionalAttribute]
+            }
+  where
+    v = mkElementVariable (testId "V") mySort
+    r = SortVariable (testId "R")
