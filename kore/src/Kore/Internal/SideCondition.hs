@@ -458,8 +458,7 @@ forgetSimplified ::
     SideCondition variable ->
     SideCondition variable
 forgetSimplified condition =
-    let
-        assumedTrue' =
+    let assumedTrue' =
             MultiAnd.map Predicate.forgetSimplified assumedTrue
         replacementsTermLike' =
             mapKeysAndValues TermLike.forgetSimplified replacementsTermLike
@@ -470,20 +469,20 @@ forgetSimplified condition =
         simplifiedFunctions' =
             (HashSet.map . fmap) TermLike.forgetSimplified simplifiedFunctions
      in SideCondition
-        { assumedTrue = assumedTrue'
-        , replacementsTermLike = replacementsTermLike'
-        , replacementsPredicate = replacementsPredicate'
-        , definedTerms = definedTerms'
-        , simplifiedFunctions = simplifiedFunctions'
-        }
-    where
-        SideCondition
-            { assumedTrue
-            , replacementsTermLike
-            , replacementsPredicate
-            , definedTerms
-            , simplifiedFunctions
-            } = condition
+            { assumedTrue = assumedTrue'
+            , replacementsTermLike = replacementsTermLike'
+            , replacementsPredicate = replacementsPredicate'
+            , definedTerms = definedTerms'
+            , simplifiedFunctions = simplifiedFunctions'
+            }
+  where
+    SideCondition
+        { assumedTrue
+        , replacementsTermLike
+        , replacementsPredicate
+        , definedTerms
+        , simplifiedFunctions
+        } = condition
 
 -- | Looks up the term in the table of replacements.
 replaceTerm ::
