@@ -4,10 +4,6 @@ License   : BSD-3-Clause
 -}
 module Main (main) where
 
-import Control.Monad (
-    foldM,
- )
-import qualified Data.Text as Text
 import GlobalMain (
     ExeName (..),
     Main,
@@ -19,18 +15,12 @@ import GlobalMain (
  )
 import Kore.BugReport (
     BugReportOption,
-    ExitCode (ExitFailure, ExitSuccess),
+    ExitCode,
     parseBugReportOption,
     withBugReport,
  )
-import Kore.Equation (
-    Equation (Equation),
-    extractEquations,
-    right,
- )
-import Kore.Internal.TermLike (
-    InternalVariable,
-    isFunctionPattern,
+import Kore.CheckFunctions (
+    checkFunctions,
  )
 import Kore.Log (
     KoreLogOptions,
@@ -51,16 +41,7 @@ import Kore.Options (
 import Kore.Syntax.Module (
     ModuleName,
  )
-import Log (
-    logError,
- )
 import Prelude.Kore
-import Pretty (
-    layoutOneLine,
-    pretty,
-    renderText,
-    (<+>),
- )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -133,24 +114,4 @@ koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
 koreCheckFunctions opts = do
     definition <- loadDefinitions [fileName opts]
     mainModule <- loadModule (mainModuleName opts) definition
-    foldM equationMap ExitSuccess $ extractEquations mainModule
-  where
-    equationMap status eqns = case status of
-        ExitSuccess -> foldM checkEquation ExitSuccess eqns
-        failure -> return failure
-
-checkEquation ::
-    InternalVariable variable =>
-    ExitCode ->
-    Equation variable ->
-    Main ExitCode
-checkEquation failure@(ExitFailure _) _ = return failure
-checkEquation _ eqn@Equation{right}
-    | isFunctionPattern right = return ExitSuccess
-    | otherwise = do
-        logError $ renderText $ layoutOneLine err
-        return $ ExitFailure 3
-  where
-    err =
-        pretty (Text.pack "RHS of equation is not a function pattern:")
-            <+> pretty eqn
+    checkFunctions mainModule

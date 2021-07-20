@@ -15,6 +15,12 @@ import Data.Text (
 import Kore.Attribute.Attributes (
     Attributes (..),
  )
+import Kore.Attribute.Constructor (
+    constructorAttribute,
+ )
+import Kore.Attribute.Functional (
+    functionalAttribute,
+ )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -27,6 +33,26 @@ import qualified Kore.Builtin as Builtin (
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
+ )
+import Kore.Internal.ApplicationSorts (
+    applicationSorts,
+ )
+import Kore.Internal.TermLike (
+    Symbol (..),
+    TermLike,
+    VariableName,
+    mkApplySymbol,
+    mkAxiom,
+    mkElemVar,
+    mkElementVariable,
+    mkEquals,
+    mkExists,
+    mkSymbol_,
+ )
+import Kore.Sort (
+    Sort (..),
+    SortActual (..),
+    SortVariable (..),
  )
 import Kore.Syntax.Definition (
     Definition (..),
@@ -42,6 +68,7 @@ import Kore.Syntax.Module (
     ModuleName (..),
  )
 import Kore.Syntax.Sentence (
+    Sentence (..),
     SentenceAxiom (..),
     SentenceSymbol (..),
  )
@@ -57,6 +84,9 @@ import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External (
     externalize,
+ )
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
+    constructorFunctionalAttributes,
  )
 import Test.Tasty (
     TestTree,
@@ -88,17 +118,19 @@ test_checkFunctions =
                 actual = checkFunctions _
                 expected = ExitSuccess
             assertEqual "" expected actual
-        , testCase "Not every equation RHS is a function pattern." $ do
-            let verifiedModule =
-                    verifiedModule
-                        Module
-                            { moduleName = ModuleName "MY-MODULE"
-                            , moduleSentences = _
-                            , moduleAttributes = Attributes []
-                            }
-                actual = _
-                expected = ExitFailure 3
-            assertEqual "" expected actual
+            {-
+                    , testCase "Not every equation RHS is a function pattern." $ do
+                        let verifiedModule =
+                                verifiedModule
+                                    Module
+                                        { moduleName = ModuleName "MY-MODULE"
+                                        , moduleSentences = _
+                                        , moduleAttributes = Attributes []
+                                        }
+                            actual = _
+                            expected = ExitFailure 3
+                        assertEqual "" expected actual
+            -}
         ]
 
 -- TODO: consider sharing code with verifiedMyModule from Test.Kore.Exec
@@ -123,6 +155,14 @@ verifiedMyModule module_ = indexedModule
 
 mySortName :: Id
 mySortName = Id "MySort" AstLocationTest
+
+mySort :: Sort
+mySort =
+    SortActualSort
+        SortActual
+            { sortActualName = mySortName
+            , sortActualSorts = []
+            }
 
 mySortDecl :: Verified.SentenceSort
 mySortDecl =
@@ -171,3 +211,14 @@ functionalAxiom name =
   where
     v = mkElementVariable (testId "V") mySort
     r = SortVariable (testId "R")
+
+applyToNoArgs :: Sort -> Text -> TermLike VariableName
+applyToNoArgs sort name =
+    mkApplySymbol
+        Symbol
+            { symbolConstructor = testId name
+            , symbolParams = []
+            , symbolAttributes = Mock.constructorFunctionalAttributes
+            , symbolSorts = applicationSorts [] sort
+            }
+        []
