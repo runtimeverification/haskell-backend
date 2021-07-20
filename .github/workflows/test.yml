@@ -156,7 +156,7 @@ jobs:
         run: cabal v2-build --enable-tests --enable-benchmarks all
 
       - name: Run unit tests
-        run: cabal v2-test --test-show-details=direct all
+        run: cabal v2-test --enable-tests --test-show-details=direct all
 
       - name: Configure with profiling
         run: cabal v2-configure --enable-profiling -f-threaded
