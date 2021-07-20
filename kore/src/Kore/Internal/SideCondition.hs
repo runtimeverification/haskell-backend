@@ -390,16 +390,15 @@ toPredicate condition@(SideCondition _ _ _ _ _) =
             & MultiAnd.make
             & Predicate.fromMultiAnd
 
-{- | Map over all TermLikes and Predicates of a SideCondition.
--}
+-- | Map over all TermLikes and Predicates of a SideCondition.
 mapTermLikesAndPredicates ::
     (InternalVariable variable2) =>
     (TermLike variable1 -> TermLike variable2) ->
     (Predicate variable1 -> Predicate variable2) ->
     SideCondition variable1 ->
     SideCondition variable2
-mapTermLikesAndPredicates fTerm fPred condition = 
-    let assumedTrue' = 
+mapTermLikesAndPredicates fTerm fPred condition =
+    let assumedTrue' =
             MultiAnd.map fPred assumedTrue
         replacementsTermLike' =
             mapKeysAndValues fTerm replacementsTermLike
