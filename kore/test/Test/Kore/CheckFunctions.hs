@@ -25,10 +25,13 @@ import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
 import Kore.BugReport (
-    ExitCode (ExitFailure, ExitSuccess),
+    ExitCode (ExitSuccess),
  )
 import qualified Kore.Builtin as Builtin (
     koreVerifiers,
+ )
+import Kore.CheckFunctions (
+    checkFunctions,
  )
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule (
@@ -88,6 +91,9 @@ import Test.Kore.Builtin.External (
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
     constructorFunctionalAttributes,
  )
+import Test.SMT (
+    runNoSMT,
+ )
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -115,9 +121,11 @@ test_checkFunctions =
                                 ]
                             , moduleAttributes = Attributes []
                             }
-                actual = checkFunctions _
                 expected = ExitSuccess
-            assertEqual "" expected actual
+            actual <-
+                checkFunctions verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
             {-
                     , testCase "Not every equation RHS is a function pattern." $ do
                         let verifiedModule =
