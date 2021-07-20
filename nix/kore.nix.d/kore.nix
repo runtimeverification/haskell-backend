@@ -193,6 +193,7 @@
           "Kore/Builtin/String/String"
           "Kore/Builtin/Symbols"
           "Kore/Builtin/Verifiers"
+          "Kore/CheckFunctions"
           "Kore/Debug"
           "Kore/Equation"
           "Kore/Equation/Application"
