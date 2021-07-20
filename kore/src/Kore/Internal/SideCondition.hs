@@ -11,11 +11,13 @@ module Kore.Internal.SideCondition (
     fromConditionWithReplacements,
     fromPredicateWithReplacements,
     addConditionWithReplacements,
+    mapTermLikesAndPredicates,
     mapVariables,
     top,
     topTODO,
     toPredicate,
     toRepresentation,
+    forgetSimplified,
     replaceTerm,
     cannotReplaceTerm,
     replacePredicate,
@@ -388,22 +390,25 @@ toPredicate condition@(SideCondition _ _ _ _ _) =
             & MultiAnd.make
             & Predicate.fromMultiAnd
 
-mapVariables ::
-    (InternalVariable variable1, InternalVariable variable2) =>
-    AdjSomeVariableName (variable1 -> variable2) ->
+{- | Map over all TermLikes and Predicates of a SideCondition.
+-}
+mapTermLikesAndPredicates ::
+    (InternalVariable variable2) =>
+    (TermLike variable1 -> TermLike variable2) ->
+    (Predicate variable1 -> Predicate variable2) ->
     SideCondition variable1 ->
     SideCondition variable2
-mapVariables adj condition@(SideCondition _ _ _ _ _) =
-    let assumedTrue' =
-            MultiAnd.map (Predicate.mapVariables adj) assumedTrue
+mapTermLikesAndPredicates fTerm fPred condition = 
+    let assumedTrue' = 
+            MultiAnd.map fPred assumedTrue
         replacementsTermLike' =
-            mapKeysAndValues (TermLike.mapVariables adj) replacementsTermLike
+            mapKeysAndValues fTerm replacementsTermLike
         replacementsPredicate' =
-            mapKeysAndValues (Predicate.mapVariables adj) replacementsPredicate
+            mapKeysAndValues fPred replacementsPredicate
         definedTerms' =
-            HashSet.map (TermLike.mapVariables adj) definedTerms
+            HashSet.map fTerm definedTerms
         simplifiedFunctions' =
-            (HashSet.map . fmap) (TermLike.mapVariables adj) simplifiedFunctions
+            (HashSet.map . fmap) fTerm simplifiedFunctions
      in SideCondition
             { assumedTrue = assumedTrue'
             , replacementsTermLike = replacementsTermLike'
@@ -419,6 +424,14 @@ mapVariables adj condition@(SideCondition _ _ _ _ _) =
         , definedTerms
         , simplifiedFunctions
         } = condition
+
+mapVariables ::
+    (InternalVariable variable1, InternalVariable variable2) =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    SideCondition variable1 ->
+    SideCondition variable2
+mapVariables adj =
+    mapTermLikesAndPredicates (TermLike.mapVariables adj) (Predicate.mapVariables adj)
 
 -- | Utility function for mapping on the keys and values of a 'HashMap'.
 mapKeysAndValues ::
@@ -453,36 +466,15 @@ toRepresentation sideCondition =
                 sideCondition{simplifiedFunctions = HashSet.empty}
      in mkRepresentation sideCondition'
 
+{- | Reset the simplified-attribute in all TermLikes and Predicates of a
+ SideCondition.
+-}
 forgetSimplified ::
     InternalVariable variable =>
     SideCondition variable ->
     SideCondition variable
-forgetSimplified condition =
-    let assumedTrue' =
-            MultiAnd.map Predicate.forgetSimplified assumedTrue
-        replacementsTermLike' =
-            mapKeysAndValues TermLike.forgetSimplified replacementsTermLike
-        replacementsPredicate' =
-            mapKeysAndValues Predicate.forgetSimplified replacementsPredicate
-        definedTerms' =
-            HashSet.map TermLike.forgetSimplified definedTerms
-        simplifiedFunctions' =
-            (HashSet.map . fmap) TermLike.forgetSimplified simplifiedFunctions
-     in SideCondition
-            { assumedTrue = assumedTrue'
-            , replacementsTermLike = replacementsTermLike'
-            , replacementsPredicate = replacementsPredicate'
-            , definedTerms = definedTerms'
-            , simplifiedFunctions = simplifiedFunctions'
-            }
-  where
-    SideCondition
-        { assumedTrue
-        , replacementsTermLike
-        , replacementsPredicate
-        , definedTerms
-        , simplifiedFunctions
-        } = condition
+forgetSimplified =
+    mapTermLikesAndPredicates TermLike.forgetSimplified Predicate.forgetSimplified
 
 -- | Looks up the term in the table of replacements.
 replaceTerm ::
