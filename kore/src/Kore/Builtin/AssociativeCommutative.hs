@@ -767,9 +767,9 @@ unifyEqualsNormalized
             case toNormalized patt of
                 Bottom ->
                     debugUnifyBottomAndReturnBottom
-                            "Duplicated elements in normalization."
-                            first
-                            second
+                        "Duplicated elements in normalization."
+                        first
+                        second
                 Normalized n -> return n
 
 data UnifyEqualsElementListsData normalized = UnifyEqualsElementListsData

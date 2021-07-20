@@ -26,10 +26,10 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Rewrite.RewritingVariable
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
+import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )

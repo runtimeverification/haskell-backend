@@ -56,8 +56,8 @@ import Kore.Simplify.And (
     termAnd,
  )
 import Kore.Simplify.AndTerms (
-    functionAnd,
     FunctionAnd (..),
+    functionAnd,
     matchFunctionAnd,
     termUnification,
  )

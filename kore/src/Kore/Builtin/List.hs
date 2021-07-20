@@ -457,7 +457,7 @@ matchUnifyEqualsList tools first second
                         [var@(Var_ _), InternalList_ builtin2] ->
                             Just $ FramedLeft FramedData{builtin1, builtin2, term1, term2, var}
                         [_, _] -> Nothing
-                        _ -> Just WrongArity 
+                        _ -> Just WrongArity
                 | otherwise -> Nothing
             _ -> Nothing
     worker _ _ _ _ = Nothing

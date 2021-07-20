@@ -22,8 +22,8 @@ import Kore.Log.DebugUnifyBottom (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Simplify as Simplifier
 import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 import Prelude.Kore hiding (
     concat,
@@ -151,9 +151,9 @@ constructorAndEqualsAssumesDifferentHeads ::
 constructorAndEqualsAssumesDifferentHeads
     unifyData =
         debugUnifyBottomAndReturnBottom
-                "Cannot unify different constructors or incompatible \
-                \sort injections."
-                term1
-                term2
+            "Cannot unify different constructors or incompatible \
+            \sort injections."
+            term1
+            term2
       where
         DifferentConstructors{term1, term2} = unifyData
