@@ -31,6 +31,9 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.TermLike (
+    mkSortVariable,
+ )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
@@ -66,7 +69,9 @@ simplifyPredicateTODO ::
     LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicateTODO sideCondition predicate = do
     patternOr <-
-        simplifyTermLike sideCondition (Predicate.fromPredicate_ predicate)
+        simplifyTermLike
+            sideCondition
+            (Predicate.fromPredicate (mkSortVariable "BadSort") predicate)
             & lift
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.

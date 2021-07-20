@@ -243,7 +243,7 @@ test_simplifyRightHandSide =
                 Pattern.fromTermAndPredicate
                     Mock.b
                     ( makeEqualsPredicate
-                        (TermLike.mkTop Mock.testSort)
+                        (TermLike.mkTop Mock.boolSort)
                         (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
                     )
             claim =

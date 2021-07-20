@@ -31,10 +31,10 @@ import Test.Tasty.HUnit
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
-    [ ([Pattern.top], [Pattern.top]) `becomes_` [Pattern.top]
-    , ([Pattern.top], []) `becomes_` []
-    , ([], [Pattern.top]) `becomes_` [Pattern.top]
-    , ([], []) `becomes_` [Pattern.top]
+    [ ([Pattern.topOf Mock.testSort], [Pattern.topOf Mock.testSort]) `becomes_` [Pattern.topOf Mock.testSort]
+    , ([Pattern.topOf Mock.testSort], []) `becomes_` []
+    , ([], [Pattern.topOf Mock.testSort]) `becomes_` [Pattern.topOf Mock.testSort]
+    , ([], []) `becomes_` [Pattern.topOf Mock.testSort]
     , ([termA], [termB]) `becomes_` [aImpliesB]
     , ([equalsXA], [equalsXB]) `becomes_` [impliesEqualsXAEqualsXB]
     , ([equalsXA], [equalsXB, equalsXC])
@@ -131,6 +131,6 @@ simplifyEvaluated ::
     IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated first second =
     runSimplifier mockEnv $
-        Implies.simplifyEvaluated SideCondition.top first second
+        Implies.simplifyEvaluated Mock.testSort SideCondition.top first second
   where
     mockEnv = Mock.env

@@ -195,7 +195,7 @@ test_KEqualSimplification =
                 keqBool
                     (kseq (inj kItemSort dvX) dotk)
                     (kseq (inj kItemSort dvT) dotk)
-            expect = [Just (Pattern.topOf kSort)]
+            expect = [Just (Pattern.topOf boolSort)]
         actual <- runKEqualSimplification term1 term2
         assertEqual' "" expect actual
     ]

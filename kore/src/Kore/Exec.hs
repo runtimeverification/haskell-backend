@@ -86,7 +86,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    fromPredicate_,
+    fromPredicate,
     makeMultipleOrPredicate,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -429,7 +429,7 @@ search
             return
                 . sameTermLikeSort patternSort
                 . getRewritingTerm
-                . fromPredicate_
+                . fromPredicate patternSort
                 $ orPredicate
       where
         patternSort = termLikeSort termLike

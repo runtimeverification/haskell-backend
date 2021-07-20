@@ -134,7 +134,7 @@ translatePredicateWith ::
     Translator variable m SExpr
 translatePredicateWith sideCondition translateTerm predicate =
     translatePredicatePattern $
-        fromPredicate_ predicate
+        fromPredicate (mkSortVariable "BadSort") predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
     translatePredicatePattern pat

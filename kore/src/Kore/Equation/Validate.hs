@@ -42,6 +42,9 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.TermLike (
+    mkSortVariable,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
@@ -138,8 +141,8 @@ validateAxiom attrs verified =
             findBadArgSubterm term
         checkArgIn (PredicateCeil (TermLike.And_ _ (TermLike.Var_ _) term)) =
             findBadArgSubterm term
-        checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
-
+        checkArgIn badArg =
+            Just $ Predicate.fromPredicate (mkSortVariable "_") badArg --pretty
         findBadArgSubterm term = case term of
             _
                 | TermLike.isConstructorLike term -> descend

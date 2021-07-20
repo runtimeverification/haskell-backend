@@ -58,12 +58,12 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate somethingOfA
                         , substitution = mempty
                         }
                     , Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate somethingOfB
                         , substitution = mempty
                         }
@@ -81,12 +81,12 @@ test_ceilSimplification =
             actual1 <-
                 evaluate
                     ( makeCeil
-                        [Pattern.top]
+                        [Pattern.topOf Mock.testSort]
                     )
             assertEqual
                 "ceil(top)"
                 ( OrPattern.fromPatterns
-                    [Pattern.top]
+                    [Pattern.topOf Mock.testSort]
                 )
                 actual1
             -- ceil(bottom) = bottom
@@ -114,7 +114,7 @@ test_ceilSimplification =
             assertEqual
                 "ceil(top)"
                 ( OrPattern.fromPatterns
-                    [Pattern.top]
+                    [Pattern.topOf Mock.testSort]
                 )
                 actual1
         )
@@ -122,15 +122,15 @@ test_ceilSimplification =
         "expanded Ceil - bool operations"
         ( do
             -- ceil(top) = top
-            actual1 <- makeEvaluate Pattern.top
+            actual1 <- makeEvaluate (Pattern.topOf Mock.testSort)
             assertEqual
                 "ceil(top)"
                 ( OrPattern.fromPatterns
-                    [Pattern.top]
+                    [Pattern.topOf Mock.testSort]
                 )
                 actual1
             -- ceil(bottom) = bottom
-            actual2 <- makeEvaluate Pattern.bottom
+            actual2 <- makeEvaluate (Pattern.bottomOf Mock.testSort)
             assertEqual
                 "ceil(bottom)"
                 ( OrPattern.fromPatterns
@@ -145,7 +145,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate somethingOfA)
@@ -176,7 +176,7 @@ test_ceilSimplification =
             let expected =
                     OrPattern.fromPatterns
                         [ Conditional
-                            { term = mkTop_
+                            { term = mkTop Mock.testSort
                             , predicate =
                                 makeAndPredicate
                                     ( makeAndPredicate
@@ -204,7 +204,7 @@ test_ceilSimplification =
                 expected
                 actual
     , testCase "ceil of constructors is top" $ do
-        let expected = OrPattern.fromPatterns [Pattern.top]
+        let expected = OrPattern.fromPatterns [Pattern.topOf Mock.testSort]
         actual <-
             makeEvaluate
                 Conditional
@@ -220,7 +220,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 ( makeAndPredicate
@@ -253,7 +253,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate fOfA)
@@ -283,7 +283,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution =
                             Substitution.unsafeWrap [(inject Mock.xConfig, fOfB)]
@@ -312,7 +312,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 ( makeAndPredicate
@@ -347,7 +347,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 (makeEqualsPredicate Mock.a Mock.cf)
@@ -364,7 +364,7 @@ test_ceilSimplification =
                     )
                     ( appliedMockEvaluator
                         Conditional
-                            { term = mkTop_
+                            { term = mkTop Mock.testSort
                             , predicate = makeEqualsPredicate Mock.a Mock.cf
                             , substitution = mempty
                             }
@@ -387,7 +387,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
@@ -406,7 +406,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate fOfA)
@@ -426,7 +426,7 @@ test_ceilSimplification =
         let expected =
                 OrPattern.fromPattern
                     Conditional
-                        { term = mkTop_
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate fOfA
                         , substitution = mempty
                         }

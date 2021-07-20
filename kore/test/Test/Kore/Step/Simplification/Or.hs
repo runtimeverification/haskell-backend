@@ -223,7 +223,7 @@ becomes
             ( stateIntention
                 [ prettyOr or1 or2
                 , "to become:"
-                , Unparser.unparse $ OrPattern.toTermLike expected
+                , Unparser.unparse $ OrPattern.toTermLike Mock.testSort expected
                 ]
             )
 

@@ -89,6 +89,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     TermLike,
+    termLikeSort,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
@@ -294,11 +295,14 @@ lhsToTerm ::
     Predicate variable ->
     TermLike variable
 lhsToTerm left Nothing requires =
-    TermLike.mkAnd (Predicate.fromPredicate_ requires) left
+    TermLike.mkAnd (Predicate.fromPredicate (termLikeSort left) requires) left
 lhsToTerm left (Just antiLeft) requires =
     TermLike.mkAnd
         (TermLike.mkNot (AntiLeft.toTermLike antiLeft))
-        (TermLike.mkAnd (Predicate.fromPredicate_ requires) left)
+        ( TermLike.mkAnd
+            (Predicate.fromPredicate (termLikeSort left) requires)
+            left
+        )
 
 -- | Wraps a term as a RHS
 injectTermIntoRHS ::

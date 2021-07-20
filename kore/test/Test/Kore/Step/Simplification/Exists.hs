@@ -40,7 +40,7 @@ test_simplify :: [TestTree]
 test_simplify =
     [ [plain10, plain11] `simplifiesTo` [plain10', plain11'] $
         "\\or distribution"
-    , [Pattern.top] `simplifiesTo` [Pattern.top] $
+    , [Pattern.topOf Mock.testSort] `simplifiesTo` [Pattern.topOf Mock.testSort] $
         "\\top"
     , [] `simplifiesTo` [] $
         "\\bottom"
@@ -158,18 +158,18 @@ test_makeEvaluate =
     [ testGroup
         "Exists - Predicates"
         [ testCase "Top" $ do
-            let expect = OrPattern.fromPatterns [Pattern.top]
+            let expect = OrPattern.fromPatterns [Pattern.topOf Mock.testSort]
             actual <-
                 makeEvaluate
                     Mock.xConfig
-                    (Pattern.top :: Pattern RewritingVariableName)
+                    (Pattern.topOf Mock.testSort :: Pattern RewritingVariableName)
             assertEqual "" expect actual
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
             actual <-
                 makeEvaluate
                     Mock.xConfig
-                    (Pattern.bottom :: Pattern RewritingVariableName)
+                    (Pattern.bottomOf Mock.testSort :: Pattern RewritingVariableName)
             assertEqual "" expect actual
         ]
     , testCase "exists applies substitution if possible" $ do
@@ -284,12 +284,12 @@ test_makeEvaluate =
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        let expect = OrPattern.fromPatterns [Pattern.top]
+        let expect = OrPattern.fromPatterns [Pattern.topOf Mock.testSort]
         actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.testSort
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution =
                         Substitution.wrap $

@@ -110,7 +110,7 @@ test_andSimplification =
         , testCase "And predicates" $ do
             let expect =
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate fOfX)
@@ -120,12 +120,12 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
@@ -133,7 +133,7 @@ test_andSimplification =
         , testCase "And substitutions - simple" $ do
             let expect =
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
@@ -144,7 +144,7 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -152,7 +152,7 @@ test_andSimplification =
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -183,7 +183,7 @@ test_andSimplification =
         , testCase "And substitutions - separate predicate" $ do
             let expect =
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution =
                             Substitution.unsafeWrap [(inject Mock.yConfig, fOfX)]
@@ -191,7 +191,7 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -199,7 +199,7 @@ test_andSimplification =
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -211,7 +211,7 @@ test_andSimplification =
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -224,7 +224,7 @@ test_andSimplification =
                                     ]
                         }
                     Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap $
@@ -352,7 +352,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
                     , Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate fOfX)
@@ -365,14 +365,14 @@ test_andSimplification =
                 ( makeAnd
                     [ fOfXExpanded
                     , Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     ]
                     [ gOfXExpanded
                     , Conditional
-                        { term = mkTop Mock.topSort
+                        { term = mkTop Mock.testSort
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
@@ -466,7 +466,7 @@ evaluate ::
     IO (OrPattern RewritingVariableName)
 evaluate And{andFirst, andSecond} =
     MultiAnd.make [andFirst, andSecond]
-        & simplify Mock.topSort Not.notSimplifier SideCondition.top
+        & simplify Mock.testSort Not.notSimplifier SideCondition.top
         & runSimplifier Mock.env
 
 evaluatePatterns ::
@@ -475,6 +475,6 @@ evaluatePatterns ::
     IO (OrPattern RewritingVariableName)
 evaluatePatterns first second =
     MultiAnd.make [first, second]
-        & makeEvaluate Mock.topSort Not.notSimplifier SideCondition.top
+        & makeEvaluate Mock.testSort Not.notSimplifier SideCondition.top
         & runSimplifierBranch Mock.env
         & fmap OrPattern.fromPatterns

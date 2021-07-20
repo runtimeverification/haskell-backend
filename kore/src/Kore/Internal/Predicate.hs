@@ -8,7 +8,6 @@ module Kore.Internal.Predicate (
     unparseWithSort,
     unparse2WithSort,
     fromPredicate,
-    fromPredicate_,
     makePredicate,
     makeTruePredicate,
     makeFalsePredicate,
@@ -305,7 +304,7 @@ instance NFData variable => NFData (Predicate variable) where
         rnf annotation `seq` rnf pat
 
 instance InternalVariable variable => Pretty (Predicate variable) where
-    pretty = unparse . fromPredicate_
+    pretty = unparse . fromPredicate (mkSortVariable "_")
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
     defineColumn = SQL.defineTextColumn
@@ -496,12 +495,6 @@ fromPredicate sort = Recursive.fold worker
                 NotF (Not () t) -> TermLike.mkNot t
                 OrF (Or () t1 t2) -> TermLike.mkOr t1 t2
                 TopF _ -> TermLike.mkTop sort
-
-fromPredicate_ ::
-    InternalVariable variable =>
-    Predicate variable ->
-    TermLike variable
-fromPredicate_ = fromPredicate undefined
 
 {- | Simple type used to track whether a predicate building function performed
     a simplification that changed the shape of the resulting term. This is
@@ -862,7 +855,9 @@ instance
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
             [ "Expected a predicate, but found:"
-            , Pretty.indent 4 (unparse $ fromPredicate_ <$> termLikeF)
+            , Pretty.indent
+                4
+                (unparse $ fromPredicate (mkSortVariable "_") <$> termLikeF)
             ]
 
 makePredicate ::
@@ -994,7 +989,7 @@ cannotSimplifyNotSimplifiedError predF =
             ++ unparseToString term
         )
   where
-    term = fromPredicate_ (synthesize predF)
+    term = fromPredicate (mkSortVariable "_") (synthesize predF)
 
 simplifiedFromChildren ::
     HasCallStack =>
@@ -1117,7 +1112,7 @@ mapVariables ::
 mapVariables adj predicate =
     let termPredicate =
             TermLike.mapVariables adj
-                . fromPredicate_
+                . fromPredicate (mkSortVariable "BadSort")
                 $ predicate
      in either
             errorMappingVariables
