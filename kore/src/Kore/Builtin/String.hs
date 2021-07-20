@@ -549,6 +549,10 @@ matchUnifyStringEq first second
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
         Just UnifyStringEq{eqTerm, internalBool}
+    | Just eqTerm <- matchStringEqual second
+      , isFunctionPattern second
+      , InternalBool_ internalBool <- first =
+        Just UnifyStringEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyStringEq #-}
 
