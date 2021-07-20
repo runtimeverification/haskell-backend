@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.OrPattern (
     OrPattern,
@@ -12,6 +12,7 @@ module Kore.Internal.OrPattern (
     fromPatterns,
     toPatterns,
     fromPattern,
+    fromOrCondition,
     fromTermLike,
     bottom,
     isFalse,
@@ -22,7 +23,6 @@ module Kore.Internal.OrPattern (
     toPattern,
     toTermLike,
     targetBinder,
-    substitute,
     mapVariables,
     MultiOr.flatten,
     MultiOr.filterOr,
@@ -30,11 +30,9 @@ module Kore.Internal.OrPattern (
     MultiOr.observeAllT,
     MultiOr.map,
     MultiOr.traverse,
+    MultiOr.traverseOr,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
 import Kore.Internal.Condition (
     Condition,
  )
@@ -47,6 +45,9 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -74,6 +75,7 @@ import Kore.Variables.Target (
     mkElementTarget,
     targetIfEqual,
  )
+import qualified Logic
 import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.
@@ -124,6 +126,14 @@ fromPatterns = from . toList
 -- | Examine a disjunction of 'Pattern.Pattern's.
 toPatterns :: OrPattern variable -> [Pattern variable]
 toPatterns = from
+
+fromOrCondition ::
+    InternalVariable variable =>
+    Sort ->
+    OrCondition variable ->
+    OrPattern variable
+fromOrCondition sort conditions =
+    MultiOr.observeAll $ Pattern.fromCondition sort <$> Logic.scatter conditions
 
 {- | A "disjunction" of one 'TermLike'.
 
@@ -255,14 +265,6 @@ targetBinder Binder{binderVariable, binderChild} =
             { binderVariable = newVar
             , binderChild = newChild
             }
-
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    OrPattern variable ->
-    OrPattern variable
-substitute subst =
-    fromPatterns . fmap (Pattern.substitute subst) . toPatterns
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>

@@ -38,18 +38,18 @@ import Kore.Reachability.Claim (
     checkImplicationWorker,
     simplifyRightHandSide,
  )
-import Kore.Rewriting.RewritingVariable (
-    mkConfigVariable,
-    mkRewritingPattern,
- )
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,
  )
+import Kore.Rewrite.RewritingVariable (
+    mkConfigVariable,
+    mkRewritingPattern,
+ )
 import qualified Logic
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify (
     runSimplifierSMT,
  )
 import Test.Tasty

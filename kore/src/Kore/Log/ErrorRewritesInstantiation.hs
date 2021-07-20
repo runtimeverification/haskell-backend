@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorRewritesInstantiation (
     ErrorRewritesInstantiation (..),
@@ -39,12 +39,12 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (
     SomeVariableName,
  )
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern (
+import Kore.Rewrite.AxiomPattern (
     AxiomPattern,
     getAxiomPattern,
  )
-import Kore.Step.Step (
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.Step (
     UnifiedRule,
     UnifyingRule (..),
     wouldNarrowWith,

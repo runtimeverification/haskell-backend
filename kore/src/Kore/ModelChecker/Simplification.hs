@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
@@ -28,16 +28,17 @@ import Kore.Internal.TermLike (
     pattern Implies_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
     filterMultiOr,
  )
-import qualified Kore.Step.Simplification.Pattern as Pattern (
+import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
  )
-import Kore.Step.Simplification.Simplify
+import Kore.Simplify.Simplify
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -54,10 +55,10 @@ checkImplicationIsTop ::
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         (forallQuantifiers, Implies_ _ implicationLHS implicationRHS) -> do
-            let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkElemVar <$> Map.mapKeys inject rename
-                implicationLHS' = TermLike.substitute subst implicationLHS
-                implicationRHS' = TermLike.substitute subst implicationRHS
+            let rename' = refreshVariablesSet lhsFreeVariables forallQuantifiers
+                subst = mkElemVar <$> Map.mapKeys inject rename'
+                implicationLHS' = substitute subst implicationLHS
+                implicationRHS' = substitute subst implicationRHS
                 resultTerm =
                     mkCeil
                         sort

@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.KEqual
 Description : Built-in KEQUAL operations
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -53,6 +53,10 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (
+    term,
+ )
+import Kore.Internal.InternalBool
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
@@ -68,11 +72,11 @@ import Kore.Internal.SideCondition (
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Simplify
+import Kore.Simplify.NotSimplifier
+import Kore.Simplify.Simplify
 import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
@@ -224,7 +228,7 @@ matchKequalEq =
 
 data UnifyKequalsEq = UnifyKequalsEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , value :: !Bool
+    , internalBool :: !InternalBool
     }
 
 {- | Matches two terms when second is a bool term
@@ -251,11 +255,12 @@ matchUnifyKequalsEq ::
 matchUnifyKequalsEq first second
     | Just eqTerm <- matchKequalEq first
       , isFunctionPattern first
-      , Just value <- Bool.matchBool second =
-        Just UnifyKequalsEq{eqTerm, value}
+      , InternalBool_ internalBool <- second =
+        Just UnifyKequalsEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
 
+-- TODO (Andrei B): doublecheck
 unifyKequalsEq ::
     forall unifier.
     MonadUnify unifier =>
@@ -263,14 +268,18 @@ unifyKequalsEq ::
     NotSimplifier unifier ->
     UnifyKequalsEq ->
     unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData = do
-    solution <- unifyChildren operand1 operand2 & OrPattern.gather
-    let solution' = MultiOr.map eraseTerm solution
-    if value
-        then Unify.scatter solution'
-        else mkNotSimplified solution' >>= Unify.scatter
+unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
+    do
+        solution <- OrPattern.gather $ unifyChildren operand1 operand2
+        solution' <-
+            MultiOr.map eraseTerm solution
+                & if internalBoolValue internalBool
+                    then pure
+                    else mkNotSimplified
+        scattered <- Unify.scatter solution'
+        return scattered{term = mkInternalBool internalBool}
   where
-    UnifyKequalsEq{eqTerm, value} = unifyData
+    UnifyKequalsEq{eqTerm, internalBool} = unifyData
     EqTerm{symbol, operand1, operand2} = eqTerm
     eraseTerm = fmap (mkTop . termLikeSort)
     sort = applicationSortsResult . symbolSorts $ symbol

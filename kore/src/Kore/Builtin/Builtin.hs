@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.Builtin
 Description : Built-in sort, symbol, and pattern verifiers
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -86,14 +86,14 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike as TermLike
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (AttemptedAxiomResults),
     BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
     MonadSimplify,
     applicationAxiomSimplifier,
  )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults (
+import qualified Kore.Simplify.Simplify as AttemptedAxiomResults (
     AttemptedAxiomResults (..),
  )
 import Kore.Unparser

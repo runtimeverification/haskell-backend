@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Attribute.Axiom
 Description : Axiom sentence attributes
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Axiom (

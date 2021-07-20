@@ -1,6 +1,6 @@
 {- |
 Copyright : (c) 2020 Runtime Verification
-License   : NCSA
+License   : BSD-3-Clause
 -}
 module Prelude.Kore (
     module Prelude,

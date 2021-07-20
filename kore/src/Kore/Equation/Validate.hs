@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Validate (
     validateAxiom,
@@ -14,7 +14,6 @@ import Data.Text (
     pack,
  )
 import Kore.AST.Error
-import Kore.ASTVerifier.Verifier
 import Kore.Attribute.Axiom (
     Assoc (..),
     Comm (..),
@@ -51,6 +50,7 @@ import Kore.Syntax.Variable
 import Kore.Unparser (
     unparse,
  )
+import Kore.Validate.Verifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
 import qualified Pretty

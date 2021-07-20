@@ -1,11 +1,12 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 
 Representation of conditional terms.
 -}
 module Kore.Internal.Conditional (
     Conditional (..),
+    Condition,
     withoutTerm,
     withCondition,
     andCondition,
@@ -36,6 +37,9 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified,
  )
 import Kore.Debug
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import Kore.Internal.Predicate (
     Predicate,
     unparse2WithSort,
@@ -57,8 +61,10 @@ import Kore.Internal.TermLike (
     Sort,
     SubstitutionOrd,
     TermLike,
+    mkVar,
     termLikeSort,
  )
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -94,6 +100,9 @@ data Conditional variable child = Conditional
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
+
+-- | A predicate and substitution without an accompanying term.
+type Condition variable = Conditional variable ()
 
 instance
     ( Debug child
@@ -229,6 +238,35 @@ instance
                 @(Map (SomeVariable variable) (TermLike variable))
                 @(Substitution variable)
 
+instance
+    InternalVariable variable =>
+    From (Condition variable) (MultiAnd (Predicate variable))
+    where
+    from = Predicate.toMultiAnd . from @(Condition _) @(Predicate _)
+    {-# INLINE from #-}
+
+instance
+    ( Substitute child
+    , TermType child ~ TermLike variable
+    , VariableNameType child ~ variable
+    , InternalVariable variable
+    ) =>
+    Substitute (Conditional variable child)
+    where
+    type TermType (Conditional variable child) = TermLike variable
+
+    type VariableNameType (Conditional variable child) = variable
+
+    substitute subst Conditional{term, predicate, substitution} =
+        Conditional
+            { term = substitute subst term
+            , predicate = substitute subst predicate
+            , substitution = substitute subst substitution
+            }
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
 prettyConditional ::
     Sort ->
     -- | term
@@ -326,15 +364,7 @@ instance
     InternalVariable variable =>
     Pretty (Conditional variable (TermLike variable))
     where
-    pretty Conditional{term, predicate, substitution} =
-        prettyConditional'
-            (unparse term)
-            (pretty predicate)
-            (pretty <$> termLikeSubstitution)
-      where
-        termLikeSubstitution =
-            Substitution.singleSubstitutionToPredicate
-                <$> Substitution.unwrap substitution
+    pretty = unparse
 
 instance
     ( InternalVariable variable

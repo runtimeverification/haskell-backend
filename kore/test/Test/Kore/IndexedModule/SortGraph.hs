@@ -9,9 +9,6 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
- )
 import Kore.Attribute.Subsort (
     subsortAttribute,
  )
@@ -25,6 +22,9 @@ import Kore.Internal.TermLike (
  )
 import Kore.Sort
 import Kore.Syntax.Definition
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External

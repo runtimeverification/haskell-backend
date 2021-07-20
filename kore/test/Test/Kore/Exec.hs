@@ -8,16 +8,6 @@ module Test.Kore.Exec (
 ) where
 
 import Control.Exception as Exception
-import Control.Monad.Catch (
-    MonadCatch,
-    MonadMask,
-    MonadThrow,
- )
-import Control.Monad.State.Strict (
-    StateT (..),
- )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Bifunctor as Bifunctor
 import Data.Default (
     def,
  )
@@ -32,9 +22,6 @@ import Data.Set (
 import qualified Data.Set as Set
 import Data.Text (
     Text,
- )
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
  )
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
@@ -55,28 +42,25 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnDepthLimitExceeded
-import Kore.Step (
+import Kore.Rewrite (
     ExecutionMode (..),
  )
-import Kore.Step.AntiLeft (
+import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
-import qualified Kore.Step.AntiLeft as AntiLeft.DoNotUse
-import Kore.Step.Rule
-import Kore.Step.RulePattern (
+import qualified Kore.Rewrite.AntiLeft as AntiLeft.DoNotUse
+import Kore.Rewrite.Rule
+import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (..),
     injectTermIntoRHS,
     rewriteRuleToTerm,
  )
-import Kore.Step.Search (
+import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Simplification.Data (
-    MonadProf,
- )
-import Kore.Step.Strategy (
+import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
 import Kore.Syntax.Definition hiding (
@@ -84,14 +68,14 @@ import Kore.Syntax.Definition hiding (
     Symbol,
  )
 import qualified Kore.Syntax.Definition as Syntax
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
 import qualified Kore.Verified as Verified
 import Log (
     Entry (..),
-    MonadLog (..),
-    SomeEntry,
  )
 import Prelude.Kore
-import qualified SMT
 import System.Exit (
     ExitCode (..),
  )
@@ -143,26 +127,10 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
     inputPattern = applyToNoArgs mySort "a"
     expected = (ExitSuccess, applyToNoArgs mySort "d")
 
-newtype TestLog a = TestLog (StateT [SomeEntry] SMT.NoSMT a)
-    deriving newtype (Functor, Applicative, Monad)
-    deriving newtype (State.MonadState [SomeEntry], MonadIO, SMT.MonadSMT)
-    deriving newtype (MonadThrow, MonadCatch, MonadMask, MonadProf)
-
-instance MonadLog TestLog where
-    logEntry entry = State.modify (toEntry entry :)
-    logWhile entry (TestLog state) =
-        TestLog $ State.mapStateT addEntry state
-      where
-        addEntry :: SMT.NoSMT (a, [SomeEntry]) -> SMT.NoSMT (a, [SomeEntry])
-        addEntry = fmap $ Bifunctor.second (toEntry entry :)
-
-runTestLog :: TestLog a -> IO [SomeEntry]
-runTestLog (TestLog state) = runNoSMT $ State.execStateT state []
-
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
     do
-        entries <- actual
+        (_, entries) <- actual
         let actualDepthWarnings =
                 catMaybes $ fromEntry @WarnDepthLimitExceeded <$> entries
             expectedWarning = WarnDepthLimitExceeded 1
@@ -175,7 +143,7 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
             verifiedModule
             Any
             inputPattern
-            & runTestLog
+            & runTestLog runNoSMT
     verifiedModule =
         verifiedMyModule
             Module

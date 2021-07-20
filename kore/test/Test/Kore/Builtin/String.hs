@@ -43,18 +43,20 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
+    runSimplifier,
     runSimplifierBranch,
     simplifyCondition,
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
@@ -478,7 +480,8 @@ test_unifyStringEq =
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            assertEqual "" [Just expect] actual
+            let expect' = expect{term = term1}
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
@@ -486,6 +489,19 @@ test_unifyStringEq =
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
+        -- integration test (see #2586)
+        do
+            actual <-
+                makeInPredicate term1 term2
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                mkAnd term1 term2
+                    & Pattern.fromTermLike
+                    & simplifyPattern
+            assertEqual "" [expect{term = term1}] actual
     , testCase "\\equals(true, X ==String Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqString (mkElemVar x) (mkElemVar y)
@@ -495,7 +511,7 @@ test_unifyStringEq =
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            let expect' = expect{predicate = makeTruePredicate}
+            let expect' = expect{term = term1}
             assertEqual "" [Just expect'] actual
         -- integration test
         do
@@ -504,6 +520,18 @@ test_unifyStringEq =
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                makeInPredicate term1 term2
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                mkAnd term1 term2
+                    & Pattern.fromTermLike
+                    & simplifyPattern
+            assertEqual "" [expect{term = term1}] actual
     ]
   where
     unifyStringEq ::
@@ -511,15 +539,23 @@ test_unifyStringEq =
         TermLike RewritingVariableName ->
         IO [Maybe (Pattern RewritingVariableName)]
     unifyStringEq term1 term2 =
-        String.unifyStringEq
-            (termUnification Not.notSimplifier)
-            Not.notSimplifier
-            term1
-            term2
+        unify matched
             & runMaybeT
             & evalEnvUnifierT Not.notSimplifier
             & runSimplifierBranch testEnv
             & runNoSMT
+      where
+        unify Nothing = empty
+        unify (Just unifyData) =
+            String.unifyStringEq
+                (termUnification Not.notSimplifier)
+                Not.notSimplifier
+                unifyData
+                & lift
+
+        matched =
+            String.matchUnifyStringEq term1 term2
+                <|> String.matchUnifyStringEq term2 term1
 
     simplifyCondition' ::
         Condition RewritingVariableName ->
@@ -528,6 +564,15 @@ test_unifyStringEq =
         simplifyCondition SideCondition.top condition
             & runSimplifierBranch testEnv
             & runNoSMT
+
+    simplifyPattern ::
+        Pattern RewritingVariableName ->
+        IO [Pattern RewritingVariableName]
+    simplifyPattern pattern1 =
+        Pattern.simplify pattern1
+            & runSimplifier testEnv
+            & runNoSMT
+            & fmap OrPattern.toPatterns
 
 x, y :: ElementVariable RewritingVariableName
 x = "x" `ofSort` stringSort

@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.ModelChecker.Bounded (
     CheckResult (..),
@@ -48,27 +48,27 @@ import qualified Kore.ModelChecker.Step as ModelChecker (
 import qualified Kore.ModelChecker.Step as ProofState (
     ProofState (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingTerm,
     resetConfigVariable,
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     ImplicationRule (ImplicationRule),
     RHS (..),
     RewriteRule,
     RulePattern (..),
     mapRuleVariables,
  )
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,
     Strategy,
     pickFinal,
     runStrategyWithSearchOrder,
+ )
+import Kore.Simplify.Simplify (
+    MonadSimplify,
  )
 import qualified Log
 import Numeric.Natural (

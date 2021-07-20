@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Options.SMT (
     KoreSolverOptions (..),
@@ -21,9 +21,11 @@ import Data.Limit (
 import Data.List (
     intercalate,
  )
+import Kore.Parser.ParserUtils (
+    readPositiveIntegral,
+ )
 import Options.Applicative (
     Parser,
-    auto,
     help,
     long,
     metavar,
@@ -109,20 +111,10 @@ parseKoreSolverOptions =
         } =
             SMT.defaultConfig
 
-    readPositiveInteger ctor optionName = do
-        readInt <- auto
-        when (readInt <= 0) err
-        return . ctor $ readInt
-      where
-        err =
-            readerError
-                . unwords
-                $ [optionName, "must be a positive integer."]
-
-    readTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
-    readRLimit = readPositiveInteger (SMT.RLimit . Limit) "smt-rlimit"
+    readTimeOut = readPositiveIntegral (SMT.TimeOut . Limit) "smt-timeout"
+    readRLimit = readPositiveIntegral (SMT.RLimit . Limit) "smt-rlimit"
     readResetInterval =
-        readPositiveInteger SMT.ResetInterval "smt-reset-interval"
+        readPositiveIntegral SMT.ResetInterval "smt-reset-interval"
 
 unparseKoreSolverOptions :: KoreSolverOptions -> [String]
 unparseKoreSolverOptions

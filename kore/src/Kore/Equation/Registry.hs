@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Registry (
     extractEquations,
@@ -37,13 +37,13 @@ import qualified Kore.Equation.Equation as Equation
 import qualified Kore.Equation.Sentence as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.Axiom.Identifier (
+import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )

@@ -4,6 +4,7 @@ module Test.Kore.Internal.SideCondition (
     test_assumeDefined,
     test_isDefined,
     test_generateNormalizedAcs,
+    test_cacheSimplifiedFunctions,
 ) where
 
 import qualified Data.HashSet as HashSet
@@ -28,7 +29,7 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -720,6 +721,55 @@ test_generateNormalizedAcs =
             actualSets = generateNormalizedAcs testSet
         assertEqual "Maps" expectedMaps actualMaps
         assertEqual "Sets" expectedSets actualSets
+
+test_cacheSimplifiedFunctions :: [TestTree]
+test_cacheSimplifiedFunctions =
+    [ testCase "Single function" $ do
+        let configuration =
+                Mock.f (mkElemVar Mock.x)
+            expected =
+                [Application Mock.fSymbol [mkElemVar Mock.x]]
+                    & HashSet.fromList
+                    & fromSimplifiedFunctions
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    , testCase "Single constructor" $ do
+        let configuration :: TermLike VariableName
+            configuration = Mock.c
+            expected = fromSimplifiedFunctions HashSet.empty
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    , testCase "Function and constructor" $ do
+        let configuration =
+                mkAnd
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.c)
+            expected =
+                [ Application Mock.fSymbol [mkElemVar Mock.x]
+                , Application Mock.gSymbol [Mock.c]
+                ]
+                    & HashSet.fromList
+                    & fromSimplifiedFunctions
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    , testCase "Nested functions" $ do
+        let configuration :: TermLike VariableName
+            configuration =
+                mkAnd
+                    (Mock.f (Mock.constr10 (Mock.g Mock.c)))
+                    (Mock.h Mock.c)
+            expected =
+                [ Application
+                    Mock.fSymbol
+                    [Mock.constr10 (Mock.g Mock.c)]
+                , Application Mock.gSymbol [Mock.c]
+                , Application Mock.hSymbol [Mock.c]
+                ]
+                    & HashSet.fromList
+                    & fromSimplifiedFunctions
+            actual = cacheSimplifiedFunctions configuration
+        assertEqual "" expected actual
+    ]
 
 collectionToMapTerm ::
     Collection VariableName ->

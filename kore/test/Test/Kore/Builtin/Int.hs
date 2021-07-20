@@ -94,18 +94,20 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
+    runSimplifier,
     runSimplifierBranch,
     simplifyCondition,
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
@@ -579,7 +581,8 @@ test_unifyIntEq =
         -- unit test
         do
             actual <- unifyIntEq term1 term2
-            assertEqual "" [Just expect] actual
+            let expect' = expect{term = term1}
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
@@ -587,6 +590,19 @@ test_unifyIntEq =
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
+        -- integration test (see #2586)
+        do
+            actual <-
+                makeInPredicate term1 term2
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                mkAnd term1 term2
+                    & Pattern.fromTermLike
+                    & simplifyPattern
+            assertEqual "" [expect{term = term1}] actual
     , testCase "\\equals(true, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqInt (mkElemVar x) (mkElemVar y)
@@ -598,7 +614,7 @@ test_unifyIntEq =
             actual <- unifyIntEq term1 term2
             -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
             -- inconsistency.
-            let expect' = expect{predicate = makeTruePredicate}
+            let expect' = expect{term = term1}
             assertEqual "" [Just expect'] actual
         -- integration test
         do
@@ -607,6 +623,19 @@ test_unifyIntEq =
                     & Condition.fromPredicate
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
+        -- integration test (see #2586)
+        do
+            actual <-
+                makeInPredicate term1 term2
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
+        do
+            actual <-
+                mkAnd term1 term2
+                    & Pattern.fromTermLike
+                    & simplifyPattern
+            assertEqual "" [expect{term = term1}] actual
     , testCase "\\equals(X +Int 1 ==Int Y +Int 1, false)" $ do
         let term1 =
                 eqInt
@@ -623,7 +652,8 @@ test_unifyIntEq =
         -- unit test
         do
             actual <- unifyIntEq term1 term2
-            assertEqual "" [Just expect] actual
+            let expect' = expect{term = term2}
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
@@ -667,6 +697,15 @@ test_unifyIntEq =
         simplifyCondition SideCondition.top condition
             & runSimplifierBranch testEnv
             & runNoSMT
+
+    simplifyPattern ::
+        Pattern RewritingVariableName ->
+        IO [Pattern RewritingVariableName]
+    simplifyPattern pattern1 =
+        Pattern.simplify pattern1
+            & runSimplifier testEnv
+            & runNoSMT
+            & fmap OrPattern.toPatterns
 
 test_contradiction :: TestTree
 test_contradiction =

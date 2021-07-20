@@ -21,12 +21,15 @@ import Kore.Equation.Application hiding (
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Rewriting.RewritingVariable (
+import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.Axiom.Registry (
+    mkEvaluatorRegistry,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.Axiom.Registry (
-    mkEvaluatorRegistry,
+import Kore.Unparser (
+    unparse,
  )
 import Prelude.Kore
 import qualified Pretty
@@ -35,8 +38,8 @@ import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -164,9 +167,17 @@ test_attemptEquation =
                             (Mock.functional10 (mkElemVar Mock.yConfig))
             initial = mkElemVar Mock.yConfig
             equation = equationId{ensures}
-        attemptEquation SideCondition.top initial equation
-            >>= expectRight
-            >>= assertEqual "" expect
+        actual <-
+            attemptEquation SideCondition.top initial equation
+                >>= expectRight
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , Pretty.indent 4 (unparse expect)
+                    , "but found:"
+                    , Pretty.indent 4 (unparse actual)
+                    ]
+        assertEqual message expect actual
     , testCase "equation requirement" $ do
         let requires =
                 makeEqualsPredicate

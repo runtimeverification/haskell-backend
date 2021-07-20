@@ -29,7 +29,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -51,6 +51,7 @@ import Kore.Internal.Substitution (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import Prelude.Kore
+import qualified Pretty
 import Test.Expect
 import Test.Kore (
     Gen,
@@ -62,9 +63,8 @@ import Test.Kore.Internal.TermLike hiding (
     mapVariables,
     markSimplified,
     simplifiedAttribute,
-    substitute,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty
@@ -393,22 +393,28 @@ normalizeConj ::
 normalizeConj Conditional{term, predicate, substitution} =
     NormalizedAndPattern
         { term
-        , predicate = MultiAnd.fromPredicate predicate
+        , predicate = Predicate.toMultiAnd predicate
         , substitution
         }
 
 assertEquivalentPatterns ::
-    Foldable t =>
     InternalVariable variable =>
     Diff variable =>
     HasCallStack =>
-    t (Pattern variable) ->
-    t (Pattern variable) ->
+    MultiOr (Pattern variable) ->
+    MultiOr (Pattern variable) ->
     IO ()
 assertEquivalentPatterns expects actuals =
     for_ (align (toList expects) (toList actuals)) $ \these -> do
         (expect, actual) <- expectThese these
-        assertEquivalent (assertEqual "") expect actual
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , (Pretty.indent 4) (Pretty.pretty expects)
+                    , "but found:"
+                    , (Pretty.indent 4) (Pretty.pretty actuals)
+                    ]
+        assertEquivalent (assertEqual message) expect actual
 
 assertEquivalentPatterns' ::
     Foldable t =>

@@ -1,15 +1,12 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.Inj (
     verifiers,
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
-import Kore.ASTVerifier.PatternVerifier.PatternVerifier (
-    PatternVerifier,
- )
 import Kore.Attribute.Synthetic (
     synthesize,
  )
@@ -20,6 +17,9 @@ import Kore.Builtin.Verifiers (
 import Kore.Error
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Validate.PatternVerifier.PatternVerifier (
+    PatternVerifier,
+ )
 import Kore.Verified as Verified
 import Prelude.Kore
 

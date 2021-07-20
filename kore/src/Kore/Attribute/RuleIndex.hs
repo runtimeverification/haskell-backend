@@ -1,7 +1,7 @@
 {- |
 Description : Rule index attribute
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Attribute.RuleIndex (
     RuleIndex (..),

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.Substitution (
     Substitution,
@@ -14,6 +14,7 @@ module Kore.Internal.Substitution (
     assignedTerm,
     mapAssignedTerm,
     retractAssignment,
+    retractAssignmentFor,
     singleSubstitutionToPredicate,
     UnwrappedSubstitution,
     mkUnwrappedSubstitution,
@@ -46,8 +47,11 @@ module Kore.Internal.Substitution (
     wrapNormalization,
     mkNormalization,
     applyNormalized,
-    substitute,
     orientSubstitution,
+    -- Constructor for UnorderedAssignment
+    -- not exported on purpose
+    UnorderedAssignment,
+    pattern UnorderedAssignment,
 ) where
 
 import qualified Data.List as List
@@ -82,6 +86,7 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
+import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
  )
@@ -170,6 +175,51 @@ retractAssignment (PredicateEquals (Var_ var) term) =
 retractAssignment (PredicateEquals term (Var_ var)) =
     Just (assign var term)
 retractAssignment _ = Nothing
+
+-- | Wrapper for 'Assignment's which are unordered.
+newtype UnorderedAssignment variable
+    = UnorderedAssignment_ (Assignment variable)
+
+pattern UnorderedAssignment ::
+    SomeVariable variable ->
+    TermLike variable ->
+    UnorderedAssignment variable
+pattern UnorderedAssignment assignedVariable assignedTerm <-
+    UnorderedAssignment_ Assignment_{assignedVariable, assignedTerm}
+{-# COMPLETE UnorderedAssignment #-}
+
+{- | Smart constructor for 'UnorderedAssignment'. Note that it does not enforce
+ the order invariant 'Assignment' does.
+-}
+unorderedAssign ::
+    SomeVariable variable ->
+    TermLike variable ->
+    UnorderedAssignment variable
+unorderedAssign variable term =
+    UnorderedAssignment_ $
+        Assignment_ variable term
+
+{- | Extract an 'UnorderedAssignment' for a /particular/ variable.
+
+Returns 'Nothing' if the 'Predicate' is not in the correct form or the variable
+name does not match.
+
+See also: 'retractAssignment'
+-}
+retractAssignmentFor ::
+    InternalVariable variable =>
+    SomeVariableName variable ->
+    Predicate variable ->
+    Maybe (UnorderedAssignment variable)
+retractAssignmentFor someVariableName predicate =
+    case predicate of
+        PredicateEquals (Var_ var) term
+            | variableName var == someVariableName ->
+                Just $ unorderedAssign var term
+        PredicateEquals term (Var_ var)
+            | variableName var == someVariableName ->
+                Just $ unorderedAssign var term
+        _ -> Nothing
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -298,6 +348,18 @@ instance
         toVariable (variableName, term) =
             let variableSort = TermLike.termLikeSort term
              in (Variable{variableName, variableSort}, term)
+
+instance InternalVariable variable => Substitute (Substitution variable) where
+    type TermType (Substitution variable) = TermLike variable
+
+    type VariableNameType (Substitution variable) = variable
+
+    substitute subst =
+        wrap . (map . mapAssignedTerm) (substitute subst) . unwrap
+    {-# INLINE substitute #-}
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
 
 type UnwrappedSubstitution variable = [Assignment variable]
 
@@ -609,7 +671,7 @@ orderRenameAndRenormalizeTODO
                         Map (SomeVariable variable) (TermLike variable)
                     replacedSubstitution =
                         fmap
-                            ( TermLike.substitute
+                            ( substitute
                                 (Map.singleton (variableName variable) replacement)
                             )
                             ( assertNoneAreFreeVarsInRhs
@@ -728,7 +790,7 @@ orientSubstitution toLeft substitution =
                             -- Remove X = Y pair.
                             & Map.delete initialKey
                             -- Apply Y = X to the right-hand side of all pairs.
-                            & Map.map (TermLike.substitute newPair)
+                            & Map.map (substitute newPair)
                             -- Insert Y = X pair.
                             & Map.insert newKey newValue
                     Just already ->
@@ -737,7 +799,7 @@ orientSubstitution toLeft substitution =
                             -- Remove Y = T.
                             & Map.delete newKey
                             -- Apply Y = X to the right-hand side of all pairs.
-                            & Map.map (TermLike.substitute newPair)
+                            & Map.map (substitute newPair)
                             -- Insert Y = X pair.
                             & Map.insert newKey newValue
                             -- Apply X = T to the right-hand side of all pairs. This
@@ -754,7 +816,7 @@ orientSubstitution toLeft substitution =
                             -- 3. We just checked that X is not a preferred variable.
                             -- 4. Therefore, X = T is a valid orientation.
                             & Map.map
-                                (TermLike.substitute (Map.singleton initialKey already))
+                                (substitute (Map.singleton initialKey already))
                             -- Insert X = T pair.
                             & Map.insert initialKey already
         | otherwise = substitutionInProgress
@@ -845,25 +907,8 @@ applyNormalized Normalization{normalized, denormalized} =
         , denormalized = mapAssignedTerm substitute' <$> denormalized
         }
   where
-    substitute' =
-        TermLike.substitute $
-            Map.mapKeys variableName $
-                Map.fromList $
-                    map assignmentToPair normalized
-
-{- | Apply a 'Map' from names to terms to a substitution.
-
-The given mapping will be applied only to the right-hand sides of the
-substitutions (see 'mapAssignedTerm').  The result will not be a normalized
-'Substitution'.
--}
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    Substitution variable ->
-    Substitution variable
-substitute subst =
-    wrap . (map . mapAssignedTerm) (TermLike.substitute subst) . unwrap
+    substitute' = substitute $ Map.fromList (toSubstitution <$> normalized)
+    toSubstitution (Assignment var term) = (variableName var, term)
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 

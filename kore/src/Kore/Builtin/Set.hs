@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 This module is intended to be imported qualified, to avoid collision with other
@@ -95,13 +95,16 @@ import Kore.Internal.TermLike (
     pattern InternalSet_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Log.DebugUnifyBottom (
+    debugUnifyBottomAndReturnBottom,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Simplify as Simplifier
 import Kore.Sort (
     Sort,
  )
-import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence (
     SentenceSort (SentenceSort),
  )
@@ -585,7 +588,7 @@ unifyEquals
                         return (Ac.asInternal tools sort1 normalized)
                     Ac.Bottom ->
                         lift $
-                            Monad.Unify.explainAndReturnBottom
+                            debugUnifyBottomAndReturnBottom
                                 "Duplicated elements in normalization."
                                 first
                                 second
