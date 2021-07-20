@@ -106,10 +106,10 @@ import Kore.Reachability (
     lensClaimPattern,
  )
 import qualified Kore.Reachability.Claim as Claim
+import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
  )
-import Kore.Rewrite
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     mapRuleVariables,
