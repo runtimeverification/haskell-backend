@@ -7,7 +7,7 @@ kollect() {
     local name="$1"
     shift
     echo '#!/bin/sh' > "$name.sh"
-    "$@" --save-temps --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
+    "$@" | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
 
@@ -87,18 +87,20 @@ generate-wasm() {
         kollect "test-$spec" \
             ./kwasm prove --backend haskell \
                 tests/proofs/"$spec"-spec.k \
-                KWASM-LEMMAS
+                KWASM-LEMMAS --dry-run --save-temps
     done
 
     kollect "test-memory" \
         ./kwasm prove --backend haskell \
             tests/proofs/memory-spec.k \
             KWASM-LEMMAS \
-            --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive
+            --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive \
+            --dry-run --save-temps
 
     kollect "test-wrc20" \
         ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
-        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend
+        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend \
+        --dry-run --save-temps
 
     $KORE/scripts/trim-source-paths.sh *.kore
 }
