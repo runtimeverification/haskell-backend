@@ -449,8 +449,41 @@ toRepresentation ::
     SideCondition.Representation
 toRepresentation sideCondition =
     let sideCondition' =
-            sideCondition{simplifiedFunctions = HashSet.empty}
+            forgetSimplified $
+                sideCondition{simplifiedFunctions = HashSet.empty}
      in mkRepresentation sideCondition'
+
+forgetSimplified ::
+    InternalVariable variable =>
+    SideCondition variable ->
+    SideCondition variable
+forgetSimplified condition =
+    let
+        assumedTrue' =
+            MultiAnd.map Predicate.forgetSimplified assumedTrue
+        replacementsTermLike' =
+            mapKeysAndValues TermLike.forgetSimplified replacementsTermLike
+        replacementsPredicate' =
+            mapKeysAndValues Predicate.forgetSimplified replacementsPredicate
+        definedTerms' =
+            HashSet.map TermLike.forgetSimplified definedTerms
+        simplifiedFunctions' =
+            (HashSet.map . fmap) TermLike.forgetSimplified simplifiedFunctions
+     in SideCondition
+        { assumedTrue = assumedTrue'
+        , replacementsTermLike = replacementsTermLike'
+        , replacementsPredicate = replacementsPredicate'
+        , definedTerms = definedTerms'
+        , simplifiedFunctions = simplifiedFunctions'
+        }
+    where
+        SideCondition
+            { assumedTrue
+            , replacementsTermLike
+            , replacementsPredicate
+            , definedTerms
+            , simplifiedFunctions
+            } = condition
 
 -- | Looks up the term in the table of replacements.
 replaceTerm ::
