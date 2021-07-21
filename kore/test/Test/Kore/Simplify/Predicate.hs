@@ -20,6 +20,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
     mkBottom,
+    mkCeil,
     mkElemVar,
     mkEquals,
     mkNot,
@@ -327,6 +328,34 @@ test_simplify =
         , (test "variable-variable assignment")
             (fromEquals_ (mkElemVar x) (mkElemVar y))
             [[fromEquals_ (mkElemVar x) (mkElemVar y)]]
+        ]
+    , testGroup
+        "\\in"
+        [ test
+            "\\top"
+            (fromIn_ Mock.a Mock.a)
+            [[]]
+        , test
+            "\\bottom"
+            (fromIn_ Mock.a Mock.b)
+            []
+        , test
+            "\\ceil"
+            (fromIn_ fa fa)
+            [[faCeil]]
+        , test
+            "\\or"
+            (fromIn_ (mkElemVar Mock.xConfig) (mkOr fa fb))
+            [ [faCeil, fromEquals_ (mkElemVar Mock.xConfig) fa]
+            , [fbCeil, fromEquals_ (mkElemVar Mock.xConfig) fb]
+            ]
+        , test
+            "Predicates"
+            (fromIn_
+                (mkEquals Mock.testSort (mkElemVar Mock.xConfig) fb)
+                (mkCeil Mock.testSort fa)
+            )
+            [[fromEquals_ (mkElemVar Mock.xConfig ) fb, faCeil, fbCeil]]
         ]
     , testGroup
         "Other"
