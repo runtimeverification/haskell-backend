@@ -78,16 +78,14 @@ Right now this uses the following:
 -}
 simplify ::
     MonadSimplify simplifier =>
-    Ord sort =>
     SideCondition RewritingVariableName ->
-    --TODO (Andrei B): Sort vs sort
-    Not sort (OrPattern RewritingVariableName) ->
+    Not Sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
 simplify sideCondition not'@Not{notSort} =
     OrPattern.observeAllT $ do
         let evaluated = MultiAnd.map makeEvaluateNot (distributeNot not')
         andPattern <- scatterAnd evaluated
-        mkMultiAndPattern (mkSortVariable "BadSort") sideCondition andPattern
+        mkMultiAndPattern notSort sideCondition andPattern
 
 simplifyEvaluatedPredicate ::
     MonadSimplify simplifier =>

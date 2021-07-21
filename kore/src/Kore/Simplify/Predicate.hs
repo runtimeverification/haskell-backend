@@ -47,7 +47,12 @@ import Kore.Internal.Substitution (
     pattern UnorderedAssignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike (Sort, TermLike, mkSortVariable)
+import Kore.Internal.TermLike (
+    Sort,
+    TermLike,
+    mkSortVariable,
+    termLikeSort,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnUnsimplifiedPredicate (
     warnUnsimplifiedPredicate,
@@ -172,8 +177,9 @@ simplify sideCondition original =
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
-                FloorF floorF ->
-                    simplifyFloor sideCondition =<< traverse simplifyTerm floorF
+                FloorF floorF@(Floor _ _ child) ->
+                    simplifyFloor (termLikeSort child) sideCondition
+                        =<< traverse simplifyTerm floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
@@ -416,11 +422,11 @@ simplifyCeil sideCondition =
 -}
 simplifyFloor ::
     MonadSimplify simplifier =>
-    Ord sort =>
+    Sort ->
     SideCondition RewritingVariableName ->
     Floor sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyFloor sideCondition floor' = do
+simplifyFloor termSort sideCondition floor' = do
     notTerm <- mkNotSimplifiedTerm floorChild
     ceilNotTerm <- mkCeilSimplified notTerm
     mkNotSimplified ceilNotTerm
@@ -429,7 +435,7 @@ simplifyFloor sideCondition floor' = do
     mkNotSimplified notChild =
         simplifyNot Not{notSort = floorResultSort, notChild}
     mkNotSimplifiedTerm notChild =
-        Not.simplify sideCondition Not{notSort = floorResultSort, notChild}
+        Not.simplify sideCondition Not{notSort = termSort, notChild}
     mkCeilSimplified ceilChild =
         simplifyCeil
             sideCondition
