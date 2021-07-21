@@ -127,7 +127,7 @@ instance Pretty (Implication modality) where
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
-            , Pretty.indent 4 (unparse $ rightTerm)
+            , Pretty.indent 4 (unparse rightTerm)
             ]
       where
         Implication
