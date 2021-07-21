@@ -25,7 +25,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
 import Kore.BugReport (
-    ExitCode (ExitSuccess),
+    ExitCode (ExitFailure, ExitSuccess),
  )
 import qualified Kore.Builtin as Builtin (
     koreVerifiers,
@@ -126,19 +126,23 @@ test_checkFunctions =
                 checkFunctions verifiedModule
                     & runTestLog runNoSMT
             assertEqual "" expected $ fst actual
-            {-
-                    , testCase "Not every equation RHS is a function pattern." $ do
-                        let verifiedModule =
-                                verifiedModule
-                                    Module
-                                        { moduleName = ModuleName "MY-MODULE"
-                                        , moduleSentences = _
-                                        , moduleAttributes = Attributes []
-                                        }
-                            actual = _
-                            expected = ExitFailure 3
-                        assertEqual "" expected actual
-            -}
+        , testCase "Not every equation RHS is a function pattern." $ do
+            let verifiedModule =
+                    verifiedMyModule
+                        Module
+                            { moduleName = ModuleName "MY-MODULE"
+                            , moduleSentences =
+                                [ asSentence mySortDecl
+                                , asSentence $ constructorDecl "a"
+                                , functionalAxiom "a"
+                                ]
+                            , moduleAttributes = Attributes []
+                            }
+                expected = ExitFailure 3
+            actual <-
+                checkFunctions verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
         ]
 
 -- TODO: consider sharing code with verifiedMyModule from Test.Kore.Exec
