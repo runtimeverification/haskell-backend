@@ -79,7 +79,7 @@ Right now this uses the following:
 simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Not Sort (OrPattern RewritingVariableName) ->
+    Not sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Not{notChild} =
     simplifyEvaluated sideCondition notChild

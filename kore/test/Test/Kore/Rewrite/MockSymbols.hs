@@ -178,6 +178,8 @@ chId :: Id
 chId = testId "ch"
 fSetId :: Id
 fSetId = testId "fSet"
+fSet2Id :: Id
+fSet2Id = testId "fSet2"
 fIntId :: Id
 fIntId = testId "fInt"
 fBoolId :: Id
@@ -386,6 +388,9 @@ chSymbol = symbol chId [] testSort & function
 
 fSetSymbol :: Symbol
 fSetSymbol = symbol fSetId [setSort] setSort & function
+
+fSet2Symbol :: Symbol
+fSet2Symbol = symbol fSet2Id [setSort, setSort] setSort & function
 
 fIntSymbol :: Symbol
 fIntSymbol = symbol fIntId [intSort] intSort & function
@@ -878,16 +883,26 @@ xRuleSet :: MockRewritingElementVariable
 xRuleSet = mkRuleElementVariable (testId "xSet") mempty setSort
 xConfigSet :: MockRewritingElementVariable
 xConfigSet = mkConfigElementVariable (testId "xSet") mempty setSort
+xEquationSet :: MockRewritingElementVariable
+xEquationSet = mkEquationElementVariable (testId "xSet") mempty setSort
 ySet :: MockElementVariable
 ySet = MockElementVariable (testId "ySet") mempty setSort
+yEquationSet :: MockRewritingElementVariable
+yEquationSet = mkEquationElementVariable (testId "ySet") mempty setSort
 xInt :: MockElementVariable
 xInt = MockElementVariable (testId "xInt") mempty intSort
 xRuleInt :: MockRewritingElementVariable
 xRuleInt = mkRuleElementVariable (testId "xInt") mempty intSort
 xConfigInt :: MockRewritingElementVariable
 xConfigInt = mkConfigElementVariable (testId "xInt") mempty intSort
+xEquationInt :: MockRewritingElementVariable
+xEquationInt = mkEquationElementVariable (testId "xInt") mempty intSort
 yInt :: MockElementVariable
 yInt = MockElementVariable (testId "yInt") mempty intSort
+yRuleInt :: MockRewritingElementVariable
+yRuleInt = mkRuleElementVariable (testId "yInt") mempty intSort
+yEquationInt :: MockRewritingElementVariable
+yEquationInt = mkEquationElementVariable (testId "yInt") mempty intSort
 xBool :: MockElementVariable
 xBool = MockElementVariable (testId "xBool") mempty boolSort
 xRuleBool :: MockRewritingElementVariable
@@ -1088,6 +1103,14 @@ fSet ::
     TermLike variable ->
     TermLike variable
 fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
+
+fSet2 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
+fSet2 arg1 arg2 = Internal.mkApplySymbol fSet2Symbol [arg1, arg2]
 
 fTestInt ::
     InternalVariable variable =>

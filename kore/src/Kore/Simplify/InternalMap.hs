@@ -47,5 +47,5 @@ normalizeInternalMap map' =
                 & fromMaybe (mkInternalMap normalizedMap)
         _ -> mkBottom_
   where
-    getSingleOpaque = asSingleOpaqueElem . getNormalizedAc
+    getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
     getNormalizedAc = getNormalizedMap . builtinAcChild

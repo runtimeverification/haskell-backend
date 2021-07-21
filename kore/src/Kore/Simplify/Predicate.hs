@@ -56,6 +56,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Ceil as Ceil
+import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
@@ -63,6 +64,8 @@ import Kore.Syntax (
     Bottom (..),
     Ceil (..),
     Exists (..),
+    Floor (..),
+    Forall (Forall),
     Iff (..),
     Implies (..),
     Not (..),
@@ -72,6 +75,7 @@ import Kore.Syntax (
     variableName,
  )
 import qualified Kore.Syntax.Exists as Exists
+import qualified Kore.Syntax.Forall as Forall
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
@@ -166,9 +170,14 @@ simplify sideCondition original =
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
+                FloorF floorF ->
+                    simplifyFloor sideCondition =<< traverse simplifyTerm floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
+                ForallF forallF ->
+                    traverse worker (Forall.refreshForall avoid forallF)
+                        >>= simplifyForall sideCondition
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -398,6 +407,35 @@ simplifyCeil ::
 simplifyCeil sideCondition =
     Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
 
+{- |
+ @
+ \\floor(T) = \\not(\\ceil(\\not(T)))
+ @
+-}
+simplifyFloor ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Floor sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyFloor sideCondition floor' = do
+    notTerm <- mkNotSimplifiedTerm floorChild
+    ceilNotTerm <- mkCeilSimplified notTerm
+    mkNotSimplified ceilNotTerm
+  where
+    Floor{floorOperandSort, floorResultSort, floorChild} = floor'
+    mkNotSimplified notChild =
+        simplifyNot Not{notSort = floorResultSort, notChild}
+    mkNotSimplifiedTerm notChild =
+        Not.simplify sideCondition Not{notSort = floorResultSort, notChild}
+    mkCeilSimplified ceilChild =
+        simplifyCeil
+            sideCondition
+            Ceil
+                { ceilOperandSort = floorOperandSort
+                , ceilResultSort = floorResultSort
+                , ceilChild
+                }
+
 simplifyExists ::
     forall simplifier.
     Monad simplifier =>
@@ -436,6 +474,34 @@ simplifyExists _ = \exists@Exists{existsChild} ->
             existsChild' = MultiAnd.map (substitute substitution) predicates
             valueCeil = MultiAnd.singleton (fromCeil_ termLike)
          in existsChild' <> valueCeil
+
+{- |
+ @
+ \\forall(x, P) = \\not(\\exists(x, \\not(P)))
+ @
+-}
+simplifyForall ::
+    forall simplifier.
+    Monad simplifier =>
+    SideCondition RewritingVariableName ->
+    Forall () RewritingVariableName NormalForm ->
+    simplifier NormalForm
+simplifyForall sideCondition forall' = do
+    notChild <- mkNotSimplified forallChild
+    existsNotChild <- mkExistsSimplified notChild
+    mkNotSimplified existsNotChild
+  where
+    Forall{forallSort, forallVariable, forallChild} = forall'
+    mkNotSimplified notChild =
+        simplifyNot Not{notSort = forallSort, notChild}
+    mkExistsSimplified existsChild =
+        simplifyExists
+            sideCondition
+            Exists
+                { existsSort = forallSort
+                , existsVariable = forallVariable
+                , existsChild
+                }
 
 extractFirstAssignment ::
     SomeVariableName RewritingVariableName ->
