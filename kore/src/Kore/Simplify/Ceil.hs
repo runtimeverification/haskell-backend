@@ -69,7 +69,6 @@ import qualified Kore.Simplify.AndPredicates as And
 import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Simplify as Simplifier
-import qualified Kore.Sort as Sort
 import Kore.TopBottom
 import Kore.Unparser (
     unparseToString,
