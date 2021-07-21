@@ -132,7 +132,7 @@ instance MonadSimplify TestSimplifier where
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =
     [ (test "LIST.List \\and simplification failure")
-        (mkAnd (Mock.concatList (mkTop Mock.topSort) (mkTop Mock.topSort)) (Mock.builtinList []))
+        (mkAnd (Mock.concatList (mkTop Mock.listSort) (mkTop Mock.listSort)) (Mock.builtinList []))
         expectUnsimplified
     , (test "Non-function symbol without evaluators")
         Mock.plain00Subsort
