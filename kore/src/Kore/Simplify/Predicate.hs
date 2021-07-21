@@ -69,11 +69,11 @@ import Kore.Syntax (
     Forall (Forall),
     Iff (..),
     Implies (..),
+    In (..),
     Not (..),
     Or (..),
     SomeVariableName,
     Top (..),
-    In (..),
     variableName,
  )
 import qualified Kore.Syntax.Exists as Exists

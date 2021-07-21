@@ -351,11 +351,11 @@ test_simplify =
             ]
         , test
             "Predicates"
-            (fromIn_
+            ( fromIn_
                 (mkEquals Mock.testSort (mkElemVar Mock.xConfig) fb)
                 (mkCeil Mock.testSort fa)
             )
-            [[fromEquals_ (mkElemVar Mock.xConfig ) fb, faCeil, fbCeil]]
+            [[fromEquals_ (mkElemVar Mock.xConfig) fb, faCeil, fbCeil]]
         ]
     , testGroup
         "Other"
