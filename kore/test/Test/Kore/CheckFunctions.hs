@@ -18,6 +18,9 @@ import Kore.Attribute.Attributes (
 import Kore.Attribute.Constructor (
     constructorAttribute,
  )
+import Kore.Attribute.Function (
+    functionAttribute,
+ )
 import Kore.Attribute.Functional (
     functionalAttribute,
  )
@@ -134,7 +137,7 @@ test_checkFunctions =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence $ constructorDecl "a"
-                                , functionalAxiom "a"
+                                , disfunctionalAxiom "a"
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -144,6 +147,12 @@ test_checkFunctions =
                     & runTestLog runNoSMT
             assertEqual "" expected $ fst actual
         ]
+
+{-
+badAxiom :: Text -> Verified.Sentence
+badAxiom name = (functionalAxiom name)
+  { sentenceAxiomAttributes = Attributes [] }
+-}
 
 -- TODO: consider sharing code with verifiedMyModule from Test.Kore.Exec
 verifiedMyModule ::
@@ -218,7 +227,27 @@ functionalAxiom name =
                 )
             )
         )
-            { sentenceAxiomAttributes = Attributes [functionalAttribute]
+            { sentenceAxiomAttributes = Attributes [functionalAttribute, functionAttribute]
+            }
+  where
+    v = mkElementVariable (testId "V") mySort
+    r = SortVariable (testId "R")
+
+disfunctionalAxiom :: Text -> Verified.Sentence
+disfunctionalAxiom name =
+    SentenceAxiomSentence
+        ( mkAxiom
+            [r]
+            ( mkExists
+                v
+                ( mkEquals
+                    (SortVariableSort r)
+                    (mkElemVar v)
+                    (applyToNoArgs mySort name)
+                )
+            )
+        )
+            { sentenceAxiomAttributes = Attributes []
             }
   where
     v = mkElementVariable (testId "V") mySort
