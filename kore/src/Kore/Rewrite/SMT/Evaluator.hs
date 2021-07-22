@@ -51,6 +51,9 @@ import Kore.Internal.SideCondition (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
+    ElementVariable,
+    ElementVariableName,
+    SomeVariableName,
     TermLike,
     Variable (..),
     mkSortVariable,
@@ -247,71 +250,80 @@ translateTerm t (UninterpretedTerm (TermLike.ElemVar_ var)) =
     lookupVariable var <|> declareVariable t var
 translateTerm t (UninterpretedPredicate predicate) = do
     TranslatorState{quantifiedVars, predicates} <- State.get
-    let freeVars =
-            TermLike.freeVariables @_ @variable predicate
-                & FreeVariables.toNames
-        boundVarsMap =
-            Map.filterWithKey
-                (\k _ -> inject (variableName k) `Set.member` freeVars)
-                quantifiedVars
-        boundPat = Predicate.makeExistsPredicateN (Map.keys boundVarsMap) predicate
+    let freeVars = FreeVariables.freeVariableNames @_ @variable predicate
+        boundVarsMap = filterBoundVarsMap freeVars quantifiedVars
+        boundPat =
+            Predicate.makeExistsPredicateN (Map.keys boundVarsMap) predicate
+        conversion = Predicate.fromPredicate (mkSortVariable "_")
+        stateSetter = field @"predicates"
     lookupUninterpreted boundPat quantifiedVars predicates
-        <|> declareUninterpreted boundPat boundVarsMap
-  where
-    lookupUninterpreted boundPat quantifiedVars terms =
-        maybe empty (translateSMTDependentAtom quantifiedVars) $
-            Map.lookup boundPat terms
-    declareUninterpreted boundPat boundVarsMap =
-        do
-            n <- Counter.increment
-            logVariableAssignment
-                n
-                -- convert to TermLike just for unparseing
-                (Predicate.fromPredicate (mkSortVariable "_") boundPat)
-            let smtName = "<" <> Text.pack (show n) <> ">"
-                (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
-                cached = SMTDependentAtom{smtName, smtType = t, boundVars}
-            _ <-
-                SMT.declareFun
-                    SMT.FunctionDeclaration
-                        { name = Atom smtName
-                        , inputSorts = smtType <$> bindings
-                        , resultSort = t
-                        }
-            field @"predicates" Lens.%= Map.insert boundPat cached
-            translateSMTDependentAtom boundVarsMap cached
+        <|> declareUninterpreted t conversion stateSetter boundPat boundVarsMap
 translateTerm t (UninterpretedTerm pat) = do
     TranslatorState{quantifiedVars, terms} <- State.get
-    let freeVars =
-            TermLike.freeVariables @_ @variable pat
-                & FreeVariables.toNames
-        boundVarsMap =
-            Map.filterWithKey
-                (\k _ -> inject (variableName k) `Set.member` freeVars)
-                quantifiedVars
+    let freeVars = FreeVariables.freeVariableNames @_ @variable pat
+        boundVarsMap = filterBoundVarsMap freeVars quantifiedVars
         boundPat = TermLike.mkExistsN (Map.keys boundVarsMap) pat
+        stateSetter = field @"terms"
     lookupUninterpreted boundPat quantifiedVars terms
-        <|> declareUninterpreted boundPat boundVarsMap
-  where
-    lookupUninterpreted boundPat quantifiedVars terms =
-        maybe empty (translateSMTDependentAtom quantifiedVars) $
-            Map.lookup boundPat terms
-    declareUninterpreted boundPat boundVarsMap =
+        <|> declareUninterpreted t id stateSetter boundPat boundVarsMap
+
+declareUninterpreted ::
+    (MonadSMT m, MonadLog m, InternalVariable variable, Ord termOrPredicate) =>
+    SExpr ->
+    (termOrPredicate -> TermLike variable) ->
+    Lens.ASetter
+        (TranslatorState variable)
+        (TranslatorState variable)
+        (Map.Map termOrPredicate (SMTDependentAtom variable))
+        (Map.Map termOrPredicate (SMTDependentAtom variable)) ->
+    termOrPredicate ->
+    Map.Map (ElementVariable variable) (SMTDependentAtom variable) ->
+    Translator variable m SExpr
+declareUninterpreted
+    sExpr
+    termLikeConversion
+    stateSetter
+    boundPat
+    boundVarsMap =
         do
             n <- Counter.increment
-            logVariableAssignment n boundPat
+            logVariableAssignment n (termLikeConversion boundPat)
             let smtName = "<" <> Text.pack (show n) <> ">"
                 (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
-                cached = SMTDependentAtom{smtName, smtType = t, boundVars}
+                cached = SMTDependentAtom{smtName, smtType = sExpr, boundVars}
             _ <-
                 SMT.declareFun
                     SMT.FunctionDeclaration
                         { name = Atom smtName
                         , inputSorts = smtType <$> bindings
-                        , resultSort = t
+                        , resultSort = sExpr
                         }
-            field @"terms" Lens.%= Map.insert boundPat cached
+            stateSetter Lens.%= Map.insert boundPat cached
             translateSMTDependentAtom boundVarsMap cached
+
+filterBoundVarsMap ::
+    Ord variable =>
+    Set.Set (SomeVariableName variable) ->
+    Map.Map
+        (Variable (ElementVariableName variable))
+        (SMTDependentAtom variable) ->
+    Map.Map
+        (Variable (ElementVariableName variable))
+        (SMTDependentAtom variable)
+filterBoundVarsMap freeVars quantifiedVars =
+    Map.filterWithKey
+        (\k _ -> inject (variableName k) `Set.member` freeVars)
+        quantifiedVars
+
+lookupUninterpreted ::
+    (InternalVariable variable, MonadSMT m, Ord k) =>
+    k ->
+    Map.Map (ElementVariable variable) (SMTDependentAtom variable) ->
+    Map.Map k (SMTDependentAtom variable) ->
+    Translator variable m SExpr
+lookupUninterpreted boundPat quantifiedVars terms =
+    maybe empty (translateSMTDependentAtom quantifiedVars) $
+        Map.lookup boundPat terms
 
 lookupVariable ::
     InternalVariable variable =>
