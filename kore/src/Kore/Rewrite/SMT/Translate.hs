@@ -63,26 +63,14 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
-import Kore.Internal.Predicate hiding (
-    AndF,
-    BottomF,
-    CeilF,
-    EqualsF,
-    ExistsF,
-    FloorF,
-    ForallF,
-    IffF,
-    ImpliesF,
-    InF,
-    NotF,
-    OrF,
-    TopF,
- )
+import Kore.Internal.Predicate
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
  )
@@ -106,6 +94,7 @@ import qualified SMT.SimpleSMT as SimpleSMT
 data TranslateItem variable
     = QuantifiedVariable !(ElementVariable variable)
     | UninterpretedTerm !(TermLike variable)
+    | UninterpretedPredicate !(Predicate variable)
 
 type TranslateTerm variable m =
     SExpr -> TranslateItem variable -> Translator variable m SExpr
@@ -124,7 +113,7 @@ the predicate from being sent to SMT.
 translatePredicateWith ::
     forall p variable m.
     ( Given (SmtMetadataTools Attribute.Symbol)
-    , p ~ TermLike variable
+    , p ~ Predicate variable
     , MonadLog m
     , InternalVariable variable
     ) =>
@@ -133,64 +122,38 @@ translatePredicateWith ::
     Predicate variable ->
     Translator variable m SExpr
 translatePredicateWith sideCondition translateTerm predicate =
-    translatePredicatePattern $
-        fromPredicate_ predicate
+    translatePredicatePattern predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
-    translatePredicatePattern pat
-        | SideCondition.isDefined sideCondition pat =
-            withDefinednessAssumption $
-                translatePredicatePatternWorker pat
-        | otherwise = translatePredicatePatternWorker pat
+    translatePredicatePattern pat = translatePredicatePatternWorker pat
 
     translatePredicatePatternWorker :: p -> Translator variable m SExpr
     translatePredicatePatternWorker pat =
         case Cofree.tailF (Recursive.project pat) of
             -- Logical connectives: translate as connectives
-            AndF and' -> translatePredicateAnd and'
-            BottomF _ -> return (SMT.bool False)
-            EqualsF eq ->
+            Predicate.AndF and' -> translatePredicateAnd and'
+            Predicate.BottomF _ -> return (SMT.bool False)
+            Predicate.EqualsF eq ->
                 -- Equality of predicates and builtins can be translated to
                 -- equality in the SMT solver, but other patterns must remain
                 -- uninterpreted.
                 translatePredicateEquals eq
-                    <|> translateUninterpreted translateTerm SMT.tBool pat
-            IffF iff -> translatePredicateIff iff
-            ImpliesF implies -> translatePredicateImplies implies
-            NotF not' -> translatePredicateNot not'
-            OrF or' -> translatePredicateOr or'
-            TopF _ -> return (SMT.bool True)
+                    <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
+            Predicate.IffF iff -> translatePredicateIff iff
+            Predicate.ImpliesF implies -> translatePredicateImplies implies
+            Predicate.NotF not' -> translatePredicateNot not'
+            Predicate.OrF or' -> translatePredicateOr or'
+            Predicate.TopF _ -> return (SMT.bool True)
             -- Uninterpreted: translate as variables
-            CeilF _ -> translateUninterpreted translateTerm SMT.tBool pat
-            ExistsF exists' ->
+            Predicate.CeilF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
+            Predicate.ExistsF exists' ->
                 translatePredicateExists exists'
-                    <|> translateUninterpreted translateTerm SMT.tBool pat
-            FloorF _ -> translateUninterpreted translateTerm SMT.tBool pat
-            ForallF forall' ->
+                    <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
+            Predicate.FloorF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
+            Predicate.ForallF forall' ->
                 translatePredicateForall forall'
-                    <|> translateUninterpreted translateTerm SMT.tBool pat
-            InF _ -> translateUninterpreted translateTerm SMT.tBool pat
-            -- Invalid: no translation, should not occur in predicates
-            MuF _ -> empty
-            NuF _ -> empty
-            ApplySymbolF _ -> empty
-            InjF _ -> empty
-            ApplyAliasF _ -> empty
-            DomainValueF _ -> empty
-            NextF _ -> empty
-            RewritesF _ -> empty
-            VariableF _ -> empty
-            StringLiteralF _ -> empty
-            InternalBoolF _ -> empty
-            InternalBytesF _ -> empty
-            InternalIntF _ -> empty
-            InternalStringF _ -> empty
-            InternalListF _ -> empty
-            InternalMapF _ -> empty
-            InternalSetF _ -> empty
-            InhabitantF _ -> empty
-            EndiannessF _ -> empty
-            SignednessF _ -> empty
+                    <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
+            Predicate.InF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
 
     translatePredicateAnd And{andFirst, andSecond} =
         SMT.and
@@ -199,8 +162,7 @@ translatePredicateWith sideCondition translateTerm predicate =
 
     translatePredicateEquals
         Equals
-            { equalsOperandSort
-            , equalsFirst
+            { equalsFirst
             , equalsSecond
             } =
             SMT.eq
@@ -211,8 +173,17 @@ translatePredicateWith sideCondition translateTerm predicate =
                 -- Attempt to translate patterns in builtin sorts, or failing that,
                 -- as predicates.
                 (<|>)
-                    (translatePattern sideCondition translateTerm equalsOperandSort child)
-                    (translatePredicatePattern child)
+                    ( translatePattern
+                        sideCondition
+                        translateTerm
+                        (termLikeSort child)
+                        child
+                    )
+                    ( either
+                        (const empty)
+                        translatePredicatePattern
+                        (makePredicate child)
+                    )
 
     translatePredicateIff Iff{iffFirst, iffSecond} =
         iff
@@ -235,12 +206,12 @@ translatePredicateWith sideCondition translateTerm predicate =
             <*> translatePredicatePattern orSecond
 
     translatePredicateExists ::
-        Exists Sort variable p -> Translator variable m SExpr
+        Exists () variable p -> Translator variable m SExpr
     translatePredicateExists Exists{existsVariable, existsChild} =
         translateQuantifier SMT.existsQ existsVariable existsChild
 
     translatePredicateForall ::
-        Forall Sort variable p -> Translator variable m SExpr
+        Forall () variable p -> Translator variable m SExpr
     translatePredicateForall Forall{forallVariable, forallChild} =
         translateQuantifier SMT.forallQ forallVariable forallChild
 
@@ -331,15 +302,15 @@ translatePattern sideCondition translateTerm sort pat =
     translateBoolWorker :: TermLike variable -> Translator variable monad SExpr
     translateBoolWorker pat' =
         case Cofree.tailF (Recursive.project pat') of
-            VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
-            InternalBoolF (Const InternalBool{internalBoolValue}) ->
+            TermLike.VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
+            TermLike.InternalBoolF (Const InternalBool{internalBoolValue}) ->
                 return $ SMT.bool internalBoolValue
-            NotF Not{notChild} ->
+            TermLike.NotF Not{notChild} ->
                 -- \not is equivalent to BOOL.not for functional patterns.
                 -- The following is safe because non-functional patterns
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
-            ApplySymbolF app ->
+            TermLike.ApplySymbolF app ->
                 translateApplication (Just SMT.tBool) pat' app
             _ -> empty
 
@@ -392,6 +363,14 @@ translateUninterpreted ::
 translateUninterpreted translateTerm sExpr pat =
     translateTerm sExpr (UninterpretedTerm pat)
 
+translateUninterpretedPredicate ::
+    TranslateTerm variable m ->
+    SExpr ->
+    Predicate variable ->
+    Translator variable m SExpr
+translateUninterpretedPredicate translateTerm sExpr predicate =
+    translateTerm sExpr (UninterpretedPredicate predicate)
+
 {- | Represents the SMT encoding of an untranslatable pattern containing
 occurrences of existential variables.  Since the same pattern might appear
 under different instances of the same existential quantifiers, it is made
@@ -431,6 +410,7 @@ translateSMTDependentAtom
 -- Translator
 data TranslatorState variable = TranslatorState
     { terms :: !(Map (TermLike variable) (SMTDependentAtom variable))
+    , predicates :: !(Map (Predicate variable) (SMTDependentAtom variable))
     , freeVars :: !(Map (ElementVariable variable) SExpr)
     , quantifiedVars ::
         !(Map (ElementVariable variable) (SMTDependentAtom variable))
@@ -438,7 +418,7 @@ data TranslatorState variable = TranslatorState
     deriving stock (Eq, GHC.Generic, Show)
 
 instance Default (TranslatorState variable) where
-    def = TranslatorState def def def
+    def = TranslatorState def def def def
 
 {- | Translator local environment, used to check if a subterm is
  assumed to be defined. If it is, we can translate it for the solver.

@@ -53,6 +53,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
     Variable (..),
+    mkSortVariable,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition (
@@ -244,6 +245,41 @@ translateTerm smtType (QuantifiedVariable var) = do
     return smtVar
 translateTerm t (UninterpretedTerm (TermLike.ElemVar_ var)) =
     lookupVariable var <|> declareVariable t var
+translateTerm t (UninterpretedPredicate predicate) = do
+    TranslatorState{quantifiedVars, predicates} <- State.get
+    let freeVars =
+            TermLike.freeVariables @_ @variable predicate
+                & FreeVariables.toNames
+        boundVarsMap =
+            Map.filterWithKey
+                (\k _ -> inject (variableName k) `Set.member` freeVars)
+                quantifiedVars
+        boundPat = Predicate.makeExistsPredicateN (Map.keys boundVarsMap) predicate
+    lookupUninterpreted boundPat quantifiedVars predicates
+        <|> declareUninterpreted boundPat boundVarsMap
+  where
+    lookupUninterpreted boundPat quantifiedVars terms =
+        maybe empty (translateSMTDependentAtom quantifiedVars) $
+            Map.lookup boundPat terms
+    declareUninterpreted boundPat boundVarsMap =
+        do
+            n <- Counter.increment
+            logVariableAssignment
+                n
+                -- convert to TermLike just for unparseing
+                (Predicate.fromPredicate (mkSortVariable "_") boundPat)
+            let smtName = "<" <> Text.pack (show n) <> ">"
+                (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
+                cached = SMTDependentAtom{smtName, smtType = t, boundVars}
+            _ <-
+                SMT.declareFun
+                    SMT.FunctionDeclaration
+                        { name = Atom smtName
+                        , inputSorts = smtType <$> bindings
+                        , resultSort = t
+                        }
+            field @"predicates" Lens.%= Map.insert boundPat cached
+            translateSMTDependentAtom boundVarsMap cached
 translateTerm t (UninterpretedTerm pat) = do
     TranslatorState{quantifiedVars, terms} <- State.get
     let freeVars =

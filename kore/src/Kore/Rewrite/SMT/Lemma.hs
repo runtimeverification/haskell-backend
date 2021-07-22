@@ -87,6 +87,7 @@ declareSMTLemmas m = do
             runTranslator $
                 translatePredicateWith SideCondition.top translateUninterpreted $
                     wrapPredicate $ sentenceAxiomPattern axiomDeclaration
+        -- TODO (Andrei B) Should I do the same for the predicates from  TranslatorState?
         SMT.assert (addQuantifiers terms lemma)
 
     addQuantifiers vars lemma | null vars = lemma
@@ -116,6 +117,8 @@ translateUninterpreted ::
     TranslateItem variable ->
     Translator variable m SExpr
 translateUninterpreted _ (QuantifiedVariable _) =
+    empty
+translateUninterpreted _ (UninterpretedPredicate _) =
     empty
 translateUninterpreted t (UninterpretedTerm pat)
     | isVariable pat =
