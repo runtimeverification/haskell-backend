@@ -410,6 +410,26 @@ test_matcherVariableFunction =
                         )
             actual <- match ruleLHS config
             assertEqual "" expected actual
+        , testCase "Concrete second set" $ do
+            let config =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xRuleInt] [])
+                        (Mock.framedSet [Mock.builtinInt 1] [])
+                ruleLHS =
+                    Mock.fSet2
+                        (Mock.framedSet [mkElemVar Mock.xEquationInt] [mkElemVar Mock.xEquationSet])
+                        (Mock.framedSet [mkElemVar Mock.yEquationInt] [])
+                expected =
+                    mkMatchResult
+                        ( makeTruePredicate
+                        , [ (inject Mock.xEquationInt, mkElemVar Mock.xRuleInt)
+                          , (inject Mock.xEquationSet, Mock.framedSet [] [])
+                          , (inject Mock.yEquationInt, Mock.builtinInt 1)
+                          ]
+                            & Map.fromList
+                        )
+            actual <- match ruleLHS config
+            assertEqual "" expected actual
         , testCase "Concrete first set, second matches variable" $ do
             let config =
                     Mock.fSet2
