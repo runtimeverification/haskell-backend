@@ -7,10 +7,10 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
 import Control.Error (
     MaybeT (..),
  )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import Data.Monoid (
     First (..),
@@ -19,6 +19,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     occursIn,
  )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
@@ -32,23 +33,17 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern (
     Condition,
     Conditional (..),
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Simplify.AndPredicates as And
-import Kore.Simplify.AndTerms (
-    compareForEquals,
-    maybeTermEquals,
- )
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
@@ -70,13 +65,18 @@ import Kore.Log.WarnUnsimplifiedPredicate (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Simplify.And as And
+import qualified Kore.Simplify.AndPredicates as And
+import Kore.Simplify.AndTerms (
+    compareForEquals,
+    maybeTermEquals,
+ )
 import qualified Kore.Simplify.Ceil as Ceil
+import qualified Kore.Simplify.Equals as Equals
+import qualified Kore.Simplify.Iff as Iff
+import qualified Kore.Simplify.Implies as Implies
 import qualified Kore.Simplify.Not as Not
 import qualified Kore.Simplify.Or as Or
-import qualified Kore.Simplify.And as And
-import qualified Kore.Simplify.Iff as Iff
-import qualified Kore.Simplify.Equals as Equals
-import qualified Kore.Simplify.Implies as Implies
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
@@ -629,7 +629,7 @@ simplifyEquals ::
     simplifier NormalForm
 simplifyEquals sideCondition Equals{equalsFirst = first, equalsSecond = second} =
     simplifyEvaluated sideCondition first' second'
-    >>= return . MultiOr.map (from @(Condition _))
+        >>= return . MultiOr.map (from @(Condition _))
   where
     (first', second') =
         minMaxBy (on compareForEquals OrPattern.toTermLike) first second
