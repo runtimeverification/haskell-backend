@@ -47,7 +47,6 @@ import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Simplify.AndPredicates as And
 import Kore.Simplify.AndTerms (
     compareForEquals,
-    maybeTermEquals,
  )
 import Kore.Internal.Predicate (
     Predicate,
@@ -688,9 +687,14 @@ makeEvaluateFunctionalOr ::
     [Pattern RewritingVariableName] ->
     simplifier (OrCondition RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
-    firstCeil <- makeEvaluateCeil sideCondition first
-    secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
-    firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
+    firstCeil <-
+        Ceil.makeEvaluate sideCondition first
+        & fmap (OrPattern.fromOrCondition (Pattern.patternSort first))
+    secondCeilsWithProofs <-
+        mapM (Ceil.makeEvaluate sideCondition) seconds
+        & (fmap . fmap) (OrPattern.fromOrCondition (Pattern.patternSort first))
+    firstNotCeil <-
+        Not.simplifyEvaluated sideCondition firstCeil
     let secondCeils = secondCeilsWithProofs
     secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
@@ -757,9 +761,13 @@ makeEvaluate
     sideCondition =
         do
             let first' = first{term = if termsAreEqual then TermLike.mkTop_ else firstTerm}
-            firstCeil <- makeEvaluateCeil sideCondition first'
+            firstCeil <-
+                Ceil.makeEvaluate sideCondition first'
+                & fmap (OrPattern.fromOrCondition (Pattern.patternSort first'))
             let second' = second{term = if termsAreEqual then TermLike.mkTop_ else secondTerm}
-            secondCeil <- makeEvaluateCeil sideCondition second'
+            secondCeil <-
+                Ceil.makeEvaluate sideCondition second'
+                & fmap (OrPattern.fromOrCondition (Pattern.patternSort second'))
             firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
             secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
             termEquality <- Equals.makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
@@ -806,8 +814,8 @@ makeEvaluateTermsToPredicate first second sideCondition
                         Predicate.markSimplified $
                             Predicate.makeEqualsPredicate first second
             Just predicatedOr -> do
-                firstCeilOr <- makeEvaluateTermCeil sideCondition first
-                secondCeilOr <- makeEvaluateTermCeil sideCondition second
+                firstCeilOr <- Ceil.makeEvaluateTerm sideCondition first
+                secondCeilOr <- Ceil.makeEvaluateTerm sideCondition second
                 firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
                 secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
                 ceilNegationAnd <-
