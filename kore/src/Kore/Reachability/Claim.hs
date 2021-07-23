@@ -598,7 +598,7 @@ simplify' lensClaimPattern claim = do
         let substitution = Pattern.substitution $ Lens.view (field @"left") claimPat
             noLeftSubst = Lens.set (field @"left" . field @"substitution") mempty claimPat
             appliedSubst = ClaimPattern.applySubstitution substitution noLeftSubst
-        in appliedSubst
+         in appliedSubst
 
     extractSideCondition =
         SideCondition.fromConditionWithReplacements

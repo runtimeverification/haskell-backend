@@ -428,7 +428,7 @@ test_proveClaims =
                         )
                     , Pattern.withCondition
                         Mock.b
-                        (Condition.assign (inject Mock.x) Mock.a){ Condition.substitution = mempty }
+                        (Condition.assign (inject Mock.x) Mock.a){Condition.substitution = mempty}
                     ]
             initialPattern =
                 Pattern.fromTermLike
