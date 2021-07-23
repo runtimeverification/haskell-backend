@@ -74,12 +74,14 @@ import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom (
     TopBottom,
  )
-import Kore.Unparser
 import Log
 import Logic (
     LogicT,
  )
 import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 import SMT (
     Result (..),
@@ -271,10 +273,8 @@ declareUninterpreted ::
     (MonadSMT m, MonadLog m, InternalVariable variable, Ord termOrPredicate) =>
     SExpr ->
     (termOrPredicate -> TermLike variable) ->
-    Lens.ASetter
+    Lens.ASetter'
         (TranslatorState variable)
-        (TranslatorState variable)
-        (Map.Map termOrPredicate (SMTDependentAtom variable))
         (Map.Map termOrPredicate (SMTDependentAtom variable)) ->
     termOrPredicate ->
     Map.Map (ElementVariable variable) (SMTDependentAtom variable) ->
@@ -359,11 +359,11 @@ declareVariable t variable = do
     return var
 
 logVariableAssignment ::
-    InternalVariable variable =>
+    Pretty pretty =>
     MonadLog m =>
     Counter.Natural ->
     -- | variable to be declared
-    TermLike variable ->
+    pretty ->
     Translator variable m ()
 logVariableAssignment n pat =
     logDebug
@@ -371,4 +371,4 @@ logVariableAssignment n pat =
         . show
         . Pretty.nest 4
         . Pretty.sep
-        $ [Pretty.pretty n, "|->", unparse pat]
+        $ [Pretty.pretty n, "|->", Pretty.pretty pat]

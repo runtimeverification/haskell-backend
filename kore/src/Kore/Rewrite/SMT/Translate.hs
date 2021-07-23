@@ -125,10 +125,7 @@ translatePredicateWith sideCondition translateTerm predicate =
     translatePredicatePattern predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
-    translatePredicatePattern pat = translatePredicatePatternWorker pat
-
-    translatePredicatePatternWorker :: p -> Translator variable m SExpr
-    translatePredicatePatternWorker pat =
+    translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             -- Logical connectives: translate as connectives
             Predicate.AndF and' -> translatePredicateAnd and'

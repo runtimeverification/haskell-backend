@@ -83,12 +83,12 @@ declareSMTLemmas m = do
         m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
-        (lemma, TranslatorState{terms}) <-
+        (lemma, TranslatorState{terms, predicates}) <-
             runTranslator $
                 translatePredicateWith SideCondition.top translateUninterpreted $
                     wrapPredicate $ sentenceAxiomPattern axiomDeclaration
-        -- TODO (Andrei B) Should I do the same for the predicates from  TranslatorState?
         SMT.assert (addQuantifiers terms lemma)
+        SMT.assert (addQuantifiers predicates lemma)
 
     addQuantifiers vars lemma | null vars = lemma
     addQuantifiers vars lemma =
