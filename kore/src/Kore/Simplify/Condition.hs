@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Simplify.Condition (
     create,
@@ -206,8 +206,8 @@ mkCondition predicate =
 simplifyConjunctions ::
     Predicate RewritingVariableName ->
     Changed (Predicate RewritingVariableName)
-simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
+simplifyConjunctions original@(Predicate.toMultiAnd -> predicates) =
     case SideCondition.simplifyConjunctionByAssumption predicates of
         Unchanged _ -> Unchanged original
         Changed (changed, _) ->
-            Changed (MultiAnd.toPredicate changed)
+            Changed (Predicate.fromMultiAnd changed)

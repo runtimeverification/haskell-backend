@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -258,7 +258,7 @@ resetResultPattern initial config@Conditional{substitution} =
     renaming =
         Map.mapKeys (fmap RuleVariableName)
             . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
-            $ refreshVariables avoiding introduced
+            $ refreshVariablesSet avoiding introduced
     renamed :: Pattern RewritingVariableName
     renamed = filtered & substitute renaming
 

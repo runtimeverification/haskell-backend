@@ -12,9 +12,9 @@
     package = {
       specVersion = "2.2";
       identifier = { name = "kore"; version = "0.49.0.0"; };
-      license = "NCSA";
+      license = "BSD-3-Clause";
       copyright = "2018-2021 Runtime Verification Inc";
-      maintainer = "thomas.tuegel@runtimeverification.com";
+      maintainer = "ana.pantilie@runtimeverification.com";
       author = "Runtime Verification Inc";
       homepage = "https://github.com/kframework/kore#readme";
       url = "";
@@ -63,6 +63,7 @@
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
+          (hsPkgs."mono-traversable" or (errorHandler.buildDepError "mono-traversable"))
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
           (hsPkgs."parser-combinators" or (errorHandler.buildDepError "parser-combinators"))
@@ -224,6 +225,7 @@
           "Kore/Internal/InternalString"
           "Kore/Internal/Key"
           "Kore/Internal/MultiAnd"
+          "Kore/Internal/MultiExists"
           "Kore/Internal/MultiOr"
           "Kore/Internal/NormalizedAc"
           "Kore/Internal/OrCondition"
@@ -602,6 +604,7 @@
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
+            (hsPkgs."mono-traversable" or (errorHandler.buildDepError "mono-traversable"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."parser-combinators" or (errorHandler.buildDepError "parser-combinators"))
@@ -723,6 +726,7 @@
             "Test/Kore/Internal/From"
             "Test/Kore/Internal/Key"
             "Test/Kore/Internal/MultiAnd"
+            "Test/Kore/Internal/MultiExists"
             "Test/Kore/Internal/OrCondition"
             "Test/Kore/Internal/OrPattern"
             "Test/Kore/Internal/Pattern"

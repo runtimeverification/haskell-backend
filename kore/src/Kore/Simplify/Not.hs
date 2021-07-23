@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Simplify.Not
 Description : Tools for Not pattern simplification.
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -79,7 +79,7 @@ Right now this uses the following:
 simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Not Sort (OrPattern RewritingVariableName) ->
+    Not sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Not{notChild} =
     simplifyEvaluated sideCondition notChild

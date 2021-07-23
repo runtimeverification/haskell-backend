@@ -20,6 +20,7 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
@@ -210,7 +211,7 @@ test_applicationSimplification =
                         [ Conditional
                             { term = fOfA
                             , predicate =
-                                (MultiAnd.toPredicate . MultiAnd.make)
+                                (Predicate.fromMultiAnd . MultiAnd.make)
                                     [ makeEqualsPredicate fOfA fOfB
                                     , makeEqualsPredicate fOfA gOfA
                                     , makeEqualsPredicate gOfA gOfB

@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Simplify.InternalSet (
     simplify,
@@ -47,5 +47,5 @@ normalizeInternalSet map' =
                 & fromMaybe (mkInternalSet normalizedSet)
         _ -> mkBottom_
   where
-    getSingleOpaque = asSingleOpaqueElem . getNormalizedAc
+    getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
     getNormalizedAc = getNormalizedSet . builtinAcChild
