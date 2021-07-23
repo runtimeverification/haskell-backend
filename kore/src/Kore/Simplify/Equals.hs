@@ -12,6 +12,8 @@ module Kore.Simplify.Equals (
     makeEvaluateTermsToPredicate,
     simplify,
     termEquals,
+    -- TODO: temp
+    makeEvaluateTermsAssumesNoBottom,
 ) where
 
 import Control.Error (

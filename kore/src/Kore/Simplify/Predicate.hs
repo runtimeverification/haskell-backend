@@ -8,6 +8,9 @@ module Kore.Simplify.Predicate (
 ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import Control.Error (
+    MaybeT (..),
+ )
 import qualified Data.Map.Strict as Map
 import Data.Monoid (
     First (..),
@@ -26,14 +29,26 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern (
     Condition,
+    Conditional (..),
+    Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Simplify.AndPredicates as And
+import Kore.Simplify.AndTerms (
+    compareForEquals,
+    maybeTermEquals,
+ )
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
@@ -57,12 +72,18 @@ import Kore.Rewrite.RewritingVariable (
  )
 import qualified Kore.Simplify.Ceil as Ceil
 import qualified Kore.Simplify.Not as Not
+import qualified Kore.Simplify.Or as Or
+import qualified Kore.Simplify.And as And
+import qualified Kore.Simplify.Iff as Iff
+import qualified Kore.Simplify.Equals as Equals
+import qualified Kore.Simplify.Implies as Implies
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
     And (..),
     Bottom (..),
     Ceil (..),
+    Equals (..),
     Exists (..),
     Floor (..),
     Forall (Forall),
@@ -178,6 +199,8 @@ simplify sideCondition original =
                 ForallF forallF ->
                     traverse worker (Forall.refreshForall avoid forallF)
                         >>= simplifyForall sideCondition
+                EqualsF equalsF ->
+                    simplifyEquals sideCondition =<< traverse simplifyTerm equalsF
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -522,3 +545,274 @@ extractFirstAssignment someVariableName predicates =
         guard (TermLike.isFunctionPattern termLike)
         (guard . not) (someVariableName `occursIn` termLike)
         pure termLike
+
+{- ORMOLU_DISABLE -}
+{-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
+
+This uses the following simplifications
+(t = term, s = substitution, p = predicate):
+
+* Equals(a, a) = true
+* Equals(phi, psi1 or psi2 or ... or psin), when phi is functional
+    = or
+        ( not ceil (phi) and not ceil(psi1) and ... and not ceil (psin)
+        , and
+            ( ceil(phi)
+            , ceil(psi1) or ceil(psi2) or  ... or ceil(psin)
+            , ceil(psi1) implies phi == psi1)
+            , ceil(psi2) implies phi == psi2)
+            ...
+            , ceil(psin) implies phi == psin)
+            )
+        )
+* Equals(t1 and t2) = ceil(t1 and t2) or (not ceil(t1) and not ceil(t2))
+    if t1 and t2 are functions.
+* Equals(t1 and p1 and s1, t2 and p2 and s2) =
+    Or(
+        And(
+            Equals(t1, t2)
+            And(ceil(t1) and p1 and s1, ceil(t2) and p2 and s2))
+        And(not(ceil(t1) and p1 and s1), not(ceil(t2) and p2 and s2))
+    )
+    + If t1 and t2 can't be bottom, then this becomes
+      Equals(t1 and p1 and s1, t2 and p2 and s2) =
+        Or(
+            And(
+                Equals(t1, t2)
+                And(p1 and s1, p2 and s2))
+            And(not(p1 and s1), not(p2 and s2))
+        )
+    + If the two terms are constructors, then this becomes
+      Equals(
+        constr1(t1, t2, ...) and p1 and s1,
+        constr2(t1', t2', ...) and p2 and s2)
+        = Or(
+            and(
+                (p1 and s2) iff (p2 and s2),
+                constr1 == constr2,
+                ceil(constr1(t1, t2, ...), constr2(t1', t2', ...))
+                Equals(t1, t1'), Equals(t2, t2'), ...
+                )
+            and(
+                not(ceil(constr1(t1, t2, ...)) and p1 and s1),
+                not(ceil(constr2(t1', t2', ...)), p2 and s2)
+                )
+        )
+      Note that when expanding Equals(t1, t1') recursively we don't need to
+      put the ceil conditions again, since we already asserted that.
+      Also note that ceil(constr(...)) is simplifiable.
+    + If the first term is a variable and the second is functional,
+      then we get a substitution:
+        Or(
+            And(
+                [t1 = t2]
+                And(p1 and s1, p2 and s2))
+            And(not(p1 and s1), not(p2 and s2))
+        )
+    + If the terms are Top, this becomes
+      Equals(p1 and s1, p2 and s2) = Iff(p1 and s1, p2 and s2)
+    + If the predicate and substitution are Top, then the result is any of
+      Equals(t1, t2)
+      Or(
+          Equals(t1, t2)
+          And(not(ceil(t1) and p1 and s1), not(ceil(t2) and p2 and s2))
+      )
+
+Normalization of the compared terms is not implemented yet, so
+Equals(a and b, b and a) will not be evaluated to Top.
+-}
+{- ORMOLU_ENABLE -}
+simplifyEquals ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Equals sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyEquals sideCondition Equals{equalsFirst = first, equalsSecond = second} =
+    simplifyEvaluated sideCondition first' second'
+    >>= return . MultiOr.map (from @(Condition _))
+  where
+    (first', second') =
+        minMaxBy (on compareForEquals OrPattern.toTermLike) first second
+
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+take an argument of type
+
+> CofreeF (Equals Sort) (Attribute.Pattern variable) (OrPattern variable)
+
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
+information besides the pattern sort, which will make it even more useful to
+carry around.
+
+-}
+simplifyEvaluated ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    simplifier (OrCondition RewritingVariableName)
+simplifyEvaluated sideCondition first second
+    | first == second = return OrCondition.top
+    -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
+    | otherwise = do
+        let isFunctionConditional Conditional{term} = TermLike.isFunctionPattern term
+        case (firstPatterns, secondPatterns) of
+            ([firstP], [secondP]) ->
+                makeEvaluate firstP secondP sideCondition
+            ([firstP], _)
+                | isFunctionConditional firstP ->
+                    makeEvaluateFunctionalOr sideCondition firstP secondPatterns
+            (_, [secondP])
+                | isFunctionConditional secondP ->
+                    makeEvaluateFunctionalOr sideCondition secondP firstPatterns
+            _
+                | OrPattern.isPredicate first && OrPattern.isPredicate second ->
+                    Iff.simplifyEvaluated sideCondition first second
+                        & fmap (MultiOr.map Pattern.withoutTerm)
+                | otherwise ->
+                    makeEvaluate
+                        (OrPattern.toPattern first)
+                        (OrPattern.toPattern second)
+                        sideCondition
+  where
+    firstPatterns = toList first
+    secondPatterns = toList second
+
+makeEvaluateFunctionalOr ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    simplifier (OrCondition RewritingVariableName)
+makeEvaluateFunctionalOr sideCondition first seconds = do
+    firstCeil <- makeEvaluateCeil sideCondition first
+    secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
+    firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
+    let secondCeils = secondCeilsWithProofs
+    secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
+    let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
+    allAreBottom <-
+        And.simplify
+            Not.notSimplifier
+            sideCondition
+            (MultiAnd.make (firstNotCeil : secondNotCeils))
+    firstEqualsSeconds <-
+        mapM
+            (makeEvaluateEqualsIfSecondNotBottom first)
+            (zip seconds secondCeils)
+    oneIsNotBottomEquals <-
+        And.simplify
+            Not.notSimplifier
+            sideCondition
+            (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
+    MultiOr.merge allAreBottom oneIsNotBottomEquals
+        & MultiOr.map Pattern.withoutTerm
+        & return
+  where
+    makeEvaluateEqualsIfSecondNotBottom
+        Conditional{term = firstTerm}
+        (Conditional{term = secondTerm}, secondCeil) =
+            do
+                equality <- Equals.makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+                Implies.simplifyEvaluated sideCondition secondCeil equality
+
+{- | evaluates an 'Equals' given its two 'Pattern' children.
+
+See 'simplify' for detailed documentation.
+-}
+makeEvaluate ::
+    MonadSimplify simplifier =>
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    simplifier (OrCondition RewritingVariableName)
+makeEvaluate
+    first@Conditional{term = TermLike.Top_ _}
+    second@Conditional{term = TermLike.Top_ _}
+    _ =
+        Iff.makeEvaluate
+            first{term = TermLike.mkTop_} -- remove the term's sort
+            second{term = TermLike.mkTop_} -- remove the term's sort
+            & MultiOr.map Pattern.withoutTerm
+            & return
+makeEvaluate
+    Conditional
+        { term = firstTerm
+        , predicate = Predicate.PredicateTrue
+        , substitution = (Substitution.unwrap -> [])
+        }
+    Conditional
+        { term = secondTerm
+        , predicate = Predicate.PredicateTrue
+        , substitution = (Substitution.unwrap -> [])
+        }
+    sideCondition =
+        makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
+makeEvaluate
+    first@Conditional{term = firstTerm}
+    second@Conditional{term = secondTerm}
+    sideCondition =
+        do
+            let first' = first{term = if termsAreEqual then TermLike.mkTop_ else firstTerm}
+            firstCeil <- makeEvaluateCeil sideCondition first'
+            let second' = second{term = if termsAreEqual then TermLike.mkTop_ else secondTerm}
+            secondCeil <- makeEvaluateCeil sideCondition second'
+            firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
+            secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
+            termEquality <- Equals.makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+            negationAnd <-
+                And.simplify
+                    Not.notSimplifier
+                    sideCondition
+                    (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+            equalityAnd <-
+                And.simplify
+                    Not.notSimplifier
+                    sideCondition
+                    (MultiAnd.make [termEquality, firstCeil, secondCeil])
+            Or.simplifyEvaluated equalityAnd negationAnd
+                & MultiOr.map Pattern.withoutTerm
+                & return
+      where
+        termsAreEqual = firstTerm == secondTerm
+
+{- | Combines two terms with 'Equals' into a predicate-substitution.
+
+It does not attempt to fully simplify the terms (the not-ceil parts used to
+catch the bottom=bottom case and everything above it), but, if the patterns are
+total, this should not be needed anyway.
+TODO(virgil): Fully simplify the terms (right now we're not simplifying not
+because it returns an 'or').
+
+See 'simplify' for detailed documentation.
+-}
+makeEvaluateTermsToPredicate ::
+    MonadSimplify simplifier =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    simplifier (OrCondition RewritingVariableName)
+makeEvaluateTermsToPredicate first second sideCondition
+    | first == second = return OrCondition.top
+    | otherwise = do
+        result <- runMaybeT $ Equals.termEquals first second
+        case result of
+            Nothing ->
+                return $
+                    OrCondition.fromCondition . Condition.fromPredicate $
+                        Predicate.markSimplified $
+                            Predicate.makeEqualsPredicate first second
+            Just predicatedOr -> do
+                firstCeilOr <- makeEvaluateTermCeil sideCondition first
+                secondCeilOr <- makeEvaluateTermCeil sideCondition second
+                firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
+                secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
+                ceilNegationAnd <-
+                    And.simplifyEvaluatedMultiPredicate
+                        sideCondition
+                        (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+
+                return $ MultiOr.merge predicatedOr ceilNegationAnd
