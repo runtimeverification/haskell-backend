@@ -590,12 +590,16 @@ simplify' ::
     Strategy.TransitionT (AppliedRule claim) m claim
 simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
-    let substitution = Pattern.substitution $ claim' Lens.^. lensClaimPattern.field @"left"
-        sideCondition = extractSideCondition claim'
-        noLeftSubst = claim' & lensClaimPattern.field @"left".field @"substitution" Lens..~ mempty
-        appliedSubst = noLeftSubst & lensClaimPattern Lens.%~ ClaimPattern.applySubstitution substitution
-    simplifyRightHandSide lensClaimPattern sideCondition appliedSubst
+    let claim'' = Lens.over lensClaimPattern applySubstOnRightHandSide claim'
+        sideCondition = extractSideCondition claim''
+    simplifyRightHandSide lensClaimPattern sideCondition claim''
   where
+    applySubstOnRightHandSide claimPat =
+        let substitution = Pattern.substitution $ Lens.view (field @"left") claimPat
+            noLeftSubst = Lens.set (field @"left" . field @"substitution") mempty claimPat
+            appliedSubst = ClaimPattern.applySubstitution substitution noLeftSubst
+        in appliedSubst
+
     extractSideCondition =
         SideCondition.fromConditionWithReplacements
             . Pattern.withoutTerm
