@@ -689,10 +689,10 @@ makeEvaluateFunctionalOr ::
 makeEvaluateFunctionalOr sideCondition first seconds = do
     firstCeil <-
         Ceil.makeEvaluate sideCondition first
-        & fmap (OrPattern.fromOrCondition (Pattern.patternSort first))
+            & fmap (OrPattern.fromOrCondition (Pattern.patternSort first))
     secondCeilsWithProofs <-
         mapM (Ceil.makeEvaluate sideCondition) seconds
-        & (fmap . fmap) (OrPattern.fromOrCondition (Pattern.patternSort first))
+            & (fmap . fmap) (OrPattern.fromOrCondition (Pattern.patternSort first))
     firstNotCeil <-
         Not.simplifyEvaluated sideCondition firstCeil
     let secondCeils = secondCeilsWithProofs
@@ -763,11 +763,11 @@ makeEvaluate
             let first' = first{term = if termsAreEqual then TermLike.mkTop_ else firstTerm}
             firstCeil <-
                 Ceil.makeEvaluate sideCondition first'
-                & fmap (OrPattern.fromOrCondition (Pattern.patternSort first'))
+                    & fmap (OrPattern.fromOrCondition (Pattern.patternSort first'))
             let second' = second{term = if termsAreEqual then TermLike.mkTop_ else secondTerm}
             secondCeil <-
                 Ceil.makeEvaluate sideCondition second'
-                & fmap (OrPattern.fromOrCondition (Pattern.patternSort second'))
+                    & fmap (OrPattern.fromOrCondition (Pattern.patternSort second'))
             firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
             secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
             termEquality <- Equals.makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
