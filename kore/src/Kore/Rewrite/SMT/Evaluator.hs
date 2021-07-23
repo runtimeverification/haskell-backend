@@ -54,9 +54,7 @@ import Kore.Internal.TermLike (
     ElementVariable,
     ElementVariableName,
     SomeVariableName,
-    TermLike,
     Variable (..),
-    mkSortVariable,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition (
@@ -256,10 +254,9 @@ translateTerm t (UninterpretedPredicate predicate) = do
         boundVarsMap = filterBoundVarsMap freeVars quantifiedVars
         boundPat =
             Predicate.makeExistsPredicateN (Map.keys boundVarsMap) predicate
-        conversion = Predicate.fromPredicate (mkSortVariable "_")
         stateSetter = field @"predicates"
     lookupUninterpreted boundPat quantifiedVars predicates
-        <|> declareUninterpreted t conversion stateSetter boundPat boundVarsMap
+        <|> declareUninterpreted t stateSetter boundPat boundVarsMap
 translateTerm t (UninterpretedTerm pat) = do
     TranslatorState{quantifiedVars, terms} <- State.get
     let freeVars = FreeVariables.freeVariableNames @_ @variable pat
@@ -267,12 +264,16 @@ translateTerm t (UninterpretedTerm pat) = do
         boundPat = TermLike.mkExistsN (Map.keys boundVarsMap) pat
         stateSetter = field @"terms"
     lookupUninterpreted boundPat quantifiedVars terms
-        <|> declareUninterpreted t id stateSetter boundPat boundVarsMap
+        <|> declareUninterpreted t stateSetter boundPat boundVarsMap
 
 declareUninterpreted ::
-    (MonadSMT m, MonadLog m, InternalVariable variable, Ord termOrPredicate) =>
+    ( MonadSMT m
+    , MonadLog m
+    , InternalVariable variable
+    , Ord termOrPredicate
+    , Pretty termOrPredicate
+    ) =>
     SExpr ->
-    (termOrPredicate -> TermLike variable) ->
     Lens.ASetter'
         (TranslatorState variable)
         (Map.Map termOrPredicate (SMTDependentAtom variable)) ->
@@ -281,13 +282,12 @@ declareUninterpreted ::
     Translator variable m SExpr
 declareUninterpreted
     sExpr
-    termLikeConversion
     stateSetter
     boundPat
     boundVarsMap =
         do
             n <- Counter.increment
-            logVariableAssignment n (termLikeConversion boundPat)
+            logVariableAssignment n boundPat
             let smtName = "<" <> Text.pack (show n) <> ">"
                 (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
                 cached = SMTDependentAtom{smtName, smtType = sExpr, boundVars}
