@@ -87,16 +87,16 @@ declareSMTLemmas m = do
             runTranslator $
                 translatePredicateWith SideCondition.top translateUninterpreted $
                     wrapPredicate $ sentenceAxiomPattern axiomDeclaration
-        SMT.assert (addQuantifiers terms lemma)
-        SMT.assert (addQuantifiers predicates lemma)
+        SMT.assert
+            (addQuantifiers (Map.elems terms <> Map.elems predicates) lemma)
 
-    addQuantifiers vars lemma | null vars = lemma
-    addQuantifiers vars lemma =
+    addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma
+    addQuantifiers smtDependentAtoms lemma =
         SMT.List
             [ SMT.Atom "forall"
             , SMT.List
                 [ SMT.List [SMT.Atom smtName, smtType]
-                | SMTDependentAtom{smtName, smtType} <- Map.elems vars
+                | SMTDependentAtom{smtName, smtType} <- smtDependentAtoms
                 ]
             , lemma
             ]
