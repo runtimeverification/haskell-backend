@@ -5,6 +5,7 @@ module Test.Kore.Exec (
     test_searchExceedingBreadthLimit,
     test_execGetExitCode,
     test_execDepthLimitExceeded,
+    test_matchDisjunction,
 ) where
 
 import Control.Exception as Exception
@@ -74,6 +75,7 @@ import Kore.Validate.DefinitionVerifier (
 import qualified Kore.Verified as Verified
 import Log (
     Entry (..),
+    runLoggerT,
  )
 import Prelude.Kore
 import System.Exit (
@@ -159,6 +161,36 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
                 , moduleAttributes = Attributes []
                 }
     inputPattern = applyToNoArgs mySort "a"
+
+test_matchDisjunction :: [TestTree]
+test_matchDisjunction =
+    [ testCase "match disjunction" $
+        do
+            let actual = matchDisjunction verifiedModule a [a]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkTop mySort) result
+    , testCase "match disjunction" $
+        do
+            let actual = matchDisjunction verifiedModule a [b]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    ]
+  where
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+    a = fromTermLike $ applyToNoArgs mySort "a"
+    b = fromTermLike $ applyToNoArgs mySort "b"
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
@@ -518,7 +550,8 @@ axiomWithAttribute attribute axiom =
   where
     currentAttributes = sentenceAxiomAttributes axiom
 
-applyAliasToNoArgs :: Sort -> Text -> TermLike VariableName
+applyAliasToNoArgs ::
+    InternalVariable variable => Sort -> Text -> TermLike variable
 applyAliasToNoArgs sort name =
     mkApplyAlias
         Alias
@@ -530,7 +563,7 @@ applyAliasToNoArgs sort name =
             }
         []
 
-applyToNoArgs :: Sort -> Text -> TermLike VariableName
+applyToNoArgs :: InternalVariable variable => Sort -> Text -> TermLike variable
 applyToNoArgs sort name =
     mkApplySymbol
         Symbol

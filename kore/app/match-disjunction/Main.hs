@@ -1,21 +1,16 @@
 module Main (main) where
 
-import Control.Monad.Trans.Maybe (
-    runMaybeT,
- )
 import GlobalMain
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
 import Kore.BugReport
+import Kore.Exec (matchDisjunction)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern (Pattern)
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     pattern Or_,
  )
@@ -26,12 +21,7 @@ import Kore.Log (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
-    getRewritingTerm,
     mkRewritingPattern,
- )
-import qualified Kore.Rewrite.Search as Search
-import Kore.Simplify.Data (
-    evalSimplifier,
  )
 import Kore.Syntax.Module (
     ModuleName (..),
@@ -54,7 +44,6 @@ import Options.Applicative (
  )
 import Prelude.Kore
 import Pretty
-import qualified SMT
 import System.Clock (
     Clock (..),
     TimeSpec,
@@ -160,28 +149,18 @@ koreMatchDisjunction options = do
     matchPattern <- mainParseMatchPattern mainModule matchFileName
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
-    let sort = Pattern.patternSort matchPattern
     final <-
         clockSomethingIO "Executing" $
-            SMT.runNoSMT $
-                evalSimplifier mainModule $ do
-                    results <-
-                        traverse (runMaybeT . match matchPattern) disjunctionPattern
-                            <&> catMaybes
-                            <&> concatMap toList
-                    results
-                        <&> Condition.toPredicate
-                        & Predicate.makeMultipleOrPredicate
-                        & Predicate.fromPredicate sort
-                        & getRewritingTerm
-                        & return
-    lift $ renderResult options (unparse final)
+            matchDisjunction mainModule matchPattern disjunctionPattern
+    lift $
+        renderResult
+            options
+            (unparse final)
     return ExitSuccess
   where
     mainParseMatchPattern mainModule fileName =
         mainParseSearchPattern mainModule fileName
             <&> mkRewritingPattern
-    match = Search.matchWith SideCondition.top
     KoreMatchDisjunctionOptions
         { definitionFileName
         , disjunctionFileName
