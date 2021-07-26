@@ -83,10 +83,6 @@ import Kore.Log.WarnIfLowProductivity (
 import qualified Kore.ModelChecker.Bounded as Bounded (
     CheckResult (..),
  )
-import Kore.Parser (
-    ParsedPattern,
-    parseKorePattern,
- )
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
