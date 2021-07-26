@@ -590,6 +590,7 @@ executable kore-match-disjunction
   import: global-main
   main-is: Main.hs
   hs-source-dirs: app/match-disjunction
+  build-depends: transformers >= 0.5
 
 test-suite kore-test
   import: haskell
