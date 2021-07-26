@@ -57,6 +57,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import qualified Kore.Simplify.Ceil as Ceil
 import qualified Kore.Simplify.Equals as Equals
+import qualified Kore.Simplify.In as In
 import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify
 import Kore.Substitute
@@ -70,6 +71,7 @@ import Kore.Syntax (
     Forall (Forall),
     Iff (..),
     Implies (..),
+    In (..),
     Not (..),
     Or (..),
     SomeVariableName,
@@ -182,7 +184,8 @@ simplify sideCondition original =
                         >>= simplifyForall sideCondition
                 EqualsF equalsF ->
                     simplifyEquals sideCondition =<< traverse simplifyTerm equalsF
-                _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
+                InF inF ->
+                    simplifyIn sideCondition =<< traverse simplifyTerm inF
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition
@@ -536,3 +539,11 @@ simplifyEquals ::
 simplifyEquals sideCondition =
     Equals.simplify sideCondition
     >=> return . MultiOr.map (from @(Condition _))
+
+simplifyIn ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    In sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyIn sideCondition =
+    In.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
