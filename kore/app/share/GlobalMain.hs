@@ -53,11 +53,6 @@ import Data.Version (
 import GHC.Stack (
     emptyCallStack,
  )
-import Kore.ASTVerifier.DefinitionVerifier (
-    sortModuleClaims,
-    verifyAndIndexDefinitionWithBase,
- )
-import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.Attribute.Definition (
     KFileLocations (..),
     parseKFileAttributes,
@@ -95,7 +90,7 @@ import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils (
     parseOnly,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Syntax hiding (Pattern)
@@ -105,6 +100,11 @@ import Kore.Syntax.Definition (
     definitionAttributes,
     getModuleNameForError,
  )
+import Kore.Validate.DefinitionVerifier (
+    sortModuleClaims,
+    verifyAndIndexDefinitionWithBase,
+ )
+import Kore.Validate.PatternVerifier as PatternVerifier
 import qualified Kore.Verified as Verified
 import Kore.VersionInfo
 import Options.Applicative (

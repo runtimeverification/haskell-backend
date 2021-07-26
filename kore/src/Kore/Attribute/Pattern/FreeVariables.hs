@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -17,6 +17,8 @@ module Kore.Attribute.Pattern.FreeVariables (
     traverseFreeVariables,
     getFreeElementVariables,
     HasFreeVariables (..),
+    occursIn,
+    freeVariableNames,
 ) where
 
 import Data.Functor.Const
@@ -38,7 +40,9 @@ import Prelude.Kore hiding (
     toList,
  )
 
-newtype FreeVariables variable = FreeVariables {getFreeVariables :: Map (SomeVariableName variable) Sort}
+newtype FreeVariables variable = FreeVariables
+    { getFreeVariables :: Map (SomeVariableName variable) Sort
+    }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -50,7 +54,11 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt = hashWithSalt salt . toList
     {-# INLINE hashWithSalt #-}
 
-instance Synthetic (FreeVariables variable) (Const (SomeVariable variable)) where
+instance
+    Synthetic
+        (FreeVariables variable)
+        (Const (SomeVariable variable))
+    where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
 
@@ -160,3 +168,33 @@ class HasFreeVariables pat variable where
 
 instance HasFreeVariables () variable where
     freeVariables = const emptyFreeVariables
+
+instance
+    (HasFreeVariables child variable, Ord variable) =>
+    HasFreeVariables [child] variable
+    where
+    freeVariables = foldMap freeVariables
+    {-# INLINE freeVariables #-}
+
+instance
+    (HasFreeVariables a variable, HasFreeVariables b variable, Ord variable) =>
+    HasFreeVariables (a, b) variable
+    where
+    freeVariables = \(a, b) -> freeVariables a <> freeVariables b
+    {-# INLINE freeVariables #-}
+
+-- | Does the named variable occur free in the pattern?
+occursIn ::
+    Ord variable =>
+    HasFreeVariables thing variable =>
+    SomeVariableName variable ->
+    thing ->
+    Bool
+occursIn variableName thing =
+    isFreeVariable variableName (freeVariables thing)
+
+freeVariableNames ::
+    HasFreeVariables thing variable =>
+    thing ->
+    Set (SomeVariableName variable)
+freeVariableNames = toNames . freeVariables

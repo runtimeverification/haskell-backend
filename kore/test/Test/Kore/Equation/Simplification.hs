@@ -9,15 +9,15 @@ import Kore.Internal.MultiAnd (
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Prelude.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification_,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify (
     runSimplifier,
  )
 import Test.Tasty

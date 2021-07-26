@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 
 Representation of program configurations as conditional patterns.
 -}
@@ -32,7 +32,6 @@ module Kore.Internal.Pattern (
     simplifiedAttribute,
     assign,
     requireDefined,
-    substitute,
     fromMultiAnd,
 
     -- * Re-exports
@@ -45,9 +44,6 @@ module Kore.Internal.Pattern (
     Condition,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
@@ -66,7 +62,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -153,7 +148,7 @@ hasSimplifiedChildren sideCondition patt =
         && Substitution.isSimplified sideCondition substitution
   where
     Conditional{term, predicate, substitution} = patt
-    clauses = MultiAnd.fromPredicate predicate
+    clauses = Predicate.toMultiAnd predicate
 
 {- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
 used to simplify the children.
@@ -168,7 +163,7 @@ hasSimplifiedChildrenIgnoreConditions patt =
         && Substitution.isSimplifiedSomeCondition substitution
   where
     Conditional{term, predicate, substitution} = patt
-    clauses = MultiAnd.fromPredicate predicate
+    clauses = Predicate.toMultiAnd predicate
 
 forgetSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
@@ -390,22 +385,6 @@ requireDefined Conditional{term, predicate, substitution} =
         , predicate =
             Predicate.makeAndPredicate predicate $
                 Predicate.makeCeilPredicate term
-        }
-
-{- | Apply a normalized 'Substitution' to a 'Pattern'.
-
-The 'Substitution' of the result will not be normalized.
--}
-substitute ::
-    InternalVariable variable =>
-    Map (SomeVariableName variable) (TermLike variable) ->
-    Pattern variable ->
-    Pattern variable
-substitute subst Conditional{term, predicate, substitution} =
-    Conditional
-        { term = TermLike.substitute subst term
-        , predicate = Predicate.substitute subst predicate
-        , substitution = Substitution.substitute subst substitution
         }
 
 fromMultiAnd ::

@@ -10,7 +10,6 @@ import Data.Map.Strict (
  )
 import qualified Data.Map.Strict as Map
 import qualified Data.Ord
-import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Function (
     Function (..),
  )
@@ -32,10 +31,11 @@ import Kore.Syntax.Definition
 import Kore.Syntax.PatternF (
     groundHead,
  )
+import Kore.Validate.DefinitionVerifier
 import Prelude.Kore
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Builtin.External
+import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -83,6 +83,13 @@ import Kore.Log.WarnIfLowProductivity (
 import qualified Kore.ModelChecker.Bounded as Bounded (
     CheckResult (..),
  )
+import Kore.Parser (
+    ParsedPattern,
+    parseKorePattern,
+ )
+import Kore.Parser.ParserUtils (
+    readPositiveIntegral,
+ )
 import Kore.Reachability (
     ProveClaimsResult (..),
     SomeClaim,
@@ -90,17 +97,17 @@ import Kore.Reachability (
     getConfiguration,
  )
 import qualified Kore.Reachability.Claim as Claim
-import Kore.Rewriting.RewritingVariable
-import Kore.Step
-import Kore.Step.RulePattern (
+import Kore.Rewrite
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.RulePattern (
     mapRuleVariables,
  )
-import Kore.Step.SMT.Lemma
-import Kore.Step.Search (
+import Kore.Rewrite.SMT.Lemma
+import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Strategy (
+import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Syntax.Definition (
@@ -288,6 +295,7 @@ data KoreExecOptions = KoreExecOptions
     , koreMergeOptions :: !(Maybe KoreMergeOptions)
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
+    , maxCounterexamples :: Natural
     }
     deriving stock (GHC.Generic)
 
@@ -332,7 +340,16 @@ parseKoreExecOptions startTime =
             <*> optional parseKoreMergeOptions
             <*> optional parseRtsStatistics
             <*> parseBugReportOption
-
+            <*> parseMaxCounterexamples
+    parseMaxCounterexamples = counterexamples <|> pure 1
+      where
+        counterexamples =
+            option
+                (readPositiveIntegral id "max-counterexamples")
+                ( metavar "MAX_COUNTEREXAMPLES"
+                    <> long "max-counterexamples"
+                    <> help "Specify the maximum number of counterexamples."
+                )
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
@@ -444,6 +461,7 @@ koreExecSh
                             koreMergeOptions
                             rtsStatistics
                             _
+                            maxCounterexamples
                         ) =
         unlines $
             [ "#!/bin/sh"
@@ -466,6 +484,7 @@ koreExecSh
                     , pure $ unwords ["--strategy", unparseExecutionMode strategy]
                     , rtsStatistics
                         $> unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
+                    , pure $ unwords ["--max-counterexamples", show maxCounterexamples]
                     ]
                 , unparseKoreSolverOptions koreSolverOptions
                 , unparseKoreLogOptions koreLogOptions
@@ -685,6 +704,7 @@ koreProve execOptions proveOptions = do
     specModule <- loadModule specMainModule definition
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
+    let KoreExecOptions{maxCounterexamples} = execOptions
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
@@ -692,6 +712,7 @@ koreProve execOptions proveOptions = do
             graphSearch
             breadthLimit
             depthLimit
+            maxCounterexamples
             mainModule
             specModule
             maybeAlreadyProvenModule

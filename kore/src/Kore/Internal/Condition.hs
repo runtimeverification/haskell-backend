@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.Condition (
     Condition,
@@ -40,6 +40,7 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified,
  )
 import Kore.Internal.Conditional (
+    Condition,
     Conditional (..),
  )
 import qualified Kore.Internal.Conditional as Conditional
@@ -60,9 +61,6 @@ import qualified Kore.Internal.TermLike as TermLike (
 import Kore.Internal.Variable
 import Kore.Syntax
 import Prelude.Kore
-
--- | A predicate and substitution without an accompanying term.
-type Condition variable = Conditional variable ()
 
 isSimplified :: SideCondition.Representation -> Condition variable -> Bool
 isSimplified sideCondition Conditional{term = (), predicate, substitution} =

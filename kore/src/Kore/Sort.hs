@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
@@ -231,7 +231,7 @@ the user tries to define a sort named _PREDICATE{}. (At least, this is not
 actually a valid identifier in Kore.)
 
 Until this is fixed, the identifier _PREDICATE is reserved in
-Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
+Kore.Validate.DefinitionVerifier.indexImplicitModule.
 
 -}
 predicateSort = SortActualSort predicateSortActual

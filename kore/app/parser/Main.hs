@@ -8,10 +8,6 @@ import Control.Monad.Catch (
 import qualified Data.Map.Strict as Map
 import GlobalMain
 import Kore.AST.ApplicativeKore
-import Kore.ASTVerifier.DefinitionVerifier (
-    verifyAndIndexDefinition,
- )
-import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -35,6 +31,10 @@ import Kore.Parser (
  )
 import Kore.Syntax.Definition
 import Kore.Unparser as Unparser
+import Kore.Validate.DefinitionVerifier (
+    verifyAndIndexDefinition,
+ )
+import qualified Kore.Validate.PatternVerifier as PatternVerifier
 import Prelude.Kore
 import Pretty (
     putDoc,

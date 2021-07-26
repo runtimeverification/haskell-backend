@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Simplification (
     simplifyEquation,
@@ -28,13 +28,14 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Substitute
 import Kore.TopBottom
 import qualified Logic
 import Prelude.Kore
@@ -76,11 +77,11 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         let Conditional{substitution, predicate} = simplifiedCond
         lift $ Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
-            left' = TermLike.substitute subst left
-            requires' = Predicate.substitute subst requires
-            antiLeft' = Predicate.substitute subst <$> antiLeft
-            right' = TermLike.substitute subst right
-            ensures' = Predicate.substitute subst ensures
+            left' = substitute subst left
+            requires' = substitute subst requires
+            antiLeft' = substitute subst <$> antiLeft
+            right' = substitute subst right
+            ensures' = substitute subst ensures
         return
             Equation
                 { left = TermLike.forgetSimplified left'

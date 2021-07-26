@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Attribute.Priority (
     Priority (..),
@@ -21,8 +21,8 @@ import Prelude.Kore
 
     It is unsafe to use this directly when handling the priorities of
     rules with a 'RulePattern' or a 'EqualityRule' representation.
-    'Kore.Step.RulePattern.getPriorityOfRule'
-    or 'Kore.Step.EqualityPattern.getPriorityOfRule' should be used instead.
+    'Kore.Rewrite.RulePattern.getPriorityOfRule'
+    or 'Kore.Rewrite.EqualityPattern.getPriorityOfRule' should be used instead.
 -}
 newtype Priority = Priority {getPriority :: Maybe Integer}
     deriving stock (Eq, Ord, Show)

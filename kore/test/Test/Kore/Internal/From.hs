@@ -22,7 +22,7 @@ import Kore.Syntax.Not
 import Kore.Syntax.Or
 import Kore.Syntax.Variable
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

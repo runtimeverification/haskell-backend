@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Unification.UnifierT (
     UnifierT (..),
@@ -22,9 +22,9 @@ import Control.Monad.Trans.Reader (
 import Data.Kind (
     Type,
  )
-import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
-import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.Condition as ConditionSimplifier
+import Kore.Simplify.NotSimplifier
+import Kore.Simplify.Simplify (
     ConditionSimplifier (..),
     MonadSimplify (..),
  )

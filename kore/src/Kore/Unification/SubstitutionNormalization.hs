@@ -2,8 +2,8 @@
 Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
               that they can be safely used on the unified term.
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -39,6 +39,7 @@ import Kore.Internal.Substitution (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Substitute
 import Kore.TopBottom
 import Prelude.Kore
 
@@ -187,7 +188,7 @@ backSubstitute sorted =
         State.modify' $ Map.insert (variableName variable) termLike
     applySubstitution termLike = do
         substitution <- State.get
-        return $ TermLike.substitute substitution termLike
+        return $ substitute substitution termLike
 
 isTrivialSubstitution ::
     Eq variable =>

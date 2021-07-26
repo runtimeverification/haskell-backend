@@ -79,18 +79,28 @@ generate-evm() {
 generate-wasm() {
     cd $KORE/wasm-semantics
 
-    export KPROVE_OPTS="--dry-run --save-temps"
-
     for spec in \
         simple-arithmetic \
         locals \
-        loops \
-        memory \
-        wrc20
+        loops
     do
         kollect "test-$spec" \
-            make tests/proofs/"$spec"-spec.k.prove -s -e
+            ./kwasm prove --backend haskell \
+                tests/proofs/"$spec"-spec.k \
+                KWASM-LEMMAS --dry-run --save-temps
     done
+
+    kollect "test-memory" \
+        ./kwasm prove --backend haskell \
+            tests/proofs/memory-spec.k \
+            KWASM-LEMMAS \
+            --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive \
+            --dry-run --save-temps
+
+    kollect "test-wrc20" \
+        ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
+        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend \
+        --dry-run --save-temps
 
     $KORE/scripts/trim-source-paths.sh *.kore
 }

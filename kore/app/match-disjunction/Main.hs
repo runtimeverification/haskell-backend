@@ -24,13 +24,13 @@ import Kore.Log (
     parseKoreLogOptions,
     runKoreLog,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingTerm,
     mkRewritingPattern,
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.Search as Search
+import Kore.Simplify.Data (
     evalSimplifier,
  )
 import Kore.Syntax.Module (
