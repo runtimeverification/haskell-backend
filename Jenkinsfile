@@ -105,7 +105,7 @@ pipeline {
         stage('Update K Submodules') {
           when { branch 'master' }
           steps {
-            build job: 'rv-devops/master', propagate: false, wait: false                                \
+            build job: 'DevOps/master', propagate: false, wait: false                                   \
                 , parameters: [ booleanParam ( name: 'UPDATE_DEPS'         , value: true              ) \
                               , string       ( name: 'UPDATE_DEPS_REPO'    , value: 'kframework/kore' ) \
                               , string       ( name: 'UPDATE_DEPS_VERSION' , value: "${env.LONG_REV}" ) \
