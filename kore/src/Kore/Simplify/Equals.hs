@@ -159,7 +159,7 @@ Equals(a and b, b and a) will not be evaluated to Top.
 simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Equals Sort (OrPattern RewritingVariableName) ->
+    Equals sort (OrPattern RewritingVariableName) ->
     simplifier (OrCondition RewritingVariableName)
 simplify sideCondition Equals{equalsFirst = first, equalsSecond = second} =
     simplifyEvaluated sideCondition first' second'
