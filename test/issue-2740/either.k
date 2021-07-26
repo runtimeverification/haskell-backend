@@ -1,10 +1,6 @@
 module EITHER
   imports INT
 
-  syntax KItem ::= run ( Either, Int ) | done ( Either )
-  rule run(Left(),  _I) => done(Left())
-  rule run(Right(), _I) => done(Right())
-
   syntax Either ::= Left() | Right()
   syntax Bool ::= P( Either , Int ) [function]
 
