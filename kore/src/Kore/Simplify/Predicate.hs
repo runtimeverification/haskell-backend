@@ -500,7 +500,7 @@ simplifyEquals ::
     simplifier NormalForm
 simplifyEquals sideCondition =
     Equals.simplify sideCondition
-    >=> return . MultiOr.map (from @(Condition _))
+        >=> return . MultiOr.map (from @(Condition _))
 
 simplifyIn ::
     MonadSimplify simplifier =>
