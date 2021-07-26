@@ -127,7 +127,6 @@ instance MonadSimplify TestSimplifier where
 
     -- Throw an error if any term would be simplified.
     simplifyTermLike = undefined
-    simplifyTermLikeOnly = undefined
 
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =
@@ -172,7 +171,7 @@ test_simplifyOnly =
     test testName input maybeExpect =
         testCase testName $ do
             let expect = fromMaybe (OrPattern.fromTermLike input) maybeExpect
-            actual <- simplifyOnly input
+            actual <- simplify input
             let message =
                     (show . Pretty.vsep)
                         [ "Expected:"
@@ -189,9 +188,9 @@ test_simplifyOnly =
         SideCondition.mkRepresentation
             (SideCondition.top @RewritingVariableName)
 
-simplifyOnly ::
+simplify ::
     TermLike RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
-simplifyOnly =
+simplify =
     runSimplifier Mock.env
-        . TermLike.simplifyOnly SideCondition.top
+        . TermLike.simplify SideCondition.top

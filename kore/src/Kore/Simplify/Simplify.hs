@@ -157,21 +157,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyTermLike sideCondition termLike =
         lift (simplifyTermLike sideCondition termLike)
 
-    -- | Simplify a 'TermLike' to a disjunction of 'Pattern'.
-    --
-    --     Unlike 'simplifyTermLike', this method does not simplify the condition.
-    simplifyTermLikeOnly ::
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    default simplifyTermLikeOnly ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyTermLikeOnly sideCondition termLike =
-        lift (simplifyTermLikeOnly sideCondition termLike)
-
     simplifyCondition ::
         SideCondition RewritingVariableName ->
         Conditional RewritingVariableName term ->

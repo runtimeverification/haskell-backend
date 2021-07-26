@@ -141,11 +141,6 @@ instance
         traceProfSimplify termLike (TermLike.simplify sideCondition termLike)
     {-# INLINE simplifyTermLike #-}
 
-    simplifyTermLikeOnly sideCondition termLike =
-        (traceProfSimplify termLike)
-            (TermLike.simplifyOnly sideCondition termLike)
-    {-# INLINE simplifyTermLikeOnly #-}
-
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
         simplify topCondition conditional
