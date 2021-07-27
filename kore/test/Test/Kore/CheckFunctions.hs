@@ -18,9 +18,6 @@ import Kore.Attribute.Attributes (
 import Kore.Attribute.Constructor (
     constructorAttribute,
  )
-import Kore.Attribute.Function (
-    functionAttribute,
- )
 import Kore.Attribute.Functional (
     functionalAttribute,
  )
@@ -35,6 +32,10 @@ import qualified Kore.Builtin as Builtin (
  )
 import Kore.CheckFunctions (
     checkFunctions,
+ )
+import Kore.Equation.Equation (
+    mkEquation,
+    toTermLikeOld,
  )
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule (
@@ -54,6 +55,7 @@ import Kore.Internal.TermLike (
     mkEquals,
     mkExists,
     mkSymbol_,
+    mkTop,
  )
 import Kore.Sort (
     Sort (..),
@@ -137,7 +139,7 @@ test_checkFunctions =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence $ constructorDecl "a"
-                                , disfunctionalAxiom "a"
+                                , disfunctionalAxiom
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -147,12 +149,6 @@ test_checkFunctions =
                     & runTestLog runNoSMT
             assertEqual "" expected $ fst actual
         ]
-
-{-
-badAxiom :: Text -> Verified.Sentence
-badAxiom name = (functionalAxiom name)
-  { sentenceAxiomAttributes = Attributes [] }
--}
 
 -- TODO: consider sharing code with verifiedMyModule from Test.Kore.Exec
 verifiedMyModule ::
@@ -227,30 +223,29 @@ functionalAxiom name =
                 )
             )
         )
-            { sentenceAxiomAttributes = Attributes [functionalAttribute, functionAttribute]
+            { sentenceAxiomAttributes = Attributes [functionalAttribute]
             }
   where
     v = mkElementVariable (testId "V") mySort
     r = SortVariable (testId "R")
 
-disfunctionalAxiom :: Text -> Verified.Sentence
-disfunctionalAxiom name =
+disfunctionalAxiom :: Verified.Sentence
+disfunctionalAxiom =
     SentenceAxiomSentence
         ( mkAxiom
             [r]
-            ( mkExists
-                v
-                ( mkEquals
-                    (SortVariableSort r)
-                    (mkElemVar v)
-                    (applyToNoArgs mySort name)
+            ( toTermLikeOld
+                mySort
+                ( mkEquation
+                    (mkTop mySort)
+                    (mkTop mySort)
                 )
             )
         )
             { sentenceAxiomAttributes = Attributes []
             }
   where
-    v = mkElementVariable (testId "V") mySort
+    --    v = mkElementVariable (testId "V") mySort
     r = SortVariable (testId "R")
 
 applyToNoArgs :: Sort -> Text -> TermLike VariableName
