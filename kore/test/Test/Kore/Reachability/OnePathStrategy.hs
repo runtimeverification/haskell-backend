@@ -808,9 +808,7 @@ test_onePathStrategy =
                         )
                     )
             left' =
-                Pattern.withCondition
-                    Mock.a
-                    (Condition.assign (inject Mock.x) Mock.a){substitution = mempty}
+                Pattern.fromTermLike Mock.a
             right =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
