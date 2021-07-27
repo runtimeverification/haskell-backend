@@ -5,7 +5,7 @@ License     : BSD-3-Clause
 module Kore.Simplify.Simplify (
     InternalVariable,
     MonadSimplify (..),
-    simplifyConditionalTerm,
+    simplifyPatternScatter,
     TermSimplifier,
 
     -- * Condition simplifiers
@@ -144,18 +144,17 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askMetadataTools = lift askMetadataTools
     {-# INLINE askMetadataTools #-}
 
-    -- | Simplify a 'TermLike' to a disjunction of function-like 'Pattern's.
-    simplifyTermLike ::
+    simplifyPattern ::
         SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
+        Pattern RewritingVariableName ->
         m (OrPattern RewritingVariableName)
-    default simplifyTermLike ::
+    default simplifyPattern ::
         (MonadTrans t, MonadSimplify n, m ~ t n) =>
         SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
+        Pattern RewritingVariableName ->
         m (OrPattern RewritingVariableName)
-    simplifyTermLike sideCondition termLike =
-        lift (simplifyTermLike sideCondition termLike)
+    simplifyPattern sideCondition termLike =
+        lift (simplifyPattern sideCondition termLike)
 
     simplifyCondition ::
         SideCondition RewritingVariableName ->
@@ -250,15 +249,14 @@ instance MonadSimplify m => MonadSimplify (RWST r () s m)
 
 -- TODO (thomas.tuegel): Factor out these types.
 
--- | Simplify a pattern subject to conditions.
-simplifyConditionalTerm ::
+simplifyPatternScatter ::
     forall simplifier.
     (MonadLogic simplifier, MonadSimplify simplifier) =>
     SideCondition RewritingVariableName ->
-    TermLike RewritingVariableName ->
+    Pattern RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-simplifyConditionalTerm sideCondition termLike =
-    simplifyTermLike sideCondition termLike >>= Logic.scatter
+simplifyPatternScatter sideCondition patt =
+    simplifyPattern sideCondition patt >>= Logic.scatter
 
 -- * Predicate simplifiers
 

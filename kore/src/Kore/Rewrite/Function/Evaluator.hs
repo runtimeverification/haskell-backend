@@ -332,12 +332,7 @@ reevaluateFunctions ::
     -- | Function evaluation result.
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-reevaluateFunctions sideCondition rewriting = do
-    let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
-    OrPattern.observeAllT $ do
-        simplifiedTerm <- simplifyConditionalTerm sideCondition rewritingTerm
-        simplifyCondition sideCondition $
-            Pattern.andCondition simplifiedTerm rewritingCondition
+reevaluateFunctions = simplifyPattern
 
 -- | Ands the given condition-substitution to the given function evaluation.
 mergeWithConditionAndSubstitution ::

@@ -70,9 +70,6 @@ import Kore.Rewrite.RewritingVariable (
 import qualified Kore.Simplify.AndPredicates as And (
     simplifyEvaluatedMultiPredicate,
  )
-import qualified Kore.Simplify.Pattern as Pattern (
-    makeEvaluate,
- )
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
@@ -308,7 +305,8 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
                             Conditional.predicate normalized
                     }
         orPattern <-
-            lift $ Pattern.makeEvaluate sideCondition substituted
+            simplifyPattern sideCondition substituted
+            & lift
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)

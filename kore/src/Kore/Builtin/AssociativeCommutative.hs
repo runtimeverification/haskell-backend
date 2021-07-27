@@ -985,7 +985,8 @@ unifyEqualsNormalizedAc
             TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         simplify term =
-            lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
+            simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
+            & lowerLogicT
 
         simplifyPair ::
             ( TermLike RewritingVariableName
@@ -1028,11 +1029,13 @@ unifyEqualsNormalizedAc
                     `andCondition` simplifiedValueCondition
                 )
           where
+            -- TODO: can this be rewritten?
             simplifyTermLike' ::
                 TermLike RewritingVariableName ->
                 unifier (Pattern RewritingVariableName)
             simplifyTermLike' term =
-                lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
+                simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
+                & lowerLogicT
 
 buildResultFromUnifiers ::
     forall normalized unifier variable.

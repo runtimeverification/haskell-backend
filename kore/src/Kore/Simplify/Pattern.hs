@@ -13,6 +13,11 @@ import Control.Monad (
     (>=>),
  )
 import qualified Kore.Internal.Conditional as Conditional
+import Control.Monad.Catch (
+    MonadThrow,
+ )
+import qualified Logic
+import Logic (LogicT)
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -39,14 +44,16 @@ import Kore.Internal.Substitution (
  )
 import Kore.Internal.TermLike (
     pattern Exists_,
+    TermLike,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Simplify.TermLike as TermLike
 import Kore.Simplify.Simplify (
     MonadSimplify,
     simplifyCondition,
-    simplifyConditionalTerm,
+    simplifyPatternScatter,
  )
 import Kore.Substitute
 import Prelude.Kore
@@ -55,6 +62,7 @@ import Prelude.Kore
 simplifyTopConfiguration ::
     forall simplifier.
     MonadSimplify simplifier =>
+    MonadThrow (LogicT simplifier) =>
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration =
@@ -65,6 +73,7 @@ and removes the exists quantifiers at the top.
 -}
 simplifyTopConfigurationDefined ::
     MonadSimplify simplifier =>
+    MonadThrow (LogicT simplifier) =>
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 simplifyTopConfigurationDefined configuration =
@@ -110,6 +119,7 @@ This should only be used when it's certain that the
 the 'Pattern'.
 -}
 makeEvaluate ::
+    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
@@ -124,7 +134,9 @@ makeEvaluate sideCondition pattern' =
                 SideCondition.addConditionWithReplacements
                     simplifiedCondition
                     sideCondition
-        simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
+        simplifiedTerm <-
+            TermLike.simplify termSideCondition term'
+            >>= Logic.scatter
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition
         simplifyCondition sideCondition simplifiedPattern

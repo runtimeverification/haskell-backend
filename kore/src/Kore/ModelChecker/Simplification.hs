@@ -17,6 +17,10 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Logic (LogicT)
+import Control.Monad.Catch (
+    MonadThrow,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     TermLike,
@@ -48,6 +52,7 @@ import qualified Pretty
 
 checkImplicationIsTop ::
     MonadSimplify m =>
+    MonadThrow (LogicT m) =>
     Pattern RewritingVariableName ->
     TermLike RewritingVariableName ->
     m Bool
