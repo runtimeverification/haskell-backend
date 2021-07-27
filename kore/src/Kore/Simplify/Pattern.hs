@@ -12,12 +12,10 @@ module Kore.Simplify.Pattern (
 import Control.Monad (
     (>=>),
  )
-import qualified Kore.Internal.Conditional as Conditional
 import Control.Monad.Catch (
     MonadThrow,
  )
-import qualified Logic
-import Logic (LogicT)
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -43,19 +41,21 @@ import Kore.Internal.Substitution (
     toMap,
  )
 import Kore.Internal.TermLike (
-    pattern Exists_,
     TermLike,
+    pattern Exists_,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.TermLike as TermLike
 import Kore.Simplify.Simplify (
     MonadSimplify,
     simplifyCondition,
     simplifyPatternScatter,
  )
+import qualified Kore.Simplify.TermLike as TermLike
 import Kore.Substitute
+import Logic (LogicT)
+import qualified Logic
 import Prelude.Kore
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
@@ -136,7 +136,7 @@ makeEvaluate sideCondition pattern' =
                     sideCondition
         simplifiedTerm <-
             TermLike.simplify termSideCondition term'
-            >>= Logic.scatter
+                >>= Logic.scatter
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition
         simplifyCondition sideCondition simplifiedPattern

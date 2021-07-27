@@ -257,7 +257,6 @@ simplifyPatternScatter ::
     simplifier (Pattern RewritingVariableName)
 simplifyPatternScatter sideCondition patt =
     simplifyPattern sideCondition patt >>= Logic.scatter
-
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies

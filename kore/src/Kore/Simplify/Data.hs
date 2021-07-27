@@ -38,9 +38,6 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Equation as Equation
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Simplify.Pattern as Pattern
-import Kore.Internal.Pattern (Pattern)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -51,6 +48,8 @@ import Kore.IndexedModule.MetadataTools (
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.Pattern (Pattern)
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     TermLike,
  )
@@ -69,6 +68,7 @@ import Kore.Rewrite.RewritingVariable (
 import qualified Kore.Simplify.Condition as Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike

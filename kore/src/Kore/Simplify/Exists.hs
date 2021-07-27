@@ -306,7 +306,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
                     }
         orPattern <-
             simplifyPattern sideCondition substituted
-            & lift
+                & lift
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)

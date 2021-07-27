@@ -986,7 +986,7 @@ unifyEqualsNormalizedAc
             unifier (Pattern RewritingVariableName)
         simplify term =
             simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
-            & lowerLogicT
+                & lowerLogicT
 
         simplifyPair ::
             ( TermLike RewritingVariableName
@@ -1035,7 +1035,7 @@ unifyEqualsNormalizedAc
                 unifier (Pattern RewritingVariableName)
             simplifyTermLike' term =
                 simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
-                & lowerLogicT
+                    & lowerLogicT
 
 buildResultFromUnifiers ::
     forall normalized unifier variable.
