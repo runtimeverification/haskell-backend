@@ -32,10 +32,10 @@ pipeline {
     stage('Update regression tests') {
       when { expression { return params.STAGE == 'UPDATE-TESTS' } }
       environment {
-        GITHUB_TOKEN = credentials('rv-jenkins')
+        GITHUB_TOKEN = credentials('rv-jenkins-access-token')
       }
       steps {
-        sshagent(['2b3d8d6b-0855-4b59-864a-6b3ddf9c9d1a']) {
+        sshagent(['rv-jenkins-github']) {
           sh '''
             git remote set-url origin git@github.com:kframework/kore
             ./scripts/update-tests.sh
@@ -105,7 +105,7 @@ pipeline {
         stage('Update K Submodules') {
           when { branch 'master' }
           steps {
-            build job: 'rv-devops/master', propagate: false, wait: false                                \
+            build job: 'DevOps/master', propagate: false, wait: false                                   \
                 , parameters: [ booleanParam ( name: 'UPDATE_DEPS'         , value: true              ) \
                               , string       ( name: 'UPDATE_DEPS_REPO'    , value: 'kframework/kore' ) \
                               , string       ( name: 'UPDATE_DEPS_VERSION' , value: "${env.LONG_REV}" ) \
