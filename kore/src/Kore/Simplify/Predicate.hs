@@ -16,7 +16,6 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     occursIn,
  )
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -29,11 +28,9 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Condition,
  )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
@@ -60,6 +57,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import qualified Kore.Simplify.Ceil as Ceil
 import qualified Kore.Simplify.Equals as Equals
+import qualified Kore.Simplify.In as In
 import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify
 import Kore.Substitute
@@ -73,6 +71,7 @@ import Kore.Syntax (
     Forall (Forall),
     Iff (..),
     Implies (..),
+    In (..),
     Not (..),
     Or (..),
     SomeVariableName,
@@ -82,42 +81,8 @@ import Kore.Syntax (
  )
 import qualified Kore.Syntax.Exists as Exists
 import qualified Kore.Syntax.Forall as Forall
-import qualified Kore.TopBottom as TopBottom
-import Kore.Unparser
 import Logic
 import Prelude.Kore
-import qualified Pretty
-
-{- | Simplify the 'Predicate' once.
-
-@simplifyPredicate@ does not attempt to apply the resulting substitution and
-re-simplify the result.
-
-See also: 'simplify'
--}
-simplifyPredicateTODO ::
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
-    SideCondition RewritingVariableName ->
-    Predicate RewritingVariableName ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicateTODO sideCondition predicate = do
-    patternOr <-
-        simplifyTermLike sideCondition (Predicate.fromPredicate_ predicate)
-            & lift
-    -- Despite using lift above, we do not need to
-    -- explicitly check for \bottom because patternOr is an OrPattern.
-    from @(Condition _) @(MultiAnd (Predicate _)) <$> scatter (OrPattern.map eraseTerm patternOr)
-  where
-    eraseTerm conditional
-        | TopBottom.isTop (Pattern.term conditional) =
-            Conditional.withoutTerm conditional
-        | otherwise =
-            (error . show . Pretty.vsep)
-                [ "Expecting a \\top term, but found:"
-                , unparse conditional
-                ]
 
 {- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
  The primary purpose of this form is to transmit to the external solver.
@@ -128,7 +93,6 @@ type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
 simplify ::
     forall simplifier.
-    HasCallStack =>
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
@@ -187,7 +151,8 @@ simplify sideCondition original =
                 EqualsF equalsF@(Equals _ _ term _) ->
                     simplifyEquals sideCondition (termLikeSort term)
                         =<< traverse simplifyTerm equalsF
-                _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
+                InF inF ->
+                    simplifyIn sideCondition =<< traverse simplifyTerm inF
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition
@@ -548,3 +513,11 @@ simplifyEquals sideCondition sort equals =
             { equalsOperandSort = sort
             , equalsResultSort = sort
             }
+
+simplifyIn ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    In sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyIn sideCondition =
+    In.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
