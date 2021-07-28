@@ -22,6 +22,7 @@ module Kore.Internal.Predicate (
     makeInPredicate,
     makeEqualsPredicate,
     makeExistsPredicate,
+    makeExistsPredicateN,
     makeForallPredicate,
     makeMultipleAndPredicate,
     makeMultipleOrPredicate,
@@ -82,6 +83,7 @@ import Data.List.Extra (
     nubOrd,
  )
 import qualified Data.Map.Strict as Map
+import Data.Semigroup
 import Data.Set (
     Set,
  )
@@ -872,6 +874,14 @@ makeExistsPredicate ::
     Predicate variable ->
     Predicate variable
 makeExistsPredicate v p = fst (makeExistsPredicate' v p)
+
+makeExistsPredicateN ::
+    InternalVariable variable =>
+    Foldable foldable =>
+    foldable (ElementVariable variable) ->
+    Predicate variable ->
+    Predicate variable
+makeExistsPredicateN = appEndo . foldMap (Endo . makeExistsPredicate)
 
 makeForallPredicate' ::
     InternalVariable variable =>
