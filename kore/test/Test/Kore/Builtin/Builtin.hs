@@ -80,6 +80,8 @@ import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
+import qualified Kore.Simplify.Pattern as Pattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
@@ -247,7 +249,7 @@ evaluate ::
     smt (OrPattern RewritingVariableName)
 evaluate termLike =
     runSimplifier testEnv $ do
-        TermLike.simplify SideCondition.top termLike
+        Pattern.simplify (Pattern.fromTermLike termLike)
 
 evaluateT ::
     MonadTrans t =>

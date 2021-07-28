@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Internal.OrPattern (
     OrPattern,
     coerceSort,
+    markSimplified,
     isSimplified,
     hasSimplifiedChildren,
     hasSimplifiedChildrenIgnoreConditions,
@@ -79,6 +80,12 @@ import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.
 type OrPattern variable = MultiOr (Pattern variable)
+
+markSimplified ::
+    InternalVariable variable =>
+    OrPattern variable ->
+    OrPattern variable
+markSimplified = MultiOr.map Pattern.markSimplified
 
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)

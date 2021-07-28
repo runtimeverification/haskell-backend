@@ -116,19 +116,30 @@ makeEvaluate ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-makeEvaluate sideCondition pattern' =
-    OrPattern.observeAllT $ do
-        withSimplifiedCondition <- simplifyCondition sideCondition pattern'
-        let (term, simplifiedCondition) =
-                Conditional.splitTerm withSimplifiedCondition
-            term' = substitute (toMap $ substitution simplifiedCondition) term
-            termSideCondition =
-                SideCondition.addConditionWithReplacements
-                    simplifiedCondition
-                    sideCondition
-        simplifiedTerm <-
-            simplifyTerm termSideCondition term'
-                >>= Logic.scatter
-        let simplifiedPattern =
-                Conditional.andCondition simplifiedTerm simplifiedCondition
-        simplifyCondition sideCondition simplifiedPattern
+makeEvaluate sideCondition =
+    loop . OrPattern.fromPattern
+  where
+    loop input = do
+        output <-
+            OrPattern.traverse worker input
+            & fmap OrPattern.flatten
+        if input == output
+            then pure output
+            else loop output
+
+    worker pattern' =
+        OrPattern.observeAllT $ do
+            withSimplifiedCondition <- simplifyCondition sideCondition pattern'
+            let (term, simplifiedCondition) =
+                    Conditional.splitTerm withSimplifiedCondition
+                term' = substitute (toMap $ substitution simplifiedCondition) term
+                termSideCondition =
+                    SideCondition.addConditionWithReplacements
+                        simplifiedCondition
+                        sideCondition
+            simplifiedTerm <-
+                simplifyTerm termSideCondition term'
+                    >>= Logic.scatter
+            let simplifiedPattern =
+                    Conditional.andCondition simplifiedTerm simplifiedCondition
+            simplifyCondition sideCondition simplifiedPattern
