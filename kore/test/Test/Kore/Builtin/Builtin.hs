@@ -26,6 +26,7 @@ import Control.Monad.Catch (
 import Data.Map.Strict (
     Map,
  )
+import Control.Monad ((>=>))
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -238,7 +239,7 @@ simplify =
         . runNoSMT
         . runSimplifier testEnv
         . Logic.observeAllT
-        . simplifyConditionalTerm SideCondition.top
+        . (simplifyTerm SideCondition.top >=> Logic.scatter)
 
 evaluate ::
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>

@@ -6,9 +6,6 @@ module Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
 ) where
 
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Kore.Attribute.Pattern.FreeVariables (
@@ -46,13 +43,11 @@ import Kore.TopBottom (
  )
 import Kore.Unparser
 import Kore.Variables.Fresh
-import Logic (LogicT)
 import Prelude.Kore
 import qualified Pretty
 
 checkImplicationIsTop ::
     MonadSimplify m =>
-    MonadThrow (LogicT m) =>
     Pattern RewritingVariableName ->
     TermLike RewritingVariableName ->
     m Bool

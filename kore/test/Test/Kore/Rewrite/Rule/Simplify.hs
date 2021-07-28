@@ -478,7 +478,7 @@ instance MFunctor TestSimplifierT where
     hoist f = TestSimplifierT . hoist f . runTestSimplifierT
 
 instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
-    simplifyTermLike sideCondition termLike = do
+    simplifyTerm sideCondition termLike = do
         TestEnv{replacements, input, requires} <- Reader.ask
         let rule = getOnePathClaim input
             leftTerm =

@@ -156,6 +156,18 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyPattern sideCondition termLike =
         lift (simplifyPattern sideCondition termLike)
 
+    simplifyTerm ::
+        SideCondition RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    default simplifyTerm ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        SideCondition RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    simplifyTerm sideCondition termLike =
+        lift (simplifyTerm sideCondition termLike)
+
     simplifyCondition ::
         SideCondition RewritingVariableName ->
         Conditional RewritingVariableName term ->

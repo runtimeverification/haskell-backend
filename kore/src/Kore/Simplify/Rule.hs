@@ -35,7 +35,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.RulePattern
-import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )

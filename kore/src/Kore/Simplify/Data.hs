@@ -50,9 +50,6 @@ import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.Pattern (Pattern)
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike (
-    TermLike,
- )
 import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier (
     matchAxiomIdentifier,
@@ -143,6 +140,9 @@ instance
     simplifyPattern sideCondition patt =
         traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
     {-# INLINE simplifyPattern #-}
+
+    simplifyTerm = TermLike.simplify
+    {-# INLINE simplifyTerm #-}
 
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition

@@ -113,7 +113,7 @@ simplify sideCondition original =
 
     replacePredicate = SideCondition.replacePredicate sideCondition
 
-    simplifyTerm = simplifyTermLike sideCondition
+    simplifyTerm' = simplifyTerm sideCondition
 
     repr = SideCondition.toRepresentation sideCondition
 
@@ -135,9 +135,9 @@ simplify sideCondition original =
                 ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
-                    simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
+                    simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
                 FloorF floorF ->
-                    simplifyFloor sideCondition =<< traverse simplifyTerm floorF
+                    simplifyFloor sideCondition =<< traverse simplifyTerm' floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
@@ -145,9 +145,9 @@ simplify sideCondition original =
                     traverse worker (Forall.refreshForall avoid forallF)
                         >>= simplifyForall sideCondition
                 EqualsF equalsF ->
-                    simplifyEquals sideCondition =<< traverse simplifyTerm equalsF
+                    simplifyEquals sideCondition =<< traverse simplifyTerm' equalsF
                 InF inF ->
-                    simplifyIn sideCondition =<< traverse simplifyTerm inF
+                    simplifyIn sideCondition =<< traverse simplifyTerm' inF
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition

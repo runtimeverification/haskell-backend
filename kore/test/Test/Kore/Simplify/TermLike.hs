@@ -125,8 +125,9 @@ instance MonadSimplify TestSimplifier where
             TestSimplifier
             (simplifyCondition sideCondition condition)
 
-    -- Throw an error if any term would be simplified.
-    simplifyTermLike = undefined
+    -- Throw an error if any pattern/term would be simplified.
+    simplifyPattern = undefined
+    simplifyTerm = undefined
 
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =
