@@ -55,6 +55,7 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.Pattern (
     Pattern,
  )
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
@@ -77,11 +78,10 @@ import qualified Kore.Simplify.Condition as Simplifier.Condition
 import Kore.Simplify.Data
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
-import qualified Kore.Simplify.Pattern as Pattern
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,

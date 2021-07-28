@@ -122,7 +122,7 @@ makeEvaluate sideCondition =
     loop input = do
         output <-
             OrPattern.traverse worker input
-            & fmap OrPattern.flatten
+                & fmap OrPattern.flatten
         if input == output
             then pure output
             else loop output

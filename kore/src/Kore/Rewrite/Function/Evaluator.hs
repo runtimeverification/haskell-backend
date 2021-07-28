@@ -334,7 +334,6 @@ reevaluateFunctions ::
     simplifier (OrPattern RewritingVariableName)
 reevaluateFunctions = simplifyPattern
 
-
 -- | Ands the given condition-substitution to the given function evaluation.
 mergeWithConditionAndSubstitution ::
     MonadSimplify simplifier =>
