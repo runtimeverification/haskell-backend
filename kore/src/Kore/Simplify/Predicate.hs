@@ -47,7 +47,10 @@ import Kore.Internal.Substitution (
     pattern UnorderedAssignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike (TermLike)
+import Kore.Internal.TermLike (
+    TermLike,
+    termLikeSort,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnUnsimplifiedPredicate (
     warnUnsimplifiedPredicate,
@@ -73,6 +76,7 @@ import Kore.Syntax (
     Not (..),
     Or (..),
     SomeVariableName,
+    Sort,
     Top (..),
     variableName,
  )
@@ -180,8 +184,9 @@ simplify sideCondition original =
                 ForallF forallF ->
                     traverse worker (Forall.refreshForall avoid forallF)
                         >>= simplifyForall sideCondition
-                EqualsF equalsF ->
-                    simplifyEquals sideCondition =<< traverse simplifyTerm equalsF
+                EqualsF equalsF@(Equals _ _ term _) ->
+                    simplifyEquals sideCondition (termLikeSort term)
+                        =<< traverse simplifyTerm equalsF
                 _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
@@ -531,8 +536,15 @@ simplifyEquals ::
     forall simplifier sort.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
+    Sort ->
     Equals sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyEquals sideCondition =
-    Equals.simplify sideCondition
-        >=> return . MultiOr.map (from @(Condition _))
+simplifyEquals sideCondition sort equals =
+    Equals.simplify sideCondition equals'
+        >>= return . MultiOr.map (from @(Condition _))
+  where
+    equals' =
+        equals
+            { equalsOperandSort = sort
+            , equalsResultSort = sort
+            }
