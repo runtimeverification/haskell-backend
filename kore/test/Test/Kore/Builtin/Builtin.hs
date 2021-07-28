@@ -20,13 +20,13 @@ module Test.Kore.Builtin.Builtin (
     runSMTWithConfig,
 ) where
 
+import Control.Monad ((>=>))
 import Control.Monad.Catch (
     MonadMask,
  )
 import Data.Map.Strict (
     Map,
  )
-import Control.Monad ((>=>))
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
