@@ -80,6 +80,9 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
     SentenceSymbol (..),
  )
+import qualified Kore.Syntax.Sentence as Sentence (
+    Symbol (..),
+ )
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
@@ -90,11 +93,19 @@ import qualified Kore.Verified as Verified (
  )
 import Prelude.Kore
 import Test.Kore
+import Test.Kore.Builtin.Definition (
+    testSortDecl,
+ )
 import Test.Kore.Builtin.External (
     externalize,
  )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
     constructorFunctionalAttributes,
+ )
+import qualified Test.Kore.Rewrite.MockSymbols as Mock (
+    f,
+    fId,
+    testSort,
  )
 import Test.SMT (
     runNoSMT,
@@ -131,14 +142,22 @@ test_checkFunctions =
                 checkFunctions verifiedModule
                     & runTestLog runNoSMT
             assertEqual "" expected $ fst actual
-        , testCase "Not every equation RHS is a function pattern." $ do
+        , {-
+                  , testCase "Testing" $ do
+                      code <-
+                          checkEquation ExitSuccess badEquation
+                              & runTestLog runNoSMT
+                      print code
+          -}
+
+          testCase "Not every equation RHS is a function pattern." $ do
             let verifiedModule =
                     verifiedMyModule
                         Module
                             { moduleName = ModuleName "MY-MODULE"
                             , moduleSentences =
-                                [ asSentence mySortDecl
-                                , asSentence $ constructorDecl "a"
+                                [ asSentence testSortDecl -- asSentence mySortDecl
+                                , asSentence mySymbDecl
                                 , disfunctionalAxiom
                                 ]
                             , moduleAttributes = Attributes []
@@ -189,6 +208,22 @@ mySortDecl =
         , sentenceSortAttributes = Attributes []
         }
 
+mySymbol :: Sentence.Symbol
+mySymbol =
+    Sentence.Symbol
+        { symbolConstructor = Mock.fId
+        , symbolParams = []
+        }
+
+mySymbDecl :: Verified.SentenceSymbol
+mySymbDecl =
+    SentenceSymbol
+        { sentenceSymbolSymbol = mySymbol -- Mock.fSymbol
+        , sentenceSymbolSorts = []
+        , sentenceSymbolResultSort = Mock.testSort
+        , sentenceSymbolAttributes = Attributes []
+        }
+
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
 constructorDecl :: Text -> Verified.SentenceSymbol
 constructorDecl name =
@@ -233,21 +268,30 @@ disfunctionalAxiom :: Verified.Sentence
 disfunctionalAxiom =
     SentenceAxiomSentence
         ( mkAxiom
-            [r]
+            []
             ( toTermLikeOld
                 mySort
                 ( mkEquation
-                    (mkTop mySort)
-                    (mkTop mySort)
+                    (Mock.f (mkTop Mock.testSort))
+                    (mkTop Mock.testSort)
                 )
             )
         )
             { sentenceAxiomAttributes = Attributes []
             }
-  where
-    --    v = mkElementVariable (testId "V") mySort
-    r = SortVariable (testId "R")
 
+-- where
+
+--    v = mkElementVariable (testId "V") mySort
+-- r = SortVariable (testId "R")
+
+{-
+badEquation :: Equation VariableName
+badEquation =
+    mkEquation
+        (mkTop mySort)
+        (mkTop mySort)
+-}
 applyToNoArgs :: Sort -> Text -> TermLike VariableName
 applyToNoArgs sort name =
     mkApplySymbol

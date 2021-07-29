@@ -4,10 +4,14 @@ License   : BSD-3-Clause
 -}
 module Kore.CheckFunctions (
     checkFunctions,
+    checkEquation',
 ) where
 
 import Control.Monad (
-    foldM,
+    join,
+ )
+import qualified Data.Map.Strict as Map (
+    elems,
  )
 import qualified Data.Text as Text
 import Kore.Attribute.Symbol (
@@ -44,13 +48,36 @@ checkFunctions ::
     MonadLog m =>
     VerifiedModule StepperAttributes ->
     m ExitCode
-checkFunctions verifiedModule =
-    foldM equationMap ExitSuccess $ extractEquations verifiedModule
+checkFunctions verifiedModule = do
+    res <- traverse checkEquation' $ join $ Map.elems $ extractEquations verifiedModule
+    traceM $ show res
+    if any (== (ExitFailure 3)) res
+        then return $ ExitFailure 3
+        else return ExitSuccess
+
+{-
   where
     equationMap status eqns = case status of
         ExitSuccess -> foldM checkEquation ExitSuccess eqns
         failure -> return failure
+-}
 
+checkEquation' ::
+    MonadLog m =>
+    InternalVariable variable =>
+    Equation variable ->
+    m ExitCode
+checkEquation' eqn@Equation{right}
+    | isFunctionPattern right = return ExitSuccess
+    | otherwise = do
+        logError $ renderText $ layoutOneLine err
+        return $ ExitFailure 3
+  where
+    err =
+        pretty (Text.pack "RHS of equation is not a function pattern:")
+            <+> pretty eqn
+
+{-
 checkEquation ::
     MonadLog m =>
     InternalVariable variable =>
@@ -64,6 +91,4 @@ checkEquation _ eqn@Equation{right}
         logError $ renderText $ layoutOneLine err
         return $ ExitFailure 3
   where
-    err =
-        pretty (Text.pack "RHS of equation is not a function pattern:")
-            <+> pretty eqn
+-}
