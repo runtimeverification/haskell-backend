@@ -29,6 +29,7 @@ module Kore.Internal.Pattern (
     hasSimplifiedChildrenIgnoreConditions,
     forgetSimplified,
     markSimplified,
+    markTermSimplifiedConditionally,
     simplifiedAttribute,
     assign,
     requireDefined,
@@ -172,6 +173,7 @@ forgetSimplified patt =
         `withCondition` Condition.forgetSimplified condition
   where
     (term, condition) = Conditional.splitTerm patt
+
 markSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
 markSimplified patt =
@@ -179,9 +181,22 @@ markSimplified patt =
         `withCondition` Condition.markSimplified condition
   where
     (term, condition) = Conditional.splitTerm patt
+
+markTermSimplifiedConditionally ::
+    InternalVariable variable =>
+    SideCondition.Representation ->
+    Pattern variable ->
+    Pattern variable
+markTermSimplifiedConditionally repr patt =
+    TermLike.markSimplifiedConditional repr term
+        `withCondition` condition
+  where
+    (term, condition) = Conditional.splitTerm patt
+
 simplifiedAttribute :: Pattern variable -> Attribute.Simplified
 simplifiedAttribute (splitTerm -> (t, p)) =
     TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
+
 freeElementVariables ::
     InternalVariable variable =>
     Pattern variable ->

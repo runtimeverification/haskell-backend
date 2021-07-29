@@ -108,7 +108,7 @@ simplify sideCondition original =
         | otherwise = do
             output <- MultiAnd.traverseOrAnd worker input
             if input == output
-                then pure output
+                then pure output -- (MultiOr.map (MultiAnd.map Predicate.markSimplified) output)
                 else loop (count + 1) output
 
     replacePredicate = SideCondition.replacePredicate sideCondition

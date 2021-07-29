@@ -140,7 +140,7 @@ simplify sideCondition =
     loop input = do
         output <- MultiOr.traverseOr (propagateConditions worker) input
         if input == output
-            then pure output
+            then pure output -- (OrPattern.markTermSimplifiedConditionally repr output)
             else loop output
 
     replaceTerm = SideCondition.replaceTerm sideCondition

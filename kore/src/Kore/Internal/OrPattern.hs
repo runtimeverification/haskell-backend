@@ -6,6 +6,7 @@ module Kore.Internal.OrPattern (
     OrPattern,
     coerceSort,
     markSimplified,
+    markTermSimplifiedConditionally,
     isSimplified,
     hasSimplifiedChildren,
     hasSimplifiedChildrenIgnoreConditions,
@@ -86,6 +87,14 @@ markSimplified ::
     OrPattern variable ->
     OrPattern variable
 markSimplified = MultiOr.map Pattern.markSimplified
+
+markTermSimplifiedConditionally ::
+    InternalVariable variable =>
+    SideCondition.Representation ->
+    OrPattern variable ->
+    OrPattern variable
+markTermSimplifiedConditionally repr =
+    MultiOr.map (Pattern.markTermSimplifiedConditionally repr)
 
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
