@@ -506,7 +506,7 @@ simplifyEquals ::
     simplifier NormalForm
 simplifyEquals sideCondition sort equals =
     Equals.simplify sideCondition equals'
-        >>= return . MultiOr.map (from @(Condition _))
+        <&> MultiOr.map (from @(Condition _))
   where
     equals' =
         equals
