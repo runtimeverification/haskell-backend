@@ -20,7 +20,6 @@ All notable changes to this project will be documented in this file.
 
 - Added log `DebugBeginClaim` (#2682).
 - CL option for proving: maximum number of counterexamples (#2648).
-- Improved performance of simplification (#2520).
 - `kore-repl`: option to turn on one-line logs (#2726).
 - Relicensing to BSD-3-Clause (PR #2742).
 - New (minor) matching case for AC structures (PR #2738).
