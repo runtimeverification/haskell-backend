@@ -124,8 +124,8 @@ makeEvaluate sideCondition =
 
     loop count input
         | count >= limit =
-            trace "\nexceeded pattern simplifier limit\n"
-                $ pure input
+            trace "\nexceeded pattern simplifier limit\n" $
+                pure input
         | otherwise = do
             output <-
                 OrPattern.traverse worker input

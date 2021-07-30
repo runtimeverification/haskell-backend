@@ -121,10 +121,9 @@ makeEvaluate variable patt
             `Conditional.withCondition` predicate
     | termIsBoolean =
         term
-            `Conditional.withCondition`
-                ( Condition.fromPredicate
-                    (makeForallPredicate variable (Condition.toPredicate predicate))
-                )
+            `Conditional.withCondition` ( Condition.fromPredicate
+                                            (makeForallPredicate variable (Condition.toPredicate predicate))
+                                        )
     | otherwise =
         Pattern.fromTermLike $
             mkForall variable $

@@ -143,8 +143,8 @@ simplify sideCondition =
         simplifier (OrPattern RewritingVariableName)
     loop count input
         | count >= limit =
-            trace "\nexceeded term simplifier limit\n"
-                $ pure input
+            trace "\nexceeded term simplifier limit\n" $
+                pure input
         | otherwise = do
             output <- MultiOr.traverseOr (propagateConditions worker) input
             if input == output

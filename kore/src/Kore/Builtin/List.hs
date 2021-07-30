@@ -478,7 +478,7 @@ unifyEquals
                     let propagatedUnified = propagateConditions unified
                         result =
                             asInternal tools internalListSort
-                            <$> propagatedUnified
+                                <$> propagatedUnified
                     return result
           where
             InternalList{internalListSort} = builtin1

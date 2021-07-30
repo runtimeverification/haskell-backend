@@ -28,9 +28,6 @@ import Control.Lens (
     Lens',
  )
 import qualified Control.Lens as Lens
-import Data.Text (
-    Text
- )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import Data.Functor.Const (
@@ -55,6 +52,9 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 import qualified Generics.SOP as SOP

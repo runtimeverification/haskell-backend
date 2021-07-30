@@ -113,7 +113,6 @@ fromPredicateSorted ::
     Predicate variable ->
     Pattern variable
 fromPredicateSorted sort = fromCondition sort . Condition.fromPredicate
-
 freeElementVariables ::
     InternalVariable variable =>
     Pattern variable ->
