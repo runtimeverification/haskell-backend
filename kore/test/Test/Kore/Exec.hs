@@ -1,6 +1,7 @@
 module Test.Kore.Exec (
     test_exec,
     test_execPriority,
+    test_execBottom,
     test_searchPriority,
     test_searchExceedingBreadthLimit,
     test_execGetExitCode,
@@ -193,6 +194,30 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
                 }
     inputPattern = applyToNoArgs mySort "b"
     expected = (ExitSuccess, applyToNoArgs mySort "d")
+
+test_execBottom :: TestTree
+test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns." $
+    do
+        ((_, actual), _) <- result
+        assertEqual "" expected actual
+  where
+    expected = mkBottom mySort
+    result =
+        exec
+            Unlimited
+            Unlimited
+            verifiedModule
+            Any
+            inputPattern
+            & runTestLog runNoSMT
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences = []
+                , moduleAttributes = Attributes []
+                }
+    inputPattern = mkBottom mySort
 
 test_searchPriority :: [TestTree]
 test_searchPriority =
