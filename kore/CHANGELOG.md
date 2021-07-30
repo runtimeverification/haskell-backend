@@ -14,6 +14,27 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.51.0.0] - 2021-07-28
+
+### Added
+
+- Added log `DebugBeginClaim` (#2682).
+- CL option for proving: maximum number of counterexamples (#2648).
+- Improved performance of simplification (#2520).
+- `kore-repl`: option to turn on one-line logs (#2726).
+- Relicensing to BSD-3-Clause (PR #2742).
+- New (minor) matching case for AC structures (PR #2738).
+
+### Changed
+
+- Changed `DebugClaimState` to `DebugTransition` (#2682).
+
+### Fixed
+
+- Fixed bug in Bool unification (#2695).
+- Symbolic execution: don't crash when configuration starts as #Bottom (#2765).
+- Fixed substitution application during claim simplification (#2740).
+
 ## [0.49.0.0] - 2021-06-30
 
 ### Added
