@@ -33,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - Fixed bug in Bool unification (#2695).
 - Symbolic execution: don't crash when configuration starts as #Bottom (#2765).
 - Fixed substitution application during claim simplification (#2740).
+- Fixes looping behavior in the simplifier (#2570).
 
 ## [0.49.0.0] - 2021-06-30
 
