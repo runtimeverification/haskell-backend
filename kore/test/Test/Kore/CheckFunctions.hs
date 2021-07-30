@@ -94,14 +94,12 @@ import qualified Kore.Verified as Verified (
  )
 import Prelude.Kore
 import Test.Kore
-
 import Test.Kore.Builtin.External (
     externalize,
  )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
     constructorFunctionalAttributes,
  )
-
 import Test.SMT (
     runNoSMT,
  )
