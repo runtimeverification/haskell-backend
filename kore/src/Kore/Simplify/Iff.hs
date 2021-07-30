@@ -25,9 +25,6 @@ import Kore.Internal.SideCondition (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike (
-    markSimplified,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -140,22 +137,20 @@ makeEvaluateNonBoolIff
                 [ Conditional
                     { term = firstTerm
                     , predicate =
-                        Predicate.markSimplified $
-                            Predicate.makeIffPredicate
-                                ( Predicate.makeAndPredicate
-                                    firstPredicate
-                                    (Substitution.toPredicate firstSubstitution)
-                                )
-                                ( Predicate.makeAndPredicate
-                                    secondPredicate
-                                    (Substitution.toPredicate secondSubstitution)
-                                )
+                        Predicate.makeIffPredicate
+                            ( Predicate.makeAndPredicate
+                                firstPredicate
+                                (Substitution.toPredicate firstSubstitution)
+                            )
+                            ( Predicate.makeAndPredicate
+                                secondPredicate
+                                (Substitution.toPredicate secondSubstitution)
+                            )
                     , substitution = mempty
                     }
                 ]
         | otherwise =
             OrPattern.fromTermLike $
-                TermLike.markSimplified $
-                    mkIff
-                        (Pattern.toTermLike patt1)
-                        (Pattern.toTermLike patt2)
+                mkIff
+                    (Pattern.toTermLike patt1)
+                    (Pattern.toTermLike patt2)

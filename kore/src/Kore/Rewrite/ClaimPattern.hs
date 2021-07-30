@@ -12,7 +12,6 @@ module Kore.Rewrite.ClaimPattern (
     applySubstitution,
     termToExistentials,
     mkGoal,
-    forgetSimplified,
     parseRightHandSide,
     claimPatternToTerm,
 ) where
@@ -314,15 +313,6 @@ termToExistentials ::
 termToExistentials (TermLike.Exists_ _ v term) =
     fmap (v :) (termToExistentials term)
 termToExistentials term = (term, [])
-
-forgetSimplified :: ClaimPattern -> ClaimPattern
-forgetSimplified claimPattern'@(ClaimPattern _ _ _ _) =
-    claimPattern'
-        { left = Pattern.forgetSimplified left
-        , right = OrPattern.forgetSimplified right
-        }
-  where
-    ClaimPattern{left, right} = claimPattern'
 
 {- | Ensure that the 'ClaimPattern''s bound variables are fresh.
 

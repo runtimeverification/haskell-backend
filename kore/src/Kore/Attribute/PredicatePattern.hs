@@ -6,12 +6,6 @@ License     : BSD-3-Clause
 -}
 module Kore.Attribute.PredicatePattern (
     PredicatePattern (PredicatePattern, freeVariables),
-    -- simplified is excluded on purpose
-    simplifiedAttribute,
-    isSimplified,
-    isSimplifiedAnyCondition,
-    isSimplifiedSomeCondition,
-    setSimplified,
     mapVariables,
     traverseVariables,
     deleteFreeVariable,
@@ -30,28 +24,14 @@ import Kore.Attribute.Pattern.FreeVariables hiding (
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables (
     freeVariables,
  )
-import Kore.Attribute.Pattern.Simplified hiding (
-    isSimplified,
-    isSimplifiedAnyCondition,
-    isSimplifiedSomeCondition,
- )
-import qualified Kore.Attribute.Pattern.Simplified as Simplified (
-    isSimplified,
-    isSimplifiedAnyCondition,
-    isSimplifiedSomeCondition,
- )
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
-    Representation,
- )
 import Kore.Syntax.Variable
 import Prelude.Kore
 
 -- | @Pattern@ are the attributes of a pattern collected during verification.
-data PredicatePattern variable = PredicatePattern
-    { freeVariables :: !(FreeVariables variable)
-    , simplified :: !Simplified
+newtype PredicatePattern variable = PredicatePattern
+    { freeVariables :: FreeVariables variable
     }
     deriving stock (Eq, GHC.Generic, Show)
 
@@ -71,44 +51,13 @@ instance (Debug variable, Diff variable) => Diff (PredicatePattern variable)
 instance
     ( Functor base
     , Synthetic (FreeVariables variable) base
-    , Synthetic Simplified base
     ) =>
     Synthetic (PredicatePattern variable) base
     where
     synthetic base =
         PredicatePattern
             { freeVariables = synthetic (freeVariables <$> base)
-            , simplified = synthetic (simplified <$> base)
             }
-
-simplifiedAttribute :: PredicatePattern variable -> Simplified
-simplifiedAttribute PredicatePattern{simplified} = simplified
-
-{- Checks whether the pattern is simplified relative to the given side
-condition.
--}
-isSimplified ::
-    SideCondition.Representation -> PredicatePattern variable -> Bool
-isSimplified sideCondition = Simplified.isSimplified sideCondition . simplifiedAttribute
-
-{- Checks whether the pattern is simplified relative to some side condition.
--}
-isSimplifiedSomeCondition ::
-    PredicatePattern variable -> Bool
-isSimplifiedSomeCondition =
-    Simplified.isSimplifiedSomeCondition . simplifiedAttribute
-
-{- Checks whether the pattern is simplified relative to any side condition.
--}
-isSimplifiedAnyCondition :: PredicatePattern variable -> Bool
-isSimplifiedAnyCondition PredicatePattern{simplified} =
-    Simplified.isSimplifiedAnyCondition simplified
-
-setSimplified ::
-    Simplified ->
-    PredicatePattern variable ->
-    PredicatePattern variable
-setSimplified simplified patt = patt{simplified}
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 

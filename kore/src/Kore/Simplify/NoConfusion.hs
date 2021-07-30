@@ -92,7 +92,7 @@ equalInjectiveHeadsAndEquals
                 -- which allow evaluating the symbol. It is possible this pattern
                 -- is not actually fully simplified!
                 term =
-                    (markSimplified . mkApplySymbol firstHead)
+                    (mkApplySymbol firstHead)
                         (Pattern.term <$> children)
             return (Pattern.withCondition term merged)
       where

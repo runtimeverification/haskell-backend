@@ -16,7 +16,6 @@ module Kore.Rewrite.RulePattern (
     topExistsToImplicitForall,
     isFreeOf,
     lhsEqualsRhs,
-    rhsForgetSimplified,
     rhsToTerm,
     lhsToTerm,
     rhsToPattern,
@@ -405,14 +404,6 @@ renameExistentials subst RHS{existentials, right, ensures} =
     renameVariable var =
         let name = SomeVariableNameElement . variableName $ var
          in maybe var expectElementVariable $ Map.lookup name subst
-
-rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
-rhsForgetSimplified RHS{existentials, right, ensures} =
-    RHS
-        { existentials
-        , right = TermLike.forgetSimplified right
-        , ensures = Predicate.forgetSimplified ensures
-        }
 
 {- | Applies a substitution to a rule and checks that it was fully applied,
 i.e. there is no substitution variable left in the rule.

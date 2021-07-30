@@ -875,7 +875,6 @@ functionAnd first second
     | isFunctionPattern first
       , isFunctionPattern second =
         makeEqualsPredicate first' second'
-            & Predicate.markSimplified
             -- Ceil predicate not needed since first being
             -- bottom will make the entire term bottom. However,
             -- one must be careful to not just drop the term.

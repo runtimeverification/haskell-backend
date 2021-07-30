@@ -39,4 +39,4 @@ simplify Next{nextChild = child} = simplifyEvaluated child
 simplifyEvaluated ::
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
-simplifyEvaluated = MultiOr.map (Pattern.markSimplified . fmap mkNext)
+simplifyEvaluated = MultiOr.map (fmap mkNext)

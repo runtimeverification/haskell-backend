@@ -15,7 +15,6 @@ module Kore.Simplify.Forall (
 import qualified Kore.Internal.Condition as Condition (
     fromPredicate,
     hasFreeVariable,
-    markPredicateSimplified,
     toPredicate,
  )
 import qualified Kore.Internal.Conditional as Conditional (
@@ -50,7 +49,6 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike (
     hasFreeVariable,
-    markSimplified,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Rewrite.RewritingVariable (
@@ -119,19 +117,18 @@ makeEvaluate variable patt
     | Pattern.isBottom patt = Pattern.bottom
     | not variableInTerm && not variableInCondition = patt
     | predicateIsBoolean =
-        TermLike.markSimplified (mkForall variable term)
+        mkForall variable term
             `Conditional.withCondition` predicate
     | termIsBoolean =
         term
-            `Conditional.withCondition` Condition.markPredicateSimplified
+            `Conditional.withCondition`
                 ( Condition.fromPredicate
                     (makeForallPredicate variable (Condition.toPredicate predicate))
                 )
     | otherwise =
         Pattern.fromTermLike $
-            TermLike.markSimplified $
-                mkForall variable $
-                    Pattern.toTermLike patt
+            mkForall variable $
+                Pattern.toTermLike patt
   where
     (term, predicate) = Pattern.splitTerm patt
     someVariable = mkSomeVariable variable

@@ -29,7 +29,7 @@ simplify ::
     OrPattern RewritingVariableName
 simplify =
     traverse (Logic.scatter >>> Compose)
-        >>> fmap (normalizeInternalMap >>> markSimplified)
+        >>> fmap normalizeInternalMap
         >>> getCompose
         >>> fmap Pattern.syncSort
         >>> MultiOr.observeAll

@@ -399,9 +399,7 @@ checkRequires sideCondition predicate requires =
     -- Pair a configuration with sideCondition for evaluation by the solver.
     withSideCondition = (,) sideCondition
 
-    withoutAxioms =
-        fmap Condition.forgetSimplified
-            . Simplifier.localSimplifierAxioms (const mempty)
+    withoutAxioms = Simplifier.localSimplifierAxioms (const mempty)
     withAxioms = id
 
 refreshVariables ::

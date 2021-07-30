@@ -629,30 +629,6 @@ test_simplificationIntegration =
             assertBool "Expected simplified term" (TermLike.isSimplified sideRepresentation term)
             assertBool (unlines ["Expected simplified condition:", message]) (Condition.isSimplified sideRepresentation condition)
             assertBool message (Pattern.isSimplified sideRepresentation pattern')
-    , testCase "Equals-in simplification" $ do
-        let gt =
-                mkSetVariable (testId "gt") Mock.stringSort
-                    & mapSetVariable (pure mkConfigVariable)
-            g =
-                mkSetVariable (testId "g") Mock.testSort1
-                    & mapSetVariable (pure mkConfigVariable)
-        actual <-
-            evaluate
-                Conditional
-                    { term =
-                        mkNu
-                            gt
-                            ( mkEquals_
-                                ( mkIn_
-                                    mkTop_
-                                    (mkNu g (mkOr Mock.aSort1 (mkSetVar g)))
-                                )
-                                mkTop_
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "And-list simplification" $ do
         actual <-
             evaluate
@@ -661,44 +637,6 @@ test_simplificationIntegration =
                         mkAnd
                             (Mock.elementList Mock.plain00)
                             (Mock.elementList Mock.functional00)
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
-    , testCase "Distributed equals simplification" $ do
-        let k =
-                mkSetVariable (testId "k") Mock.stringSort
-                    & mapSetVariable (pure mkConfigVariable)
-        actual <-
-            evaluate
-                Conditional
-                    { term =
-                        mkMu
-                            k
-                            ( mkEquals_
-                                (Mock.functionalConstr21 Mock.cf Mock.cf)
-                                (Mock.functionalConstr21 Mock.ch Mock.cg)
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
-    , testCase "nu-floor-in-or simplification" $ do
-        let q =
-                mkSetVariable (testId "q") Mock.otherSort
-                    & mapSetVariable (pure mkConfigVariable)
-        actual <-
-            evaluate
-                Conditional
-                    { term =
-                        mkNu
-                            q
-                            ( mkFloor_
-                                ( mkIn_
-                                    (Mock.g Mock.ch)
-                                    (mkOr Mock.cf Mock.cg)
-                                )
-                            )
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }

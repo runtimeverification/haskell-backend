@@ -18,7 +18,6 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Symbol (
@@ -107,8 +106,4 @@ instance Synthetic Function InternalList where
 
 instance Synthetic Functional InternalList where
     synthetic = fold
-    {-# INLINE synthetic #-}
-
-instance Synthetic Simplified InternalList where
-    synthetic = notSimplified
     {-# INLINE synthetic #-}

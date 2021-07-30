@@ -132,16 +132,24 @@ simplify ::
     TermLike RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 simplify sideCondition =
-    loop . OrPattern.fromTermLike
+    loop 0 . OrPattern.fromTermLike
   where
+    limit :: Int
+    limit = 4
+
     loop ::
+        Int ->
         OrPattern RewritingVariableName ->
         simplifier (OrPattern RewritingVariableName)
-    loop input = do
-        output <- MultiOr.traverseOr (propagateConditions worker) input
-        if input == output
-            then pure output -- (OrPattern.markTermSimplifiedConditionally repr output)
-            else loop output
+    loop count input
+        | count >= limit =
+            trace "\nexceeded term simplifier limit\n"
+                $ pure input
+        | otherwise = do
+            output <- MultiOr.traverseOr (propagateConditions worker) input
+            if input == output
+                then pure output -- (OrPattern.markTermSimplifiedConditionally repr output)
+                else loop (count + 1) output
 
     replaceTerm = SideCondition.replaceTerm sideCondition
 
@@ -159,8 +167,6 @@ simplify sideCondition =
     worker termLike
         | Just termLike' <- replaceTerm termLike =
             worker termLike'
-        | TermLike.isSimplified repr termLike =
-            pure (OrPattern.fromTermLike termLike)
         | otherwise =
             case termLikeF of
                 -- Not implemented:

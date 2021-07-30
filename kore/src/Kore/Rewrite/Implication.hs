@@ -13,7 +13,6 @@ module Kore.Rewrite.Implication (
     applySubstitution,
     termToExistentials,
     resetConfigVariables,
-    forgetSimplified,
     parseRightHandSide,
     implicationToTerm,
 ) where
@@ -312,15 +311,6 @@ termToExistentials ::
 termToExistentials (TermLike.Exists_ _ v term) =
     fmap (v :) (termToExistentials term)
 termToExistentials term = (term, [])
-
-forgetSimplified :: Implication modality -> Implication modality
-forgetSimplified implication'@(Implication _ _ _ _ _) =
-    implication'
-        { left = Pattern.forgetSimplified left
-        , right = OrPattern.forgetSimplified right
-        }
-  where
-    Implication{left, right} = implication'
 
 {- | Ensure that the 'Implication''s bound variables are fresh.
 

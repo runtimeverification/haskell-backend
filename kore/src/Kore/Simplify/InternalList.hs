@@ -27,5 +27,5 @@ simplify =
     traverse (Logic.scatter >>> Compose)
         >>> fmap mkInternalList
         >>> getCompose
-        >>> fmap (Pattern.syncSort >>> fmap markSimplified)
+        >>> fmap (Pattern.syncSort)
         >>> MultiOr.observeAll

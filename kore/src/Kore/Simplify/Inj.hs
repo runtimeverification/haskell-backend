@@ -44,7 +44,7 @@ simplify injOrPattern = do
                 -- evaluateInj does not mark its result simplified because it
                 -- exists outside the simplifier; for example, it might be
                 -- called during unification or matching.
-                (TermLike.markSimplified . evaluateInj)
+                evaluateInj
                 composed
     return evaluated
 

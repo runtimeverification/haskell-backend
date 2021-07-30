@@ -9,18 +9,8 @@ module Kore.Internal.TermLike (
     TermAttributes (..),
     TermLike (..),
     extractAttributes,
-    isSimplified,
-    isSimplifiedSomeCondition,
     Attribute.isConstructorLike,
     assertConstructorLikeKeys,
-    markSimplified,
-    markSimplifiedConditional,
-    markSimplifiedMaybeConditional,
-    setSimplified,
-    setAttributeSimplified,
-    forgetSimplified,
-    simplifiedAttribute,
-    attributeSimplifiedAttribute,
     isFunctionPattern,
     isFunctionalPattern,
     hasConstructorLikeTop,
@@ -225,7 +215,6 @@ import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
  )
 import qualified Kore.Attribute.Pattern.Function as Attribute
 import qualified Kore.Attribute.Pattern.Functional as Attribute
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -408,45 +397,6 @@ fromConcrete ::
     TermLike variable
 fromConcrete = mapVariables (pure $ from @Concrete)
 
-{- | Is the 'TermLike' fully simplified under the given side condition?
-
-See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
--}
-isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
-isSimplified sideCondition =
-    isAttributeSimplified sideCondition . extractAttributes
-
-{- | Is the 'TermLike' fully simplified under any side condition?
-
-See also: 'isSimplified', 'isSimplifiedSomeCondition'.
--}
-isSimplifiedAnyCondition :: TermLike variable -> Bool
-isSimplifiedAnyCondition =
-    isAttributeSimplifiedAnyCondition . extractAttributes
-
-{- | Is the 'TermLike' fully simplified under some side condition?
-
-See also: 'isSimplified', 'isSimplifiedAnyCondition'.
--}
-isSimplifiedSomeCondition :: TermLike variable -> Bool
-isSimplifiedSomeCondition =
-    isAttributeSimplifiedSomeCondition . extractAttributes
-
-{- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
-
-@
-isSimplified (forgetSimplified _) == False
-@
--}
-forgetSimplified ::
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable
-forgetSimplified = resynthesize
-
-simplifiedAttribute :: TermLike variable -> Attribute.Simplified
-simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes
-
 assertConstructorLikeKeys ::
     HasCallStack =>
     InternalVariable variable =>
@@ -466,125 +416,7 @@ assertConstructorLikeKeys keys a
                 , Pretty.indent 2 "Non-constructor-like patterns:"
                 ]
                     <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
-    | any (not . isSimplifiedAnyCondition) keys =
-        let simplifiableKeys =
-                filter (not . isSimplifiedAnyCondition) $ Prelude.Kore.toList keys
-         in (error . show . Pretty.vsep) $
-                [ "Internal error: expected fully simplified patterns,\
-                  \ an internal invariant has been violated.\
-                  \ Please report this error."
-                , Pretty.indent 2 "Unsimplified patterns:"
-                ]
-                    <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | otherwise = a
-
-{- | Mark a 'TermLike' as fully simplified at the current level.
-
-The pattern is fully simplified if we do not know how to simplify it any
-further. The simplifier reserves the right to skip any pattern which is marked,
-so do not mark any pattern unless you are certain it cannot be further
-simplified.
-
-Note that fully simplified at the current level may not mean that the pattern
-is fully simplified (e.g. if a child is simplified conditionally).
--}
-markSimplified ::
-    (HasCallStack, InternalVariable variable) =>
-    TermLike variable ->
-    TermLike variable
-markSimplified (Recursive.project -> attrs :< termLikeF) =
-    Recursive.embed
-        ( setAttributeSimplified
-            (checkedSimplifiedFromChildren termLikeF)
-            attrs
-            :< termLikeF
-        )
-
-markSimplifiedMaybeConditional ::
-    (HasCallStack, InternalVariable variable) =>
-    Maybe SideCondition.Representation ->
-    TermLike variable ->
-    TermLike variable
-markSimplifiedMaybeConditional Nothing = markSimplified
-markSimplifiedMaybeConditional (Just condition) =
-    markSimplifiedConditional condition
-
-cannotSimplifyNotSimplifiedError ::
-    (HasCallStack, InternalVariable variable) =>
-    TermLikeF variable (TermLike variable) ->
-    a
-cannotSimplifyNotSimplifiedError termLikeF =
-    error
-        ( "Unexpectedly marking term with NotSimplified children as \
-          \simplified:\n"
-            ++ show termLikeF
-            ++ "\n"
-            ++ Unparser.unparseToString termLikeF
-        )
-
-setSimplified ::
-    (HasCallStack, InternalVariable variable) =>
-    Attribute.Simplified ->
-    TermLike variable ->
-    TermLike variable
-setSimplified
-    simplified
-    (Recursive.project -> attrs :< termLikeF) =
-        Recursive.embed
-            ( setAttributeSimplified mergedSimplified attrs
-                :< termLikeF
-            )
-      where
-        childSimplified = simplifiedFromChildren termLikeF
-        mergedSimplified = case (childSimplified, simplified) of
-            (Attribute.NotSimplified, Attribute.NotSimplified) ->
-                Attribute.NotSimplified
-            (Attribute.NotSimplified, _) ->
-                cannotSimplifyNotSimplifiedError termLikeF
-            (_, Attribute.NotSimplified) ->
-                Attribute.NotSimplified
-            _ -> childSimplified <> simplified
-
-{- |Marks a term as being simplified as long as the side condition stays
-unchanged.
--}
-markSimplifiedConditional ::
-    (HasCallStack, InternalVariable variable) =>
-    SideCondition.Representation ->
-    TermLike variable ->
-    TermLike variable
-markSimplifiedConditional
-    condition
-    (Recursive.project -> attrs :< termLikeF) =
-        Recursive.embed
-            ( setAttributeSimplified
-                ( checkedSimplifiedFromChildren termLikeF
-                    <> Attribute.simplifiedConditionally condition
-                )
-                attrs
-                :< termLikeF
-            )
-
-simplifiedFromChildren ::
-    HasCallStack =>
-    TermLikeF variable (TermLike variable) ->
-    Attribute.Simplified
-simplifiedFromChildren termLikeF =
-    case mergedSimplified of
-        Attribute.NotSimplified -> Attribute.NotSimplified
-        _ -> mergedSimplified `Attribute.simplifiedTo` Attribute.fullySimplified
-  where
-    mergedSimplified =
-        foldMap (attributeSimplifiedAttribute . extractAttributes) termLikeF
-
-checkedSimplifiedFromChildren ::
-    (HasCallStack, InternalVariable variable) =>
-    TermLikeF variable (TermLike variable) ->
-    Attribute.Simplified
-checkedSimplifiedFromChildren termLikeF =
-    case simplifiedFromChildren termLikeF of
-        Attribute.NotSimplified -> cannotSimplifyNotSimplifiedError termLikeF
-        simplified -> simplified
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort

@@ -84,12 +84,12 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             ensures' = substitute subst ensures
         return
             Equation
-                { left = TermLike.forgetSimplified left'
-                , requires = Predicate.forgetSimplified requires'
+                { left = left'
+                , requires = requires'
                 , argument = Nothing
-                , antiLeft = Predicate.forgetSimplified <$> antiLeft'
-                , right = TermLike.forgetSimplified right'
-                , ensures = Predicate.forgetSimplified ensures'
+                , antiLeft = antiLeft'
+                , right = right'
+                , ensures = ensures'
                 , attributes = attributes
                 }
         & Logic.observeAllT

@@ -51,7 +51,6 @@ import Kore.Internal.TermLike (
     mkInternalBytes,
  )
 import qualified Kore.Internal.TermLike as TermLike (
-    markSimplified,
     pattern App_,
     pattern StringLiteral_,
  )
@@ -76,7 +75,7 @@ asInternal ::
     ByteString ->
     TermLike variable
 asInternal bytesSort bytesValue =
-    TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
+    mkInternalBytes bytesSort bytesValue
 
 internalize ::
     InternalVariable variable =>

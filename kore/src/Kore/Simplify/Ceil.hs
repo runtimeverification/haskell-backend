@@ -392,7 +392,6 @@ makeSimplifiedCeil
 
         unsimplified =
             OrCondition.fromPredicate
-                . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
                 . makeCeilPredicate
                 $ termLike
 

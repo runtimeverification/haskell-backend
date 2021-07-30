@@ -96,10 +96,6 @@ newSetCeilSimplifier =
                 mkInternalAc (fromElement element){opaque = [termLike]}
                     & TermLike.mkInternalSet
                     & makeCeilPredicate
-                    -- TODO (thomas.tuegel): Do not mark this simplified.
-                    -- Marking here may prevent user-defined axioms from applying.
-                    -- At present, we wouldn't apply such an axiom, anyway.
-                    & Predicate.markSimplifiedMaybeConditional Nothing
         runCeilSimplifier
             ( newBuiltinAssocCommCeilSimplifier
                 TermLike.mkInternalSet
@@ -123,10 +119,6 @@ newMapCeilSimplifier =
                 mkInternalAc (fromElement element'){opaque = [termLike]}
                     & TermLike.mkInternalMap
                     & makeCeilPredicate
-                    -- TODO (thomas.tuegel): Do not mark this simplified.
-                    -- Marking here may prevent user-defined axioms from applying.
-                    -- At present, we wouldn't apply such an axiom, anyway.
-                    & Predicate.markSimplifiedMaybeConditional Nothing
                     & makeForallPredicate variable
               where
                 (variable, element') =
@@ -316,10 +308,6 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
             }
             & mkBuiltin
             & makeCeilPredicate
-            -- TODO (thomas.tuegel): Do not mark this simplified.
-            -- Marking here may prevent user-defined axioms from applying.
-            -- At present, we wouldn't apply such an axiom, anyway.
-            & Predicate.markSimplifiedMaybeConditional Nothing
             & OrCondition.fromPredicate
             & MultiAnd.singleton
 

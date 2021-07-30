@@ -174,16 +174,15 @@ makeEvaluateImpliesNonBool
                 [ Conditional
                     { term = firstTerm
                     , predicate =
-                        Predicate.markSimplified $
-                            Predicate.makeImpliesPredicate
-                                ( Predicate.makeAndPredicate
-                                    firstPredicate
-                                    (Substitution.toPredicate firstSubstitution)
-                                )
-                                ( Predicate.makeAndPredicate
-                                    secondPredicate
-                                    (Substitution.toPredicate secondSubstitution)
-                                )
+                        Predicate.makeImpliesPredicate
+                            ( Predicate.makeAndPredicate
+                                firstPredicate
+                                (Substitution.toPredicate firstSubstitution)
+                            )
+                            ( Predicate.makeAndPredicate
+                                secondPredicate
+                                (Substitution.toPredicate secondSubstitution)
+                            )
                     , substitution = mempty
                     }
                 ]
@@ -192,10 +191,9 @@ makeEvaluateImpliesNonBool
             OrPattern.fromPatterns
                 [ Conditional
                     { term =
-                        TermLike.markSimplified $
-                            mkImplies
-                                (Pattern.toTermLike pattern1)
-                                (Pattern.toTermLike pattern2)
+                        mkImplies
+                            (Pattern.toTermLike pattern1)
+                            (Pattern.toTermLike pattern2)
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
