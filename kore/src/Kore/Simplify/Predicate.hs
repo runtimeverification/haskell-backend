@@ -16,7 +16,6 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     occursIn,
  )
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -29,11 +28,9 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Condition,
  )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
@@ -48,9 +45,7 @@ import Kore.Internal.Substitution (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (
-    Sort,
     TermLike,
-    mkSortVariable,
     termLikeSort,
  )
 import qualified Kore.Internal.TermLike as TermLike
@@ -61,6 +56,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Kore.Simplify.Ceil as Ceil
+import qualified Kore.Simplify.Equals as Equals
 import qualified Kore.Simplify.In as In
 import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify
@@ -69,6 +65,7 @@ import Kore.Syntax (
     And (..),
     Bottom (..),
     Ceil (..),
+    Equals (..),
     Exists (..),
     Floor (..),
     Forall (Forall),
@@ -78,49 +75,14 @@ import Kore.Syntax (
     Not (..),
     Or (..),
     SomeVariableName,
+    Sort,
     Top (..),
     variableName,
  )
 import qualified Kore.Syntax.Exists as Exists
 import qualified Kore.Syntax.Forall as Forall
-import qualified Kore.TopBottom as TopBottom
-import Kore.Unparser
 import Logic
 import Prelude.Kore
-import qualified Pretty
-
-{- | Simplify the 'Predicate' once.
-
-@simplifyPredicate@ does not attempt to apply the resulting substitution and
-re-simplify the result.
-
-See also: 'simplify'
--}
-simplifyPredicateTODO ::
-    ( HasCallStack
-    , MonadSimplify simplifier
-    ) =>
-    SideCondition RewritingVariableName ->
-    Predicate RewritingVariableName ->
-    LogicT simplifier (MultiAnd (Predicate RewritingVariableName))
-simplifyPredicateTODO sideCondition predicate = do
-    patternOr <-
-        simplifyTermLike
-            sideCondition
-            (Predicate.fromPredicate (mkSortVariable "BadSort") predicate)
-            & lift
-    -- Despite using lift above, we do not need to
-    -- explicitly check for \bottom because patternOr is an OrPattern.
-    from @(Condition _) @(MultiAnd (Predicate _)) <$> scatter (OrPattern.map eraseTerm patternOr)
-  where
-    eraseTerm conditional
-        | TopBottom.isTop (Pattern.term conditional) =
-            Conditional.withoutTerm conditional
-        | otherwise =
-            (error . show . Pretty.vsep)
-                [ "Expecting a \\top term, but found:"
-                , unparse conditional
-                ]
 
 {- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
  The primary purpose of this form is to transmit to the external solver.
@@ -131,7 +93,6 @@ type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
 simplify ::
     forall simplifier.
-    HasCallStack =>
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
@@ -188,9 +149,11 @@ simplify sideCondition original =
                 ForallF forallF ->
                     traverse worker (Forall.refreshForall avoid forallF)
                         >>= simplifyForall sideCondition
+                EqualsF equalsF@(Equals _ _ term _) ->
+                    simplifyEquals sideCondition (termLikeSort term)
+                        =<< traverse simplifyTerm equalsF
                 InF inF ->
                     simplifyIn sideCondition =<< traverse simplifyTerm inF
-                _ -> simplifyPredicateTODO sideCondition predicate & MultiOr.observeAllT
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition
@@ -535,6 +498,23 @@ extractFirstAssignment someVariableName predicates =
         guard (TermLike.isFunctionPattern termLike)
         (guard . not) (someVariableName `occursIn` termLike)
         pure termLike
+
+simplifyEquals ::
+    forall simplifier sort.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Sort ->
+    Equals sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplifyEquals sideCondition sort equals =
+    Equals.simplify sideCondition equals'
+        <&> MultiOr.map (from @(Condition _))
+  where
+    equals' =
+        equals
+            { equalsOperandSort = sort
+            , equalsResultSort = sort
+            }
 
 simplifyIn ::
     MonadSimplify simplifier =>
