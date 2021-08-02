@@ -88,11 +88,17 @@ test_andTermsSimplification =
             actual <- simplifyUnify (mkTop Mock.testSort) fOfA
             assertEqual "" ([expected], [expected]) actual
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
-            let expect = ([], [])
+            let expect =
+                    ( [Pattern.bottomOf Mock.testSort]
+                    , [Pattern.bottomOf Mock.testSort]
+                    )
             actual <- simplifyUnify fOfA (mkBottom Mock.testSort)
             assertEqual "" expect actual
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
-            let expect = ([], [])
+            let expect =
+                    ( [Pattern.bottomOf Mock.testSort]
+                    , [Pattern.bottomOf Mock.testSort]
+                    )
             actual <- simplifyUnify (mkBottom Mock.testSort) fOfA
             assertEqual "" expect actual
         ]
@@ -927,7 +933,7 @@ test_andTermsSimplification =
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
-                expect = []
+                expect = [Pattern.bottomOf Mock.listSort]
             actual <- unify term7 term8
             assertEqual "" expect actual
         , testCase "fallback for external List symbols" $ do
