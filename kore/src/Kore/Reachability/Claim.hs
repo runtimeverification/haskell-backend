@@ -35,7 +35,6 @@ module Kore.Reachability.Claim (
     simplifyRightHandSide,
 ) where
 
-import Kore.Log.WarnClaimRHSIsBottom
 import Control.Lens (
     Lens',
  )
@@ -103,6 +102,7 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import Kore.Log.InfoReachability
+import Kore.Log.WarnClaimRHSIsBottom
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )
@@ -580,8 +580,9 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             pure $ NotImplied claimPattern
         | otherwise = do
             warnClaimRHSIsBottom claimPattern
-            pure $ Lens.set (field @"left") stuck claimPattern
-                & NotImpliedStuck
+            pure $
+                Lens.set (field @"left") stuck claimPattern
+                    & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
 
