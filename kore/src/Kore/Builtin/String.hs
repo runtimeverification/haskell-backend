@@ -570,7 +570,8 @@ unifyStringEq unifyChildren (NotSimplifier notSimplifier) unifyData =
   where
     UnifyStringEq{eqTerm, internalBool} = unifyData
     EqTerm{symbol, operand1, operand2} = eqTerm
-    eraseTerm = fmap (mkTop . termLikeSort)
+    eraseTerm conditional =
+        conditional $> (mkTop (internalBoolSort internalBool))
     notSort = applicationSortsResult . symbolSorts $ symbol
     mkNotSimplified notChild =
         notSimplifier SideCondition.top Not{notSort, notChild}
