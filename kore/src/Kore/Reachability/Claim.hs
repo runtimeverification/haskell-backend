@@ -35,6 +35,7 @@ module Kore.Reachability.Claim (
     simplifyRightHandSide,
 ) where
 
+import Kore.Log.WarnClaimRHSIsBottom
 import Control.Lens (
     Lens',
  )
@@ -515,7 +516,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 >>= Pattern.simplify
                 >>= SMT.Evaluator.filterMultiOr
                 >>= Logic.scatter
-        pure (examine anyUnified stuck)
+        examine anyUnified stuck
         & elseImplied
   where
     ClaimPattern{right, left, existentials} = claimPattern
@@ -569,16 +570,17 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine ::
         AnyUnified ->
         Pattern RewritingVariableName ->
-        CheckImplicationResult ClaimPattern
+        m (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            Implied
+            pure Implied
         | not didAnyUnify
           , not (isBottom right) =
-            NotImplied claimPattern
-        | otherwise =
-            Lens.set (field @"left") stuck claimPattern
+            pure $ NotImplied claimPattern
+        | otherwise = do
+            warnClaimRHSIsBottom claimPattern
+            pure $ Lens.set (field @"left") stuck claimPattern
                 & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
