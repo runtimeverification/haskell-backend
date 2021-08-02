@@ -100,6 +100,13 @@ import Test.Kore.Builtin.External (
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
     constructorFunctionalAttributes,
  )
+
+{-
+import qualified Test.Kore.Rewrite.MockSymbols as Mock (
+    testSort,
+    --    topSort,
+ )
+-}
 import Test.SMT (
     runNoSMT,
  )
@@ -220,7 +227,7 @@ myF ::
 myF arg =
     mkApplySymbol
         Symbol
-            { symbolConstructor = mySortName
+            { symbolConstructor = mySymbolName
             , symbolParams = []
             , symbolSorts = applicationSorts [] mySort
             , symbolAttributes = Mock.constructorFunctionalAttributes
