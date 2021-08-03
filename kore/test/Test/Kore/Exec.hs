@@ -166,31 +166,98 @@ test_matchDisjunction :: [TestTree]
 test_matchDisjunction =
     [ testCase "match disjunction" $
         do
-            let actual = matchDisjunction verifiedModule a [a]
-            result <- runLoggerT actual mempty
-            assertEqual "" (mkTop mySort) result
-    , testCase "match disjunction" $
-        do
-            let actual = matchDisjunction verifiedModule a [b]
+            let actual =
+                    matchDisjunction verifiedModule initial [final1, final2]
             result <- runLoggerT actual mempty
             assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - bottom 1" $
+        do
+            let actual =
+                    matchDisjunction
+                        verifiedModule
+                        unreachable
+                        [final1, final2, next1, next2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - bottom 2" $
+        do
+            let actual =
+                    matchDisjunction
+                        verifiedModule
+                        initial
+                        [final1, final2, next1, next2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - bottom 3" $
+        do
+            let actual =
+                    matchDisjunction verifiedModule unreachable [final1, final2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - bottom 4" $
+        do
+            let actual =
+                    matchDisjunction verifiedModule initial [next1, next2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - bottom 5" $
+        do
+            let actual =
+                    matchDisjunction verifiedModule unreachable [next1, next2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - bottom 6" $
+        do
+            let actual =
+                    matchDisjunction
+                        verifiedModule
+                        unreachable
+                        [final1, final2, initial, next1, next2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkBottom mySort) result
+    , testCase "match disjunction - top" $
+        do
+            let actual =
+                    matchDisjunction
+                        verifiedModule
+                        initial
+                        [final1, final2, initial, next1, next2]
+            result <- runLoggerT actual mempty
+            assertEqual "" (mkTop mySort) result
     ]
   where
+    -- these tests are inspired by the "search" integration test
     verifiedModule =
         verifiedMyModule
             Module
                 { moduleName = ModuleName "MY-MODULE"
                 , moduleSentences =
                     [ asSentence mySortDecl
-                    , asSentence $ constructorDecl "a"
-                    , asSentence $ constructorDecl "b"
-                    , functionalAxiom "a"
-                    , functionalAxiom "b"
+                    , asSentence $ constructorDecl "initial"
+                    , asSentence $ constructorDecl "next1"
+                    , asSentence $ constructorDecl "next2"
+                    , asSentence $ constructorDecl "final1"
+                    , asSentence $ constructorDecl "final2"
+                    , asSentence $ constructorDecl "unreachable"
+                    , functionalAxiom "initial"
+                    , functionalAxiom "next1"
+                    , functionalAxiom "next2"
+                    , functionalAxiom "final1"
+                    , functionalAxiom "final2"
+                    , functionalAxiom "unreachable"
+                    -- , simpleRewriteAxiom "initial" "next1"
+                    -- , simpleRewriteAxiom "initial" "next2"
+                    -- , simpleRewriteAxiom "next1" "final1"
+                    -- , simpleRewriteAxiom "next2" "final2"
                     ]
                 , moduleAttributes = Attributes []
                 }
-    a = fromTermLike $ applyToNoArgs mySort "a"
-    b = fromTermLike $ applyToNoArgs mySort "b"
+    initial = fromTermLike $ applyToNoArgs mySort "initial"
+    next1 = fromTermLike $ applyToNoArgs mySort "next1"
+    next2 = fromTermLike $ applyToNoArgs mySort "next2"
+    final1 = fromTermLike $ applyToNoArgs mySort "final1"
+    final2 = fromTermLike $ applyToNoArgs mySort "final2"
+    unreachable = fromTermLike $ applyToNoArgs mySort "unreachable"
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
