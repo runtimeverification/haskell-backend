@@ -20,15 +20,20 @@ newtype WarnClaimRHSIsBottom = WarnClaimRHSIsBottom {claim :: ClaimPattern}
     deriving stock (Show)
 
 instance Pretty WarnClaimRHSIsBottom where
-    pretty (WarnClaimRHSIsBottom rule) =
+    pretty WarnClaimRHSIsBottom{claim} =
         Pretty.hsep
             [ "The right-hand side of the claim is bottom:"
-            , Pretty.pretty (from rule :: SourceLocation)
+            , prettySourceLocation claim
             ]
 
 instance Entry WarnClaimRHSIsBottom where
     entrySeverity _ = Warning
     helpDoc _ = "warn when the right-hand side of a claim is bottom"
+    oneLineDoc WarnClaimRHSIsBottom{claim} =
+        Just $ prettySourceLocation claim
+
+prettySourceLocation :: ClaimPattern -> Pretty.Doc ann
+prettySourceLocation = Pretty.pretty @SourceLocation . from
 
 warnClaimRHSIsBottom ::
     MonadLog log =>
