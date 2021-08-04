@@ -93,6 +93,6 @@ debugUnifyBottomAndReturnBottom ::
 debugUnifyBottomAndReturnBottom info first second = do
     debugUnifyBottom
         info
-        (TermLike.mapVariables (pure $ from @_ @VariableName) first)
-        (TermLike.mapVariables (pure $ from @_ @VariableName) second)
+        first
+        second
     empty

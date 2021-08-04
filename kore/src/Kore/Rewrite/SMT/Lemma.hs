@@ -83,19 +83,20 @@ declareSMTLemmas m = do
         m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
-        (lemma, TranslatorState{terms}) <-
+        (lemma, TranslatorState{terms, predicates}) <-
             runTranslator $
                 translatePredicateWith SideCondition.top translateUninterpreted $
                     wrapPredicate $ sentenceAxiomPattern axiomDeclaration
-        SMT.assert (addQuantifiers terms lemma)
+        SMT.assert
+            (addQuantifiers (Map.elems terms <> Map.elems predicates) lemma)
 
-    addQuantifiers vars lemma | null vars = lemma
-    addQuantifiers vars lemma =
+    addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma
+    addQuantifiers smtDependentAtoms lemma =
         SMT.List
             [ SMT.Atom "forall"
             , SMT.List
                 [ SMT.List [SMT.Atom smtName, smtType]
-                | SMTDependentAtom{smtName, smtType} <- Map.elems vars
+                | SMTDependentAtom{smtName, smtType} <- smtDependentAtoms
                 ]
             , lemma
             ]
@@ -116,6 +117,8 @@ translateUninterpreted ::
     TranslateItem variable ->
     Translator variable m SExpr
 translateUninterpreted _ (QuantifiedVariable _) =
+    empty
+translateUninterpreted _ (UninterpretedPredicate _) =
     empty
 translateUninterpreted t (UninterpretedTerm pat)
     | isVariable pat =
