@@ -28,9 +28,7 @@ import Kore.Variables.Fresh (FreshPartialOrd)
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Exists' corresponds to the @\\exists@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md> (Patterns).
 
 'existsSort' is both the sort of the operands and the sort of the result.
 -}
