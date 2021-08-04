@@ -245,10 +245,6 @@ test_matchDisjunction =
                     , functionalAxiom "final1"
                     , functionalAxiom "final2"
                     , functionalAxiom "unreachable"
-                    -- , simpleRewriteAxiom "initial" "next1"
-                    -- , simpleRewriteAxiom "initial" "next2"
-                    -- , simpleRewriteAxiom "next1" "final1"
-                    -- , simpleRewriteAxiom "next2" "final2"
                     ]
                 , moduleAttributes = Attributes []
                 }
