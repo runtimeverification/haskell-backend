@@ -579,7 +579,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
           , not (isBottom right) =
             pure $ NotImplied claimPattern
         | otherwise = do
-            warnClaimRHSIsBottom claimPattern
+            when (isBottom right) $
+                warnClaimRHSIsBottom claimPattern
             pure $
                 Lens.set (field @"left") stuck claimPattern
                     & NotImpliedStuck
