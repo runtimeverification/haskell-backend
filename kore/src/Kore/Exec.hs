@@ -264,7 +264,7 @@ exec
                         , (ExecDepth 0, Start initialConfig)
                         )
             let (depths, finalConfigs) = unzip finals
-            infoExecDepth (maximum depths)
+            infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
                     MultiOr.make $
                         catMaybes $
