@@ -84,17 +84,17 @@ parseKoreMatchDisjunctionOptions startTime =
         <$> argument
             str
             ( metavar "DEFINITION_FILE"
-                <> help "Kore definition file to verify and use for execution"
+                <> help "Kore definition file to verify and use for execution."
             )
         <*> strOption
             ( metavar "DISJUNCTION_FILE"
                 <> long "disjunction"
-                <> help "TODO"
+                <> help "File containing a disjunction of concrete terms."
             )
         <*> strOption
             ( metavar "MATCH_FILE"
                 <> long "match"
-                <> help "TODO"
+                <> help "Kore source file representing pattern to search for."
             )
         <*> optional
             ( strOption
@@ -107,7 +107,6 @@ parseKoreMatchDisjunctionOptions startTime =
         <*> parseBugReportOption
         <*> parseKoreLogOptions exeName startTime
   where
-    -- TODO: factor this out in GlobalMain?
     parseMainModuleName =
         GlobalMain.parseModuleName
             "MODULE"
@@ -118,7 +117,7 @@ parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
     fullDesc
         <> progDesc "Matches Kore pattern in MATCH_FILE with Kore pattern in DISJUNCTION_FILE"
-        <> header "kore-match-disjunction - TODO"
+        <> header "kore-match-disjunction - a tool for applying search patterns to disjunctions of configurations"
 
 main :: IO ()
 main = do
