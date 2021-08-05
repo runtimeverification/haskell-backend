@@ -17,9 +17,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
-syntactic category, which are not yet in the Semantics of K document,
-but they should appear in Section 9.1.4 (Patterns) at some point.
+{- |'DomainValue' corresponds to the @\\dv@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'domainValueSort' is the sort of the result.
 
