@@ -104,6 +104,7 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import Kore.Log.InfoReachability
+import Kore.Log.WarnClaimRHSIsBottom
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )
@@ -518,7 +519,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 >>= Pattern.simplify
                 >>= SMT.Evaluator.filterMultiOr
                 >>= Logic.scatter
-        pure (examine anyUnified stuck)
+        examine anyUnified stuck
         & elseImplied
   where
     ClaimPattern{right, left, existentials} = claimPattern
@@ -575,17 +576,20 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine ::
         AnyUnified ->
         Pattern RewritingVariableName ->
-        CheckImplicationResult ClaimPattern
+        m (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            Implied
+            pure Implied
         | not didAnyUnify
           , not (isBottom right) =
-            NotImplied claimPattern
-        | otherwise =
-            Lens.set (field @"left") stuck claimPattern
-                & NotImpliedStuck
+            pure $ NotImplied claimPattern
+        | otherwise = do
+            when (isBottom right) $
+                warnClaimRHSIsBottom claimPattern
+            pure $
+                Lens.set (field @"left") stuck claimPattern
+                    & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
 

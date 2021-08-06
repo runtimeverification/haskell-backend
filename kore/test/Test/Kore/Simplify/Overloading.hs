@@ -438,7 +438,7 @@ unifies ::
     TestTree
 unifies comment (term1, term2) (term1', term2') =
     withUnification
-        (assertEqual "" (Right (Simple (Pair term1' term2'))))
+        (assertEqual "" (Just (Resolution (Simple (Pair term1' term2')))))
         comment
         (Pair term1 term2)
 
@@ -458,9 +458,11 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
   where
     checkNarrowing :: UnificationResult -> Assertion
     checkNarrowing
-        ( Right
-                ( WithNarrowing
-                        Narrowing{narrowingSubst, overloadPair}
+        ( Just
+                ( Resolution
+                        ( WithNarrowing
+                                Narrowing{narrowingSubst, overloadPair}
+                            )
                     )
             ) =
             do
@@ -478,7 +480,7 @@ doesn'tUnify ::
     TestTree
 doesn'tUnify comment term1 term2 reason =
     withUnification
-        (assertEqual "" (Left (Clash reason)))
+        (assertEqual "" (Just (ClashResult reason)))
         comment
         (Pair term1 term2)
 
@@ -490,7 +492,7 @@ unifyNotApplicable ::
     TestTree
 unifyNotApplicable comment term1 term2 =
     withUnification
-        (assertEqual "" (Left NotApplicable))
+        (assertEqual "" Nothing)
         comment
         (Pair term1 term2)
 
@@ -502,16 +504,16 @@ unifyNotApplicableTwice ::
     TestTree
 unifyNotApplicableTwice comment term1 term2 =
     withUnificationTwice
-        (assertEqual "" (Left NotApplicable))
+        (assertEqual "" Nothing)
         comment
         (Pair term1 term2)
 
-type MatchResult =
+type TestMatchResult =
     Either UnifyOverloadingError (Pair (TermLike RewritingVariableName))
 
 match ::
     Pair (TermLike RewritingVariableName) ->
-    IO MatchResult
+    IO TestMatchResult
 match termPair = runSimplifier Mock.env $ runExceptT matchResult
   where
     matchResult ::
@@ -519,7 +521,7 @@ match termPair = runSimplifier Mock.env $ runExceptT matchResult
     matchResult = matchOverloading termPair
 
 withMatching ::
-    (MatchResult -> Assertion) ->
+    (TestMatchResult -> Assertion) ->
     TestName ->
     Pair (TermLike RewritingVariableName) ->
     TestTree
@@ -529,7 +531,7 @@ withMatching check comment termPair =
         check actual
 
 withMatchingTwice ::
-    (MatchResult -> Assertion) ->
+    (TestMatchResult -> Assertion) ->
     TestName ->
     Pair (TermLike RewritingVariableName) ->
     TestTree
@@ -543,15 +545,16 @@ withMatchingTwice check comment termPair =
                 check actual'
 
 type UnificationResult =
-    Either UnifyOverloadingError (OverloadingResolution RewritingVariableName)
+    Maybe MatchResult
 
 unify ::
     Pair (TermLike RewritingVariableName) ->
     IO UnificationResult
-unify termPair = runSimplifier Mock.env $ runExceptT unifyResult
+unify termPair =
+    runSimplifier Mock.env $ return unifyResult
   where
-    unifyResult :: UnifyOverloadingResult (SimplifierT NoSMT) RewritingVariableName
-    unifyResult = unifyOverloading termPair
+    unifyResult :: Maybe MatchResult
+    unifyResult = matchResult <$> unifyOverloading Mock.overloadSimplifier termPair
 
 withUnification ::
     (UnificationResult -> Assertion) ->
@@ -572,13 +575,13 @@ withUnificationTwice check comment termPair =
     testCase comment $ do
         actual <- unify termPair
         case actual of
-            Left _ -> assertFailure "Expected matching solution."
-            Right (Simple termPair') -> do
+            Just (Resolution (Simple termPair')) -> do
                 actual' <- unify termPair'
                 check actual'
-            Right (WithNarrowing Narrowing{overloadPair}) -> do
+            Just (Resolution (WithNarrowing Narrowing{overloadPair})) -> do
                 actual' <- unify overloadPair
                 check actual'
+            _ -> assertFailure "Expected matching solution."
 
 x1 :: TermLike RewritingVariableName
 x1 =

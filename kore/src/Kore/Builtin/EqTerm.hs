@@ -5,31 +5,11 @@ License     : BSD-3-Clause
 module Kore.Builtin.EqTerm (
     EqTerm (..),
     matchEqTerm,
-    unifyEqTerm,
+    -- unifyEqTerm,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
 import qualified Control.Monad as Monad
-import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Simplify.NotSimplifier (
-    NotSimplifier (..),
- )
-import Kore.Simplify.Simplify (
-    TermSimplifier,
- )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
 
@@ -55,26 +35,25 @@ matchEqTerm _ _ = Nothing
 
 This function is suitable only for equality simplification.
 -}
-unifyEqTerm ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    EqTerm (TermLike RewritingVariableName) ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
-    | Just value2 <- Bool.matchBool termLike2 =
-        lift $ do
-            solution <- unifyChildren operand1 operand2 & OrPattern.gather
-            let solution' = MultiOr.map eraseTerm solution
-            if value2
-                then Unify.scatter solution'
-                else mkNotSimplified solution' >>= Unify.scatter
-    | otherwise = empty
-  where
-    sort = TermLike.termLikeSort termLike2
-    EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition sort . Pattern.withoutTerm
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = sort, notChild}
+
+-- unifyEqTerm ::
+--     forall unifier.
+--     MonadUnify unifier =>
+--     TermSimplifier RewritingVariableName unifier ->
+--     NotSimplifier unifier ->
+--     EqTerm (TermLike RewritingVariableName) ->
+--     Bool ->
+--     unifier (Pattern RewritingVariableName)
+-- unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm value =
+--     do
+--         solution <- unifyChildren operand1 operand2 & OrPattern.gather
+--         let solution' = MultiOr.map eraseTerm solution
+--         if value
+--             then Unify.scatter solution'
+--             else mkNotSimplified solution' >>= Unify.scatter
+--   where
+--     sort = TermLike.termLikeSort termLike2
+--     EqTerm{operand1, operand2} = eqTerm
+--     eraseTerm = Pattern.fromCondition sort . Pattern.withoutTerm
+--     mkNotSimplified notChild =
+--         notSimplifier SideCondition.top Not{notSort = sort, notChild}

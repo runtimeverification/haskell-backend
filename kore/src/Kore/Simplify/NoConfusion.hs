@@ -22,6 +22,7 @@ import Kore.Log.DebugUnifyBottom (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 import Prelude.Kore hiding (
@@ -102,6 +103,10 @@ equalInjectiveHeadsAndEquals
             , secondChildren
             } = unifyData
 
+data DifferentConstructors = DifferentConstructors
+    { term1, term2 :: !(TermLike RewritingVariableName)
+    }
+
 {- | Matches
 
 @
@@ -117,12 +122,12 @@ and
 when @f /= g@ and @f,g@ either have the @constructor@ attribute or are overloaded.
 -}
 matchDifferentConstructors ::
-    (Symbol -> Bool) ->
+    OverloadSimplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe ()
+    Maybe DifferentConstructors
 matchDifferentConstructors
-    isOverloaded
+    OverloadSimplifier{isOverloaded}
     first
     second
         | App_ firstHead _ <- first
@@ -130,7 +135,7 @@ matchDifferentConstructors
           , firstHead /= secondHead
           , Symbol.isConstructor firstHead || isOverloaded firstHead
           , Symbol.isConstructor secondHead || isOverloaded secondHead =
-            Just ()
+            Just DifferentConstructors{term1 = first, term2 = second}
         | otherwise = empty
 {-# INLINE matchDifferentConstructors #-}
 
@@ -141,15 +146,14 @@ to be different; therefore their conjunction is @\\bottom@.
 -}
 constructorAndEqualsAssumesDifferentHeads ::
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
+    DifferentConstructors ->
     unifier a
 constructorAndEqualsAssumesDifferentHeads
-    first
-    second =
-        do
-            debugUnifyBottomAndReturnBottom
-                "Cannot unify different constructors or incompatible \
-                \sort injections."
-                first
-                second
+    unifyData =
+        debugUnifyBottomAndReturnBottom
+            "Cannot unify different constructors or incompatible \
+            \sort injections."
+            term1
+            term2
+      where
+        DifferentConstructors{term1, term2} = unifyData

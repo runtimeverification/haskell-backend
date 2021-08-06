@@ -21,6 +21,8 @@ module Kore.Builtin.Map (
     -- * Unification
     unifyEquals,
     unifyNotInKeys,
+    matchUnifyNotInKeys,
+    matchUnifyEquals,
 
     -- * Raw evaluators
     evalConcat,
@@ -30,9 +32,8 @@ module Kore.Builtin.Map (
 ) where
 
 import Control.Error (
-    MaybeT (MaybeT),
+    MaybeT,
     hoistMaybe,
-    runMaybeT,
  )
 import qualified Control.Monad as Monad
 import Data.HashMap.Strict (
@@ -113,7 +114,6 @@ import Kore.Syntax.Sentence (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import qualified Kore.Unification.Unify as Unify
 import Prelude.Kore
 
@@ -522,69 +522,84 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
+data NormAcData = NormAcData
+    { normalized1, normalized2 :: !(InternalMap Key (TermLike RewritingVariableName))
+    , term1, term2 :: !(TermLike RewritingVariableName)
+    , acData :: !(Ac.UnifyEqualsNormAc NormalizedMap RewritingVariableName)
+    }
+
+data UnifyEqualsMap
+    = ReturnBottom !(TermLike RewritingVariableName) !(TermLike RewritingVariableName)
+    | NormAc !NormAcData
+
+-- | Matches two concrete Map domain values.
+matchUnifyEquals ::
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsMap
+matchUnifyEquals tools first second
+    | Just True <- isMapSort tools sort1 =
+        worker first second True <|> worker second first False
+    | otherwise = Nothing
+  where
+    sort1 = termLikeSort first
+
+    normalizedOrBottom ::
+        TermLike RewritingVariableName ->
+        Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
+    normalizedOrBottom = Ac.toNormalized
+
+    worker a b isFirstMatched
+        | InternalMap_ normalized1 <- a
+          , InternalMap_ normalized2 <- b =
+            NormAc . NormAcData normalized1 normalized2 term1 term2
+                <$> Ac.matchUnifyEqualsNormalizedAc
+                    tools
+                    normalized1
+                    normalized2
+        | otherwise = case normalizedOrBottom a of
+            Ac.Bottom -> Just $ ReturnBottom term1 term2
+            Ac.Normalized normalized1 ->
+                let a' = Ac.asInternal tools sort1 normalized1
+                 in case normalizedOrBottom b of
+                        Ac.Bottom -> Just $ ReturnBottom term1 term2
+                        Ac.Normalized normalized2 ->
+                            let b' = Ac.asInternal tools sort1 normalized2
+                             in worker a' b' isFirstMatched
+      where
+        (term1, term2) = if isFirstMatched then (a, b) else (b, a)
+
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
 When it is used for simplifying equality, one should separately solve the
 case ⊥ = ⊥. One should also throw away the term in the returned pattern.
-
-The maps are assumed to have the same sort, but this is not checked. If
-multiple sorts are hooked to the same builtin domain, the verifier should
-reject the definition.
 -}
 unifyEquals ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals unifyEqualsChildren first second = do
-    tools <- Simplifier.askMetadataTools
-    (Monad.guard . fromMaybe False) (isMapSort tools sort1)
-    MaybeT $ do
-        unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
-        case sequence unifiers of
-            Nothing -> return Nothing
-            Just us -> Monad.Unify.scatter (map Just us)
-  where
-    sort1 = termLikeSort first
-
-    unifyEquals0 ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MaybeT unifier (Pattern RewritingVariableName)
-    unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
-        tools <- Simplifier.askMetadataTools
-        Ac.unifyEqualsNormalized
-            tools
-            first
-            second
-            unifyEqualsChildren
-            normalized1
-            normalized2
-    unifyEquals0 pat1 pat2 = do
-        firstDomain <- asDomain pat1
-        secondDomain <- asDomain pat2
-        unifyEquals0 firstDomain secondDomain
-      where
-        asDomain ::
-            TermLike RewritingVariableName ->
-            MaybeT unifier (TermLike RewritingVariableName)
-        asDomain patt =
-            case normalizedOrBottom of
-                Ac.Normalized normalized -> do
-                    tools <- Simplifier.askMetadataTools
-                    return (Ac.asInternal tools sort1 normalized)
-                Ac.Bottom ->
-                    lift $
-                        debugUnifyBottomAndReturnBottom
-                            "Duplicated elements in normalization."
-                            first
-                            second
+    SmtMetadataTools Attribute.Symbol ->
+    UnifyEqualsMap ->
+    unifier (Pattern RewritingVariableName)
+unifyEquals unifyEqualsChildren tools unifyData =
+    case unifyData of
+        ReturnBottom term1 term2 ->
+            debugUnifyBottomAndReturnBottom
+                "Duplicated elements in normalization."
+                term1
+                term2
+        NormAc unifyData' ->
+            Ac.unifyEqualsNormalized
+                tools
+                term1
+                term2
+                unifyEqualsChildren
+                normalized1
+                normalized2
+                acData
           where
-            normalizedOrBottom ::
-                Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
-            normalizedOrBottom = Ac.toNormalized patt
+            NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'
 
 data InKeys term = InKeys
     { symbol :: !Symbol
@@ -610,35 +625,134 @@ matchInKeys ::
     Maybe (InKeys (TermLike variable))
 matchInKeys = retract
 
-unifyNotInKeys ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
+data UnifyNotInKeys = UnifyNotInKeys
+    { inKeys :: !(InKeys (TermLike RewritingVariableName))
+    , concreteKeys, mapKeys, opaqueElements :: ![TermLike RewritingVariableName]
+    , term :: !(TermLike RewritingVariableName)
+    }
+
+data UnifyNotInKeysResult
+    = NullKeysNullOpaques
+    | NonNullKeysOrMultipleOpaques !UnifyNotInKeys
+
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}(false), inKeys(map, key))
+@
+
+when @key@ does not belong to the keys of @map@. Symmetric in the two arguments.
+-}
+matchUnifyNotInKeys ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
-    worker a b <|> worker b a
+    Maybe UnifyNotInKeysResult
+matchUnifyNotInKeys first second
+    | Just False <- Bool.matchBool first
+      , Just inKeys@InKeys{mapTerm} <- matchInKeys second
+      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+        let symbolicKeys = getSymbolicKeysOfAc normalizedMap
+            concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
+            mapKeys = symbolicKeys <> concreteKeys
+            opaqueElements = opaque . unwrapAc $ normalizedMap
+            unifyData =
+                NonNullKeysOrMultipleOpaques
+                    UnifyNotInKeys
+                        { inKeys
+                        , concreteKeys
+                        , mapKeys
+                        , opaqueElements
+                        , term = first
+                        }
+         in case (mapKeys, opaqueElements) of
+                -- null mapKeys && null opaqueElements
+                ([], []) -> Just NullKeysNullOpaques
+                -- (not (null mapKeys) || (length opaqueElements > 1))
+                (_ : _, _) -> Just unifyData
+                (_, _ : _ : _) -> Just unifyData
+                -- otherwise
+                _ -> Nothing
+    | Just False <- Bool.matchBool second
+      , Just inKeys@InKeys{mapTerm} <- matchInKeys first
+      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+        let symbolicKeys = getSymbolicKeysOfAc normalizedMap
+            concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
+            mapKeys = symbolicKeys <> concreteKeys
+            opaqueElements = opaque . unwrapAc $ normalizedMap
+            unifyData =
+                NonNullKeysOrMultipleOpaques
+                    UnifyNotInKeys
+                        { inKeys
+                        , concreteKeys
+                        , mapKeys
+                        , opaqueElements
+                        , term = second
+                        }
+         in case (mapKeys, opaqueElements) of
+                -- null mapKeys && null opaqueElements
+                ([], []) -> Just NullKeysNullOpaques
+                -- (not (null mapKeys) || (length opaqueElements > 1))
+                (_ : _, _) -> Just unifyData
+                (_, _ : _ : _) -> Just unifyData
+                -- otherwise
+                _ -> Nothing
+    | otherwise = Nothing
   where
     normalizedOrBottom ::
         InternalVariable variable =>
         TermLike variable ->
         Ac.NormalizedOrBottom NormalizedMap variable
     normalizedOrBottom = Ac.toNormalized
+{-# INLINE matchUnifyNotInKeys #-}
 
+unifyNotInKeys ::
+    forall unifier.
+    MonadUnify unifier =>
+    Sort ->
+    TermSimplifier RewritingVariableName unifier ->
+    NotSimplifier unifier ->
+    UnifyNotInKeysResult ->
+    unifier (Pattern RewritingVariableName)
+unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData =
+    case unifyData of
+        NullKeysNullOpaques -> return (Pattern.topOf resultSort)
+        NonNullKeysOrMultipleOpaques unifyData' ->
+            do
+                -- Concrete keys are constructor-like, therefore they are defined
+                TermLike.assertConstructorLikeKeys concreteKeys $ return ()
+                definedKey <- defineTerm keyTerm
+                definedMap <- defineTerm mapTerm
+                keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
+
+                let keyInKeysOpaque =
+                        (\term' -> inject @(TermLike _) (inKeys :: InKeys (TermLike RewritingVariableName)){mapTerm = term'})
+                            <$> opaqueElements
+
+                opaqueConditions <-
+                    traverse (unifyChildren term) keyInKeysOpaque
+                let conditions =
+                        fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
+                            <> [definedKey, definedMap]
+                return $ collectConditions conditions
+          where
+            UnifyNotInKeys
+                { inKeys
+                , concreteKeys
+                , mapKeys
+                , opaqueElements
+                , term
+                } = unifyData'
+            InKeys{keyTerm, mapTerm} = inKeys
+  where
     defineTerm ::
         TermLike RewritingVariableName ->
-        MaybeT unifier (Condition RewritingVariableName)
-    defineTerm termLike =
-        makeEvaluateTermCeil SideCondition.topTODO termLike
+        unifier (Condition RewritingVariableName)
+    defineTerm term =
+        makeEvaluateTermCeil SideCondition.topTODO term
             >>= Unify.scatter
-            & lift
-
-    sort1 = TermLike.termLikeSort a
 
     eraseTerm =
-        Pattern.fromCondition sort1 . Pattern.withoutTerm
+        Pattern.fromCondition resultSort . Pattern.withoutTerm
 
     unifyAndNegate t1 t2 =
         do
@@ -648,45 +762,9 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                 fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
             (notSimplifier SideCondition.top)
                 Not
-                    { notSort = sort1
+                    { notSort = resultSort
                     , notChild = OrPattern.fromPatterns unificationSolutions
                     }
             >>= Unify.scatter
 
-    collectConditions terms = fold terms & Pattern.fromCondition sort1
-
-    worker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MaybeT unifier (Pattern RewritingVariableName)
-    worker termLike1 termLike2
-        | Just boolValue <- Bool.matchBool termLike1
-          , not boolValue
-          , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys termLike2
-          , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
-            do
-                let symbolicKeys = getSymbolicKeysOfAc normalizedMap
-                    concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
-                    mapKeys = symbolicKeys <> concreteKeys
-                    opaqueElements = opaque . unwrapAc $ normalizedMap
-                if null mapKeys && null opaqueElements
-                    then return (Pattern.topOf sort1)
-                    else do
-                        Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
-                        -- Concrete keys are constructor-like, therefore they are defined
-                        TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-                        definedKey <- defineTerm keyTerm
-                        definedMap <- defineTerm mapTerm
-                        keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
-
-                        let keyInKeysOpaque =
-                                (\term -> inject @(TermLike _) inKeys{mapTerm = term})
-                                    <$> opaqueElements
-
-                        opaqueConditions <-
-                            lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
-                        let conditions =
-                                fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                                    <> [definedKey, definedMap]
-                        return $ collectConditions conditions
-    worker _ _ = empty
+    collectConditions terms = fold terms & Pattern.fromCondition resultSort

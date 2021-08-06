@@ -485,6 +485,7 @@ matchStringEqual =
 
 data UnifyString = UnifyString
     { string1, string2 :: !InternalString
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 {- | Matches
@@ -503,10 +504,10 @@ matchString ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyString
-matchString first second
-    | InternalString_ string1 <- first
-      , InternalString_ string2 <- second =
-        Just UnifyString{string1, string2}
+matchString term1 term2
+    | InternalString_ string1 <- term1
+      , InternalString_ string2 <- term2 =
+        Just UnifyString{string1, string2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchString #-}
 
@@ -514,26 +515,31 @@ matchString first second
 unifyString ::
     forall unifier.
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyString ->
     unifier (Pattern RewritingVariableName)
-unifyString term1 term2 unifyData =
+unifyString unifyData =
     assert (on (==) internalStringSort string1 string2) worker
   where
     worker :: unifier (Pattern RewritingVariableName)
     worker
         | on (==) internalStringValue string1 string2 =
             return $ Pattern.fromTermLike term1
-        | otherwise =
-            debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
-    UnifyString{string1, string2} = unifyData
+        | otherwise = debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
+    UnifyString{string1, string2, term1, term2} = unifyData
 
 data UnifyStringEq = UnifyStringEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
     , internalBool :: !InternalBool
     }
 
+{- | Matches
+
+@
+\\equals{_, _}(\\dv{Bool}(_), eqString{_}(_,_)),
+@
+
+symmetric in the two arguments.
+-}
 matchUnifyStringEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -542,6 +548,10 @@ matchUnifyStringEq first second
     | Just eqTerm <- matchStringEqual first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
+        Just UnifyStringEq{eqTerm, internalBool}
+    | Just eqTerm <- matchStringEqual second
+      , isFunctionPattern second
+      , InternalBool_ internalBool <- first =
         Just UnifyStringEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyStringEq #-}

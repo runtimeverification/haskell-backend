@@ -20,6 +20,7 @@ module Kore.Builtin.KEqual (
     unifyKequalsEq,
     unifyIfThenElse,
     matchUnifyKequalsEq,
+    matchIfThenElse,
 
     -- * keys
     eqKey,
@@ -231,11 +232,6 @@ data UnifyKequalsEq = UnifyKequalsEq
     , internalBool :: !InternalBool
     }
 
-{- | Matches two terms when second is a bool term
-    and the first is a function pattern matching
-    the @KEQUAL.eq@ hooked symbol.
--}
-
 {- | Matches
 
 @
@@ -245,8 +241,10 @@ data UnifyKequalsEq = UnifyKequalsEq
 and
 
 @
-\\and{_}(eq(_,_), \\dv{Bool}(_))
+\\and{_}(eq(_,_), \\dv{Bool}(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
@@ -256,6 +254,10 @@ matchUnifyKequalsEq first second
     | Just eqTerm <- matchKequalEq first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
+        Just UnifyKequalsEq{eqTerm, internalBool}
+    | Just eqTerm <- matchKequalEq second
+      , isFunctionPattern second
+      , InternalBool_ internalBool <- first =
         Just UnifyKequalsEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
@@ -277,7 +279,7 @@ unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
                     then pure
                     else mkNotSimplified
         scattered <- Unify.scatter solution'
-        return scattered{term = mkInternalBool internalBool}
+        return (scattered :: Pattern RewritingVariableName){term = mkInternalBool internalBool}
   where
     UnifyKequalsEq{eqTerm, internalBool} = unifyData
     EqTerm{symbol, operand1, operand2} = eqTerm
@@ -294,43 +296,65 @@ data IfThenElse term = IfThenElse
     , branch1, branch2 :: !term
     }
 
--- | Match the @KEQUAL.eq@ hooked symbol.
-matchIfThenElse :: TermLike variable -> Maybe (IfThenElse (TermLike variable))
-matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
-    hook' <- (getHook . symbolHook) symbol
-    Monad.guard (hook' == iteKey)
-    return IfThenElse{symbol, condition, branch1, branch2}
-matchIfThenElse _ = Nothing
+data UnifyIfThenElse = UnifyIfThenElse
+    { ifThenElse :: IfThenElse (TermLike RewritingVariableName)
+    , -- The term that was not matched by @matchIfThenElse@
+      term :: TermLike RewritingVariableName
+    }
+
+{- | Matches
+
+@
+\\and{_}(ite(_,_,_), _)
+@
+
+symmetric in the two arguments.
+-}
+matchIfThenElse ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyIfThenElse
+matchIfThenElse first second
+    | Just ifThenElse <- matchITE first =
+        Just $ UnifyIfThenElse{ifThenElse, term = second}
+    | Just ifThenElse <- matchITE second =
+        Just $ UnifyIfThenElse{ifThenElse, term = first}
+    | otherwise = Nothing
+  where
+    matchITE (App_ symbol [condition, branch1, branch2]) = do
+        hook' <- (getHook . symbolHook) symbol
+        Monad.guard (hook' == iteKey)
+        return IfThenElse{symbol, condition, branch1, branch2}
+    matchITE _ = Nothing
+{-# INLINE matchIfThenElse #-}
 
 unifyIfThenElse ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyIfThenElse unifyChildren a b =
-    worker a b <|> worker b a
+    UnifyIfThenElse ->
+    unifier (Pattern RewritingVariableName)
+unifyIfThenElse unifyChildren unifyData =
+    worker ifThenElse term
   where
+    UnifyIfThenElse{ifThenElse, term} = unifyData
     takeCondition value condition' =
         makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
             & Condition.fromPredicate
       where
         sort = termLikeSort condition'
-    worker termLike1 termLike2
-        | Just ifThenElse <- matchIfThenElse termLike1 =
-            lift (takeBranch1 ifThenElse <|> takeBranch2 ifThenElse)
+    worker ifThenElse' second' =
+        takeBranch1 ifThenElse' <|> takeBranch2 ifThenElse'
       where
         takeBranch1 IfThenElse{condition, branch1} = do
-            solution <- unifyChildren branch1 termLike2
+            solution <- unifyChildren branch1 second'
             let branchCondition = takeCondition True condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
                 & Logic.lowerLogicT
         takeBranch2 IfThenElse{condition, branch2} = do
-            solution <- unifyChildren branch2 termLike2
+            solution <- unifyChildren branch2 second'
             let branchCondition = takeCondition False condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
                 & Logic.lowerLogicT
-    worker _ _ = empty
