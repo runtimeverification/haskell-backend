@@ -28,7 +28,7 @@ import GHC.Generics (
 import Kore.Unparser
 import Prelude.Kore
 
--- |Enumeration of patterns starting with @\@
+-- |Enumeration of patterns starting with @\\@
 data MLPatternType
     = AndPatternType
     | BottomPatternType
