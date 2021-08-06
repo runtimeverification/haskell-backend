@@ -1,0 +1,1014 @@
+kore-exec: [372960] Debug (DebugAttemptEquation):
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+kore-exec: [380727] Debug (DebugAttemptEquation):
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [404659] Debug (DebugAttemptEquation):
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+kore-exec: [410973] Debug (DebugAttemptEquation):
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Spa */
+            \equals{SortGeneratedCounterCell{}, _PREDICATE{}}(
+                /* Fl Fn D Sfa */
+                RuleVar'Unds'DotVar0:SortGeneratedCounterCell{},
+                /* Fl Fn D Sfa */
+                Lbl'-LT-'generatedCounter'-GT-'{}(
+                    /* Created: Kore.Rewrite.Rule.Expand.maybeNewVariable */
+                    /* Fl Fn D Sfa */
+                    RuleVar'Unds'DotVar1:SortInt{}
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [438338] Debug (DebugAttemptEquation):
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+kore-exec: [444316] Debug (DebugAttemptEquation):
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Spc */
+            \and{_PREDICATE{}}(
+                /* Sfc */
+                \ceil{SortS{}, _PREDICATE{}}(
+                    /* Fn Sfc */
+                    Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                        /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+                    )
+                ),
+                /* Spa */
+                \equals{SortGeneratedCounterCell{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa */
+                    RuleVar'Unds'DotVar0:SortGeneratedCounterCell{},
+                    /* Fl Fn D Sfa */
+                    Lbl'-LT-'generatedCounter'-GT-'{}(
+                        /* Created: Kore.Rewrite.Rule.Expand.maybeNewVariable */
+                        /* Fl Fn D Sfa */
+                        RuleVar'Unds'DotVar1:SortInt{}
+                    )
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+            Key:
+              /* Sfc */
+              \ceil{SortS{}, _PREDICATE{}}(
+                  /* Fn Sfc */
+                  Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                      /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+                  )
+              )
+            Value:
+              /* D Sfa */ \top{_PREDICATE{}}()
+            Key:
+              /* Spa */
+              \equals{SortGeneratedCounterCell{}, _PREDICATE{}}(
+                  /* Fl Fn D Sfa */
+                  RuleVar'Unds'DotVar0:SortGeneratedCounterCell{},
+                  /* Fl Fn D Sfa */
+                  Lbl'-LT-'generatedCounter'-GT-'{}(
+                      /* Created: Kore.Rewrite.Rule.Expand.maybeNewVariable */
+                      /* Fl Fn D Sfa */
+                      RuleVar'Unds'DotVar1:SortInt{}
+                  )
+              )
+            Value:
+              /* D Sfa */ \top{_PREDICATE{}}()
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [478694] Debug (DebugAttemptEquation):
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ RuleVarX:SortInt{}
+        )
+kore-exec: [483385] Debug (DebugAttemptEquation):
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ RuleVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [501818] Debug (DebugAttemptEquation):
+    (InfoReachability) while simplifying the claim:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [507384] Debug (DebugAttemptEquation):
+    (InfoReachability) while simplifying the claim:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+        /* Fn Spa */
+        /* Inj: */ inj{SortS{}, SortKItem{}}(
+            /* Fn Spa */
+            Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+            )
+        )
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [527382] Debug (DebugAttemptEquation):
+    (InfoReachability) while simplifying the claim:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [533509] Debug (DebugAttemptEquation):
+    (InfoReachability) while simplifying the claim:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+        /* Fn Spa */
+        /* Inj: */ inj{SortS{}, SortKItem{}}(
+            /* Fn Spa */
+            Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+            )
+        )
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [556929] Debug (DebugAttemptEquation):
+    (InfoReachability) while simplifying the claim:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [563736] Debug (DebugAttemptEquation):
+    (InfoReachability) while simplifying the claim:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Sfc */
+            \ceil{SortS{}, _PREDICATE{}}(
+                /* Fn Sfc */
+                Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+            Key:
+              /* Sfc */
+              \ceil{SortS{}, _PREDICATE{}}(
+                  /* Fn Sfc */
+                  Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                      /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                  )
+              )
+            Value:
+              /* D Sfa */ \top{_PREDICATE{}}()
+        Assumed to be defined:
+        /* Fn Spa */
+        /* Inj: */ inj{SortS{}, SortKItem{}}(
+            /* Fn Spa */
+            Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+            )
+        )
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [591733] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [597302] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [616355] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [623193] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [643771] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [649611] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [668883] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [675214] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Sfc */
+            \not{_PREDICATE{}}(
+                /* Sfc */
+                \equals{SortS{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ Lbla'Unds'SIMPLIFICATION'Unds'S{}(),
+                    /* Fn Sfc */
+                    Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                    )
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [699097] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [705694] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Sfc */
+            \ceil{SortS{}, _PREDICATE{}}(
+                /* Fn Sfc */
+                Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [725760] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [732121] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Spu */
+            \and{_PREDICATE{}}(
+                /* Sfc */
+                \ceil{SortS{}, _PREDICATE{}}(
+                    /* Fn Sfc */
+                    Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                    )
+                ),
+                /* Sfc */
+                \not{_PREDICATE{}}(
+                    /* Sfc */
+                    \equals{SortS{}, _PREDICATE{}}(
+                        /* Fl Fn D Sfa Cl */
+                        Lbla'Unds'SIMPLIFICATION'Unds'S{}(),
+                        /* Fn Sfc */
+                        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                        )
+                    )
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+            Key:
+              /* Sfc */
+              \ceil{SortS{}, _PREDICATE{}}(
+                  /* Fn Sfc */
+                  Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                      /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                  )
+              )
+            Value:
+              /* D Sfa */ \top{_PREDICATE{}}()
+            Key:
+              /* Sfc */
+              \equals{SortS{}, _PREDICATE{}}(
+                  /* Fl Fn D Sfa Cl */ Lbla'Unds'SIMPLIFICATION'Unds'S{}(),
+                  /* Fn Sfc */
+                  Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                      /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                  )
+              )
+            Value:
+              /* Fn Sfa */ \bottom{_PREDICATE{}}()
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [766215] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [772843] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [791211] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [796884] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* D Sfa */ \top{_PREDICATE{}}()
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [816636] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [823012] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Sfc */
+            \not{_PREDICATE{}}(
+                /* Sfc */
+                \equals{SortS{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ Lbla'Unds'SIMPLIFICATION'Unds'S{}(),
+                    /* Fn Sfc */
+                    Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                    )
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [844927] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55 to term:
+        /* Fn Spa */
+        Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+            /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+        )
+kore-exec: [850641] Debug (DebugAttemptEquation):
+    (InfoReachability) while checking the implication:
+    (DebugAttemptEquation) while applying equation at /Users/emarzion/kore/test/simplification/a-spec.k:5:24-5:55:
+    equation is not applicable:
+    Could not infer the equation requirement:
+        /* Spa */
+        \equals{SortBool{}, _PREDICATE{}}(
+            /* Fl Fn D Spa */
+            Lbl'Unds-GT-'Int'Unds'{}(
+                /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+            ),
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true")
+        )
+    and the matching requirement:
+        /* D Sfa */ \top{_PREDICATE{}}()
+    from the side condition:
+        Assumed true condition:
+            /* Sfc */
+            \ceil{SortS{}, _PREDICATE{}}(
+                /* Fn Sfc */
+                Lblf'LParUndsRParUnds'SIMPLIFICATION'Unds'S'Unds'Int{}(
+                    /* Fl Fn D Sfa */ ConfigVarX:SortInt{}
+                )
+            )
+        TermLike replacements:
+        Predicate replacements:
+        Assumed to be defined:
+    The negated implication is:
+        \and(
+            /* term: */
+            /* D Sfa */ \top{_PREDICATE{}}(),
+        \and(
+            /* predicate: */
+            /* Sfa */
+            \not{_PREDICATE{}}(
+                /* Sfa */
+                \equals{SortBool{}, _PREDICATE{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                    /* Fl Fn D Sfa */
+                    Lbl'Unds-GT-'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ ConfigVarX:SortInt{},
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    )
+                )
+            ),
+            /* substitution: */
+            \top()
+        ))
+kore-exec: [874643] Warning (WarnStuckClaimState):
+    (InfoReachability) while checking the implication:
+    The proof has reached the final configuration, but the claimed implication is not valid. Location: /Users/emarzion/kore/test/simplification/a-spec.k:14:11-14:33
+[Warning] Compiler: Variable 'X' defined but not used. Prefix variable name
+with underscore if this is intentional.
+	Source(/Users/emarzion/kore/test/simplification/a-spec.k)
+	Location(14,17,14,18)
