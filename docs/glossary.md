@@ -40,7 +40,7 @@
 
 1. (noun)
    A syntactic element constructed according to the rules described in the
-   semantics-of-k document.
+   kore-syntax document.
 2. (noun)
    The internal representation of such a syntactic element. It may have
    constructs which cannot be represented directly into syntactic elements
