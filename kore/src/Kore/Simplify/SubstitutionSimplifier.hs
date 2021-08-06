@@ -349,9 +349,16 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
         case variableName uVar of
             SomeVariableNameSet _ -> return subst
-            SomeVariableNameElement _ -> do
-                termLike' <- simplifyTermLike termLike
-                return $ Substitution.assign uVar termLike'
+            SomeVariableNameElement _
+                | isSimplified -> return subst
+                | otherwise -> do
+                    termLike' <- simplifyTermLike termLike
+                    return $ Substitution.assign uVar termLike'
+              where
+                isSimplified =
+                    TermLike.isSimplified
+                        sideConditionRepresentation
+                        termLike
 
     simplifyTermLike ::
         TermLike RewritingVariableName ->

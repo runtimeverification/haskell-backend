@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Internal.OrCondition (
     OrCondition,
+    isSimplified,
     toConditions,
     fromConditions,
     fromCondition,
@@ -43,6 +44,9 @@ import Prelude.Kore
 
 -- | The disjunction of 'Condition'.
 type OrCondition variable = MultiOr (Condition variable)
+
+isSimplified :: SideCondition.Representation -> OrCondition variable -> Bool
+isSimplified sideCondition = all (Condition.isSimplified sideCondition)
 
 -- | A "disjunction" of one 'Condition'.
 fromCondition :: Condition variable -> OrCondition variable

@@ -24,6 +24,12 @@ module Kore.Internal.Pattern (
     topOf,
     fromTermLike,
     Kore.Internal.Pattern.freeElementVariables,
+    isSimplified,
+    hasSimplifiedChildren,
+    hasSimplifiedChildrenIgnoreConditions,
+    forgetSimplified,
+    markSimplified,
+    simplifiedAttribute,
     assign,
     requireDefined,
     fromMultiAnd,
@@ -41,6 +47,9 @@ module Kore.Internal.Pattern (
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
+ )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+    Simplified,
  )
 import Kore.Internal.Condition (
     Condition,
@@ -113,6 +122,66 @@ fromPredicateSorted ::
     Predicate variable ->
     Pattern variable
 fromPredicateSorted sort = fromCondition sort . Condition.fromPredicate
+isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
+isSimplified sideCondition (splitTerm -> (t, p)) =
+    TermLike.isSimplified sideCondition t
+        && Condition.isSimplified sideCondition p
+
+{- | Checks whether the conjunction a 'Pattern' has simplified children.
+A 'Pattern' is a conjunction at the top level:
+@
+\\and{S}('term', \\and{S}('predicate', 'substitution'))
+@
+where 'predicate' itself is generally a conjunction of many clauses. The
+children of the 'Pattern' are considered simplified if the 'term' and
+'substitution' are simplified and the individual clauses of the 'predicate' are
+simplified.
+-}
+hasSimplifiedChildren ::
+    Ord variable =>
+    SideCondition.Representation ->
+    Pattern variable ->
+    Bool
+hasSimplifiedChildren sideCondition patt =
+    TermLike.isSimplified sideCondition term
+        && all (Predicate.isSimplified sideCondition) clauses
+        && Substitution.isSimplified sideCondition substitution
+  where
+    Conditional{term, predicate, substitution} = patt
+    clauses = Predicate.toMultiAnd predicate
+
+{- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
+used to simplify the children.
+-}
+hasSimplifiedChildrenIgnoreConditions ::
+    Ord variable =>
+    Pattern variable ->
+    Bool
+hasSimplifiedChildrenIgnoreConditions patt =
+    TermLike.isSimplifiedSomeCondition term
+        && all Predicate.isSimplifiedSomeCondition clauses
+        && Substitution.isSimplifiedSomeCondition substitution
+  where
+    Conditional{term, predicate, substitution} = patt
+    clauses = Predicate.toMultiAnd predicate
+
+forgetSimplified ::
+    InternalVariable variable => Pattern variable -> Pattern variable
+forgetSimplified patt =
+    TermLike.forgetSimplified term
+        `withCondition` Condition.forgetSimplified condition
+  where
+    (term, condition) = Conditional.splitTerm patt
+markSimplified ::
+    InternalVariable variable => Pattern variable -> Pattern variable
+markSimplified patt =
+    TermLike.markSimplified term
+        `withCondition` Condition.markSimplified condition
+  where
+    (term, condition) = Conditional.splitTerm patt
+simplifiedAttribute :: Pattern variable -> Attribute.Simplified
+simplifiedAttribute (splitTerm -> (t, p)) =
+    TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
 freeElementVariables ::
     InternalVariable variable =>
     Pattern variable ->

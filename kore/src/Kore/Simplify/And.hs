@@ -159,7 +159,10 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
         term =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term unified)
-    let predicate = Predicate.fromMultiAnd predicates
+    let predicate =
+            Predicate.fromMultiAnd predicates
+                & Predicate.setSimplified simplified
+        simplified = foldMap Predicate.simplifiedAttribute predicates
      in Pattern.withCondition term (from substitution <> from predicate)
             & return
 
@@ -173,7 +176,10 @@ applyAndIdempotenceAndFindContradictions patt =
   where
     (terms, negatedTerms) = splitIntoTermsAndNegations patt
     noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
-    mkAndSimplified a b = mkAnd a b
+    mkAndSimplified a b =
+        TermLike.setSimplified
+            (TermLike.simplifiedAttribute a <> TermLike.simplifiedAttribute b)
+            (mkAnd a b)
 
 splitIntoTermsAndNegations ::
     TermLike RewritingVariableName ->

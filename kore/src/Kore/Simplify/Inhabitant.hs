@@ -12,6 +12,9 @@ import Kore.Internal.OrPattern (
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike (
+    markSimplified,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -25,4 +28,5 @@ simplify ::
     OrPattern RewritingVariableName
 simplify Inhabitant{inhSort} =
     OrPattern.fromTermLike $
-        mkInhabitant inhSort
+        TermLike.markSimplified $
+            mkInhabitant inhSort

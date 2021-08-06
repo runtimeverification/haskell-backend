@@ -22,6 +22,7 @@ import Control.Error (
 import Control.Monad.Catch (
     MonadThrow,
  )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import qualified Kore.Internal.MultiOr as MultiOr (
     flatten,
@@ -116,8 +117,21 @@ evaluateApplication
             return $
                 OrPattern.fromPattern $
                     Pattern.withCondition
-                        termLike
+                        (markSimplifiedIfChildren maybeSideCondition termLike)
                         childrenCondition
+
+        markSimplifiedIfChildren ::
+            Maybe SideCondition.Representation ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName
+        markSimplifiedIfChildren Nothing =
+            TermLike.setSimplified
+                (foldMap TermLike.simplifiedAttribute application)
+        markSimplifiedIfChildren (Just condition) =
+            TermLike.setSimplified
+                ( foldMap TermLike.simplifiedAttribute application
+                    <> Attribute.Simplified.simplifiedConditionally condition
+                )
 
         canMemoize
             | Symbol.isMemo symbol

@@ -108,7 +108,7 @@ simplify sideCondition original =
         | otherwise = do
             output <- MultiAnd.traverseOrAnd worker input
             if input == output
-                then pure output -- (MultiOr.map (MultiAnd.map Predicate.markSimplified) output)
+                then pure output
                 else loop (count + 1) output
 
     replacePredicate = SideCondition.replacePredicate sideCondition
@@ -123,6 +123,8 @@ simplify sideCondition original =
     worker predicate
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
+        | Predicate.isSimplified repr predicate =
+            pure (mkSingleton predicate)
         | otherwise =
             case predicateF of
                 AndF andF -> normalizeAnd =<< traverse worker andF
@@ -313,6 +315,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         -- \not(\and(_, ...))
         Predicate.fromMultiAnd predicates
             & fromNot
+            & Predicate.markSimplified
             & mkSingleton
             & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}

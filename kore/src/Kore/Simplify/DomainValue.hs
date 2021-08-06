@@ -40,7 +40,7 @@ simplify ::
     OrPattern RewritingVariableName
 simplify builtin@DomainValue{domainValueSort} =
     OrPattern.coerceSort domainValueSort
-        . MultiOr.map (fmap mkDomainValue)
+        . MultiOr.map (fmap (markSimplified . mkDomainValue))
         $ simplifyDomainValue builtin
 
 simplifyDomainValue ::

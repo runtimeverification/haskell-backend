@@ -72,7 +72,7 @@ asInternal ::
     Integer ->
     TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    TermLike.fromConcrete . mkInternalInt $
+    TermLike.fromConcrete . TermLike.markSimplified . mkInternalInt $
         asBuiltin builtinIntSort builtinIntValue
 
 asBuiltin ::

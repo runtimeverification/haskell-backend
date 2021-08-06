@@ -117,22 +117,15 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition =
-    loop 0 . OrPattern.fromPattern
+    loop . OrPattern.fromPattern
   where
-    limit :: Int
-    limit = 4
-
-    loop count input
-        | count >= limit =
-            trace "\nexceeded pattern simplifier limit\n" $
-                pure input
-        | otherwise = do
-            output <-
-                OrPattern.traverse worker input
-                    & fmap OrPattern.flatten
-            if input == output
-                then pure output
-                else loop (count + 1) output
+    loop input = do
+        output <-
+            OrPattern.traverse worker input
+                & fmap OrPattern.flatten
+        if input == output
+            then pure output
+            else loop output
 
     worker pattern' =
         OrPattern.observeAllT $ do

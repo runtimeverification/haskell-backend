@@ -16,12 +16,16 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern (
     fromTermLike,
+    simplifiedAttribute,
     toTermLike,
  )
 import Kore.Internal.TermLike (
     Mu (Mu),
     SetVariable,
     mkMu,
+ )
+import qualified Kore.Internal.TermLike as TermLike (
+    setSimplified,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Rewrite.RewritingVariable (
@@ -48,5 +52,6 @@ makeEvaluate ::
     Pattern RewritingVariableName
 makeEvaluate variable patt =
     Pattern.fromTermLike $
-        mkMu variable $
-            Pattern.toTermLike patt
+        TermLike.setSimplified (Pattern.simplifiedAttribute patt) $
+            mkMu variable $
+                Pattern.toTermLike patt

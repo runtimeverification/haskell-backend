@@ -45,4 +45,9 @@ simplifyEvaluatedMultiPredicate sideCondition predicates =
         andConditions element
   where
     andConditions predicates' =
-        Substitution.normalize sideCondition (fold predicates')
+        fmap markSimplified $
+            Substitution.normalize sideCondition (fold predicates')
+      where
+        markSimplified =
+            Condition.setPredicateSimplified
+                (foldMap Condition.simplifiedAttribute predicates')

@@ -20,6 +20,7 @@ import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Internal.Symbol
 import Kore.Sort
@@ -60,6 +61,10 @@ instance Synthetic Function (Const Signedness) where
 
 instance Synthetic Defined (Const Signedness) where
     synthetic = const (Defined True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const Signedness) where
+    synthetic = const fullySimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic ConstructorLike (Const Signedness) where

@@ -39,6 +39,9 @@ import Kore.Internal.TermLike (
     TermLike,
     mkInternalBool,
  )
+import qualified Kore.Internal.TermLike as TermLike (
+    markSimplified,
+ )
 import Prelude.Kore
 
 -- | Builtin name of the @Bool@ sort.
@@ -60,7 +63,7 @@ asInternal ::
     Bool ->
     TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    mkInternalBool $
+    TermLike.markSimplified . mkInternalBool $
         asBuiltin builtinBoolSort builtinBoolValue
 
 asBuiltin ::

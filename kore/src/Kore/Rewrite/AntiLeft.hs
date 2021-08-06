@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Rewrite.AntiLeft (
     AntiLeft (..),
     antiLeftPredicate,
+    forgetSimplified,
     mapVariables,
     parse,
     toTermLike,
@@ -228,6 +229,32 @@ mapVariablesLeft adj antiLeft@(AntiLeftLhs _ _ _) =
         }
   where
     AntiLeftLhs{existentials, predicate, term} = antiLeft
+
+forgetSimplified ::
+    InternalVariable variable =>
+    AntiLeft variable ->
+    AntiLeft variable
+forgetSimplified antiLeft@(AntiLeft _ _ _) =
+    AntiLeft
+        { aliasTerm = TermLike.forgetSimplified aliasTerm
+        , maybeInner = forgetSimplified <$> maybeInner
+        , leftHands = map forgetSimplifiedLeft leftHands
+        }
+  where
+    AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
+
+forgetSimplifiedLeft ::
+    InternalVariable variable =>
+    AntiLeftLhs variable ->
+    AntiLeftLhs variable
+forgetSimplifiedLeft antiLeftLhs@(AntiLeftLhs _ _ _) =
+    AntiLeftLhs
+        { existentials
+        , predicate = Predicate.forgetSimplified predicate
+        , term = TermLike.forgetSimplified term
+        }
+  where
+    AntiLeftLhs{existentials, predicate, term} = antiLeftLhs
 
 toTermLike :: AntiLeft variable -> TermLike variable
 toTermLike AntiLeft{aliasTerm} = aliasTerm

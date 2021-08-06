@@ -21,6 +21,9 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeFloorPredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate (
+    markSimplified,
+ )
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -92,4 +95,5 @@ makeEvaluateNonBoolFloor patt =
     (term, condition) = Pattern.splitTerm patt
     floorCondition =
         makeFloorPredicate term
+            & Predicate.markSimplified
             & Condition.fromPredicate

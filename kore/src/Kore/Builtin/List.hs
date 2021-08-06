@@ -98,6 +98,7 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike (
     Symbol (..),
     isFunctionPattern,
+    markSimplified,
  )
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottom,
@@ -477,7 +478,8 @@ unifyEquals
                     unified <- sequence $ Seq.zipWith simplifyChild list1 list2
                     let propagatedUnified = propagateConditions unified
                         result =
-                            asInternal tools internalListSort
+                            TermLike.markSimplified
+                                . asInternal tools internalListSort
                                 <$> propagatedUnified
                     return result
           where
@@ -505,7 +507,7 @@ unifyEquals
                                 internal2
                         suffixUnified <- simplifyChild frame2 listSuffix1
                         let result =
-                                mkInternalList internal1
+                                TermLike.markSimplified (mkInternalList internal1)
                                     <$ prefixUnified
                                     <* suffixUnified
                         return result
@@ -581,7 +583,7 @@ unifyEquals
                             frame1
                             suffix2Frame2
                     let result =
-                            initial
+                            TermLike.markSimplified initial
                                 <$ prefixUnified
                                 <* suffixUnified
                     return result
@@ -590,7 +592,7 @@ unifyEquals
                         unifyEqualsConcrete internal1 internal2
                     suffixUnified <- simplifyChild frame1 frame2
                     let result =
-                            initial
+                            TermLike.markSimplified initial
                                 <$ prefixUnified
                                 <* suffixUnified
                     return result
@@ -628,13 +630,13 @@ unifyEquals
                             internal1
                             internal2{internalListChild = suffix2}
                     let result =
-                            initial <$ prefixUnified <* suffixUnified
+                            TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
                     return result
                 | length1 == length2 = do
                     prefixUnified <- simplifyChild frame1 frame2
                     suffixUnified <- unifyEqualsConcrete internal1 internal2
                     let result =
-                            initial
+                            TermLike.markSimplified initial
                                 <$ prefixUnified
                                 <* suffixUnified
                     return result

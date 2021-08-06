@@ -17,6 +17,11 @@ module Kore.Internal.TermLike.TermLike (
     traverseVariablesF,
     updateCallStack,
     depth,
+    isAttributeSimplified,
+    isAttributeSimplifiedAnyCondition,
+    isAttributeSimplifiedSomeCondition,
+    attributeSimplifiedAttribute,
+    setAttributeSimplified,
     mapAttributeVariables,
     deleteFreeVariable,
 ) where
@@ -52,9 +57,6 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import Data.Text (
-    Text,
- )
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 import qualified Generics.SOP as SOP
@@ -70,6 +72,8 @@ import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Attribute
 import qualified Kore.Attribute.Pattern.Functional as Attribute
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -371,6 +375,43 @@ instance Synthetic Attribute.Defined (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
+instance Synthetic Attribute.Simplified (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
+            InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+
 instance Synthetic Attribute.ConstructorLike (TermLikeF variable) where
     synthetic =
         \case
@@ -430,6 +471,7 @@ data TermAttributes variable = TermAttributes
     , termFunction :: !Attribute.Function
     , termDefined :: !Attribute.Defined
     , termCreated :: !Attribute.Created
+    , termSimplified :: !Attribute.Simplified
     , termConstructorLike :: !Attribute.ConstructorLike
     }
     deriving stock (Eq, Show)
@@ -448,6 +490,7 @@ instance
     , Synthetic Attribute.Functional base
     , Synthetic Attribute.Function base
     , Synthetic Attribute.Defined base
+    , Synthetic Attribute.Simplified base
     , Synthetic Attribute.ConstructorLike base
     ) =>
     Synthetic (TermAttributes variable) base
@@ -460,6 +503,10 @@ instance
             , termFunction = synthetic (termFunction <$> base)
             , termDefined = synthetic (termDefined <$> base)
             , termCreated = synthetic (termCreated <$> base)
+            , termSimplified =
+                if Attribute.isConstructorLike constructorLikeAttr
+                    then Attribute.fullySimplified
+                    else synthetic (termSimplified <$> base)
             , termConstructorLike = constructorLikeAttr
             }
       where
@@ -474,11 +521,65 @@ instance Attribute.HasConstructorLike (TermAttributes variable) where
 instance (Ord variable) => From KeyAttributes (TermAttributes variable) where
     from = fromKeyAttributes
 
+attributeSimplifiedAttribute ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Attribute.Simplified
+attributeSimplifiedAttribute patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt termSimplified
+
 constructorLikeAttribute ::
     TermAttributes variable ->
     Attribute.ConstructorLike
 constructorLikeAttribute TermAttributes{termConstructorLike} =
     termConstructorLike
+
+{- Checks whether the pattern is simplified relative to the given side
+condition.
+-}
+isAttributeSimplified ::
+    HasCallStack =>
+    SideCondition.Representation ->
+    TermAttributes variable ->
+    Bool
+isAttributeSimplified sideCondition patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplified sideCondition termSimplified
+
+{- Checks whether the pattern is simplified relative to some side condition.
+-}
+isAttributeSimplifiedSomeCondition ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Bool
+isAttributeSimplifiedSomeCondition patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplifiedSomeCondition termSimplified
+
+{- Checks whether the pattern is simplified relative to any side condition.
+-}
+isAttributeSimplifiedAnyCondition ::
+    HasCallStack =>
+    TermAttributes variable ->
+    Bool
+isAttributeSimplifiedAnyCondition patt@TermAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplifiedAnyCondition termSimplified
+
+assertSimplifiedConsistency :: HasCallStack => TermAttributes variable -> a -> a
+assertSimplifiedConsistency
+    TermAttributes{termConstructorLike, termSimplified}
+        | Attribute.isConstructorLike termConstructorLike
+          , not (Attribute.isSimplifiedAnyCondition termSimplified) =
+            error "Inconsistent attributes, constructorLike implies fully simplified."
+        | otherwise = id
+
+setAttributeSimplified ::
+    Attribute.Simplified ->
+    TermAttributes variable ->
+    TermAttributes variable
+setAttributeSimplified termSimplified attrs =
+    attrs{termSimplified}
 
 -- TODO: should we remove this? it isn't used anywhere
 
@@ -601,18 +702,18 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                 TermAttributes{termCreated} = attrs
 
                 attributeRepresentation = case attrs of
-                    (TermAttributes _ _ _ _ _ _ _) ->
+                    (TermAttributes _ _ _ _ _ _ _ _) ->
                         Pretty.surround
                             (Pretty.hsep $ map Pretty.pretty representation)
                             "/* "
                             " */"
                   where
-                    representation :: [Text]
                     representation =
                         addFunctionalRepresentation $
                             addFunctionRepresentation $
                                 addDefinedRepresentation $
-                                    addConstructorLikeRepresentation []
+                                    addSimplifiedRepresentation $
+                                        addConstructorLikeRepresentation []
                 addFunctionalRepresentation
                     | Attribute.isFunctional $ termFunctional attrs = ("Fl" :)
                     | otherwise = id
@@ -622,6 +723,14 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                 addDefinedRepresentation
                     | Attribute.isDefined $ termDefined attrs = ("D" :)
                     | otherwise = id
+                addSimplifiedRepresentation =
+                    case simplifiedTag of
+                        Just result -> (result :)
+                        Nothing -> id
+                  where
+                    simplifiedTag =
+                        Attribute.Simplified.unparseTag
+                            (attributeSimplifiedAttribute attrs)
                 addConstructorLikeRepresentation =
                     case constructorLike of
                         Just Attribute.ConstructorLikeHead -> ("Cl" :)
@@ -830,17 +939,19 @@ fromKeyAttributes attrs =
         , termFunctional = Attribute.Functional True
         , termFunction = Attribute.Function True
         , termDefined = Attribute.Defined True
+        , termSimplified = Attribute.fullySimplified
         , termConstructorLike =
             Attribute.ConstructorLike (Just Attribute.ConstructorLikeHead)
         , termCreated = Attribute.Created Nothing
         }
 
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
-toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _)
+toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
     | Attribute.nullFreeVariables termFreeVariables
       , Attribute.isFunctional termFunctional
       , Attribute.isFunction termFunction
       , Attribute.isDefined termDefined
+      , Attribute.isSimplifiedAnyCondition termSimplified
       , Attribute.isConstructorLike termConstructorLike =
         Just $ KeyAttributes termSort
     | otherwise = Nothing
@@ -852,6 +963,7 @@ toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _)
         , termFunction
         , termDefined
         , termConstructorLike
+        , termSimplified
         } = attrs
 
 -- | Ensure that a 'TermLike' is a concrete, constructor-like term.

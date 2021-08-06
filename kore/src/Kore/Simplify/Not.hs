@@ -53,6 +53,9 @@ import Kore.Internal.SideCondition (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike (
+    markSimplified,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -172,9 +175,10 @@ makeEvaluatePredicate
         Conditional
             { term = ()
             , predicate =
-                makeNotPredicate $
-                    makeAndPredicate predicate $
-                        Substitution.toPredicate substitution
+                Predicate.markSimplified $
+                    makeNotPredicate $
+                        makeAndPredicate predicate $
+                            Substitution.toPredicate substitution
             , substitution = mempty
             }
 
@@ -196,7 +200,7 @@ makeTermNot (And_ _ term1 term2) =
 makeTermNot term
     | isBottom term = MultiOr.singleton mkTop_
     | isTop term = MultiOr.singleton mkBottom_
-    | otherwise = MultiOr.singleton $ mkNot term
+    | otherwise = MultiOr.singleton $ TermLike.markSimplified $ mkNot term
 
 -- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
 distributeNot ::

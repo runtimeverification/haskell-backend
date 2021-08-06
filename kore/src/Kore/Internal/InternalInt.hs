@@ -14,6 +14,7 @@ import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -60,4 +61,8 @@ instance Synthetic Function (Const InternalInt) where
 
 instance Synthetic Functional (Const InternalInt) where
     synthetic = alwaysFunctional
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const InternalInt) where
+    synthetic = alwaysSimplified
     {-# INLINE synthetic #-}

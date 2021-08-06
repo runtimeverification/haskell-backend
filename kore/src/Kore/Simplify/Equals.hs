@@ -330,7 +330,8 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
             Conditional
                 { term = mkTop_
                 , predicate =
-                    makeEqualsPredicate firstTerm secondTerm
+                    Predicate.markSimplified $
+                        makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
 
@@ -370,7 +371,8 @@ makeEvaluateTermsToPredicate first second sideCondition
             Nothing ->
                 return $
                     OrCondition.fromCondition . Condition.fromPredicate $
-                        makeEqualsPredicate first second
+                        Predicate.markSimplified $
+                            makeEqualsPredicate first second
             Just predicatedOr -> do
                 firstCeilOr <- makeEvaluateTermCeil sideCondition first
                 secondCeilOr <- makeEvaluateTermCeil sideCondition second
@@ -447,6 +449,7 @@ termEqualsAnd p1 p2 =
                 . sequence
         equalsPattern =
             makeEqualsPredicate first second
+                & Predicate.markSimplified
                 & Condition.fromPredicate
                 -- Although the term will eventually be discarded, the sub-term
                 -- unifier should return it in case the caller needs to

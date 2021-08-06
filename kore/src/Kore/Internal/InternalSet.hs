@@ -25,6 +25,7 @@ import Kore.Attribute.Pattern.FreeVariables hiding (
  )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.NormalizedAc
@@ -130,6 +131,10 @@ instance Synthetic Function (InternalAc key NormalizedSet) where
 instance Synthetic Functional (InternalAc key NormalizedSet) where
     synthetic InternalAc{builtinAcChild = NormalizedSet builtinSetChild} =
         normalizedAcFunctional builtinSetChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (InternalAc key NormalizedSet) where
+    synthetic = notSimplified
     {-# INLINE synthetic #-}
 
 instance HasConstructorLike (Value NormalizedSet ConstructorLike) where

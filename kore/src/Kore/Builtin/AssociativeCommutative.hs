@@ -58,6 +58,9 @@ import qualified Data.Reflection as Reflection
 import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+    Simplified,
+ )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -175,6 +178,9 @@ class
         TermLike variable ->
         Maybe (normalized Key (TermLike variable))
 
+    simplifiedAttributeValue ::
+        Value normalized (TermLike variable) -> Attribute.Simplified
+
 instance TermWrapper NormalizedMap where
     asInternalBuiltin tools builtinAcSort builtinAcChild =
         InternalAc
@@ -229,6 +235,8 @@ instance TermWrapper NormalizedMap where
                 , opaque = [patt]
                 }
 
+    simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
+
 instance TermWrapper NormalizedSet where
     asInternalBuiltin tools builtinAcSort builtinAcChild =
         InternalAc
@@ -277,6 +285,8 @@ instance TermWrapper NormalizedSet where
     toNormalized patt =
         (Normalized . wrapAc)
             emptyNormalizedAc{opaque = [patt]}
+
+    simplifiedAttributeValue SetValue = mempty
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @TermLike Concrete@ to @TermLike variable@.
@@ -720,7 +730,24 @@ unifyEqualsNormalized
             renormalized <- normalize1 normalizedTerm
 
             let unifierTerm :: TermLike RewritingVariableName
-                unifierTerm = asInternal tools sort1 renormalized
+                unifierTerm = markSimplified $ asInternal tools sort1 renormalized
+
+                markSimplified =
+                    TermLike.setSimplified
+                        ( foldMap TermLike.simplifiedAttribute opaque
+                            <> foldMap TermLike.simplifiedAttribute abstractKeys
+                            <> foldMap simplifiedAttributeValue abstractValues
+                            <> foldMap simplifiedAttributeValue concreteValues
+                        )
+                  where
+                    unwrapped = unwrapAc renormalized
+                    NormalizedAc{opaque} = unwrapped
+                    (abstractKeys, abstractValues) =
+                        (unzip . map unwrapElement)
+                            (elementsWithVariables unwrapped)
+                    (_, concreteValues) =
+                        (unzip . HashMap.toList)
+                            (concreteElements unwrapped)
 
             return (unifierTerm `Pattern.withCondition` unifierCondition)
       where

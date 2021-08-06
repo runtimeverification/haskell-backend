@@ -409,10 +409,10 @@ quantifyPattern variable original@Conditional{term, predicate, substitution}
             , "variable=" ++ unparseToString variable
             , "patt=" ++ unparseToString original
             ]
-    | quantifyTerm = mkExists variable <$> original
+    | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
     | quantifyPredicate =
         Conditional.withCondition term $
-            Condition.fromPredicate
+            Condition.fromPredicate . Predicate.markSimplified
             -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
             -- the And simplifier on the predicate.
             $

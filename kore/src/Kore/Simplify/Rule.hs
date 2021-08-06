@@ -86,10 +86,10 @@ simplifyRulePattern rule = do
                     RulePattern{attributes} = rule
                 return
                     RulePattern
-                        { left = left'
-                        , antiLeft = antiLeft'
-                        , requires = requires'
-                        , rhs = rhs'
+                        { left = TermLike.forgetSimplified left'
+                        , antiLeft = AntiLeft.forgetSimplified <$> antiLeft'
+                        , requires = Predicate.forgetSimplified requires'
+                        , rhs = rhsForgetSimplified rhs'
                         , attributes = attributes
                         }
         _ ->
@@ -120,6 +120,7 @@ simplifyClaimPattern claim = do
                 let subst = Substitution.toMap substitution
                     left' = Pattern.withCondition term (Pattern.withoutTerm left)
                  in return
+                        . ClaimPattern.forgetSimplified
                         . substitute subst
                         $ claim
                             { ClaimPattern.left = left'
