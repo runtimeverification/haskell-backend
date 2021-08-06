@@ -29,12 +29,12 @@ module Kore.Builtin.Set (
 
     -- * Unification
     unifyEquals,
+    matchUnifyEquals,
 ) where
 
 import Control.Error (
-    MaybeT (MaybeT),
+    MaybeT,
     hoistMaybe,
-    runMaybeT,
  )
 import qualified Control.Monad as Monad
 import Data.HashMap.Strict (
@@ -114,7 +114,6 @@ import qualified Kore.Syntax.Sentence as Sentence.DoNotUse (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Prelude.Kore
 
 -- | Builtin name of the @Set@ sort.
@@ -526,73 +525,85 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
-{- | Simplify the conjunction or equality of two concrete Set domain values.
+data NormAcData = NormAcData
+    { normalized1, normalized2 :: !(InternalSet Key (TermLike RewritingVariableName))
+    , term1, term2 :: !(TermLike RewritingVariableName)
+    , acData :: !(Ac.UnifyEqualsNormAc NormalizedSet RewritingVariableName)
+    }
 
-    When it is used for simplifying equality, one should separately solve the
-    case ⊥ = ⊥. One should also throw away the term in the returned pattern.
+data UnifyEqualsMap
+    = ReturnBottom !(TermLike RewritingVariableName) !(TermLike RewritingVariableName)
+    | NormAc !NormAcData
 
-    The sets are assumed to have the same sort, but this is not checked. If
-    multiple sorts are hooked to the same builtin domain, the verifier should
-    reject the definition.
+-- | Matches two concrete Set domain values.
+matchUnifyEquals ::
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsMap
+matchUnifyEquals tools first second
+    | Just True <- isSetSort tools sort1 =
+        worker first second True <|> worker second first False
+    | otherwise = Nothing
+  where
+    sort1 = termLikeSort first
+
+    normalizedOrBottom ::
+        TermLike RewritingVariableName ->
+        Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
+    normalizedOrBottom = Ac.toNormalized
+
+    worker a b isFirstMatched
+        | InternalSet_ normalized1 <- a
+          , InternalSet_ normalized2 <- b =
+            NormAc . NormAcData normalized1 normalized2 term1 term2
+                <$> Ac.matchUnifyEqualsNormalizedAc
+                    tools
+                    normalized1
+                    normalized2
+        | otherwise = case normalizedOrBottom a of
+            Ac.Bottom -> Just $ ReturnBottom term1 term2
+            Ac.Normalized normalized1 ->
+                let a' = Ac.asInternal tools sort1 normalized1
+                 in case normalizedOrBottom b of
+                        Ac.Bottom -> Just $ ReturnBottom term1 term2
+                        Ac.Normalized normalized2 ->
+                            let b' = Ac.asInternal tools sort1 normalized2
+                             in worker a' b' isFirstMatched
+      where
+        (term1, term2) = if isFirstMatched then (a, b) else (b, a)
+
+{- | Simplify the conjunction or equality of two concrete Map domain values.
+
+When it is used for simplifying equality, one should separately solve the
+case ⊥ = ⊥. One should also throw away the term in the returned pattern.
+
+The maps are assumed to have the same sort, but this is not checked. If
+multiple sorts are hooked to the same builtin domain, the verifier should
+reject the definition.
 -}
 unifyEquals ::
     forall unifier.
     MonadUnify unifier =>
-    ( TermLike RewritingVariableName ->
-      TermLike RewritingVariableName ->
-      unifier (Pattern RewritingVariableName)
-    ) ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyEquals
-    unifyEqualsChildren
-    first
-    second =
-        do
-            tools <- Simplifier.askMetadataTools
-            (Monad.guard . fromMaybe False) (isSetSort tools sort1)
-            MaybeT $ do
-                unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
-                case sequence unifiers of
-                    Nothing -> return Nothing
-                    Just us -> Monad.Unify.scatter (map Just us)
-      where
-        sort1 = termLikeSort first
-
-        unifyEquals0 ::
-            TermLike RewritingVariableName ->
-            TermLike RewritingVariableName ->
-            MaybeT unifier (Pattern RewritingVariableName)
-        unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2) = do
-            tools <- Simplifier.askMetadataTools
+    TermSimplifier RewritingVariableName unifier ->
+    SmtMetadataTools Attribute.Symbol ->
+    UnifyEqualsMap ->
+    unifier (Pattern RewritingVariableName)
+unifyEquals unifyEqualsChildren tools unifyData =
+    case unifyData of
+        ReturnBottom term1 term2 ->
+            debugUnifyBottomAndReturnBottom
+                "Duplicated elements in normalization."
+                term1
+                term2
+        NormAc unifyData' ->
             Ac.unifyEqualsNormalized
                 tools
-                first
-                second
+                term1
+                term2
                 unifyEqualsChildren
                 normalized1
                 normalized2
-        unifyEquals0 pat1 pat2 = do
-            firstDomain <- asDomain pat1
-            secondDomain <- asDomain pat2
-            unifyEquals0 firstDomain secondDomain
+                acData
           where
-            asDomain ::
-                TermLike RewritingVariableName ->
-                MaybeT unifier (TermLike RewritingVariableName)
-            asDomain patt =
-                case normalizedOrBottom of
-                    Ac.Normalized normalized -> do
-                        tools <- Simplifier.askMetadataTools
-                        return (Ac.asInternal tools sort1 normalized)
-                    Ac.Bottom ->
-                        lift $
-                            debugUnifyBottomAndReturnBottom
-                                "Duplicated elements in normalization."
-                                first
-                                second
-              where
-                normalizedOrBottom ::
-                    Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
-                normalizedOrBottom = Ac.toNormalized patt
+            NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'

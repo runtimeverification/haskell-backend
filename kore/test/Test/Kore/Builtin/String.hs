@@ -555,7 +555,6 @@ test_unifyStringEq =
 
         matched =
             String.matchUnifyStringEq term1 term2
-                <|> String.matchUnifyStringEq term2 term1
 
     simplifyCondition' ::
         Condition RewritingVariableName ->
