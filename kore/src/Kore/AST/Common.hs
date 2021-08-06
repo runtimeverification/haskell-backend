@@ -10,8 +10,8 @@ Unified constructs are those that represent both meta and object versions of
 an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 'Sort' or 'Sort')
 
-Please refer to Section 9 (The Kore Language) of the
-<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+Please refer to
+<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.AST.Common (
     MLPatternType (..),
