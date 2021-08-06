@@ -267,6 +267,7 @@
           "Kore/Log/Registry"
           "Kore/Log/SQLite"
           "Kore/Log/WarnBoundedModelChecker"
+          "Kore/Log/WarnClaimRHSIsBottom"
           "Kore/Log/WarnDepthLimitExceeded"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
