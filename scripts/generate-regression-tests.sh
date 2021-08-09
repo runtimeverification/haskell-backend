@@ -62,7 +62,7 @@ generate-evm() {
     kollect-file test-add0 "$testadd0.haskell-out" \
         make "$testadd0.run-interactive" -e
 
-    kollect-file test-add0 "$testmul0.haskell-out" \
+    kollect-file test-mul0 "$testmul0.haskell-out" \
         make "$testmul0.run-interactive" -e
 
     kollect-file test-and0 "$testand0.haskell-out" \
