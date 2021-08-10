@@ -84,7 +84,7 @@ import Kore.Variables.Free (
 import Prelude.Kore
 import qualified Pretty
 
-{- | @Symbol@ is the @sort-variables@ part of the
+{- | 'Symbol' is the @sort-variables@ part of the
 @symbol@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
 
 See also: 'SymbolOrAlias'
@@ -427,7 +427,7 @@ instance
     where
     freeVariables = freeVariables . getSentenceClaim
 
-{- | @SentenceHook@ corresponds to @sentence-hooked-sort@ and @sentence-hooked-symbol@ syntactic categories from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax#sentences>.
+{- | 'SentenceHook' corresponds to @sentence-hooked-sort@ and @sentence-hooked-symbol@ syntactic categories from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax#sentences>.
 
 See also: 'SentenceSort', 'SentenceSymbol'
 -}
@@ -451,7 +451,7 @@ instance Unparse SentenceHook where
             SentenceHookedSort a -> "hooked-" <> unparse2 a
             SentenceHookedSymbol a -> "hooked-" <> unparse2 a
 
--- | @Sentence@ is the @sentence@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax#sentences>.
+-- | 'Sentence' is the @sentence@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax#sentences>.
 data Sentence (patternType :: Type)
     = SentenceAliasSentence !(SentenceAlias patternType)
     | SentenceSymbolSentence !SentenceSymbol

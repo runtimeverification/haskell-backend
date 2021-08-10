@@ -32,9 +32,9 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- | @Id@ is a Kore identifier.
+{- | 'Id' is a Kore identifier.
 
-@Id@ corresponds to the @identifier@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
+'Id' corresponds to the @identifier@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
 data Id = Id
     { getId :: !Text

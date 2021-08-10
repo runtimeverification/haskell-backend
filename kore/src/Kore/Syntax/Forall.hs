@@ -93,9 +93,9 @@ instance Synthetic Sort (Forall Sort variable) where
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
 
-@forallBinder@ may be used to implement 'traverseBinder'.
+'forallBinder' may be used to implement 'Kore.Variables.Binding.traverseBinder'.
 
-See also: 'existsBinder'.
+See also: 'Kore.Syntax.Exists.existsBinder'.
 -}
 forallBinder ::
     Lens.Lens

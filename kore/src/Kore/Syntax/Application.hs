@@ -8,7 +8,7 @@ constructs.
 
 Unified constructs are those that represent both meta and object versions of
 an AST term in a single data type (e.g. 'SymbolOrAlias' that can be either
-'Symbol' or 'Alias')
+'Kore.Syntax.Sentence.Symbol' or 'Kore.Syntax.Sentence.Alias')
 
 Please refer to
 <http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
@@ -28,7 +28,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'SymbolOrAlias' corresponds to the @symbol-or-alias0@ syntactic category from
+{- |'SymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from
 <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
 -}
 data SymbolOrAlias = SymbolOrAlias

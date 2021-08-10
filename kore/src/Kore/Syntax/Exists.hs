@@ -101,9 +101,9 @@ instance
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
-@existsBinder@ may be used to implement 'traverseBinder'.
+'existsBinder' may be used to implement 'Kore.Variables.Binding.traverseBinder'.
 
-See also: 'forallBinder'.
+See also: 'Kore.Syntax.Forall.forallBinder'.
 -}
 existsBinder ::
     Lens.Lens

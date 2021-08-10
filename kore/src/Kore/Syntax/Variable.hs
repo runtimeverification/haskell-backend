@@ -95,7 +95,7 @@ illegalVariableCounter =
 
 {- | Reset 'counter' so that a 'VariableName' may be unparsed.
 
-@externalizeFreshVariableName@ is not injective and is unsafe if used with
+'externalizeFreshVariableName' is not injective and is unsafe if used with
 'mapVariables'. See 'Kore.Internal.Pattern.externalizeFreshVariables' instead.
 -}
 externalizeFreshVariableName :: VariableName -> VariableName
@@ -124,7 +124,7 @@ toVariableName = from @variable @VariableName
 
 Variables occur without their sorts as subterms in Applicative Kore patterns,
 but with their sorts in binders like @\\exists@ and
-@\\forall@. @unparse2SortedVariable@ adds the sort ascription to the unparsed
+@\\forall@. 'unparse2SortedVariable' adds the sort ascription to the unparsed
 variable for the latter case.
 -}
 unparse2SortedVariable ::
@@ -250,7 +250,7 @@ instance From variable VariableName => From (SetVariableName variable) VariableN
 
 -- * Variable occurrences
 
-{- | @Variable@ is an occurrence of a variable in a Kore pattern.
+{- | 'Variable' is an occurrence of a variable in a Kore pattern.
 
 The @variable@ parameter is the type of variable names.
 
@@ -332,9 +332,9 @@ traverseSetVariable ::
     f (SetVariable variable2)
 traverseSetVariable adj = traverse (traverseSetVariableName adj)
 
-{- | @SomeVariableName@ is the name of a variable in a pattern.
+{- | 'SomeVariableName' is the name of a variable in a pattern.
 
-@SomeVariableName@ may be an 'ElementVariableName' or a 'SetVariableName'.
+'SomeVariableName' may be an 'ElementVariableName' or a 'SetVariableName'.
 -}
 data SomeVariableName variable
     = SomeVariableNameElement !(ElementVariableName variable)
@@ -562,7 +562,7 @@ isElementVariable = isJust . retractElementVariable
 
 It is an error if the 'SomeVariable' is not the 'ElemVar' constructor.
 
-Use @expectElementVariable@ when maintaining the invariant outside the type
+Use 'expectElementVariable' when maintaining the invariant outside the type
 system that the 'SomeVariable' is an 'ElementVariable', but please include a
 comment at the call site describing how the invariant is maintained.
 -}
@@ -588,7 +588,7 @@ isSetVariable unifiedVariable
 
 It is an error if the 'SomeVariable' is not the 'SetVar' constructor.
 
-Use @expectSetVariable@ when maintaining the invariant outside the type system
+Use 'expectSetVariable' when maintaining the invariant outside the type system
 that the 'SomeVariable' is an 'SetVariable', but please include a comment at the
 call site describing how the invariant is maintained.
 -}

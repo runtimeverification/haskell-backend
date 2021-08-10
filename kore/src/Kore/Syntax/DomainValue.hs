@@ -22,8 +22,8 @@ import qualified Pretty
 'domainValueSort' is the sort of the result.
 
 This represents the encoding of an object constant, e.g. we may use
-\dv{Int{}}{"123"} instead of a representation based on constructors,
-e.g. succesor(succesor(...succesor(0)...))
+@\\dv{Int{}}{"123"}@ instead of a representation based on constructors,
+e.g. @succesor(succesor(...succesor(0)...))@
 -}
 data DomainValue sort child = DomainValue
     { domainValueSort :: !sort

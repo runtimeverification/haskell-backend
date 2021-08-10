@@ -56,9 +56,9 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- | @SortVariable@ is a Kore sort variable.
+{- | 'SortVariable' is a Kore sort variable.
 
-@SortVariable@ corresponds to the @sort-variable@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
+'SortVariable' corresponds to the @sort-variable@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 newtype SortVariable = SortVariable
     {getSortVariable :: Id}

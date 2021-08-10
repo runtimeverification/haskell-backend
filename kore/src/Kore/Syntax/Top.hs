@@ -15,7 +15,7 @@ import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
 
-{- | 'Top' corresponds to the @\top{}()@ connective in Kore.
+{- | 'Top' corresponds to the @\\top{}()@ connective in Kore.
 
 'topSort' is the sort of the result.
 -}
