@@ -51,9 +51,10 @@ checkFunctions ::
 checkFunctions verifiedModule = do
     res <- traverse checkEquation' $ join $ Map.elems $ extractEquations verifiedModule
     traceM $ show res
-    if any (== (ExitFailure 3)) res
-        then return $ ExitFailure 3
-        else return ExitSuccess
+    return $
+        if ExitFailure 3 `elem` res
+            then ExitFailure 3
+            else ExitSuccess
 
 {-
   where
