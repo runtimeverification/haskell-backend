@@ -26,9 +26,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- | 'ModuleName' corresponds to the @module-name@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
+-- | 'ModuleName' corresponds to the @module-name@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#identifiers kore-syntax#identifiers>.
 newtype ModuleName = ModuleName {getModuleName :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -48,8 +46,7 @@ getModuleNameForError = Text.unpack . getModuleName
 'Attributes'.
 
 They correspond to the second, third and forth non-terminals of the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions).
+syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#definition-modules kore-syntax#definition-modues>.
 -}
 data Module (sentence :: Type) = Module
     { moduleName :: !ModuleName
