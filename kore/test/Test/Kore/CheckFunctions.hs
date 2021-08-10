@@ -98,7 +98,8 @@ import Test.Kore.Builtin.External (
     externalize,
  )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
-    constructorFunctionalAttributes, functionalAttributes
+    constructorFunctionalAttributes,
+    functionalAttributes,
  )
 
 {-
