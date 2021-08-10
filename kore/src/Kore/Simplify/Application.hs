@@ -38,7 +38,7 @@ import Kore.Rewrite.Function.Evaluator (
     evaluateApplication,
  )
 import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName
+    RewritingVariableName,
  )
 import Kore.Rewrite.Substitution (
     mergePredicatesAndSubstitutions,
@@ -139,12 +139,11 @@ evaluateApplicationFunction
             let definedPredicate = makeMultipleAndPredicate (predicate : ceilPredicates)
                 definedSideCondition = assumeDefinedTerms applicationChildren sideCondition
                 ceilPredicates = makeCeilPredicate <$> applicationChildren
-                Application { applicationChildren } = term
+                Application{applicationChildren} = term
              in evaluateApplication
                     definedSideCondition
                     Conditional{term = (), predicate = definedPredicate, substitution}
                     term
-
 
 makeExpandedApplication ::
     MonadSimplify simplifier =>

@@ -712,21 +712,21 @@ assumeDefined =
  'SideCondition'. See 'assumeDefined' for more details.
 -}
 assumeDefinedTerms ::
-    forall variable foldable .
+    forall variable foldable.
     InternalVariable variable =>
     Foldable foldable =>
     foldable (TermLike variable) ->
     SideCondition variable ->
     SideCondition variable
 assumeDefinedTerms terms sideCondition =
-    sideCondition { definedTerms = definedTerms' }
+    sideCondition{definedTerms = definedTerms'}
   where
     definedTerms' :: HashSet (TermLike variable)
     definedTerms' = definedTerms sideCondition <> foldMap getDefined terms
 
     getDefined :: TermLike variable -> HashSet (TermLike variable)
     getDefined term = case (assumeDefinedWorker term) of
-        Bottom -> HashSet.empty 
+        Bottom -> HashSet.empty
         Defined hs -> hs
 
 assumeDefinedWorker ::
@@ -739,7 +739,7 @@ assumeDefinedWorker term' =
         TermLike.And_ _ child1 child2 ->
             let result1 = assumeDefinedWorker child1
                 result2 = assumeDefinedWorker child2
-                in asSet term' <> result1 <> result2
+             in asSet term' <> result1 <> result2
         TermLike.App_ symbol children ->
             checkFunctional symbol term'
                 <> foldMap assumeDefinedWorker children
@@ -755,7 +755,7 @@ assumeDefinedWorker term' =
                     generateNormalizedAcs internalMap
                         & HashSet.map TermLike.mkInternalMap
                         & Defined
-                in foldMap assumeDefinedWorker definedElems
+             in foldMap assumeDefinedWorker definedElems
                     <> definedMaps
         TermLike.InternalSet_ internalSet ->
             let definedElems =
@@ -764,14 +764,14 @@ assumeDefinedWorker term' =
                     generateNormalizedAcs internalSet
                         & HashSet.map TermLike.mkInternalSet
                         & Defined
-                in foldMap assumeDefinedWorker definedElems
+             in foldMap assumeDefinedWorker definedElems
                     <> definedSets
         TermLike.Forall_ _ _ child ->
             asSet term' <> assumeDefinedWorker child
         TermLike.In_ _ _ child1 child2 ->
             let result1 = assumeDefinedWorker child1
                 result2 = assumeDefinedWorker child2
-                in asSet term' <> result1 <> result2
+             in asSet term' <> result1 <> result2
         TermLike.Bottom_ _ -> Bottom
         _ -> asSet term'
   where
