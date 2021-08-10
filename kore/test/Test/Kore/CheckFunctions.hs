@@ -98,7 +98,7 @@ import Test.Kore.Builtin.External (
     externalize,
  )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock (
-    constructorFunctionalAttributes,
+    constructorFunctionalAttributes, functionalAttributes
  )
 
 {-
@@ -216,23 +216,22 @@ mySymbDecl =
         { sentenceSymbolSymbol = mySymbol
         , sentenceSymbolSorts = []
         , sentenceSymbolResultSort = mySort
-        , sentenceSymbolAttributes = Attributes []
+        , sentenceSymbolAttributes = Attributes [functionalAttribute]
         }
 
 myF ::
     InternalVariable variable =>
     HasCallStack =>
-    TermLike variable ->
     TermLike variable
-myF arg =
+myF =
     mkApplySymbol
         Symbol
             { symbolConstructor = mySymbolName
             , symbolParams = []
             , symbolSorts = applicationSorts [] mySort
-            , symbolAttributes = Mock.constructorFunctionalAttributes
+            , symbolAttributes = Mock.functionalAttributes
             }
-        [arg]
+        []
 
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
 constructorDecl :: Text -> Verified.SentenceSymbol
@@ -282,7 +281,7 @@ disfunctionalAxiom =
             ( toTermLikeOld
                 mySort
                 ( mkEquation
-                    (myF (mkTop mySort))
+                    myF
                     (mkTop mySort)
                 )
             )
