@@ -98,8 +98,7 @@ type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 toOrPattern :: Sort -> NormalForm -> OrPattern RewritingVariableName
 toOrPattern sort =
     MultiOr.map
-        ( Pattern.fromCondition sort
-        . from @(Predicate _) @(Condition _)
+        ( Pattern.fromPredicateSorted sort
         . Predicate.makeMultipleAndPredicate
         . toList
         )
