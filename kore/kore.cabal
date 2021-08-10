@@ -589,6 +589,14 @@ executable kore-repl
   build-depends: exceptions >=0.10
   build-depends: reflection >=2.1
 
+executable kore-match-disjunction
+  import: haskell
+  import: exe
+  import: global-main
+  main-is: Main.hs
+  hs-source-dirs: app/match-disjunction
+  build-depends: transformers >= 0.5
+
 test-suite kore-test
   import: haskell
   import: library
