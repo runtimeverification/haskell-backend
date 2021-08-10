@@ -697,19 +697,20 @@ test_simplificationIntegration =
                             (mkOr Mock.cf Mock.cg)
                         )
                     )
-                & Pattern.fromTermLike
+                    & Pattern.fromTermLike
                 )
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Predicate simplifier simplifies child predicates" $ do
         actual <-
             evaluate
-                    ( makeFloorPredicate
-                        ( mkIn Mock.testSort
-                            Mock.cf
-                            Mock.cf
-                        )
-                    & Pattern.fromPredicateSorted Mock.testSort
+                ( makeFloorPredicate
+                    ( mkIn
+                        Mock.testSort
+                        Mock.cf
+                        Mock.cf
                     )
+                    & Pattern.fromPredicateSorted Mock.testSort
+                )
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "equals-predicate with sort change simplification" $ do
         actual <-

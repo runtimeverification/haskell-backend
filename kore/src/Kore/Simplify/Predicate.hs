@@ -17,7 +17,6 @@ import Kore.Attribute.Pattern.FreeVariables (
     occursIn,
  )
 import Kore.Internal.From
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -35,6 +34,7 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.Pattern (
     Condition,
  )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
@@ -99,8 +99,8 @@ toOrPattern :: Sort -> NormalForm -> OrPattern RewritingVariableName
 toOrPattern sort =
     MultiOr.map
         ( Pattern.fromPredicateSorted sort
-        . Predicate.makeMultipleAndPredicate
-        . toList
+            . Predicate.makeMultipleAndPredicate
+            . toList
         )
 
 fromOrCondition :: OrCondition RewritingVariableName -> NormalForm
