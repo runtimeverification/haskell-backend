@@ -25,6 +25,9 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -36,6 +39,7 @@ import Kore.Internal.Predicate (
     PredicateF (..),
  )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -44,7 +48,10 @@ import Kore.Internal.Substitution (
     pattern UnorderedAssignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike (TermLike)
+import Kore.Internal.TermLike (
+    TermLike,
+    termLikeSort,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnUnsimplifiedPredicate (
     warnUnsimplifiedPredicate,
@@ -72,6 +79,7 @@ import Kore.Syntax (
     Not (..),
     Or (..),
     SomeVariableName,
+    Sort,
     Top (..),
     variableName,
  )
@@ -86,6 +94,17 @@ import Prelude.Kore
  'simplifyNot' for the most notable exception.
 -}
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
+
+toOrPattern :: Sort -> NormalForm -> OrPattern RewritingVariableName
+toOrPattern sort =
+    MultiOr.map
+        ( Pattern.fromPredicateSorted sort
+            . Predicate.makeMultipleAndPredicate
+            . toList
+        )
+
+fromOrCondition :: OrCondition RewritingVariableName -> NormalForm
+fromOrCondition = MultiOr.map (from @(Condition _))
 
 simplify ::
     forall simplifier.
@@ -113,7 +132,15 @@ simplify sideCondition original =
 
     replacePredicate = SideCondition.replacePredicate sideCondition
 
-    simplifyTerm' = simplifyTerm sideCondition
+    -- If the child 'TermLike' is a term representing a predicate,
+    -- 'simplifyTerm' will not attempt to simplify it, so
+    -- it should be transformed into a 'Predicate' and simplified
+    -- accordingly.
+    simplifyTerm' term
+        | Right predicate <- Predicate.makePredicate term =
+            toOrPattern (termLikeSort term) <$> worker predicate
+        | otherwise =
+            simplifyTerm sideCondition term
 
     repr = SideCondition.toRepresentation sideCondition
 
@@ -144,8 +171,9 @@ simplify sideCondition original =
                 ForallF forallF ->
                     traverse worker (Forall.refreshForall avoid forallF)
                         >>= simplifyForall sideCondition
-                EqualsF equalsF ->
-                    simplifyEquals sideCondition =<< traverse simplifyTerm' equalsF
+                EqualsF equalsF@(Equals _ _ term _) ->
+                    simplifyEquals sideCondition (termLikeSort term)
+                        =<< traverse simplifyTerm' equalsF
                 InF inF ->
                     simplifyIn sideCondition =<< traverse simplifyTerm' inF
       where
@@ -374,7 +402,7 @@ simplifyCeil ::
     Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyCeil sideCondition =
-    Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
+    Ceil.simplify sideCondition >=> return . fromOrCondition
 
 {- |
  @
@@ -496,11 +524,18 @@ simplifyEquals ::
     forall simplifier sort.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
+    Sort ->
     Equals sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyEquals sideCondition =
-    Equals.simplify sideCondition
-        >=> return . MultiOr.map (from @(Condition _))
+simplifyEquals sideCondition sort equals =
+    Equals.simplify sideCondition equals'
+        <&> MultiOr.map (from @(Condition _))
+  where
+    equals' =
+        equals
+            { equalsOperandSort = sort
+            , equalsResultSort = sort
+            }
 
 simplifyIn ::
     MonadSimplify simplifier =>
@@ -508,4 +543,4 @@ simplifyIn ::
     In sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyIn sideCondition =
-    In.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
+    In.simplify sideCondition >=> return . fromOrCondition

@@ -435,6 +435,7 @@ matchIntEqual =
 
 data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 {- | Matches
@@ -453,10 +454,10 @@ matchInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyInt
-matchInt first second
-    | InternalInt_ int1 <- first
-      , InternalInt_ int2 <- second =
-        Just UnifyInt{int1, int2}
+matchInt term1 term2
+    | InternalInt_ int1 <- term1
+      , InternalInt_ int2 <- term2 =
+        Just UnifyInt{int1, int2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchInt #-}
 
@@ -464,14 +465,12 @@ matchInt first second
 unifyInt ::
     forall unifier.
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyInt ->
     unifier (Pattern RewritingVariableName)
-unifyInt term1 term2 unifyData =
+unifyInt unifyData =
     assert (on (==) internalIntSort int1 int2) worker
   where
-    UnifyInt{int1, int2} = unifyData
+    UnifyInt{int1, int2, term1, term2} = unifyData
     worker :: unifier (Pattern RewritingVariableName)
     worker
         | on (==) internalIntValue int1 int2 =
@@ -486,8 +485,10 @@ data UnifyIntEq = UnifyIntEq
 
 {- | Matches
 @
-\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_))
+\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->
@@ -497,6 +498,10 @@ matchUnifyIntEq first second
     | Just eqTerm <- matchIntEqual first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
+        Just UnifyIntEq{eqTerm, internalBool}
+    | Just eqTerm <- matchIntEqual second
+      , isFunctionPattern second
+      , InternalBool_ internalBool <- first =
         Just UnifyIntEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}

@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.49.0.0"; };
+      identifier = { name = "kore"; version = "0.51.0.0"; };
       license = "BSD-3-Clause";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "ana.pantilie@runtimeverification.com";
@@ -267,6 +267,7 @@
           "Kore/Log/Registry"
           "Kore/Log/SQLite"
           "Kore/Log/WarnBoundedModelChecker"
+          "Kore/Log/WarnClaimRHSIsBottom"
           "Kore/Log/WarnDepthLimitExceeded"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
@@ -564,6 +565,28 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/share" "app/repl" ];
+          mainPath = (([
+            "Main.hs"
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
+            ""
+            ];
+          };
+        "kore-match-disjunction" = {
+          depends = [
+            (hsPkgs."base" or (errorHandler.buildDepError "base"))
+            (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
+            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
+            (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+            ];
+          buildable = true;
+          modules = [ "GlobalMain" "Paths_kore" ];
+          hsSourceDirs = [ "app/share" "app/match-disjunction" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
