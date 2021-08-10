@@ -16,6 +16,7 @@ module Kore.Exec (
     prove,
     proveWithRepl,
     boundedModelCheck,
+    matchDisjunction,
     Rewrite,
     Equality,
 ) where
@@ -39,6 +40,7 @@ import Control.Monad.Trans.Except (
     runExceptT,
     throwE,
  )
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
  )
@@ -60,6 +62,7 @@ import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
     Equation,
@@ -89,6 +92,7 @@ import Kore.Internal.Predicate (
     fromPredicate_,
     makeMultipleOrPredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop (
@@ -174,6 +178,7 @@ import Kore.Unparser (
     unparseToText2,
  )
 import Log (
+    LoggerT,
     MonadLog,
  )
 import qualified Log
@@ -187,6 +192,7 @@ import Prof
 import SMT (
     MonadSMT,
     SMT,
+    runNoSMT,
  )
 import System.Exit (
     ExitCode (..),
@@ -258,7 +264,7 @@ exec
                         , (ExecDepth 0, Start initialConfig)
                         )
             let (depths, finalConfigs) = unzip finals
-            infoExecDepth (maximum depths)
+            infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
                     MultiOr.make $
                         catMaybes $
@@ -573,6 +579,29 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             (Bounded.bmcStrategy axioms)
             searchOrder
             (head claims, depthLimit)
+
+matchDisjunction ::
+    VerifiedModule Attribute.Symbol ->
+    Pattern RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    LoggerT IO (TermLike VariableName)
+matchDisjunction mainModule matchPattern disjunctionPattern =
+    do
+        SMT.runNoSMT $
+            evalSimplifier mainModule $ do
+                results <-
+                    traverse (runMaybeT . match matchPattern) disjunctionPattern
+                        <&> catMaybes
+                        <&> concatMap toList
+                results
+                    <&> Condition.toPredicate
+                    & Predicate.makeMultipleOrPredicate
+                    & Predicate.fromPredicate sort
+                    & getRewritingTerm
+                    & return
+  where
+    sort = Pattern.patternSort matchPattern
+    match = Search.matchWith SideCondition.top
 
 -- | Rule merging
 mergeAllRules ::

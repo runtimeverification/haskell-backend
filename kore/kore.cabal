@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.49.0.0
+version:        0.51.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -347,6 +347,7 @@ library
     Kore.Log.Registry
     Kore.Log.SQLite
     Kore.Log.WarnBoundedModelChecker
+    Kore.Log.WarnClaimRHSIsBottom
     Kore.Log.WarnDepthLimitExceeded
     Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity
@@ -588,6 +589,14 @@ executable kore-repl
   hs-source-dirs: app/repl
   build-depends: exceptions >=0.10
   build-depends: reflection >=2.1
+
+executable kore-match-disjunction
+  import: haskell
+  import: exe
+  import: global-main
+  main-is: Main.hs
+  hs-source-dirs: app/match-disjunction
+  build-depends: transformers >= 0.5
 
 executable kore-check-functions
   import: haskell

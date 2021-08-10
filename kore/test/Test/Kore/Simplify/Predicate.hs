@@ -18,9 +18,14 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     ElementVariable,
     TermLike,
+    mkAnd,
+    mkBottom,
+    mkCeil,
     mkElemVar,
     mkEquals,
+    mkNot,
     mkOr,
+    mkTop,
     variableName,
  )
 import Kore.Rewrite.RewritingVariable
@@ -162,6 +167,43 @@ test_simplify =
             (fromCeil_ (mkEquals Mock.testSort fa fb))
             [[fromEquals_ fa fb]]
         ]
+    , testGroup
+        "\\floor"
+        [ test
+            "\\bottom"
+            (fromFloor_ (mkBottom Mock.testSort))
+            []
+        , test
+            "\\top"
+            (fromFloor_ (mkTop Mock.testSort))
+            [[]]
+        , test
+            "\\and"
+            (fromFloor_ (mkAnd fa fb))
+            [
+                [ fromNot (fromCeil_ (mkNot fa))
+                , fromEquals_ fa fb
+                ]
+            ]
+        , test
+            "desugaring"
+            ( fromNot
+                ( fromFloor_
+                    ( mkNot
+                        (mkOr fa fb)
+                    )
+                )
+            )
+            -- Note: simplifyNot does not evaluate \\not(\\and) to \\or
+            [
+                [ fromNot
+                    ( fromAnd
+                        (fromNot faCeil)
+                        (fromNot fbCeil)
+                    )
+                ]
+            ]
+        ]
     , (testGroup "\\exists")
         [ (test "irrelevant variable")
             (fromExists x faCeil)
@@ -235,6 +277,41 @@ test_simplify =
             )
             [[faCeil]]
         ]
+    , ( testGroup
+            "\\forall"
+            [ test
+                "\\top"
+                ( (fromForall x)
+                    fromTop_
+                )
+                [[]]
+            , test
+                "\\bottom"
+                ( (fromForall x)
+                    fromBottom_
+                )
+                []
+            , test
+                "irrelevant variable"
+                ( (fromForall x)
+                    faCeil
+                )
+                [[faCeil]]
+            , test
+                "desugaring"
+                ( fromNot
+                    ( (fromForall x)
+                        ( fromNot
+                            ( fromAnd
+                                (fromCeil_ (Mock.f (mkElemVar Mock.xConfig)))
+                                (fromEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                            )
+                        )
+                    )
+                )
+                [[faCeil]]
+            ]
+      )
     , (testGroup "\\equals")
         [ (test "invalid assignment")
             ( fromEquals_
@@ -251,6 +328,34 @@ test_simplify =
         , (test "variable-variable assignment")
             (fromEquals_ (mkElemVar x) (mkElemVar y))
             [[fromEquals_ (mkElemVar x) (mkElemVar y)]]
+        ]
+    , testGroup
+        "\\in"
+        [ test
+            "\\top"
+            (fromIn_ Mock.a Mock.a)
+            [[]]
+        , test
+            "\\bottom"
+            (fromIn_ Mock.a Mock.b)
+            []
+        , test
+            "\\ceil"
+            (fromIn_ fa fa)
+            [[faCeil]]
+        , test
+            "\\or"
+            (fromIn_ (mkElemVar Mock.xConfig) (mkOr fa fb))
+            [ [faCeil, fromEquals_ (mkElemVar Mock.xConfig) fa]
+            , [fbCeil, fromEquals_ (mkElemVar Mock.xConfig) fb]
+            ]
+        , test
+            "Predicates"
+            ( fromIn_
+                (mkEquals Mock.testSort (mkElemVar Mock.xConfig) fb)
+                (mkCeil Mock.testSort fa)
+            )
+            [[fromEquals_ (mkElemVar Mock.xConfig) fb, faCeil, fbCeil]]
         ]
     , testGroup
         "Other"

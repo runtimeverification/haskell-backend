@@ -7,11 +7,11 @@ the syntactic categories of a Kore definition that do not need unified
 constructs.
 
 Unified constructs are those that represent both meta and object versions of
-an AST term in a single data type (e.g. 'UnifiedSort' that can be either
-'Sort' or 'Sort')
+an AST term in a single data type (e.g. 'SymbolOrAlias' that can be either
+'Kore.Syntax.Sentence.Symbol' or 'Kore.Syntax.Sentence.Alias')
 
-Please refer to Section 9 (The Kore Language) of the
-<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+Please refer to
+<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Syntax.Application (
     SymbolOrAlias (..),
@@ -28,9 +28,8 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
-@head@ syntactic category from the Semantics of K,
-Section 9.1.3 (Heads).
+{- |'SymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from
+<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
 -}
 data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
@@ -55,8 +54,9 @@ instance Unparse SymbolOrAlias where
 instance From SymbolOrAlias SymbolOrAlias where
     from = id
 
-{- |'Application' corresponds to the @head(pattern-list)@ branches of the
-@pattern@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+{- |'Application' corresponds to the @application-pattern@ branch of the
+@pattern@ syntactic category from
+<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
