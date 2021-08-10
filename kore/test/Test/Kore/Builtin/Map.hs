@@ -374,7 +374,7 @@ test_concatDuplicateKeys =
             let patMap1 = elementMap patKey patVal1
                 patMap2 = elementMap patKey patVal2
                 patConcat = concatMap patMap1 patMap2
-                predicate = mkEquals_ (mkBottom listSort) patConcat
+                predicate = mkEquals_ (mkBottom mapSort) patConcat
             (===) OrPattern.bottom =<< evaluateT patConcat
             evaluateExpectTopK predicate
         )

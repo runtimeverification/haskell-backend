@@ -167,8 +167,7 @@ simplify
         { equalsFirst = first
         , equalsSecond = second
         , equalsOperandSort = sort
-        , equalsResultSort = resultSort
-        } = simplifyEvaluated resultSort sideCondition first' second'
+        } = simplifyEvaluated sort sideCondition first' second'
       where
         (first', second') =
             minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
