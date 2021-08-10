@@ -27,8 +27,10 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
+    assumeDefinedTerms,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
@@ -36,7 +38,7 @@ import Kore.Rewrite.Function.Evaluator (
     evaluateApplication,
  )
 import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
+    RewritingVariableName
  )
 import Kore.Rewrite.Substitution (
     mergePredicatesAndSubstitutions,
@@ -134,10 +136,15 @@ evaluateApplicationFunction
                     & OrPattern.fromPattern
                     & return
         | otherwise =
-            evaluateApplication
-                sideCondition
-                Conditional{term = (), predicate, substitution}
-                term
+            let definedPredicate = makeMultipleAndPredicate (predicate : ceilPredicates)
+                definedSideCondition = assumeDefinedTerms applicationChildren sideCondition
+                ceilPredicates = makeCeilPredicate <$> applicationChildren
+                Application { applicationChildren } = term
+             in evaluateApplication
+                    definedSideCondition
+                    Conditional{term = (), predicate = definedPredicate, substitution}
+                    term
+
 
 makeExpandedApplication ::
     MonadSimplify simplifier =>
