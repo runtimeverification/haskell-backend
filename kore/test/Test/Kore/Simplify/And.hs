@@ -53,7 +53,7 @@ test_andSimplification =
             =<< evaluate (makeAnd [Pattern.topOf Mock.testSort] [])
         assertEqual
             "true and true = true"
-            (OrPattern.top Mock.testSort)
+            (OrPattern.topOf Mock.testSort)
             =<< evaluate (makeAnd [Pattern.topOf Mock.testSort] [Pattern.topOf Mock.testSort])
     , testCase "And with booleans" $ do
         assertEqual

@@ -438,7 +438,7 @@ test_keysUnit =
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
-            assertEqual "" (OrPattern.top kSort) =<< evaluate predicate
+            assertEqual "" (OrPattern.topOf kSort) =<< evaluate predicate
 
 test_keysElement :: TestTree
 test_keysElement =
@@ -483,7 +483,7 @@ test_keysListUnit =
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
-            assertEqual "" (OrPattern.top kSort) =<< evaluate predicate
+            assertEqual "" (OrPattern.topOf kSort) =<< evaluate predicate
 
 test_keysListElement :: TestTree
 test_keysListElement =

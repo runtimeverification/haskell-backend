@@ -91,8 +91,8 @@ simplifyEvaluated ::
     simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sort sideCondition first second
     | OrPattern.isTrue first = return second
-    | OrPattern.isFalse first = return (OrPattern.top sort)
-    | OrPattern.isTrue second = return (OrPattern.top sort)
+    | OrPattern.isFalse first = return (OrPattern.topOf sort)
+    | OrPattern.isTrue second = return (OrPattern.topOf sort)
     | OrPattern.isFalse second =
         Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise =

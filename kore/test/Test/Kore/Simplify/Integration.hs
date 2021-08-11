@@ -311,7 +311,7 @@ test_simplificationIntegration =
                     }
         assertEqual "" expect actual
     , testCase "exists variable equality" $ do
-        let expect = OrPattern.top Mock.testSort
+        let expect = OrPattern.topOf Mock.testSort
         actual <-
             evaluateWithAxioms
                 Map.empty
@@ -328,7 +328,7 @@ test_simplificationIntegration =
                     }
         assertEqual "" expect actual
     , testCase "exists variable equality reverse" $ do
-        let expect = OrPattern.top Mock.testSort
+        let expect = OrPattern.topOf Mock.testSort
         actual <-
             evaluateWithAxioms
                 Map.empty
@@ -350,14 +350,14 @@ test_simplificationIntegration =
                 Pattern.fromTermLike $
                     mkExists Mock.xConfig $
                         (mkEquals Mock.testSort) (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig)
-        assertEqual "" (OrPattern.top Mock.testSort) actual
+        assertEqual "" (OrPattern.topOf Mock.testSort) actual
     , testCase "exists variable equality reverse" $ do
         actual <-
             evaluateWithAxioms Map.empty $
                 Pattern.fromTermLike $
                     mkExists Mock.xConfig $
                         (mkEquals Mock.testSort) (mkElemVar Mock.yConfig) (mkElemVar Mock.xConfig)
-        assertEqual "" (OrPattern.top Mock.testSort) actual
+        assertEqual "" (OrPattern.topOf Mock.testSort) actual
     , testCase "simplification with top predicate (exists variable capture)" $
         do
             let requirement = \var ->

@@ -61,7 +61,7 @@ test_forallSimplification =
             -- forall(top) = top
             assertEqual
                 "forall(top)"
-                (OrPattern.top Mock.topSort)
+                (OrPattern.topOf Mock.topSort)
                 ( evaluate
                     ( makeForall
                         Mock.xConfig

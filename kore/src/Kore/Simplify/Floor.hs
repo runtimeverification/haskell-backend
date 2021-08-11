@@ -78,7 +78,7 @@ makeEvaluateFloor ::
     Pattern RewritingVariableName ->
     OrPattern RewritingVariableName
 makeEvaluateFloor resultSort child
-    | Pattern.isTop child = OrPattern.top resultSort
+    | Pattern.isTop child = OrPattern.topOf resultSort
     | Pattern.isBottom child = OrPattern.bottom
     | otherwise = makeEvaluateNonBoolFloor resultSort child
 

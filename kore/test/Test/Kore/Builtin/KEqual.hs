@@ -83,7 +83,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
-        let expect = OrPattern.top kSort
+        let expect = OrPattern.topOf kSort
             xConfigElemVarKItemSort =
                 configElementVariableFromId "x" kItemSort
             original =
@@ -97,7 +97,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = OrPattern.top kSort
+        let expect = OrPattern.topOf kSort
             xConfigElemVarIdSort =
                 configElementVariableFromId "x" idSort
             original =
@@ -111,7 +111,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct constructor-like terms" $ do
-        let expect = OrPattern.top kSort
+        let expect = OrPattern.topOf kSort
             original =
                 mkEquals
                     kSort

@@ -29,4 +29,4 @@ simplify ::
     Sort ->
     Top Sort child ->
     OrPattern RewritingVariableName
-simplify sort _ = OrPattern.top sort
+simplify sort _ = OrPattern.topOf sort

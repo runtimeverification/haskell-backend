@@ -263,7 +263,7 @@ evaluateExpectTopK ::
     Hedgehog.PropertyT smt ()
 evaluateExpectTopK termLike = do
     actual <- evaluateT termLike
-    OrPattern.top kSort Hedgehog.=== actual
+    OrPattern.topOf kSort Hedgehog.=== actual
 
 evaluateToList ::
     TermLike RewritingVariableName ->

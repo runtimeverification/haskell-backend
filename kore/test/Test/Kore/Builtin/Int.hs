@@ -497,7 +497,7 @@ test_unifyEqual_Equal =
     testCaseWithoutSMT "unifyEqual BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkEquals kSort dv1 dv1
-        assertEqual' "" (OrPattern.top kSort) actual
+        assertEqual' "" (OrPattern.topOf kSort) actual
 
 -- | "\and"ed internal Integers that are not equal
 test_unifyAnd_NotEqual :: TestTree
@@ -522,7 +522,7 @@ test_unifyAndEqual_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
         actual <- evaluate $ mkEquals kSort dv $ mkAnd dv dv
-        assertEqual' "" (OrPattern.top kSort) actual
+        assertEqual' "" (OrPattern.topOf kSort) actual
 
 -- | Internal Integer "\and"ed with builtin function applied to variable
 test_unifyAnd_Fn :: TestTree

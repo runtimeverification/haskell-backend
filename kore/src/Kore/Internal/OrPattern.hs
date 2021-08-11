@@ -18,7 +18,7 @@ module Kore.Internal.OrPattern (
     isFalse,
     isPredicate,
     tryGetSort,
-    top,
+    topOf,
     isTrue,
     toPattern,
     toTermLike,
@@ -148,7 +148,7 @@ fromTermLike = fromPattern . Pattern.fromTermLike
 {- | @\\bottom@
 
 @
-'isFalse' bottom == True
+isFalse bottom == True
 @
 -}
 bottom :: InternalVariable variable => OrPattern variable
@@ -161,13 +161,11 @@ isFalse = isBottom
 {- | @\\top@
 
 @
-'isTrue' top == True
-
-To do (Callan): should this be renamed `topOf` as elsewhere?
+isTrue (topOf _) == True
 @
 -}
-top :: InternalVariable variable => Sort -> OrPattern variable
-top sort = fromPattern (Pattern.topOf sort)
+topOf :: InternalVariable variable => Sort -> OrPattern variable
+topOf sort = fromPattern (Pattern.topOf sort)
 
 -- | 'isTrue' checks if the 'Or' has a single top pattern.
 isTrue :: OrPattern variable -> Bool
