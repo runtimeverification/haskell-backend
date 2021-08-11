@@ -262,7 +262,6 @@ matchUnifyKequalsEq first second
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
 
--- TODO (Andrei B): doublecheck
 unifyKequalsEq ::
     forall unifier.
     MonadUnify unifier =>

@@ -1213,7 +1213,7 @@ mapVariables ::
 mapVariables adj predicate =
     let termPredicate =
             TermLike.mapVariables adj
-                . fromPredicate (mkSortVariable "BadSort")
+                . fromPredicate (mkSortVariable "_")
                 $ predicate
      in either
             errorMappingVariables

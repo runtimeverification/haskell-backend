@@ -5,7 +5,6 @@ License     : BSD-3-Clause
 module Kore.Builtin.EqTerm (
     EqTerm (..),
     matchEqTerm,
-    -- unifyEqTerm,
 ) where
 
 import qualified Control.Monad as Monad
@@ -30,30 +29,3 @@ matchEqTerm selectSymbol (App_ symbol [operand1, operand2]) = do
     Monad.guard (selectSymbol symbol)
     return EqTerm{symbol, operand1, operand2}
 matchEqTerm _ _ = Nothing
-
-{- | Unification for an equality-like symbol.
-
-This function is suitable only for equality simplification.
--}
-
--- unifyEqTerm ::
---     forall unifier.
---     MonadUnify unifier =>
---     TermSimplifier RewritingVariableName unifier ->
---     NotSimplifier unifier ->
---     EqTerm (TermLike RewritingVariableName) ->
---     Bool ->
---     unifier (Pattern RewritingVariableName)
--- unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm value =
---     do
---         solution <- unifyChildren operand1 operand2 & OrPattern.gather
---         let solution' = MultiOr.map eraseTerm solution
---         if value
---             then Unify.scatter solution'
---             else mkNotSimplified solution' >>= Unify.scatter
---   where
---     sort = TermLike.termLikeSort termLike2
---     EqTerm{operand1, operand2} = eqTerm
---     eraseTerm = Pattern.fromCondition sort . Pattern.withoutTerm
---     mkNotSimplified notChild =
---         notSimplifier SideCondition.top Not{notSort = sort, notChild}

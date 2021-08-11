@@ -511,8 +511,6 @@ matchUnifyIntEq first second
 
 This function is suitable only for equality simplification.
 -}
-
--- TODO (Andrei B): doublecheck
 unifyIntEq ::
     forall unifier.
     MonadUnify unifier =>

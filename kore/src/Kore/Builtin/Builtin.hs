@@ -445,10 +445,7 @@ isSymbol builtinName Symbol{symbolAttributes = Attribute.Symbol{hook}} =
 
 {- | Is the given sort hooked to the named builtin?
 
-TO DO (callan): fix documentation here
-
-Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
-Returns Just False if the sort is a variable.
+Returns Nothing if the sort is a variable.
 -}
 isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
