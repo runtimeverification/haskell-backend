@@ -269,12 +269,12 @@ makeEvaluate ::
     SideCondition RewritingVariableName ->
     simplifier (OrCondition RewritingVariableName)
 makeEvaluate
-    first@Conditional{term = Top_ sort}
+    first@Conditional{term = Top_ _}
     second@Conditional{term = Top_ _}
     _ =
         Iff.makeEvaluate
-            first{term = mkTop sort} -- remove the term's sort
-            second{term = mkTop sort} -- remove the term's sort
+            first
+            second
             & MultiOr.map Pattern.withoutTerm
             & return
 makeEvaluate

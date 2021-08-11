@@ -87,7 +87,7 @@ makeEvaluateNonBoolFloor ::
     Pattern RewritingVariableName ->
     OrPattern RewritingVariableName
 makeEvaluateNonBoolFloor resultSort patt@Conditional{term = Top_ _} =
-    OrPattern.fromPattern patt{term = mkTop resultSort} -- remove the term's sort
+    OrPattern.fromPattern patt{term = mkTop resultSort} -- change the term's sort
     -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
     -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor resultSort patt =
