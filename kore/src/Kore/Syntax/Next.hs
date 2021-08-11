@@ -16,8 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Next' corresponds to the @\next@ branch of the @object-pattern@
-syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+{- |'Next' corresponds to the @\\next@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'nextSort' is both the sort of the operand and the sort of the result.
 -}
