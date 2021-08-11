@@ -74,7 +74,7 @@ test_makeEvaluate =
             "iff(topOf Mock.testSort and predicate, topOf Mock.testSort and predicate)"
             ( OrPattern.fromPatterns
                 [ Conditional
-                    { term = (mkTop Mock.testSort)
+                    { term = mkTop Mock.testSort
                     , predicate =
                         makeIffPredicate
                             ( makeAndPredicate
@@ -97,7 +97,7 @@ test_makeEvaluate =
             )
             ( makeEvaluate
                 Conditional
-                    { term = (mkTop Mock.testSort)
+                    { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
                         Substitution.wrap $
@@ -105,7 +105,7 @@ test_makeEvaluate =
                                 [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
-                    { term = (mkTop Mock.testSort)
+                    { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap $
