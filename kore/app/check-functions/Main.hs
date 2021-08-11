@@ -19,7 +19,7 @@ import Kore.BugReport (
     parseBugReportOption,
     withBugReport,
  )
-import Kore.CheckFunctions (
+import Kore.Exec (
     checkFunctions,
  )
 import Kore.Log (

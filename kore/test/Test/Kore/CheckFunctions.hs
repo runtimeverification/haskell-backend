@@ -30,14 +30,14 @@ import Kore.BugReport (
 import qualified Kore.Builtin as Builtin (
     koreVerifiers,
  )
-import Kore.CheckFunctions (
-    checkFunctions,
- )
 import Kore.Equation.Equation (
     mkEquation,
     toTermLikeOld,
  )
 import qualified Kore.Error
+import Kore.Exec (
+    checkFunctions,
+ )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )

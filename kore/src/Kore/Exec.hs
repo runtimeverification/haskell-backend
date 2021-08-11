@@ -17,6 +17,7 @@ module Kore.Exec (
     proveWithRepl,
     boundedModelCheck,
     matchDisjunction,
+    checkFunctions,
     Rewrite,
     Equality,
 ) where
@@ -30,6 +31,7 @@ import Control.Error (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
+    join,
     (>=>),
  )
 import Control.Monad.Catch (
@@ -56,6 +58,7 @@ import Data.Limit (
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
+    pack,
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Definition
@@ -65,7 +68,9 @@ import Kore.Attribute.Symbol (
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
-    Equation,
+    Equation (Equation),
+    extractEquations,
+    right,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -180,6 +185,7 @@ import Kore.Unparser (
 import Log (
     LoggerT,
     MonadLog,
+    logError,
  )
 import qualified Log
 import Logic (
@@ -188,6 +194,12 @@ import Logic (
  )
 import qualified Logic
 import Prelude.Kore
+import Pretty (
+    layoutOneLine,
+    pretty,
+    renderText,
+    (<+>),
+ )
 import Prof
 import SMT (
     MonadSMT,
@@ -603,6 +615,35 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
 
+{- | For every equation in a function definition,
+ the right-hand side of the equation is a function pattern.
+-}
+checkFunctions ::
+    MonadLog m =>
+    VerifiedModule StepperAttributes ->
+    m ExitCode
+checkFunctions verifiedModule = do
+    res <- traverse checkEquation $ join $ Map.elems $ extractEquations verifiedModule
+    return $
+        if ExitFailure 3 `elem` res
+            then ExitFailure 3
+            else ExitSuccess
+
+checkEquation ::
+    MonadLog m =>
+    InternalVariable variable =>
+    Equation variable ->
+    m ExitCode
+checkEquation eqn@Equation{right}
+    | isFunctionPattern right = return ExitSuccess
+    | otherwise = do
+        logError $ renderText $ layoutOneLine err
+        return $ ExitFailure 3
+  where
+    err =
+        pretty (pack "RHS of equation is not a function pattern:")
+            <+> pretty eqn
+
 -- | Rule merging
 mergeAllRules ::
     ( MonadLog smt
@@ -698,10 +739,10 @@ extractAndSimplifyRules rules names = do
             return
             (Map.lookup ruleName registry)
 
-    whenDuplicate logError withNames = do
+    whenDuplicate logErr withNames = do
         let duplicateNames =
                 findCollisions . mkMapWithCollisions $ withNames
-        unless (null duplicateNames) (logError duplicateNames)
+        unless (null duplicateNames) (logErr duplicateNames)
 
 mkMapWithCollisions ::
     Ord key =>
