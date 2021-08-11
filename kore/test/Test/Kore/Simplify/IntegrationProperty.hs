@@ -66,7 +66,7 @@ import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplifiesToSimplified :: TestTree
-test_simplifiesToSimplified = do
+test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
         let term' = mkRewritingTerm term
