@@ -1213,6 +1213,7 @@ mapVariables ::
 mapVariables adj predicate =
     let termPredicate =
             TermLike.mapVariables adj
+                -- TODO (Andrei B): Try to avoid TermLike conversion
                 . fromPredicate (mkSortVariable "_")
                 $ predicate
      in either
