@@ -753,7 +753,6 @@
             "Test/Kore/Builtin/Set"
             "Test/Kore/Builtin/Signedness"
             "Test/Kore/Builtin/String"
-            "Test/Kore/CheckFunctions"
             "Test/Kore/Contains"
             "Test/Kore/Equation/Application"
             "Test/Kore/Equation/Common"
