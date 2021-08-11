@@ -29,13 +29,11 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern (
-    --    bottom,
     bottomOf,
     fromTermLike,
     isBottom,
     isTop,
     patternSort,
-    --    top,
     splitTerm,
     toTermLike,
     topOf,
