@@ -295,7 +295,7 @@ test_checkFunctions =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence mySymbDecl
-                                , disfunctionalAxiom
+                                , disfunctionalAxiom -- this will cause failure
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -344,7 +344,7 @@ test_checkFunctions =
                     mySort
                     ( mkEquation
                         myF
-                        (mkTop mySort)
+                        (mkTop mySort) -- Note: \top is not functional
                     )
                 )
             )

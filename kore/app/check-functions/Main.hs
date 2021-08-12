@@ -111,7 +111,7 @@ mainWithOptions opts = do
     exitWith exitCode
 
 koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
-koreCheckFunctions opts = do
-    definition <- loadDefinitions [fileName opts]
-    mainModule <- loadModule (mainModuleName opts) definition
-    checkFunctions mainModule
+koreCheckFunctions opts =
+    loadDefinitions [fileName opts]
+        >>= loadModule (mainModuleName opts)
+        >>= checkFunctions

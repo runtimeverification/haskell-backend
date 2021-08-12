@@ -615,20 +615,41 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
 
-{- | For every equation in a function definition,
+{- | Ensure that for every equation in a function definition,
  the right-hand side of the equation is a function pattern.
+ 'checkFunctions' first extracts equations from a verified module
+ to a list of equations. Then it 'traverse's the list, checking
+ that each equation is a function pattern. If any equation fails
+ the check, 'checkFunctions' logs an error message containing
+ the offending equation. After checking each equation, if any
+ have failed the check then 'checkFunctions' returns @'ExitFailure' 3@;
+ otherwise it returns 'ExitSuccess'.
+
+ See 'checkEquation',
+ 'Kore.Equation.Registry.extractEquations',
+ and 'Kore.Internal.TermLike.isFunctionPattern'.
 -}
 checkFunctions ::
     MonadLog m =>
+    -- | The main module
     VerifiedModule StepperAttributes ->
     m ExitCode
-checkFunctions verifiedModule = do
-    res <- traverse checkEquation $ join $ Map.elems $ extractEquations verifiedModule
-    return $
-        if ExitFailure 3 `elem` res
-            then ExitFailure 3
-            else ExitSuccess
+checkFunctions verifiedModule = checkResults <$> traverse checkEquation equations
+  where
+    equations = join $ Map.elems $ extractEquations verifiedModule
+    -- if any equations fail the check,
+    -- the entire function returns ExitFailure 3.
+    checkResults results
+        | ExitFailure 3 `elem` results = ExitFailure 3
+        | otherwise = ExitSuccess
 
+{- | 'checkEquation' returns 'ExitSuccess' when the 'right'-hand-side
+ of an 'Equation' is a function pattern. Otherwise, log the error message
+ "RHS of equation is not a function pattern:", pretty-print the
+ offending equation, and return @'ExitFailure' 3@.
+
+ See 'Kore.Internal.TermLike.isFunctionPattern'.
+-}
 checkEquation ::
     MonadLog m =>
     InternalVariable variable =>
