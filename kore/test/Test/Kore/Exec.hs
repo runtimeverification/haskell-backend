@@ -295,7 +295,9 @@ test_checkFunctions =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence mySymbDecl
-                                , disfunctionalAxiom -- this will cause failure
+                                , -- disfunctionalAxiom will cause
+                                  -- the expected failure
+                                  disfunctionalAxiom
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -314,6 +316,8 @@ test_checkFunctions =
             { symbolConstructor = mySymbolName
             , symbolParams = []
             }
+    -- Note: symbol attributes should only be
+    -- function or functional, it should not be a constructor.
     mySymbDecl :: Verified.SentenceSymbol
     mySymbDecl =
         SentenceSymbol
@@ -322,6 +326,7 @@ test_checkFunctions =
             , sentenceSymbolResultSort = mySort
             , sentenceSymbolAttributes = Attributes [functionalAttribute]
             }
+    -- Note: myF is functional but takes no arguments
     myF ::
         InternalVariable variable =>
         HasCallStack =>
