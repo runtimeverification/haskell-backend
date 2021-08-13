@@ -136,7 +136,6 @@ import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
 import Test.Kore.With
