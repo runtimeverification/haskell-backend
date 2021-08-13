@@ -28,9 +28,7 @@ import Kore.Variables.Fresh (FreshPartialOrd)
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Exists' corresponds to the @\\exists@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'existsSort' is both the sort of the operands and the sort of the result.
 -}
@@ -103,9 +101,9 @@ instance
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
-@existsBinder@ may be used to implement 'traverseBinder'.
+'existsBinder' may be used to implement 'Kore.Variables.Binding.traverseBinder'.
 
-See also: 'forallBinder'.
+See also: 'Kore.Syntax.Forall.forallBinder'.
 -}
 existsBinder ::
     Lens.Lens

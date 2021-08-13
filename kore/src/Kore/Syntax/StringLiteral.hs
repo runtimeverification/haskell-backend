@@ -23,9 +23,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
-Section 9.1.1 (Lexicon).
--}
+-- |'StringLiteral' corresponds to the @string-literal@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#string-literals kore-syntax.md#string-literals>.
 newtype StringLiteral = StringLiteral {getStringLiteral :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

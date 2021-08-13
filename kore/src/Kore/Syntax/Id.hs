@@ -2,8 +2,7 @@
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 
-Please refer to Section 9 (The Kore Language) of the
-<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+Please refer to <http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Syntax.Id (
     -- * Identifiers
@@ -33,10 +32,9 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- | @Id@ is a Kore identifier.
+{- | 'Id' is a Kore identifier.
 
-@Id@ corresponds to the @identifier@ syntactic category from the Semantics of K,
-Section 9.1.1 (Lexicon).
+'Id' corresponds to the @identifier@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
 data Id = Id
     { getId :: !Text
