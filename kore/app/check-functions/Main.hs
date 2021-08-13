@@ -54,7 +54,7 @@ import System.Exit (
 exeName :: ExeName
 exeName = ExeName "kore-check-functions"
 
--- | modifiers for the command line parser description
+-- | Modifiers for the command line parser description
 checkerInfoModifiers :: InfoMod options
 checkerInfoModifiers =
     fullDesc
