@@ -144,6 +144,11 @@ simplify sideCondition original =
 
     repr = SideCondition.toRepresentation sideCondition
 
+    -- Simplify the 'Predicate' bottom-up.
+    -- The children of each node in the 'Predicate' tree are simplified
+    -- either by calling the 'TermLike' simplifier (which only simplifies
+    -- non-predicate terms) or, for 'Predicate's, by recursively calling
+    -- this function.
     worker ::
         Predicate RewritingVariableName ->
         simplifier NormalForm
