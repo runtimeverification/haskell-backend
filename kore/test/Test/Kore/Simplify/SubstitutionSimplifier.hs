@@ -7,7 +7,7 @@ module Test.Kore.Simplify.SubstitutionSimplifier (
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.SideCondition as SideCondition (
-    top,
+    fromDefinedTerms
  )
 import Kore.Internal.Substitution (
     mkNormalization,
@@ -36,6 +36,8 @@ import Test.Kore.Simplify (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Data.HashSet as HashSet
+
 
 test_SubstitutionSimplifier :: [TestTree]
 test_SubstitutionSimplifier =
@@ -109,8 +111,8 @@ test_SubstitutionSimplifier =
             [mkNormalization [(z, b), (y, g b)] [(x, f (mkVar x))]]
         , test
             "length 1, with constructor"
-            [(x, (constr1 . f) (mkVar x))]
-            [mkNormalization [] [(x, (constr1 . f) (mkVar x))]]
+            [(x, (constr1 . f') (mkVar x))]
+            [mkNormalization [] [(x, (constr1 . f') (mkVar x))]]
         , test
             "length 2, alone"
             [(x, f (mkVar y)), (y, g (mkVar x))]
@@ -235,9 +237,11 @@ test_SubstitutionSimplifier =
                 [ testCase "simplification" $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Simplification.substitutionSimplifier
+                    let sideCondition = SideCondition.fromDefinedTerms $
+                            HashSet.fromList [mkVar xs, mkVar ys]
                     actual <-
                         runSimplifier Mock.env $
-                            simplifySubstitution SideCondition.top input
+                            simplifySubstitution sideCondition input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions actual
                         actualSubstitutions =
@@ -252,9 +256,11 @@ test_SubstitutionSimplifier =
                 , testCase "unification" $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Unification.substitutionSimplifier Not.notSimplifier
+                    let sideCondition = SideCondition.fromDefinedTerms $
+                            HashSet.fromList [mkVar xs, mkVar ys]
                     actual <-
                         runSimplifier Mock.env . runUnifierT Not.notSimplifier $
-                            simplifySubstitution SideCondition.top input
+                            simplifySubstitution sideCondition input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions <$> actual
                         actualSubstitutions =
@@ -283,15 +289,13 @@ a = Mock.a
 b = Mock.b
 c = Mock.c
 
-f
-    , g
-    , h
-    , constr1 ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName
+f , g , h, f', constr1 ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
 f = Mock.f
 g = Mock.g
 h = Mock.h
+f' = Mock.f'
 constr1 = Mock.constr10
 
 sigma ::

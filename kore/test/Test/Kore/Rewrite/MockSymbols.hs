@@ -356,17 +356,26 @@ eSymbol = symbol eId [] testSort & functional & constructor
 fSymbol :: Symbol
 fSymbol = symbol fId [testSort] testSort & function
 
+fSymbol' :: Symbol
+fSymbol' = symbol fId [testSort] testSort & functional & function
+
 fSort0Symbol :: Symbol
 fSort0Symbol = symbol fSort0Id [testSort0] testSort0 & function
 
 gSymbol :: Symbol
 gSymbol = symbol gId [testSort] testSort & function
 
+gSymbol' :: Symbol
+gSymbol' = symbol gId [testSort] testSort & functional & function
+
 gSort0Symbol :: Symbol
 gSort0Symbol = symbol gSort0Id [testSort0] testSort0 & function
 
 hSymbol :: Symbol
 hSymbol = symbol hId [testSort] testSort & function
+
+hSymbol' :: Symbol
+hSymbol' = symbol hId [testSort] testSort & functional & function
 
 cfSymbol :: Symbol
 cfSymbol = symbol cfId [] testSort & function
@@ -1059,9 +1068,7 @@ d = Internal.mkApplySymbol dSymbol []
 e :: InternalVariable variable => TermLike variable
 e = Internal.mkApplySymbol eSymbol []
 
-f
-    , g
-    , h ::
+f, g , h ::
         InternalVariable variable =>
         HasCallStack =>
         TermLike variable ->
@@ -1069,6 +1076,15 @@ f
 f arg = Internal.mkApplySymbol fSymbol [arg]
 g arg = Internal.mkApplySymbol gSymbol [arg]
 h arg = Internal.mkApplySymbol hSymbol [arg]
+
+f', g', h' ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
+f' arg = Internal.mkApplySymbol fSymbol' [arg]
+g' arg = Internal.mkApplySymbol gSymbol' [arg]
+h' arg = Internal.mkApplySymbol hSymbol' [arg]
 
 fSort0
     , gSort0 ::

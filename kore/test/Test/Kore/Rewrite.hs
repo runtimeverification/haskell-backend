@@ -162,7 +162,7 @@ test_stepStrategy =
                             Unlimited
                             Unlimited
                             strategy'
-                            ( Mock.functionalConstr10 (Mock.f xTerm)
+                            ( Mock.functionalConstr10 (Mock.f' xTerm)
                                 & Pattern.fromTermLike
                             )
                             [ simpleRewrite
@@ -177,11 +177,11 @@ test_stepStrategy =
                     let -- f( X ) /\ not( a == f( X ) )
                         firstRemainderPattern =
                             Pattern.fromTermAndPredicate
-                                (Mock.functionalConstr10 (Mock.f xTerm))
+                                (Mock.functionalConstr10 (Mock.f' xTerm))
                                 ( makeNotPredicate $
                                     makeEqualsPredicate
                                         Mock.a
-                                        (Mock.f xTerm)
+                                        (Mock.f' xTerm)
                                 )
                         --    c11 ( g( X0 ) )
                         -- /\ a == f( X )
@@ -189,11 +189,14 @@ test_stepStrategy =
                         secondRemainderPattern =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr11 (Mock.g (mkElemVar Mock.var_x_0)))
-                                ( makeAndPredicate
-                                    ( makeEqualsPredicate
-                                        Mock.a
-                                        (Mock.f xTerm)
-                                    )
+                                ( makeAndPredicate 
+                                    ( makeAndPredicate
+                                        ( makeCeilPredicate $ Mock.g (mkElemVar Mock.var_x_0))                   
+                                        ( makeEqualsPredicate
+                                            Mock.a
+                                            (Mock.f' xTerm)
+                                        )
+                                    )                       
                                     ( makeNotPredicate
                                         ( makeAndPredicate
                                             ( makeCeilPredicate
@@ -211,15 +214,18 @@ test_stepStrategy =
                             Pattern.fromTermAndPredicate
                                 Mock.c
                                 ( makeAndPredicate
-                                    (makeCeilPredicate (Mock.g Mock.b))
                                     ( makeAndPredicate
-                                        ( makeEqualsPredicate
-                                            Mock.a
-                                            (Mock.f xTerm)
-                                        )
+                                        (makeCeilPredicate (Mock.g Mock.b))
                                         ( makeEqualsPredicate
                                             (Mock.g Mock.b)
                                             (Mock.g (mkElemVar Mock.var_x_0))
+                                        )
+                                    )
+                                    ( makeAndPredicate
+                                        (makeCeilPredicate (Mock.g (mkElemVar Mock.var_x_0)))
+                                        ( makeEqualsPredicate
+                                            Mock.a
+                                            (Mock.f' xTerm)
                                         )
                                     )
                                 )

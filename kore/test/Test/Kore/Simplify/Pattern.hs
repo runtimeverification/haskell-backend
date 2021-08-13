@@ -175,18 +175,16 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( (Predicate.fromMultiAnd . MultiAnd.make)
-                        [ makeEqualsPredicate fOfX gOfX
-                        , makeNotPredicate $ makeCeilPredicate fOfX
-                        ]
-                    )
+                    Predicate.makeFalsePredicate
         actual <-
             simplify $
                 Pattern.fromTermAndPredicate
+                    -- C(f(x)) ∧ C(g(x))
                     ( mkAnd
                         (Mock.constr10 fOfX)
                         (Mock.constr10 gOfX)
                     )
+                    -- ¬⌈f(x)⌉ ∧ (⌈f(x)⌉ ⇒ ⌈g(x)⌉)
                     ( makeAndPredicate
                         (makeNotPredicate $ makeCeilPredicate fOfX)
                         ( makeImpliesPredicate

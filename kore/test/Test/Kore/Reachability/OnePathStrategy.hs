@@ -23,9 +23,11 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
+    makeAndPredicate,
+    makeCeilPredicate,
     makeEqualsPredicate,
     makeNotPredicate,
-    makeTruePredicate,
+    makeTruePredicate, makeCeilPredicate
  )
 import Kore.Internal.TermLike (
     TermLike,
@@ -690,12 +692,14 @@ test_onePathStrategy =
                     Conditional
                         { term = Mock.a
                         , predicate =
-                            makeEqualsPredicate
-                                (Mock.builtinBool True)
-                                ( Mock.lessInt
-                                    (Mock.fTestInt Mock.b)
-                                    (Mock.builtinInt 0)
-                                )
+                            makeAndPredicate 
+                                (makeCeilPredicate $ Mock.fTestInt Mock.b)
+                                $ makeEqualsPredicate
+                                    (Mock.builtinBool True)
+                                    ( Mock.lessInt
+                                        (Mock.fTestInt Mock.b)
+                                        (Mock.builtinInt 0)
+                                    )
                         , substitution = mempty
                         }
                     (fromTermLike Mock.a)
@@ -778,12 +782,14 @@ test_onePathStrategy =
                     Conditional
                         { term = Mock.a
                         , predicate =
-                            makeEqualsPredicate
-                                (Mock.builtinBool True)
-                                ( Mock.lessInt
-                                    (Mock.fTestInt Mock.b)
-                                    (Mock.builtinInt 0)
-                                )
+                            makeAndPredicate 
+                                (makeCeilPredicate $ Mock.fTestInt Mock.b)
+                                $ makeEqualsPredicate
+                                    (Mock.builtinBool True)
+                                    ( Mock.lessInt
+                                        (Mock.fTestInt Mock.b)
+                                        (Mock.builtinInt 0)
+                                    )
                         , substitution = mempty
                         }
                     (fromTermLike Mock.a)

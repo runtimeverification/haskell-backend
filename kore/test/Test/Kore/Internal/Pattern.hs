@@ -417,6 +417,7 @@ assertEquivalentPatterns expects actuals =
         assertEquivalent (assertEqual message) expect actual
 
 assertEquivalentPatterns' ::
+    HasCallStack =>
     Foldable t =>
     InternalVariable variable =>
     Functor f =>

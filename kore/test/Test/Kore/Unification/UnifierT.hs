@@ -336,7 +336,11 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate Mock.cf Mock.cg
+                            Predicate.makeAndPredicate
+                                (Predicate.makeAndPredicate
+                                    (Predicate.makeCeilPredicate Mock.cg)
+                                    (Predicate.makeEqualsPredicate Mock.cf Mock.cg))
+                                (Predicate.makeCeilPredicate Mock.cf)
                         , substitution =
                             Substitution.unsafeWrap
                                 [(inject Mock.xConfig, Mock.constr10 Mock.cf)]

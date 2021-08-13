@@ -27,13 +27,14 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Attribute.Pattern.FreeVariables (FreeVariables)
 import Kore.Internal.Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
     assumeDefinedTerms,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.Function.Evaluator (
     evaluateApplication,
  )
@@ -127,8 +128,8 @@ evaluateApplicationFunction ::
     simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
-    expandedApp@Conditional{term, predicate, substitution}
-        | SideCondition.isSimplifiedFunction term sideCondition =
+    expandedApp@Conditional{term = application, predicate, substitution}
+        | SideCondition.isSimplifiedFunction application sideCondition =
             let applicationPattern =
                     synthesize . ApplySymbolF <$> expandedApp
              in applicationPattern
@@ -137,13 +138,15 @@ evaluateApplicationFunction
                     & return
         | otherwise =
             let definedPredicate = makeMultipleAndPredicate (predicate : ceilPredicates)
-                definedSideCondition = assumeDefinedTerms applicationChildren sideCondition
-                ceilPredicates = makeCeilPredicate <$> applicationChildren
-                Application{applicationChildren} = term
+                definedSideCondition = assumeDefinedTerms undefinedChildren sideCondition
+                isUndefined t = not (SideCondition.isDefined sideCondition t)
+                undefinedChildren = filter isUndefined applicationChildren
+                ceilPredicates = makeCeilPredicate <$> undefinedChildren
+                Application{applicationChildren} = application
              in evaluateApplication
                     definedSideCondition
                     Conditional{term = (), predicate = definedPredicate, substitution}
-                    term
+                    application
 
 makeExpandedApplication ::
     MonadSimplify simplifier =>

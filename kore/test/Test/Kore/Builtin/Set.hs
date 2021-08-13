@@ -272,7 +272,7 @@ test_inElementSymbolic =
             let patElement = mkApplySymbol elementSetSymbolTestSort [patKey]
                 patIn = mkApplySymbol inSetSymbolTestSort [patKey, patElement]
                 patTrue = Test.Bool.asInternal True
-                conditionTerm = mkAnd patTrue (mkCeil_ patElement)
+                conditionTerm = mkAnd patTrue (mkCeil_ patIn)
             actual <- evaluateT patIn
             expected <- evaluateT conditionTerm
             actual === expected
@@ -291,7 +291,7 @@ test_inConcatSymbolic =
                         HashSet.insert patKey (HashSet.fromList keys)
                 patIn = mkApplySymbol inSetSymbolTestSort [patKey, patSet]
                 patTrue = Test.Bool.asPattern True
-                conditionTerm = mkCeil boolSort patSet
+                conditionTerm = mkCeil boolSort patIn
             condition <- evaluateT conditionTerm
             let expected =
                     MultiOr.map
@@ -300,10 +300,7 @@ test_inConcatSymbolic =
                         )
                         condition
             actual <- evaluateT patIn
-            Pattern.assertEquivalent'
-                (===)
-                (from expected :: [Pattern RewritingVariableName])
-                (from actual :: [Pattern RewritingVariableName])
+            actual === expected
         )
 
 test_inConcat :: TestTree

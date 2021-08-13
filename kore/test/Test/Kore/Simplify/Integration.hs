@@ -242,11 +242,11 @@ test_simplificationIntegration =
     , testCase "function application with top predicate" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkElemVar var))
-                    (Mock.g Mock.b)
+                    (Mock.f' (mkElemVar var))
+                    (Mock.g' Mock.b)
             expect =
                 OrPattern.fromTermLike $
-                    Mock.functionalConstr11 $ Mock.g Mock.a
+                    Mock.functionalConstr11 $ Mock.g' Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
@@ -256,7 +256,7 @@ test_simplificationIntegration =
                             ,
                                 [ axiom
                                     (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                    (Mock.g Mock.a)
+                                    (Mock.g' Mock.a)
                                     (requirement Mock.xConfig)
                                 ]
                             )
@@ -439,8 +439,8 @@ test_simplificationIntegration =
     , testCase "simplification with top predicate (nu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
-                    (Mock.g Mock.b)
+                    (Mock.f' (mkSetVar var))
+                    (Mock.g' Mock.b)
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -448,7 +448,10 @@ test_simplificationIntegration =
                             mkNu
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
-                        , predicate = requirement Mock.setXConfig
+                        , predicate = 
+                            makeAndPredicate
+                                (makeCeilPredicate $ mkSetVar Mock.setXConfig)
+                                (requirement Mock.setXConfig)
                         , substitution = mempty
                         }
                     ]
@@ -461,7 +464,7 @@ test_simplificationIntegration =
                             ,
                                 [ axiom
                                     (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                    (Mock.g Mock.a)
+                                    (Mock.g' Mock.a)
                                     (requirement Mock.setXConfig)
                                 ]
                             )
@@ -477,8 +480,8 @@ test_simplificationIntegration =
     , testCase "simplification with top predicate (mu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
-                    (Mock.g Mock.b)
+                    (Mock.f' (mkSetVar var))
+                    (Mock.g' Mock.b)
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -486,7 +489,10 @@ test_simplificationIntegration =
                             mkMu
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
-                        , predicate = requirement Mock.setXConfig
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate $ mkSetVar Mock.setXConfig)
+                                (requirement Mock.setXConfig)
                         , substitution = mempty
                         }
                     ]
@@ -499,7 +505,7 @@ test_simplificationIntegration =
                             ,
                                 [ axiom
                                     (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                    (Mock.g Mock.a)
+                                    (Mock.g' Mock.a)
                                     (requirement Mock.setXConfig)
                                 ]
                             )
@@ -776,11 +782,11 @@ test_simplificationIntegrationUnification =
     , testCase "function application with top predicate" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkElemVar var))
-                    (Mock.g Mock.b)
+                    (Mock.f' (mkElemVar var))
+                    (Mock.g' Mock.b)
             expect =
                 OrPattern.fromTermLike $
-                    Mock.functionalConstr11 $ Mock.g Mock.a
+                    Mock.functionalConstr11 $ Mock.g' Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
@@ -791,7 +797,7 @@ test_simplificationIntegrationUnification =
                                 [ functionAxiomUnification
                                     Mock.functionalConstr10Symbol
                                     [mkElemVar Mock.xConfig]
-                                    (Mock.g Mock.a)
+                                    (Mock.g' Mock.a)
                                     (requirement Mock.xConfig)
                                 ]
                             )
@@ -930,8 +936,8 @@ test_simplificationIntegrationUnification =
     , testCase "simplification with top predicate (nu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
-                    (Mock.g Mock.b)
+                    (Mock.f' (mkSetVar var))
+                    (Mock.g' Mock.b)
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -939,7 +945,10 @@ test_simplificationIntegrationUnification =
                             mkNu
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
-                        , predicate = requirement Mock.setXConfig
+                        , predicate =
+                            makeAndPredicate 
+                                (makeCeilPredicate $ mkSetVar Mock.setXConfig)
+                                (requirement Mock.setXConfig)
                         , substitution = mempty
                         }
                     ]
@@ -953,7 +962,7 @@ test_simplificationIntegrationUnification =
                                 [ functionAxiomUnification
                                     Mock.functionalConstr10Symbol
                                     [mkElemVar Mock.xConfig]
-                                    (Mock.g Mock.a)
+                                    (Mock.g' Mock.a)
                                     (requirement Mock.setXConfig)
                                 ]
                             )
@@ -969,8 +978,8 @@ test_simplificationIntegrationUnification =
     , testCase "simplification with top predicate (mu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
-                    (Mock.g Mock.b)
+                    (Mock.f' (mkSetVar var))
+                    (Mock.g' Mock.b)
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -978,7 +987,10 @@ test_simplificationIntegrationUnification =
                             mkMu
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
-                        , predicate = requirement Mock.setXConfig
+                        , predicate =
+                            makeAndPredicate 
+                                (makeCeilPredicate $ mkSetVar Mock.setXConfig)
+                                (requirement Mock.setXConfig)
                         , substitution = mempty
                         }
                     ]
@@ -992,7 +1004,7 @@ test_simplificationIntegrationUnification =
                                 [ functionAxiomUnification
                                     Mock.functionalConstr10Symbol
                                     [mkElemVar Mock.xConfig]
-                                    (Mock.g Mock.a)
+                                    (Mock.g' Mock.a)
                                     (requirement Mock.setXConfig)
                                 ]
                             )
