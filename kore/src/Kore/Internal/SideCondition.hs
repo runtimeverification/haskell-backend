@@ -846,6 +846,7 @@ The resulting set will not contain the input collection itself.
 generateNormalizedAcs ::
     forall normalized variable.
     InternalVariable variable =>
+    Foldable (normalized Key) =>
     Ord (Element normalized (TermLike variable)) =>
     Ord (Value normalized (TermLike variable)) =>
     Ord (normalized Key (TermLike variable)) =>
@@ -856,14 +857,18 @@ generateNormalizedAcs ::
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ HashSet.map symbolicToAc symbolicPairs
-    , HashSet.map concreteToAc concretePairs
-    , HashSet.map opaqueToAc opaquePairs
-    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
-    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
-    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
-    ]
-        & fold
+    if all isDefinedInternal internalAc
+        then mempty
+        else
+            [ HashSet.map symbolicToAc symbolicPairs
+            , HashSet.map concreteToAc concretePairs
+            , HashSet.map opaqueToAc opaquePairs
+            , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+            , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+            , HashSet.map concreteOpaqueToAc concreteOpaquePairs
+            ]
+                & fold
+                & HashSet.filter (not . all isDefinedInternal)
   where
     InternalAc
         { builtinAcChild
