@@ -493,7 +493,7 @@ test_generateNormalizedAcs =
                     , (mkElemVar Mock.y, Mock.b)
                     ]
                     []
-            expected = [] -- [collection]
+            expected = []
         testCollection collection expected
     , testCase "3-element symbolic: all unique pair-wise subcollections" $ do
         let collection =
