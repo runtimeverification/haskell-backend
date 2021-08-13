@@ -4,10 +4,11 @@ module Test.Kore.Simplify.SubstitutionSimplifier (
     test_SubstitutionSimplifier,
 ) where
 
+import qualified Data.HashSet as HashSet
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.SideCondition as SideCondition (
-    fromDefinedTerms
+    fromDefinedTerms,
  )
 import Kore.Internal.Substitution (
     mkNormalization,
@@ -36,8 +37,6 @@ import Test.Kore.Simplify (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Data.HashSet as HashSet
-
 
 test_SubstitutionSimplifier :: [TestTree]
 test_SubstitutionSimplifier =
@@ -237,8 +236,9 @@ test_SubstitutionSimplifier =
                 [ testCase "simplification" $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Simplification.substitutionSimplifier
-                    let sideCondition = SideCondition.fromDefinedTerms $
-                            HashSet.fromList [mkVar xs, mkVar ys]
+                    let sideCondition =
+                            SideCondition.fromDefinedTerms $
+                                HashSet.fromList [mkVar xs, mkVar ys]
                     actual <-
                         runSimplifier Mock.env $
                             simplifySubstitution sideCondition input
@@ -256,8 +256,9 @@ test_SubstitutionSimplifier =
                 , testCase "unification" $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Unification.substitutionSimplifier Not.notSimplifier
-                    let sideCondition = SideCondition.fromDefinedTerms $
-                            HashSet.fromList [mkVar xs, mkVar ys]
+                    let sideCondition =
+                            SideCondition.fromDefinedTerms $
+                                HashSet.fromList [mkVar xs, mkVar ys]
                     actual <-
                         runSimplifier Mock.env . runUnifierT Not.notSimplifier $
                             simplifySubstitution sideCondition input
@@ -289,9 +290,13 @@ a = Mock.a
 b = Mock.b
 c = Mock.c
 
-f , g , h, f', constr1 ::
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName
+f
+    , g
+    , h
+    , f'
+    , constr1 ::
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName
 f = Mock.f
 g = Mock.g
 h = Mock.h

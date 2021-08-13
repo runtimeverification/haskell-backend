@@ -337,9 +337,10 @@ test_mergeAndNormalizeSubstitutions =
                         { term = ()
                         , predicate =
                             Predicate.makeAndPredicate
-                                (Predicate.makeAndPredicate
+                                ( Predicate.makeAndPredicate
                                     (Predicate.makeCeilPredicate Mock.cg)
-                                    (Predicate.makeEqualsPredicate Mock.cf Mock.cg))
+                                    (Predicate.makeEqualsPredicate Mock.cf Mock.cg)
+                                )
                                 (Predicate.makeCeilPredicate Mock.cf)
                         , substitution =
                             Substitution.unsafeWrap

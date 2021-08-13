@@ -1068,7 +1068,9 @@ d = Internal.mkApplySymbol dSymbol []
 e :: InternalVariable variable => TermLike variable
 e = Internal.mkApplySymbol eSymbol []
 
-f, g , h ::
+f
+    , g
+    , h ::
         InternalVariable variable =>
         HasCallStack =>
         TermLike variable ->
@@ -1077,11 +1079,13 @@ f arg = Internal.mkApplySymbol fSymbol [arg]
 g arg = Internal.mkApplySymbol gSymbol [arg]
 h arg = Internal.mkApplySymbol hSymbol [arg]
 
-f', g', h' ::
-    InternalVariable variable =>
-    HasCallStack =>
-    TermLike variable ->
-    TermLike variable
+f'
+    , g'
+    , h' ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
 f' arg = Internal.mkApplySymbol fSymbol' [arg]
 g' arg = Internal.mkApplySymbol gSymbol' [arg]
 h' arg = Internal.mkApplySymbol hSymbol' [arg]

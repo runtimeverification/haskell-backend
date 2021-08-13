@@ -448,7 +448,7 @@ test_simplificationIntegration =
                             mkNu
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
-                        , predicate = 
+                        , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate $ mkSetVar Mock.setXConfig)
                                 (requirement Mock.setXConfig)
@@ -946,7 +946,7 @@ test_simplificationIntegrationUnification =
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
                         , predicate =
-                            makeAndPredicate 
+                            makeAndPredicate
                                 (makeCeilPredicate $ mkSetVar Mock.setXConfig)
                                 (requirement Mock.setXConfig)
                         , substitution = mempty
@@ -988,7 +988,7 @@ test_simplificationIntegrationUnification =
                                 Mock.var_setXConfig_0
                                 (mkSetVar Mock.var_setXConfig_0)
                         , predicate =
-                            makeAndPredicate 
+                            makeAndPredicate
                                 (makeCeilPredicate $ mkSetVar Mock.setXConfig)
                                 (requirement Mock.setXConfig)
                         , substitution = mempty

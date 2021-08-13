@@ -189,14 +189,14 @@ test_stepStrategy =
                         secondRemainderPattern =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr11 (Mock.g (mkElemVar Mock.var_x_0)))
-                                ( makeAndPredicate 
+                                ( makeAndPredicate
                                     ( makeAndPredicate
-                                        ( makeCeilPredicate $ Mock.g (mkElemVar Mock.var_x_0))                   
+                                        (makeCeilPredicate $ Mock.g (mkElemVar Mock.var_x_0))
                                         ( makeEqualsPredicate
                                             Mock.a
                                             (Mock.f' xTerm)
                                         )
-                                    )                       
+                                    )
                                     ( makeNotPredicate
                                         ( makeAndPredicate
                                             ( makeCeilPredicate

@@ -15,6 +15,7 @@ module Kore.Simplify.Application (
 import Control.Monad.Catch (
     MonadThrow,
  )
+import Kore.Attribute.Pattern.FreeVariables (FreeVariables)
 import Kore.Attribute.Synthetic (synthesize)
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -27,7 +28,6 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Attribute.Pattern.FreeVariables (FreeVariables)
 import Kore.Internal.Predicate
 import Kore.Internal.SideCondition (
     SideCondition,

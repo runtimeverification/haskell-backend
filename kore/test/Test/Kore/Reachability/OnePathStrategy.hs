@@ -27,7 +27,7 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeEqualsPredicate,
     makeNotPredicate,
-    makeTruePredicate, makeCeilPredicate
+    makeTruePredicate,
  )
 import Kore.Internal.TermLike (
     TermLike,
@@ -692,7 +692,7 @@ test_onePathStrategy =
                     Conditional
                         { term = Mock.a
                         , predicate =
-                            makeAndPredicate 
+                            makeAndPredicate
                                 (makeCeilPredicate $ Mock.fTestInt Mock.b)
                                 $ makeEqualsPredicate
                                     (Mock.builtinBool True)
@@ -782,7 +782,7 @@ test_onePathStrategy =
                     Conditional
                         { term = Mock.a
                         , predicate =
-                            makeAndPredicate 
+                            makeAndPredicate
                                 (makeCeilPredicate $ Mock.fTestInt Mock.b)
                                 $ makeEqualsPredicate
                                     (Mock.builtinBool True)
