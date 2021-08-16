@@ -11,6 +11,8 @@ case $(uname) in
     ;;
 esac
 
+dir="${KORE}/"
+
 $sed \
-   -e "s|$KORE||g" \
+   -e "s|$dir||g" \
     -i "$@"
