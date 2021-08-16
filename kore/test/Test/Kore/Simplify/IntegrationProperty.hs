@@ -7,7 +7,6 @@ module Test.Kore.Simplify.IntegrationProperty (
 import Control.Exception (
     ErrorCall (..),
  )
-import Pretty (pretty)
 import Control.Monad.Catch (
     MonadThrow,
     catch,
@@ -57,6 +56,7 @@ import qualified Kore.Simplify.Pattern as Pattern (
 import Kore.Simplify.Simplify
 import Kore.Unparser
 import Prelude.Kore
+import Pretty (pretty)
 import qualified SMT
 import Test.ConsistentKore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock

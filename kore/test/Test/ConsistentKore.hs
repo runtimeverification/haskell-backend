@@ -26,8 +26,6 @@ import Data.Text (
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Kore.Internal.From
-import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Attribute.Constructor as Attribute.Constructor (
     Constructor (..),
  )
@@ -71,9 +69,11 @@ import qualified Kore.Internal.Alias as Internal (
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (ApplicationSorts),
  )
+import Kore.Internal.From
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
+import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Internal.Symbol as Internal (
     Symbol (Symbol),
  )
