@@ -25,15 +25,14 @@ import Prelude.Kore
 
 -- | Simplify an 'InternalMap' pattern.
 simplify ::
-    Sort ->
     InternalSet Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
-simplify sort =
-    traverse (Logic.scatter >>> Compose)
-        >>> fmap (normalizeInternalSet sort >>> markSimplified)
-        >>> getCompose
-        >>> fmap Pattern.syncSort
-        >>> MultiOr.observeAll
+simplify internalSet =
+    traverse (Logic.scatter >>> Compose) internalSet
+        & fmap (normalizeInternalSet (builtinAcSort internalSet) >>> markSimplified)
+        & getCompose
+        & fmap Pattern.syncSort
+        & MultiOr.observeAll
 
 normalizeInternalSet ::
     Sort ->

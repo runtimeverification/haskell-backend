@@ -82,7 +82,7 @@ test_simplify =
         TestTree
     becomes name origin (OrPattern.fromPatterns -> expects) =
         testCase name $ do
-            let actuals = evaluate Mock.topSort origin
+            let actuals = evaluate origin
             assertEqual "" expects actuals
 
 mkSet :: [child] -> [child] -> InternalSet Key child
@@ -114,7 +114,6 @@ mkSetAux concreteElements elements opaque =
     mkSetValue = \x -> (x, SetValue)
 
 evaluate ::
-    Sort ->
     InternalSet Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
 evaluate = simplify
