@@ -3,14 +3,14 @@
 case $(uname) in
     # MacOS
     Darwin*)
-        sed \
-            -e 's|/home/jenkins-slave/workspace/[^/]\+/||' \
-            -i '' "$@"
-        ;;
-    # This should be Linux
+        sed="gsed"
+    ;;
+    # Assumed to be Linux
     *)
-        sed \
-            -e 's|/home/jenkins-slave/workspace/[^/]\+/||' \
-            -i "$@"
-        ;;
+        sed="sed"
+    ;;
 esac
+
+$sed \
+   -e "s|$KORE||g" \
+    -i "$@"
