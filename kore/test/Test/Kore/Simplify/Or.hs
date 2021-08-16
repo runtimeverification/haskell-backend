@@ -9,6 +9,7 @@ import qualified Data.List as List
 import Data.Text (
     Text,
  )
+import Kore.Internal.OrPattern (getSortIfNotBottom)
 import Kore.Internal.Predicate (
     Predicate,
     makeEqualsPredicate,
@@ -223,9 +224,11 @@ becomes
             ( stateIntention
                 [ prettyOr or1 or2
                 , "to become:"
-                , Unparser.unparse $ OrPattern.toTermLike (mkSortVariable "_") expected
+                , Unparser.unparse $ OrPattern.toTermLike termSort expected
                 ]
             )
+      where
+        termSort = fromMaybe (mkSortVariable "_") (getSortIfNotBottom expected)
 
 simplifiesTo ::
     HasCallStack =>
