@@ -860,7 +860,7 @@ generateNormalizedAcs ::
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    if all isConstructorLike (children internalAc)
+    if alwaysDefined internalAc
         then mempty
         else
             [ HashSet.map symbolicToAc symbolicPairs
@@ -871,10 +871,15 @@ generateNormalizedAcs internalAc =
             , HashSet.map concreteOpaqueToAc concreteOpaquePairs
             ]
                 & fold
-                & HashSet.filter (not . all isConstructorLike . children)
+                & HashSet.filter (not . alwaysDefined)
   where
-    children InternalAc{builtinAcChild = normalized} =
-        fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
+    alwaysDefined InternalAc{builtinAcChild = normalized} =
+        all isConstructorLike children && null opaques
+      where
+        children =
+            fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
+        opaques =
+            opaque (unwrapAc normalized)
     InternalAc
         { builtinAcChild
         , builtinAcSort
