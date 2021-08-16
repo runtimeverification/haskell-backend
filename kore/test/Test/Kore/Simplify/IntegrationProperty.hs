@@ -1,11 +1,13 @@
 module Test.Kore.Simplify.IntegrationProperty (
     test_simplifiesToSimplified,
     test_regressionGeneratedTerms,
+    test_testingPredicateGen,
 ) where
 
 import Control.Exception (
     ErrorCall (..),
  )
+import Pretty (pretty)
 import Control.Monad.Catch (
     MonadThrow,
     catch,
@@ -91,6 +93,12 @@ test_simplifiesToSimplified =
         | otherwise = do
             traceM ("Error for input: " ++ unparseToString term)
             throwM err
+
+test_testingPredicateGen :: TestTree
+test_testingPredicateGen =
+    testPropertyWithoutSolver "TESTING" $ do
+        pred' <- forAll predicateGen
+        traceM (show . pretty $ pred')
 
 test_regressionGeneratedTerms :: [TestTree]
 test_regressionGeneratedTerms =

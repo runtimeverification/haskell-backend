@@ -3,6 +3,8 @@ module Test.ConsistentKore (
     Setup (..),
     runTermGen,
     termLikeGen,
+    -- testing
+    predicateGen,
 ) where
 
 import qualified Control.Arrow as Arrow
@@ -24,6 +26,8 @@ import Data.Text (
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import Kore.Internal.From
+import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Attribute.Constructor as Attribute.Constructor (
     Constructor (..),
  )
@@ -240,6 +244,41 @@ termLikeGen = do
     limitTermDepth (Range.Size s)
         | s < 10 = Range.Size s
         | otherwise = Range.Size 10
+
+-- TODO:
+--   - will need the config for generating terms/variables
+--   - make generated predicates smaller
+predicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+predicateGen =
+    Gen.recursive
+        Gen.choice
+        [return fromTop_, return fromBottom_]
+        [ andPredicateGen
+        , orPredicateGen
+        , notPredicateGen
+        , impliesPredicateGen
+        , iffPredicateGen
+        ]
+
+andPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+andPredicateGen =
+    Gen.subterm2 predicateGen predicateGen fromAnd
+
+orPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+orPredicateGen =
+    Gen.subterm2 predicateGen predicateGen fromOr
+
+impliesPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+impliesPredicateGen =
+    Gen.subterm2 predicateGen predicateGen fromImplies
+
+iffPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+iffPredicateGen =
+    Gen.subterm2 predicateGen predicateGen fromIff
+
+notPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+notPredicateGen =
+    Gen.subterm predicateGen fromNot
 
 termLikeGenImpl :: Range.Size -> Sort -> Gen (Maybe (TermLike VariableName))
 termLikeGenImpl (Range.Size size) requestedSort = do
