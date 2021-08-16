@@ -34,12 +34,12 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.Pattern (
     Condition,
  )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
  )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
