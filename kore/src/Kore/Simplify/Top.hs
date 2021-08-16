@@ -20,13 +20,14 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Sort
 import Kore.Syntax.Top
-import Prelude.Kore ()
+import Prelude.Kore (
+    (.),
+ )
 
 -- | simplifies a Top pattern, which means returning an always-true or.
 
 -- TODO (virgil): Preserve pattern sorts under simplification.
 simplify ::
-    Sort ->
     Top Sort child ->
     OrPattern RewritingVariableName
-simplify sort _ = OrPattern.topOf sort
+simplify = OrPattern.topOf . topSort

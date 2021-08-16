@@ -28,12 +28,11 @@ test_topSimplification =
         ( assertEqual
             ""
             (OrPattern.fromPattern (Pattern.topOf testSort))
-            (evaluate testSort Top{topSort = testSort})
+            (evaluate Top{topSort = testSort})
         )
     ]
 
 evaluate ::
-    Sort ->
     Top Sort (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
 evaluate = simplify

@@ -441,7 +441,7 @@ simplify sideCondition = \termLike ->
                 -- TODO(virgil): Move next up through patterns.
                 NextF nextF -> Next.simplify <$> simplifyChildren nextF
                 OrF orF -> Or.simplify <$> simplifyChildren orF
-                TopF topF -> Top.simplify termSort <$> simplifyChildren topF
+                TopF topF -> Top.simplify <$> simplifyChildren topF
                 --
                 StringLiteralF stringLiteralF ->
                     return $ StringLiteral.simplify (getConst stringLiteralF)
