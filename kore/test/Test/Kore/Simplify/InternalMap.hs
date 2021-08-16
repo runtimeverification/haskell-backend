@@ -111,7 +111,7 @@ test_simplify =
             assertEqual
                 ""
                 (OrPattern.fromPatterns expect)
-                (evaluate Mock.topSort origin)
+                (evaluate origin)
 
 mkMap :: [(child, child)] -> [child] -> InternalMap Key child
 mkMap = mkMapAux []
@@ -140,7 +140,6 @@ mkMapAux concreteElements elements opaque =
         }
 
 evaluate ::
-    Sort ->
     InternalMap Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
 evaluate = simplify

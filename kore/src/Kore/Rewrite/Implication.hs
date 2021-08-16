@@ -127,7 +127,7 @@ instance Pretty (Implication modality) where
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
-            , Pretty.indent 4 (unparse rightTerm)
+            , Pretty.indent 4 (pretty right)
             ]
       where
         Implication
@@ -135,10 +135,6 @@ instance Pretty (Implication modality) where
             , right
             , existentials
             } = implication'
-        rightTerm =
-            case OrPattern.tryGetSort right of
-                Nothing -> error "to do"
-                Just s -> OrPattern.toTermLike s right
 
 instance TopBottom (Implication modality) where
     isTop _ = False

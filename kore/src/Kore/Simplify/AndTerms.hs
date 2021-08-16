@@ -79,6 +79,9 @@ import Kore.Simplify.NoConfusion
 import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Overloading as Overloading
 import Kore.Simplify.Simplify as Simplifier
+import Kore.Sort (
+    sameSort,
+ )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
@@ -161,7 +164,11 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- matchBytes first second =
             lift $ unifyBytes unifyData
         | Just unifyData <- matchBottomTermEquals first second =
-            lift $ bottomTermEquals (termLikeSort first) SideCondition.topTODO unifyData
+            lift $
+                bottomTermEquals
+                    (sameSort (termLikeSort first) (termLikeSort first))
+                    SideCondition.topTODO
+                    unifyData
         | Just unifyData <- matchVariableFunctionEquals first second =
             lift $ variableFunctionEquals unifyData
         | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
@@ -193,7 +200,12 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- Builtin.Map.matchUnifyEquals tools first second =
             lift $ Builtin.Map.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.Map.matchUnifyNotInKeys first second =
-            lift $ Builtin.Map.unifyNotInKeys (termLikeSort first) childTransformers notSimplifier unifyData
+            lift $
+                Builtin.Map.unifyNotInKeys
+                    (sameSort (termLikeSort first) (termLikeSort first))
+                    childTransformers
+                    notSimplifier
+                    unifyData
         | Just unifyData <- Builtin.Set.matchUnifyEquals tools first second =
             lift $ Builtin.Set.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =

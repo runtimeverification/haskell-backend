@@ -1087,10 +1087,8 @@ cannotSimplifyNotSimplifiedError predF =
         ( "Unexpectedly marking term with NotSimplified children as simplified:\n"
             ++ show predF
             ++ "\n"
-            ++ unparseToString term
+            ++ (show . pretty $ synthesize predF)
         )
-  where
-    term = fromPredicate (mkSortVariable "_") (synthesize predF)
 
 simplifiedFromChildren ::
     HasCallStack =>

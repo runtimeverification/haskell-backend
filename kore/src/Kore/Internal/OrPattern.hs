@@ -17,7 +17,7 @@ module Kore.Internal.OrPattern (
     bottom,
     isFalse,
     isPredicate,
-    tryGetSort,
+    getSortIfNotBottom,
     topOf,
     isTrue,
     toPattern,
@@ -211,8 +211,8 @@ isPredicate :: OrPattern variable -> Bool
 isPredicate = all Pattern.isPredicate
 
 -- | Gets the `Sort` of a non-empty 'OrPattern' and othewise returns `Nothing`.
-tryGetSort :: OrPattern variable -> Maybe Sort
-tryGetSort multiOr =
+getSortIfNotBottom :: OrPattern variable -> Maybe Sort
+getSortIfNotBottom multiOr =
     case toList multiOr of
         [] -> Nothing
         p : _ -> Just (Pattern.patternSort p)

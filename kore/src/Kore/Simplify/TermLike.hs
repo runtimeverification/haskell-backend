@@ -415,7 +415,7 @@ simplify sideCondition = \termLike ->
                 InternalListF internalF ->
                     InternalList.simplify <$> simplifyChildren internalF
                 InternalMapF internalMapF ->
-                    (InternalMap.simplify termSort) <$> simplifyChildren internalMapF
+                    InternalMap.simplify <$> simplifyChildren internalMapF
                 InternalSetF internalSetF ->
                     (InternalSet.simplify termSort) <$> simplifyChildren internalSetF
                 DomainValueF domainValueF ->
@@ -552,7 +552,7 @@ simplifyOnly sideCondition =
                 InternalListF internalListF ->
                     InternalList.simplify <$> traverse worker internalListF
                 InternalMapF internalMapF ->
-                    InternalMap.simplify sort <$> traverse worker internalMapF
+                    InternalMap.simplify <$> traverse worker internalMapF
                 InternalSetF internalSetF ->
                     InternalSet.simplify sort <$> traverse worker internalSetF
                 -- Domain values:

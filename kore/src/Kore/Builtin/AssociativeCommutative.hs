@@ -115,6 +115,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Simplify as Simplifier
 import Kore.Sort (
     Sort,
+    sameSort,
  )
 import Kore.Syntax.Variable
 import Kore.Unification.Unify (
@@ -1400,7 +1401,10 @@ unifyEqualsElementLists
 
             let remainder2Terms = map fromConcreteOrWithVariable remainder2
 
-            case elementListAsInternal tools (termLikeSort first) remainder2Terms of
+            case elementListAsInternal
+                    tools
+                    (sameSort (termLikeSort first) (termLikeSort first))
+                    remainder2Terms of
                 Nothing ->
                     debugUnifyBottomAndReturnBottom
                         "Duplicated element in unification results"

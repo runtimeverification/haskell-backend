@@ -1395,7 +1395,7 @@ prettyClaimStateComponent transformation omitList =
             , provenValue = makeAuxReplOutput "Proven."
             }
   where
-    -- Dummy sort used to unparse configurations.
+    -- Sort variable used to unparse configurations.
     -- This is only used for unparsing \bottom.
     dummySort = SortVariableSort (SortVariable "R")
     prettyComponent =

@@ -109,7 +109,6 @@ import Kore.Internal.TermLike (
     Key,
     TermLike,
     pattern App_,
-    pattern Equals_,
     pattern Exists_,
     pattern Forall_,
     pattern Inj_,
@@ -560,7 +559,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         assumeEqualTerms =
             case predicate of
                 PredicateEquals t1 t2 ->
-                    case retractLocalFunction (TermLike.mkEquals (TermLike.termLikeSort t1) t1 t2) of
+                    case retractLocalFunction (Predicate.makeEqualsPredicate t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
                                 HashMap.insert t1' t2'
@@ -665,11 +664,11 @@ in either order, but the function pattern is always returned first in the
 'Pair'.
 -}
 retractLocalFunction ::
-    TermLike variable ->
+    Predicate variable ->
     Maybe (Pair (TermLike variable))
 retractLocalFunction =
     \case
-        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
+        PredicateEquals term1 term2 -> go term1 term2 <|> go term2 term1
         _ -> Nothing
   where
     go term1@(App_ symbol1 _) term2
