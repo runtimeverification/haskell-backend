@@ -1402,9 +1402,9 @@ unifyEqualsElementLists
             let remainder2Terms = map fromConcreteOrWithVariable remainder2
 
             case elementListAsInternal
-                    tools
-                    (sameSort (termLikeSort first) (termLikeSort first))
-                    remainder2Terms of
+                tools
+                (sameSort (termLikeSort first) (termLikeSort first))
+                remainder2Terms of
                 Nothing ->
                     debugUnifyBottomAndReturnBottom
                         "Duplicated element in unification results"
