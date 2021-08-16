@@ -1403,7 +1403,7 @@ unifyEqualsElementLists
 
             case elementListAsInternal
                 tools
-                (sameSort (termLikeSort first) (termLikeSort first))
+                (sameSort (termLikeSort first) (termLikeSort second))
                 remainder2Terms of
                 Nothing ->
                     debugUnifyBottomAndReturnBottom

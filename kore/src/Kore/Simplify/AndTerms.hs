@@ -166,7 +166,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- matchBottomTermEquals first second =
             lift $
                 bottomTermEquals
-                    (sameSort (termLikeSort first) (termLikeSort first))
+                    (sameSort (termLikeSort first) (termLikeSort second))
                     SideCondition.topTODO
                     unifyData
         | Just unifyData <- matchVariableFunctionEquals first second =
@@ -202,7 +202,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just unifyData <- Builtin.Map.matchUnifyNotInKeys first second =
             lift $
                 Builtin.Map.unifyNotInKeys
-                    (sameSort (termLikeSort first) (termLikeSort first))
+                    (sameSort (termLikeSort first) (termLikeSort second))
                     childTransformers
                     notSimplifier
                     unifyData
