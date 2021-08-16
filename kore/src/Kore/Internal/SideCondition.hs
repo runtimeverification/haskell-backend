@@ -31,7 +31,6 @@ module Kore.Internal.SideCondition (
 ) where
 
 import Changed
-import Control.Comonad.Trans.Cofree (ComonadCofree (unwrap))
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
     StateT,
@@ -43,7 +42,6 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product (
     field,
  )
-import Data.GraphViz (normal)
 import Data.HashMap.Strict (
     HashMap,
  )

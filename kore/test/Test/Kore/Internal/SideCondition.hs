@@ -7,7 +7,6 @@ module Test.Kore.Internal.SideCondition (
     test_cacheSimplifiedFunctions,
 ) where
 
-import qualified Data.Foldable as Foldable
 import qualified Data.HashSet as HashSet
 import Data.Maybe (
     fromJust,
@@ -15,7 +14,6 @@ import Data.Maybe (
 import Data.Sup (
     Sup (..),
  )
-import Data.Text.Prettyprint.Doc (Pretty (pretty))
 import GHC.Natural (
     Natural,
  )
@@ -25,12 +23,9 @@ import Kore.Internal.InternalMap (
 import Kore.Internal.InternalSet (
     InternalSet,
  )
-import Kore.Internal.NormalizedAc (unparseInternalAc)
 import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
-import Kore.Unparser (unparse)
 import Prelude.Kore
-import qualified Pretty
 import Test.Kore (
     testId,
  )
