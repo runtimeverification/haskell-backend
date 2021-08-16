@@ -222,12 +222,25 @@ test_assumeDefined =
                     ]
                     []
                 , Collection
+                    [ (mkElemVar Mock.x, Mock.a)
+                    , (Mock.c, Mock.d)
+                    ]
+                    []
+                , Collection
+                    [ (mkElemVar Mock.x, Mock.a)
+                    ]
+                    [0]
+                , Collection
                     [ (Mock.f Mock.plain00, Mock.b)
                     , (Mock.c, Mock.d)
                     ]
                     []
                 , Collection
                     [ (Mock.f Mock.plain00, Mock.b)
+                    ]
+                    [0]
+                , Collection
+                    [ (Mock.c, Mock.d)
                     ]
                     [0]
                 ]
@@ -493,7 +506,7 @@ test_generateNormalizedAcs =
                     , (mkElemVar Mock.y, Mock.b)
                     ]
                     []
-            expected = []
+            expected = [collection]
         testCollection collection expected
     , testCase "3-element symbolic: all unique pair-wise subcollections" $ do
         let collection =
@@ -503,7 +516,17 @@ test_generateNormalizedAcs =
                     , (mkElemVar Mock.z, Mock.c)
                     ]
                     []
-            expected = []
+            expected =
+                [ Collection
+                    [(mkElemVar Mock.x, Mock.a), (mkElemVar Mock.y, Mock.b)]
+                    []
+                , Collection
+                    [(mkElemVar Mock.y, Mock.b), (mkElemVar Mock.z, Mock.c)]
+                    []
+                , Collection
+                    [(mkElemVar Mock.x, Mock.a), (mkElemVar Mock.z, Mock.c)]
+                    []
+                ]
         testCollection collection expected
     , testCase "3-element concrete: all unique pair-wise subcollections" $ do
         let collection =
@@ -513,11 +536,31 @@ test_generateNormalizedAcs =
                     , (Mock.c, Mock.c)
                     ]
                     []
-            expected = []
+            expected =
+                [ Collection
+                    [(Mock.a, Mock.a), (Mock.b, Mock.b)]
+                    []
+                , Collection
+                    [(Mock.b, Mock.b), (Mock.c, Mock.c)]
+                    []
+                , Collection
+                    [(Mock.a, Mock.a), (Mock.c, Mock.c)]
+                    []
+                ]
         testCollection collection expected
     , testCase "3-opaque: all unique pair-wise subcollections" $ do
         let collection = Collection [] [0, 1, 2]
-            expected = []
+            expected =
+                [ Collection
+                    []
+                    [0, 1]
+                , Collection
+                    []
+                    [1, 2]
+                , Collection
+                    []
+                    [0, 2]
+                ]
         testCollection collection expected
     , testCase
         "2-concrete, 2-symbolic: generates all, including mixed,\
@@ -531,7 +574,26 @@ test_generateNormalizedAcs =
                         , (mkElemVar Mock.y, Mock.d)
                         ]
                         []
-                expected = []
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.d)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.d)]
+                        []
+                    , Collection
+                        [(Mock.b, Mock.c), (mkElemVar Mock.y, Mock.d)]
+                        []
+                    ]
             testCollection collection expected
     , testCase
         "2-concrete 1-symbolic 1-opaque: all unique pairs\
@@ -544,7 +606,26 @@ test_generateNormalizedAcs =
                         , (Mock.b, Mock.c)
                         ]
                         [0]
-                expected = []
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [0]
+                    , Collection
+                        [(Mock.b, Mock.c)]
+                        [0]
+                    ]
             testCollection collection expected
     , testCase
         "2-symbolic 1-concrete 1-opaque map: all unique pairs\
@@ -557,7 +638,26 @@ test_generateNormalizedAcs =
                         , (mkElemVar Mock.y, Mock.c)
                         ]
                         [0]
-                expected = []
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.y, Mock.c)]
+                        [0]
+                    ]
             testCollection collection expected
     , testCase
         "3-element 2-opaque: all unique pairs\
@@ -570,7 +670,38 @@ test_generateNormalizedAcs =
                         , (Mock.b, Mock.c)
                         ]
                         [0, 1]
-                expected = []
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [0]
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [1]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [1]
+                    , Collection
+                        [(Mock.b, Mock.c)]
+                        [0]
+                    , Collection
+                        [(Mock.b, Mock.c)]
+                        [1]
+                    , Collection
+                        []
+                        [0, 1]
+                    ]
             testCollection collection expected
     ]
   where

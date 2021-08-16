@@ -31,6 +31,7 @@ module Kore.Internal.SideCondition (
 ) where
 
 import Changed
+import Control.Comonad.Trans.Cofree (ComonadCofree (unwrap))
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
     StateT,
@@ -42,6 +43,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product (
     field,
  )
+import Data.GraphViz (normal)
 import Data.HashMap.Strict (
     HashMap,
  )
@@ -85,6 +87,7 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
+    unwrapElement,
     pattern AcPair,
  )
 import Kore.Internal.Predicate (
@@ -108,6 +111,7 @@ import Kore.Internal.TermLike (
     Application,
     Key,
     TermLike,
+    isConstructorLike,
     pattern App_,
     pattern Equals_,
     pattern Exists_,
@@ -846,7 +850,6 @@ The resulting set will not contain the input collection itself.
 generateNormalizedAcs ::
     forall normalized variable.
     InternalVariable variable =>
-    Foldable (normalized Key) =>
     Ord (Element normalized (TermLike variable)) =>
     Ord (Value normalized (TermLike variable)) =>
     Ord (normalized Key (TermLike variable)) =>
@@ -857,7 +860,7 @@ generateNormalizedAcs ::
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    if all isDefinedInternal internalAc
+    if all isConstructorLike (children internalAc)
         then mempty
         else
             [ HashSet.map symbolicToAc symbolicPairs
@@ -868,8 +871,10 @@ generateNormalizedAcs internalAc =
             , HashSet.map concreteOpaqueToAc concreteOpaquePairs
             ]
                 & fold
-                & HashSet.filter (not . all isDefinedInternal)
+                & HashSet.filter (not . all isConstructorLike . children)
   where
+    children InternalAc{builtinAcChild = normalized} =
+        fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
     InternalAc
         { builtinAcChild
         , builtinAcSort
