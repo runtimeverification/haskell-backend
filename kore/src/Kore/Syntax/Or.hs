@@ -19,9 +19,7 @@ import Pretty (
  )
 import qualified Pretty
 
-{- |'Or' corresponds to the @\or@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Or' corresponds to the @\\or@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'orSort' is both the sort of the operands and the sort of the result.
 -}
