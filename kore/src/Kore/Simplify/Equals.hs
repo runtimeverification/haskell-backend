@@ -68,6 +68,7 @@ import qualified Kore.Simplify.Or as Or (
     simplifyEvaluated,
  )
 import Kore.Simplify.Simplify
+import Kore.Sort (sameSort)
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
@@ -172,9 +173,9 @@ simplify
         (first', second') =
             minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
 
-{- TODO (virgil): Preserve pattern sorts under simplification.
+{-
 
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+Another way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
 > CofreeF (Equals Sort) (Attribute.Pattern variable) (OrPattern variable)
@@ -295,13 +296,12 @@ makeEvaluate
     second@Conditional{term = secondTerm}
     sideCondition =
         do
-            let termSort = termLikeSort firstTerm
-            let first' = first{term = if termsAreEqual then mkTop termSort else firstTerm}
+            let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
             firstCeil <- makeEvaluateCeil sort sideCondition first'
-            let second' = second{term = if termsAreEqual then mkTop termSort else secondTerm}
+            let second' = second{term = if termsAreEqual then mkTop sort else secondTerm}
             secondCeil <- makeEvaluateCeil sort sideCondition second'
             let mkNotSimplified notChild =
-                    Not.simplify sideCondition Not{notSort = termSort, notChild}
+                    Not.simplify sideCondition Not{notSort = sort, notChild}
             firstCeilNegation <- mkNotSimplified firstCeil
             secondCeilNegation <- mkNotSimplified secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
@@ -315,7 +315,7 @@ makeEvaluate
                 & MultiOr.map Pattern.withoutTerm
                 & return
       where
-        sort = termLikeSort firstTerm
+        sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
         termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it

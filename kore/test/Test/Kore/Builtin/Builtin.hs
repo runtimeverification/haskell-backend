@@ -258,6 +258,7 @@ evaluateT ::
 evaluateT = lift . evaluate
 
 evaluateExpectTopK ::
+    HasCallStack =>
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
     Hedgehog.PropertyT smt ()
