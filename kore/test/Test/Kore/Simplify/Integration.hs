@@ -692,19 +692,30 @@ test_simplificationIntegration =
                     & mapSetVariable (pure mkConfigVariable)
         actual <-
             evaluate
-                Conditional
-                    { term =
-                        mkNu
-                            q
-                            ( (mkFloor Mock.otherSort)
-                                ( (mkIn Mock.otherSort)
-                                    (Mock.g Mock.ch)
-                                    (mkOr Mock.cf Mock.cg)
-                                )
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+                ( mkNu
+                    q
+                    ( mkFloor
+                        Mock.otherSort
+                        ( mkIn
+                            Mock.otherSort
+                            (Mock.g Mock.ch)
+                            (mkOr Mock.cf Mock.cg)
+                        )
+                    )
+                    & Pattern.fromTermLike
+                )
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
+    , testCase "Predicate simplifier simplifies child predicates" $ do
+        actual <-
+            evaluate
+                ( makeFloorPredicate
+                    ( mkIn
+                        Mock.testSort
+                        Mock.cf
+                        Mock.cf
+                    )
+                    & Pattern.fromPredicateSorted Mock.testSort
+                )
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "equals-predicate with sort change simplification" $ do
         actual <-
