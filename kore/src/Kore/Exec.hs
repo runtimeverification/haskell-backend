@@ -631,7 +631,7 @@ checkFunctions ::
     VerifiedModule StepperAttributes ->
     m ExitCode
 checkFunctions verifiedModule =
-    checkResults $ catMaybes $ map checkEquation equations
+    checkResults $ mapMaybe checkEquation equations
   where
     equations = join $ Map.elems $ extractEquations verifiedModule
     -- if any equations fail the check, log the equations and
