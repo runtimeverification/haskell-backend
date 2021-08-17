@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.52.0.0] - 2021-08-11
+
+### Added
+
+- Warn when RHS of claim is #Bottom (#2703).
+- New tool: `kore-match-disjunction` (#2649).
+
 ## [0.51.0.0] - 2021-07-28
 
 ### Added

@@ -25,12 +25,16 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import Kore.Internal.Pattern (
     Condition,
  )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
@@ -91,6 +95,17 @@ import Prelude.Kore
 -}
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
+toOrPattern :: Sort -> NormalForm -> OrPattern RewritingVariableName
+toOrPattern sort =
+    MultiOr.map
+        ( Pattern.fromPredicateSorted sort
+            . Predicate.makeMultipleAndPredicate
+            . toList
+        )
+
+fromOrCondition :: OrCondition RewritingVariableName -> NormalForm
+fromOrCondition = MultiOr.map (from @(Condition _))
+
 simplify ::
     forall simplifier.
     MonadSimplify simplifier =>
@@ -117,10 +132,23 @@ simplify sideCondition original =
 
     replacePredicate = SideCondition.replacePredicate sideCondition
 
-    simplifyTerm = simplifyTermLikeOnly sideCondition
+    -- If the child 'TermLike' is a term representing a predicate,
+    -- 'simplifyTermLikeOnly' will not attempt to simplify it, so
+    -- it should be transformed into a 'Predicate' and simplified
+    -- accordingly.
+    simplifyTerm term
+        | Right predicate <- Predicate.makePredicate term =
+            toOrPattern (termLikeSort term) <$> worker predicate
+        | otherwise =
+            simplifyTermLikeOnly sideCondition term
 
     repr = SideCondition.toRepresentation sideCondition
 
+    -- Simplify the 'Predicate' bottom-up.
+    -- The children of each node in the 'Predicate' tree are simplified
+    -- either by calling the 'TermLike' simplifier (which only simplifies
+    -- non-predicate terms) or, for 'Predicate's, by recursively calling
+    -- this function.
     worker ::
         Predicate RewritingVariableName ->
         simplifier NormalForm
@@ -379,7 +407,7 @@ simplifyCeil ::
     Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyCeil sideCondition =
-    Ceil.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
+    Ceil.simplify sideCondition >=> return . fromOrCondition
 
 {- |
  @
@@ -520,4 +548,4 @@ simplifyIn ::
     In sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyIn sideCondition =
-    In.simplify sideCondition >=> return . MultiOr.map (from @(Condition _))
+    In.simplify sideCondition >=> return . fromOrCondition
