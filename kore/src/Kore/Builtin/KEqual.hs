@@ -282,11 +282,10 @@ unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
   where
     UnifyKequalsEq{eqTerm, internalBool} = unifyData
     EqTerm{symbol, operand1, operand2} = eqTerm
-    eraseTerm conditional =
-        conditional $> (mkTop (internalBoolSort internalBool))
-    sort = applicationSortsResult . symbolSorts $ symbol
+    eqSort = applicationSortsResult . symbolSorts $ symbol
+    eraseTerm conditional = conditional $> (mkTop eqSort)
     mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = sort, notChild}
+        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

@@ -576,6 +576,7 @@ simplifyOnly sideCondition =
                 -- Matching Logic:
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
+                    -- MultiAnd doesn't preserve the sort so we need to send it as an external argument
                     And.simplify sort Not.notSimplifier sideCondition
                         =<< MultiAnd.traverse worker conjuncts
                 OrF orF ->

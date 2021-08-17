@@ -122,6 +122,19 @@ test_KEqual =
                     )
         actual <- evaluate original
         assertEqual' "" expect actual
+    , testCaseWithoutSMT "kseq(x, dotk) and kseq(x, dotk)" $ do
+        let expect = OrPattern.fromTermLike $ Test.Bool.asInternal True
+            xConfigElemVarKItemSort =
+                configElementVariableFromId "x" kItemSort
+            original =
+                mkAnd
+                    (Test.Bool.asInternal True)
+                    ( keqBool
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                    )
+        actual <- evaluate original
+        assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain values" $ do
         let expect = OrPattern.fromTermLike $ Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
