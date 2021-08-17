@@ -85,6 +85,7 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
+    unwrapElement,
     pattern AcPair,
  )
 import Kore.Internal.Predicate (
@@ -108,6 +109,7 @@ import Kore.Internal.TermLike (
     Application,
     Key,
     TermLike,
+    isConstructorLike,
     pattern App_,
     pattern Exists_,
     pattern Forall_,
@@ -855,15 +857,26 @@ generateNormalizedAcs ::
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ HashSet.map symbolicToAc symbolicPairs
-    , HashSet.map concreteToAc concretePairs
-    , HashSet.map opaqueToAc opaquePairs
-    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
-    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
-    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
-    ]
-        & fold
+    if alwaysDefined internalAc
+        then mempty
+        else
+            [ HashSet.map symbolicToAc symbolicPairs
+            , HashSet.map concreteToAc concretePairs
+            , HashSet.map opaqueToAc opaquePairs
+            , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+            , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+            , HashSet.map concreteOpaqueToAc concreteOpaquePairs
+            ]
+                & fold
+                & HashSet.filter (not . alwaysDefined)
   where
+    alwaysDefined InternalAc{builtinAcChild = normalized} =
+        all isConstructorLike children && null opaques
+      where
+        children =
+            fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
+        opaques =
+            opaque (unwrapAc normalized)
     InternalAc
         { builtinAcChild
         , builtinAcSort
