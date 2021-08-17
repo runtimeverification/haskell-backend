@@ -72,7 +72,6 @@ import Hedgehog hiding (
     Concrete,
  )
 import qualified Hedgehog.Gen as Gen
-import Kore.Internal.From
 import qualified Hedgehog.Range as Range
 import Kore.Builtin.Int (
     ediv,
@@ -85,6 +84,7 @@ import Kore.Builtin.Int (
  )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.From
 import Kore.Internal.InternalInt
 import Kore.Internal.Key as Key
 import qualified Kore.Internal.MultiOr as MultiOr

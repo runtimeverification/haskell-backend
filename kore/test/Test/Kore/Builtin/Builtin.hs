@@ -35,7 +35,6 @@ import Data.Text (
  )
 import qualified Hedgehog
 import qualified Kore.Attribute.Null as Attribute
-import Kore.Internal.Predicate (Predicate)
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error (
@@ -59,6 +58,7 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
