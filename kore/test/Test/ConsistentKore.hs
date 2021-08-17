@@ -12,8 +12,6 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
-import Kore.Internal.Pattern (Pattern)
-import qualified Kore.Internal.Pattern as Pattern
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List (
     foldl',
@@ -73,6 +71,8 @@ import Kore.Internal.From
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
+import Kore.Internal.Pattern (Pattern)
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Internal.Symbol as Internal (
     Symbol (Symbol),
