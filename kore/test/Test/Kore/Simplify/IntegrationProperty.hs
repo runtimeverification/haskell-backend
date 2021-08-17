@@ -55,7 +55,6 @@ import qualified Kore.Simplify.Pattern as Pattern (
 import Kore.Simplify.Simplify
 import Kore.Unparser
 import Prelude.Kore
-import Pretty (pretty)
 import qualified SMT
 import Test.ConsistentKore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
