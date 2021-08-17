@@ -1,10 +1,8 @@
 module Test.ConsistentKore (
     CollectionSorts (..),
     Setup (..),
-    runTermGen,
-    termLikeGen,
-    -- testing
-    predicateGen,
+    runKoreGen,
+    patternGen,
 ) where
 
 import qualified Control.Arrow as Arrow
@@ -14,6 +12,8 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
+import Kore.Internal.Pattern (Pattern)
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List (
     foldl',
@@ -86,15 +86,11 @@ import Kore.Internal.TermLike (
     mkApplyAlias,
     mkApplySymbol,
     mkBottom,
-    mkCeil,
     mkElemVar,
-    mkEquals,
     mkExists,
-    mkFloor,
     mkForall,
     mkIff,
     mkImplies,
-    mkIn,
     mkInternalBool,
     mkInternalInt,
     mkInternalList,
@@ -190,8 +186,8 @@ data Setup = Setup
 
 type Gen = ReaderT (Setup, Context) Hedgehog.Gen
 
-runTermGen :: Setup -> Gen a -> Hedgehog.Gen a
-runTermGen
+runKoreGen :: Setup -> Gen a -> Hedgehog.Gen a
+runKoreGen
     setup@Setup{freeElementVariables, freeSetVariables}
     generator =
         Reader.runReaderT generator (setup, context)
@@ -203,6 +199,12 @@ runTermGen
                 , onlyConstructorLike = False
                 , onlyConcrete = False
                 }
+
+patternGen :: Gen (Pattern VariableName)
+patternGen =
+    Pattern.fromTermAndPredicate
+        <$> termLikeGen
+        <*> predicateGen
 
 addQuantifiedSetVariable :: SetVariable VariableName -> Context -> Context
 addQuantifiedSetVariable
@@ -232,8 +234,11 @@ requestConcrete =
     localContext (\context -> context{onlyConcrete = True})
 
 termLikeGen :: Gen (TermLike VariableName)
-termLikeGen = do
-    topSort <- sortGen
+termLikeGen =
+    sortGen >>= termLikeGenWithSort
+
+termLikeGenWithSort :: Sort -> Gen (TermLike VariableName)
+termLikeGenWithSort topSort = do
     maybeResult <-
         Gen.scale limitTermDepth $
             Gen.sized (\size -> termLikeGenImpl size topSort)
@@ -246,9 +251,8 @@ termLikeGen = do
         | otherwise = Range.Size 10
 
 -- TODO:
---   - will need the config for generating terms/variables
 --   - make generated predicates smaller
-predicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+predicateGen :: Gen (Predicate VariableName)
 predicateGen =
     Gen.recursive
         Gen.choice
@@ -258,27 +262,67 @@ predicateGen =
         , notPredicateGen
         , impliesPredicateGen
         , iffPredicateGen
+        , ceilGen
+        , floorGen
+        , equalsGen
+        , inGen
+        , existsPredicateGen
+        , forallPredicateGen
         ]
 
-andPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+andPredicateGen :: Gen (Predicate VariableName)
 andPredicateGen =
     Gen.subterm2 predicateGen predicateGen fromAnd
 
-orPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+orPredicateGen :: Gen (Predicate VariableName)
 orPredicateGen =
     Gen.subterm2 predicateGen predicateGen fromOr
 
-impliesPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+impliesPredicateGen :: Gen (Predicate VariableName)
 impliesPredicateGen =
     Gen.subterm2 predicateGen predicateGen fromImplies
 
-iffPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+iffPredicateGen :: Gen (Predicate VariableName)
 iffPredicateGen =
     Gen.subterm2 predicateGen predicateGen fromIff
 
-notPredicateGen :: Hedgehog.MonadGen m => m (Predicate VariableName)
+notPredicateGen :: Gen (Predicate VariableName)
 notPredicateGen =
     Gen.subterm predicateGen fromNot
+
+ceilGen :: Gen (Predicate VariableName)
+ceilGen =
+    fromCeil_ <$> termLikeGen
+
+floorGen :: Gen (Predicate VariableName)
+floorGen =
+    fromFloor_ <$> termLikeGen
+
+equalsGen :: Gen (Predicate VariableName)
+equalsGen = do
+    sort' <- sortGen
+    fromEquals_
+        <$> termLikeGenWithSort sort'
+        <*> termLikeGenWithSort sort'
+
+inGen :: Gen (Predicate VariableName)
+inGen = do
+    sort' <- sortGen
+    fromIn_
+        <$> termLikeGenWithSort sort'
+        <*> termLikeGenWithSort sort'
+
+existsPredicateGen :: Gen (Predicate VariableName)
+existsPredicateGen = do
+    sort' <- sortGen
+    variable <- elementVariableGen sort'
+    Gen.subterm predicateGen (fromExists variable)
+
+forallPredicateGen :: Gen (Predicate VariableName)
+forallPredicateGen = do
+    sort' <- sortGen
+    variable <- elementVariableGen sort'
+    Gen.subterm predicateGen (fromForall variable)
 
 termLikeGenImpl :: Range.Size -> Sort -> Gen (Maybe (TermLike VariableName))
 termLikeGenImpl (Range.Size size) requestedSort = do
@@ -375,19 +419,15 @@ termGenerators = do
         filterGeneratorsAndGroup
             [ andGenerator
             , bottomGenerator
-            , ceilGenerator
-            , equalsGenerator
             , existsGenerator
-            , floorGenerator
             , forallGenerator
             , iffGenerator
             , impliesGenerator
-            , inGenerator
-            , muGenerator
             , notGenerator
-            , nuGenerator
             , orGenerator
             , topGenerator
+            , nuGenerator
+            , muGenerator
             ]
     literals <-
         filterGeneratorsAndGroup
@@ -464,27 +504,6 @@ unaryOperatorGenerator builder =
         return
             (builder <$> child) -- Maybe functor
 
-unaryFreeSortOperatorGenerator ::
-    (Sort -> TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-unaryFreeSortOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = True
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator resultSort = do
-        childSort <- sortGen
-        child <- childGenerator childSort
-        return
-            (builder resultSort <$> child) -- Maybe functor
-
 unaryQuantifiedElementOperatorGenerator ::
     (ElementVariable VariableName -> TermLike VariableName -> TermLike VariableName) ->
     TermGenerator
@@ -534,28 +553,6 @@ muNuOperatorGenerator builder =
             return
                 (builder quantifiedVariable <$> child) -- Maybe functor
 
-binaryFreeSortOperatorGenerator ::
-    (Sort -> TermLike VariableName -> TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-binaryFreeSortOperatorGenerator builder =
-    TermGenerator
-        { arity = 2
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = True
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator resultSort = do
-        childSort <- sortGen
-        child1 <- childGenerator childSort
-        child2 <- childGenerator childSort
-        return
-            (builder resultSort <$> child1 <*> child2) -- Maybe applicative
-
 binaryOperatorGenerator ::
     (TermLike VariableName -> TermLike VariableName -> TermLike VariableName) ->
     TermGenerator
@@ -583,17 +580,8 @@ andGenerator = binaryOperatorGenerator mkAnd
 bottomGenerator :: TermGenerator
 bottomGenerator = nullaryFreeSortOperatorGenerator mkBottom
 
-ceilGenerator :: TermGenerator
-ceilGenerator = unaryFreeSortOperatorGenerator mkCeil
-
-equalsGenerator :: TermGenerator
-equalsGenerator = binaryFreeSortOperatorGenerator mkEquals
-
 existsGenerator :: TermGenerator
 existsGenerator = unaryQuantifiedElementOperatorGenerator mkExists
-
-floorGenerator :: TermGenerator
-floorGenerator = unaryFreeSortOperatorGenerator mkFloor
 
 forallGenerator :: TermGenerator
 forallGenerator = unaryQuantifiedElementOperatorGenerator mkForall
@@ -603,9 +591,6 @@ iffGenerator = binaryOperatorGenerator mkIff
 
 impliesGenerator :: TermGenerator
 impliesGenerator = binaryOperatorGenerator mkImplies
-
-inGenerator :: TermGenerator
-inGenerator = binaryFreeSortOperatorGenerator mkIn
 
 muGenerator :: TermGenerator
 muGenerator = muNuOperatorGenerator mkMu

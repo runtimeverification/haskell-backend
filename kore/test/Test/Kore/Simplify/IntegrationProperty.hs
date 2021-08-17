@@ -1,13 +1,11 @@
 module Test.Kore.Simplify.IntegrationProperty (
     test_simplifiesToSimplified,
     test_regressionGeneratedTerms,
-    test_testingPredicateGen,
 ) where
 
 import Control.Exception (
     ErrorCall (..),
  )
-import Pretty (pretty)
 import Control.Monad.Catch (
     MonadThrow,
     catch,
@@ -48,7 +46,7 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
-    mkRewritingTerm,
+    mkRewritingPattern,
  )
 import qualified Kore.Simplify.Data as Simplification
 import qualified Kore.Simplify.Pattern as Pattern (
@@ -70,20 +68,20 @@ import Test.Tasty.HUnit.Ext
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
-        term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
-        let term' = mkRewritingTerm term
+        patt <- forAll (runKoreGen Mock.generatorSetup patternGen)
+        let patt' = mkRewritingPattern patt
         (annotate . unlines)
-            [" ***** unparsed input =", unparseToString term, " ***** "]
+            [" ***** unparsed input =", unparseToString patt, " ***** "]
         simplified <-
             catch
-                (evaluateT (Pattern.fromTermLike term'))
-                (exceptionHandler term)
+                (evaluateT patt')
+                (exceptionHandler patt)
         (===) True (OrPattern.isSimplified sideRepresentation simplified)
   where
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler ::
         MonadThrow m =>
-        TermLike VariableName ->
+        Pattern VariableName ->
         ErrorCall ->
         PropertyT m a
     exceptionHandler term err@(ErrorCallWithLocation message _location)
@@ -93,12 +91,6 @@ test_simplifiesToSimplified =
         | otherwise = do
             traceM ("Error for input: " ++ unparseToString term)
             throwM err
-
-test_testingPredicateGen :: TestTree
-test_testingPredicateGen =
-    testPropertyWithoutSolver "TESTING" $ do
-        pred' <- forAll predicateGen
-        traceM (show . pretty $ pred')
 
 test_regressionGeneratedTerms :: [TestTree]
 test_regressionGeneratedTerms =
