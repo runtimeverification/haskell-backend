@@ -17,6 +17,7 @@ module Kore.Exec (
     proveWithRepl,
     boundedModelCheck,
     matchDisjunction,
+    checkFunctions,
     Rewrite,
     Equality,
 ) where
@@ -30,6 +31,7 @@ import Control.Error (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
+    join,
     (>=>),
  )
 import Control.Monad.Catch (
@@ -66,6 +68,8 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
     Equation,
+    extractEquations,
+    right,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -95,6 +99,9 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.ErrorEquationRightFunction (
+    errorEquationRightFunction,
+ )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
@@ -603,6 +610,34 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
 
+{- | Ensure that for every equation in a function definition, the right-hand
+ - side of the equation is a function pattern. 'checkFunctions' first extracts
+ - equations from a verified module to a list of equations. Then it checks that
+ - each equation in the list is a function pattern. 'filter' the equations that
+ - fail the check, and pass the list to 'checkResults'. If there were no bad
+ - equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
+ - logs an error message for each bad equation before returning
+ - @'ExitFailure' 3@.
+ - See 'checkEquation',
+ - 'Kore.Equation.Registry.extractEquations',
+ - 'Kore.Internal.TermLike.isFunctionPattern',
+ - and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
+-}
+checkFunctions ::
+    MonadLog m =>
+    -- | The main module
+    VerifiedModule StepperAttributes ->
+    m ExitCode
+checkFunctions verifiedModule =
+    checkResults $ filter (not . isFunctionPattern . right) equations
+  where
+    equations = join $ Map.elems $ extractEquations verifiedModule
+    -- if any equations fail the check, log the equations and
+    -- the entire function returns ExitFailure 3.
+    checkResults [] = return ExitSuccess
+    checkResults eqns =
+        mapM_ errorEquationRightFunction eqns $> ExitFailure 3
+
 -- | Rule merging
 mergeAllRules ::
     ( MonadLog smt
@@ -698,10 +733,10 @@ extractAndSimplifyRules rules names = do
             return
             (Map.lookup ruleName registry)
 
-    whenDuplicate logError withNames = do
+    whenDuplicate logErr withNames = do
         let duplicateNames =
                 findCollisions . mkMapWithCollisions $ withNames
-        unless (null duplicateNames) (logError duplicateNames)
+        unless (null duplicateNames) (logErr duplicateNames)
 
 mkMapWithCollisions ::
     Ord key =>
