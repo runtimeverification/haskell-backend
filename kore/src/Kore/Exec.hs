@@ -58,13 +58,16 @@ import Data.Limit (
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
-    pack,
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
+import Kore.Log.ErrorEquationRightFunction (
+    errorEquationRightFunction,
+ )
+
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
@@ -185,7 +188,6 @@ import Kore.Unparser (
 import Log (
     LoggerT,
     MonadLog,
-    logError,
  )
 import qualified Log
 import Logic (
@@ -194,12 +196,15 @@ import Logic (
  )
 import qualified Logic
 import Prelude.Kore
+
+{-
 import Pretty (
     layoutOneLine,
     pretty,
     renderText,
     (<+>),
  )
+-}
 import Prof
 import SMT (
     MonadSMT,
@@ -618,52 +623,43 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
 {- | Ensure that for every equation in a function definition,
  the right-hand side of the equation is a function pattern.
  'checkFunctions' first extracts equations from a verified module
- to a list of equations. Then it 'traverse's the list, checking
- that each equation is a function pattern. If any equation fails
- the check, 'checkFunctions' logs an error message containing
- the offending equation. After checking each equation, if any
- have failed the check then 'checkFunctions' returns @'ExitFailure' 3@;
- otherwise it returns 'ExitSuccess'.
+ to a list of equations. Then it checks that each equation in the list
+ is a function pattern. If any equation fails the check, 'checkEquations'
+ returns @'Just' eqn@. Then, collect all the offending equations with
+ 'catMaybes' and pass the list to 'checkResults'. If there were no bad
+ equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
+ logs an error message for each bad equation before returning @'ExitFailure' 3@.
 
  See 'checkEquation',
  'Kore.Equation.Registry.extractEquations',
- and 'Kore.Internal.TermLike.isFunctionPattern'.
+ 'Kore.Internal.TermLike.isFunctionPattern',
+ and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 -}
 checkFunctions ::
     MonadLog m =>
     -- | The main module
     VerifiedModule StepperAttributes ->
     m ExitCode
-checkFunctions verifiedModule = checkResults <$> traverse checkEquation equations
+checkFunctions verifiedModule =
+    checkResults $ catMaybes $ map checkEquation equations
   where
     equations = join $ Map.elems $ extractEquations verifiedModule
-    -- if any equations fail the check,
+    -- if any equations fail the check, log the equations and
     -- the entire function returns ExitFailure 3.
-    checkResults results
-        | ExitFailure 3 `elem` results = ExitFailure 3
-        | otherwise = ExitSuccess
+    checkResults [] = return ExitSuccess
+    checkResults eqns =
+        mapM_ errorEquationRightFunction eqns $> ExitFailure 3
 
-{- | 'checkEquation' returns 'ExitSuccess' when the 'right'-hand-side
- of an 'Equation' is a function pattern. Otherwise, log the error message
- "RHS of equation is not a function pattern:", pretty-print the
- offending equation, and return @'ExitFailure' 3@.
+{- | 'checkEquation' returns 'Nothing' when the 'right'-hand-side
+ of an 'Equation' is a function pattern. Otherwise,
+ RHS of equation is not a function pattern so return @'Just' eqn@.
 
  See 'Kore.Internal.TermLike.isFunctionPattern'.
 -}
-checkEquation ::
-    MonadLog m =>
-    InternalVariable variable =>
-    Equation variable ->
-    m ExitCode
+checkEquation :: Equation VariableName -> Maybe (Equation VariableName)
 checkEquation eqn@Equation{right}
-    | isFunctionPattern right = return ExitSuccess
-    | otherwise = do
-        logError $ renderText $ layoutOneLine err
-        return $ ExitFailure 3
-  where
-    err =
-        pretty (pack "RHS of equation is not a function pattern:")
-            <+> pretty eqn
+    | isFunctionPattern right = Nothing
+    | otherwise = Just eqn -- save bad equation for error reporting and logging
 
 -- | Rule merging
 mergeAllRules ::
