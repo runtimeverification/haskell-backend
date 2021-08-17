@@ -64,10 +64,6 @@ import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
-import Kore.Log.ErrorEquationRightFunction (
-    errorEquationRightFunction,
- )
-
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
@@ -103,6 +99,9 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.ErrorEquationRightFunction (
+    errorEquationRightFunction,
+ )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
