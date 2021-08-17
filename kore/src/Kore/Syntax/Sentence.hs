@@ -84,9 +84,8 @@ import Kore.Variables.Free (
 import Prelude.Kore
 import qualified Pretty
 
-{- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
-@symbol-declaration@ syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions).
+{- | 'Symbol' is the @sort-variables@ part of the
+@symbol@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
 
 See also: 'SymbolOrAlias'
 -}
@@ -118,9 +117,9 @@ groundSymbol ctor =
         , symbolParams = []
         }
 
-{- | 'Alias' corresponds to the @head-constructor{sort-variable-list}@ part of
-the @alias-declaration@ and @alias-declaration@ syntactic categories from the
-Semantics of K, Section 9.1.6 (Declaration and Definitions).
+{- | 'Alias' corresponds to the @sort-variables@ part of
+the @alias@ syntactic category from
+<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 
 See also: 'SymbolOrAlias'.
 -}
@@ -140,9 +139,7 @@ instance Unparse Alias where
     unparse2 Alias{aliasConstructor} =
         unparse2 aliasConstructor
 
-{- | 'SentenceAlias' corresponds to the @alias-declaration@ and syntactic
-category from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
+-- | 'SentenceAlias' corresponds to the @sentence-alias@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 data SentenceAlias (patternType :: Type) = SentenceAlias
     { sentenceAliasAlias :: !Alias
     , sentenceAliasSorts :: ![Sort]
@@ -202,9 +199,7 @@ instance Unparse patternType => Unparse (SentenceAlias patternType) where
                 , unparse2 sentenceAliasAttributes
                 ]
 
-{- | 'SentenceSymbol' is the @symbol-declaration@ and syntactic category from
-the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
+-- | 'SentenceSymbol' is the @sentence-symbol@ and syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 data SentenceSymbol = SentenceSymbol
     { sentenceSymbolSymbol :: !Symbol
     , sentenceSymbolSorts :: ![Sort]
@@ -265,8 +260,8 @@ instance Unparse SentenceSymbol where
                         Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s])
                             <> unparse2Inhabitant rest
 
-{- | 'SentenceImport' corresponds to the @import-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+{- | 'SentenceImport' corresponds to the @sentence-import@ syntactic category
+from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 -}
 data SentenceImport = SentenceImport
     { sentenceImportModuleName :: !ModuleName
@@ -295,8 +290,8 @@ instance Unparse SentenceImport where
                 , unparse2 sentenceImportAttributes
                 ]
 
-{- | 'SentenceSort' corresponds to the @sort-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+{- | 'SentenceSort' corresponds to the @sentence-sort@ syntactic category
+from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 -}
 data SentenceSort = SentenceSort
     { sentenceSortName :: !Id
@@ -347,9 +342,7 @@ instance Unparse SentenceSort where
                     0 -> ""
                     m -> Pretty.fillSep ["(\\inh Sorts)", printLbSortsRb (m - 1)]
 
-{- | 'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
+-- | 'SentenceAxiom' corresponds to the @sentence-axiom@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 data SentenceAxiom (patternType :: Type) = SentenceAxiom
     { sentenceAxiomParameters :: ![SortVariable]
     , sentenceAxiomPattern :: !patternType
@@ -411,9 +404,7 @@ unparseAxiom2
             , unparse2 sentenceAxiomAttributes
             ]
 
-{- | 'SentenceClaim' corresponds to the @claim-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
+-- | 'SentenceClaim' corresponds to the @sentence-claim@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 newtype SentenceClaim (patternType :: Type) = SentenceClaim {getSentenceClaim :: SentenceAxiom patternType}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -436,8 +427,7 @@ instance
     where
     freeVariables = freeVariables . getSentenceClaim
 
-{- | @SentenceHook@ corresponds to @hook-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+{- | 'SentenceHook' corresponds to @sentence-hooked-sort@ and @sentence-hooked-symbol@ syntactic categories from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax#sentences>.
 
 See also: 'SentenceSort', 'SentenceSymbol'
 -}
@@ -461,9 +451,7 @@ instance Unparse SentenceHook where
             SentenceHookedSort a -> "hooked-" <> unparse2 a
             SentenceHookedSymbol a -> "hooked-" <> unparse2 a
 
-{- | @Sentence@ is the @declaration@ syntactic category from the Semantics of K,
-Section 9.1.6 (Declaration and Definitions).
--}
+-- | 'Sentence' is the @sentence@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax#sentences>.
 data Sentence (patternType :: Type)
     = SentenceAliasSentence !(SentenceAlias patternType)
     | SentenceSymbolSentence !SentenceSymbol
@@ -605,6 +593,7 @@ asSentence ::
     Sentence patternType
 asSentence = inject
 
+-- | 'SentenceSymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 class SentenceSymbolOrAlias (sentence :: Type) where
     getSentenceSymbolOrAliasConstructor ::
         sentence -> Id

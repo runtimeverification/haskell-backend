@@ -90,7 +90,7 @@ import qualified SQL
 @variable@ is the family of variable types.
 
 @annotation@ is the type of annotations decorating each node of the abstract
-syntax tree. @Pattern@ is a 'Traversable' 'Comonad' over the type of
+syntax tree. 'Pattern' is a 'Traversable' 'Comonad' over the type of
 annotations.
 -}
 newtype
@@ -448,9 +448,9 @@ eraseAnnotations = (<$) Attribute.Null
 
 {- | Use the provided traversal to replace all variables in a 'Pattern'.
 
-@traverseVariables@ is strict, i.e. its argument is fully evaluated before it
-returns. When composing multiple transformations with @traverseVariables@, the
-intermediate trees will be fully allocated; @mapVariables@ is more composable in
+'traverseVariables' is strict, i.e. its argument is fully evaluated before it
+returns. When composing multiple transformations with 'traverseVariables', the
+intermediate trees will be fully allocated; 'mapVariables' is more composable in
 this respect.
 
 See also: 'mapVariables'
@@ -478,9 +478,9 @@ traverseVariables adj =
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 
-@mapVariables@ is lazy: it descends into its argument only as the result is
+'mapVariables' is lazy: it descends into its argument only as the result is
 demanded. Intermediate allocation from composing multiple transformations with
-@mapVariables@ is amortized; the intermediate trees are never fully resident.
+'mapVariables' is amortized; the intermediate trees are never fully resident.
 
 See also: 'traverseVariables'
 -}
@@ -494,15 +494,15 @@ mapVariables adj =
     mapF = PatternF.mapVariables adj
     mapVariablesWorker (a :< pat) = a :< mapF pat
 
-{- | Construct a 'ConcretePattern' from a 'Pattern'.
+{- | Construct a @ConcretePattern@ from a 'Pattern'.
 
-A concrete pattern contains no variables, so @asConcretePattern@ is
+A concrete pattern contains no variables, so 'asConcretePattern' is
 fully polymorphic on the variable type in the pure pattern. If the argument
-contains any variables, the result is @Nothing@.
+contains any variables, the result is 'Nothing'.
 
-@asConcretePattern@ is strict, i.e. it traverses its argument entirely,
+'asConcretePattern' is strict, i.e. it traverses its argument entirely,
 because the entire tree must be traversed to inspect for variables before
-deciding if the result is @Nothing@ or @Just _@.
+deciding if the result is 'Nothing' or @'Just' _@.
 -}
 asConcretePattern ::
     Pattern variable annotation ->
@@ -512,12 +512,12 @@ asConcretePattern = traverseVariables (pure toConcrete)
 isConcrete :: Pattern variable annotation -> Bool
 isConcrete = isJust . asConcretePattern
 
-{- | Construct a 'Pattern' from a 'ConcretePattern'.
+{- | Construct a 'Pattern' from a @ConcretePattern@.
 
 The concrete pattern contains no variables, so the result is fully
 polymorphic in the variable type.
 
-@fromConcretePattern@ unfolds the resulting syntax tree lazily, so it
+'fromConcretePattern' unfolds the resulting syntax tree lazily, so it
 composes with other tree transformations without allocating intermediates.
 -}
 fromConcretePattern ::
