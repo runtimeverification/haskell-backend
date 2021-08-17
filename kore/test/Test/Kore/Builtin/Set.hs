@@ -64,7 +64,6 @@ import Control.Error (
     runMaybeT,
  )
 import qualified Data.Default as Default
-import Kore.Internal.From
 import qualified Data.HashMap.Strict as HashMap
 import Data.HashSet (
     HashSet,
@@ -88,6 +87,7 @@ import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.From
 import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern

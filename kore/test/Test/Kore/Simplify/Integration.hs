@@ -529,67 +529,67 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expected actual
-    -- , testCase "Or to pattern" $ do
-    --     let expected =
-    --             ( OrPattern.fromPatterns
-    --                 . map
-    --                     ( Pattern.fromCondition Mock.boolSort
-    --                         . Condition.fromPredicate
-    --                         . Predicate.fromMultiAnd
-    --                         . MultiAnd.make
-    --                     )
-    --             )
-    --                 [
-    --                     [ fromImplies (fromAnd cfCeil cgCeil) chCeil
-    --                     , fromImplies cfCeil chCeil
-    --                     , fromImplies chCeil (fromAnd cfCeil cgCeil)
-    --                     ]
-    --                 ,
-    --                     [ fromImplies (fromAnd cfCeil cgCeil) chCeil
-    --                     , fromImplies cfCeil chCeil
-    --                     , fromImplies chCeil cfCeil
-    --                     ]
-    --                 ]
-    --         -- Uncomment when using the new Iff simplifier:
-    --         -- ( OrPattern.fromPatterns
-    --         --     . map
-    --         --         ( Pattern.fromCondition Mock.boolSort
-    --         --             . Condition.fromPredicate
-    --         --             . Predicate.fromMultiAnd
-    --         --             . MultiAnd.make
-    --         --         )
-    --         -- )
-    --         --     [ [fromNot cfCeil, fromNot chCeil]
-    --         --     , [chCeil, cgCeil, cfCeil]
-    --         --     , [chCeil, cfCeil, fromNot cgCeil]
-    --         --     ]
-    --         cfCeil = makeCeilPredicate Mock.cf
-    --         cgCeil = makeCeilPredicate Mock.cg
-    --         chCeil = makeCeilPredicate Mock.ch
-    --     actual <-
-    --         evaluate
-    --             Conditional
-    --                 { term = mkTop_
-    --                 , predicate =
-    --                     fromIff
-    --                         ( fromIn_
-    --                             (mkCeil_ Mock.cf)
-    --                             (mkCeil_ Mock.cg)
-    --                         )
-    --                         (fromCeil_ Mock.ch)
-    --                 , substitution = mempty
-    --                 }
-    --     let message =
-    --             (show . Pretty.vsep)
-    --                 [ "Expected:"
-    --                 , (Pretty.indent 4 . Pretty.vsep)
-    --                     (map unparse . toList $ expected)
-    --                 , "but found:"
-    --                 , (Pretty.indent 4 . Pretty.vsep)
-    --                     (map unparse . toList $ actual)
-    --                 ]
-    --     assertEqual message expected actual
-    , testCase "Builtin and simplification failure" $ do
+    , -- , testCase "Or to pattern" $ do
+      --     let expected =
+      --             ( OrPattern.fromPatterns
+      --                 . map
+      --                     ( Pattern.fromCondition Mock.boolSort
+      --                         . Condition.fromPredicate
+      --                         . Predicate.fromMultiAnd
+      --                         . MultiAnd.make
+      --                     )
+      --             )
+      --                 [
+      --                     [ fromImplies (fromAnd cfCeil cgCeil) chCeil
+      --                     , fromImplies cfCeil chCeil
+      --                     , fromImplies chCeil (fromAnd cfCeil cgCeil)
+      --                     ]
+      --                 ,
+      --                     [ fromImplies (fromAnd cfCeil cgCeil) chCeil
+      --                     , fromImplies cfCeil chCeil
+      --                     , fromImplies chCeil cfCeil
+      --                     ]
+      --                 ]
+      --         -- Uncomment when using the new Iff simplifier:
+      --         -- ( OrPattern.fromPatterns
+      --         --     . map
+      --         --         ( Pattern.fromCondition Mock.boolSort
+      --         --             . Condition.fromPredicate
+      --         --             . Predicate.fromMultiAnd
+      --         --             . MultiAnd.make
+      --         --         )
+      --         -- )
+      --         --     [ [fromNot cfCeil, fromNot chCeil]
+      --         --     , [chCeil, cgCeil, cfCeil]
+      --         --     , [chCeil, cfCeil, fromNot cgCeil]
+      --         --     ]
+      --         cfCeil = makeCeilPredicate Mock.cf
+      --         cgCeil = makeCeilPredicate Mock.cg
+      --         chCeil = makeCeilPredicate Mock.ch
+      --     actual <-
+      --         evaluate
+      --             Conditional
+      --                 { term = mkTop_
+      --                 , predicate =
+      --                     fromIff
+      --                         ( fromIn_
+      --                             (mkCeil_ Mock.cf)
+      --                             (mkCeil_ Mock.cg)
+      --                         )
+      --                         (fromCeil_ Mock.ch)
+      --                 , substitution = mempty
+      --                 }
+      --     let message =
+      --             (show . Pretty.vsep)
+      --                 [ "Expected:"
+      --                 , (Pretty.indent 4 . Pretty.vsep)
+      --                     (map unparse . toList $ expected)
+      --                 , "but found:"
+      --                 , (Pretty.indent 4 . Pretty.vsep)
+      --                     (map unparse . toList $ actual)
+      --                 ]
+      --     assertEqual message expected actual
+      testCase "Builtin and simplification failure" $ do
         let m =
                 mkSetVariable (testId "m") Mock.listSort
                     & mapSetVariable (pure mkConfigVariable)

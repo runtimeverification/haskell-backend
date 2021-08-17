@@ -54,7 +54,6 @@ import Control.Monad (
  )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Kore.Internal.From
 import Data.HashMap.Strict (
     HashMap,
  )
@@ -78,6 +77,7 @@ import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
+import Kore.Internal.From
 import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern

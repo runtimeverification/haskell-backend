@@ -12,8 +12,8 @@ import Control.Monad.Trans.Maybe (
 import qualified Data.Text as Text
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
-import Kore.Internal.From
 import qualified Kore.Builtin.KEqual as KEqual
+import Kore.Internal.From
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern (
     Pattern,
