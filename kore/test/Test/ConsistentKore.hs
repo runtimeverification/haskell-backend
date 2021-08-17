@@ -250,8 +250,6 @@ termLikeGenWithSort topSort = do
         | s < 10 = Range.Size s
         | otherwise = Range.Size 10
 
--- TODO:
---   - make generated predicates smaller
 predicateGen :: Gen (Predicate VariableName)
 predicateGen =
     Gen.recursive
