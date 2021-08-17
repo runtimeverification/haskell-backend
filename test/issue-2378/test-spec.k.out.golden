@@ -1,9 +1,12 @@
-  #Not ( #Exists _0 . #Exists S . {
-    keys ( _M )
-  #Equals
-    S
-    SetItem ( _0 )
-  } )
+  #Not ( #Exists _0 . #Exists S . #Ceil ( S
+    SetItem ( _0 ) )
+  #And
+    {
+      keys ( _M )
+    #Equals
+      S
+      SetItem ( _0 )
+    } )
 #And
   #Not ( {
     .Set
