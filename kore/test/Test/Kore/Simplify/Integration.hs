@@ -677,7 +677,7 @@ test_simplificationIntegration =
                         (Mock.functionalConstr21 Mock.cf Mock.cf)
                         (Mock.functionalConstr21 Mock.ch Mock.cg)
                     )
-                & Pattern.fromTermLike
+                    & Pattern.fromTermLike
                 )
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "nu-not-and-or simplification" $ do
