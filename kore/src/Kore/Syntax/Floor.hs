@@ -58,5 +58,5 @@ instance Synthetic (FreeVariables variable) (Floor sort) where
 instance Synthetic Sort (Floor Sort) where
     synthetic Floor{floorOperandSort, floorResultSort, floorChild} =
         floorResultSort
-            & seq (matchSort floorOperandSort floorChild)
+            & seq (sameSort floorOperandSort floorChild)
     {-# INLINE synthetic #-}

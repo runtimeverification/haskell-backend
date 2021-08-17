@@ -97,6 +97,8 @@ import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Internal.TermLike (
+    Not (..),
+    Sort,
     isFunctionPattern,
     mkIn,
     termLikeSort,
@@ -275,13 +277,14 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
                 fmap (snd . Step.refreshRule mempty) $
                     Lens.forOf (field @"left") claimPattern $
                         \config -> Compose $ do
+                            let claimPatSort = ClaimPattern.getClaimPatternSort claimPattern
                             results <-
                                 Step.applyClaimsSequence
                                     mkClaim
                                     config
                                     (Lens.view lensClaimPattern <$> claims)
                                     & lift
-                            deriveResults fromAppliedRule results
+                            deriveResults claimPatSort fromAppliedRule results
   where
     fromAppliedRule =
         AppliedClaim
@@ -556,8 +559,11 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             Exists.makeEvaluate sideCondition existentials removed
                 >>= Logic.scatter
             & OrPattern.observeAllT
-            & (>>= Not.simplifyEvaluated sideCondition)
+            & (>>= mkNotSimplified)
             & wereAnyUnified
+      where
+        mkNotSimplified notChild =
+            Not.simplify sideCondition Not{notSort = sort, notChild}
 
     wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
     wereAnyUnified act = swap <$> runStateT act mempty
@@ -676,8 +682,9 @@ deriveWith lensClaimPattern mkRule takeStep rewrites claim =
                 fmap (snd . Step.refreshRule mempty) $
                     Lens.forOf (field @"left") claimPattern $
                         \config -> Compose $ do
+                            let claimPatSort = ClaimPattern.getClaimPatternSort claimPattern
                             results <- takeStep rewrites config & lift
-                            deriveResults fromAppliedRule results
+                            deriveResults claimPatSort fromAppliedRule results
   where
     fromAppliedRule =
         AppliedAxiom
@@ -699,6 +706,7 @@ deriveSeq' lensRulePattern mkRule =
 
 deriveResults ::
     Step.UnifyingRuleVariable representation ~ RewritingVariableName =>
+    Sort ->
     (Step.UnifiedRule representation -> AppliedRule claim) ->
     Step.Results representation ->
     Strategy.TransitionT
@@ -706,7 +714,7 @@ deriveResults ::
         simplifier
         (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
-deriveResults fromAppliedRule Results{results, remainders} =
+deriveResults sort fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
@@ -715,7 +723,7 @@ deriveResults fromAppliedRule Results{results, remainders} =
     addResult Result{appliedRule, result} = do
         addRule appliedRule
         case toList result of
-            [] -> addRewritten Pattern.bottom
+            [] -> addRewritten (Pattern.bottomOf sort)
             configs -> asum (addRewritten <$> configs)
 
     addRewritten = pure . ApplyRewritten

@@ -44,8 +44,8 @@ floor(a and b) = floor(a) and floor(b).
 simplify ::
     Floor Sort (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
-simplify Floor{floorChild = child} =
-    simplifyEvaluatedFloor child
+simplify Floor{floorResultSort = resultSort, floorChild = child} =
+    simplifyEvaluatedFloor resultSort child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -61,35 +61,38 @@ to carry around.
 
 -}
 simplifyEvaluatedFloor ::
+    Sort ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
-simplifyEvaluatedFloor child =
+simplifyEvaluatedFloor resultSort child =
     case toList child of
-        [childP] -> makeEvaluateFloor childP
-        _ -> makeEvaluateFloor (OrPattern.toPattern child)
+        [childP] -> makeEvaluateFloor resultSort childP
+        _ -> makeEvaluateFloor resultSort (OrPattern.toPattern resultSort child)
 
 {- | 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 
 See 'simplify' for details.
 -}
 makeEvaluateFloor ::
+    Sort ->
     Pattern RewritingVariableName ->
     OrPattern RewritingVariableName
-makeEvaluateFloor child
-    | Pattern.isTop child = OrPattern.top
+makeEvaluateFloor resultSort child
+    | Pattern.isTop child = OrPattern.topOf resultSort
     | Pattern.isBottom child = OrPattern.bottom
-    | otherwise = makeEvaluateNonBoolFloor child
+    | otherwise = makeEvaluateNonBoolFloor resultSort child
 
 makeEvaluateNonBoolFloor ::
+    Sort ->
     Pattern RewritingVariableName ->
     OrPattern RewritingVariableName
-makeEvaluateNonBoolFloor patt@Conditional{term = Top_ _} =
-    OrPattern.fromPattern patt{term = mkTop_} -- remove the term's sort
+makeEvaluateNonBoolFloor resultSort patt@Conditional{term = Top_ _} =
+    OrPattern.fromPattern patt{term = mkTop resultSort} -- change the term's sort
     -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
     -- sorts, and maybe other cases also
-makeEvaluateNonBoolFloor patt =
+makeEvaluateNonBoolFloor resultSort patt =
     floorCondition <> condition
-        & Pattern.fromCondition_
+        & (Pattern.fromCondition resultSort)
         & OrPattern.fromPattern
   where
     (term, condition) = Pattern.splitTerm patt

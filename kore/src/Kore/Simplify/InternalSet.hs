@@ -27,17 +27,18 @@ import Prelude.Kore
 simplify ::
     InternalSet Key (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
-simplify =
-    traverse (Logic.scatter >>> Compose)
-        >>> fmap (normalizeInternalSet >>> markSimplified)
-        >>> getCompose
-        >>> fmap Pattern.syncSort
-        >>> MultiOr.observeAll
+simplify internalSet =
+    traverse (Logic.scatter >>> Compose) internalSet
+        & fmap (normalizeInternalSet (builtinAcSort internalSet) >>> markSimplified)
+        & getCompose
+        & fmap Pattern.syncSort
+        & MultiOr.observeAll
 
 normalizeInternalSet ::
+    Sort ->
     InternalSet Key (TermLike RewritingVariableName) ->
     TermLike RewritingVariableName
-normalizeInternalSet map' =
+normalizeInternalSet returnSort map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
         Just normalizedSet ->
             -- If the InternalSet consists of a single compound, remove the
@@ -45,7 +46,7 @@ normalizeInternalSet map' =
             getSingleOpaque normalizedSet
                 -- Otherwise, inject the InternalSet into TermLike.
                 & fromMaybe (mkInternalSet normalizedSet)
-        _ -> mkBottom_
+        _ -> mkBottom returnSort
   where
     getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
     getNormalizedAc = getNormalizedSet . builtinAcChild

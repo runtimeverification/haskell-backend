@@ -23,11 +23,14 @@ test_matchAxiomIdentifier =
         (Application Mock.sortInjectionId)
     , matches
         "\\ceil(f(a))"
-        (TermLike.mkCeil_ (Mock.f Mock.a))
+        (TermLike.mkCeil Mock.topSort (Mock.f Mock.a))
         (Ceil (Application Mock.fId))
     , matches
         "\\ceil(\\ceil(f(a)))"
-        (TermLike.mkCeil_ (TermLike.mkCeil_ (Mock.f Mock.a)))
+        ( TermLike.mkCeil
+            Mock.topSort
+            (TermLike.mkCeil Mock.subSort (Mock.f Mock.a))
+        )
         (Ceil (Ceil (Application Mock.fId)))
     , notMatches
         "\\and(f(a), g(a))"
@@ -35,7 +38,11 @@ test_matchAxiomIdentifier =
     , matches "x" (TermLike.mkElemVar Mock.x) Variable
     , matches
         "\\equals(x, f(a))"
-        (TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a))
+        ( TermLike.mkEquals
+            Mock.topSort
+            (TermLike.mkElemVar Mock.x)
+            (Mock.f Mock.a)
+        )
         (Equals Variable (Application Mock.fId))
     , matches
         "\\exists(x, f(a))"
@@ -44,7 +51,10 @@ test_matchAxiomIdentifier =
     , matches
         "\\exists(x, \\equals(x, f(a)))"
         ( TermLike.mkExists Mock.x $
-            TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a)
+            TermLike.mkEquals
+                Mock.topSort
+                (TermLike.mkElemVar Mock.x)
+                (Mock.f Mock.a)
         )
         (Exists (Equals Variable (Application Mock.fId)))
     , testGroup
@@ -100,7 +110,7 @@ test_matchAxiomIdentifier =
             [ matches name termLike axiomIdentifier
             , matches
                 ceilName
-                (TermLike.mkCeil_ termLike)
+                (TermLike.mkCeil Mock.topSort termLike)
                 (Ceil axiomIdentifier)
             ]
       where

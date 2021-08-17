@@ -815,7 +815,7 @@ simplifyPattern (UnificationTerm term) = do
         simplifiedPatterns <-
             Pattern.simplify expandedPattern
         case toList simplifiedPatterns of
-            [] -> return Pattern.bottom
+            [] -> return (Pattern.bottomOf Mock.testSort)
             (config : _) -> return config
     expandedPattern = Pattern.fromTermLike term
 

@@ -89,8 +89,8 @@ instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
 instance Synthetic Sort (In Sort) where
     synthetic in' =
         inResultSort
-            & seq (matchSort inOperandSort inContainedChild)
-                . seq (matchSort inOperandSort inContainingChild)
+            & seq (sameSort inOperandSort inContainedChild)
+                . seq (sameSort inOperandSort inContainingChild)
       where
         In{inResultSort, inOperandSort} = in'
         In{inContainedChild, inContainingChild} = in'

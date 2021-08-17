@@ -99,7 +99,7 @@ test_simplify =
     ceilb =
         makeCeilPredicate (Mock.f Mock.b)
             & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottom]
+    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
     becomes ::
         HasCallStack =>
         TestName ->

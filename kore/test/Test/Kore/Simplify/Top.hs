@@ -27,7 +27,7 @@ test_topSimplification =
         "Top evaluates to top"
         ( assertEqual
             ""
-            (OrPattern.fromPattern Pattern.top)
+            (OrPattern.fromPattern (Pattern.topOf testSort))
             (evaluate Top{topSort = testSort})
         )
     ]

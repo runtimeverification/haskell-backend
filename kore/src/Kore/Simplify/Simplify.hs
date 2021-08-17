@@ -94,6 +94,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike (
+    Sort,
     TermAttributes,
     TermLike,
     TermLikeF (..),
@@ -572,16 +573,17 @@ makeEvaluateTermCeil sideCondition child =
 
 makeEvaluateCeil ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-makeEvaluateCeil sideCondition child =
+makeEvaluateCeil sort sideCondition child =
     do
         let (childTerm, childCondition) = Pattern.splitTerm child
         ceilCondition <-
             Predicate.makeCeilPredicate childTerm
                 & Condition.fromPredicate
                 & simplifyCondition sideCondition
-        Pattern.andCondition Pattern.top (ceilCondition <> childCondition)
+        Pattern.andCondition (Pattern.topOf sort) (ceilCondition <> childCondition)
             & pure
         & OrPattern.observeAllT

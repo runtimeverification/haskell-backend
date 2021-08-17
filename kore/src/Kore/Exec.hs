@@ -89,7 +89,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    fromPredicate_,
+    fromPredicate,
     makeMultipleOrPredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
@@ -272,9 +272,9 @@ exec
                                 <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
-                    forceSort initialSort $
-                        OrPattern.toTermLike
-                            (MultiOr.map getRewritingPattern finalConfigs')
+                    MultiOr.map getRewritingPattern finalConfigs'
+                        & OrPattern.toTermLike initialSort
+                        & sameTermLikeSort initialSort
             return (exitCode, finalTerm)
       where
         dropStrategy = snd
@@ -429,9 +429,9 @@ search
                 orPredicate =
                     makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
             return
-                . forceSort patternSort
+                . sameTermLikeSort patternSort
                 . getRewritingTerm
-                . fromPredicate_
+                . fromPredicate patternSort
                 $ orPredicate
       where
         patternSort = termLikeSort termLike

@@ -39,12 +39,12 @@ test_assumeDefined :: [TestTree]
 test_assumeDefined =
     [ testCase "Fails on \\bottom" $ do
         let term :: TermLike VariableName
-            term = mkBottom_
+            term = mkBottom Mock.topSort
             actual = assumeDefined term
         assertEqual "" Nothing actual
     , testCase "Fails on nested \\bottom" $ do
         let term :: TermLike VariableName
-            term = Mock.f mkBottom_
+            term = Mock.f (mkBottom Mock.testSort)
             actual = assumeDefined term
         assertEqual "" Nothing actual
     , testCase "And: implies subterms are defined" $ do
@@ -73,7 +73,7 @@ test_assumeDefined =
         assertEqual "" expected actual
     , testCase "Ceil: implies subterms are defined" $ do
         let term :: TermLike VariableName
-            term = mkCeil_ Mock.plain00
+            term = mkCeil Mock.topSort Mock.plain00
             expected =
                 [term, Mock.plain00]
                     & HashSet.fromList
@@ -141,7 +141,8 @@ test_assumeDefined =
     , testCase "In: implies subterms are defined" $ do
         let term :: TermLike VariableName
             term =
-                mkIn_
+                mkIn
+                    Mock.topSort
                     (Mock.f (mkElemVar Mock.x))
                     (Mock.functional10 (Mock.g Mock.a))
             expected =

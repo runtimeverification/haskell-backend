@@ -91,9 +91,13 @@ import Kore.Reachability (
     SomeClaim,
     StuckClaim (..),
     getConfiguration,
+    lensClaimPattern,
  )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewrite
+import Kore.Rewrite.ClaimPattern (
+    getClaimPatternSort,
+ )
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     mapRuleVariables,
@@ -113,9 +117,6 @@ import Kore.Syntax.Definition (
     Sentence (..),
  )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
-import Kore.TopBottom (
-    isTop,
- )
 import Kore.Unparser (
     unparse,
  )
@@ -714,18 +715,22 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     let ProveClaimsResult{stuckClaims, provenClaims} = proveResult
-    let (exitCode, final)
-            | noStuckClaims = success
-            | otherwise =
-                stuckPatterns
-                    & OrPattern.toTermLike
-                    & failure
+    let (exitCode, final) =
+            case foldFirst stuckClaims of
+                Nothing -> success -- stuckClaims is empty
+                Just claim ->
+                    stuckPatterns
+                        & OrPattern.toTermLike (getClaimPatternSort $ claimPattern claim)
+                        & failure
           where
-            noStuckClaims = isTop stuckClaims
             stuckPatterns =
                 OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
+            claimPattern claim =
+                claim
+                    & getStuckClaim
+                    & Lens.view lensClaimPattern
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, exitCode)

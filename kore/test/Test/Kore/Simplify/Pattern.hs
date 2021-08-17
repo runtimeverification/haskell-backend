@@ -384,7 +384,7 @@ test_Pattern_simplify_equalityterm =
             -- ]
             first = Mock.cf
             second =
-                (OrPattern.toTermLike . OrPattern.fromPatterns)
+                (OrPattern.toTermLike Mock.testSort . OrPattern.fromPatterns)
                     [ (Pattern.withCondition Mock.cg)
                         (Condition.assign (inject Mock.xConfig) Mock.a)
                     , Pattern.fromTermLike Mock.ch
@@ -433,7 +433,7 @@ termLike = Pattern.fromTermLike
 
 -- | Term is \bottom, but not in a trivial way.
 notTop, orAs, bottomLike :: Pattern RewritingVariableName
-notTop = termLike (mkNot mkTop_)
+notTop = termLike (mkNot $ mkTop Mock.testSort)
 
 -- | Lifting disjunction to the top would duplicate terms.
 orAs = termLike (mkOr Mock.a Mock.a)
