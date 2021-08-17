@@ -89,6 +89,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     Key,
+    Not (..),
     TermLike,
     retractKey,
     termLikeSort,
@@ -707,13 +708,14 @@ matchUnifyNotInKeys first second
 unifyNotInKeys ::
     forall unifier.
     MonadUnify unifier =>
+    Sort ->
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
     UnifyNotInKeysResult ->
     unifier (Pattern RewritingVariableName)
-unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) unifyData =
+unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData =
     case unifyData of
-        NullKeysNullOpaques -> return Pattern.top
+        NullKeysNullOpaques -> return (Pattern.topOf resultSort)
         NonNullKeysOrMultipleOpaques unifyData' ->
             do
                 -- Concrete keys are constructor-like, therefore they are defined
@@ -750,18 +752,19 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) unifyData =
             >>= Unify.scatter
 
     eraseTerm =
-        Pattern.fromCondition_ . Pattern.withoutTerm
+        Pattern.fromCondition resultSort . Pattern.withoutTerm
 
     unifyAndNegate t1 t2 =
         do
             -- Erasing the unified term is valid here because
             -- the terms are all wrapped in \ceil below.
             unificationSolutions <-
-                fmap eraseTerm
-                    <$> Unify.gather (unifyChildren t1 t2)
-            notSimplifier
-                SideCondition.top
-                (OrPattern.fromPatterns unificationSolutions)
+                fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
+            (notSimplifier SideCondition.top)
+                Not
+                    { notSort = resultSort
+                    , notChild = OrPattern.fromPatterns unificationSolutions
+                    }
             >>= Unify.scatter
 
-    collectConditions terms = fold terms & Pattern.fromCondition_
+    collectConditions terms = fold terms & Pattern.fromCondition resultSort

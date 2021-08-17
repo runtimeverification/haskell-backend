@@ -139,6 +139,8 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     fromConditionWithReplacements,
  )
 import Kore.Internal.TermLike (
+    Sort (..),
+    SortVariable (..),
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
@@ -1393,8 +1395,11 @@ prettyClaimStateComponent transformation omitList =
             , provenValue = makeAuxReplOutput "Proven."
             }
   where
+    -- Sort variable used to unparse configurations.
+    -- This is only used for unparsing \bottom.
+    dummySort = SortVariableSort (SortVariable "R")
     prettyComponent =
-        unparseToString . OrPattern.toTermLike
+        unparseToString . OrPattern.toTermLike dummySort
             . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::

@@ -68,6 +68,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (Iff sort) where
 instance Synthetic Sort (Iff Sort) where
     synthetic Iff{iffSort, iffFirst, iffSecond} =
         iffSort
-            & seq (matchSort iffSort iffFirst)
-                . seq (matchSort iffSort iffSecond)
+            & seq (sameSort iffSort iffFirst)
+                . seq (sameSort iffSort iffSecond)
     {-# INLINE synthetic #-}

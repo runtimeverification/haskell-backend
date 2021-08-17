@@ -33,7 +33,7 @@ test_TermLike =
     , testCase "Single constructor is constructor-like" $
         Mock.a `shouldBeConstructorLike` True
     , testCase "Constructor-like with constructor at the top" $
-        Mock.constr10 (Mock.builtinInt 3) `shouldBeConstructorLike` True
+        Mock.constrInt (Mock.builtinInt 3) `shouldBeConstructorLike` True
     , testCase "Simplifiable pattern contains symbol which is only functional" $
         Mock.constr10 (Mock.f Mock.a) `shouldBeConstructorLike` False
     , testCase "Constructor-like pattern with constructor and sort injection" $

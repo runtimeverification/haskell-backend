@@ -54,5 +54,5 @@ instance Ord variable => Synthetic (FreeVariables variable) (Rewrites sort) wher
 instance Synthetic Sort (Rewrites Sort) where
     synthetic Rewrites{rewritesSort, rewritesFirst, rewritesSecond} =
         rewritesSort
-            & seq (matchSort rewritesSort rewritesFirst)
-                . seq (matchSort rewritesSort rewritesSecond)
+            & seq (sameSort rewritesSort rewritesFirst)
+                . seq (sameSort rewritesSort rewritesSecond)

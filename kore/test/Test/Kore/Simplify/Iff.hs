@@ -41,10 +41,10 @@ test_simplify =
         (testSimplifyBoolean <$> [minBound ..] <*> [minBound ..])
     , testGroup
         "Half-Boolean operations"
-        [ (top, termA) `becomes` [termA] $ "iff(⊤, a) = a"
-        , (termA, top) `becomes` [termA] $ "iff(a, ⊤) = a"
-        , (bottom, termA) `becomes` [termNotA] $ "iff(⊤, a) = ¬a"
-        , (termA, bottom) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
+        [ (topOf Mock.testSort, termA) `becomes` [termA] $ "iff(⊤, a) = a"
+        , (termA, topOf Mock.testSort) `becomes` [termA] $ "iff(a, ⊤) = a"
+        , (bottomOf Mock.testSort, termA) `becomes` [termNotA] $ "iff(⊤, a) = ¬a"
+        , (termA, bottomOf Mock.testSort) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
         ]
     ]
   where
@@ -61,20 +61,20 @@ test_makeEvaluate =
         (testEvaluateBoolean <$> [minBound ..] <*> [minBound ..])
     , testGroup
         "Half-Boolean operations"
-        [ (top, termA) `becomes` [termA] $ "iff(⊤, a) = a"
-        , (termA, top) `becomes` [termA] $ "iff(a, ⊤) = a"
-        , (bottom, termA) `becomes` [termNotA] $ "iff(⊤, a) = ¬a"
-        , (termA, bottom) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
+        [ (topOf Mock.testSort, termA) `becomes` [termA] $ "iff(⊤, a) = a"
+        , (termA, topOf Mock.testSort) `becomes` [termA] $ "iff(a, ⊤) = a"
+        , (bottomOf Mock.testSort, termA) `becomes` [termNotA] $ "iff(⊤, a) = ¬a"
+        , (termA, bottomOf Mock.testSort) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
         ]
     , testCase
         "iff with predicates and substitutions"
-        -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
-        --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
+        -- iff(topOf Mock.testSort and predicate1 and subst1, topOf Mock.testSort and predicate2 and subst2)
+        --     = topOf Mock.testSort and (iff(predicate1 and subst1, predicate2 and subst2)
         ( assertEqual
-            "iff(top and predicate, top and predicate)"
+            "iff(topOf Mock.testSort and predicate, topOf Mock.testSort and predicate)"
             ( OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.testSort
                     , predicate =
                         makeIffPredicate
                             ( makeAndPredicate
@@ -97,7 +97,7 @@ test_makeEvaluate =
             )
             ( makeEvaluate
                 Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
                         Substitution.wrap $
@@ -105,7 +105,7 @@ test_makeEvaluate =
                                 [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap $
@@ -125,16 +125,16 @@ test_makeEvaluate =
                             ( mkAnd
                                 ( mkAnd
                                     (Mock.f Mock.a)
-                                    (mkCeil_ Mock.cf)
+                                    (mkCeil Mock.testSort Mock.cf)
                                 )
-                                (mkEquals_ (mkElemVar Mock.xConfig) Mock.a)
+                                (mkEquals Mock.testSort (mkElemVar Mock.xConfig) Mock.a)
                             )
                             ( mkAnd
                                 ( mkAnd
                                     (Mock.g Mock.b)
-                                    (mkCeil_ Mock.cg)
+                                    (mkCeil Mock.testSort Mock.cg)
                                 )
-                                (mkEquals_ (mkElemVar Mock.yConfig) Mock.b)
+                                (mkEquals Mock.testSort (mkElemVar Mock.yConfig) Mock.b)
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -192,8 +192,8 @@ nameBool x
 
 valueBool :: Bool -> Pattern RewritingVariableName
 valueBool x
-    | x = Pattern.top
-    | otherwise = Pattern.bottom
+    | x = Pattern.topOf Mock.testSort
+    | otherwise = Pattern.bottomOf Mock.testSort
 
 termA :: Pattern RewritingVariableName
 termA =

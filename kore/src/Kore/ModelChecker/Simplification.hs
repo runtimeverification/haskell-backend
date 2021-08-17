@@ -21,12 +21,13 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
-    mkCeil_,
+    mkCeil,
     mkElemVar,
     mkNot,
     pattern Forall_,
     pattern Implies_,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -59,7 +60,8 @@ checkImplicationIsTop lhs rhs =
                 implicationLHS' = substitute subst implicationLHS
                 implicationRHS' = substitute subst implicationRHS
                 resultTerm =
-                    mkCeil_
+                    mkCeil
+                        sort
                         ( mkAnd
                             (mkAnd lhsMLPatt implicationLHS')
                             (mkNot implicationRHS')
@@ -87,6 +89,7 @@ checkImplicationIsTop lhs rhs =
             & map variableName
             & Set.fromList
     lhsMLPatt = Pattern.toTermLike lhs
+    sort = TermLike.termLikeSort rhs
 
 stripForallQuantifiers ::
     TermLike RewritingVariableName ->

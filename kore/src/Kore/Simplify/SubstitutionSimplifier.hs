@@ -165,8 +165,10 @@ simplifyAnds ::
     NonEmpty (TermLike RewritingVariableName) ->
     monad (Pattern RewritingVariableName)
 simplifyAnds MakeAnd{makeAnd} sideCondition (NonEmpty.sort -> patterns) =
-    foldM simplifyAnds' Pattern.top patterns
+    foldM simplifyAnds' (Pattern.topOf resultSort) patterns
   where
+    resultSort :: TermLike.Sort
+    resultSort = TermLike.termLikeSort (NonEmpty.head patterns)
     simplifyAnds' ::
         Pattern RewritingVariableName ->
         TermLike RewritingVariableName ->
