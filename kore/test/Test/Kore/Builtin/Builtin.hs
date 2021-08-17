@@ -9,8 +9,10 @@ module Test.Kore.Builtin.Builtin (
     testEvaluators,
     testSymbolWithoutSolver,
     simplify,
-    evaluate,
-    evaluateT,
+    evaluateTerm,
+    evaluateTermT,
+    evaluatePredicate,
+    evaluatePredicateT,
     evaluateToList,
     indexedModule,
     verifiedModule,
@@ -33,6 +35,7 @@ import Data.Text (
  )
 import qualified Hedgehog
 import qualified Kore.Attribute.Null as Attribute
+import Kore.Internal.Predicate (Predicate)
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error (
@@ -243,20 +246,35 @@ simplify =
         . Logic.observeAllT
         . (simplifyTerm SideCondition.top >=> Logic.scatter)
 
-evaluate ::
+evaluateTerm ::
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
     smt (OrPattern RewritingVariableName)
-evaluate termLike =
-    runSimplifier testEnv $ do
+evaluateTerm termLike =
+    runSimplifier testEnv $
         Pattern.simplify (Pattern.fromTermLike termLike)
 
-evaluateT ::
+evaluatePredicate ::
+    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
+    Predicate RewritingVariableName ->
+    smt (OrPattern RewritingVariableName)
+evaluatePredicate predicate =
+    runSimplifier testEnv $
+        Pattern.simplify (Pattern.fromTermAndPredicate mkTop_ predicate)
+
+evaluateTermT ::
     MonadTrans t =>
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
     t smt (OrPattern RewritingVariableName)
-evaluateT = lift . evaluate
+evaluateTermT = lift . evaluateTerm
+
+evaluatePredicateT ::
+    MonadTrans t =>
+    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
+    Predicate RewritingVariableName ->
+    t smt (OrPattern RewritingVariableName)
+evaluatePredicateT = lift . evaluatePredicate
 
 evaluateToList ::
     TermLike RewritingVariableName ->

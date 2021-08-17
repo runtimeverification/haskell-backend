@@ -72,6 +72,7 @@ import Hedgehog hiding (
     Concrete,
  )
 import qualified Hedgehog.Gen as Gen
+import Kore.Internal.From
 import qualified Hedgehog.Range as Range
 import Kore.Builtin.Int (
     ediv,
@@ -147,7 +148,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asOrPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     name = expectHook symb
@@ -164,7 +165,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     name = expectHook symb
@@ -181,7 +182,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     name = expectHook symb
@@ -197,7 +198,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialOrPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     name = expectHook symb
@@ -214,7 +215,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     name = expectHook symb
@@ -232,7 +233,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialOrPattern $ impl a 0
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, 0])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, 0])
         (===) expect actual
   where
     name = expectHook symb
@@ -250,7 +251,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialOrPattern $ impl a b c
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b, c])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
     name = expectHook symb
@@ -400,7 +401,7 @@ test_euclidian_division_theorem =
         mkApplySymbol
             symbol
             (asInternal <$> [a, b])
-            & evaluateT
+            & evaluateTermT
             & fmap extractValue
     extractValue :: OrPattern RewritingVariableName -> Integer
     extractValue (OrPattern.toTermLike -> term) =
@@ -479,7 +480,7 @@ testInt ::
     [TermLike RewritingVariableName] ->
     OrPattern RewritingVariableName ->
     TestTree
-testInt name = testSymbolWithoutSolver evaluate name
+testInt name = testSymbolWithoutSolver evaluateTerm name
 
 -- | "\equal"ed internal Integers that are not equal
 test_unifyEqual_NotEqual :: TestTree
@@ -487,7 +488,7 @@ test_unifyEqual_NotEqual =
     testCaseWithoutSMT "unifyEqual BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
-        actual <- evaluate $ mkEquals_ dv1 dv2
+        actual <- evaluatePredicate $ fromEquals_ dv1 dv2
         assertEqual' "" OrPattern.bottom actual
 
 -- | "\equal"ed internal Integers that are equal
@@ -495,7 +496,7 @@ test_unifyEqual_Equal :: TestTree
 test_unifyEqual_Equal =
     testCaseWithoutSMT "unifyEqual BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
-        actual <- evaluate $ mkEquals_ dv1 dv1
+        actual <- evaluatePredicate $ fromEquals_ dv1 dv1
         assertEqual' "" OrPattern.top actual
 
 -- | "\and"ed internal Integers that are not equal
@@ -504,7 +505,7 @@ test_unifyAnd_NotEqual =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
-        actual <- evaluate $ mkAnd dv1 dv2
+        actual <- evaluateTerm $ mkAnd dv1 dv2
         assertEqual' "" OrPattern.bottom actual
 
 -- | "\and"ed internal Integers that are equal
@@ -512,7 +513,7 @@ test_unifyAnd_Equal :: TestTree
 test_unifyAnd_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
-        actual <- evaluate $ mkAnd dv1 dv1
+        actual <- evaluateTerm $ mkAnd dv1 dv1
         assertEqual' "" (OrPattern.fromTermLike dv1) actual
 
 -- | "\and"ed then "\equal"ed internal Integers that are equal
@@ -520,7 +521,7 @@ test_unifyAndEqual_Equal :: TestTree
 test_unifyAndEqual_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
-        actual <- evaluate $ mkEquals_ dv $ mkAnd dv dv
+        actual <- evaluatePredicate $ fromEquals_ dv $ mkAnd dv dv
         assertEqual' "" OrPattern.top actual
 
 -- | Internal Integer "\and"ed with builtin function applied to variable
@@ -538,7 +539,7 @@ test_unifyAnd_Fn =
                     , substitution = mempty
                     }
                     & MultiOr.singleton
-        actual <- evaluateT $ mkAnd dv fnPat
+        actual <- evaluateTermT $ mkAnd dv fnPat
         (===) expect actual
 
 test_reflexivity_symbolic :: TestTree
@@ -546,7 +547,7 @@ test_reflexivity_symbolic =
     testCaseWithoutSMT "evaluate symbolic reflexivity for equality" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
             expect = Test.Bool.asOrPattern True
-        actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
+        actual <- evaluateTerm $ mkApplySymbol eqIntSymbol [x, x]
         assertEqual' "" expect actual
 
 test_symbolic_eq_not_conclusive :: TestTree
@@ -557,7 +558,7 @@ test_symbolic_eq_not_conclusive =
             expect =
                 MultiOr.singleton . fromTermLike $
                     mkApplySymbol eqIntSymbol [x, y]
-        actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
+        actual <- evaluateTerm $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
