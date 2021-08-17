@@ -195,15 +195,6 @@ import Logic (
  )
 import qualified Logic
 import Prelude.Kore
-
-{-
-import Pretty (
-    layoutOneLine,
-    pretty,
-    renderText,
-    (<+>),
- )
--}
 import Prof
 import SMT (
     MonadSMT,
