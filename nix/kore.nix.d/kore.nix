@@ -252,6 +252,7 @@
           "Kore/Log/DebugUnifyBottom"
           "Kore/Log/ErrorBottomTotalFunction"
           "Kore/Log/ErrorDecidePredicateUnknown"
+          "Kore/Log/ErrorEquationRightFunction"
           "Kore/Log/ErrorException"
           "Kore/Log/ErrorParse"
           "Kore/Log/ErrorRewriteLoop"
