@@ -67,7 +67,7 @@ import Kore.Attribute.Symbol (
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
-    Equation (Equation),
+    Equation,
     extractEquations,
     right,
  )
@@ -610,20 +610,18 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
 
-{- | Ensure that for every equation in a function definition,
- the right-hand side of the equation is a function pattern.
- 'checkFunctions' first extracts equations from a verified module
- to a list of equations. Then it checks that each equation in the list
- is a function pattern. If any equation fails the check, 'checkEquations'
- returns @'Just' eqn@. Then, collect all the offending equations with
- 'catMaybes' and pass the list to 'checkResults'. If there were no bad
- equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
- logs an error message for each bad equation before returning @'ExitFailure' 3@.
-
- See 'checkEquation',
- 'Kore.Equation.Registry.extractEquations',
- 'Kore.Internal.TermLike.isFunctionPattern',
- and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
+{- | Ensure that for every equation in a function definition, the right-hand
+ - side of the equation is a function pattern. 'checkFunctions' first extracts
+ - equations from a verified module to a list of equations. Then it checks that
+ - each equation in the list is a function pattern. 'filter' the equations that
+ - fail the check, and pass the list to 'checkResults'. If there were no bad
+ - equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
+ - logs an error message for each bad equation before returning
+ - @'ExitFailure' 3@.
+ - See 'checkEquation',
+ - 'Kore.Equation.Registry.extractEquations',
+ - 'Kore.Internal.TermLike.isFunctionPattern',
+ - and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 -}
 checkFunctions ::
     MonadLog m =>
@@ -631,7 +629,7 @@ checkFunctions ::
     VerifiedModule StepperAttributes ->
     m ExitCode
 checkFunctions verifiedModule =
-    checkResults $ mapMaybe checkEquation equations
+    checkResults $ filter (not . isFunctionPattern . right) equations
   where
     equations = join $ Map.elems $ extractEquations verifiedModule
     -- if any equations fail the check, log the equations and
@@ -639,17 +637,6 @@ checkFunctions verifiedModule =
     checkResults [] = return ExitSuccess
     checkResults eqns =
         mapM_ errorEquationRightFunction eqns $> ExitFailure 3
-
-{- | 'checkEquation' returns 'Nothing' when the 'right'-hand-side
- of an 'Equation' is a function pattern. Otherwise,
- RHS of equation is not a function pattern so return @'Just' eqn@.
-
- See 'Kore.Internal.TermLike.isFunctionPattern'.
--}
-checkEquation :: Equation VariableName -> Maybe (Equation VariableName)
-checkEquation eqn@Equation{right}
-    | isFunctionPattern right = Nothing
-    | otherwise = Just eqn -- save bad equation for error reporting and logging
 
 -- | Rule merging
 mergeAllRules ::
