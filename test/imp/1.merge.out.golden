@@ -2,7 +2,18 @@
 \rewrites{SortGeneratedTopCell{}}(
     /* Spa */
     \and{SortGeneratedTopCell{}}(
-        /* D Sfa */ \top{SortGeneratedTopCell{}}(),
+        /* Sfa */
+        \equals{SortBool{}, SortGeneratedTopCell{}}(
+            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
+            /* Fl Fn D Sfa */
+            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                /* Fl Fn D Sfa */
+                /* Inj: */ inj{SortId{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ VarX:SortId{}
+                ),
+                /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortMap{}
+            )
+        ),
         /* Fn Sfa */
         Lbl'-LT-'generatedTop'-GT-'{}(
             /* Fn Sfa */
