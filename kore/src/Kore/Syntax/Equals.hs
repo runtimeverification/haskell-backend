@@ -113,8 +113,8 @@ instance Ord variable => Synthetic (FreeVariables variable) (Equals sort) where
 instance Synthetic Sort (Equals Sort) where
     synthetic equals =
         equalsResultSort
-            & seq (matchSort equalsOperandSort equalsFirst)
-                . seq (matchSort equalsOperandSort equalsSecond)
+            & seq (sameSort equalsOperandSort equalsFirst)
+                . seq (sameSort equalsOperandSort equalsSecond)
       where
         Equals{equalsOperandSort, equalsResultSort} = equals
         Equals{equalsFirst, equalsSecond} = equals

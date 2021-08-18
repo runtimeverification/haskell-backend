@@ -39,7 +39,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     TermLike,
-    mkBottom_,
+    mkBottom,
     mkElemVar,
  )
 import qualified Kore.Log as Log
@@ -663,7 +663,10 @@ zeroToTen =
 emptyClaim :: SomeClaim
 emptyClaim =
     OnePath . OnePathClaim $
-        claimWithName mkBottom_ mkBottom_ "emptyClaim"
+        claimWithName
+            (mkBottom kSort)
+            (mkBottom kSort)
+            "emptyClaim"
 
 zeroToZero :: SomeClaim
 zeroToZero =

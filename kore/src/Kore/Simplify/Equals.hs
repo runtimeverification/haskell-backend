@@ -61,13 +61,14 @@ import qualified Kore.Simplify.Implies as Implies (
  )
 import qualified Kore.Simplify.Not as Not (
     notSimplifier,
-    simplifyEvaluated,
+    simplify,
     simplifyEvaluatedPredicate,
  )
 import qualified Kore.Simplify.Or as Or (
     simplifyEvaluated,
  )
 import Kore.Simplify.Simplify
+import Kore.Sort (sameSort)
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
@@ -161,15 +162,20 @@ simplify ::
     SideCondition RewritingVariableName ->
     Equals Sort (OrPattern RewritingVariableName) ->
     simplifier (OrCondition RewritingVariableName)
-simplify sideCondition Equals{equalsFirst = first, equalsSecond = second} =
-    simplifyEvaluated sideCondition first' second'
-  where
-    (first', second') =
-        minMaxBy (on compareForEquals OrPattern.toTermLike) first second
+simplify
+    sideCondition
+    Equals
+        { equalsFirst = first
+        , equalsSecond = second
+        , equalsOperandSort = sort
+        } = simplifyEvaluated sort sideCondition first' second'
+      where
+        (first', second') =
+            minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
 
-{- TODO (virgil): Preserve pattern sorts under simplification.
+{-
 
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+Another way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
 > CofreeF (Equals Sort) (Attribute.Pattern variable) (OrPattern variable)
@@ -182,11 +188,12 @@ carry around.
 -}
 simplifyEvaluated ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
     simplifier (OrCondition RewritingVariableName)
-simplifyEvaluated sideCondition first second
+simplifyEvaluated sort sideCondition first second
     | first == second = return OrCondition.top
     -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
     | otherwise = do
@@ -202,12 +209,12 @@ simplifyEvaluated sideCondition first second
                     makeEvaluateFunctionalOr sideCondition secondP firstPatterns
             _
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                    Iff.simplifyEvaluated sideCondition first second
+                    Iff.simplifyEvaluated sort sideCondition first second
                         & fmap (MultiOr.map Pattern.withoutTerm)
                 | otherwise ->
                     makeEvaluate
-                        (OrPattern.toPattern first)
-                        (OrPattern.toPattern second)
+                        (OrPattern.toPattern sort first)
+                        (OrPattern.toPattern sort second)
                         sideCondition
   where
     firstPatterns = toList first
@@ -221,36 +228,36 @@ makeEvaluateFunctionalOr ::
     [Pattern RewritingVariableName] ->
     simplifier (OrCondition RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
-    firstCeil <- makeEvaluateCeil sideCondition first
-    secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
-    firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
+    let sort = Pattern.patternSort first
+    firstCeil <- makeEvaluateCeil sort sideCondition first
+    secondCeilsWithProofs <- mapM (makeEvaluateCeil sort sideCondition) seconds
+    let mkNotSimplified notChild =
+            Not.simplify sideCondition Not{notSort = sort, notChild}
+    firstNotCeil <- mkNotSimplified firstCeil
     let secondCeils = secondCeilsWithProofs
-    secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
+    secondNotCeils <- traverse mkNotSimplified secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        And.simplify
-            Not.notSimplifier
-            sideCondition
+        (And.simplify sort Not.notSimplifier sideCondition)
             (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
-            (makeEvaluateEqualsIfSecondNotBottom first)
+            (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        And.simplify
-            Not.notSimplifier
-            sideCondition
+        (And.simplify sort Not.notSimplifier sideCondition)
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     MultiOr.merge allAreBottom oneIsNotBottomEquals
         & MultiOr.map Pattern.withoutTerm
         & return
   where
     makeEvaluateEqualsIfSecondNotBottom
+        sort
         Conditional{term = firstTerm}
         (Conditional{term = secondTerm}, secondCeil) =
             do
                 equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-                Implies.simplifyEvaluated sideCondition secondCeil equality
+                Implies.simplifyEvaluated sort sideCondition secondCeil equality
 
 {- | evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -267,8 +274,8 @@ makeEvaluate
     second@Conditional{term = Top_ _}
     _ =
         Iff.makeEvaluate
-            first{term = mkTop_} -- remove the term's sort
-            second{term = mkTop_} -- remove the term's sort
+            first
+            second
             & MultiOr.map Pattern.withoutTerm
             & return
 makeEvaluate
@@ -289,27 +296,26 @@ makeEvaluate
     second@Conditional{term = secondTerm}
     sideCondition =
         do
-            let first' = first{term = if termsAreEqual then mkTop_ else firstTerm}
-            firstCeil <- makeEvaluateCeil sideCondition first'
-            let second' = second{term = if termsAreEqual then mkTop_ else secondTerm}
-            secondCeil <- makeEvaluateCeil sideCondition second'
-            firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
-            secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
+            let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
+            firstCeil <- makeEvaluateCeil sort sideCondition first'
+            let second' = second{term = if termsAreEqual then mkTop sort else secondTerm}
+            secondCeil <- makeEvaluateCeil sort sideCondition second'
+            let mkNotSimplified notChild =
+                    Not.simplify sideCondition Not{notSort = sort, notChild}
+            firstCeilNegation <- mkNotSimplified firstCeil
+            secondCeilNegation <- mkNotSimplified secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
             negationAnd <-
-                And.simplify
-                    Not.notSimplifier
-                    sideCondition
+                (And.simplify sort Not.notSimplifier sideCondition)
                     (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                And.simplify
-                    Not.notSimplifier
-                    sideCondition
+                (And.simplify sort Not.notSimplifier sideCondition)
                     (MultiAnd.make [termEquality, firstCeil, secondCeil])
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
                 & return
       where
+        sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
         termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
@@ -325,10 +331,11 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
             makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
     (return . fromMaybe def) result
   where
+    sort = termLikeSort firstTerm
     def =
         OrPattern.fromPattern
             Conditional
-                { term = mkTop_
+                { term = mkTop sort
                 , predicate =
                     Predicate.markSimplified $
                         makeEqualsPredicate firstTerm secondTerm
@@ -345,7 +352,8 @@ makeEvaluateTermsAssumesNoBottomMaybe ::
     MaybeT simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
-    return (MultiOr.map Pattern.fromCondition_ result)
+    let sort = termLikeSort first
+    return (MultiOr.map (Pattern.fromCondition sort) result)
 
 {- | Combines two terms with 'Equals' into a predicate-substitution.
 

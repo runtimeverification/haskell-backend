@@ -31,12 +31,12 @@ import Test.Tasty.HUnit.Ext
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
-    [ [Pattern.top] `becomes_` []
-    , [] `becomes_` [Pattern.top]
+    [ [Pattern.topOf Mock.testSort] `becomes_` []
+    , [] `becomes_` [Pattern.topOf Mock.testSort]
     , [termX] `becomes_` [termNotX]
     , [termNotX] `becomes_` [termX]
     , [equalsXA] `becomes_` [notEqualsXA]
-    , equalsXAWithSortedBottom `patternBecomes` [Pattern.top]
+    , equalsXAWithSortedBottom `patternBecomes` [Pattern.topOf Mock.testSort]
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
     , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXASorted]
@@ -154,14 +154,14 @@ substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.xConfig, Mock
 forceTermSort ::
     Pattern.Pattern RewritingVariableName ->
     Pattern.Pattern RewritingVariableName
-forceTermSort = fmap (forceSort Mock.testSort)
+forceTermSort = fmap (sameTermLikeSort Mock.testSort)
 
 fromPredicate ::
     Predicate.Predicate RewritingVariableName ->
     Pattern.Pattern RewritingVariableName
 fromPredicate =
     forceTermSort
-        . Pattern.fromCondition_
+        . Pattern.fromCondition Mock.testSort
         . Condition.fromPredicate
 
 fromSubstitution ::
@@ -169,13 +169,15 @@ fromSubstitution ::
     Pattern.Pattern RewritingVariableName
 fromSubstitution =
     forceTermSort
-        . Pattern.fromCondition_
+        . Pattern.fromCondition Mock.testSort
         . Condition.fromSubstitution
 
 simplifyEvaluated ::
     OrPattern.OrPattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated =
-    runSimplifier mockEnv . Not.simplifyEvaluated SideCondition.top
+    runSimplifier mockEnv . mkNotSimplified
   where
     mockEnv = Mock.env
+    mkNotSimplified notChild =
+        Not.simplify SideCondition.top Not{notSort = Mock.testSort, notChild}

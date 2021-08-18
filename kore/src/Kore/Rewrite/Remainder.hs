@@ -134,7 +134,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
     case patt of
         App_ _ children -> do
             ceil <-
-                traverse (Ceil.makeEvaluateTerm sideCondition) children
+                traverse (Ceil.makeEvaluateTerm termSort sideCondition) children
                     >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                             sideCondition
                             . MultiAnd.make
@@ -149,3 +149,5 @@ ceilChildOfApplicationOrTop sideCondition patt =
                     , substitution = mempty
                     }
         _ -> pure Condition.top
+  where
+    termSort = termLikeSort patt

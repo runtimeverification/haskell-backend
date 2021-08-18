@@ -85,6 +85,7 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
+    unwrapElement,
     pattern AcPair,
  )
 import Kore.Internal.Predicate (
@@ -108,8 +109,8 @@ import Kore.Internal.TermLike (
     Application,
     Key,
     TermLike,
+    isConstructorLike,
     pattern App_,
-    pattern Equals_,
     pattern Exists_,
     pattern Forall_,
     pattern Inj_,
@@ -560,7 +561,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         assumeEqualTerms =
             case predicate of
                 PredicateEquals t1 t2 ->
-                    case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
+                    case retractLocalFunction (Predicate.makeEqualsPredicate t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
                                 HashMap.insert t1' t2'
@@ -665,11 +666,11 @@ in either order, but the function pattern is always returned first in the
 'Pair'.
 -}
 retractLocalFunction ::
-    TermLike variable ->
+    Predicate variable ->
     Maybe (Pair (TermLike variable))
 retractLocalFunction =
     \case
-        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
+        PredicateEquals term1 term2 -> go term1 term2 <|> go term2 term1
         _ -> Nothing
   where
     go term1@(App_ symbol1 _) term2
@@ -856,15 +857,26 @@ generateNormalizedAcs ::
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ HashSet.map symbolicToAc symbolicPairs
-    , HashSet.map concreteToAc concretePairs
-    , HashSet.map opaqueToAc opaquePairs
-    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
-    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
-    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
-    ]
-        & fold
+    if alwaysDefined internalAc
+        then mempty
+        else
+            [ HashSet.map symbolicToAc symbolicPairs
+            , HashSet.map concreteToAc concretePairs
+            , HashSet.map opaqueToAc opaquePairs
+            , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+            , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+            , HashSet.map concreteOpaqueToAc concreteOpaquePairs
+            ]
+                & fold
+                & HashSet.filter (not . alwaysDefined)
   where
+    alwaysDefined InternalAc{builtinAcChild = normalized} =
+        all isConstructorLike children && null opaques
+      where
+        children =
+            fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
+        opaques =
+            opaque (unwrapAc normalized)
     InternalAc
         { builtinAcChild
         , builtinAcSort

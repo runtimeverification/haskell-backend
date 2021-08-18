@@ -8,7 +8,6 @@ module Kore.Internal.Predicate (
     unparseWithSort,
     unparse2WithSort,
     fromPredicate,
-    fromPredicate_,
     makePredicate,
     makeTruePredicate,
     makeFalsePredicate,
@@ -137,9 +136,6 @@ import Kore.Internal.TermLike hiding (
     simplifiedAttribute,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort (
-    predicateSort,
- )
 import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
@@ -311,7 +307,7 @@ instance NFData variable => NFData (Predicate variable) where
         rnf annotation `seq` rnf pat
 
 instance InternalVariable variable => Pretty (Predicate variable) where
-    pretty = unparse . fromPredicate_
+    pretty = unparse . fromPredicate (mkSortVariable "_")
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
     defineColumn = SQL.defineTextColumn
@@ -593,12 +589,6 @@ fromPredicate sort = Recursive.fold worker
                 OrF (Or () t1 t2) -> TermLike.mkOr t1 t2
                 TopF _ -> TermLike.mkTop sort
 
-fromPredicate_ ::
-    InternalVariable variable =>
-    Predicate variable ->
-    TermLike variable
-fromPredicate_ = fromPredicate predicateSort
-
 {- | Simple type used to track whether a predicate building function performed
     a simplification that changed the shape of the resulting term. This is
     needed when these functions are called while traversing the Predicate tree.
@@ -821,7 +811,7 @@ makeInPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeInPredicate' t1 t2 =
-    (TermLike.makeSortsAgree makeInWorker t1 t2, NotChanged)
+    (TermLike.checkSortsAgree makeInWorker t1 t2, NotChanged)
   where
     makeInWorker t1' t2' _ = synthesize $ InF $ In () () t1' t2'
 
@@ -838,7 +828,7 @@ makeEqualsPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeEqualsPredicate' t1 t2 =
-    (TermLike.makeSortsAgree makeEqualsWorker t1 t2, NotChanged)
+    (TermLike.checkSortsAgree makeEqualsWorker t1 t2, NotChanged)
   where
     makeEqualsWorker t1' t2' _ = synthesize $ EqualsF $ Equals () () t1' t2'
 
@@ -966,7 +956,9 @@ instance
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
             [ "Expected a predicate, but found:"
-            , Pretty.indent 4 (unparse $ fromPredicate_ <$> termLikeF)
+            , Pretty.indent
+                4
+                (unparse $ fromPredicate (mkSortVariable "_") <$> termLikeF)
             ]
 
 makePredicate ::
@@ -1095,10 +1087,8 @@ cannotSimplifyNotSimplifiedError predF =
         ( "Unexpectedly marking term with NotSimplified children as simplified:\n"
             ++ show predF
             ++ "\n"
-            ++ unparseToString term
+            ++ (show . pretty $ synthesize predF)
         )
-  where
-    term = fromPredicate_ (synthesize predF)
 
 simplifiedFromChildren ::
     HasCallStack =>
@@ -1221,7 +1211,8 @@ mapVariables ::
 mapVariables adj predicate =
     let termPredicate =
             TermLike.mapVariables adj
-                . fromPredicate_
+                -- TODO (Andrei B): Try to avoid TermLike conversion
+                . fromPredicate (mkSortVariable "_")
                 $ predicate
      in either
             errorMappingVariables

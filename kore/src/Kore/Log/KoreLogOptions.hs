@@ -162,7 +162,7 @@ parseKoreLogFormat = option formatReader info
     info =
         mempty
             <> Options.long "log-format"
-            <> Options.help "Formating style selected"
+            <> Options.help "Log format: standard, oneline"
             <> Options.value def
 
 type EntryTypes = Set SomeTypeRep

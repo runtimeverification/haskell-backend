@@ -11,6 +11,7 @@ module Test.Kore.Builtin.Builtin (
     simplify,
     evaluate,
     evaluateT,
+    evaluateExpectTopK,
     evaluateToList,
     indexedModule,
     verifiedModule,
@@ -51,6 +52,7 @@ import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -254,6 +256,15 @@ evaluateT ::
     TermLike RewritingVariableName ->
     t smt (OrPattern RewritingVariableName)
 evaluateT = lift . evaluate
+
+evaluateExpectTopK ::
+    HasCallStack =>
+    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
+    TermLike RewritingVariableName ->
+    Hedgehog.PropertyT smt ()
+evaluateExpectTopK termLike = do
+    actual <- evaluateT termLike
+    OrPattern.topOf kSort Hedgehog.=== actual
 
 evaluateToList ::
     TermLike RewritingVariableName ->

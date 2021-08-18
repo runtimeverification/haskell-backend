@@ -11,7 +11,6 @@ module Kore.Simplify.Not (
     makeEvaluate,
     makeEvaluatePredicate,
     simplify,
-    simplifyEvaluated,
     simplifyEvaluatedPredicate,
     notSimplifier,
 ) where
@@ -55,6 +54,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
+    termLikeSort,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -79,41 +79,13 @@ Right now this uses the following:
 simplify ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Not sort (OrPattern RewritingVariableName) ->
+    Not Sort (OrPattern RewritingVariableName) ->
     simplifier (OrPattern RewritingVariableName)
-simplify sideCondition Not{notChild} =
-    simplifyEvaluated sideCondition notChild
-
-{- |'simplifyEvaluated' simplifies a 'Not' pattern given its
-'OrPattern' child.
-
-See 'simplify' for details.
--}
-
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
-take an argument of type
-
-> CofreeF (Not Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually
-cache information besides the pattern sort, which will make it even more useful
-to carry around.
-
--}
-simplifyEvaluated ::
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
-simplifyEvaluated sideCondition simplified =
+simplify sideCondition not'@Not{notSort} =
     OrPattern.observeAllT $ do
-        let not' = Not{notChild = simplified, notSort = ()}
-        andPattern <-
-            scatterAnd (MultiAnd.map makeEvaluateNot (distributeNot not'))
-        mkMultiAndPattern sideCondition andPattern
+        let evaluated = MultiAnd.map makeEvaluateNot (distributeNot not')
+        andPattern <- scatterAnd evaluated
+        mkMultiAndPattern notSort sideCondition andPattern
 
 simplifyEvaluatedPredicate ::
     MonadSimplify simplifier =>
@@ -198,9 +170,11 @@ makeTermNot (Not_ _ term) = MultiOr.singleton term
 makeTermNot (And_ _ term1 term2) =
     MultiOr.merge (makeTermNot term1) (makeTermNot term2)
 makeTermNot term
-    | isBottom term = MultiOr.singleton mkTop_
-    | isTop term = MultiOr.singleton mkBottom_
+    | isBottom term = MultiOr.singleton (mkTop sort)
+    | isTop term = MultiOr.singleton (mkBottom sort)
     | otherwise = MultiOr.singleton $ TermLike.markSimplified $ mkNot term
+  where
+    sort = TermLike.termLikeSort term
 
 -- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
 distributeNot ::
@@ -223,10 +197,11 @@ scatterAnd = scatter . MultiAnd.distributeAnd
 -- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
 mkMultiAndPattern ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
-mkMultiAndPattern = And.makeEvaluate notSimplifier
+mkMultiAndPattern resultSort = And.makeEvaluate resultSort notSimplifier
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
 mkMultiAndPredicate ::
@@ -237,8 +212,5 @@ mkMultiAndPredicate predicates =
     -- implements And semantics.
     return $ fold predicates
 
-notSimplifier ::
-    MonadSimplify simplifier =>
-    NotSimplifier simplifier
-notSimplifier =
-    NotSimplifier simplifyEvaluated
+notSimplifier :: MonadSimplify simplifier => NotSimplifier simplifier
+notSimplifier = NotSimplifier simplify

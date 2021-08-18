@@ -99,7 +99,10 @@ test_matcherEqualHeads =
         ]
     , testCase "Bottom" $ do
         let expect = Just (makeTruePredicate, Map.empty)
-        actual <- matchDefinition mkBottom_ mkBottom_
+        actual <-
+            matchDefinition
+                (mkBottom Mock.topSort)
+                (mkBottom Mock.topSort)
         assertEqual "" expect actual
     , testCase "Ceil" $ do
         let expect =
@@ -109,8 +112,8 @@ test_matcherEqualHeads =
                     )
         actual <-
             matchDefinition
-                (mkCeil_ (Mock.plain10 (mkElemVar Mock.xConfig)))
-                (mkCeil_ (Mock.plain10 Mock.a))
+                (mkCeil Mock.topSort (Mock.plain10 (mkElemVar Mock.xConfig)))
+                (mkCeil Mock.topSort (Mock.plain10 Mock.a))
         assertEqual "" expect actual
     , testCase "Equals" $ do
         let expect =
@@ -122,11 +125,13 @@ test_matcherEqualHeads =
                     )
         actual <-
             matchDefinition
-                ( mkEquals_
+                ( mkEquals
+                    Mock.topSort
                     (Mock.plain10 (mkElemVar Mock.xConfig))
                     (Mock.plain10 Mock.a)
                 )
-                ( mkEquals_
+                ( mkEquals
+                    Mock.topSort
                     (Mock.plain10 (mkElemVar Mock.yConfig))
                     (Mock.plain10 Mock.a)
                 )
@@ -172,8 +177,8 @@ test_matcherEqualHeads =
     , testCase "Top" $ do
         actual <-
             matchDefinition
-                mkTop_
-                mkTop_
+                (mkTop Mock.topSort)
+                (mkTop Mock.topSort)
         assertEqual "" topCondition actual
     , testCase "Iff vs Or" $ do
         let expect = Nothing

@@ -9,12 +9,12 @@ module Kore.Builtin.EqTerm (
 ) where
 
 import qualified Control.Monad as Monad
+import Kore.Internal.ApplicationSorts (applicationSortsResult)
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -48,7 +48,6 @@ matchEqTerm selectSymbol (App_ symbol [operand1, operand2]) = do
 matchEqTerm _ _ = Nothing
 
 {- | Unification for an equality-like symbol.
-
 This function is suitable only for equality simplification.
 -}
 unifyEqTerm ::
@@ -63,8 +62,11 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm value =
     do
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else notSimplifier SideCondition.top) solution'
+        (if value then pure else mkNotSimplified) solution'
             >>= Unify.scatter
   where
-    EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    EqTerm{symbol, operand1, operand2} = eqTerm
+    eqSort = applicationSortsResult . symbolSorts $ symbol
+    eraseTerm conditional = conditional $> (mkTop eqSort)
+    mkNotSimplified notChild =
+        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}

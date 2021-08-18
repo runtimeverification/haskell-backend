@@ -77,7 +77,7 @@ test_ceilSimplification =
             actual1 <-
                 evaluate
                     ( makeCeil
-                        [Pattern.top]
+                        [Pattern.topOf Mock.testSort]
                     )
             assertEqual
                 "ceil(top)"
@@ -112,13 +112,13 @@ test_ceilSimplification =
         "expanded Ceil - bool operations"
         ( do
             -- ceil(top) = top
-            actual1 <- makeEvaluate Pattern.top
+            actual1 <- makeEvaluate (Pattern.topOf Mock.testSort)
             assertEqual
                 "ceil(top)"
                 OrCondition.top
                 actual1
             -- ceil(bottom) = bottom
-            actual2 <- makeEvaluate Pattern.bottom
+            actual2 <- makeEvaluate (Pattern.bottomOf Mock.testSort)
             assertEqual
                 "ceil(bottom)"
                 OrCondition.bottom
@@ -350,7 +350,7 @@ test_ceilSimplification =
                     )
                     ( appliedMockEvaluator
                         Conditional
-                            { term = mkTop_
+                            { term = mkTop Mock.testSort
                             , predicate = makeEqualsPredicate Mock.a Mock.cf
                             , substitution = mempty
                             }

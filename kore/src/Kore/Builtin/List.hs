@@ -277,7 +277,7 @@ evalGet _ resultSort [_list, _ix] = do
     emptyList <|> bothConcrete
   where
     maybeBottom =
-        maybe Pattern.bottom Pattern.fromTermLike
+        maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
 evalGet _ _ _ = Builtin.wrongArity getKey
 
 evalUpdate :: Builtin.Function
@@ -629,7 +629,7 @@ unifyEquals
                 "Cannot unify lists of different length."
                 term1
                 term2
-            return Pattern.bottom
+            return (Pattern.bottomOf $ termLikeSort term1)
 
         unifyEqualsFramedRightRight ::
             TermLike.Symbol ->
