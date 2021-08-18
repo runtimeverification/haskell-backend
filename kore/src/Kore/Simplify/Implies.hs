@@ -31,7 +31,7 @@ import qualified Kore.Simplify.And as And
 import qualified Kore.Simplify.Not as Not (
     makeEvaluate,
     notSimplifier,
-    simplifyEvaluated,
+    simplify,
  )
 import Kore.Simplify.Simplify
 import Logic (
@@ -60,8 +60,8 @@ simplify ::
     simplifier (OrPattern RewritingVariableName)
 simplify
     sideCondition
-    Implies{impliesFirst = first, impliesSecond = second} =
-        simplifyEvaluated sideCondition first second
+    Implies{impliesFirst = first, impliesSecond = second, impliesSort = sort} =
+        simplifyEvaluated sort sideCondition first second
 
 {- | simplifies an Implies given its two 'OrPattern' children.
 
@@ -84,42 +84,42 @@ carry around.
 -}
 simplifyEvaluated ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplifyEvaluated sideCondition first second
+simplifyEvaluated sort sideCondition first second
     | OrPattern.isTrue first = return second
-    | OrPattern.isFalse first = return OrPattern.top
-    | OrPattern.isTrue second = return OrPattern.top
-    | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
+    | OrPattern.isFalse first = return (OrPattern.topOf sort)
+    | OrPattern.isTrue second = return (OrPattern.topOf sort)
+    | OrPattern.isFalse second =
+        Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise =
         OrPattern.observeAllT $
             Logic.scatter second
-                >>= simplifyEvaluateHalfImplies sideCondition first
+                >>= simplifyEvaluateHalfImplies sort sideCondition first
 
 simplifyEvaluateHalfImplies ::
     MonadSimplify simplifier =>
+    Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     Pattern RewritingVariableName ->
     LogicT simplifier (Pattern RewritingVariableName)
-simplifyEvaluateHalfImplies
-    sideCondition
-    first
-    second
-        | OrPattern.isTrue first = return second
-        | OrPattern.isFalse first = return Pattern.top
-        | Pattern.isTop second = return Pattern.top
-        | Pattern.isBottom second =
-            Not.simplifyEvaluated sideCondition first
-                >>= Logic.scatter
-        | otherwise =
-            case toList first of
-                [firstP] -> Logic.scatter $ makeEvaluateImplies firstP second
-                firstPatterns ->
-                    distributeEvaluateImplies sideCondition firstPatterns second
-                        >>= Logic.scatter
+simplifyEvaluateHalfImplies sort sideCondition first second
+    | OrPattern.isTrue first = return second
+    | OrPattern.isFalse first = return (Pattern.topOf sort)
+    | Pattern.isTop second = return (Pattern.topOf sort)
+    | Pattern.isBottom second =
+        Not.simplify sideCondition Not{notSort = sort, notChild = first}
+            >>= Logic.scatter
+    | otherwise =
+        case toList first of
+            [firstP] -> Logic.scatter $ makeEvaluateImplies firstP second
+            firstPatterns ->
+                distributeEvaluateImplies sideCondition firstPatterns second
+                    >>= Logic.scatter
 
 distributeEvaluateImplies ::
     MonadSimplify simplifier =>
@@ -128,11 +128,10 @@ distributeEvaluateImplies ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 distributeEvaluateImplies sideCondition firsts second =
-    And.simplify
-        Not.notSimplifier
-        sideCondition
+    (And.simplify sort Not.notSimplifier sideCondition)
         (MultiAnd.make implications)
   where
+    sort = Pattern.patternSort second
     implications = map (\first -> makeEvaluateImplies first second) firsts
 
 makeEvaluateImplies ::
@@ -145,13 +144,15 @@ makeEvaluateImplies
         | Pattern.isTop first =
             OrPattern.fromPatterns [second]
         | Pattern.isBottom first =
-            OrPattern.fromPatterns [Pattern.top]
+            OrPattern.fromPatterns [Pattern.topOf sort]
         | Pattern.isTop second =
-            OrPattern.fromPatterns [Pattern.top]
+            OrPattern.fromPatterns [Pattern.topOf sort]
         | Pattern.isBottom second =
             Not.makeEvaluate first
         | otherwise =
             makeEvaluateImpliesNonBool first second
+      where
+        sort = Pattern.patternSort first
 
 makeEvaluateImpliesNonBool ::
     Pattern RewritingVariableName ->

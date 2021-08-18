@@ -89,7 +89,7 @@ instance
 
 instance Synthetic Sort (Exists Sort variable) where
     synthetic Exists{existsSort, existsChild} =
-        existsSort `matchSort` existsChild
+        existsSort `sameSort` existsChild
     {-# INLINE synthetic #-}
 
 instance

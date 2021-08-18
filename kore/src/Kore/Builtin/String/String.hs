@@ -91,7 +91,7 @@ asPartialPattern ::
     Maybe Text ->
     Pattern variable
 asPartialPattern resultSort =
-    maybe Pattern.bottom (asPattern resultSort)
+    maybe (Pattern.bottomOf resultSort) (asPattern resultSort)
 
 eqKey :: IsString s => s
 eqKey = "STRING.eq"

@@ -81,6 +81,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
 instance Synthetic Sort (Or Sort) where
     synthetic Or{orSort, orFirst, orSecond} =
         orSort
-            & seq (matchSort orSort orFirst)
-                . seq (matchSort orSort orSecond)
+            & seq (sameSort orSort orFirst)
+                . seq (sameSort orSort orSecond)
     {-# INLINE synthetic #-}

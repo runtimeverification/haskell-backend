@@ -83,11 +83,12 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.topOf kSort
             xConfigElemVarKItemSort =
                 configElementVariableFromId "x" kItemSort
             original =
-                mkEquals_
+                mkEquals
+                    kSort
                     (Test.Bool.asInternal True)
                     ( keqBool
                         (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
@@ -96,11 +97,12 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.topOf kSort
             xConfigElemVarIdSort =
                 configElementVariableFromId "x" idSort
             original =
-                mkEquals_
+                mkEquals
+                    kSort
                     (Test.Bool.asInternal True)
                     ( keqBool
                         (kseq (inj kItemSort (mkElemVar xConfigElemVarIdSort)) dotk)
@@ -109,13 +111,27 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct constructor-like terms" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.topOf kSort
             original =
-                mkEquals_
+                mkEquals
+                    kSort
                     (Test.Bool.asInternal False)
                     ( keqBool
                         (kseq (inj kItemSort dvX) dotk)
                         (kseq (inj kItemSort dvT) dotk)
+                    )
+        actual <- evaluate original
+        assertEqual' "" expect actual
+    , testCaseWithoutSMT "kseq(x, dotk) and kseq(x, dotk)" $ do
+        let expect = OrPattern.fromTermLike $ Test.Bool.asInternal True
+            xConfigElemVarKItemSort =
+                configElementVariableFromId "x" kItemSort
+            original =
+                mkAnd
+                    (Test.Bool.asInternal True)
+                    ( keqBool
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
                     )
         actual <- evaluate original
         assertEqual' "" expect actual

@@ -47,7 +47,6 @@ import Kore.Simplify.Equals (
     makeEvaluateTermsToPredicate,
     simplify,
  )
-import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
@@ -302,12 +301,12 @@ test_equalsSimplification_Pattern =
         actual <-
             evaluate
                 Conditional
-                    { term = mkTop_
+                    { term = mkTop testSort
                     , predicate = makeEqualsPredicate fOfA fOfB
                     , substitution = mempty
                     }
                 Conditional
-                    { term = mkTop_
+                    { term = mkTop testSort
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = mempty
                     }
@@ -376,8 +375,8 @@ test_equalsSimplification_TermLike =
         "bottom == bottom"
         ( assertTermEquals
             Condition.topCondition
-            mkBottom_
-            mkBottom_
+            (mkBottom testSort)
+            (mkBottom testSort)
         )
     , testCase
         "domain-value == domain-value"
@@ -431,7 +430,7 @@ test_equalsSimplification_TermLike =
         "a != bottom"
         ( assertTermEquals
             Condition.bottomCondition
-            mkBottom_
+            (mkBottom testSort)
             Mock.a
         )
     , testCase
@@ -914,15 +913,18 @@ assertBidirectionalEqualityResult
             actualEvaluateEquals <- evaluateOr orderedEquality
             let assertEqual' name expect actual =
                     let message =
-                            unlines
-                                [ firstName ++ " vs " ++ secondName ++ ":"
-                                , "Expected " <> name
-                                , unparseToString
-                                    (OrPattern.toTermLike <$> orderedEquality)
-                                , "would simplify to:"
-                                , unlines (show . Pretty.pretty <$> toList expect)
-                                , "but instead found:"
-                                , unlines (show . Pretty.pretty <$> toList actual)
+                            (show . Pretty.vsep)
+                                [ Pretty.hsep
+                                    [ Pretty.pretty firstName
+                                    , "vs"
+                                    , Pretty.pretty secondName <> Pretty.colon
+                                    ]
+                                , "Expected" Pretty.<+> name
+                                , (Pretty.indent 4) (Pretty.pretty orderedEquality)
+                                , "would simplify to"
+                                , (Pretty.indent 4) (Pretty.pretty expect)
+                                , "but instead found"
+                                , (Pretty.indent 4) (Pretty.pretty actual)
                                 ]
                      in assertEqual message expect actual
             assertEqual'
@@ -976,8 +978,8 @@ assertTermEqualsMultiGeneric expect first second = do
   where
     termToPattern ::
         TermLike RewritingVariableName -> Pattern RewritingVariableName
-    termToPattern (Bottom_ _) =
-        Conditional.bottom
+    termToPattern (Bottom_ sort) =
+        Conditional.bottomOf sort
     termToPattern term =
         Conditional
             { term = term

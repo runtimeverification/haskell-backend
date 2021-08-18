@@ -334,12 +334,13 @@ simplify sideCondition = \termLike ->
               , resultPredicate == condition =
                 return $
                     OrPattern.fromPattern $
-                        Pattern.fromCondition_ $
+                        Pattern.fromCondition resultSort $
                             Condition.markPredicateSimplifiedConditional
                                 sideConditionRepresentation
                                 resultPredicate
             | otherwise = continuation
           where
+            resultSort = Pattern.patternSort result
             (resultTerm, resultPredicate) = Pattern.splitTerm result
             resultSubstitutionIsEmpty =
                 case resultPredicate of
@@ -360,6 +361,7 @@ simplify sideCondition = \termLike ->
             refreshSetBinder = TermLike.refreshSetBinder avoiding
             ~sort = termLikeSort termLike
             (_ :< termLikeF) = Recursive.project termLike
+            termSort = termLikeSort termLike
          in case termLikeF of
                 -- Unimplemented cases
                 ApplyAliasF _ -> doNotSimplify
@@ -371,7 +373,7 @@ simplify sideCondition = \termLike ->
                 --
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
-                    And.simplify Not.notSimplifier sideCondition
+                    (And.simplify termSort Not.notSimplifier sideCondition)
                         =<< MultiAnd.traverse
                             (simplifyTermLike sideCondition)
                             conjuncts
@@ -574,7 +576,8 @@ simplifyOnly sideCondition =
                 -- Matching Logic:
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
-                    And.simplify Not.notSimplifier sideCondition
+                    -- MultiAnd doesn't preserve the sort so we need to send it as an external argument
+                    And.simplify sort Not.notSimplifier sideCondition
                         =<< MultiAnd.traverse worker conjuncts
                 OrF orF ->
                     Or.simplify <$> traverse worker orF

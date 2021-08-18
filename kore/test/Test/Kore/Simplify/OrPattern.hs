@@ -12,7 +12,7 @@ import Kore.Internal.OrPattern (
 import qualified Kore.Internal.OrPattern as OrPattern (
     bottom,
     fromPatterns,
-    top,
+    topOf,
  )
 import Kore.Internal.Predicate (
     Predicate,
@@ -38,8 +38,8 @@ import Test.Tasty.HUnit.Ext
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
     [ testCase "Identity for top" $ do
-        actual <- runSimplifyPredicates makeTruePredicate OrPattern.top
-        assertEqual "" OrPattern.top actual
+        actual <- runSimplifyPredicates makeTruePredicate (OrPattern.topOf Mock.topSort)
+        assertEqual "" (OrPattern.topOf Mock.topSort) actual
     , testCase "Identity for bottom" $ do
         actual <- runSimplifyPredicates makeTruePredicate OrPattern.bottom
         assertEqual "" OrPattern.bottom actual

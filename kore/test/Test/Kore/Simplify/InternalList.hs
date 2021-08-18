@@ -67,7 +67,7 @@ test_simplify =
     ceilb =
         makeCeilPredicate (Mock.f Mock.b)
             & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottom]
+    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.listSort]
     becomes ::
         HasCallStack =>
         TestName ->
@@ -91,5 +91,7 @@ mkList children =
         , internalListChild = Seq.fromList children
         }
 
-evaluate :: InternalList (OrPattern RewritingVariableName) -> OrPattern RewritingVariableName
+evaluate ::
+    InternalList (OrPattern RewritingVariableName) ->
+    OrPattern RewritingVariableName
 evaluate = simplify

@@ -101,7 +101,7 @@ asPartialPattern ::
     Maybe Integer ->
     Pattern variable
 asPartialPattern resultSort =
-    maybe Pattern.bottom (asPattern resultSort)
+    maybe (Pattern.bottomOf resultSort) (asPattern resultSort)
 
 randKey :: IsString s => s
 randKey = "INT.rand"

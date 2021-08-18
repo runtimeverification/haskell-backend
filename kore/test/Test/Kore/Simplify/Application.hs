@@ -89,7 +89,7 @@ test_applicationSimplification =
         assertEqual "" expect actual
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = OrPattern.fromPatterns [Pattern.bottom]
+        let expect = OrPattern.fromPatterns [Pattern.bottomOf Mock.testSort]
         actual <-
             evaluate
                 Map.empty
@@ -112,7 +112,7 @@ test_applicationSimplification =
                 ( makeApplication
                     Mock.sigmaSymbol
                     [ [aExpanded]
-                    , [Pattern.top]
+                    , [Pattern.topOf Mock.testSort]
                     ]
                 )
         assertEqual "" expect actual

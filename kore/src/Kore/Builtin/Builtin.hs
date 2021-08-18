@@ -96,9 +96,6 @@ import Kore.Simplify.Simplify (
 import qualified Kore.Simplify.Simplify as AttemptedAxiomResults (
     AttemptedAxiomResults (..),
  )
-import Kore.Sort (
-    predicateSort,
- )
 import Kore.Unparser
 import Prelude.Kore
 
@@ -448,19 +445,15 @@ isSymbol builtinName Symbol{symbolAttributes = Attribute.Symbol{hook}} =
 
 {- | Is the given sort hooked to the named builtin?
 
-Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
-Returns Just False if the sort is a variable.
+Returns Nothing if the sort is a variable.
 -}
 isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
-    | isPredicateSort = Nothing
     | SortVariableSort _ <- sort = Nothing
     | otherwise =
         let MetadataTools{sortAttributes} = tools
             Attribute.Sort{hook} = sortAttributes sort
          in Just (getHook hook == Just builtinName)
-  where
-    isPredicateSort = sort == predicateSort
 
 -- | Run a function evaluator that can terminate early.
 getAttemptedAxiom ::

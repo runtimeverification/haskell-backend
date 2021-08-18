@@ -226,7 +226,7 @@ test_hasSimplifiedChildren =
                             (setSimplifiedPred simplified mockPredicate2)
                         )
                 patt =
-                    Pattern.fromCondition_
+                    Pattern.fromCondition Mock.testSort
                         . Condition.fromPredicate
                         $ predicate
             assertEqual
@@ -247,7 +247,7 @@ test_hasSimplifiedChildren =
                         (setSimplifiedPred simplified mockPredicate2)
                     )
             patt =
-                Pattern.fromCondition_
+                Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
                     $ predicate
         assertEqual
@@ -285,7 +285,7 @@ test_hasSimplifiedChildren =
                     (setSimplifiedPred simplified mockPredicate1)
                     (setSimplifiedPred simplified mockPredicate2)
             patt =
-                Pattern.fromCondition_
+                Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
                     $ predicate
         assertEqual
@@ -309,17 +309,17 @@ test_hasSimplifiedChildren =
                     ( Predicate.makeFloorPredicate
                         ( Mock.functional20
                             (mkNu Mock.setX Mock.c)
-                            (Mock.functionalConstr10 mkTop_)
+                            (Mock.functionalConstr10 (mkTop Mock.testSort))
                         )
                         & Predicate.setSimplified fullySimplified
                     )
                     ( Predicate.makeCeilPredicate
-                        (Mock.tdivInt mkTop_ mkTop_)
+                        (Mock.tdivInt (mkTop Mock.intSort) (mkTop Mock.intSort))
                         & Predicate.setSimplified fullySimplified
                     )
                     & Predicate.setSimplified partiallySimplified
             patt =
-                Pattern.fromCondition_
+                Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
                     $ predicate
         assertEqual

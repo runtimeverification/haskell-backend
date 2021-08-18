@@ -64,6 +64,7 @@ import Kore.Internal.TermLike (
     Modality,
     SomeVariable,
     SomeVariableName (..),
+    Sort,
     TermLike,
     Variable (..),
     VariableName,
@@ -126,7 +127,7 @@ instance Pretty (Implication modality) where
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
-            , Pretty.indent 4 (unparse $ OrPattern.toTermLike right)
+            , Pretty.indent 4 (pretty right)
             ]
       where
         Implication
@@ -142,6 +143,11 @@ instance TopBottom (Implication modality) where
 instance From (Implication modality) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
+getImplicationSort ::
+    Implication modality ->
+    Sort
+getImplicationSort (Implication left _ _ _ _) = Pattern.patternSort left
+
 freeVariablesRight ::
     Implication modality ->
     FreeVariables RewritingVariableName
@@ -149,9 +155,10 @@ freeVariablesRight implication'@(Implication _ _ _ _ _) =
     freeVariables
         ( TermLike.mkExistsN
             existentials
-            (OrPattern.toTermLike right)
+            (OrPattern.toTermLike sort right)
         )
   where
+    sort = getImplicationSort implication'
     Implication{right, existentials} = implication'
 
 freeVariablesLeft ::
@@ -229,14 +236,14 @@ implicationToTerm representation@(Implication _ _ _ _ _) =
     leftTerm =
         Pattern.term left
             & getRewritingTerm
-    sort = TermLike.termLikeSort leftTerm
+    sort = getImplicationSort representation
     leftCondition =
         Pattern.withoutTerm left
             & Condition.toPredicate
             & Predicate.fromPredicate sort
             & getRewritingTerm
     rightPattern =
-        TermLike.mkExistsN existentials (OrPattern.toTermLike right)
+        TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
             & getRewritingTerm
 
 substituteRight ::
