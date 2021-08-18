@@ -1,4 +1,4 @@
-[org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(tests/proofs/loops-spec.k)")]
+[org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(wasm-semantics/tests/proofs/loops-spec.k)")]
 module LOOPS-SPEC
 
 // imports
@@ -26,4 +26,4 @@ import KWASM-LEMMAS []
       \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'wasm'-GT-'{}(Lbl'-LT-'instrs'-GT-'{}(Var'Unds'DotVar2:SortK{}),Var'Unds'2:SortValstackCell{},Lbl'-LT-'curFrame'-GT-'{}(Lbl'-LT-'locals'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("0")),inj{SortVal{}, SortKItem{}}(Lbl'-LT-Unds-GT-UndsUnds'WASM-DATA'Unds'Val'Unds'ValType'Unds'Number{}(inj{SortIValType{}, SortValType{}}(VarITYPE:SortIValType{}),inj{SortInt{}, SortNumber{}}(\dv{SortInt{}}("0"))))),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("1")),inj{SortVal{}, SortKItem{}}(Lbl'-LT-Unds-GT-UndsUnds'WASM-DATA'Unds'Val'Unds'ValType'Unds'Number{}(inj{SortIValType{}, SortValType{}}(VarITYPE:SortIValType{}),inj{SortInt{}, SortNumber{}}(Lbl'UndsSlsh'Int'Unds'{}(Lbl'UndsStar'Int'Unds'{}(VarN:SortInt{},Lbl'UndsPlus'Int'Unds'{}(VarN:SortInt{},\dv{SortInt{}}("1"))),\dv{SortInt{}}("2")))))))),Var'Unds'DotVar3:SortCurModIdxCell{}),Var'Unds'3:SortModuleRegistryCell{},Var'Unds'4:SortModuleIdsCell{},Var'Unds'5:SortModuleInstancesCell{},Var'Unds'6:SortNextModuleIdxCell{},Var'Unds'7:SortMainStoreCell{},Var'Unds'8:SortDeterministicMemoryGrowthCell{}),Var'Unds'DotVar0:SortGeneratedCounterCell{}))))
   [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(41,11,68,70)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(wasm-semantics/tests/proofs/loops-spec.k)"), org'Stop'kframework'Stop'definition'Stop'Production{}()]
 
-endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(3,1,70,9)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(tests/proofs/loops-spec.k)")]
+endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(3,1,70,9)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(wasm-semantics/tests/proofs/loops-spec.k)")]
