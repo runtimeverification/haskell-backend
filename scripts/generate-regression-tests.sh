@@ -51,6 +51,9 @@ generate-evm() {
 
     local testpop1=tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
     local testadd0=tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json
+    local testmul0=tests/ethereum-tests/VMTests/vmArithmeticTest/mul0.json
+    local testsha3_bigSize=tests/ethereum-tests/VMTests/vmSha3Test/sha3_bigSize.json
+    local testand0=tests/ethereum-tests/VMTests/vmBitwiseLogicOperation/and0.json
     local testsumTo10=tests/interactive/sumTo10.evm
 
     kollect-file test-pop1 "$testpop1.haskell-out" \
@@ -58,7 +61,16 @@ generate-evm() {
     
     kollect-file test-add0 "$testadd0.haskell-out" \
         make "$testadd0.run-interactive" -e
+
+    kollect-file test-mul0 "$testmul0.haskell-out" \
+        make "$testmul0.run-interactive" -e
+
+    kollect-file test-and0 "$testand0.haskell-out" \
+        make "$testand0.run-interactive" -e
     
+    kollect-file test-sha3_bigSize "$testsha3_bigSize.haskell-out" \
+        make "$testsha3_bigSize.run-interactive" -e
+
     kollect-file test-sumTo10 $testsumTo10.haskell-out \
         make "$testsumTo10.run-interactive" -e
 
@@ -72,7 +84,16 @@ generate-evm() {
 
     kollect test-sum-to-n \
         make tests/specs/examples/sum-to-n-spec.k.prove -s -e
+
+    kollect test-lemmas \
+        make tests/specs/functional/lemmas-spec.k.prove -s -e
     
+    kollect test-storagevar03 \
+        make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
+
+    kollect test-totalSupply \
+        make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
+
     $KORE/scripts/trim-source-paths.sh *.kore
 }
 
