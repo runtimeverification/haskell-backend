@@ -51,6 +51,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
  )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -60,7 +61,6 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
@@ -265,8 +265,8 @@ evaluatePredicate predicate =
     runSimplifier testEnv $
         Pattern.simplify
             ( Pattern.fromCondition kSort
-            . Condition.fromPredicate
-            $ predicate
+                . Condition.fromPredicate
+                $ predicate
             )
 
 evaluateTermT ::
