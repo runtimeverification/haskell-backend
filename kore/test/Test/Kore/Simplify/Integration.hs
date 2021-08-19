@@ -583,7 +583,7 @@ test_simplificationIntegration =
                                     (mkTop Mock.testSort1)
                                     (mkNu g (mkOr Mock.aSort1 (mkSetVar g)))
                                 )
-                                (mkTop Mock.listSort)
+                                (mkTop Mock.testSort1)
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
