@@ -84,7 +84,7 @@ test_KEqual =
         actual <- evaluateTerm original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.topOf kSort
             xConfigElemVarKItemSort =
                 configElementVariableFromId "x" kItemSort
             original =
@@ -97,7 +97,7 @@ test_KEqual =
         actual <- evaluatePredicate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.topOf kSort
             xConfigElemVarIdSort =
                 configElementVariableFromId "x" idSort
             original =
@@ -110,7 +110,7 @@ test_KEqual =
         actual <- evaluatePredicate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct constructor-like terms" $ do
-        let expect = OrPattern.top
+        let expect = OrPattern.topOf kSort
             original =
                 fromEquals_
                     (Test.Bool.asInternal False)
@@ -119,6 +119,19 @@ test_KEqual =
                         (kseq (inj kItemSort dvT) dotk)
                     )
         actual <- evaluatePredicate original
+        assertEqual' "" expect actual
+    , testCaseWithoutSMT "kseq(x, dotk) and kseq(x, dotk)" $ do
+        let expect = OrPattern.fromTermLike $ Test.Bool.asInternal True
+            xConfigElemVarKItemSort =
+                configElementVariableFromId "x" kItemSort
+            original =
+                mkAnd
+                    (Test.Bool.asInternal True)
+                    ( keqBool
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                    )
+        actual <- evaluateTerm original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "distinct domain values" $ do
         let expect = OrPattern.fromTermLike $ Test.Bool.asInternal False

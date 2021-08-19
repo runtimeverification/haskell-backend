@@ -444,6 +444,9 @@ constr11Symbol = symbol constr11Id [testSort] testSort & constructor
 constr20Symbol :: Symbol
 constr20Symbol = symbol constr20Id [testSort, testSort] testSort & constructor
 
+constrIntSymbol :: Symbol
+constrIntSymbol = symbol constr10Id [intSort] intSort & constructor
+
 constrFunct20TestMapSymbol :: Symbol
 constrFunct20TestMapSymbol =
     symbol constrFunct20TestMapId [testSort, mapSort] testSort
@@ -1183,13 +1186,15 @@ constr00 :: InternalVariable variable => HasCallStack => TermLike variable
 constr00 = Internal.mkApplySymbol constr00Symbol []
 
 constr10
-    , constr11 ::
+    , constr11
+    , constrInt ::
         InternalVariable variable =>
         HasCallStack =>
         TermLike variable ->
         TermLike variable
 constr10 arg = Internal.mkApplySymbol constr10Symbol [arg]
 constr11 arg = Internal.mkApplySymbol constr11Symbol [arg]
+constrInt arg = Internal.mkApplySymbol constrIntSymbol [arg]
 
 constr20 ::
     InternalVariable variable =>

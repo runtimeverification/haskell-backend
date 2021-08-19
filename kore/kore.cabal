@@ -331,6 +331,7 @@ library
     Kore.Log.DebugUnifyBottom
     Kore.Log.ErrorBottomTotalFunction
     Kore.Log.ErrorDecidePredicateUnknown
+    Kore.Log.ErrorEquationRightFunction
     Kore.Log.ErrorException
     Kore.Log.ErrorParse
     Kore.Log.ErrorRewriteLoop
@@ -596,6 +597,13 @@ executable kore-match-disjunction
   main-is: Main.hs
   hs-source-dirs: app/match-disjunction
   build-depends: transformers >= 0.5
+
+executable kore-check-functions
+  import: haskell
+  import: exe
+  import: global-main
+  main-is: Main.hs
+  hs-source-dirs: app/check-functions
 
 test-suite kore-test
   import: haskell

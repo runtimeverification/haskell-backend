@@ -83,9 +83,9 @@ test_getUnit =
                     [ mkApplySymbol unitListSymbol []
                     , Test.Int.asInternal k
                     ]
-            predicate = fromEquals_ mkBottom_ patGet
+            predicate = fromEquals_ (mkBottom listSort) patGet
         (===) OrPattern.bottom =<< evaluateTermT patGet
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_getFirstElement :: TestTree
 test_getFirstElement =
@@ -103,11 +103,11 @@ test_getFirstElement =
                 case values of
                     Seq.Empty -> Nothing
                     v Seq.:<| _ -> Just v
-            patFirst = maybe mkBottom_ Test.Int.asInternal value
+            patFirst = maybe (mkBottom intSort) Test.Int.asInternal value
             predicate = fromEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialPattern value
         (===) (MultiOr.singleton expectGet) =<< evaluateTermT patGet
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_getLastElement :: TestTree
 test_getLastElement =
@@ -126,11 +126,11 @@ test_getLastElement =
                 case values of
                     Seq.Empty -> Nothing
                     _ Seq.:|> v -> Just v
-            patFirst = maybe mkBottom_ Test.Int.asInternal value
+            patFirst = maybe (mkBottom intSort) Test.Int.asInternal value
             predicate = fromEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialPattern value
         (===) (MultiOr.singleton expectGet) =<< evaluateTermT patGet
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_GetUpdate :: TestTree
 test_GetUpdate =
@@ -153,12 +153,12 @@ test_GetUpdate =
                             patGet
                             value
                     expect = Pattern.fromTermLike value
-                (===) OrPattern.top =<< evaluatePredicateT predicate
+                (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
                 (===) (MultiOr.singleton expect) =<< evaluateTermT patGet
             else do
-                let predicate = fromEquals_ mkBottom_ patUpdated
+                let predicate = fromEquals_ (mkBottom listSort) patUpdated
                 (===) OrPattern.bottom =<< evaluateTermT patUpdated
-                (===) OrPattern.top =<< evaluatePredicateT predicate
+                (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_inUnit :: TestTree
 test_inUnit =
@@ -173,7 +173,7 @@ test_inUnit =
             patFalse = Test.Bool.asInternal False
             predicate = fromEquals_ patFalse patIn
         (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patIn
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_inElement :: TestTree
 test_inElement =
@@ -189,7 +189,7 @@ test_inElement =
             patTrue = Test.Bool.asInternal True
             predicate = fromEquals_ patIn patTrue
         (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patIn
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_inConcat :: TestTree
 test_inConcat =
@@ -208,7 +208,7 @@ test_inConcat =
             patTrue = Test.Bool.asInternal True
             predicate = fromEquals_ patIn patTrue
         (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patIn
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =
@@ -227,8 +227,8 @@ test_concatUnit =
         expectValues <- evaluateTermT patValues
         (===) expectValues =<< evaluateTermT patConcat1
         (===) expectValues =<< evaluateTermT patConcat2
-        (===) OrPattern.top =<< evaluatePredicateT predicate1
-        (===) OrPattern.top =<< evaluatePredicateT predicate2
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate1
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate2
 
 test_concatUnitSymbolic :: TestTree
 test_concatUnitSymbolic =
@@ -247,8 +247,8 @@ test_concatUnitSymbolic =
         expectSymbolic <- evaluateTermT patSymbolic
         (===) expectSymbolic =<< evaluateTermT patConcat1
         (===) expectSymbolic =<< evaluateTermT patConcat2
-        (===) OrPattern.top =<< evaluatePredicateT predicate1
-        (===) OrPattern.top =<< evaluatePredicateT predicate2
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate1
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate2
 
 test_concatAssociates :: TestTree
 test_concatAssociates =
@@ -273,7 +273,7 @@ test_concatAssociates =
         evalConcat12_3 <- evaluateTermT patConcat12_3
         evalConcat1_23 <- evaluateTermT patConcat1_23
         (===) evalConcat12_3 evalConcat1_23
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
 
 test_concatSymbolic :: TestTree
 test_concatSymbolic =
@@ -389,7 +389,7 @@ test_simplify :: TestTree
 test_simplify =
     testPropertyWithSolver "simplify elements" $ do
         let x = mkElemVar (configElementVariableFromId (testId "x") intSort)
-            original = asInternal [mkAnd x mkTop_]
+            original = asInternal [mkAnd x (mkTop intSort)]
             expected = MultiOr.singleton $ asPattern [x]
         (===) expected =<< evaluateTermT original
 
@@ -416,14 +416,14 @@ test_size =
             zero = mkInt 0
             predicate = fromEquals_ zero original
         (===) (OrPattern.fromTermLike zero) =<< evaluateTermT original
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
     , testPropertyWithSolver "size(element(_)) = 1" $ do
         k <- forAll genInteger
         let original = sizeList (elementList $ mkInt k)
             one = mkInt 1
             predicate = fromEquals_ one original
         (===) (OrPattern.fromTermLike one) =<< evaluateTermT original
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
     , testPropertyWithSolver "size(a + b) = size(a) + size(b)" $ do
         as <- asInternal . fmap mkInt <$> forAll genSeqInteger
         bs <- asInternal . fmap mkInt <$> forAll genSeqInteger
@@ -433,7 +433,7 @@ test_size =
         expect1 <- evaluateTermT sizeConcat
         expect2 <- evaluateTermT addSize
         (===) expect1 expect2
-        (===) OrPattern.top =<< evaluatePredicateT predicate
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
     ]
 
 test_make :: [TestTree]

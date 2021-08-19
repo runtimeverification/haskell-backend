@@ -60,5 +60,5 @@ instance Synthetic (FreeVariables variable) (Ceil sort) where
 instance Synthetic Sort (Ceil Sort) where
     synthetic Ceil{ceilOperandSort, ceilResultSort, ceilChild} =
         ceilResultSort
-            & seq (matchSort ceilOperandSort ceilChild)
+            & seq (sameSort ceilOperandSort ceilChild)
     {-# INLINE synthetic #-}

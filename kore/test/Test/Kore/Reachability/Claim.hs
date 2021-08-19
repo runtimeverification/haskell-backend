@@ -229,7 +229,7 @@ test_checkImplication =
         actual <- checkImplication goal
         assertEqual "" [NotImpliedStuck goal] actual
     , testCase "Implied if both sides are \\bottom" $ do
-        let config = Pattern.bottom
+        let config = Pattern.bottomOf Mock.topSort
             dest = OrPattern.bottom
             goal = mkGoal config dest []
         actual <- checkImplication goal
@@ -243,19 +243,19 @@ test_simplifyRightHandSide =
                 Pattern.fromTermAndPredicate
                     Mock.b
                     ( makeEqualsPredicate
-                        TermLike.mkTop_
+                        (TermLike.mkTop Mock.boolSort)
                         (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
                     )
             claim =
                 mkGoal
-                    Pattern.top
+                    (Pattern.topOf Mock.testSort)
                     ( [Pattern.fromTermLike Mock.a, unsatisfiableBranch]
                         & OrPattern.fromPatterns
                     )
                     []
             expected =
                 mkGoal
-                    Pattern.top
+                    (Pattern.topOf Mock.testSort)
                     (Mock.a & OrPattern.fromTermLike)
                     []
         actual <-

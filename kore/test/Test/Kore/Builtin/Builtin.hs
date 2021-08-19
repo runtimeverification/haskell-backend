@@ -13,6 +13,7 @@ module Test.Kore.Builtin.Builtin (
     evaluateTermT,
     evaluatePredicate,
     evaluatePredicateT,
+    evaluateExpectTopK,
     evaluateToList,
     indexedModule,
     verifiedModule,
@@ -54,10 +55,12 @@ import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
@@ -260,7 +263,11 @@ evaluatePredicate ::
     smt (OrPattern RewritingVariableName)
 evaluatePredicate predicate =
     runSimplifier testEnv $
-        Pattern.simplify (Pattern.fromTermAndPredicate mkTop_ predicate)
+        Pattern.simplify
+            ( Pattern.fromCondition kSort
+            . Condition.fromPredicate
+            $ predicate
+            )
 
 evaluateTermT ::
     MonadTrans t =>
@@ -275,6 +282,15 @@ evaluatePredicateT ::
     Predicate RewritingVariableName ->
     t smt (OrPattern RewritingVariableName)
 evaluatePredicateT = lift . evaluatePredicate
+
+evaluateExpectTopK ::
+    HasCallStack =>
+    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
+    TermLike RewritingVariableName ->
+    Hedgehog.PropertyT smt ()
+evaluateExpectTopK termLike = do
+    actual <- evaluateTermT termLike
+    OrPattern.topOf kSort Hedgehog.=== actual
 
 evaluateToList ::
     TermLike RewritingVariableName ->

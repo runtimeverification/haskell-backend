@@ -229,7 +229,7 @@ test_getUnit =
                 patFalse = Test.Bool.asInternal False
                 predicate = fromEquals_ patFalse patIn
             (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patIn
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_inElement :: TestTree
@@ -243,7 +243,7 @@ test_inElement =
                 patTrue = Test.Bool.asInternal True
                 predicate = fromEquals_ patIn patTrue
             (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patIn
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_inUnitSymbolic :: TestTree
@@ -261,7 +261,7 @@ test_inUnitSymbolic =
                 patFalse = Test.Bool.asInternal False
                 predicate = fromEquals_ patFalse patIn
             (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patIn
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_inElementSymbolic :: TestTree
@@ -273,7 +273,7 @@ test_inElementSymbolic =
             let patElement = mkApplySymbol elementSetSymbolTestSort [patKey]
                 patIn = mkApplySymbol inSetSymbolTestSort [patKey, patElement]
                 patTrue = Test.Bool.asInternal True
-                conditionTerm = mkAnd patTrue (mkCeil_ patElement)
+                conditionTerm = mkAnd patTrue (mkCeil boolSort patElement)
             actual <- evaluateTermT patIn
             expected <- evaluateTermT conditionTerm
             actual === expected
@@ -321,7 +321,7 @@ test_inConcat =
                 patTrue = Test.Bool.asInternal True
                 predicate = fromEquals_ patTrue patIn
             (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patIn
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_concatUnit :: TestTree
@@ -340,8 +340,8 @@ test_concatUnit =
             expect <- evaluateTermT patValues
             (===) expect =<< evaluateTermT patConcat1
             (===) expect =<< evaluateTermT patConcat2
-            (===) OrPattern.top =<< evaluatePredicateT predicate1
-            (===) OrPattern.top =<< evaluatePredicateT predicate2
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate1
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate2
         )
 
 test_concatAssociates :: TestTree
@@ -368,7 +368,7 @@ test_concatAssociates =
             concat12_3 <- evaluateTermT patConcat12_3
             concat1_23 <- evaluateTermT patConcat1_23
             (===) concat12_3 concat1_23
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_concatNormalizes :: TestTree
@@ -428,7 +428,7 @@ test_concatNormalizes =
             evalConcat <- evaluateTermT patConcat
             evalNormalized <- evaluateTermT patNormalized
             (===) evalConcat evalNormalized
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_difference :: TestTree
@@ -447,7 +447,7 @@ test_difference =
                 predicate = fromEquals_ patSet3 patDifference
             expect <- evaluateTermT patSet3
             (===) expect =<< evaluateTermT patDifference
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_difference_symbolic :: [TestTree]
@@ -537,7 +537,7 @@ test_toList =
                 predicate = fromEquals_ expectedList actualList
             expect <- evaluateTermT expectedList
             (===) expect =<< evaluateTermT actualList
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
   where
     implToList =
@@ -561,7 +561,7 @@ test_size =
                 predicate = fromEquals_ patExpected patActual
             expect <- evaluateTermT patExpected
             (===) expect =<< evaluateTermT patActual
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_intersection_unit :: TestTree
@@ -571,7 +571,7 @@ test_intersection_unit =
         let original = intersectionSet as unitSet
             expect = OrPattern.fromTermLike $ asInternal HashSet.empty
         (===) expect =<< evaluateTermT original
-        (===) OrPattern.top =<< evaluatePredicateT (fromEquals_ original unitSet)
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT (fromEquals_ original unitSet)
 
 test_intersection_idem :: TestTree
 test_intersection_idem =
@@ -581,7 +581,7 @@ test_intersection_idem =
             original = intersectionSet termLike termLike
             expect = OrPattern.fromTermLike $ asInternal as
         (===) expect =<< evaluateTermT original
-        (===) OrPattern.top =<< evaluatePredicateT (fromEquals_ original termLike)
+        (===) (OrPattern.topOf kSort) =<< evaluatePredicateT (fromEquals_ original termLike)
 
 test_list2set :: TestTree
 test_list2set =
@@ -596,7 +596,7 @@ test_list2set =
             original = list2setSet input
             expect = OrPattern.fromTermLike $ asInternal set
         (===) expect =<< evaluateTermT original
-        (===) OrPattern.top
+        (===) (OrPattern.topOf kSort)
             =<< evaluatePredicateT (fromEquals_ original termLike)
 
 test_inclusion :: [TestTree]
@@ -615,7 +615,7 @@ test_inclusion =
                         (fromNot (fromEquals_ patKey1 patKey2))
                         (fromEquals_ (Test.Bool.asInternal True) patInclusion)
             (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patInclusion
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion success: empty set <= any set"
@@ -624,7 +624,7 @@ test_inclusion =
             let patInclusion = inclusionSet unitSet patSomeSet
                 predicate = fromEquals_ (Test.Bool.asInternal True) patInclusion
             (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patInclusion
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: not (some nonempty set <= empty set)"
@@ -634,7 +634,7 @@ test_inclusion =
                 patInclusion = inclusionSet patSomeSet unitSet
                 predicate = fromEquals_ (Test.Bool.asInternal False) patInclusion
             (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patInclusion
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
     , testPropertyWithSolver
         "SET.inclusion failure: lhs key not included in rhs set"
@@ -650,7 +650,7 @@ test_inclusion =
                         (fromNot (fromEquals_ patKey1 patKey2))
                         (fromEquals_ (Test.Bool.asInternal False) patInclusion)
             (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patInclusion
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
     ]
 
@@ -708,7 +708,7 @@ test_unifyConcreteIdem =
                 predicate = fromEquals_ patSet patAnd
             expect <- evaluateTermT patSet
             (===) expect =<< evaluateTermT patAnd
-            (===) OrPattern.top =<< evaluatePredicateT predicate
+            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 test_unifyConcreteDistinct :: TestTree

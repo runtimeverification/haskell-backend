@@ -89,9 +89,9 @@ makeEvaluateIn sideCondition first second
     | Pattern.isTop second = Ceil.makeEvaluate sideCondition first
     | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
     | otherwise =
-        And.makeEvaluate
-            Not.notSimplifier
-            sideCondition
+        (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
             (MultiAnd.make [first, second])
             & OrPattern.observeAllT
             >>= Ceil.simplifyEvaluated sideCondition
+  where
+    pattSort = patternSort first

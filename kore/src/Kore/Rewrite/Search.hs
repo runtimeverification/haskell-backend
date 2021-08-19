@@ -131,9 +131,9 @@ matchWith ::
     MaybeT m (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
     unifiers <-
-        lift $
-            Unifier.runUnifierT Not.notSimplifier $
-                unificationProcedure sideCondition t1 t2
+        unificationProcedure sideCondition t1 t2
+            & Unifier.runUnifierT Not.notSimplifier
+            & lift
     let mergeAndEvaluate ::
             Condition RewritingVariableName ->
             m (OrCondition RewritingVariableName)

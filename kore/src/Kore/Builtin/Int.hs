@@ -126,6 +126,7 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
+    applicationSortsResult,
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
@@ -524,10 +525,13 @@ unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
             MultiOr.map eraseTerm solution
                 & if internalBoolValue internalBool
                     then pure
-                    else notSimplifier SideCondition.top
+                    else mkNotSimplified
         scattered <- Unify.scatter solution'
         return scattered{term = mkInternalBool internalBool}
   where
     UnifyIntEq{eqTerm, internalBool} = unifyData
-    EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    EqTerm{symbol, operand1, operand2} = eqTerm
+    eqSort = applicationSortsResult . symbolSorts $ symbol
+    eraseTerm conditional = conditional $> (mkTop eqSort)
+    mkNotSimplified notChild =
+        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
