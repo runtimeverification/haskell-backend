@@ -29,6 +29,7 @@ module SMC
   imports BOOL
   imports INT
   imports MAP
+  imports SET
 
   syntax KItem ::= "+" | "-" | "/" | "<=" | "!" | "&&" BExp | Id "=" | choice(Block, Block) | "STUCK"
 

@@ -1,5 +1,8 @@
 module ORD
-  imports STRING
+    imports STRING
+    imports INT
+    imports BOOL
+
     syntax String ::= rlpEncodeString ( String )           [function]
     syntax String ::= rlpEncodeLength ( String , Int )     [function]
 

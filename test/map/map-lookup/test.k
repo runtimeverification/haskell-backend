@@ -1,6 +1,7 @@
 module TEST
 
   imports INT
+  imports BOOL
   imports MAP
 
   syntax Int ::= #lookup ( Map , Int ) [function]
