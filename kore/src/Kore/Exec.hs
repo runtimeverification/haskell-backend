@@ -610,16 +610,30 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
 
-{- | Ensure that for every equation in a function definition, the right-hand
- - side of the equation is a function pattern. 'checkFunctions' first extracts
- - equations from a verified module to a list of equations. Then it checks that
- - each equation in the list is a function pattern. 'filter' the equations that
- - fail the check, and pass the list to 'checkResults'. If there were no bad
- - equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
- - logs an error message for each bad equation before returning
+{- | 'checkFunctions' verifies two properties:
+ - 1. Ensure that for every equation in a function definition, the right-hand
+ - side of the equation is a function pattern.
+ - 2. For every pair of equations in a function definition, the equations
+ - cannot match the same term.
+ -
+ - To check the first property, 'checkFunctions' starts by extracting equations
+ - from a verified module to a list of equations. Then it 'filter's the
+ - equations with the Haskell predicate that the right-hand side is NOT a
+ - function pattern. It passes the list to 'checkResults' and if the list is
+ - empty, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults' logs
+ - an error message for each equation that failed the first check before returning
  - @'ExitFailure' 3@.
- - See 'checkEquation',
- - 'Kore.Equation.Registry.extractEquations',
+ -
+ - To check the second property, instantiate the pair of equations E1 and E2 at
+ - the same term e.g. @fun({X})@ and evaluate
+ - @Pre1({Y}) /\ Args1({X}, {Y}) /\ Prio1({X}) /\ Pre2({Y}) /\ Args2({X}, {Y}) /\ Prio2({X})@
+ - If this predicate is unsatisfiable, then the equations can never match the
+ - same term. Equations are grouped according to the symbol at the top.
+ - Let @[E1, E2, ..., En]@ be one of those groups. 'checkFunctions' generates
+ - all unordered pairs @(Ei, Ej)@ and evaluates the predicate above. For every
+ - group of equations, check that all of the results are @\\bottom@.
+ -
+ - See 'Kore.Equation.Registry.extractEquations',
  - 'Kore.Internal.TermLike.isFunctionPattern',
  - and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 -}
