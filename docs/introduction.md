@@ -11,9 +11,9 @@ and converts the external representations into internal representations.
 
 References:
 
-- `Kore.Syntax.Pattern`
-- `Kore.Syntax.Definition`
-- `Kore.Validate.DefinitionVerifier`
+- [`Kore.Syntax.Pattern`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Syntax/Pattern.hs)
+- [`Kore.Syntax.Definition`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Syntax/Definition.hs)
+- [`Kore.Validate.DefinitionVerifier`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Validate/DefinitionVerifier.hs)
 
 ### `TermLike`
 
@@ -25,7 +25,7 @@ The name `TermLike` alludes to the fact that these are _usually_ matching logic 
 
 References:
 
-- `Kore.Internal.TermLike`
+- [`Kore.Internal.TermLike`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/TermLike.hs)
 
 #### `Cofree` and `Synthetic`
 
@@ -37,9 +37,9 @@ The `Synthetic` typeclass ensures that the annotations are always kept updated, 
 
 References:
 
-- `Kore.Attribute.Synthetic`
-- `Kore.Attribute.Pattern`
-- `Control.Comonad.Trans.Cofree`
+- [`Kore.Attribute.Synthetic`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Attribute/Synthetic.hs)
+- [`Kore.Attribute.Pattern`](https://github.com/kframework/kore/tree/master/kore/src/Kore/Attribute/Pattern)
+- [`Control.Comonad.Trans.Cofree`](https://hackage.haskell.org/package/free)
 
 #### `Builtin`
 
@@ -59,7 +59,7 @@ both for performance and to facilitate unification and matching.
 
 References:
 
-- `Kore.Domain.Builtin`
+- [`Kore.Builtin`](https://github.com/kframework/kore/tree/master/kore/src/Kore/Builtin)
 
 ### `Condition`
 
@@ -68,7 +68,7 @@ made up of a `Predicate` and a `Substitution`.
 
 References:
 
-- `Kore.Internal.Condition`
+- [`Kore.Internal.Condition`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/Condition.hs)
 
 #### `Predicate`
 
@@ -78,7 +78,7 @@ essentially the subset of `TermLike` that can be built from `Ceil` and connectiv
 
 References:
 
-- `Kore.Internal.Predicate`
+- [`Kore.Internal.Predicate`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/Predicate.hs)
 
 #### `Substitution`
 
@@ -89,7 +89,7 @@ that is, a `Substitution` is the type of `Predicate` which can be applied as a s
 
 References:
 
-- `Kore.Internal.Substitution`
+- [`Kore.Internal.Substitution`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/Substitution.hs)
 
 ### `Pattern`
 
@@ -100,7 +100,7 @@ so `Pattern` is somewhat more common than `TermLike` alone.
 
 References:
 
-- `Kore.Internal.Pattern`
+- [`Kore.Internal.Pattern`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/Pattern.hs)
 
 ### `Conditional`
 
@@ -109,7 +109,7 @@ an arbitrary type with `Condition`s.
 
 References:
 
-- `Kore.Internal.Conditional`
+- [`Kore.Internal.Conditional`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/Conditional.hs)
 
 ### `OrPattern`
 
@@ -118,7 +118,7 @@ This is the usual output of simplification.
 
 References:
 
-- `Kore.Internal.OrPattern`
+- [`Kore.Internal.OrPattern`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Internal/OrPattern.hs)
 
 
 ## Behavior
@@ -155,10 +155,10 @@ The substitution normalization step is discussed below.
 
 References:
 
-- `Kore.Simplify.AndTerms`
-- `Kore.Builtin.List`
-- `Kore.Builtin.Map`
-- `Kore.Builtin.Set`
+- [`Kore.Simplify.AndTerms`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Simplify/AndTerms.hs)
+- [`Kore.Builtin.List`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Builtin/List.hs)
+- [`Kore.Builtin.Map`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Builtin/Map.hs)
+- [`Kore.Builtin.Set`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Builtin/Set.hs)
 
 ### Substitution normalization
 
@@ -198,8 +198,8 @@ it is entirely reasonable to generate conditions such as `x = x + y` in this con
 
 References:
 
-- `Kore.Unification.SubstitutionNormalization`
-- `Kore.Simplify.SubstitutionSimplifier`
+- [`Kore.Unification.SubstitutionNormalization`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Unification/SubstitutionNormalization.hs)
+- [`Kore.Simplify.SubstitutionSimplifier`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Simplify/SubstitutionSimplifier.hs)
 
 ### Matching
 
@@ -208,7 +208,7 @@ Matching is implemented sequentially, so there is no separate substitution norma
 
 References:
 
-- `Kore.Rewrite.Axiom.Matcher`
+- [`Kore.Rewrite.Axiom.Matcher`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Rewrite/Axiom/Matcher.hs)
 
 ### Semantic rules
 
@@ -226,7 +226,7 @@ The procedures to apply one-path and all-path reachability claims is described i
 
 References:
 
-- `Kore.Rewrite.Step`
+- [`Kore.Rewrite.Step`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Rewrite/Step.hs)
 
 ### Function rules
 
@@ -238,8 +238,8 @@ this point is planned to change.
 
 References:
 
-- `Kore.Rewrite.Function.Evaluator`
-- `Kore.Rewrite.Axiom.EvaluationStrategy`
+- [`Kore.Rewrite.Function.Evaluator`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Rewrite/Function/Evaluator.hs)
+- [`Kore.Rewrite.Axiom.EvaluationStrategy`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Rewrite/Axiom/EvaluationStrategy.hs)
 
 ### Simplification
 
@@ -252,8 +252,8 @@ requiring substitution normalization at the top.
 
 References:
 
-- `Kore.Simplify.TermLike`
-- `Kore.Simplify.Condition`
+- [`Kore.Simplify.TermLike`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Simplify/TermLike.hs)
+- [`Kore.Simplify.Condition`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Simplify/Condition.hs)
 
 ### Refuting predicates
 
@@ -278,5 +278,5 @@ avoiding the overhead of restarting the solver for each query.
 
 References:
 
-- `Kore.Rewrite.SMT.Translate`
-- `Kore.Rewrite.SMT.Evaluator`
+- [`Kore.Rewrite.SMT.Translate`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Rewrite/SMT/Translate.hs)
+- [`Kore.Rewrite.SMT.Evaluator`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Rewrite/SMT/Evaluator.hs)
