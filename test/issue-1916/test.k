@@ -1,5 +1,6 @@
 module TEST-SYNTAX
   imports INT
+  imports BOOL
   imports ML-SYNTAX
 
   syntax Pgm ::= "begin" | "end"
