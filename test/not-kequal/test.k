@@ -1,6 +1,7 @@
 module TEST
   imports BOOL
   imports INT
+  imports K-EQUAL
 
   syntax OpCode ::= "a" | "b" | "c" | "d" | "e" | "f" | "g"
 

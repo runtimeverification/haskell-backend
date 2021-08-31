@@ -1,5 +1,6 @@
 module TEST
 
+  imports INT
   imports BOOL
   imports MAP
 

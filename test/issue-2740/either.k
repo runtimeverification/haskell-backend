@@ -1,5 +1,6 @@
 module EITHER
   imports INT
+  imports BOOL
 
   syntax Either ::= Left() | Right()
   syntax Bool ::= P( Either , Int ) [function]
