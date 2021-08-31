@@ -10,8 +10,6 @@ module Kore.Simplify.Condition (
     simplifyPredicates,
 ) where
 
-import qualified Pretty
-
 import Changed
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
@@ -55,6 +53,7 @@ import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
 import Logic
 import Prelude.Kore
+import qualified Pretty
 
 -- | Create a 'ConditionSimplifier' using 'simplify'.
 create ::
@@ -90,14 +89,14 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         simplified <- do
             res <-
                 trace ("\nInput predicate:\n" <> show (Pretty.pretty predicate')) $
-                simplifyPredicate predicate' >>= Logic.scatter
+                    simplifyPredicate predicate' >>= Logic.scatter
             trace ("\nIntermediate result:\n" <> show (Pretty.pretty res)) $
                 simplifyPredicates sideCondition res
-            -- trace ("\nInput predicate:\n" <> show (Pretty.pretty predicate')) $
-            -- simplifyPredicates sideCondition (from predicate')
-            -- simplifyPredicate predicate'
-            --     >>= Logic.scatter
-            --     >>= simplifyPredicates sideCondition
+        -- trace ("\nInput predicate:\n" <> show (Pretty.pretty predicate')) $
+        -- simplifyPredicates sideCondition (from predicate')
+        -- simplifyPredicate predicate'
+        --     >>= Logic.scatter
+        --     >>= simplifyPredicates sideCondition
         trace ("\nSimplified predicate:\n" <> show (Pretty.pretty simplified)) $ TopBottom.guardAgainstBottom simplified
         -- TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
