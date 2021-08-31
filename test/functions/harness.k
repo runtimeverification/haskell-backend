@@ -2,6 +2,7 @@ module HARNESS
 
   imports BASIC-K
   imports LIST
+  imports INT
 
   // Test harness
 
