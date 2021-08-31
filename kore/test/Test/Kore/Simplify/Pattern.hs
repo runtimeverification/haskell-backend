@@ -216,48 +216,48 @@ test_Pattern_simplify_equalityterm =
     [ testCase "f vs g or h" $ do
         let expected =
                 (OrPattern.fromOrCondition Mock.testSort . MultiOr.make)
-                [ Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate Mock.cf
-                        , makeCeilPredicate Mock.cg
-                        , makeEqualsPredicate Mock.cf Mock.cg
-                        , makeNotPredicate (makeCeilPredicate Mock.ch)
-                        ]
-                    )
-                , Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate Mock.cf
-                        , makeCeilPredicate Mock.cg
-                        , makeCeilPredicate Mock.ch
-                        , makeEqualsPredicate Mock.cf Mock.cg
-                        , makeEqualsPredicate Mock.cf Mock.ch
-                        ]
-                    )
-                , Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate Mock.cf
-                        , makeCeilPredicate Mock.ch
-                        , makeEqualsPredicate Mock.cf Mock.ch
-                        , makeNotPredicate $ makeCeilPredicate Mock.cg
-                        ]
-                    )
-                , Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate Mock.cf
-                        , makeCeilPredicate Mock.ch
-                        , makeCeilPredicate Mock.cg
-                        , makeEqualsPredicate Mock.cf Mock.ch
-                        , makeEqualsPredicate Mock.cf Mock.cg
-                        ]
-                    )
-                , Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeNotPredicate $ makeCeilPredicate Mock.cf
-                        , makeNotPredicate $ makeCeilPredicate Mock.cg
-                        , makeNotPredicate $ makeCeilPredicate Mock.ch
-                        ]
-                    )
-                ]
+                    [ Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeNotPredicate (makeCeilPredicate Mock.ch)
+                            ]
+                        )
+                    , Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.cg
+                            , makeCeilPredicate Mock.ch
+                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.ch
+                            ]
+                        )
+                    , Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.ch
+                            , makeEqualsPredicate Mock.cf Mock.ch
+                            , makeNotPredicate $ makeCeilPredicate Mock.cg
+                            ]
+                        )
+                    , Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.ch
+                            , makeCeilPredicate Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.ch
+                            , makeEqualsPredicate Mock.cf Mock.cg
+                            ]
+                        )
+                    , Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                            , makeNotPredicate $ makeCeilPredicate Mock.cg
+                            , makeNotPredicate $ makeCeilPredicate Mock.ch
+                            ]
+                        )
+                    ]
             first = Mock.cf
             second = mkOr Mock.cg Mock.ch
         assertBidirectionalEqualityResult first second expected
@@ -299,41 +299,41 @@ test_Pattern_simplify_equalityterm =
             definedH = makeCeilPredicate Mock.ch
             expected =
                 (OrPattern.fromOrCondition Mock.testSort . MultiOr.make)
-                [ mconcat
-                    [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
-                        [ definedF
-                        , definedG
-                        , makeEqualsPredicate Mock.cf Mock.cg
-                        , makeNotPredicate definedH
+                    [ mconcat
+                        [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
+                            [ definedF
+                            , definedG
+                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeNotPredicate definedH
+                            ]
+                        , Condition.assign (inject Mock.xConfig) Mock.a
                         ]
-                    , Condition.assign (inject Mock.xConfig) Mock.a
+                    , mconcat
+                        [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
+                            [ definedF
+                            , definedG
+                            , definedH
+                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.ch
+                            ]
+                        , Condition.assign (inject Mock.xConfig) Mock.a
+                        ]
+                    , Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ definedF
+                            , definedH
+                            , makeEqualsPredicate Mock.cf Mock.ch
+                            , makeNotPredicate definedGWithSubstitution
+                            ]
+                        )
+                    , Condition.fromPredicate
+                        ( Predicate.fromMultiAnd . MultiAnd.make $
+                            [ makeNotPredicate definedGWithSubstitution
+                            , makeNotPredicate definedF
+                            , makeNotPredicate definedH
+                            ]
+                        )
                     ]
-                , mconcat
-                    [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
-                        [ definedF
-                        , definedG
-                        , definedH
-                        , makeEqualsPredicate Mock.cf Mock.cg
-                        , makeEqualsPredicate Mock.cf Mock.ch
-                        ]
-                    , Condition.assign (inject Mock.xConfig) Mock.a
-                    ]
-                , Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ definedF
-                        , definedH
-                        , makeEqualsPredicate Mock.cf Mock.ch
-                        , makeNotPredicate definedGWithSubstitution
-                        ]
-                    )
-                , Condition.fromPredicate
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeNotPredicate definedGWithSubstitution
-                        , makeNotPredicate definedF
-                        , makeNotPredicate definedH
-                        ]
-                    )
-                ]
             first = Mock.cf
             second =
                 (OrPattern.toTermLike Mock.testSort . OrPattern.fromPatterns)
