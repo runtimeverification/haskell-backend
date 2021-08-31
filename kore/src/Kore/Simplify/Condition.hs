@@ -107,7 +107,10 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
 
-    forgetSimplified = MultiAnd.map Predicate.forgetSimplified
+    -- If the 'MultiAnd' is singular, we should avoid resimplification.
+    forgetSimplified predicates
+        | length predicates <= 1 = predicates
+        | otherwise = MultiAnd.map Predicate.forgetSimplified predicates
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional{predicate, substitution}) =
