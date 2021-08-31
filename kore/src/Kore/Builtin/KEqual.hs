@@ -54,12 +54,7 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    term,
- )
 import Kore.Internal.InternalBool
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -269,23 +264,7 @@ unifyKequalsEq ::
     NotSimplifier unifier ->
     UnifyKequalsEq ->
     unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- OrPattern.gather $ unifyChildren operand1 operand2
-        solution' <-
-            MultiOr.map eraseTerm solution
-                & if internalBoolValue internalBool
-                    then pure
-                    else mkNotSimplified
-        scattered <- Unify.scatter solution'
-        return (scattered :: Pattern RewritingVariableName){term = mkInternalBool internalBool}
-  where
-    UnifyKequalsEq{eqTerm, internalBool} = unifyData
-    EqTerm{symbol, operand1, operand2} = eqTerm
-    eqSort = applicationSortsResult . symbolSorts $ symbol
-    eraseTerm conditional = conditional $> (mkTop eqSort)
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
+unifyKequalsEq = Builtin.unifyEq eqTerm internalBool
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

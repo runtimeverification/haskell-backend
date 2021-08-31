@@ -37,6 +37,7 @@ module Kore.Builtin.Builtin (
     getAttemptedAxiom,
     makeDomainValueTerm,
     makeDomainValuePattern,
+    unifyEq,
 
     -- * Implementing builtin unification
     module Kore.Builtin.Verifiers,
@@ -59,6 +60,9 @@ import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol (..),
  )
+import Kore.Builtin.EqTerm (
+    EqTerm (..),
+ )
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
 import Kore.Error (
@@ -75,6 +79,13 @@ import Kore.IndexedModule.MetadataTools (
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
+import Kore.Internal.InternalBool (
+    InternalBool (..),
+ )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -85,17 +96,26 @@ import Kore.Internal.Pattern as Pattern (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Simplify.NotSimplifier (
+    NotSimplifier (..),
+ )
 import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
-    AttemptedAxiomResults (AttemptedAxiomResults),
-    BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+    AttemptedAxiomResults (..),
+    BuiltinAndAxiomSimplifier (..),
     MonadSimplify,
+    TermSimplifier,
     applicationAxiomSimplifier,
  )
-import qualified Kore.Simplify.Simplify as AttemptedAxiomResults (
-    AttemptedAxiomResults (..),
+import Kore.Unification.Unify (
+    MonadUnify,
  )
+import qualified Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Prelude.Kore
 
@@ -483,3 +503,37 @@ makeDomainValuePattern ::
 makeDomainValuePattern sort stringLiteral =
     Pattern.fromTermLike $
         makeDomainValueTerm sort stringLiteral
+
+-- | Unification of @eq@ symbols
+unifyEq ::
+    forall unifier unifyData.
+    MonadUnify unifier =>
+    (unifyData -> EqTerm (TermLike RewritingVariableName)) ->
+    (unifyData -> InternalBool) ->
+    TermSimplifier RewritingVariableName unifier ->
+    NotSimplifier unifier ->
+    unifyData ->
+    unifier (Pattern RewritingVariableName)
+unifyEq
+    getEqTerm
+    getInternalBool
+    unifyChildren
+    (NotSimplifier notSimplifier)
+    unifyData =
+        do
+            solution <- OrPattern.gather $ unifyChildren operand1 operand2
+            solution' <-
+                MultiOr.map eraseTerm solution
+                    & if internalBoolValue internalBool
+                        then pure
+                        else mkNotSimplified
+            scattered <- Unify.scatter solution'
+            return scattered{term = mkInternalBool internalBool}
+      where
+        eqTerm = getEqTerm unifyData
+        internalBool = getInternalBool unifyData
+        EqTerm{symbol, operand1, operand2} = eqTerm
+        eqSort = applicationSortsResult . symbolSorts $ symbol
+        eraseTerm conditional = conditional $> (mkTop eqSort)
+        mkNotSimplified notChild =
+            notSimplifier SideCondition.top Not{notSort = eqSort, notChild}

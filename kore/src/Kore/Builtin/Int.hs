@@ -110,13 +110,8 @@ import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    term,
- )
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -126,7 +121,6 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
-    applicationSortsResult,
     symbolHook,
  )
 import Kore.Internal.TermLike as TermLike
@@ -518,20 +512,4 @@ unifyIntEq ::
     NotSimplifier unifier ->
     UnifyIntEq ->
     unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- OrPattern.gather $ unifyChildren operand1 operand2
-        solution' <-
-            MultiOr.map eraseTerm solution
-                & if internalBoolValue internalBool
-                    then pure
-                    else mkNotSimplified
-        scattered <- Unify.scatter solution'
-        return scattered{term = mkInternalBool internalBool}
-  where
-    UnifyIntEq{eqTerm, internalBool} = unifyData
-    EqTerm{symbol, operand1, operand2} = eqTerm
-    eqSort = applicationSortsResult . symbolSorts $ symbol
-    eraseTerm conditional = conditional $> (mkTop eqSort)
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
+unifyIntEq = Builtin.unifyEq eqTerm internalBool
