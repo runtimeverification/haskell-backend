@@ -1,6 +1,7 @@
 module WITH-CONFIG
     imports INT
     imports COLLECTIONS
+    imports K-EQUAL
 
     configuration
         <set-balance>

@@ -3,6 +3,8 @@
 module MAP-TESTS-SYNTAX
     imports MAP
     imports INT
+    imports BOOL
+    imports K-EQUAL
 
     syntax MyId ::= "x" | "y" | "z" | foo ( MyId )
 

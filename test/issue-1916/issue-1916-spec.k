@@ -1,9 +1,9 @@
 module VERIFICATION
-  import TEST
+  imports TEST
 endmodule
 
 module ISSUE-1916-SPEC
-  import VERIFICATION
+  imports VERIFICATION
 
   // Proving this claim requires that the right-hand side is simplified using
   // the conditions from the left-hand side.
