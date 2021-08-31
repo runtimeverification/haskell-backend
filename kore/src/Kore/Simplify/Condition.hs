@@ -88,7 +88,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         simplified <-
             simplifyPredicate predicate'
                 >>= Logic.scatter
-                >>= simplifyPredicates sideCondition
+                >>= simplifyPredicates sideCondition . forgetSimplified
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -106,6 +106,8 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
+
+    forgetSimplified = MultiAnd.map Predicate.forgetSimplified
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional{predicate, substitution}) =
