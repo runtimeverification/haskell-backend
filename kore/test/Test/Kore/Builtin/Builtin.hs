@@ -19,11 +19,15 @@ module Test.Kore.Builtin.Builtin (
     runStep,
     runSMT,
     runSMTWithConfig,
+    unifyEq,
+    simplifyCondition',
+    simplifyPattern,
 ) where
 
 import Control.Monad.Catch (
     MonadMask,
  )
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Map.Strict (
     Map,
  )
@@ -35,6 +39,7 @@ import qualified Hedgehog
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Error (
     Error,
  )
@@ -48,6 +53,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
  )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.Conditional (Condition)
 import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -74,10 +80,13 @@ import Kore.Rewrite.RulePattern (
     RulePattern,
  )
 import qualified Kore.Rewrite.Step as Step
+import Kore.Simplify.AndTerms (termUnification)
 import qualified Kore.Simplify.Condition as Simplifier.Condition
 import Kore.Simplify.Data
 import Kore.Simplify.InjSimplifier
+import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.OverloadSimplifier
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
@@ -85,6 +94,7 @@ import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
  )
+import Kore.Unification.UnifierT (evalEnvUnifierT)
 import Kore.Unparser (
     unparseToText,
  )
@@ -306,3 +316,43 @@ hpropUnparse gen = Hedgehog.property $ do
     let syntax = unparseToText builtin
         expected = externalize builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax
+
+unifyEq ::
+    Text ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    IO [Maybe (Pattern RewritingVariableName)]
+unifyEq eqKey term1 term2 =
+    unify matched
+        & runMaybeT
+        & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+        & runNoSMT
+  where
+    unify Nothing = empty
+    unify (Just unifyData) =
+        Builtin.unifyEq
+            (termUnification Not.notSimplifier)
+            Not.notSimplifier
+            unifyData
+            & lift
+
+    matched =
+        Builtin.matchUnifyEq eqKey term1 term2
+
+simplifyCondition' ::
+    Condition RewritingVariableName ->
+    IO [Condition RewritingVariableName]
+simplifyCondition' condition =
+    simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+simplifyPattern ::
+    Pattern RewritingVariableName ->
+    IO [Pattern RewritingVariableName]
+simplifyPattern pattern1 =
+    Pattern.simplify pattern1
+        & runSimplifier testEnv
+        & runNoSMT
+        & fmap OrPattern.toPatterns

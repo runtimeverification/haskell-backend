@@ -57,9 +57,6 @@ module Test.Kore.Builtin.Int (
     testInt,
 ) where
 
-import Control.Monad.Trans.Maybe (
-    runMaybeT,
- )
 import Data.Bits (
     complement,
     shift,
@@ -73,7 +70,6 @@ import Hedgehog hiding (
  )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Int (
     ediv,
     emod,
@@ -93,24 +89,10 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
- )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
-import Kore.Simplify.Data (
-    runSimplifier,
-    runSimplifierBranch,
-    simplifyCondition,
- )
-import qualified Kore.Simplify.Not as Not
-import qualified Kore.Simplify.Pattern as Pattern
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
  )
 import Prelude.Kore
 import Test.Kore (
@@ -672,41 +654,7 @@ test_unifyIntEq =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         IO [Maybe (Pattern RewritingVariableName)]
-    unifyIntEq term1 term2 =
-        unify matched
-            & runMaybeT
-            & evalEnvUnifierT Not.notSimplifier
-            & runSimplifierBranch testEnv
-            & runNoSMT
-      where
-        unify Nothing = empty
-        unify (Just unifyData) =
-            Builtin.unifyEq
-                (termUnification Not.notSimplifier)
-                Not.notSimplifier
-                unifyData
-                & lift
-
-        matched =
-            Int.matchUnifyIntEq term1 term2
-                <|> Int.matchUnifyIntEq term2 term1
-
-    simplifyCondition' ::
-        Condition RewritingVariableName ->
-        IO [Condition RewritingVariableName]
-    simplifyCondition' condition =
-        simplifyCondition SideCondition.top condition
-            & runSimplifierBranch testEnv
-            & runNoSMT
-
-    simplifyPattern ::
-        Pattern RewritingVariableName ->
-        IO [Pattern RewritingVariableName]
-    simplifyPattern pattern1 =
-        Pattern.simplify pattern1
-            & runSimplifier testEnv
-            & runNoSMT
-            & fmap OrPattern.toPatterns
+    unifyIntEq = unifyEq Int.eqKey
 
 test_contradiction :: TestTree
 test_contradiction =
@@ -728,11 +676,3 @@ test_contradiction =
     x, y :: TermLike RewritingVariableName
     x = mkElemVar $ ofSort "x" intSort
     y = mkElemVar $ ofSort "y" intSort
-
-    simplifyCondition' ::
-        Condition RewritingVariableName ->
-        IO [Condition RewritingVariableName]
-    simplifyCondition' condition =
-        simplifyCondition SideCondition.top condition
-            & runSimplifierBranch testEnv
-            & runNoSMT
