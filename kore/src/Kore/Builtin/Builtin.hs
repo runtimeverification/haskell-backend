@@ -37,6 +37,7 @@ module Kore.Builtin.Builtin (
     getAttemptedAxiom,
     makeDomainValueTerm,
     makeDomainValuePattern,
+    UnifyEq (..),
     unifyEq,
 
     -- * Implementing builtin unification
@@ -503,6 +504,11 @@ makeDomainValuePattern ::
 makeDomainValuePattern sort stringLiteral =
     Pattern.fromTermLike $
         makeDomainValueTerm sort stringLiteral
+
+data UnifyEq = UnifyEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , internalBool :: !InternalBool
+    }
 
 -- | Unification of @eq@ symbols
 unifyEq ::

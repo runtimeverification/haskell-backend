@@ -105,12 +105,14 @@ import Kore.Attribute.Hook (
     Hook (..),
  )
 import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Builtin (
+    UnifyEq (..),
+ )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.Pattern (
     Pattern,
@@ -473,11 +475,6 @@ unifyInt unifyData =
         | otherwise =
             debugUnifyBottomAndReturnBottom "distinct integers" term1 term2
 
-data UnifyIntEq = UnifyIntEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 @
 \\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_)),
@@ -488,16 +485,16 @@ symmetric in the two arguments.
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyIntEq
+    Maybe UnifyEq
 matchUnifyIntEq first second
     | Just eqTerm <- matchIntEqual first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
-        Just UnifyIntEq{eqTerm, internalBool}
+        Just UnifyEq{eqTerm, internalBool}
     | Just eqTerm <- matchIntEqual second
       , isFunctionPattern second
       , InternalBool_ internalBool <- first =
-        Just UnifyIntEq{eqTerm, internalBool}
+        Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}
 
@@ -510,6 +507,6 @@ unifyIntEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    UnifyIntEq ->
+    UnifyEq ->
     unifier (Pattern RewritingVariableName)
 unifyIntEq = Builtin.unifyEq eqTerm internalBool

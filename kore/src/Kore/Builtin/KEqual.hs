@@ -48,13 +48,13 @@ import Kore.Attribute.Hook (
  )
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
+    UnifyEq (..),
     acceptAnySort,
  )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.InternalBool
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -222,11 +222,6 @@ matchKequalEq =
             Monad.guard (hook2 == eqKey)
             & isJust
 
-data UnifyKequalsEq = UnifyKequalsEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 
 @
@@ -244,16 +239,16 @@ symmetric in the two arguments.
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyKequalsEq
+    Maybe UnifyEq
 matchUnifyKequalsEq first second
     | Just eqTerm <- matchKequalEq first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
-        Just UnifyKequalsEq{eqTerm, internalBool}
+        Just UnifyEq{eqTerm, internalBool}
     | Just eqTerm <- matchKequalEq second
       , isFunctionPattern second
       , InternalBool_ internalBool <- first =
-        Just UnifyKequalsEq{eqTerm, internalBool}
+        Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
 
@@ -262,7 +257,7 @@ unifyKequalsEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    UnifyKequalsEq ->
+    UnifyEq ->
     unifier (Pattern RewritingVariableName)
 unifyKequalsEq = Builtin.unifyEq eqTerm internalBool
 

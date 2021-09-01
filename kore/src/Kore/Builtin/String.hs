@@ -70,6 +70,9 @@ import Kore.Attribute.Hook (
     Hook (..),
  )
 import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Builtin (
+    UnifyEq (..),
+ )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
@@ -78,7 +81,6 @@ import qualified Kore.Error
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
-import Kore.Internal.InternalBool
 import Kore.Internal.InternalString
 import Kore.Internal.Pattern (
     Pattern,
@@ -521,11 +523,6 @@ unifyString unifyData =
         | otherwise = debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2, term1, term2} = unifyData
 
-data UnifyStringEq = UnifyStringEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 
 @
@@ -537,16 +534,16 @@ symmetric in the two arguments.
 matchUnifyStringEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyStringEq
+    Maybe UnifyEq
 matchUnifyStringEq first second
     | Just eqTerm <- matchStringEqual first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
-        Just UnifyStringEq{eqTerm, internalBool}
+        Just UnifyEq{eqTerm, internalBool}
     | Just eqTerm <- matchStringEqual second
       , isFunctionPattern second
       , InternalBool_ internalBool <- first =
-        Just UnifyStringEq{eqTerm, internalBool}
+        Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyStringEq #-}
 
@@ -559,6 +556,6 @@ unifyStringEq ::
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    UnifyStringEq ->
+    UnifyEq ->
     unifier (Pattern RewritingVariableName)
 unifyStringEq = Builtin.unifyEq eqTerm internalBool
