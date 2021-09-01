@@ -105,7 +105,6 @@ import Kore.Builtin.Builtin (
     UnifyEq (..),
  )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
@@ -410,10 +409,6 @@ evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
     conditions = foldMap mkCeilUnlessDefined arguments
 evalEq _ _ _ = Builtin.wrongArity eqKey
 
--- | Match the @INT.eq@ hooked symbol.
-matchIntEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchIntEqual = Builtin.matchEqual eqKey
-
 data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
     , term1, term2 :: !(TermLike RewritingVariableName)
@@ -470,14 +465,5 @@ matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEq
-matchUnifyIntEq first second
-    | Just eqTerm <- matchIntEqual first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyEq{eqTerm, internalBool}
-    | Just eqTerm <- matchIntEqual second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
-        Just UnifyEq{eqTerm, internalBool}
-    | otherwise = Nothing
+matchUnifyIntEq = Builtin.matchUnifyIntEq eqKey
 {-# INLINE matchUnifyIntEq #-}

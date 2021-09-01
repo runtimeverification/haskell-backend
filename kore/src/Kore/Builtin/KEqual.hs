@@ -51,7 +51,6 @@ import Kore.Builtin.Builtin (
     acceptAnySort,
  )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern (
@@ -211,10 +210,6 @@ neqKey = "KEQUAL.neq"
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
 
--- | Match the @KEQUAL.eq@ hooked symbol.
-matchKequalEq :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchKequalEq = Builtin.matchEqual eqKey
-
 {- | Matches
 
 @
@@ -233,16 +228,7 @@ matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEq
-matchUnifyKequalsEq first second
-    | Just eqTerm <- matchKequalEq first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyEq{eqTerm, internalBool}
-    | Just eqTerm <- matchKequalEq second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
-        Just UnifyEq{eqTerm, internalBool}
-    | otherwise = Nothing
+matchUnifyKequalsEq = Builtin.matchUnifyIntEq eqKey
 {-# INLINE matchUnifyKequalsEq #-}
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.

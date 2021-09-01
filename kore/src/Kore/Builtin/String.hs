@@ -69,7 +69,6 @@ import Kore.Builtin.Builtin (
     UnifyEq (..),
  )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
 import qualified Kore.Error
@@ -458,10 +457,6 @@ builtinFunctions =
             op
         )
 
--- | Match the @STRING.eq@ hooked symbol.
-matchStringEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchStringEqual = Builtin.matchEqual eqKey
-
 data UnifyString = UnifyString
     { string1, string2 :: !InternalString
     , term1, term2 :: !(TermLike RewritingVariableName)
@@ -518,14 +513,5 @@ matchUnifyStringEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEq
-matchUnifyStringEq first second
-    | Just eqTerm <- matchStringEqual first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyEq{eqTerm, internalBool}
-    | Just eqTerm <- matchStringEqual second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
-        Just UnifyEq{eqTerm, internalBool}
-    | otherwise = Nothing
+matchUnifyStringEq = Builtin.matchUnifyIntEq eqKey
 {-# INLINE matchUnifyStringEq #-}

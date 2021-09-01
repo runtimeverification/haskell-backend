@@ -40,6 +40,7 @@ module Kore.Builtin.Builtin (
     UnifyEq (..),
     unifyEq,
     matchEqual,
+    matchUnifyIntEq,
 
     -- * Implementing builtin unification
     module Kore.Builtin.Verifiers,
@@ -551,3 +552,27 @@ matchEqual eqKey =
             hook2 <- (getHook . symbolHook) symbol
             Monad.guard (hook2 == eqKey)
             & isJust
+
+{- | Matches
+@
+\\equals{_, _}(eqKey{_}(_, _), \\dv{Bool}(_)),
+@
+symmetric in the two arguments,
+for a given `eqKey`.
+-}
+matchUnifyIntEq ::
+    Text ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEq
+matchUnifyIntEq eqKey first second
+    | Just eqTerm <- matchEqual eqKey first
+      , isFunctionPattern first
+      , InternalBool_ internalBool <- second =
+        Just UnifyEq{eqTerm, internalBool}
+    | Just eqTerm <- matchEqual eqKey second
+      , isFunctionPattern second
+      , InternalBool_ internalBool <- first =
+        Just UnifyEq{eqTerm, internalBool}
+    | otherwise = Nothing
+{-# INLINE matchUnifyIntEq #-}
