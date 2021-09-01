@@ -465,5 +465,5 @@ matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEq
-matchUnifyIntEq = Builtin.matchUnifyIntEq eqKey
+matchUnifyIntEq = Builtin.matchUnifyEq eqKey
 {-# INLINE matchUnifyIntEq #-}

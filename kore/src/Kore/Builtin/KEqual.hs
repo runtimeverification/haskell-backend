@@ -228,7 +228,7 @@ matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEq
-matchUnifyKequalsEq = Builtin.matchUnifyIntEq eqKey
+matchUnifyKequalsEq = Builtin.matchUnifyEq eqKey
 {-# INLINE matchUnifyKequalsEq #-}
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.

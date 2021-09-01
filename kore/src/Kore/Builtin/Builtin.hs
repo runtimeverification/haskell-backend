@@ -40,7 +40,7 @@ module Kore.Builtin.Builtin (
     UnifyEq (..),
     unifyEq,
     matchEqual,
-    matchUnifyIntEq,
+    matchUnifyEq,
 
     -- * Implementing builtin unification
     module Kore.Builtin.Verifiers,
@@ -560,12 +560,12 @@ matchEqual eqKey =
 symmetric in the two arguments,
 for a given `eqKey`.
 -}
-matchUnifyIntEq ::
+matchUnifyEq ::
     Text ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEq
-matchUnifyIntEq eqKey first second
+matchUnifyEq eqKey first second
     | Just eqTerm <- matchEqual eqKey first
       , isFunctionPattern first
       , InternalBool_ internalBool <- second =
@@ -575,4 +575,4 @@ matchUnifyIntEq eqKey first second
       , InternalBool_ internalBool <- first =
         Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
-{-# INLINE matchUnifyIntEq #-}
+{-# INLINE matchUnifyEq #-}
