@@ -39,6 +39,7 @@ module Kore.Builtin.Builtin (
     makeDomainValuePattern,
     UnifyEq (..),
     unifyEq,
+    matchEqual,
 
     -- * Implementing builtin unification
     module Kore.Builtin.Verifiers,
@@ -47,6 +48,7 @@ module Kore.Builtin.Builtin (
 import Control.Error (
     MaybeT (..),
  )
+import qualified Control.Monad as Monad
 import Data.Text (
     Text,
  )
@@ -63,6 +65,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import Kore.Builtin.EqTerm (
     EqTerm (..),
+    matchEqTerm,
  )
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
@@ -98,6 +101,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Symbol (symbolHook)
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -538,3 +542,12 @@ unifyEq
         eraseTerm conditional = conditional $> (mkTop eqSort)
         mkNotSimplified notChild =
             notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
+
+-- | Match @eq@ hooked symbols.
+matchEqual :: Text -> TermLike variable -> Maybe (EqTerm (TermLike variable))
+matchEqual eqKey =
+    matchEqTerm $ \symbol ->
+        do
+            hook2 <- (getHook . symbolHook) symbol
+            Monad.guard (hook2 == eqKey)
+            & isJust

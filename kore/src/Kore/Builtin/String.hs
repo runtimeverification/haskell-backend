@@ -46,7 +46,6 @@ module Kore.Builtin.String (
 import Control.Error (
     MaybeT,
  )
-import qualified Control.Monad as Monad
 import Data.Char (
     chr,
     ord,
@@ -65,9 +64,6 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
-import Kore.Attribute.Hook (
-    Hook (..),
- )
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
     UnifyEq (..),
@@ -85,9 +81,6 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Symbol (
-    symbolHook,
- )
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -467,12 +460,7 @@ builtinFunctions =
 
 -- | Match the @STRING.eq@ hooked symbol.
 matchStringEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchStringEqual =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
+matchStringEqual = Builtin.matchEqual eqKey
 
 data UnifyString = UnifyString
     { string1, string2 :: !InternalString

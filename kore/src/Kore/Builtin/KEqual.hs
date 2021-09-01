@@ -213,12 +213,7 @@ iteKey = "KEQUAL.ite"
 
 -- | Match the @KEQUAL.eq@ hooked symbol.
 matchKequalEq :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchKequalEq =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
+matchKequalEq = Builtin.matchEqual eqKey
 
 {- | Matches
 

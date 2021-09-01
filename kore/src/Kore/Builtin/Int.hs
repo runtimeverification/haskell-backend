@@ -100,9 +100,6 @@ import GHC.Integer.GMP.Internals (
 import GHC.Integer.Logarithms (
     integerLog2#,
  )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
     UnifyEq (..),
@@ -121,9 +118,6 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    symbolHook,
- )
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Rewrite.RewritingVariable (
@@ -418,12 +412,7 @@ evalEq _ _ _ = Builtin.wrongArity eqKey
 
 -- | Match the @INT.eq@ hooked symbol.
 matchIntEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchIntEqual =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
+matchIntEqual = Builtin.matchEqual eqKey
 
 data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
