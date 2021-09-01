@@ -547,7 +547,7 @@ test_unifyStringEq =
       where
         unify Nothing = empty
         unify (Just unifyData) =
-            String.unifyStringEq
+            Builtin.unifyEq
                 (termUnification Not.notSimplifier)
                 Not.notSimplifier
                 unifyData

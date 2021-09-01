@@ -512,17 +512,13 @@ data UnifyEq = UnifyEq
 
 -- | Unification of @eq@ symbols
 unifyEq ::
-    forall unifier unifyData.
+    forall unifier.
     MonadUnify unifier =>
-    (unifyData -> EqTerm (TermLike RewritingVariableName)) ->
-    (unifyData -> InternalBool) ->
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
-    unifyData ->
+    UnifyEq ->
     unifier (Pattern RewritingVariableName)
 unifyEq
-    getEqTerm
-    getInternalBool
     unifyChildren
     (NotSimplifier notSimplifier)
     unifyData =
@@ -536,8 +532,7 @@ unifyEq
             scattered <- Unify.scatter solution'
             return scattered{term = mkInternalBool internalBool}
       where
-        eqTerm = getEqTerm unifyData
-        internalBool = getInternalBool unifyData
+        UnifyEq{eqTerm, internalBool} = unifyData
         EqTerm{symbol, operand1, operand2} = eqTerm
         eqSort = applicationSortsResult . symbolSorts $ symbol
         eraseTerm conditional = conditional $> (mkTop eqSort)

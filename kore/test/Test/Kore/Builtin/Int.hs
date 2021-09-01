@@ -73,6 +73,7 @@ import Hedgehog hiding (
  )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Int (
     ediv,
     emod,
@@ -680,7 +681,7 @@ test_unifyIntEq =
       where
         unify Nothing = empty
         unify (Just unifyData) =
-            Int.unifyIntEq
+            Builtin.unifyEq
                 (termUnification Not.notSimplifier)
                 Not.notSimplifier
                 unifyData

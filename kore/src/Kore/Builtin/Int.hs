@@ -27,7 +27,6 @@ module Kore.Builtin.Int (
     asPattern,
     asPartialPattern,
     parse,
-    unifyIntEq,
     unifyInt,
     matchInt,
     matchUnifyIntEq,
@@ -130,12 +129,8 @@ import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.NotSimplifier (
-    NotSimplifier (..),
- )
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
-    TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -497,16 +492,3 @@ matchUnifyIntEq first second
         Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyIntEq #-}
-
-{- | Unification of the @INT.eq@ symbol.
-
-This function is suitable only for equality simplification.
--}
-unifyIntEq ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    UnifyEq ->
-    unifier (Pattern RewritingVariableName)
-unifyIntEq = Builtin.unifyEq eqTerm internalBool

@@ -17,7 +17,6 @@ builtin modules.
 module Kore.Builtin.KEqual (
     verifiers,
     builtinFunctions,
-    unifyKequalsEq,
     unifyIfThenElse,
     matchUnifyKequalsEq,
     matchIfThenElse,
@@ -71,7 +70,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify
 import Kore.Syntax.Definition (
     SentenceSymbol (..),
@@ -251,15 +249,6 @@ matchUnifyKequalsEq first second
         Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyKequalsEq #-}
-
-unifyKequalsEq ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    UnifyEq ->
-    unifier (Pattern RewritingVariableName)
-unifyKequalsEq = Builtin.unifyEq eqTerm internalBool
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse
