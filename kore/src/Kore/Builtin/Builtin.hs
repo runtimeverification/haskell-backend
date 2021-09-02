@@ -37,6 +37,10 @@ module Kore.Builtin.Builtin (
     getAttemptedAxiom,
     makeDomainValueTerm,
     makeDomainValuePattern,
+    UnifyEq (..),
+    unifyEq,
+    matchEqual,
+    matchUnifyEq,
 
     -- * Implementing builtin unification
     module Kore.Builtin.Verifiers,
@@ -45,6 +49,7 @@ module Kore.Builtin.Builtin (
 import Control.Error (
     MaybeT (..),
  )
+import qualified Control.Monad as Monad
 import Data.Text (
     Text,
  )
@@ -58,6 +63,10 @@ import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol (..),
+ )
+import Kore.Builtin.EqTerm (
+    EqTerm (..),
+    matchEqTerm,
  )
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
@@ -75,6 +84,13 @@ import Kore.IndexedModule.MetadataTools (
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
+import Kore.Internal.InternalBool (
+    InternalBool (..),
+ )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -85,17 +101,27 @@ import Kore.Internal.Pattern as Pattern (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Symbol (symbolHook)
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Simplify.NotSimplifier (
+    NotSimplifier (..),
+ )
 import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
-    AttemptedAxiomResults (AttemptedAxiomResults),
-    BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+    AttemptedAxiomResults (..),
+    BuiltinAndAxiomSimplifier (..),
     MonadSimplify,
+    TermSimplifier,
     applicationAxiomSimplifier,
  )
-import qualified Kore.Simplify.Simplify as AttemptedAxiomResults (
-    AttemptedAxiomResults (..),
+import Kore.Unification.Unify (
+    MonadUnify,
  )
+import qualified Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Prelude.Kore
 
@@ -483,3 +509,70 @@ makeDomainValuePattern ::
 makeDomainValuePattern sort stringLiteral =
     Pattern.fromTermLike $
         makeDomainValueTerm sort stringLiteral
+
+data UnifyEq = UnifyEq
+    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
+    , internalBool :: !InternalBool
+    }
+
+-- | Unification of @eq@ symbols
+unifyEq ::
+    forall unifier.
+    MonadUnify unifier =>
+    TermSimplifier RewritingVariableName unifier ->
+    NotSimplifier unifier ->
+    UnifyEq ->
+    unifier (Pattern RewritingVariableName)
+unifyEq
+    unifyChildren
+    (NotSimplifier notSimplifier)
+    unifyData =
+        do
+            solution <- OrPattern.gather $ unifyChildren operand1 operand2
+            solution' <-
+                MultiOr.map eraseTerm solution
+                    & if internalBoolValue internalBool
+                        then pure
+                        else mkNotSimplified
+            scattered <- Unify.scatter solution'
+            return scattered{term = mkInternalBool internalBool}
+      where
+        UnifyEq{eqTerm, internalBool} = unifyData
+        EqTerm{symbol, operand1, operand2} = eqTerm
+        eqSort = applicationSortsResult . symbolSorts $ symbol
+        eraseTerm conditional = conditional $> (mkTop eqSort)
+        mkNotSimplified notChild =
+            notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
+
+-- | Match @eq@ hooked symbols.
+matchEqual :: Text -> TermLike variable -> Maybe (EqTerm (TermLike variable))
+matchEqual eqKey =
+    matchEqTerm $ \symbol ->
+        do
+            hook2 <- (getHook . symbolHook) symbol
+            Monad.guard (hook2 == eqKey)
+            & isJust
+
+{- | Matches
+@
+\\equals{_, _}(eqKey{_}(_, _), \\dv{Bool}(_)),
+@
+symmetric in the two arguments,
+for a given `eqKey`.
+-}
+matchUnifyEq ::
+    Text ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEq
+matchUnifyEq eqKey first second
+    | Just eqTerm <- matchEqual eqKey first
+      , isFunctionPattern first
+      , InternalBool_ internalBool <- second =
+        Just UnifyEq{eqTerm, internalBool}
+    | Just eqTerm <- matchEqual eqKey second
+      , isFunctionPattern second
+      , InternalBool_ internalBool <- first =
+        Just UnifyEq{eqTerm, internalBool}
+    | otherwise = Nothing
+{-# INLINE matchUnifyEq #-}
