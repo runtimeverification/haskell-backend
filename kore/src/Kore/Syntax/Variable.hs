@@ -479,7 +479,7 @@ mapSomeVariableName ::
 mapSomeVariableName adj variable1 =
     fmap (index adj idx) variable1
   where
-    idx = () <$ variable1
+    idx = void variable1
 
 mapElementVariableName ::
     AdjSomeVariableName (variable1 -> variable2) ->
@@ -503,7 +503,7 @@ traverseSomeVariableName ::
 traverseSomeVariableName adj variable1 =
     traverse (index adj idx) variable1
   where
-    idx = () <$ variable1
+    idx = void variable1
 
 traverseElementVariableName ::
     forall variable1 variable2 f.
