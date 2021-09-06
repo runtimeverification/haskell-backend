@@ -27,7 +27,6 @@ module Kore.Builtin.Int (
     asPattern,
     asPartialPattern,
     parse,
-    unifyIntEq,
     unifyInt,
     matchInt,
     matchUnifyIntEq,
@@ -101,22 +100,15 @@ import GHC.Integer.GMP.Internals (
 import GHC.Integer.Logarithms (
     integerLog2#,
  )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
 import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Builtin (
+    UnifyEq (..),
+ )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    term,
- )
-import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -125,21 +117,13 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    applicationSortsResult,
-    symbolHook,
- )
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.NotSimplifier (
-    NotSimplifier (..),
- )
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
-    TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -425,15 +409,6 @@ evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
     conditions = foldMap mkCeilUnlessDefined arguments
 evalEq _ _ _ = Builtin.wrongArity eqKey
 
--- | Match the @INT.eq@ hooked symbol.
-matchIntEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchIntEqual =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
-
 data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
     , term1, term2 :: !(TermLike RewritingVariableName)
@@ -479,11 +454,6 @@ unifyInt unifyData =
         | otherwise =
             debugUnifyBottomAndReturnBottom "distinct integers" term1 term2
 
-data UnifyIntEq = UnifyIntEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 @
 \\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_)),
@@ -494,44 +464,6 @@ symmetric in the two arguments.
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyIntEq
-matchUnifyIntEq first second
-    | Just eqTerm <- matchIntEqual first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyIntEq{eqTerm, internalBool}
-    | Just eqTerm <- matchIntEqual second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
-        Just UnifyIntEq{eqTerm, internalBool}
-    | otherwise = Nothing
+    Maybe UnifyEq
+matchUnifyIntEq = Builtin.matchUnifyEq eqKey
 {-# INLINE matchUnifyIntEq #-}
-
-{- | Unification of the @INT.eq@ symbol.
-
-This function is suitable only for equality simplification.
--}
-unifyIntEq ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    UnifyIntEq ->
-    unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- OrPattern.gather $ unifyChildren operand1 operand2
-        solution' <-
-            MultiOr.map eraseTerm solution
-                & if internalBoolValue internalBool
-                    then pure
-                    else mkNotSimplified
-        scattered <- Unify.scatter solution'
-        return scattered{term = mkInternalBool internalBool}
-  where
-    UnifyIntEq{eqTerm, internalBool} = unifyData
-    EqTerm{symbol, operand1, operand2} = eqTerm
-    eqSort = applicationSortsResult . symbolSorts $ symbol
-    eraseTerm conditional = conditional $> (mkTop eqSort)
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}

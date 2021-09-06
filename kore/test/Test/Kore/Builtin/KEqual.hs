@@ -12,6 +12,7 @@ import Control.Monad.Trans.Maybe (
 import qualified Data.Text as Text
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.KEqual as KEqual
 import Kore.Internal.From
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -239,7 +240,7 @@ runKEqualSimplification term1 term2 =
         KEqual.matchUnifyKequalsEq term1 term2
             <|> KEqual.matchUnifyKequalsEq term2 term1
     unify (Just unifyData) =
-        KEqual.unifyKequalsEq
+        Builtin.unifyEq
             (termUnification Not.notSimplifier)
             Not.notSimplifier
             unifyData
