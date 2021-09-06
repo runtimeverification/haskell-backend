@@ -281,6 +281,24 @@ addAssumptions predicates sideCondition =
             predicates <> assumedTrue sideCondition
         }
 
+areIncludedIn
+    :: Eq variable
+    => Foldable f
+    => f (Predicate variable)
+    -> SideCondition variable
+    -> Bool
+areIncludedIn predicates sideCondition =
+    all (flip isIncludedIn sideCondition) predicates
+
+isIncludedIn
+    :: Eq variable
+    => Predicate variable
+    -> SideCondition variable
+    -> Bool
+isIncludedIn predicate SideCondition { assumedTrue } =
+    predicate `elem` assumedTrue
+
+
 {- | Assumes a 'Condition' to be true in the context of another
 'SideCondition' and recalculates the term replacements table
 from the combined predicate.
@@ -292,19 +310,22 @@ addConditionWithReplacements ::
     SideCondition variable
 addConditionWithReplacements
     (from @(Condition _) @(MultiAnd _) -> newCondition)
-    sideCondition =
-        let combinedConditions = oldCondition <> newCondition
-            (assumedTrue, assumptions) =
-                simplifyConjunctionByAssumption combinedConditions
-                    & extract
-            Assumptions replacementsTermLike replacementsPredicate = assumptions
-         in SideCondition
-                { assumedTrue
-                , replacementsTermLike
-                , replacementsPredicate
-                , definedTerms
-                , simplifiedFunctions
-                }
+    sideCondition
+        | newCondition `areIncludedIn` sideCondition =
+            sideCondition
+        | otherwise =
+            let combinedConditions = oldCondition <> newCondition
+                (assumedTrue, assumptions) =
+                    simplifyConjunctionByAssumption combinedConditions
+                        & extract
+                Assumptions replacementsTermLike replacementsPredicate = assumptions
+             in SideCondition
+                    { assumedTrue
+                    , replacementsTermLike
+                    , replacementsPredicate
+                    , definedTerms
+                    , simplifiedFunctions
+                    }
       where
         SideCondition
             { assumedTrue = oldCondition
