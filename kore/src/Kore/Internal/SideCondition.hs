@@ -281,23 +281,22 @@ addAssumptions predicates sideCondition =
             predicates <> assumedTrue sideCondition
         }
 
-areIncludedIn
-    :: Eq variable
-    => Foldable f
-    => f (Predicate variable)
-    -> SideCondition variable
-    -> Bool
+areIncludedIn ::
+    Eq variable =>
+    Foldable f =>
+    f (Predicate variable) ->
+    SideCondition variable ->
+    Bool
 areIncludedIn predicates sideCondition =
     all (flip isIncludedIn sideCondition) predicates
 
-isIncludedIn
-    :: Eq variable
-    => Predicate variable
-    -> SideCondition variable
-    -> Bool
-isIncludedIn predicate SideCondition { assumedTrue } =
+isIncludedIn ::
+    Eq variable =>
+    Predicate variable ->
+    SideCondition variable ->
+    Bool
+isIncludedIn predicate SideCondition{assumedTrue} =
     predicate `elem` assumedTrue
-
 
 {- | Assumes a 'Condition' to be true in the context of another
 'SideCondition' and recalculates the term replacements table
