@@ -56,15 +56,15 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
  )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.Condition (
+    Condition,
+ )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Condition (
-    Condition,
- )
 import Kore.Internal.Pattern (
     Pattern,
  )
