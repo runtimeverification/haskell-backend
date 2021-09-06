@@ -696,11 +696,9 @@ test_unifyConcrete =
                     asTermLike (uncurry mkAnd <$> map12)
                 patActual =
                     mkAnd (asTermLike map1) (asTermLike map2)
-                predicate = fromEquals_ patExpect patActual
             expect <- evaluateTermT patExpect
             actual <- evaluateTermT patActual
             (===) expect actual
-            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
 
 -- Given a function to scramble the arguments to concat, i.e.,
