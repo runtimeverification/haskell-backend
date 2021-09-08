@@ -34,6 +34,8 @@ instance Pretty WarnDepthLimitExceeded where
 
 instance Entry WarnDepthLimitExceeded where
     entrySeverity _ = Warning
+    oneLineDoc (WarnDepthLimitExceeded limitExceeded) =
+        Pretty.pretty limitExceeded
     helpDoc _ = "warn when depth limit is exceeded"
 
 warnDepthLimitExceeded :: MonadLog log => Natural -> log ()

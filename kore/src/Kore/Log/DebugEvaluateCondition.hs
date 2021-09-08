@@ -56,6 +56,8 @@ instance Pretty DebugEvaluateCondition where
 instance Entry DebugEvaluateCondition where
     entrySeverity _ = Debug
     contextDoc _ = Just "while evaluating predicate"
+    oneLineDoc (DebugEvaluateCondition _) = "DebugEvaluateCondition _"
+    oneLineDoc result = pretty (show result)
     helpDoc _ = "log every predicate evaluated by the SMT solver"
 
 instance SQL.Table DebugEvaluateCondition

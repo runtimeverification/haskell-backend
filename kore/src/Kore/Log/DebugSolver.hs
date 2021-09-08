@@ -62,10 +62,12 @@ instance Pretty DebugSolverRecv where
 
 instance Entry DebugSolverSend where
     entrySeverity _ = Debug
+    oneLineDoc _ = mempty
     helpDoc _ = "log commands sent to SMT solver"
 
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
+    oneLineDoc _ = mempty
     helpDoc _ = "log responses received from SMT solver"
 
 logDebugSolverSendWith ::
