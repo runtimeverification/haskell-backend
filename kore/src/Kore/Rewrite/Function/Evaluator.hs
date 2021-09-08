@@ -271,7 +271,7 @@ maybeEvaluatePattern
             | toSimplify == unchangedPatt =
                 return (OrPattern.fromPattern unchangedPatt)
             | otherwise =
-                reevaluateFunctions sideCondition toSimplify
+                simplifyPattern sideCondition toSimplify
 
 evaluateSortInjection ::
     InternalVariable variable =>
@@ -322,17 +322,6 @@ sortInjectionSorts symbol =
                 , Pretty.indent 4 (unparse symbol)
                 , "should have two sort parameters."
                 ]
-
-{- | 'reevaluateFunctions' re-evaluates functions after a user-defined function
-was evaluated.
--}
-reevaluateFunctions ::
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    -- | Function evaluation result.
-    Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
-reevaluateFunctions = simplifyPattern
 
 -- | Ands the given condition-substitution to the given function evaluation.
 mergeWithConditionAndSubstitution ::
