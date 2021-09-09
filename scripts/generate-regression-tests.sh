@@ -94,6 +94,9 @@ generate-evm() {
     kollect test-totalSupply \
         make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
 
+    kollect test-addu48u48 \
+        make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
+
     $KORE/scripts/trim-source-paths.sh *.kore
 }
 

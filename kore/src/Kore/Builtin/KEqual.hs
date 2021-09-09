@@ -17,7 +17,6 @@ builtin modules.
 module Kore.Builtin.KEqual (
     verifiers,
     builtinFunctions,
-    unifyKequalsEq,
     unifyIfThenElse,
     matchUnifyKequalsEq,
     matchIfThenElse,
@@ -48,18 +47,12 @@ import Kore.Attribute.Hook (
  )
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin (
+    UnifyEq (..),
     acceptAnySort,
  )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    term,
- )
-import Kore.Internal.InternalBool
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -76,7 +69,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify
 import Kore.Syntax.Definition (
     SentenceSymbol (..),
@@ -218,20 +210,6 @@ neqKey = "KEQUAL.neq"
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
 
--- | Match the @KEQUAL.eq@ hooked symbol.
-matchKequalEq :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchKequalEq =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
-
-data UnifyKequalsEq = UnifyKequalsEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 
 @
@@ -249,43 +227,9 @@ symmetric in the two arguments.
 matchUnifyKequalsEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyKequalsEq
-matchUnifyKequalsEq first second
-    | Just eqTerm <- matchKequalEq first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyKequalsEq{eqTerm, internalBool}
-    | Just eqTerm <- matchKequalEq second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
-        Just UnifyKequalsEq{eqTerm, internalBool}
-    | otherwise = Nothing
+    Maybe UnifyEq
+matchUnifyKequalsEq = Builtin.matchUnifyEq eqKey
 {-# INLINE matchUnifyKequalsEq #-}
-
-unifyKequalsEq ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    UnifyKequalsEq ->
-    unifier (Pattern RewritingVariableName)
-unifyKequalsEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- OrPattern.gather $ unifyChildren operand1 operand2
-        solution' <-
-            MultiOr.map eraseTerm solution
-                & if internalBoolValue internalBool
-                    then pure
-                    else mkNotSimplified
-        scattered <- Unify.scatter solution'
-        return (scattered :: Pattern RewritingVariableName){term = mkInternalBool internalBool}
-  where
-    UnifyKequalsEq{eqTerm, internalBool} = unifyData
-    EqTerm{symbol, operand1, operand2} = eqTerm
-    eqSort = applicationSortsResult . symbolSorts $ symbol
-    eraseTerm conditional = conditional $> (mkTop eqSort)
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
 
 -- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
 data IfThenElse term = IfThenElse

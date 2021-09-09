@@ -26,6 +26,7 @@ import Data.Text (
     Text,
  )
 import qualified Kore.Builtin.Bool as Builtin.Bool
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.Builtin.InternalBytes (
@@ -188,11 +189,11 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
             lift $ Builtin.Bool.unifyBoolNot childTransformers boolNotData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
-            lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
-            lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
-            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
             lift $ Builtin.Endianness.unifyEquals unifyData
         | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
@@ -278,11 +279,11 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
             lift $ Builtin.Bool.unifyBoolNot childTransformers boolNotData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
-            lift $ Builtin.KEqual.unifyKequalsEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
-            lift $ Builtin.Int.unifyIntEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
-            lift $ Builtin.String.unifyStringEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
         | Just unifyData <- Builtin.KEqual.matchIfThenElse first second =
             lift $ Builtin.KEqual.unifyIfThenElse childTransformers unifyData
         | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
