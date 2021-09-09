@@ -73,7 +73,7 @@ testComparison name impl symb =
         a <- forAll genString
         b <- forAll genString
         let expect = Test.Bool.asOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
 
 test_eq :: TestTree
@@ -446,7 +446,7 @@ testString ::
     [TermLike RewritingVariableName] ->
     OrPattern RewritingVariableName ->
     TestTree
-testString name = testSymbolWithoutSolver evaluate name
+testString name = testSymbolWithoutSolver evaluateTerm name
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
 idName `ofSort` sort = configElementVariableFromId (testId idName) sort
