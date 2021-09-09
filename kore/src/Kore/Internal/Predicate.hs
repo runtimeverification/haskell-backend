@@ -1086,6 +1086,7 @@ See also: 'isSimplified'.
 isSimplifiedAnyCondition :: Predicate variable -> Bool
 isSimplifiedAnyCondition =
     PredicatePattern.isSimplifiedAnyCondition . extractAttributes
+
 cannotSimplifyNotSimplifiedError ::
     (HasCallStack, InternalVariable variable) =>
     PredicateF variable (Predicate variable) ->
