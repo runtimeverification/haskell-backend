@@ -14,6 +14,16 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.53.0.0] - 2021-09-08
+
+### Added
+
+- Display log-format option values (#2808).
+
+### Fixed
+
+- Performance issues related to `SideCondition.definedTerms` (#2778, #2779).
+
 ## [0.52.0.0] - 2021-08-11
 
 ### Added
