@@ -133,14 +133,14 @@ simplify sideCondition original =
     replacePredicate = SideCondition.replacePredicate sideCondition
 
     -- If the child 'TermLike' is a term representing a predicate,
-    -- 'simplifyTermLikeOnly' will not attempt to simplify it, so
+    -- 'simplifyTerm' will not attempt to simplify it, so
     -- it should be transformed into a 'Predicate' and simplified
     -- accordingly.
-    simplifyTerm term
+    simplifyTerm' term
         | Right predicate <- Predicate.makePredicate term =
             toOrPattern (termLikeSort term) <$> worker predicate
         | otherwise =
-            simplifyTermLikeOnly sideCondition term
+            simplifyTerm sideCondition term
 
     repr = SideCondition.toRepresentation sideCondition
 
@@ -167,10 +167,10 @@ simplify sideCondition original =
                 ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
-                    simplifyCeil sideCondition =<< traverse simplifyTerm ceilF
+                    simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
                 FloorF floorF@(Floor _ _ child) ->
                     simplifyFloor (termLikeSort child) sideCondition
-                        =<< traverse simplifyTerm floorF
+                        =<< traverse simplifyTerm' floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
                         >>= simplifyExists sideCondition
@@ -179,9 +179,9 @@ simplify sideCondition original =
                         >>= simplifyForall sideCondition
                 EqualsF equalsF@(Equals _ _ term _) ->
                     simplifyEquals sideCondition (termLikeSort term)
-                        =<< traverse simplifyTerm equalsF
+                        =<< traverse simplifyTerm' equalsF
                 InF inF ->
-                    simplifyIn sideCondition =<< traverse simplifyTerm inF
+                    simplifyIn sideCondition =<< traverse simplifyTerm' inF
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition

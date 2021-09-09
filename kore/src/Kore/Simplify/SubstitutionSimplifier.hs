@@ -85,8 +85,8 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
-    simplifyConditionalTerm,
-    simplifyTermLike,
+    simplifyPattern,
+    simplifyPatternScatter,
  )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization (
@@ -153,7 +153,8 @@ simplificationMakeAnd =
     makeAnd termLike1 termLike2 sideCondition = do
         simplified <-
             mkAnd termLike1 termLike2
-                & simplifyConditionalTerm sideCondition
+                & Pattern.fromTermLike
+                & simplifyPatternScatter sideCondition
         TopBottom.guardAgainstBottom simplified
         return simplified
 
@@ -353,7 +354,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             SomeVariableNameElement _
                 | isSimplified -> return subst
                 | otherwise -> do
-                    termLike' <- simplifyTermLike' termLike
+                    termLike' <- simplifyTermLike termLike
                     return $ Substitution.assign uVar termLike'
               where
                 isSimplified =
@@ -361,14 +362,14 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
                         sideConditionRepresentation
                         termLike
 
-    simplifyTermLike' ::
+    simplifyTermLike ::
         TermLike RewritingVariableName ->
         Impl
             RewritingVariableName
             simplifier
             (TermLike RewritingVariableName)
-    simplifyTermLike' termLike = do
-        orPattern <- simplifyTermLike sideCondition termLike
+    simplifyTermLike termLike = do
+        orPattern <- simplifyPattern sideCondition (Pattern.fromTermLike termLike)
         case OrPattern.toPatterns orPattern of
             [] -> do
                 addCondition Condition.bottom
