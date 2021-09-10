@@ -46,9 +46,10 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Simplify (
     MonadSimplify,
     simplifyCondition,
-    simplifyConditionalTerm,
+    simplifyTerm,
  )
 import Kore.Substitute
+import qualified Logic
 import Prelude.Kore
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
@@ -110,21 +111,35 @@ This should only be used when it's certain that the
 the 'Pattern'.
 -}
 makeEvaluate ::
+    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-makeEvaluate sideCondition pattern' =
-    OrPattern.observeAllT $ do
-        withSimplifiedCondition <- simplifyCondition sideCondition pattern'
-        let (term, simplifiedCondition) =
-                Conditional.splitTerm withSimplifiedCondition
-            term' = substitute (toMap $ substitution simplifiedCondition) term
-            termSideCondition =
-                SideCondition.addConditionWithReplacements
-                    simplifiedCondition
-                    sideCondition
-        simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
-        let simplifiedPattern =
-                Conditional.andCondition simplifiedTerm simplifiedCondition
-        simplifyCondition sideCondition simplifiedPattern
+makeEvaluate sideCondition =
+    loop . OrPattern.fromPattern
+  where
+    loop input = do
+        output <-
+            OrPattern.traverse worker input
+                & fmap OrPattern.flatten
+        if input == output
+            then pure output
+            else loop output
+
+    worker pattern' =
+        OrPattern.observeAllT $ do
+            withSimplifiedCondition <- simplifyCondition sideCondition pattern'
+            let (term, simplifiedCondition) =
+                    Conditional.splitTerm withSimplifiedCondition
+                term' = substitute (toMap $ substitution simplifiedCondition) term
+                termSideCondition =
+                    SideCondition.addConditionWithReplacements
+                        simplifiedCondition
+                        sideCondition
+            simplifiedTerm <-
+                simplifyTerm termSideCondition term'
+                    >>= Logic.scatter
+            let simplifiedPattern =
+                    Conditional.andCondition simplifiedTerm simplifiedCondition
+            simplifyCondition sideCondition simplifiedPattern

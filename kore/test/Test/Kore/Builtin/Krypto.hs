@@ -46,9 +46,7 @@ import Kore.Simplify.Simplify (
  )
 import qualified Kore.TopBottom as TopBottom
 import Prelude.Kore
-import Test.Kore.Builtin.Builtin hiding (
-    evaluate,
- )
+import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT (
