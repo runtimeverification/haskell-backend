@@ -45,11 +45,13 @@ instance Entry WarnTrivialClaim where
     oneLineDoc (WarnProvenClaimZeroDepth claim) =
         Pretty.hsep
             [ "WarnProvenClaimZeroDepth"
+            , Pretty.colon
             , Pretty.pretty @SourceLocation $ from claim
             ]
     oneLineDoc (WarnTrivialClaimRemoved claim) =
         Pretty.hsep
-            [ "WarnTrivialClaimRemoved"
+            [ "WarnTrivialClaimRemoved:"
+            , Pretty.colon
             , Pretty.pretty @SourceLocation $ from claim
             ]
     helpDoc _ = "warn when a claim is proven without taking any steps"

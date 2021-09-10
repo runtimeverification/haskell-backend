@@ -45,11 +45,13 @@ instance Entry InfoProofDepth where
     oneLineDoc (InfoUnprovenDepth (ProofDepth depth)) =
         Pretty.hsep
             [ "InfoUnprovenDepth"
+            , Pretty.colon
             , Pretty.pretty depth
             ]
     oneLineDoc (InfoProvenDepth (ProofDepth depth)) =
         Pretty.hsep
             [ "InfoProvenDepth"
+            , Pretty.colon
             , Pretty.pretty depth
             ]
 

@@ -44,7 +44,7 @@ instance Pretty WarnRetrySolverQuery where
 
 instance Entry WarnRetrySolverQuery where
     entrySeverity _ = Warning
-    oneLineDoc _ = mempty
+    oneLineDoc _ = "WarnRetrySolverQuery"
     helpDoc _ =
         "warning raised when the solver failed to decide\
         \ the satisfiability of a formula, indicating that\
