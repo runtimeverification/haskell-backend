@@ -45,10 +45,10 @@ instance Pretty WarnStuckClaimState where
 instance Entry WarnStuckClaimState where
     entrySeverity _ = Warning
     oneLineDoc (TermsUnifiableStuck claim) =
-        Pretty.vsep
+        Pretty.hsep
             ["TermsUnifiableStuck", Pretty.pretty @SourceLocation $ from claim]
     oneLineDoc (TermsNotUnifiableStuck claim) =
-        Pretty.vsep
+        Pretty.hsep
             ["TermsNotUnifiableStuck", Pretty.pretty @SourceLocation $ from claim]
 
     helpDoc _ = "distinguish the ways a proof can become stuck"
