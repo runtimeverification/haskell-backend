@@ -218,6 +218,7 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' action =
         whileDebugAttemptEquation termLike equationRenamed $ do
             result <- action
+            -- TODO: cache result if failure here
             debugAttemptEquationResult equation result
             return result
 

@@ -14,6 +14,8 @@ module Kore.Simplify.Simplify (
     liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
+    SimplifierCache (..),
+    initCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
     lookupAxiomSimplifier,
@@ -42,6 +44,10 @@ module Kore.Simplify.Simplify (
 ) where
 
 import qualified Control.Monad as Monad
+import Data.Hashable (Hashed)
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
+import Kore.Equation.Equation (Equation)
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -231,6 +237,10 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askOverloadSimplifier = lift askOverloadSimplifier
     {-# INLINE askOverloadSimplifier #-}
 
+    getCache :: m SimplifierCache
+
+    putCache :: SimplifierCache -> m ()
+
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
@@ -299,6 +309,28 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
                 observeAllT $ simplifier sideCondition predicate
         scatter results
 -- * Builtin and axiom simplifiers
+
+newtype SimplifierCache =
+    SimplifierCache
+        { attemptedEquationsCache ::
+            HashMap
+                EvaluatorTable
+                CachedAttemptResult
+        }
+
+data EvaluatorTable = EvaluatorTable
+    { equation :: Equation RewritingVariableName
+    , term :: TermLike RewritingVariableName
+    , condition :: SideCondition RewritingVariableName
+    }
+
+data CachedAttemptResult
+    = Doesn'tMatch
+    | Doesn'tCheckRequires
+    | SuccessfulAttempt (Hashed (Pattern RewritingVariableName))
+
+initCache :: SimplifierCache
+initCache = SimplifierCache HashMap.empty
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.

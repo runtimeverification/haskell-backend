@@ -52,7 +52,7 @@ import Kore.Internal.TermLike (
     mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewrite.Step (
+import Kore.Rewrite.UnifyingRule (
     Renaming,
  )
 import Kore.Sort

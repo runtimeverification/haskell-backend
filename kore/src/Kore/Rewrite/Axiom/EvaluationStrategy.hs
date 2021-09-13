@@ -117,6 +117,7 @@ attemptEquationAndAccumulateErrors condition term equation =
   where
     attemptEquation =
         ExceptRT . ExceptT $
+            -- TODO: check if already attempted
             Equation.attemptEquation
                 condition
                 (TermLike.mapVariables (pure Target.unTarget) term)
@@ -144,6 +145,7 @@ simplificationEvaluation ::
     BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
+        -- TODO: check if already attempted
         result <-
             Equation.attemptEquation
                 condition
