@@ -44,10 +44,6 @@ module Kore.Simplify.Simplify (
 ) where
 
 import qualified Control.Monad as Monad
-import Data.Hashable (Hashed)
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
-import Kore.Equation.Equation (Equation)
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -63,6 +59,9 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
+import Data.Hashable (Hashed)
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -71,6 +70,7 @@ import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
+import Kore.Equation.Equation (Equation)
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -310,13 +310,12 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
         scatter results
 -- * Builtin and axiom simplifiers
 
-newtype SimplifierCache =
-    SimplifierCache
-        { attemptedEquationsCache ::
-            HashMap
-                EvaluatorTable
-                CachedAttemptResult
-        }
+newtype SimplifierCache = SimplifierCache
+    { attemptedEquationsCache ::
+        HashMap
+            EvaluatorTable
+            CachedAttemptResult
+    }
 
 data EvaluatorTable = EvaluatorTable
     { equation :: Equation RewritingVariableName
