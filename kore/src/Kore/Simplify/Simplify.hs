@@ -238,8 +238,19 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     {-# INLINE askOverloadSimplifier #-}
 
     getCache :: m SimplifierCache
+    default getCache ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        m SimplifierCache
+    getCache = lift getCache
+    {-# INLINE getCache #-}
 
     putCache :: SimplifierCache -> m ()
+    default putCache ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        SimplifierCache ->
+        m ()
+    putCache = lift . putCache
+    {-# INLINE putCache #-}
 
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>

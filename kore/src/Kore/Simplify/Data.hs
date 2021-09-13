@@ -32,11 +32,7 @@ import Control.Monad.Catch (
  )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
-import Control.Monad.State.Strict (StateT (StateT))
-import Control.Monad.Trans.State.Strict (
-    StateT (runStateT),
-    evalStateT,
- )
+import Control.Monad.State.Strict
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import Data.HashSet (HashSet)
@@ -112,6 +108,7 @@ newtype SimplifierT smt a = SimplifierT
     deriving newtype (Functor, Applicative, Monad, MonadSMT)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader (Env (SimplifierT smt)))
+    deriving newtype (MonadState SimplifierCache)
 
 type Simplifier = SimplifierT SMT
 
@@ -176,6 +173,12 @@ instance
 
     askOverloadSimplifier = asks overloadSimplifier
     {-# INLINE askOverloadSimplifier #-}
+
+    getCache = get
+    {-# INLINE getCache #-}
+
+    putCache = put
+    {-# INLINE putCache #-}
 
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
