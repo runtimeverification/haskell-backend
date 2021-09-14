@@ -102,6 +102,7 @@ data LogMessage = LogMessage
 
 instance Entry LogMessage where
     entrySeverity LogMessage{severity} = severity
+    oneLineDoc (LogMessage{severity}) = prettySeverity severity
 
 instance Pretty LogMessage where
     pretty LogMessage{message, callstack} =

@@ -27,6 +27,7 @@ instance Pretty InfoReachability where
 instance Log.Entry InfoReachability where
     entrySeverity _ = Log.Info
     contextDoc InfoReachability{prim} = (<+>) "while" <$> primDoc prim
+    oneLineDoc InfoReachability{prim} = Pretty.pretty . show $ prim
     helpDoc _ = "log reachability proof steps"
 
 primDoc :: Prim -> Maybe (Doc ann)

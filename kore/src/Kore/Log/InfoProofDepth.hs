@@ -42,6 +42,19 @@ instance Pretty InfoProofDepth where
 
 instance Entry InfoProofDepth where
     entrySeverity _ = Info
+    oneLineDoc (InfoUnprovenDepth (ProofDepth depth)) =
+        Pretty.hsep
+            [ "InfoUnprovenDepth"
+            , Pretty.colon
+            , Pretty.pretty depth
+            ]
+    oneLineDoc (InfoProvenDepth (ProofDepth depth)) =
+        Pretty.hsep
+            [ "InfoProvenDepth"
+            , Pretty.colon
+            , Pretty.pretty depth
+            ]
+
     helpDoc _ = "log depth of proof graph"
 
 infoUnprovenDepth :: MonadLog log => ProofDepth -> log ()
