@@ -15,6 +15,7 @@ import Control.Lens (
     (<>=),
  )
 import qualified Control.Lens as Lens
+import Kore.Rewrite.Axiom.MatcherData
 import qualified Control.Monad as Monad
 import Control.Monad.RWS.Strict (
     MonadReader,
@@ -152,11 +153,6 @@ instance Ord variable => Ord (Constraint variable) where
     compare constraint1@(Constraint pair1) constraint2@(Constraint pair2) =
         compare (findClass constraint1) (findClass constraint2)
             <> compare pair1 pair2
-
-type MatchResult variable =
-    ( Predicate variable
-    , Map.Map (SomeVariableName variable) (TermLike variable)
-    )
 
 {- | Dispatch a single matching constraint.
 

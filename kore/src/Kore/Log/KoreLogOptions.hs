@@ -40,7 +40,7 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
-import Kore.Equation (
+import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )

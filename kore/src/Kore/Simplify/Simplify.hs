@@ -15,6 +15,7 @@ module Kore.Simplify.Simplify (
 
     -- * Builtin and axiom simplifiers
     SimplifierCache (..),
+    EvaluatorTable (..),
     initCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
@@ -44,6 +45,7 @@ module Kore.Simplify.Simplify (
 ) where
 
 import qualified Control.Monad as Monad
+import Kore.Equation.DebugEquation (AttemptEquationError)
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -61,7 +63,6 @@ import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
-import Data.Hashable (Hashed)
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -325,19 +326,16 @@ newtype SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
         HashMap
             EvaluatorTable
-            CachedAttemptResult
+            (AttemptEquationError RewritingVariableName)
     }
 
 data EvaluatorTable = EvaluatorTable
-    { equation :: Equation RewritingVariableName
-    , term :: TermLike RewritingVariableName
-    , condition :: SideCondition RewritingVariableName
+    { cachedEquation :: Equation RewritingVariableName
+    , cachedTerm :: TermLike RewritingVariableName
     }
-
-data CachedAttemptResult
-    = Doesn'tMatch
-    | Doesn'tCheckRequires
-    | SuccessfulAttempt (Hashed (Pattern RewritingVariableName))
+    deriving stock (Eq, Ord)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Hashable)
 
 initCache :: SimplifierCache
 initCache = SimplifierCache HashMap.empty

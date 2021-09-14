@@ -32,11 +32,14 @@ import Data.Semigroup (
  )
 import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Equation (
+import qualified Kore.Equation.DebugEquation as Equation
+import Kore.Equation.DebugEquation (
     AttemptEquationError,
-    Equation,
  )
 import qualified Kore.Equation as Equation
+import Kore.Equation.Equation (
+    Equation,
+                              )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -117,7 +120,6 @@ attemptEquationAndAccumulateErrors condition term equation =
   where
     attemptEquation =
         ExceptRT . ExceptT $
-            -- TODO: check if already attempted
             Equation.attemptEquation
                 condition
                 (TermLike.mapVariables (pure Target.unTarget) term)
@@ -145,7 +147,6 @@ simplificationEvaluation ::
     BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        -- TODO: check if already attempted
         result <-
             Equation.attemptEquation
                 condition

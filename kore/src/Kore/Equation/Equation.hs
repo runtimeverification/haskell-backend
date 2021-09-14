@@ -87,6 +87,7 @@ data Equation variable = Equation
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation ::

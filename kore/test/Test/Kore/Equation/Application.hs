@@ -19,6 +19,7 @@ import Kore.Equation.Application hiding (
     attemptEquation,
  )
 import Kore.Equation.Equation
+import Kore.Equation.DebugEquation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
