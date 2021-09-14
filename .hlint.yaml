@@ -33,9 +33,9 @@
   - {name: [Data.Map], within: []}
   - {name: [System.FilePath.Posix], within: []}
   - name:
-      - Data.Text.Prettyprint.Doc
-      - Data.Text.Prettyprint.Doc.Render.Text
-      - Data.Text.Prettyprint.Doc.String
+      - Prettyprinter
+      - Prettyprinter.Render.Text
+      - Prettyprinter.String
     within:
       - Pretty
 
