@@ -40,11 +40,11 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
+import qualified Kore.Equation as Equation
 import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )
-import qualified Kore.Equation as Equation
 import Kore.Log.DebugSolver (
     DebugSolverOptions (..),
     parseDebugSolverOptions,

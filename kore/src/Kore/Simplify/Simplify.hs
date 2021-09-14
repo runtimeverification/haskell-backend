@@ -45,7 +45,6 @@ module Kore.Simplify.Simplify (
 ) where
 
 import qualified Control.Monad as Monad
-import Kore.Equation.DebugEquation (AttemptEquationError)
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -71,6 +70,7 @@ import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
+import Kore.Equation.DebugEquation (AttemptEquationError)
 import Kore.Equation.Equation (Equation)
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,

@@ -23,27 +23,29 @@ module Kore.Equation.DebugEquation (
     debugAttemptEquationResult,
 ) where
 
-import Prelude.Kore
-import Debug
-import Kore.Unparser (Unparse (..))
-import qualified Kore.Attribute.Source as Attribute
-import Kore.Internal.Pattern (Pattern)
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
 import Control.Error (
     ExceptT,
     withExceptT,
  )
+import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
+import Kore.AST.AstWithLocation
+import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Source as Attribute
+import Kore.Equation.Equation (Equation (..))
+import Kore.Internal.OrCondition (OrCondition)
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Predicate (Predicate)
+import Kore.Internal.SideCondition (SideCondition)
+import Kore.Internal.TermLike (AstLocation (AstLocationFile), FileLocation, SomeVariableName, TermLike)
+import Kore.Rewrite.Axiom.MatcherData (
+    MatchResult,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Pretty (Pretty (..))
-import Kore.Internal.TermLike (TermLike, SomeVariableName, AstLocation (AstLocationFile), FileLocation)
-import Kore.Internal.Predicate (Predicate)
-import Kore.Internal.SideCondition (SideCondition)
-import Kore.Internal.OrCondition (OrCondition)
-import qualified Kore.Attribute.Axiom as Attribute
-import Kore.AST.AstWithLocation
+import Kore.Unparser (Unparse (..))
 import Log (
     Entry (..),
     MonadLog,
@@ -51,10 +53,8 @@ import Log (
     logEntry,
     logWhile,
  )
-import Kore.Equation.Equation (Equation (..))
-import Kore.Rewrite.Axiom.MatcherData (
-    MatchResult,
-                                  )
+import Prelude.Kore
+import Pretty (Pretty (..))
 import qualified Pretty
 
 {- | The outcome of an attempt to apply an 'Equation'.

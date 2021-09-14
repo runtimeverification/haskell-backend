@@ -32,14 +32,14 @@ import Data.Semigroup (
  )
 import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Equation.DebugEquation as Equation
+import qualified Kore.Equation as Equation
 import Kore.Equation.DebugEquation (
     AttemptEquationError,
  )
-import qualified Kore.Equation as Equation
+import qualified Kore.Equation.DebugEquation as Equation
 import Kore.Equation.Equation (
     Equation,
-                              )
+ )
 import Kore.Internal.OrPattern (
     OrPattern,
  )

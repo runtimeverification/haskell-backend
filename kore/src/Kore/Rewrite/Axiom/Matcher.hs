@@ -15,7 +15,6 @@ import Control.Lens (
     (<>=),
  )
 import qualified Control.Lens as Lens
-import Kore.Rewrite.Axiom.MatcherData
 import qualified Control.Monad as Monad
 import Control.Monad.RWS.Strict (
     MonadReader,
@@ -84,6 +83,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.MatcherData
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

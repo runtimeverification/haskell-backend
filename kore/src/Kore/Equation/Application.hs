@@ -23,12 +23,11 @@ import Control.Monad (
 import Control.Monad.Except (
     catchError,
  )
+import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-import Kore.Equation.DebugEquation
-import qualified Data.HashMap.Strict as HashMap
 import Data.Set (
     Set,
  )
@@ -38,6 +37,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Equation.DebugEquation
 import Kore.Equation.Equation (
     Equation (..),
  )
@@ -114,7 +114,6 @@ attemptEquation sideCondition termLike equation = do
         Just attemptResult -> return (Left attemptResult)
         Nothing -> attemptEquationWorker
   where
-
     attemptEquationWorker =
         whileDebugAttemptEquation' . runExceptT $ do
             let Equation{left, argument, antiLeft} = equationRenamed
@@ -198,7 +197,7 @@ attemptEquation sideCondition termLike equation = do
                     }
             updatedCache =
                 HashMap.insert newEntry result cache
-                & Simplifier.SimplifierCache
+                    & Simplifier.SimplifierCache
         Simplifier.putCache updatedCache
 
     alreadyAttempted = do
@@ -214,14 +213,12 @@ attemptEquation sideCondition termLike equation = do
             WhileApplyMatchResult _ -> return value
             WhileCheckRequires
                 ( CheckRequiresError
-                    { sideCondition = oldSideCondition
-                    }
-                ) ->
+                        { sideCondition = oldSideCondition
+                        }
+                    ) ->
                     if sideCondition == oldSideCondition
                         then return value
                         else empty
-
-
 
 {- | Simplify the argument of a function definition equation with the
  match substitution and the priority predicate. This will avoid
