@@ -12,8 +12,11 @@ import Control.Monad.Catch (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.Attribute.Axiom (
+    Axiom (..),
+ )
 import Kore.Equation.Equation (
-    Equation,
+    Equation (..),
  )
 import Kore.Internal.TermLike (
     VariableName,
@@ -63,6 +66,11 @@ instance Exception ErrorEquationRightFunction where
 
 instance Entry ErrorEquationRightFunction where
     entrySeverity _ = Error
+    oneLineDoc
+        ( ErrorEquationRightFunction
+                Equation{attributes = Axiom{sourceLocation}}
+            ) =
+            pretty sourceLocation
     helpDoc _ = "errors raised when right-hand side of equation is not a function pattern"
 
 instance SQL.Table ErrorEquationRightFunction

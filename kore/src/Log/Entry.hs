@@ -58,8 +58,7 @@ class (Show entry, Typeable entry) => Entry entry where
     default longDoc :: Pretty entry => entry -> Pretty.Doc ann
     longDoc = Pretty.pretty
 
-    oneLineDoc :: entry -> Maybe (Pretty.Doc ann)
-    oneLineDoc = const $ Just "One line logging not implemented for this entry"
+    oneLineDoc :: entry -> Pretty.Doc ann
 
     contextDoc :: entry -> Maybe (Pretty.Doc ann)
     contextDoc = const Nothing

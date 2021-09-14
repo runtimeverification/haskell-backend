@@ -95,9 +95,8 @@ instance Entry DebugTransition where
     helpDoc _ = "log proof state"
     oneLineDoc
         (DebugAfterTransition AfterTransition{transition, appliedRules}) =
-            Just $
-                transitionHeader
-                    <> Pretty.hsep (pretty <$> appliedRules)
+            transitionHeader
+                <> Pretty.hsep (pretty <$> appliedRules)
           where
             transitionHeader =
                 "after  "
@@ -106,7 +105,7 @@ instance Entry DebugTransition where
                         _otherwise -> pretty transition <> ": "
     oneLineDoc
         (DebugBeforeTransition BeforeTransition{transition}) =
-            Just $ "before " <> pretty transition
+            "before " <> pretty transition
 
 debugBeforeTransition ::
     MonadLog log =>

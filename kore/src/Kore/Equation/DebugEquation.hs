@@ -38,6 +38,9 @@ import Kore.Internal.OrCondition (OrCondition)
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (SideCondition)
+import Kore.Attribute.SourceLocation (
+    SourceLocation (..),
+ )
 import Kore.Internal.TermLike (AstLocation (AstLocationFile), FileLocation, SomeVariableName, TermLike)
 import Kore.Rewrite.Axiom.MatcherData (
     MatchResult,
@@ -113,7 +116,6 @@ data MatchError variable = MatchError
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving anyclass (Hashable)
 
 instance Pretty (MatchError RewritingVariableName) where
     pretty _ = "equation did not match term"
@@ -190,7 +192,6 @@ data CheckRequiresError variable = CheckRequiresError
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving anyclass (Hashable)
 
 instance Pretty (CheckRequiresError RewritingVariableName) where
     pretty checkRequiresError =
@@ -255,10 +256,12 @@ instance Entry DebugAttemptEquation where
     contextDoc _ = Nothing
     helpDoc _ = "log equation application attempts"
     oneLineDoc (DebugAttemptEquation equation _) =
-        (\loc -> Pretty.hsep ["applying equation at", pretty loc])
-            <$> srcLoc equation
-    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = Just "equation is not applicable"
-    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = Just "equation is applicable"
+        maybe
+            mempty
+            (\loc -> Pretty.hsep ["applying equation at", pretty loc])
+            (srcLoc equation)
+    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
+    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
@@ -313,6 +316,12 @@ isLocEmpty Attribute.SourceLocation{source = Attribute.Source file} =
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
+    oneLineDoc
+        ( DebugApplyEquation
+                Equation{attributes = Attribute.Axiom{sourceLocation}}
+                _
+            ) =
+            pretty sourceLocation
     helpDoc _ = "log equation application successes"
 
 {- | Log when an 'Equation' is actually applied.
