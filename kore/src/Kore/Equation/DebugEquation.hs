@@ -33,14 +33,14 @@ import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Source as Attribute
+import Kore.Attribute.SourceLocation (
+    SourceLocation (..),
+ )
 import Kore.Equation.Equation (Equation (..))
 import Kore.Internal.OrCondition (OrCondition)
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (SideCondition)
-import Kore.Attribute.SourceLocation (
-    SourceLocation (..),
- )
 import Kore.Internal.TermLike (AstLocation (AstLocationFile), FileLocation, SomeVariableName, TermLike)
 import Kore.Rewrite.Axiom.MatcherData (
     MatchResult,
