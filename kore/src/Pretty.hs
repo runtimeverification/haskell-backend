@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
 module Pretty (
-    module Data.Text.Prettyprint.Doc,
+    module Prettyprinter,
     layoutOneLine,
     renderText,
     renderString,
@@ -23,17 +23,17 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import Data.Text.Prettyprint.Doc
-import Data.Text.Prettyprint.Doc.Render.String (
+import Prelude.Kore
+import Prettyprinter
+import Prettyprinter.Render.String (
     renderString,
  )
-import Data.Text.Prettyprint.Doc.Render.Text (
+import Prettyprinter.Render.Text (
     hPutDoc,
     putDoc,
     renderIO,
     renderStrict,
  )
-import Prelude.Kore
 
 {- | Lay out the document with no (automatic) line breaks.
 
