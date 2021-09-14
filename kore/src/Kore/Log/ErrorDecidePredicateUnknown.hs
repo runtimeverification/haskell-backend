@@ -50,6 +50,7 @@ instance Pretty ErrorDecidePredicateUnknown where
 
 instance Entry ErrorDecidePredicateUnknown where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorDecidePredicateUnknown"
     helpDoc _ =
         "errors raised when the solver cannot decide satisfiability of a formula"
 

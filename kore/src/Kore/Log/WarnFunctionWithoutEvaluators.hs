@@ -9,6 +9,7 @@ module Kore.Log.WarnFunctionWithoutEvaluators (
 
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.Attribute.Symbol (sourceLocation)
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol (..),
  )
@@ -59,6 +60,8 @@ instance Pretty WarnFunctionWithoutEvaluators where
 
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
+    oneLineDoc (WarnFunctionWithoutEvaluators Symbol{symbolAttributes}) =
+        Pretty.pretty $ sourceLocation symbolAttributes
     helpDoc _ = "warn when encountering a function with no definition"
 
 instance SQL.Table WarnFunctionWithoutEvaluators

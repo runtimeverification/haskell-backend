@@ -32,6 +32,8 @@ instance Pretty WarnBoundedModelChecker where
 
 instance Entry WarnBoundedModelChecker where
     entrySeverity _ = Warning
+    oneLineDoc (WarnBoundedModelChecker rule) =
+        Pretty.pretty @SourceLocation $ from rule
     helpDoc _ = "warn when the bounded model checker does not terminate within the given bound"
 
 warnBoundedModelChecker ::

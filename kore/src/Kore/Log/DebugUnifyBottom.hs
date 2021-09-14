@@ -55,6 +55,7 @@ instance Pretty DebugUnifyBottom where
 
 instance Entry DebugUnifyBottom where
     entrySeverity _ = Debug
+    oneLineDoc _ = "DebugUnifyBottom"
     helpDoc _ = "log failed unification"
 
 mkDebugUnifyBottom ::

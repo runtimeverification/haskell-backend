@@ -57,6 +57,8 @@ instance Pretty WarnIfLowProductivity where
                 | otherwise = []
 instance Entry WarnIfLowProductivity where
     entrySeverity _ = Warning
+    oneLineDoc (WarnIfLowProductivity productivityPercent _) =
+        Pretty.pretty productivityPercent
     helpDoc _ = "warn when productivty (MUT time / Total time) drops below 90%"
 
 warnIfLowProductivity ::
