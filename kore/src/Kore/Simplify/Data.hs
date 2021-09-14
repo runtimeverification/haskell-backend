@@ -33,16 +33,12 @@ import Control.Monad.Catch (
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import Control.Monad.State.Strict
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
-import Data.HashSet (HashSet)
 import qualified Data.Map.Strict as Map
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Equation as Equation
-import Kore.Equation.Equation (Equation)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -55,8 +51,6 @@ import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.Pattern (Pattern)
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.SideCondition (SideCondition)
-import Kore.Internal.TermLike (TermLike)
 import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier (
     matchAxiomIdentifier,
