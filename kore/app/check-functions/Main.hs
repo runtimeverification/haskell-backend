@@ -20,8 +20,8 @@ import Kore.BugReport (
     withBugReport,
  )
 import Kore.Exec (
-    checkFunctions,
     checkBothMatch,
+    checkFunctions,
  )
 import Kore.Log (
     KoreLogOptions,
@@ -39,6 +39,7 @@ import Kore.Options (
     progDesc,
     str,
  )
+import Kore.Simplify.Data (evalSimplifier)
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -54,7 +55,6 @@ import System.Clock (
 import System.Exit (
     exitWith,
  )
-import Kore.Simplify.Data (evalSimplifier)
 
 exeName :: ExeName
 exeName = ExeName "kore-check-functions"
@@ -121,10 +121,11 @@ mainWithOptions opts = do
 
 koreCheckBothMatch :: KoreCheckerOptions -> Main ExitCode
 koreCheckBothMatch opts = do
-    mod' <- loadDefinitions [fileName opts]
-                >>= loadModule (mainModuleName opts)
-    SMT.runNoSMT $ evalSimplifier mod' $ checkBothMatch mod' 
-    
+    mod' <-
+        loadDefinitions [fileName opts]
+            >>= loadModule (mainModuleName opts)
+    SMT.runNoSMT $ evalSimplifier mod' $ checkBothMatch mod'
+
 koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
 koreCheckFunctions opts =
     loadDefinitions [fileName opts]

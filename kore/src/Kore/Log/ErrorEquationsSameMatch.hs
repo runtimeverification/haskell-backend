@@ -65,7 +65,8 @@ instance Exception ErrorEquationsSameMatch where
 
 instance Entry ErrorEquationsSameMatch where
     entrySeverity _ = Error
-    helpDoc _ = "errors raised when two equations from a\
+    helpDoc _ =
+        "errors raised when two equations from a\
         \ function definition can match the same term"
 
 instance SQL.Table ErrorEquationsSameMatch
@@ -77,5 +78,5 @@ errorEquationsSameMatch ::
     Equation VariableName ->
     m ()
 errorEquationsSameMatch eq1 eq2 =
-    logError . renderText . layoutOneLine . pretty 
-    $ ErrorEquationsSameMatch eq1 eq2
+    logError . renderText . layoutOneLine . pretty $
+        ErrorEquationsSameMatch eq1 eq2

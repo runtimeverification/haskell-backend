@@ -74,8 +74,9 @@ import Kore.Equation (
     right,
  )
 import qualified Kore.Equation as Equation (
+    Equation (antiLeft),
     argument,
-    requires, Equation (antiLeft)
+    requires,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -103,16 +104,16 @@ import Kore.Internal.Predicate (
     makeMultipleOrPredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition (
+    top,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Internal.SideCondition (
-    top
- )
 import Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
  )
 import Kore.Log.ErrorEquationsSameMatch (
-    errorEquationsSameMatch
+    errorEquationsSameMatch,
  )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
@@ -194,7 +195,7 @@ import Kore.Syntax.Module (
     ModuleName,
  )
 import Kore.TopBottom (
-    isBottom
+    isBottom,
  )
 import Kore.Unparser (
     unparseToText,
@@ -668,12 +669,12 @@ bothMatch eq1 eq2 =
         prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
         check =
             Predicate.makeAndPredicate pre1 $
-            Predicate.makeAndPredicate pre2 $
-            Predicate.makeAndPredicate arg1 $
-            Predicate.makeAndPredicate arg2 $
-            Predicate.makeAndPredicate prio1 prio2
-        check' = Predicate.mapVariables (pure mkConfigVariable) check in
-    (not . isBottom) <$> Predicate.simplify top check'
+                Predicate.makeAndPredicate pre2 $
+                    Predicate.makeAndPredicate arg1 $
+                        Predicate.makeAndPredicate arg2 $
+                            Predicate.makeAndPredicate prio1 prio2
+        check' = Predicate.mapVariables (pure mkConfigVariable) check
+     in (not . isBottom) <$> Predicate.simplify top check'
 
 checkBothMatch ::
     MonadSimplify m =>
@@ -688,8 +689,8 @@ checkBothMatch verifiedModule =
     mkPairs xs =
         case xs of
             [] -> []
-            (x:ys) -> map ((,) x) ys ++ mkPairs ys
-    checkResults [] = return ExitSuccess 
+            (x : ys) -> map ((,) x) ys ++ mkPairs ys
+    checkResults [] = return ExitSuccess
     checkResults eqnPairs =
         mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3
 
