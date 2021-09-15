@@ -18,6 +18,7 @@ module Kore.Exec (
     boundedModelCheck,
     matchDisjunction,
     checkFunctions,
+    checkBothMatch,
     Rewrite,
     Equality,
 ) where
@@ -31,6 +32,7 @@ import Control.Error (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
+    filterM,
     join,
     (>=>),
  )
@@ -71,6 +73,10 @@ import Kore.Equation (
     extractEquations,
     right,
  )
+import qualified Kore.Equation as Equation (
+    argument,
+    requires, Equation (antiLeft)
+ )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -99,8 +105,14 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Internal.SideCondition (
+    top
+ )
 import Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
+ )
+import Kore.Log.ErrorEquationsSameMatch (
+    errorEquationsSameMatch
  )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
@@ -173,12 +185,16 @@ import Kore.Simplify.Data (
  )
 import qualified Kore.Simplify.Data as Simplifier
 import qualified Kore.Simplify.Pattern as Pattern
+import qualified Kore.Simplify.Predicate as Predicate
 import qualified Kore.Simplify.Rule as Rule
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
 import Kore.Syntax.Module (
     ModuleName,
+ )
+import Kore.TopBottom (
+    isBottom
  )
 import Kore.Unparser (
     unparseToText,
@@ -637,6 +653,45 @@ checkFunctions verifiedModule =
     checkResults [] = return ExitSuccess
     checkResults eqns =
         mapM_ errorEquationRightFunction eqns $> ExitFailure 3
+
+bothMatch ::
+    MonadSimplify m =>
+    Equation VariableName ->
+    Equation VariableName ->
+    m Bool
+bothMatch eq1 eq2 =
+    let pre1 = Equation.requires eq1
+        pre2 = Equation.requires eq2
+        arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1
+        arg2 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq2
+        prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
+        prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
+        check =
+            Predicate.makeAndPredicate pre1 $
+            Predicate.makeAndPredicate pre2 $
+            Predicate.makeAndPredicate arg1 $
+            Predicate.makeAndPredicate arg2 $
+            Predicate.makeAndPredicate prio1 prio2
+        check' = Predicate.mapVariables (pure mkConfigVariable) check in
+    (not . isBottom) <$> Predicate.simplify top check'
+
+checkBothMatch ::
+    MonadSimplify m =>
+    -- | The main module
+    VerifiedModule StepperAttributes ->
+    m ExitCode
+checkBothMatch verifiedModule =
+    filterM (uncurry bothMatch) (mkPairs equations)
+        >>= checkResults
+  where
+    equations = join $ Map.elems $ extractEquations verifiedModule
+    mkPairs xs =
+        case xs of
+            [] -> []
+            (x:ys) -> map ((,) x) ys ++ mkPairs ys
+    checkResults [] = return ExitSuccess 
+    checkResults eqnPairs =
+        mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3
 
 -- | Rule merging
 mergeAllRules ::
