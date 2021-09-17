@@ -655,6 +655,10 @@ checkFunctions verifiedModule =
     checkResults eqns =
         mapM_ errorEquationRightFunction eqns $> ExitFailure 3
 
+
+{- | Returns true when both equations match the same term.  See:
+ - https://github.com/kframework/kore/issues/2472#issue-833143685
+-}
 bothMatch ::
     MonadSimplify m =>
     Equation VariableName ->
@@ -676,6 +680,9 @@ bothMatch eq1 eq2 =
         check' = Predicate.mapVariables (pure mkConfigVariable) check
      in (not . isBottom) <$> Predicate.simplify top check'
 
+{- | Checks if any function definition in the module carries two equations that both match
+ - same term.
+-}
 checkBothMatch ::
     MonadSimplify m =>
     -- | The main module
@@ -686,6 +693,7 @@ checkBothMatch verifiedModule =
         >>= checkResults
   where
     equations = join $ Map.elems $ extractEquations verifiedModule
+    -- produces all 'in-order' pairs in a list
     mkPairs xs =
         case xs of
             [] -> []

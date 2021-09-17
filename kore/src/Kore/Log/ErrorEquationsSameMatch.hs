@@ -38,7 +38,7 @@ import SQL (
     Table,
  )
 
--- | Error when RHS of equation is not a function pattern.
+-- | Error when two equations both match a term.
 data ErrorEquationsSameMatch = ErrorEquationsSameMatch
     { equation1, equation2 :: Equation VariableName
     }
@@ -71,7 +71,6 @@ instance Entry ErrorEquationsSameMatch where
 
 instance SQL.Table ErrorEquationsSameMatch
 
--- | Error when RHS of equation is not a function pattern.
 errorEquationsSameMatch ::
     MonadLog m =>
     Equation VariableName ->
