@@ -689,10 +689,10 @@ checkBothMatch ::
     VerifiedModule StepperAttributes ->
     m ExitCode
 checkBothMatch verifiedModule =
-    filterM (uncurry bothMatch) (mkPairs equations)
+    filterM (uncurry bothMatch) equations
         >>= checkResults
   where
-    equations = join $ Map.elems $ extractEquations verifiedModule
+    equations = join $ map mkPairs $ Map.elems $ extractEquations verifiedModule
     -- produces all 'in-order' pairs in a list
     mkPairs xs =
         case xs of
