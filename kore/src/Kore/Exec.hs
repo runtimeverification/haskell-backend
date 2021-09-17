@@ -655,7 +655,6 @@ checkFunctions verifiedModule =
     checkResults eqns =
         mapM_ errorEquationRightFunction eqns $> ExitFailure 3
 
-
 {- | Returns true when both equations match the same term.  See:
  - https://github.com/kframework/kore/issues/2472#issue-833143685
 -}

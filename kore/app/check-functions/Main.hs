@@ -116,7 +116,6 @@ mainWithOptions opts = do
         ExitSuccess ->
             withBugReport' koreCheckBothMatch
                 >>= exitWith
-
   where
     withBugReport' check =
         withBugReport exeName (bugReportOption opts) $ \tmpDir ->
