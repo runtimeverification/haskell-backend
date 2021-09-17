@@ -6,6 +6,7 @@ module Main (main) where
 
 import GlobalMain (
     ExeName (..),
+    LoadedModule,
     Main,
     loadDefinitions,
     loadModule,
@@ -15,7 +16,7 @@ import GlobalMain (
  )
 import Kore.BugReport (
     BugReportOption,
-    ExitCode,
+    ExitCode (..),
     parseBugReportOption,
     withBugReport,
  )
@@ -109,25 +110,27 @@ main = do
 
 mainWithOptions :: KoreCheckerOptions -> IO ()
 mainWithOptions opts = do
-    exitCode <-
-        withBugReport exeName (bugReportOption opts) $ \tmpDir ->
-            koreCheckFunctions opts
-                & runKoreLog tmpDir (koreLogOptions opts)
-    exitCode' <-
-        withBugReport exeName (bugReportOption opts) $ \tmpDir ->
-            koreCheckBothMatch opts
-                & runKoreLog tmpDir (koreLogOptions opts)
-    exitWith $ max exitCode exitCode'
+    exitCode <- withBugReport' koreCheckFunctions
+    case exitCode of
+        ExitFailure _ -> exitWith exitCode
+        ExitSuccess ->
+            withBugReport' koreCheckBothMatch
+                >>= exitWith
 
-koreCheckBothMatch :: KoreCheckerOptions -> Main ExitCode
-koreCheckBothMatch opts = do
-    mod' <-
-        loadDefinitions [fileName opts]
-            >>= loadModule (mainModuleName opts)
-    SMT.runNoSMT $ evalSimplifier mod' $ checkBothMatch mod'
+  where
+    withBugReport' check =
+        withBugReport exeName (bugReportOption opts) $ \tmpDir ->
+            getLoadedModule opts >>= check
+                & runKoreLog tmpDir (koreLogOptions opts)
 
-koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
-koreCheckFunctions opts =
+getLoadedModule :: KoreCheckerOptions -> Main LoadedModule
+getLoadedModule opts =
     loadDefinitions [fileName opts]
         >>= loadModule (mainModuleName opts)
-        >>= checkFunctions
+
+koreCheckBothMatch :: LoadedModule -> Main ExitCode
+koreCheckBothMatch loadedMod =
+    SMT.runNoSMT $ evalSimplifier loadedMod $ checkBothMatch loadedMod
+
+koreCheckFunctions :: LoadedModule -> Main ExitCode
+koreCheckFunctions = checkFunctions
