@@ -253,6 +253,7 @@
           "Kore/Log/ErrorBottomTotalFunction"
           "Kore/Log/ErrorDecidePredicateUnknown"
           "Kore/Log/ErrorEquationRightFunction"
+          "Kore/Log/ErrorEquationsSameMatch"
           "Kore/Log/ErrorException"
           "Kore/Log/ErrorParse"
           "Kore/Log/ErrorRewriteLoop"
