@@ -218,7 +218,7 @@ attemptEquation sideCondition termLike equation = do
                     }
         (result, newCache) <-
             Simplifier.lookupFromCache entry simplifierCache
-            & (MaybeT . return)
+                & (MaybeT . return)
         case result of
             WhileMatch _ -> return (result, newCache)
             WhileApplyMatchResult _ -> return (result, newCache)
@@ -233,7 +233,7 @@ attemptEquation sideCondition termLike equation = do
                     }
         (result, newCache) <-
             Simplifier.lookupFromCache entry simplifierCache
-            & (MaybeT . return)
+                & (MaybeT . return)
         case result of
             WhileCheckRequires _ -> return (result, newCache)
             WhileMatch _ -> empty

@@ -47,8 +47,6 @@ module Kore.Simplify.Simplify (
 ) where
 
 import qualified Control.Monad as Monad
-import qualified Data.HashPSQ as HashPSQ
-import Data.HashPSQ (HashPSQ)
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -64,6 +62,8 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
+import Data.HashPSQ (HashPSQ)
+import qualified Data.HashPSQ as HashPSQ
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -347,19 +347,19 @@ initCache (fromEnum -> cacheCapacity) =
         }
 
 isCacheFull :: SimplifierCache -> Bool
-isCacheFull SimplifierCache { cacheSize, cacheCapacity } =
+isCacheFull SimplifierCache{cacheSize, cacheCapacity} =
     cacheSize >= cacheCapacity
 
 removeMinCache :: SimplifierCache -> SimplifierCache
-removeMinCache SimplifierCache { attemptedEquationsCache, cacheCapacity, cacheSize } =
+removeMinCache SimplifierCache{attemptedEquationsCache, cacheCapacity, cacheSize} =
     let attemptedEquationsCache' =
             HashPSQ.deleteMin attemptedEquationsCache
         cacheSize' = cacheSize - 1
-    in  SimplifierCache
-        { attemptedEquationsCache = attemptedEquationsCache'
-        , cacheSize = cacheSize'
-        , cacheCapacity
-        }
+     in SimplifierCache
+            { attemptedEquationsCache = attemptedEquationsCache'
+            , cacheSize = cacheSize'
+            , cacheCapacity
+            }
 
 applyInvariant :: SimplifierCache -> SimplifierCache
 applyInvariant cache
@@ -370,23 +370,23 @@ addToCache :: EvaluatorTable -> AttemptEquationError RewritingVariableName -> Si
 addToCache table result =
     addToCache' . applyInvariant
   where
-    addToCache' oldCache@SimplifierCache { attemptedEquationsCache, cacheSize } =
+    addToCache' oldCache@SimplifierCache{attemptedEquationsCache, cacheSize} =
         let (maybeOldValue, newAttemptedEquationsCache) =
                 HashPSQ.insertView table 0 result attemptedEquationsCache
          in oldCache
-             { attemptedEquationsCache = newAttemptedEquationsCache
-             , cacheSize =
-                 case maybeOldValue of
-                    Just _ -> cacheSize
-                    Nothing -> cacheSize + 1
-             }
+                { attemptedEquationsCache = newAttemptedEquationsCache
+                , cacheSize =
+                    case maybeOldValue of
+                        Just _ -> cacheSize
+                        Nothing -> cacheSize + 1
+                }
 
 lookupFromCache :: EvaluatorTable -> SimplifierCache -> Maybe (AttemptEquationError RewritingVariableName, SimplifierCache)
-lookupFromCache table oldCache@SimplifierCache { attemptedEquationsCache } =
+lookupFromCache table oldCache@SimplifierCache{attemptedEquationsCache} =
     case HashPSQ.alter increasePriority table attemptedEquationsCache of
         (Just result, newAttemptedEquationsCache) ->
             let newCache =
-                    oldCache { attemptedEquationsCache = newAttemptedEquationsCache } :: SimplifierCache
+                    oldCache{attemptedEquationsCache = newAttemptedEquationsCache} :: SimplifierCache
              in Just (result, newCache)
         (Nothing, _) -> Nothing
   where
