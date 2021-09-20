@@ -51,6 +51,7 @@ instance Pretty WarnUnsimplifiedPredicate where
 
 instance Entry WarnUnsimplifiedPredicate where
     entrySeverity _ = Warning
+    oneLineDoc WarnUnsimplifiedPredicate{limit} = Pretty.pretty limit
     helpDoc _ = "warn when a predicate is not simplified"
 
 warnUnsimplifiedPredicate ::

@@ -29,8 +29,7 @@ instance Pretty WarnClaimRHSIsBottom where
 instance Entry WarnClaimRHSIsBottom where
     entrySeverity _ = Warning
     helpDoc _ = "warn when the right-hand side of a claim is bottom"
-    oneLineDoc WarnClaimRHSIsBottom{claim} =
-        Just $ prettySourceLocation claim
+    oneLineDoc WarnClaimRHSIsBottom{claim} = prettySourceLocation claim
 
 prettySourceLocation :: ClaimPattern -> Pretty.Doc ann
 prettySourceLocation = Pretty.pretty @SourceLocation . from
