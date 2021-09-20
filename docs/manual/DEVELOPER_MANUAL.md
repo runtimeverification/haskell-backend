@@ -8,6 +8,115 @@
 2. [Basics](#basics)
 3. [Design](#design)
 3. [Implementation](#implementation)
+    1. [Hooks](#implementation-hooks)
+        1. [BOOL](#implementation-hooks-bool)
+            1. [BOOL.Bool](#implementation-hooks-bool-bool)
+            2. [BOOL.or](#implementation-hooks-bool-or)
+            3. [BOOL.and](#implementation-hooks-bool-and)
+            4. [BOOL.xor](#implementation-hooks-bool-xor)
+            5. [BOOL.eq](#implementation-hooks-bool-eq)
+            6. [BOOL.ne](#implementation-hooks-bool-ne)
+            7. [BOOL.not](#implementation-hooks-bool-not)
+            8. [BOOL.implies](#implementation-hooks-bool-implies)
+        2. [INT](#implementation-hooks-int)
+            1. [INT.Int](#implementation-hooks-int-int)
+            2. [INT.gt](#implementation-hooks-int-gt)
+            3. [INT.ge](#implementation-hooks-int-ge)
+            4. [INT.eq](#implementation-hooks-int-eq)
+            5. [INT.le](#implementation-hooks-int-le)
+            6. [INT.lt](#implementation-hooks-int-lt)
+            7. [INT.ne](#implementation-hooks-int-ne)
+            8. [INT.add](#implementation-hooks-int-add)
+            9. [INT.sub](#implementation-hooks-int-sub)
+            10. [INT.mul](#implementation-hooks-int-mul)
+            11. [INT.abs](#implementation-hooks-int-abs)
+            12. [INT.tdiv](#implementation-hooks-int-tdiv)
+            13. [INT.tmod](#implementation-hooks-int-tmod)
+            14. [INT.ediv](#implementation-hooks-int-ediv)
+            15. [INT.emod](#implementation-hooks-int-emod)
+            16. [INT.and](#implementation-hooks-int-and)
+            17. [INT.or](#implementation-hooks-int-or)
+            18. [INT.xor](#implementation-hooks-int-xor)
+            19. [INT.not](#implementation-hooks-int-not)
+            20. [INT.shl](#implementation-hooks-int-shl)
+            21. [INT.shr](#implementation-hooks-int-shr)
+            22. [INT.pow](#implementation-hooks-int-pow)
+            23. [INT.powmod](#implementation-hooks-int-powmod)
+            24. [INT.log2](#implementation-hooks-int-log2)
+        3. [STRING](#implementation-hooks-string)
+            1. [STRING.String](#implementation-hooks-string-string)
+            2. [STRING.eq](#implementation-hooks-string-eq)
+            3. [STRING.lt](#implementation-hooks-string-lt)
+            4. [STRING.concat](#implementation-hooks-string-concat)
+            5. [STRING.string2int](#implementation-hooks-string-string2int)
+            6. [STRING.int2string](#implementation-hooks-string-int2string)
+            7. [STRING.string2base](#implementation-hooks-string-string2base)
+            8. [STRING.base2string](#implementation-hooks-string-base2string)
+            9. [STRING.substr](#implementation-hooks-string-substr)
+            10. [STRING.length](#implementation-hooks-string-length)
+            11. [STRING.find](#implementation-hooks-string-find)
+            12. [STRING.token2string](#implementation-hooks-string-token2string)
+            13. [STRING.string2token](#implementation-hooks-string-string2token)
+        4. [MAP](#implementation-hooks-map)
+            1. [MAP.Map](#implementation-hooks-map-map)
+            2. [MAP.unit](#implementation-hooks-map-unit)
+            3. [MAP.element](#implementation-hooks-map-element)
+            4. [MAP.concat](#implementation-hooks-map-concat)
+            5. [MAP.update](#implementation-hooks-map-update)
+            6. [MAP.remove](#implementation-hooks-map-remove)
+            7. [MAP.removeAll](#implementation-hooks-map-removeall)
+            8. [MAP.size](#implementation-hooks-map-size)
+            9. [MAP.lookup](#implementation-hooks-map-lookup)
+            10. [MAP.lookupOrDefault](#implementation-hooks-map-lookupordefault)
+            11. [MAP.in_keys](#implementation-hooks-map-inkeys)
+            12. [MAP.keys](#implementation-hooks-map-keys)
+            13. [MAP.keys_list](#implementation-hooks-map-keyslist)
+            14. [MAP.values](#implementation-hooks-map-values)
+            15. [MAP.inclusion](#implementation-hooks-map-inclusion)
+        5. [LIST](#implementation-hooks-list)
+            1. [LIST.List](#implementation-hooks-list-list)
+            2. [LIST.unit](#implementation-hooks-list-unit)
+            3. [LIST.element](#implementation-hooks-list-element)
+            4. [LIST.concat](#implementation-hooks-list-concat)
+            5. [LIST.get](#implementation-hooks-list-get)
+            6. [LIST.update](#implementation-hooks-list-update)
+            7. [LIST.in](#implementation-hooks-list-in)
+            8. [LIST.size](#implementation-hooks-list-size)
+            9. [LIST.make](#implementation-hooks-list-make)
+            10. [LIST.updateAll](#implementation-hooks-list-updateall)
+        6. [SET](#implementation-hooks-set)
+            1. [SET.Set](#implementation-hooks-set-set)
+            2. [SET.unit](#implementation-hooks-set-unit)
+            3. [SET.element](#implementation-hooks-set-element)
+            4. [SET.concat](#implementation-hooks-set-concat)
+            5. [SET.intersection](#implementation-hooks-set-intersection)
+            6. [SET.in](#implementation-hooks-set-in)
+            7. [SET.inclusion](#implementation-hooks-set-inclusion)
+            8. [SET.list2set](#implementation-hooks-set-list2set)
+        7. [KEQUAL](#implementation-hooks-kequal)
+            1. [KEQUAL.eq](#implementation-hooks-kequal-eq)
+            2. [KEQUAL.neq](#implementation-hooks-kequal-neq)
+            3. [KEQUAL.ite](#implementation-hooks-kequal-ite)
+        8. [KRYPTO](#implementation-hooks-krypto)
+            1. [KRYPTO.keccak256](#implementation-hooks-krypto-keccak266)
+            2. [KRYPTO.ripemd160](#implementation-hooks-krypto-ripemd160)
+            3. [KRYPTO.sha256](#implementation-hooks-krypto-sha256)
+            4. [KRYPTO.sha3256](#implementation-hooks-krypto-sha3256)
+        9. [BYTES](#implementation-hooks-bytes)
+            1. [BYTES.bytes2string](#implementation-hooks-bytes-bytes2string)
+            2. [BYTES.string2bytes](#implementation-hooks-bytes-string2bytes)
+            3. [BYTES.update](#implementation-hooks-bytes-update)
+            4. [BYTES.substr](#implementation-hooks-bytes-substr)
+            5. [BYTES.replaceAt](#implementation-hooks-bytes-replaceat)
+            6. [BYTES.padRight](#implementation-hooks-bytes-padright)
+            7. [BYTES.padLeft](#implementation-hooks-bytes-padleft)
+            8. [BYTES.reverse](#implementation-hooks-bytes-reverse)
+            9. [BYTES.length](#implementation-hooks-bytes-length)
+            10. [BYTES.concat](#implementation-hooks-bytes-concat)
+            11. [BYTES.int2bytes](#implementation-hooks-bytes-int2bytes)
+            12. [BYTES.bytes2int](#implementation-hooks-bytes-bytes2int)
+            13. [BYTES.decodeBytes](#implementation-hooks-bytes-decodebytes)
+            14. [BYTES.encodeBytes](#implementation-hooks-bytes-encodebytes)
 4. [Language](#language)
     1. [Lexical Structure](#language-lexical-structure)
         1. [Comments](#language-lexical-structure-comments)
@@ -37,6 +146,325 @@
 ## <span id="design">Design</span>
 
 ## <span id="implementation">Implementation</span>
+
+### <span id="implementation-hooks">Hooks</span>
+
+The builtin domains are listed below, categorized by sort. Each sort and symbol is described and an example hooked declaration is given. Note that some domains depend on others being defined!
+
+#### <span id="implementation-hooks-bool">BOOL</span>
+
+No dependencies.
+
+##### <span id="implementation-hooks-bool-bool">BOOL.Bool</span>
+
+The builtin Boolean sort:
+
+```
+hooked-sort Bool{}
+    [hook{}("BOOL.Bool")]
+```
+
+Two domain values are recognized:
+
+```
+\dv{Bool{}}("true")  // Boolean true
+\dv{Bool{}}("false") // Boolean false
+```
+
+##### <span id="implementation-hooks-bool-or">BOOL.or</span>
+
+Logical OR: `\dv{Bool{}}("true")` if either operand is `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
+
+```
+hooked-symbol or{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.or")]
+```
+
+
+##### <span id="implementation-hooks-bool-and">BOOL.and</span>
+
+Logical AND: `\dv{Bool{}}("true")` if both operands are `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
+
+```
+hooked-symbol and{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.and")]
+```
+
+##### <span id="implementation-hooks-bool-xor">BOOL.xor</span>
+
+Logical XOR: `\dv{Bool{}}("true")` if exactly one operand is `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
+
+```
+hooked-symbol xor{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.xor")]
+```
+
+##### <span id="implementation-hooks-bool-eq">BOOL.eq</span>
+
+`\dv{Bool{}}("true")` if the operands are equal, otherwise `\dv{Bool{}}("false")`.
+
+```
+hooked-symbol eq{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.eq")]
+```
+
+##### <span id="implementation-hooks-bool-ne">BOOL.ne</span>
+
+`\dv{Bool{}}("true")` if the operands are **not** equal, otherwise `\dv{Bool{}}("false")`.
+
+```
+hooked-symbol ne{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.ne")]
+```
+
+##### <span id="implementation-hooks-bool-not">BOOL.not</span>
+
+Logical negation: `\dv{Bool{}}("true")` when its argument is `\dv{Bool{}}("false")` and vice versa.
+
+```
+hooked-symbol not{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.not")]
+```
+
+##### <span id="implementation-hooks-bool-implies">BOOL.implies</span>
+
+Logical implication.
+
+```
+hooked-symbol implies{}(Bool{}, Bool{}) : Bool{}
+    [hook{}("BOOL.implies")]
+```
+
+#### <span id="implementation-hooks-int">INT</span>
+
+Depends on `BOOL`.
+
+##### <span id="implementation-hooks-int-int">INT.Int</span>
+
+The builtin sort of arbitrary-precision integers.
+
+```
+hooked-sort Int{}
+    [hook{}("INT.Int")]
+```
+
+Valid domain values are a string of decimal digits, optionally preceeded by a sign.
+
+```
+\dv{Int{}}("256")   // positive 256, sign omitted
+\dv{Int{}}("-1024") // negative 1024
+\dv{Int{}}("+3")    // positive 3
+```
+
+##### <span id="implementation-hooks-int-gt">INT.gt</span>
+
+Comparison: is the first argument greater than the second?
+
+```
+hooked-symbol gt{}(Int{}, Int{}) : Bool{}
+    [hook{}("INT.gt")]
+```
+
+##### <span id="implementation-hooks-int-ge">INT.ge</span>
+
+Comparison: is the first argument greater than or equal to the second?
+
+```
+hooked-symbol ge{}(Int{}, Int{}) : Bool{}
+    [hook{}("INT.ge")]
+```
+
+##### <span id="implementation-hooks-int-eq">INT.eq</span>
+
+Comparison: is the first argument equal to the second?
+
+```
+hooked-symbol eq{}(Int{}, Int{}) : Bool{}
+    [hook{}("INT.eq")]
+```
+
+##### <span id="implementation-hooks-int-le">INT.le</span>
+
+Comparison: is the first argument less than or equal to the second?
+
+```
+hooked-symbol le{}(Int{}, Int{}) : Bool{}
+    [hook{}("INT.le")]
+```
+
+##### <span id="implementation-hooks-int-lt">INT.lt</span>
+
+Comparison: is the first argument less than the second?
+
+```
+hooked-symbol lt{}(Int{}, Int{}) : Bool{}
+    [hook{}("INT.lt")]
+```
+
+##### <span id="implementation-hooks-int-ne">INT.ne</span>
+
+Comparison: is the first argument inequal to the second?
+
+```
+hooked-symbol ne{}(Int{}, Int{}) : Bool{}
+    [hook{}("INT.ne")]
+```
+
+##### <span id="implementation-hooks-int-add">INT.add</span>
+
+The sum of the arguments.
+
+```
+hooked-symbol add{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.add")]
+```
+
+##### <span id="implementation-hooks-int-sub">INT.sub</span>
+
+The difference of the arguments (the first less the second).
+
+```
+hooked-symbol sub{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.sub")]
+```
+
+##### <span id="implementation-hooks-int-mul">INT.mul</span>
+
+The product of the arguments.
+
+```
+hooked-symbol mul{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.mul")]
+```
+
+##### <span id="implementation-hooks-int-abs">INT.abs</span>
+
+The absolute value of the argument.
+
+```
+hooked-symbol abs{}(Int{}) : Int{}
+    [hook{}("INT.abs")]
+```
+
+##### <span id="implementation-hooks-int-tdiv">INT.tdiv</span>
+
+Quotient of the first argument divided by the second (truncated toward zero). The result is `bottom{}()` if the second argument is zero.
+
+```
+hooked-symbol tdiv{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.tdiv")]
+```
+
+##### <span id="implementation-hooks-int-tmod">INT.tmod</span>
+
+Remainder of the first argument divided by the second (truncated toward zero). The result is `bottom{}()` if the second argument is zero.
+
+```
+hooked-symbol tmod{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.tmod")]
+```
+
+##### <span id="implementation-hooks-int-ediv">INT.ediv</span>
+
+Quotient of the first argument divided by the second (using the euclidean algorithm). The result is `bottom{}()` if the second argument is zero.
+
+```
+hooked-symbol ediv{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.ediv")]
+```
+
+##### <span id="implementation-hooks-int-emod">INT.emod</span>
+
+Remainder of the first argument divided by the second (using the euclidean algorithm). The result is guaranteed to be positive. The result is `bottom{}()` if the second argument is zero.
+
+```
+hooked-symbol emod{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.emod")]
+```
+
+##### <span id="implementation-hooks-int-and">INT.and</span>
+
+Bitwise and of the arguments.
+
+```
+hooked-symbol and{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.and")]
+```
+
+##### <span id="implementation-hooks-int-or">INT.or</span>
+
+Bitwise or of the arguments.
+
+```
+hooked-symbol or{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.or")]
+```
+
+##### <span id="implementation-hooks-int-xor">INT.xor</span>
+
+Bitwise exclusive or of the arguments.
+
+```
+hooked-symbol xor{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.xor")]
+```
+
+##### <span id="implementation-hooks-int-not">INT.not</span>
+
+Bitwise complement of the argument.
+
+```
+hooked-symbol not{}(Int{}) : Int{}
+    [hook{}("INT.not")]
+```
+
+##### <span id="implementation-hooks-int-shl">INT.shl</span>
+
+Shift the bits of the first argument to the left. The second argument specifies how many bits to shift by, and will be truncated to the least-significant Haskell Int. The second argument can be negative, in which case the first argument will be shifted right.
+
+```
+hooked-symbol shl{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.shl")]
+```
+
+##### <span id="implementation-hooks-int-shr">INT.shr</span>
+
+Shift the bits of the first argument to the right. The second argument specifies how many bits to shift by, and will be truncated to the least-significant Haskell Int. The second argument can be negative, in which case the first argument will be shifted left.
+
+```
+hooked-symbol shr{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.shr")]
+```
+
+##### <span id="implementation-hooks-int-pow">INT.pow</span>
+
+The first argument raised to the power of the second argument. The result is `bottom{}()` if the second argument is negative.
+
+```
+hooked-symbol pow{}(Int{}, Int{}) : Int{}
+    [hook{}("INT.pow")]
+```
+
+##### <span id="implementation-hooks-int-powmod">INT.powmod</span>
+
+The first argument raised to the power of the second argument, but performed modulo the third argument. The result is `\bottom{}()` if either:
+
+* The second argument is zero, or
+* the second argument is negative and the first and third arguments are not coprime.
+
+```
+hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
+    [hook{}("INT.powmod")]
+```
+
+##### <span id="implementation-hooks-int-log2">INT.log2</span>
+
+The base 2 logarithm of the argument. The result is `\bottom{}()` if the second argument is not positive.
+
+```
+hooked-symbol log2{}(Int{}) : Int{}
+    [hook{}("INT.log2")]
+```
 
 ## <span id="language">Language</span>
 
