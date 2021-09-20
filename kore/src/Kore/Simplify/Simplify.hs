@@ -14,7 +14,7 @@ module Kore.Simplify.Simplify (
     liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
-    SimplifierCache (..),
+    SimplifierCache,
     EvaluatorTable (..),
     initCache,
     addToCache,
