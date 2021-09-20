@@ -17,6 +17,8 @@ module Kore.Simplify.Simplify (
     SimplifierCache (..),
     EvaluatorTable (..),
     initCache,
+    addToCache,
+    lookupFromCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
     lookupAxiomSimplifier,
@@ -45,6 +47,8 @@ module Kore.Simplify.Simplify (
 ) where
 
 import qualified Control.Monad as Monad
+import qualified Data.HashPSQ as HashPSQ
+import Data.HashPSQ (HashPSQ)
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -60,8 +64,6 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -322,23 +324,84 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
         scatter results
 -- * Builtin and axiom simplifiers
 
-newtype SimplifierCache = SimplifierCache
+type UsageFrequency = Int
+type CacheCapacity = Int
+type CacheSize = Int
+
+data SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
-        HashMap
+        HashPSQ
             EvaluatorTable
+            UsageFrequency
             (AttemptEquationError RewritingVariableName)
+    , cacheCapacity :: CacheCapacity
+    , cacheSize :: CacheSize
     }
+
+initCache :: Natural -> SimplifierCache
+initCache (fromEnum -> cacheCapacity) =
+    SimplifierCache
+        { attemptedEquationsCache = HashPSQ.empty
+        , cacheCapacity
+        , cacheSize = 0
+        }
+
+isCacheFull :: SimplifierCache -> Bool
+isCacheFull SimplifierCache { cacheSize, cacheCapacity } =
+    cacheSize >= cacheCapacity
+
+removeMinCache :: SimplifierCache -> SimplifierCache
+removeMinCache SimplifierCache { attemptedEquationsCache, cacheCapacity, cacheSize } =
+    let attemptedEquationsCache' =
+            HashPSQ.deleteMin attemptedEquationsCache
+        cacheSize' = cacheSize - 1
+    in  SimplifierCache
+        { attemptedEquationsCache = attemptedEquationsCache'
+        , cacheSize = cacheSize'
+        , cacheCapacity
+        }
+
+applyInvariant :: SimplifierCache -> SimplifierCache
+applyInvariant cache
+    | isCacheFull cache = removeMinCache cache
+    | otherwise = cache
+
+addToCache :: EvaluatorTable -> AttemptEquationError RewritingVariableName -> SimplifierCache -> SimplifierCache
+addToCache table result =
+    addToCache' . applyInvariant
+  where
+    addToCache' oldCache@SimplifierCache { attemptedEquationsCache, cacheSize } =
+        let (maybeOldValue, newAttemptedEquationsCache) =
+                HashPSQ.insertView table 0 result attemptedEquationsCache
+         in oldCache
+             { attemptedEquationsCache = newAttemptedEquationsCache
+             , cacheSize =
+                 case maybeOldValue of
+                    Just _ -> cacheSize
+                    Nothing -> cacheSize + 1
+             }
+
+lookupFromCache :: EvaluatorTable -> SimplifierCache -> Maybe (AttemptEquationError RewritingVariableName, SimplifierCache)
+lookupFromCache table oldCache@SimplifierCache { attemptedEquationsCache } =
+    case HashPSQ.alter increasePriority table attemptedEquationsCache of
+        (Just result, newAttemptedEquationsCache) ->
+            let newCache =
+                    oldCache { attemptedEquationsCache = newAttemptedEquationsCache } :: SimplifierCache
+             in Just (result, newCache)
+        (Nothing, _) -> Nothing
+  where
+    increasePriority Nothing = (Nothing, Nothing)
+    increasePriority (Just (oldPriority, result)) =
+        (Just result, Just (oldPriority + 1, result))
 
 data EvaluatorTable = EvaluatorTable
     { cachedEquation :: Equation RewritingVariableName
     , cachedTerm :: TermLike RewritingVariableName
+    , cachedSideCondition :: Maybe (SideCondition RewritingVariableName)
     }
     deriving stock (Eq, Ord)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
-
-initCache :: SimplifierCache
-initCache = SimplifierCache HashMap.empty
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
