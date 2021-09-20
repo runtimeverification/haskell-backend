@@ -2,42 +2,54 @@
 
 ## Table of Contents
 
-1. [Introduction]()
-  1. [Motivation]()
-  1. [Document Structure]()
-2. [Basics]()
-3. [Design]()
-3. [Implementation]()
-4. [Language]()
-5. [Commands]()
-6. [K Framework]()
-7. [Application Notes]()
-8. [Glossary]()
+1. [Introduction](#introduction)
+    1. [Motivation](#introduction-motivation)
+    2. [Document Structure](#introduction-document-structure)
+2. [Basics](#basics)
+3. [Design](#design)
+3. [Implementation](#implementation)
+4. [Language](#language)
+    1. [Lexical Structure](#language-lexical-structure)
+        1. [Comments](#language-lexical-structure-comments)
+        2. [String literals](#language-lexical-structure-string-literals)
+        3. [Keywords](#language-lexical-structure-keywords)
+        4. [Identifiers](#language-lexical-structure-identifiers)
+    2. [Syntax](#language-syntax)
+        1. [Sorts](#language-syntax-sorts)
+        2. [Patterns](#language-syntax-patterns)
+        3. [Attributes](#language-syntax-attributes)
+        4. [Sentences](#language-syntax-sentences)
+        5. [Definition and Modules](#language-syntax-definition-and-modules)
+    3. [Validity](#language-validity)
+5. [Commands](#commands)
+6. [K Framework](#kframework)
+7. [Application Notes](#application-notes)
+8. [Glossary](#glossary)
 
-## Introduction
+## <span id="introduction">Introduction</span>
 
-### Motivation
+### <span id="introduction-motivation">Motivation</span>
 
-### Document Structure
+### <span id="introduction-document-structure">Document Structure</span>
 
-## Basics
+## <span id="basics">Basics</span>
 
-## Design
+## <span id="design">Design</span>
 
-## Implementation
+## <span id="implementation">Implementation</span>
 
-## Language
+## <span id="language">Language</span>
 
-### Lexical Structure
+### <span id="language-lexical-structure">Lexical Structure</span>
 
-#### Comments
+#### <span id="language-lexical-structure-comments">Comments</span>
 
 Kore allows C-style comments:
 
 * `//` line comment
 * `/*` block comment (non-nested) `*/`
 
-#### String literals
+#### <span id="language-lexical-structure-string-literals">String literals</span>
 
 ```
 <string-literal>
@@ -55,7 +67,7 @@ The following table summarizes the escape sequences allowed in string literals. 
 
 TODO insert table
 
-#### Keywords
+#### <span id="language-lexical-structure-keywords">Keywords</span>
 
 ```
 <keyword>
@@ -67,7 +79,7 @@ TODO insert table
     | "alias"   | "where"
 ```
 
-#### Identifiers
+#### <span id="language-lexical-structure-identifiers">Identifiers</span>
 
 ```
 <identifier>
@@ -101,7 +113,7 @@ TODO insert table
 
 Identifiers must not be `<keyword>`s.
 
-### Syntax
+### <span id="language-syntax">Syntax</span>
 
 The syntax of Kore is defined here in [Backus-Naur form](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form), augmented with the following meta-syntactic notations for brevity:
 
@@ -116,7 +128,7 @@ The syntax of Kore is defined here in [Backus-Naur form](https://en.wikipedia.or
 
 ```
 
-#### Sorts
+#### <span id="language-syntax-sorts">Sorts</span>
 
 A sort is either a *sort variable* or a *sort constructor* applied to a list of *sort parameters*.
 
@@ -135,7 +147,7 @@ A sort is either a *sort variable* or a *sort constructor* applied to a list of 
   ::= <[sort-variable]-sep-by-[","]>
 ```
 
-#### Patterns
+#### <span id="language-syntax-patterns">Patterns</span>
 
 ```
 <pattern>
@@ -192,7 +204,7 @@ A sort is either a *sort variable* or a *sort constructor* applied to a list of 
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
 ```
 
-#### Attributes
+#### <span id="language-syntax-attributes">Attributes</span>
 
 Attributes are hints to the backend, often collected by the frontend. Some attributes express syntactic information, while others express semantic information. All semantic information contained in attributes should correspond to axioms declared explicitly. The hints indicate when the backend may use faster algorithms, more efficient data structures, etc. (TODO be more specific). The meaning of particular attributes is implementation-defined. The order of attributes is **never** significant.
 
@@ -204,7 +216,7 @@ Attributes are hints to the backend, often collected by the frontend. Some attri
   ::= <[attribute]-sep-by-[","]>
 ```
 
-#### Sentences
+#### <span id="language-syntax-sentences">Sentences</span>
 
 A sentence is a single declaration. Sentences always appear inside modules, defined below.
 
@@ -248,7 +260,7 @@ A sentence is a single declaration. Sentences always appear inside modules, defi
 <symbol-or-alias> ::= <symbol-id> "{" <sort-variables> "}"
 ```
 
-#### Definition and modules
+#### <span id="language-syntax-definition-and-modules">Definition and modules</span>
 
 A definition is a non-empty sequence of modules.
 
@@ -263,7 +275,7 @@ A definition is a non-empty sequence of modules.
   :: <[module]-sep-by-1-[whitespace]>
 ```
 
-### Validity
+### <span id="language-validity">Validity</span>
 
 A valid Kore definition conforms to the grammar of `<definition>` described above and the following conditions:
 
@@ -296,9 +308,9 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 4. In any matching logic pattern, the sort of pattern arguments agrees with the specified argument sort parameter.
 5. In any binder (quantifier or fixpoint), the sort of the variable argument agrees with its free occurrences in the pattern argument.
 
-### Implicit Sort Signatures
+### <span id="language-implicit-sort-signatures">Implicit Sort Signatures</span>
 
-#### Connectives
+#### <span id="language-implicit-sort-signatures-connectives">Connectives</span>
 
 ```
 \top{S}() : S
@@ -310,40 +322,40 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 \iff{S}(S, S) : S
 ```
 
-#### Quantifiers
+#### <span id="language-implicit-sort-signatures-quantifiers">Quantifiers</span>
 
 ```
 \exists{S}(x:T, S)
 \forall{S}(x:T, S)
 ```
 
-#### Fixpoints
+#### <span id="language-implicit-sort-signatures-fixpoints">Fixpoints</span>
 
 ```
 \mu{}(@X:S, S) : S
 \nu{}(@X:S, S) : S
 ```
 
-#### Rewriting
+#### <span id="language-implicit-sort-signatures-rewriting">Rewriting</span>
 
 ```
 \next{S}(S) : S
 \rewrites{S}(S, S) : S
 ```
 
-#### Domain values
+#### <span id="language-implicit-sort-signatures-domain-values">Domain values</span>
 
 ```
 \dv{S}(#String) : S
 ```
 
-## Commands
+## <span id="commands">Commands</span>
 
-## K Framework
+## <span id="kframework">K Framework</span>
 
-## Application Notes
+## <span id="application-notes">Application Notes</span>
 
-## Glossary
+## <span id="glossary">Glossary</span>
 
 <span id="bmc">*BMC*</span>
 
