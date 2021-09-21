@@ -218,9 +218,10 @@ attemptEquation sideCondition termLike equation = do
             WhileCheckRequires
                 CheckRequiresError
                     { sideCondition = sideCondition'
-                    } -> if sideCondition == sideCondition'
-                             then return (result, newCache)
-                             else empty
+                    } ->
+                    if sideCondition == sideCondition'
+                        then return (result, newCache)
+                        else empty
 
 {- | Simplify the argument of a function definition equation with the
  match substitution and the priority predicate. This will avoid
