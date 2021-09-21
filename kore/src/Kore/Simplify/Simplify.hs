@@ -397,7 +397,6 @@ lookupFromCache table oldCache@SimplifierCache{attemptedEquationsCache} =
 data EvaluatorTable = EvaluatorTable
     { cachedEquation :: Equation RewritingVariableName
     , cachedTerm :: TermLike RewritingVariableName
-    , cachedSideCondition :: Maybe (SideCondition RewritingVariableName)
     }
     deriving stock (Eq, Ord)
     deriving stock (GHC.Generic)

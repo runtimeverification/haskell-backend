@@ -183,21 +183,15 @@ attemptEquation sideCondition termLike equation = do
 
     cacheIfFailure result =
         case result of
-            Left failure@(WhileMatch _) ->
-                addToCache failure Nothing
-            Left failure@(WhileApplyMatchResult _) ->
-                addToCache failure Nothing
-            Left failure@(WhileCheckRequires _) ->
-                addToCache failure (Just sideCondition)
+            Left failure -> addToCache failure
             _ -> return ()
 
-    addToCache result sideCondition' = do
+    addToCache result = do
         simplifierCache <- Simplifier.getCache
         let newEntry =
                 Simplifier.EvaluatorTable
                     { cachedEquation = equation
                     , cachedTerm = termLike
-                    , cachedSideCondition = sideCondition'
                     }
             updatedCache =
                 Simplifier.addToCache newEntry result simplifierCache
@@ -205,16 +199,15 @@ attemptEquation sideCondition termLike equation = do
 
     alreadyAttempted = do
         simplifierCache <- Simplifier.getCache
-        (result, newCache) <- doesn'tMatch simplifierCache <|> doesn'tCheckRequires simplifierCache
+        (result, newCache) <- alreadyAttemptedWorker simplifierCache
         Simplifier.putCache newCache
         return result
 
-    doesn'tMatch simplifierCache = do
+    alreadyAttemptedWorker simplifierCache = do
         let entry =
                 Simplifier.EvaluatorTable
                     { cachedEquation = equation
                     , cachedTerm = termLike
-                    , cachedSideCondition = Nothing
                     }
         (result, newCache) <-
             Simplifier.lookupFromCache entry simplifierCache
@@ -222,22 +215,12 @@ attemptEquation sideCondition termLike equation = do
         case result of
             WhileMatch _ -> return (result, newCache)
             WhileApplyMatchResult _ -> return (result, newCache)
-            WhileCheckRequires _ -> empty
-
-    doesn'tCheckRequires simplifierCache = do
-        let entry =
-                Simplifier.EvaluatorTable
-                    { cachedEquation = equation
-                    , cachedTerm = termLike
-                    , cachedSideCondition = Just sideCondition
-                    }
-        (result, newCache) <-
-            Simplifier.lookupFromCache entry simplifierCache
-                & (MaybeT . return)
-        case result of
-            WhileCheckRequires _ -> return (result, newCache)
-            WhileMatch _ -> empty
-            WhileApplyMatchResult _ -> empty
+            WhileCheckRequires
+                CheckRequiresError
+                    { sideCondition = sideCondition'
+                    } -> if sideCondition == sideCondition'
+                             then return (result, newCache)
+                             else empty
 
 {- | Simplify the argument of a function definition equation with the
  match substitution and the priority predicate. This will avoid
