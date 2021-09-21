@@ -86,6 +86,11 @@ instance Exception ErrorRewritesInstantiation where
 
 instance Entry ErrorRewritesInstantiation where
     entrySeverity _ = Error
+    oneLineDoc
+        ErrorRewritesInstantiation
+            { problem = SubstitutionCoverageError{location}
+            } =
+            pretty location
     helpDoc _ = "log rewrite instantiation errors"
 
 instance Pretty ErrorRewritesInstantiation where
