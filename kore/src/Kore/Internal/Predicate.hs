@@ -34,6 +34,7 @@ module Kore.Internal.Predicate (
     simplifiedAttribute,
     isSimplified,
     isSimplifiedSomeCondition,
+    isSimplifiedAnyCondition,
     isFreeOf,
     freeElementVariables,
     hasFreeVariable,
@@ -1077,6 +1078,14 @@ See also: 'isSimplified'.
 isSimplifiedSomeCondition :: Predicate variable -> Bool
 isSimplifiedSomeCondition =
     PredicatePattern.isSimplifiedSomeCondition . extractAttributes
+
+{- | Is the 'Predicate' fully simplified under any side condition?
+
+See also: 'isSimplified'.
+-}
+isSimplifiedAnyCondition :: Predicate variable -> Bool
+isSimplifiedAnyCondition =
+    PredicatePattern.isSimplifiedAnyCondition . extractAttributes
 
 cannotSimplifyNotSimplifiedError ::
     (HasCallStack, InternalVariable variable) =>
