@@ -191,7 +191,7 @@ that may branch.
 -}
 runSimplifier :: Monad smt => Env (SimplifierT smt) -> SimplifierT smt a -> smt a
 runSimplifier env simplifier =
-    runReaderT (evalStateT (runSimplifierT simplifier) (initCache 200)) env
+    runReaderT (evalStateT (runSimplifierT simplifier) (initCache 3906)) env
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -208,7 +208,7 @@ evalSimplifier ::
 evalSimplifier verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
     -- TODO: clean-up
-    runReaderT (evalStateT (runSimplifierT simplifier) (initCache 200)) env
+    runReaderT (evalStateT (runSimplifierT simplifier) (initCache 3906)) env
   where
     !earlyEnv =
         {-# SCC "evalSimplifier/earlyEnv" #-}
