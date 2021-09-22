@@ -8,6 +8,7 @@ import Data.Default (
 import Data.Limit (
     Limit (..),
  )
+import qualified Data.Sequence as Seq
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -21,6 +22,9 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
+import Kore.Reachability.Prim (
+    Prim (..),
+ )
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
@@ -38,6 +42,7 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Rewrite.Transition (runTransitionT)
 import Kore.Unparser (
     unparseToText2,
  )
@@ -731,6 +736,20 @@ test_proveClaims =
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
+    , testCase "transitionRule: LHS is undefined" $ do
+        let claim :: AllPathClaim
+            claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
+        actual <-
+            runSimplifierSMT Mock.env . runTransitionT $
+                transitionRule
+                    []
+                    [[]]
+                    ApplyAxioms
+                    (Claimed claim)
+        assertEqual
+            "Result is Proven"
+            [(Proven, Seq.empty)]
+            actual
     ]
 
 simpleAxiom ::

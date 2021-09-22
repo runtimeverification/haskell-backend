@@ -334,9 +334,11 @@ transitionRule claims axiomGroups = transitionRuleWorker
             >>= return . applyResultToClaimState
     transitionRuleWorker ApplyClaims claimState = pure claimState
     transitionRuleWorker ApplyAxioms claimState
-        | Just claim <- retractRewritable claimState =
-            applyAxioms axiomGroups claim
-                >>= return . applyResultToClaimState
+        | Just claim <- retractRewritable claimState = do
+            Transition.ifte
+                (applyAxioms axiomGroups claim)
+                (return . applyResultToClaimState)
+                (pure Proven)
         | otherwise = pure claimState
 
     applyResultToClaimState (ApplyRewritten a) = Rewritten a
