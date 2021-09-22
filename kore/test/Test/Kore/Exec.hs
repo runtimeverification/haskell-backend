@@ -8,6 +8,7 @@ module Test.Kore.Exec (
     test_execDepthLimitExceeded,
     test_matchDisjunction,
     test_checkFunctions,
+    test_checkBothMatch,
 ) where
 
 import Control.Exception as Exception
@@ -37,6 +38,7 @@ import qualified Kore.Builtin.Int as Int
 import Kore.Equation.Equation (
     mkEquation,
     toTermLikeOld,
+    Equation (..),
  )
 import qualified Kore.Error
 import Kore.Exec
@@ -45,6 +47,7 @@ import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeTruePredicate,
+    makeEqualsPredicate,
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -69,6 +72,9 @@ import Kore.Rewrite.Search (
 import qualified Kore.Rewrite.Search as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
+ )
+import Kore.Simplify.Data (
+    evalSimplifier,
  )
 import Kore.Syntax.Definition hiding (
     Alias,
@@ -355,6 +361,104 @@ test_checkFunctions =
             )
                 { sentenceAxiomAttributes = Attributes []
                 }
+
+test_checkBothMatch :: TestTree
+test_checkBothMatch =
+    testGroup
+        "checkBothMatch"
+        [ testCase "Function patterns do not both match." $ do
+            let verifiedModule =
+                    verifiedMyModule
+                        Module
+                            { moduleName = ModuleName "MY-MODULE"
+                            , moduleSentences =
+                                [ asSentence mySortDecl
+                                , asSentence $ constructorDecl "a"
+                                , asSentence $ constructorDecl "b"
+                                , asSentence mySymbDecl
+                                , mkEq "a" "a"
+                                , mkEq "b" "a"
+                                ]
+                            , moduleAttributes = Attributes []
+                            }
+                expected = ExitSuccess
+            actual <-
+                checkBothMatch verifiedModule
+                    & evalSimplifier verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
+        , testCase "Two function patterns both match." $ do
+            let verifiedModule =
+                    verifiedMyModule
+                        Module
+                            { moduleName = ModuleName "MY-MODULE"
+                            , moduleSentences =
+                                [ asSentence mySortDecl
+                                , asSentence $ constructorDecl "a"
+                                , asSentence $ constructorDecl "b"
+                                , asSentence mySymbDecl
+                                , mkEq "a" "a"
+                                , mkEq "a" "b"
+                                ]
+                            , moduleAttributes = Attributes []
+                            }
+                expected = ExitFailure 3
+            actual <-
+                checkBothMatch verifiedModule
+                    & evalSimplifier verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
+        ]
+  where
+    myFx ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
+    myFx x =
+        mkApplySymbol
+            Symbol
+                { symbolConstructor = mySymbolName
+                , symbolParams = []
+                , symbolSorts = applicationSorts [mySort] mySort
+                , symbolAttributes = Mock.functionalAttributes
+                }
+            [x]
+    -- f(name1) = name2
+    mkEq name1 name2 = SentenceAxiomSentence $
+        mkAxiom [] $
+            toTermLikeOld mySort $
+                Equation
+                    { left = myFx (mkElemVar v)
+                    , requires = makeEqualsPredicate (mkElemVar v) (wrap name1)
+                    , argument = Nothing
+                    , antiLeft = Nothing
+                    , right = wrap name2
+                    , ensures = makeTruePredicate
+                    , attributes = def
+                    }
+      where
+        wrap = applyToNoArgs mySort
+        v = mkElementVariable (testId "V") mySort
+
+    mySymbolName :: Id
+    mySymbolName = Id "MySymbol" AstLocationTest
+    mySymbol :: Sentence.Symbol
+    mySymbol =
+        Sentence.Symbol
+            { symbolConstructor = mySymbolName
+            , symbolParams = []
+            }
+    -- Note: symbol attributes should only be
+    -- function or functional, it should not be a constructor.
+    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl =
+        SentenceSymbol
+            { sentenceSymbolSymbol = mySymbol
+            , sentenceSymbolSorts = [mySort]
+            , sentenceSymbolResultSort = mySort
+            , sentenceSymbolAttributes = Attributes [functionalAttribute]
+            }
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
