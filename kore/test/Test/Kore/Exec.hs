@@ -36,9 +36,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import Kore.Equation.Equation (
+    Equation (..),
     mkEquation,
     toTermLikeOld,
-    Equation (..),
  )
 import qualified Kore.Error
 import Kore.Exec
@@ -46,8 +46,8 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    makeTruePredicate,
     makeEqualsPredicate,
+    makeTruePredicate,
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -425,18 +425,19 @@ test_checkBothMatch =
                 }
             [x]
     -- f(name1) = name2
-    mkEq name1 name2 = SentenceAxiomSentence $
-        mkAxiom [] $
-            toTermLikeOld mySort $
-                Equation
-                    { left = myFx (mkElemVar v)
-                    , requires = makeEqualsPredicate (mkElemVar v) (wrap name1)
-                    , argument = Nothing
-                    , antiLeft = Nothing
-                    , right = wrap name2
-                    , ensures = makeTruePredicate
-                    , attributes = def
-                    }
+    mkEq name1 name2 =
+        SentenceAxiomSentence $
+            mkAxiom [] $
+                toTermLikeOld mySort $
+                    Equation
+                        { left = myFx (mkElemVar v)
+                        , requires = makeEqualsPredicate (mkElemVar v) (wrap name1)
+                        , argument = Nothing
+                        , antiLeft = Nothing
+                        , right = wrap name2
+                        , ensures = makeTruePredicate
+                        , attributes = def
+                        }
       where
         wrap = applyToNoArgs mySort
         v = mkElementVariable (testId "V") mySort
