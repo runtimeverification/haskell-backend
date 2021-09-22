@@ -54,6 +54,9 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Source as Attribute
+import Kore.Attribute.SourceLocation (
+    SourceLocation (..),
+ )
 import Kore.Equation.Equation (
     Equation (..),
  )
@@ -602,10 +605,12 @@ instance Entry DebugAttemptEquation where
     contextDoc _ = Nothing
     helpDoc _ = "log equation application attempts"
     oneLineDoc (DebugAttemptEquation equation _) =
-        (\loc -> Pretty.hsep ["applying equation at", pretty loc])
-            <$> srcLoc equation
-    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = Just "equation is not applicable"
-    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = Just "equation is applicable"
+        maybe
+            mempty
+            (\loc -> Pretty.hsep ["applying equation at", pretty loc])
+            (srcLoc equation)
+    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
+    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
@@ -660,6 +665,12 @@ isLocEmpty Attribute.SourceLocation{source = Attribute.Source file} =
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
+    oneLineDoc
+        ( DebugApplyEquation
+                Equation{attributes = Attribute.Axiom{sourceLocation}}
+                _
+            ) =
+            pretty sourceLocation
     helpDoc _ = "log equation application successes"
 
 {- | Log when an 'Equation' is actually applied.

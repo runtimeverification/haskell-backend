@@ -44,6 +44,19 @@ instance Pretty WarnStuckClaimState where
 
 instance Entry WarnStuckClaimState where
     entrySeverity _ = Warning
+    oneLineDoc (TermsUnifiableStuck claim) =
+        Pretty.hsep
+            [ "TermsUnifiableStuck"
+            , Pretty.colon
+            , Pretty.pretty @SourceLocation $ from claim
+            ]
+    oneLineDoc (TermsNotUnifiableStuck claim) =
+        Pretty.hsep
+            [ "TermsNotUnifiableStuck:"
+            , Pretty.colon
+            , Pretty.pretty @SourceLocation $ from claim
+            ]
+
     helpDoc _ = "distinguish the ways a proof can become stuck"
 
 warnStuckClaimStateTermsUnifiable :: MonadLog log => SomeClaim -> log ()
