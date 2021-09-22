@@ -906,16 +906,16 @@ Conversion to `String`.
 
 ~~~
     hooked-symbol bytes2string{}(Bytes{}) : String{}
-        [hook{}("BYTES.string2bytes")]
+        [hook{}("BYTES.bytes2string")]
 ~~~
 
-### BYTES.bytes2string
-Conversion to `String`. Expects all characters to be in the '\0' .. '\255'
+### BYTES.string2bytes
+Conversion to `Bytes`. Expects all characters to be in the '\0' .. '\255'
 range.
 
 ~~~
     hooked-symbol string2bytes{}(String{}) : Bytes{}
-        [hook{}("BYTES.bytes2string")]
+        [hook{}("BYTES.string2bytes")]
 ~~~
 
 ### BYTES.update
