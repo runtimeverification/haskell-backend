@@ -147,7 +147,6 @@ common library
   build-depends: prettyprinter >=1.2
   build-depends: process >=1.6
   build-depends: profunctors >=5.3
-  build-depends: psqueues >=0.2.7
   build-depends: recursion-schemes >=5.1
   build-depends: reflection >=2.1
   build-depends: semialign >=1

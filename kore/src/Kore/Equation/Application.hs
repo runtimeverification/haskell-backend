@@ -23,6 +23,7 @@ import Control.Monad (
 import Control.Monad.Except (
     catchError,
  )
+import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
  )
@@ -183,44 +184,40 @@ attemptEquation sideCondition termLike equation = do
 
     cacheIfFailure result =
         case result of
-            Left failure -> addToCache failure
+            Left failure ->
+                addToCache failure
             _ -> return ()
 
     addToCache result = do
-        simplifierCache <- Simplifier.getCache
+        (Simplifier.SimplifierCache cache) <- Simplifier.getCache
         let newEntry =
                 Simplifier.EvaluatorTable
                     { cachedEquation = equation
                     , cachedTerm = termLike
                     }
             updatedCache =
-                Simplifier.addToCache newEntry result simplifierCache
+                HashMap.insert newEntry result cache
+                    & Simplifier.SimplifierCache
         Simplifier.putCache updatedCache
 
     alreadyAttempted = do
-        simplifierCache <- Simplifier.getCache
-        (result, newCache) <- alreadyAttemptedWorker simplifierCache
-        Simplifier.putCache newCache
-        return result
-
-    alreadyAttemptedWorker simplifierCache = do
+        (Simplifier.SimplifierCache cache) <- Simplifier.getCache
         let entry =
                 Simplifier.EvaluatorTable
                     { cachedEquation = equation
                     , cachedTerm = termLike
                     }
-        (result, newCache) <-
-            Simplifier.lookupFromCache entry simplifierCache
-                & (MaybeT . return)
-        case result of
-            WhileMatch _ -> return (result, newCache)
-            WhileApplyMatchResult _ -> return (result, newCache)
+        value <- MaybeT $ return $ HashMap.lookup entry cache
+        case value of
+            WhileMatch _ -> return value
+            WhileApplyMatchResult _ -> return value
             WhileCheckRequires
-                CheckRequiresError
-                    { sideCondition = sideCondition'
-                    } ->
-                    if sideCondition == sideCondition'
-                        then return (result, newCache)
+                ( CheckRequiresError
+                        { sideCondition = oldSideCondition
+                        }
+                    ) ->
+                    if sideCondition == oldSideCondition
+                        then return value
                         else empty
 
 {- | Simplify the argument of a function definition equation with the
