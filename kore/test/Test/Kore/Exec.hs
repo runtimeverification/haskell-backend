@@ -36,9 +36,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import Kore.Equation.Equation (
+    Equation (..),
     mkEquation,
     toTermLikeOld,
-    Equation (..),
  )
 import qualified Kore.Error
 import Kore.Exec
@@ -48,7 +48,6 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeTruePredicate,
     makeFalsePredicate,
-    makeEqualsPredicate,
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -425,7 +424,7 @@ test_checkBothMatch =
                 , symbolAttributes = Mock.functionalAttributes
                 }
             [x]
-    -- f(name1) = name2
+    -- f(x) = name assuming pr
     mkEq name pr = SentenceAxiomSentence $
         mkAxiom [] $
             toTermLikeOld mySort $
