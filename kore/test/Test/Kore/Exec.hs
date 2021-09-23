@@ -47,6 +47,7 @@ import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeTruePredicate,
+    makeFalsePredicate,
     makeEqualsPredicate,
  )
 import Kore.Internal.TermLike
@@ -374,10 +375,10 @@ test_checkBothMatch =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence $ constructorDecl "a"
-                                , asSentence $ constructorDecl "b"
+--                                , asSentence $ constructorDecl "b"
                                 , asSentence mySymbDecl
-                                , mkEq "a" "a"
-                                , mkEq "b" "a"
+                                , mkEq "a" makeTruePredicate
+                                , mkEq "a" makeFalsePredicate
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -397,8 +398,8 @@ test_checkBothMatch =
                                 , asSentence $ constructorDecl "a"
                                 , asSentence $ constructorDecl "b"
                                 , asSentence mySymbDecl
-                                , mkEq "a" "a"
-                                , mkEq "a" "b"
+                                , mkEq "a" makeTruePredicate
+                                , mkEq "b" makeTruePredicate
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -425,15 +426,15 @@ test_checkBothMatch =
                 }
             [x]
     -- f(name1) = name2
-    mkEq name1 name2 = SentenceAxiomSentence $
+    mkEq name pr = SentenceAxiomSentence $
         mkAxiom [] $
             toTermLikeOld mySort $
                 Equation
                     { left = myFx (mkElemVar v)
-                    , requires = makeEqualsPredicate (mkElemVar v) (wrap name1)
+                    , requires = pr
                     , argument = Nothing
                     , antiLeft = Nothing
-                    , right = wrap name2
+                    , right = wrap name
                     , ensures = makeTruePredicate
                     , attributes = def
                     }
