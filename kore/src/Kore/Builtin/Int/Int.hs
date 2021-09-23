@@ -32,8 +32,7 @@ module Kore.Builtin.Int.Int (
     orKey,
     xorKey,
     notKey,
-    shlKey,
-    shrKey,
+    shiftKey,
     powKey,
     powmodKey,
     log2Key,
@@ -169,11 +168,8 @@ xorKey = "INT.xor"
 notKey :: IsString s => s
 notKey = "INT.not"
 
-shlKey :: IsString s => s
-shlKey = "INT.shl"
-
-shrKey :: IsString s => s
-shrKey = "INT.shr"
+shiftKey :: IsString s => s
+shiftKey = "INT.shift"
 
 powKey :: IsString s => s
 powKey = "INT.pow"

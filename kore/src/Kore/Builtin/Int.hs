@@ -54,8 +54,7 @@ module Kore.Builtin.Int (
     orKey,
     xorKey,
     notKey,
-    shlKey,
-    shrKey,
+    shiftKey,
     powKey,
     powmodKey,
     log2Key,
@@ -183,8 +182,7 @@ symbolVerifiers =
         , (orKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
         , (xorKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
         , (notKey, Builtin.verifySymbol assertSort [assertSort])
-        , (shlKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
-        , (shrKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+        , (shiftKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
         , -- Exponential and logarithmic operations
           (powKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
         ,
@@ -280,8 +278,7 @@ builtinFunctions =
         , binaryOperator orKey (.|.)
         , binaryOperator xorKey xor
         , unaryOperator notKey complement
-        , binaryOperator shlKey (\a -> shift a . fromInteger)
-        , binaryOperator shrKey (\a -> shift a . fromInteger . negate)
+        , binaryOperator shiftKey (\a -> shift a . fromInteger)
         , -- Exponential and logarithmic operations
           partialBinaryOperator powKey pow
         , partialTernaryOperator powmodKey powmod

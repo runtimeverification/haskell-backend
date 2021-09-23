@@ -283,32 +283,19 @@ Bitwise complement of the argument.
         [hook{}("INT.not")]
 ~~~
 
-### INT.shl
+### INT.shift
 
-Shift the bits of the first argument to the left with zeros shifted into
-the lower bits. The second argument specifies how many bits to shift by, and
-will be truncated to the least-significant Haskell Int. The second argument
-can be negative, in which case the first argument will be shifted right. Right
-shifts perform sign extension on signed numbers; i.e. they fill the top bits
-with 1 if the first argument is negative and with 0 otherwise.
-
-~~~
-    hooked-symbol shl{}(Int{}, Int{}) : Int{}
-        [hook{}("INT.shl")]
-~~~
-
-### INT.shr
-
-Shift the bits of the first argument to the right. Right shifts perform sign
-extension on signed numbers; i.e. they fill the top bits with 1 if the first
-argument is negative and with 0 otherwise. The second argument specifies how
-many bits to shift by, and will be truncated to the least-significant Haskell
-Int. The second argument can be negative, in which case the first argument
-will be shifted left with zeros shifted into the lower bits.
+Shift the bits of the first argument. The second argument specifies how many
+bits to shift by, and will be truncated to the least-significant Haskell Int.
+If the second argument is positive, the bits are shifted left with zeros
+shifted into the lower bits. Otherwise, when the second argument is negative,
+the bits are shifted to the right. Right shifts perform sign extension on
+signed numbers; i.e. they fill the top bits with 1 if the first argument is
+negative and with 0 otherwise.
 
 ~~~
-    hooked-symbol shr{}(Int{}, Int{}) : Int{}
-        [hook{}("INT.shr")]
+    hooked-symbol shift{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shift")]
 ~~~
 
 ### INT.pow

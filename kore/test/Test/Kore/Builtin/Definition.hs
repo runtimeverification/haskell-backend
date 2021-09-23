@@ -250,10 +250,12 @@ xorIntSymbol :: Internal.Symbol
 xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor" & function & functional
 notIntSymbol :: Internal.Symbol
 notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not" & function & functional
-shlIntSymbol :: Internal.Symbol
-shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl" & function & functional
-shrIntSymbol :: Internal.Symbol
-shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr" & function & functional
+shiftIntSymbol :: Internal.Symbol
+shiftIntSymbol =
+    binaryIntSymbol "shiftInt"
+        & hook "INT.shift"
+        & function
+        & functional
 powIntSymbol :: Internal.Symbol
 powIntSymbol = binaryIntSymbol "powInt" & hook "INT.pow" & function
 powmodIntSymbol :: Internal.Symbol
@@ -1411,8 +1413,7 @@ intModule =
             , hookedSymbolDecl orIntSymbol
             , hookedSymbolDecl xorIntSymbol
             , hookedSymbolDecl notIntSymbol
-            , hookedSymbolDecl shlIntSymbol
-            , hookedSymbolDecl shrIntSymbol
+            , hookedSymbolDecl shiftIntSymbol
             , hookedSymbolDecl powIntSymbol
             , hookedSymbolDecl powmodIntSymbol
             , hookedSymbolDecl log2IntSymbol
