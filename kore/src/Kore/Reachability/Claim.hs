@@ -329,14 +329,14 @@ transitionRule claims axiomGroups = transitionRuleWorker
                         pure (Stuck a)
                     | otherwise -> pure (Claimed a)
         | otherwise = pure claimState
-    transitionRuleWorker ApplyClaims (Claimed claim) = do
+    transitionRuleWorker ApplyClaims (Claimed claim) =
         Transition.ifte
             (applyClaims claims claim)
             (return . applyResultToClaimState)
             (pure Proven)
     transitionRuleWorker ApplyClaims claimState = pure claimState
     transitionRuleWorker ApplyAxioms claimState
-        | Just claim <- retractRewritable claimState = do
+        | Just claim <- retractRewritable claimState =
             Transition.ifte
                 (applyAxioms axiomGroups claim)
                 (return . applyResultToClaimState)
