@@ -117,6 +117,7 @@
             12. [BYTES.bytes2int](#implementation-hooks-bytes-bytes2int)
             13. [BYTES.decodeBytes](#implementation-hooks-bytes-decodebytes)
             14. [BYTES.encodeBytes](#implementation-hooks-bytes-encodebytes)
+    2. [Source Tree and Build System](#implementation-source-tree-and-build-system)
 4. [Language](#language)
     1. [Lexical Structure](#language-lexical-structure)
         1. [Comments](#language-lexical-structure-comments)
@@ -151,7 +152,16 @@
 
 ### [Hooks]{#implementation-hooks}
 
+[Pull request #632](https://github.com/kframework/kore/pull/632/files) is a self-contained example of adding a builtin symbol. When adding a builtin symbol we should add:
+
+1. An entry to the hooks document.
+2. A symbol verifier.
+3. An evaluator for concrete arguments (at least).
+4. A declaration to `Test.Kore.Builtin.Definition`.
+5. A few tests with different concrete arguments.
+
 The builtin domains are listed below, categorized by sort. Each sort and symbol is described and an example hooked declaration is given. Note that some domains depend on others being defined!
+
 
 #### [BOOL]{#implementation-hooks-bool}
 
