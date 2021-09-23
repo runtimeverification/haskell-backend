@@ -14,9 +14,11 @@ module Kore.Simplify.Simplify (
     liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
-    SimplifierCache (..),
-    EvaluatorTable (..),
+    SimplifierCache (attemptedEquationsCache),
+    EvaluationAttempt (..),
     initCache,
+    updateCache,
+    lookupCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
     lookupAxiomSimplifier,
@@ -320,16 +322,24 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
             lift . lift $
                 observeAllT $ simplifier sideCondition predicate
         scatter results
+
 -- * Builtin and axiom simplifiers
 
+-- | Used for keeping track of already attempted equations which failed to
+-- apply. This uses a naive caching algorithm, meaning it doesn't attempt
+-- to trim the cache in certain situations. We found that a more sophisticated
+-- algorithm didn't bring much benefits in practice,
 newtype SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
         HashMap
-            EvaluatorTable
+            EvaluationAttempt
             (AttemptEquationError RewritingVariableName)
     }
 
-data EvaluatorTable = EvaluatorTable
+-- | An evaluation attempt is determined by an equation-term pair, since the
+-- 'AttemptEquationError' type contains any necessary information about the
+-- 'SideCondition'.
+data EvaluationAttempt = EvaluationAttempt
     { cachedEquation :: Equation RewritingVariableName
     , cachedTerm :: TermLike RewritingVariableName
     }
@@ -337,8 +347,20 @@ data EvaluatorTable = EvaluatorTable
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
 
+-- | Initialize with an empty cache.
 initCache :: SimplifierCache
 initCache = SimplifierCache HashMap.empty
+
+-- | Update by inserting a new entry into the cache.
+updateCache :: EvaluationAttempt -> AttemptEquationError RewritingVariableName -> SimplifierCache -> SimplifierCache
+updateCache key value (SimplifierCache oldCache) =
+    HashMap.insert key value oldCache
+    & SimplifierCache
+
+-- | Lookup an entry in the cache.
+lookupCache :: EvaluationAttempt -> SimplifierCache -> Maybe (AttemptEquationError RewritingVariableName)
+lookupCache key (SimplifierCache cache) =
+    HashMap.lookup key cache
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.

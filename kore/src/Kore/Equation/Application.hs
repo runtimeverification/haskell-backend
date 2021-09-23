@@ -23,7 +23,6 @@ import Control.Monad (
 import Control.Monad.Except (
     catchError,
  )
-import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
  )
@@ -189,36 +188,40 @@ attemptEquation sideCondition termLike equation = do
             _ -> return ()
 
     addToCache result = do
-        (Simplifier.SimplifierCache cache) <- Simplifier.getCache
+        oldCache <- Simplifier.getCache
         let newEntry =
-                Simplifier.EvaluatorTable
+                Simplifier.EvaluationAttempt
                     { cachedEquation = equation
                     , cachedTerm = termLike
                     }
-            updatedCache =
-                HashMap.insert newEntry result cache
-                    & Simplifier.SimplifierCache
-        Simplifier.putCache updatedCache
+            newCache =
+                Simplifier.updateCache newEntry result oldCache
+        Simplifier.putCache newCache
 
     alreadyAttempted = do
-        (Simplifier.SimplifierCache cache) <- Simplifier.getCache
+        cache <- Simplifier.getCache
         let entry =
-                Simplifier.EvaluatorTable
+                Simplifier.EvaluationAttempt
                     { cachedEquation = equation
                     , cachedTerm = termLike
                     }
-        value <- MaybeT $ return $ HashMap.lookup entry cache
-        case value of
-            WhileMatch _ -> return value
-            WhileApplyMatchResult _ -> return value
-            WhileCheckRequires
-                ( CheckRequiresError
-                        { sideCondition = oldSideCondition
-                        }
-                    ) ->
-                    if sideCondition == oldSideCondition
-                        then return value
-                        else empty
+        value <-
+            Simplifier.lookupCache entry cache
+            & (MaybeT . return)
+        checkWithSideCondition value
+      where
+        checkWithSideCondition value =
+            case value of
+                WhileMatch _ -> return value
+                WhileApplyMatchResult _ -> return value
+                WhileCheckRequires
+                    ( CheckRequiresError
+                            { sideCondition = oldSideCondition
+                            }
+                        ) ->
+                        if sideCondition == oldSideCondition
+                            then return value
+                            else empty
 
 {- | Simplify the argument of a function definition equation with the
  match substitution and the priority predicate. This will avoid

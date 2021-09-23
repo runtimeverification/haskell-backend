@@ -207,8 +207,7 @@ evalSimplifier ::
     smt a
 evalSimplifier verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
-    -- TODO: clean-up
-    runReaderT (evalStateT (runSimplifierT simplifier) initCache) env
+    runSimplifier env simplifier
   where
     !earlyEnv =
         {-# SCC "evalSimplifier/earlyEnv" #-}
