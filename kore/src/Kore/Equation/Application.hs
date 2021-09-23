@@ -207,7 +207,7 @@ attemptEquation sideCondition termLike equation = do
                     }
         value <-
             Simplifier.lookupCache entry cache
-            & (MaybeT . return)
+                & (MaybeT . return)
         checkWithSideCondition value
       where
         checkWithSideCondition value =

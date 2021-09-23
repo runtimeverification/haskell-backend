@@ -322,13 +322,13 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
             lift . lift $
                 observeAllT $ simplifier sideCondition predicate
         scatter results
-
 -- * Builtin and axiom simplifiers
 
--- | Used for keeping track of already attempted equations which failed to
--- apply. This uses a naive caching algorithm, meaning it doesn't attempt
--- to trim the cache in certain situations. We found that a more sophisticated
--- algorithm didn't bring much benefits in practice,
+{- | Used for keeping track of already attempted equations which failed to
+ apply. This uses a naive caching algorithm, meaning it doesn't attempt
+ to trim the cache in certain situations. We found that a more sophisticated
+ algorithm didn't bring much benefits in practice,
+-}
 newtype SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
         HashMap
@@ -336,9 +336,10 @@ newtype SimplifierCache = SimplifierCache
             (AttemptEquationError RewritingVariableName)
     }
 
--- | An evaluation attempt is determined by an equation-term pair, since the
--- 'AttemptEquationError' type contains any necessary information about the
--- 'SideCondition'.
+{- | An evaluation attempt is determined by an equation-term pair, since the
+ 'AttemptEquationError' type contains any necessary information about the
+ 'SideCondition'.
+-}
 data EvaluationAttempt = EvaluationAttempt
     { cachedEquation :: Equation RewritingVariableName
     , cachedTerm :: TermLike RewritingVariableName
@@ -355,7 +356,7 @@ initCache = SimplifierCache HashMap.empty
 updateCache :: EvaluationAttempt -> AttemptEquationError RewritingVariableName -> SimplifierCache -> SimplifierCache
 updateCache key value (SimplifierCache oldCache) =
     HashMap.insert key value oldCache
-    & SimplifierCache
+        & SimplifierCache
 
 -- | Lookup an entry in the cache.
 lookupCache :: EvaluationAttempt -> SimplifierCache -> Maybe (AttemptEquationError RewritingVariableName)
