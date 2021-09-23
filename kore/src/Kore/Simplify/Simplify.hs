@@ -351,13 +351,20 @@ initCache :: SimplifierCache
 initCache = SimplifierCache HashMap.empty
 
 -- | Update by inserting a new entry into the cache.
-updateCache :: EvaluationAttempt -> AttemptEquationError RewritingVariableName -> SimplifierCache -> SimplifierCache
+updateCache ::
+    EvaluationAttempt ->
+    AttemptEquationError RewritingVariableName ->
+    SimplifierCache ->
+    SimplifierCache
 updateCache key value (SimplifierCache oldCache) =
     HashMap.insert key value oldCache
         & SimplifierCache
 
 -- | Lookup an entry in the cache.
-lookupCache :: EvaluationAttempt -> SimplifierCache -> Maybe (AttemptEquationError RewritingVariableName)
+lookupCache ::
+    EvaluationAttempt ->
+    SimplifierCache ->
+    Maybe (AttemptEquationError RewritingVariableName)
 lookupCache key (SimplifierCache cache) =
     HashMap.lookup key cache
 
