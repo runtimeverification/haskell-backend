@@ -744,34 +744,24 @@ test_transitionRule =
     testGroup
         "transitionRule: AllPath"
         [ testCase "ApplyAxioms: LHS is undefined" $ do
-            let claim :: AllPathClaim
-                claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
-            actual <-
-                runSimplifierSMT Mock.env . runTransitionT $
-                    transitionRule
-                        []
-                        [[]]
-                        ApplyAxioms
-                        (Claimed claim)
+            actual <- runTransitionRule [] [[]] ApplyAxioms (Claimed claim)
             assertEqual
                 "Result is Proven"
                 [(Proven, Seq.empty)]
                 actual
         , testCase "ApplyClaims: LHS is undefined" $ do
-            let claim :: AllPathClaim
-                claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
             actual <-
-                runSimplifierSMT Mock.env . runTransitionT $
-                    transitionRule
-                        []
-                        [[]]
-                        ApplyClaims
-                        (Claimed claim)
+                runTransitionRule [] [[]] ApplyClaims (Claimed claim)
             assertEqual
                 "Result is Proven"
                 [(Proven, Seq.empty)]
                 actual
         ]
+  where
+    claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
+    runTransitionRule claims axiomGroups prim cState =
+        runSimplifierSMT Mock.env . runTransitionT $
+            transitionRule claims axiomGroups prim cState
 
 simpleAxiom ::
     TermLike VariableName ->
