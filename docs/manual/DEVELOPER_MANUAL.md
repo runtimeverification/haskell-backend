@@ -131,31 +131,33 @@
         5. [Definition and Modules](#language-syntax-definition-and-modules)
     3. [Validity](#language-validity)
 5. [Commands](#commands)
+    1. [kore-exec](#commands-kore-exec)
+    2. [kore-repl](#commands-kore-repl)
 6. [K Framework](#kframework)
 7. [Application Notes](#application-notes)
 8. [Glossary](#glossary)
 
-## <span id="introduction">Introduction</span>
+## [Introduction]{#introduction}
 
-### <span id="introduction-motivation">Motivation</span>
+### [Motivation]{#introduction-motivation}
 
-### <span id="introduction-document-structure">Document Structure</span>
+### [Document Structure]{#introduction-document-structure}
 
-## <span id="basics">Basics</span>
+## [Basics]{#basics}
 
-## <span id="design">Design</span>
+## [Design]{#design}
 
-## <span id="implementation">Implementation</span>
+## [Implementation]{#implementation}
 
-### <span id="implementation-hooks">Hooks</span>
+### [Hooks]{#implementation-hooks}
 
 The builtin domains are listed below, categorized by sort. Each sort and symbol is described and an example hooked declaration is given. Note that some domains depend on others being defined!
 
-#### <span id="implementation-hooks-bool">BOOL</span>
+#### [BOOL]{#implementation-hooks-bool}
 
 No dependencies.
 
-##### <span id="implementation-hooks-bool-bool">BOOL.Bool</span>
+##### [BOOL.Bool]{#implementation-hooks-bool-bool}
 
 The builtin Boolean sort:
 
@@ -171,7 +173,7 @@ Two domain values are recognized:
 \dv{Bool{}}("false") // Boolean false
 ```
 
-##### <span id="implementation-hooks-bool-or">BOOL.or</span>
+##### [BOOL.or]{#implementation-hooks-bool-or}
 
 Logical OR: `\dv{Bool{}}("true")` if either operand is `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
 
@@ -181,7 +183,7 @@ hooked-symbol or{}(Bool{}, Bool{}) : Bool{}
 ```
 
 
-##### <span id="implementation-hooks-bool-and">BOOL.and</span>
+##### [BOOL.and]{#implementation-hooks-bool-and}
 
 Logical AND: `\dv{Bool{}}("true")` if both operands are `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
 
@@ -190,7 +192,7 @@ hooked-symbol and{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.and")]
 ```
 
-##### <span id="implementation-hooks-bool-xor">BOOL.xor</span>
+##### [BOOL.xor]{#implementation-hooks-bool-xor}
 
 Logical XOR: `\dv{Bool{}}("true")` if exactly one operand is `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
 
@@ -199,7 +201,7 @@ hooked-symbol xor{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.xor")]
 ```
 
-##### <span id="implementation-hooks-bool-eq">BOOL.eq</span>
+##### [BOOL.eq]{#implementation-hooks-bool-eq}
 
 `\dv{Bool{}}("true")` if the operands are equal, otherwise `\dv{Bool{}}("false")`.
 
@@ -208,7 +210,7 @@ hooked-symbol eq{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.eq")]
 ```
 
-##### <span id="implementation-hooks-bool-ne">BOOL.ne</span>
+##### [BOOL.ne]{#implementation-hooks-bool-ne}
 
 `\dv{Bool{}}("true")` if the operands are **not** equal, otherwise `\dv{Bool{}}("false")`.
 
@@ -217,7 +219,7 @@ hooked-symbol ne{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.ne")]
 ```
 
-##### <span id="implementation-hooks-bool-not">BOOL.not</span>
+##### [BOOL.not]{#implementation-hooks-bool-not}
 
 Logical negation: `\dv{Bool{}}("true")` when its argument is `\dv{Bool{}}("false")` and vice versa.
 
@@ -226,7 +228,7 @@ hooked-symbol not{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.not")]
 ```
 
-##### <span id="implementation-hooks-bool-implies">BOOL.implies</span>
+##### [BOOL.implies]{#implementation-hooks-bool-implies}
 
 Logical implication.
 
@@ -235,11 +237,11 @@ hooked-symbol implies{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.implies")]
 ```
 
-#### <span id="implementation-hooks-int">INT</span>
+#### [INT]{#implementation-hooks-int}
 
 Depends on `BOOL`.
 
-##### <span id="implementation-hooks-int-int">INT.Int</span>
+##### [INT.Int]{#implementation-hooks-int-int}
 
 The builtin sort of arbitrary-precision integers.
 
@@ -256,7 +258,7 @@ Valid domain values are a string of decimal digits, optionally preceeded by a si
 \dv{Int{}}("+3")    // positive 3
 ```
 
-##### <span id="implementation-hooks-int-gt">INT.gt</span>
+##### [INT.gt]{#implementation-hooks-int-gt}
 
 Comparison: is the first argument greater than the second?
 
@@ -265,7 +267,7 @@ hooked-symbol gt{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.gt")]
 ```
 
-##### <span id="implementation-hooks-int-ge">INT.ge</span>
+##### [INT.ge]{#implementation-hooks-int-ge}
 
 Comparison: is the first argument greater than or equal to the second?
 
@@ -274,7 +276,7 @@ hooked-symbol ge{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.ge")]
 ```
 
-##### <span id="implementation-hooks-int-eq">INT.eq</span>
+##### [INT.eq]{#implementation-hooks-int-eq}
 
 Comparison: is the first argument equal to the second?
 
@@ -283,7 +285,7 @@ hooked-symbol eq{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.eq")]
 ```
 
-##### <span id="implementation-hooks-int-le">INT.le</span>
+##### [INT.le]{#implementation-hooks-int-le}
 
 Comparison: is the first argument less than or equal to the second?
 
@@ -292,7 +294,7 @@ hooked-symbol le{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.le")]
 ```
 
-##### <span id="implementation-hooks-int-lt">INT.lt</span>
+##### [INT.lt]{#implementation-hooks-int-lt}
 
 Comparison: is the first argument less than the second?
 
@@ -301,7 +303,7 @@ hooked-symbol lt{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.lt")]
 ```
 
-##### <span id="implementation-hooks-int-ne">INT.ne</span>
+##### [INT.ne]{#implementation-hooks-int-ne}
 
 Comparison: is the first argument inequal to the second?
 
@@ -310,7 +312,7 @@ hooked-symbol ne{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.ne")]
 ```
 
-##### <span id="implementation-hooks-int-add">INT.add</span>
+##### [INT.add]{#implementation-hooks-int-add}
 
 The sum of the arguments.
 
@@ -319,7 +321,7 @@ hooked-symbol add{}(Int{}, Int{}) : Int{}
     [hook{}("INT.add")]
 ```
 
-##### <span id="implementation-hooks-int-sub">INT.sub</span>
+##### [INT.sub]{#implementation-hooks-int-sub}
 
 The difference of the arguments (the first less the second).
 
@@ -328,7 +330,7 @@ hooked-symbol sub{}(Int{}, Int{}) : Int{}
     [hook{}("INT.sub")]
 ```
 
-##### <span id="implementation-hooks-int-mul">INT.mul</span>
+##### [INT.mul]{#implementation-hooks-int-mul}
 
 The product of the arguments.
 
@@ -337,7 +339,7 @@ hooked-symbol mul{}(Int{}, Int{}) : Int{}
     [hook{}("INT.mul")]
 ```
 
-##### <span id="implementation-hooks-int-abs">INT.abs</span>
+##### [INT.abs]{#implementation-hooks-int-abs}
 
 The absolute value of the argument.
 
@@ -346,7 +348,7 @@ hooked-symbol abs{}(Int{}) : Int{}
     [hook{}("INT.abs")]
 ```
 
-##### <span id="implementation-hooks-int-tdiv">INT.tdiv</span>
+##### [INT.tdiv]{#implementation-hooks-int-tdiv}
 
 Quotient of the first argument divided by the second (truncated toward zero). The result is `bottom{}()` if the second argument is zero.
 
@@ -355,7 +357,7 @@ hooked-symbol tdiv{}(Int{}, Int{}) : Int{}
     [hook{}("INT.tdiv")]
 ```
 
-##### <span id="implementation-hooks-int-tmod">INT.tmod</span>
+##### [INT.tmod]{#implementation-hooks-int-tmod}
 
 Remainder of the first argument divided by the second (truncated toward zero). The result is `bottom{}()` if the second argument is zero.
 
@@ -364,7 +366,7 @@ hooked-symbol tmod{}(Int{}, Int{}) : Int{}
     [hook{}("INT.tmod")]
 ```
 
-##### <span id="implementation-hooks-int-ediv">INT.ediv</span>
+##### [INT.ediv]{#implementation-hooks-int-ediv}
 
 Quotient of the first argument divided by the second (using the euclidean algorithm). The result is `bottom{}()` if the second argument is zero.
 
@@ -373,7 +375,7 @@ hooked-symbol ediv{}(Int{}, Int{}) : Int{}
     [hook{}("INT.ediv")]
 ```
 
-##### <span id="implementation-hooks-int-emod">INT.emod</span>
+##### [INT.emod]{#implementation-hooks-int-emod}
 
 Remainder of the first argument divided by the second (using the euclidean algorithm). The result is guaranteed to be positive. The result is `bottom{}()` if the second argument is zero.
 
@@ -382,7 +384,7 @@ hooked-symbol emod{}(Int{}, Int{}) : Int{}
     [hook{}("INT.emod")]
 ```
 
-##### <span id="implementation-hooks-int-and">INT.and</span>
+##### [INT.and]{#implementation-hooks-int-and}
 
 Bitwise and of the arguments.
 
@@ -391,7 +393,7 @@ hooked-symbol and{}(Int{}, Int{}) : Int{}
     [hook{}("INT.and")]
 ```
 
-##### <span id="implementation-hooks-int-or">INT.or</span>
+##### [INT.or]{#implementation-hooks-int-or}
 
 Bitwise or of the arguments.
 
@@ -400,7 +402,7 @@ hooked-symbol or{}(Int{}, Int{}) : Int{}
     [hook{}("INT.or")]
 ```
 
-##### <span id="implementation-hooks-int-xor">INT.xor</span>
+##### [INT.xor]{#implementation-hooks-int-xor}
 
 Bitwise exclusive or of the arguments.
 
@@ -409,7 +411,7 @@ hooked-symbol xor{}(Int{}, Int{}) : Int{}
     [hook{}("INT.xor")]
 ```
 
-##### <span id="implementation-hooks-int-not">INT.not</span>
+##### [INT.not]{#implementation-hooks-int-not}
 
 Bitwise complement of the argument.
 
@@ -418,7 +420,7 @@ hooked-symbol not{}(Int{}) : Int{}
     [hook{}("INT.not")]
 ```
 
-##### <span id="implementation-hooks-int-shl">INT.shl</span>
+##### [INT.shl]{#implementation-hooks-int-shl}
 
 Shift the bits of the first argument to the left. The second argument specifies how many bits to shift by, and will be truncated to the least-significant Haskell Int. The second argument can be negative, in which case the first argument will be shifted right.
 
@@ -427,7 +429,7 @@ hooked-symbol shl{}(Int{}, Int{}) : Int{}
     [hook{}("INT.shl")]
 ```
 
-##### <span id="implementation-hooks-int-shr">INT.shr</span>
+##### [INT.shr]{#implementation-hooks-int-shr}
 
 Shift the bits of the first argument to the right. The second argument specifies how many bits to shift by, and will be truncated to the least-significant Haskell Int. The second argument can be negative, in which case the first argument will be shifted left.
 
@@ -436,7 +438,7 @@ hooked-symbol shr{}(Int{}, Int{}) : Int{}
     [hook{}("INT.shr")]
 ```
 
-##### <span id="implementation-hooks-int-pow">INT.pow</span>
+##### [INT.pow]{#implementation-hooks-int-pow}
 
 The first argument raised to the power of the second argument. The result is `bottom{}()` if the second argument is negative.
 
@@ -445,7 +447,7 @@ hooked-symbol pow{}(Int{}, Int{}) : Int{}
     [hook{}("INT.pow")]
 ```
 
-##### <span id="implementation-hooks-int-powmod">INT.powmod</span>
+##### [INT.powmod]{#implementation-hooks-int-powmod}
 
 The first argument raised to the power of the second argument, but performed modulo the third argument. The result is `\bottom{}()` if either:
 
@@ -457,7 +459,7 @@ hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
     [hook{}("INT.powmod")]
 ```
 
-##### <span id="implementation-hooks-int-log2">INT.log2</span>
+##### [INT.log2]{#implementation-hooks-int-log2}
 
 The base 2 logarithm of the argument. The result is `\bottom{}()` if the second argument is not positive.
 
@@ -466,18 +468,18 @@ hooked-symbol log2{}(Int{}) : Int{}
     [hook{}("INT.log2")]
 ```
 
-## <span id="language">Language</span>
+## [Language]{#language}
 
-### <span id="language-lexical-structure">Lexical Structure</span>
+### [Lexical Structure]{#language-lexical-structure}
 
-#### <span id="language-lexical-structure-comments">Comments</span>
+#### [Comments]{#language-lexical-structure-comments}
 
 Kore allows C-style comments:
 
 * `//` line comment
 * `/*` block comment (non-nested) `*/`
 
-#### <span id="language-lexical-structure-string-literals">String literals</span>
+#### [String literals]{#language-lexical-structure-string-literals}
 
 ```
 <string-literal>
@@ -495,7 +497,7 @@ The following table summarizes the escape sequences allowed in string literals. 
 
 TODO insert table
 
-#### <span id="language-lexical-structure-keywords">Keywords</span>
+#### [Keywords]{#language-lexical-structure-keywords}
 
 ```
 <keyword>
@@ -507,7 +509,7 @@ TODO insert table
     | "alias"   | "where"
 ```
 
-#### <span id="language-lexical-structure-identifiers">Identifiers</span>
+#### [Identifiers]{#language-lexical-structure-identifiers}
 
 ```
 <identifier>
@@ -541,7 +543,7 @@ TODO insert table
 
 Identifiers must not be `<keyword>`s.
 
-### <span id="language-syntax">Syntax</span>
+### [Syntax]{#language-syntax}
 
 The syntax of Kore is defined here in [Backus-Naur form](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form), augmented with the following meta-syntactic notations for brevity:
 
@@ -556,7 +558,7 @@ The syntax of Kore is defined here in [Backus-Naur form](https://en.wikipedia.or
 
 ```
 
-#### <span id="language-syntax-sorts">Sorts</span>
+#### [Sorts]{#language-syntax-sorts}
 
 A sort is either a *sort variable* or a *sort constructor* applied to a list of *sort parameters*.
 
@@ -575,7 +577,7 @@ A sort is either a *sort variable* or a *sort constructor* applied to a list of 
   ::= <[sort-variable]-sep-by-[","]>
 ```
 
-#### <span id="language-syntax-patterns">Patterns</span>
+#### [Patterns]{#language-syntax-patterns}
 
 ```
 <pattern>
@@ -632,7 +634,7 @@ A sort is either a *sort variable* or a *sort constructor* applied to a list of 
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
 ```
 
-#### <span id="language-syntax-attributes">Attributes</span>
+#### [Attributes]{#language-syntax-attributes}
 
 Attributes are hints to the backend, often collected by the frontend. Some attributes express syntactic information, while others express semantic information. All semantic information contained in attributes should correspond to axioms declared explicitly. The hints indicate when the backend may use faster algorithms, more efficient data structures, etc. (TODO be more specific). The meaning of particular attributes is implementation-defined. The order of attributes is **never** significant.
 
@@ -644,7 +646,7 @@ Attributes are hints to the backend, often collected by the frontend. Some attri
   ::= <[attribute]-sep-by-[","]>
 ```
 
-#### <span id="language-syntax-sentences">Sentences</span>
+#### [Sentences]{#language-syntax-sentences}
 
 A sentence is a single declaration. Sentences always appear inside modules, defined below.
 
@@ -688,7 +690,7 @@ A sentence is a single declaration. Sentences always appear inside modules, defi
 <symbol-or-alias> ::= <symbol-id> "{" <sort-variables> "}"
 ```
 
-#### <span id="language-syntax-definition-and-modules">Definition and modules</span>
+#### [Definition and modules]{#language-syntax-definition-and-modules}
 
 A definition is a non-empty sequence of modules.
 
@@ -703,7 +705,7 @@ A definition is a non-empty sequence of modules.
   :: <[module]-sep-by-1-[whitespace]>
 ```
 
-### <span id="language-validity">Validity</span>
+### [Validity]{#language-validity}
 
 A valid Kore definition conforms to the grammar of `<definition>` described above and the following conditions:
 
@@ -736,9 +738,9 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 4. In any matching logic pattern, the sort of pattern arguments agrees with the specified argument sort parameter.
 5. In any binder (quantifier or fixpoint), the sort of the variable argument agrees with its free occurrences in the pattern argument.
 
-### <span id="language-implicit-sort-signatures">Implicit Sort Signatures</span>
+### [Implicit Sort Signatures]{#language-implicit-sort-signatures}
 
-#### <span id="language-implicit-sort-signatures-connectives">Connectives</span>
+#### [Connectives]{#language-implicit-sort-signatures-connectives}
 
 ```
 \top{S}() : S
@@ -750,88 +752,92 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 \iff{S}(S, S) : S
 ```
 
-#### <span id="language-implicit-sort-signatures-quantifiers">Quantifiers</span>
+#### [Quantifiers]{#language-implicit-sort-signatures-quantifiers}
 
 ```
 \exists{S}(x:T, S)
 \forall{S}(x:T, S)
 ```
 
-#### <span id="language-implicit-sort-signatures-fixpoints">Fixpoints</span>
+#### [Fixpoints]{#language-implicit-sort-signatures-fixpoints}
 
 ```
 \mu{}(@X:S, S) : S
 \nu{}(@X:S, S) : S
 ```
 
-#### <span id="language-implicit-sort-signatures-rewriting">Rewriting</span>
+#### [Rewriting]{#language-implicit-sort-signatures-rewriting}
 
 ```
 \next{S}(S) : S
 \rewrites{S}(S, S) : S
 ```
 
-#### <span id="language-implicit-sort-signatures-domain-values">Domain values</span>
+#### [Domain values]{#language-implicit-sort-signatures-domain-values}
 
 ```
 \dv{S}(#String) : S
 ```
 
-## <span id="commands">Commands</span>
+## [Commands]{#commands}
 
-## <span id="kframework">K Framework</span>
+### [kore-exec]{#commands-kore-exec}
 
-## <span id="application-notes">Application Notes</span>
+### [kore-repl]{#commands-kore-repl}
 
-## <span id="glossary">Glossary</span>
+## [K Framework]{#kframework}
 
-<span id="bmc">*BMC*</span>
+## [Application Notes]{#application-notes}
+
+## [Glossary]{#glossary}
+
+[*BMC*]{#glossary-bmc}
 
   1. (noun, acronym) Bounded model checking. Execute the program on all paths for a given number of steps (a.k.a. bound), attempting to identify given properties (bugs, unexpected behaviours, etc.) in the execution graph.
 
-<span id="constructor-like">*constructor-like*</span>
+[*constructor-like*]{#glossary-constructor-like}
 
-  1. (adjective) A pattern is *constructor-like* if logical equality is syntactic equality. A [pattern](#pattern) is constructor-like if it is logically equal (in the `\equals` sense) to another constructor-like pattern if and only if the patterns are syntactically equal. The constructor-like patterns of a sort comprise a normal form of elements in that sort.
+  1. (adjective) A pattern is *constructor-like* if logical equality is syntactic equality. A [pattern](#glossary-pattern) is constructor-like if it is logically equal (in the `\equals` sense) to another constructor-like pattern if and only if the patterns are syntactically equal. The constructor-like patterns of a sort comprise a normal form of elements in that sort.
   2. (adjective) A symbol is *constructor-like* if it may form the head of a constructor-like application pattern (in the sense defined about). Roughly, this means the symbol has injectivity and no-confusion axioms.
 
-<span id="function">*function*</span>
+[*function*]{#glossary-function}
 
-  1. (noun) An application symbol that, when applied to [function-like](#function-like) patterns, produces function-like patterns.
-  2. (noun/adjective) A [function-like](#function-like) pattern.
+  1. (noun) An application symbol that, when applied to [function-like](#glossary-function-like) patterns, produces function-like patterns.
+  2. (noun/adjective) A [function-like](#glossary-function-like) pattern.
 
-<span id="function-like">*function-like*</span>
+[*function-like*]{#glossary-function-like}
 
-  1. (adjective) A function-like [pattern](#pattern) can have at most one value, i.e. it satisfies $(\exists x . x = \varphi ) \vee \neg \lceil \varphi \rceil$.
+  1. (adjective) A function-like [pattern](#glossary-pattern) can have at most one value, i.e. it satisfies $(\exists x . x = \varphi ) \vee \neg \lceil \varphi \rceil$.
 
-<span id="functional">*functional*</span>
+[*functional*]{#glossary-functional}
 
-  1. (adjective) A functional [pattern](#pattern) has exactly one value, i.e. it satisfies $(\exists x . x = \varphi)$.
+  1. (adjective) A functional [pattern](#glossary-pattern) has exactly one value, i.e. it satisfies $(\exists x . x = \varphi)$.
 
-<span id="pattern">*pattern*</span>
+[*pattern*]{#glossary-pattern}
 
   1. (noun) The internal representation of a syntactic element. It may have constructs which cannot be represented directly into syntactic elements (e.g. map domain values), but it is expected that it is possible to create an equivalent syntactic representation.
 
-<span id="predicate">*predicate*</span>
+[*predicate*]{#glossary-predicate}
 
-  1. (noun) A [pattern](#pattern) that can evaluate only to top and bottom. Application patterns that can only evaluate to top and bottom are hard to identify (TODO Why?), so some of the code that identifies predicates fails on these (TODO clarify what code?). Whenever a [substitution](#substitution) can be extracted efficiently, the "predicate" term may refer to the non-substitution part of the predicate.
+  1. (noun) A [pattern](#glossary-pattern) that can evaluate only to top and bottom. Application patterns that can only evaluate to top and bottom are hard to identify (TODO Why?), so some of the code that identifies predicates fails on these (TODO clarify what code?). Whenever a [substitution](#glossary-substitution) can be extracted efficiently, the "predicate" term may refer to the non-substitution part of the predicate.
 
-<span id="sbc">*SBC*</span>
+[*SBC*]{#glossary-sbc}
 
   1. (noun, acronym) Semantics-based compilation. Compilation that uses the semantics of the language to analyze the behaviour of the program (e.g. through symbolic execution), and uses what it learned to improve the compilation result.
 
-<span id="sort-injection">*sort injection*</span>
+[*sort injection*]{#glossary-sort-injection}
 
-  1. (noun) A [symbol](#symbol) with the `sortInjection` attribute. The sort injection symbol is used to represent the K sub-sort relation in Kore. K sorts contain symbols and sorts (their sub-sorts), but Kore sorts contain only symbols. The sort injection symbol wraps patterns of a sub-sort so they can be included (*injected*) into the super-sort. Two important properties follow from this definition. First, sort injection symbols are injective. Second, the sort injection symbol from a particular sub-sort is distinct (in the no-confusion-different-constructors sense) from the super-sort's constructors.
-  2. (noun) A sort injection is a [pattern](#pattern) of the form $inj\{Sub\{\}, Super\{\}\}(\varphi:Sub\{\})$ where `inj{Sub{}, Super{}}` is a sort injection symbol (described above). Where the K sort `Super` contains `Sub`, the pattern $\varphi$ with least-sort `Sub` can appear anywhere that a term of sort `Super` is required. In Kore, this is represented with the injection above because all sorts are regarded as distinct.
+  1. (noun) A [symbol](#glossary-symbol) with the `sortInjection` attribute. The sort injection symbol is used to represent the K sub-sort relation in Kore. K sorts contain symbols and sorts (their sub-sorts), but Kore sorts contain only symbols. The sort injection symbol wraps patterns of a sub-sort so they can be included (*injected*) into the super-sort. Two important properties follow from this definition. First, sort injection symbols are injective. Second, the sort injection symbol from a particular sub-sort is distinct (in the no-confusion-different-constructors sense) from the super-sort's constructors.
+  2. (noun) A sort injection is a [pattern](#glossary-pattern) of the form $inj\{Sub\{\}, Super\{\}\}(\varphi:Sub\{\})$ where `inj{Sub{}, Super{}}` is a sort injection symbol (described above). Where the K sort `Super` contains `Sub`, the pattern $\varphi$ with least-sort `Sub` can appear anywhere that a term of sort `Super` is required. In Kore, this is represented with the injection above because all sorts are regarded as distinct.
 
-<span id="substitution">*substitution*</span>
+[*substitution*]{#glossary-substitution}
 
-  1. (noun) A [predicate](#predicate) of the form $x_1=\varphi_1 \land x_2=\varphi_2 \land \dots \land x_n=\varphi_n$ where $x_i$ are variables and $\varphi_i$ are patterns.
+  1. (noun) A [predicate](#glossary-predicate) of the form $x_1=\varphi_1 \land x_2=\varphi_2 \land \dots \land x_n=\varphi_n$ where $x_i$ are variables and $\varphi_i$ are patterns.
 
-<span id="symbol">*symbol*</span>
+[*symbol]{#glossary-symbol}
 
   1. TODO
 
-<span id="term-pattern">*term pattern*</span>
+[*term pattern*]{#glossary-term-pattern}
 
-  1. (noun) A [pattern](#pattern) of a specific type. A term pattern is usually constructed with variables and function application patterns. In some cases, it is used for any pattern with the expectation that it will be reduced, as much as reasonably possible, to a variable-application form.
+  1. (noun) A [pattern](#glossary-pattern) of a specific type. A term pattern is usually constructed with variables and function application patterns. In some cases, it is used for any pattern with the expectation that it will be reduced, as much as reasonably possible, to a variable-application form.
