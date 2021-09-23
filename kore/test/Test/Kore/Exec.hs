@@ -46,8 +46,8 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    makeTruePredicate,
     makeFalsePredicate,
+    makeTruePredicate,
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -374,8 +374,8 @@ test_checkBothMatch =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence $ constructorDecl "a"
---                                , asSentence $ constructorDecl "b"
-                                , asSentence mySymbDecl
+                                , --                                , asSentence $ constructorDecl "b"
+                                  asSentence mySymbDecl
                                 , mkEq "a" makeTruePredicate
                                 , mkEq "a" makeFalsePredicate
                                 ]
@@ -425,18 +425,19 @@ test_checkBothMatch =
                 }
             [x]
     -- f(x) = name assuming pr
-    mkEq name pr = SentenceAxiomSentence $
-        mkAxiom [] $
-            toTermLikeOld mySort $
-                Equation
-                    { left = myFx (mkElemVar v)
-                    , requires = pr
-                    , argument = Nothing
-                    , antiLeft = Nothing
-                    , right = wrap name
-                    , ensures = makeTruePredicate
-                    , attributes = def
-                    }
+    mkEq name pr =
+        SentenceAxiomSentence $
+            mkAxiom [] $
+                toTermLikeOld mySort $
+                    Equation
+                        { left = myFx (mkElemVar v)
+                        , requires = pr
+                        , argument = Nothing
+                        , antiLeft = Nothing
+                        , right = wrap name
+                        , ensures = makeTruePredicate
+                        , attributes = def
+                        }
       where
         wrap = applyToNoArgs mySort
         v = mkElementVariable (testId "V") mySort
