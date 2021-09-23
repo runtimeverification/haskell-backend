@@ -1,5 +1,6 @@
 module Test.Kore.Reachability.Prove (
     test_proveClaims,
+    test_transitionRule,
 ) where
 
 import Data.Default (
@@ -736,21 +737,41 @@ test_proveClaims =
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
-    , testCase "transitionRule: LHS is undefined" $ do
-        let claim :: AllPathClaim
-            claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
-        actual <-
-            runSimplifierSMT Mock.env . runTransitionT $
-                transitionRule
-                    []
-                    [[]]
-                    ApplyAxioms
-                    (Claimed claim)
-        assertEqual
-            "Result is Proven"
-            [(Proven, Seq.empty)]
-            actual
     ]
+
+test_transitionRule :: TestTree
+test_transitionRule =
+    testGroup
+        "transitionRule: AllPath"
+        [ testCase "ApplyAxioms: LHS is undefined" $ do
+            let claim :: AllPathClaim
+                claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
+            actual <-
+                runSimplifierSMT Mock.env . runTransitionT $
+                    transitionRule
+                        []
+                        [[]]
+                        ApplyAxioms
+                        (Claimed claim)
+            assertEqual
+                "Result is Proven"
+                [(Proven, Seq.empty)]
+                actual
+        , testCase "ApplyClaims: LHS is undefined" $ do
+            let claim :: AllPathClaim
+                claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
+            actual <-
+                runSimplifierSMT Mock.env . runTransitionT $
+                    transitionRule
+                        []
+                        [[]]
+                        ApplyClaims
+                        (Claimed claim)
+            assertEqual
+                "Result is Proven"
+                [(Proven, Seq.empty)]
+                actual
+        ]
 
 simpleAxiom ::
     TermLike VariableName ->
