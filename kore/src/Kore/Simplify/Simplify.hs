@@ -325,9 +325,7 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
 -- * Builtin and axiom simplifiers
 
 {- | Used for keeping track of already attempted equations which failed to
- apply. This uses a naive caching algorithm, meaning it doesn't attempt
- to trim the cache in certain situations. We found that a more sophisticated
- algorithm didn't bring much benefits in practice,
+ apply.
 -}
 newtype SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
