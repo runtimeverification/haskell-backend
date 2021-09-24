@@ -8,6 +8,10 @@
 2. [Basics](#basics)
 3. [Design](#design)
 3. [Implementation](#implementation)
+    1. [Context Map](#implementation-context-map)
+        1. [Low-level](#implementation-context-map-low-level)
+        2. [Interface](#implementation-context-map-interface)
+        3. [Workflow](#implementation-context-map-workflow)
     1. [Hooks](#implementation-hooks)
         1. [BOOL](#implementation-hooks-bool)
             1. [BOOL.Bool](#implementation-hooks-bool-bool)
@@ -149,6 +153,41 @@
 ## [Design]{#design}
 
 ## [Implementation]{#implementation}
+
+### [Context Map]{#implementation-context-map}
+
+> [Domain Driven Design] deals with large models by dividing them into different Bounded Contexts and being explicit about their interrelationships."
+
+[BoundedContext - martinfowler.com](https://martinfowler.com/bliki/BoundedContext.html)
+
+Our boundaries are not very strict, because our domain is well-defined; that is, Kore is given a formal semantics. The map has basically two kinds of entities:
+
+* *Languages* define an interface between contexts. For us, these are mostly internal representations of Kore patterns and definitions.
+* *Workflows* implement the behavior of the model, for example: parsing, validation, rewriting, simplification, proving.
+
+Sometimes *languages* and *workflows* overlap, but this should be avoided.
+
+#### [Low-level]{#implementation-context-map-low-level}
+
+
+![context-map-low-level.jpg](./img/implementation/context-map/context-map-low-level.jpg)
+
+
+This diagram is intended to be normative. Question carefully any instance where the actual dependencies differ significantly from the relationships shown here. Note that all internal modules depend on Kore.Internal, but these are omitted for clarity. The diagram only depicts the core domain models. There are utility contexts for logging, databases, etc. which are not shown.
+
+#### [Interface]{#implementation-context-map-interface}
+
+
+![context-map-interface.jpg](./img/implementation/context-map/context-map-interface.jpg)
+
+
+#### [Workflow]{#implementation-context-map-workflow}
+
+
+![context-map-workflow.jpg](./img/implementation/context-map/context-map-workflow.jpg)
+
+
+Kore.Exec and Kore.Repl control the input/output cycle with the user. These modules drive the data flow through the backend. Input passes through parsing and validation. The interface between these is mediated by Kore.Syntax. The valid definition and claims or patterns pass to Kore.Reachability, with the interface mediated by Kore.Internal and the other representations. The claims or program iterate through Kore.Rewrite and Kore.Simplify according to the controller, Kore.Reachability.
 
 ### [Hooks]{#implementation-hooks}
 

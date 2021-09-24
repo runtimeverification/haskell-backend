@@ -1,5 +1,4 @@
-Generate a PDF using [pandoc](https://pandoc.org):
+Generate PDF version using [pandoc](https://pandoc.org):
 ```
-pandoc DEVELOPER_MANUAL.md --pdf-engine=xelatex -o manual.pdf
+pandoc -f markdown-implicit_figures DEVELOPER_MANUAL.md --pdf-engine=xelatex -o manual.pdf
 ```
-
