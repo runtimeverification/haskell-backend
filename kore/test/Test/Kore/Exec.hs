@@ -374,8 +374,7 @@ test_checkBothMatch =
                             , moduleSentences =
                                 [ asSentence mySortDecl
                                 , asSentence $ constructorDecl "a"
-                                , --                                , asSentence $ constructorDecl "b"
-                                  asSentence mySymbDecl
+                                , asSentence mySymbDecl
                                 , mkEq "a" makeTruePredicate
                                 , mkEq "a" makeFalsePredicate
                                 ]

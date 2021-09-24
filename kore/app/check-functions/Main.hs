@@ -47,6 +47,8 @@ import Kore.Syntax.Module (
 import Prelude.Kore
 import SMT (
     runNoSMT,
+    runSMT,
+    defaultConfig
  )
 import System.Clock (
     Clock (Monotonic),
@@ -129,7 +131,7 @@ getLoadedModule opts =
 
 koreCheckBothMatch :: LoadedModule -> Main ExitCode
 koreCheckBothMatch loadedMod =
-    SMT.runNoSMT $ evalSimplifier loadedMod $ checkBothMatch loadedMod
+    SMT.runSMT defaultConfig (pure ()) $ evalSimplifier loadedMod $ checkBothMatch loadedMod
 
 koreCheckFunctions :: LoadedModule -> Main ExitCode
 koreCheckFunctions = checkFunctions
