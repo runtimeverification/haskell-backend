@@ -1,2 +1,2 @@
 #!/bin/sh
-${KORE_EXEC:?} test-sumTo10-definition.kore --module ETHEREUM-SIMULATION --pattern test-sumTo10-tmp.in.GuSxUGN6qr "$@"
+${KORE_EXEC:?} test-sumTo10-definition.kore --module ETHEREUM-SIMULATION --pattern test-sumTo10-tmp.in.7vWg8eVcnq "$@"
