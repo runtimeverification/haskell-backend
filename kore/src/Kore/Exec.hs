@@ -694,7 +694,7 @@ checkBothMatch verifiedModule =
   where
     equations = join $ map mkPairs $ Map.elems $ extractEquations verifiedModule
     -- produces all 'in-order' pairs in a list
-    mkPairs xs = [(x,y) | (x:ys) <- tails xs, y <- ys]
+    mkPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
     checkResults [] = return ExitSuccess
     checkResults eqnPairs =
         mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3
