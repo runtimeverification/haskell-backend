@@ -26,7 +26,8 @@ module Test.Kore.Builtin.Int (
     test_or,
     test_xor,
     test_not,
-    test_shift,
+    test_shl,
+    test_shr,
     test_pow,
     test_powmod,
     test_log2,
@@ -406,8 +407,15 @@ test_xor = testBinary xorIntSymbol xor
 test_not :: TestTree
 test_not = testUnary notIntSymbol complement
 
-test_shift :: TestTree
-test_shift = testBinary shiftIntSymbol (\a -> shift a . fromInteger)
+test_shl :: TestTree
+test_shl = testBinary shlIntSymbol shl
+  where
+    shl a = shift a . fromInteger
+
+test_shr :: TestTree
+test_shr = testBinary shrIntSymbol shr
+  where
+    shr a = shift a . fromInteger . negate
 
 -- Exponential and logarithmic operations
 test_pow :: TestTree
