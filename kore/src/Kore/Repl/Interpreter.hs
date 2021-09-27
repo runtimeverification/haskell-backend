@@ -1455,8 +1455,7 @@ showDotGraph gr =
         . Graph.graphToDot (graphParams gr)
         $ gr
 
-{- | A version of @showDotGraph@ that catches any exceptions.
--}
+-- | A version of @showDotGraph@ that catches any exceptions.
 showDotGraphCatchException ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
@@ -1469,7 +1468,7 @@ showDotGraphCatchException gr =
                 [ "Encountered the following exception:"
                 , Pretty.indent 4 $ fromString $ displayException e
                 , "Please note that the graph command is not\
-                \ currently supported on MacOS." 
+                  \ currently supported on MacOS."
                 ]
 
 saveDotGraph ::
