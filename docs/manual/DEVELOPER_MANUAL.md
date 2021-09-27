@@ -13,6 +13,7 @@
         2. [Interface](#implementation-context-map-interface)
         3. [Workflow](#implementation-context-map-workflow)
     1. [Hooks](#implementation-hooks)
+        1. [How To: Add Builtin Hook](#implementation-hooks-add-builtin-hook)
         1. [BOOL](#implementation-hooks-bool)
             1. [BOOL.Bool](#implementation-hooks-bool-bool)
             2. [BOOL.or](#implementation-hooks-bool-or)
@@ -191,6 +192,8 @@ Kore.Exec and Kore.Repl control the input/output cycle with the user. These modu
 
 ### [Hooks]{#implementation-hooks}
 
+#### [How To: Add Builtin Hook]{#implementation-hooks-add-builtin-hook}
+
 [Pull request #632](https://github.com/kframework/kore/pull/632/files) ([TODO update PR](https://github.com/kframework/kore/pull/2845#discussion_r715497574))is a self-contained example of adding a builtin symbol. When adding a builtin symbol we should add:
 
 1. An entry to the hooks document.
@@ -200,7 +203,6 @@ Kore.Exec and Kore.Repl control the input/output cycle with the user. These modu
 5. A few tests with different concrete arguments.
 
 The builtin domains are listed below, categorized by sort. Each sort and symbol is described and an example hooked declaration is given. Note that some domains depend on others being defined!
-
 
 #### [BOOL]{#implementation-hooks-bool}
 
