@@ -21,6 +21,7 @@ newtype Owise = Owise {isOwise :: Bool}
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 instance Default Owise where
     def = Owise False
