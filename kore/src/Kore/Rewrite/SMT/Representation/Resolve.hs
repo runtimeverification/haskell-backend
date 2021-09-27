@@ -204,14 +204,14 @@ resolveSort ::
     Maybe (Sort sort symbol name)
 resolveSort
     resolvers
-    Sort{smtFromSortArgs, declaration} =
-        traceMaybe D_SMT_resolveSort [debugArg "declaration" declaration] $
+    Sort{smtFromSortArgs, sortDeclaration} =
+        traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration] $
             do
-                newDeclaration <- resolveKoreSortDeclaration resolvers declaration
+                newDeclaration <- resolveKoreSortDeclaration resolvers sortDeclaration
                 return
                     Sort
                         { smtFromSortArgs = smtFromSortArgs
-                        , declaration = newDeclaration
+                        , sortDeclaration = newDeclaration
                         }
 
 resolveKoreSortDeclaration ::
@@ -296,14 +296,14 @@ resolveSymbol ::
 resolveSymbol
     resolvers
     symbolId
-    Symbol{smtFromSortArgs, declaration} =
-        traceMaybe D_SMT_resolveSymbol [debugArg "declaration" declaration] $ do
+    Symbol{smtFromSortArgs, symbolDeclaration} =
+        traceMaybe D_SMT_resolveSymbol [debugArg "declaration" symbolDeclaration] $ do
             newDeclaration <-
-                resolveKoreSymbolDeclaration resolvers symbolId declaration
+                resolveKoreSymbolDeclaration resolvers symbolId symbolDeclaration
             return
                 Symbol
                     { smtFromSortArgs = smtFromSortArgs
-                    , declaration = newDeclaration
+                    , symbolDeclaration = newDeclaration
                     }
 
 resolveKoreSymbolDeclaration ::
@@ -414,9 +414,9 @@ sortDeclaresSymbolImpl
     symbolId =
         case Map.lookup sortActualName sorts of
             Nothing -> False
-            Just Sort{declaration = SortDeclarationSort _} -> False
-            Just Sort{declaration = SortDeclaredIndirectly _} -> False
-            Just Sort{declaration = SortDeclarationDataType dataType} ->
+            Just Sort{sortDeclaration = SortDeclarationSort _} -> False
+            Just Sort{sortDeclaration = SortDeclaredIndirectly _} -> False
+            Just Sort{sortDeclaration = SortDeclarationDataType dataType} ->
                 dataTypeDeclaresSymbol dataType symbolId
 sortDeclaresSymbolImpl _ _ _ = False
 

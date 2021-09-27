@@ -26,8 +26,8 @@ declare :: SMT.MonadSMT m => AST.SmtDeclarations -> m ()
 declare AST.Declarations{symbols} = traverse_ declareSymbol symbols
 
 declareSymbol :: SMT.MonadSMT m => AST.SmtSymbol -> m ()
-declareSymbol AST.Symbol{declaration} =
-    declareKoreSymbolDeclaration declaration
+declareSymbol AST.Symbol{symbolDeclaration} =
+    declareKoreSymbolDeclaration symbolDeclaration
 
 declareKoreSymbolDeclaration ::
     SMT.MonadSMT m => AST.SmtKoreSymbolDeclaration -> m ()

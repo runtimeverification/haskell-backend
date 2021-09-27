@@ -37,16 +37,16 @@ declare AST.Declarations{sorts} = do
         Maybe (Either SMT.SmtSortDeclaration SMT.SmtDataTypeDeclaration)
     eitherDeclaration
         AST.Sort
-            { declaration = AST.SortDeclarationSort declaration
+            { sortDeclaration = AST.SortDeclarationSort declaration
             } =
             Just (Left declaration)
     eitherDeclaration
         AST.Sort
-            { declaration = AST.SortDeclarationDataType declaration
+            { sortDeclaration = AST.SortDeclarationDataType declaration
             } =
             Just (Right declaration)
     eitherDeclaration
         AST.Sort
-            { declaration = AST.SortDeclaredIndirectly _
+            { sortDeclaration = AST.SortDeclaredIndirectly _
             } =
             Nothing

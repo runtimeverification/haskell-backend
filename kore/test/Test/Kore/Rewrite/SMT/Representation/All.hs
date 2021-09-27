@@ -78,7 +78,7 @@ test_symbolParsing =
                     const $
                         Just $
                             AST.encode (AST.encodable name)
-            , declaration =
+            , sortDeclaration =
                 AST.SortDeclarationSort
                     SMT.SortDeclaration
                         { name = AST.encode (AST.encodable name)

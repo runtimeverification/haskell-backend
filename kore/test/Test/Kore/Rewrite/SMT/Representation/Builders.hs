@@ -64,7 +64,7 @@ unresolvedSort :: Kore.Id -> AST.UnresolvedSort
 unresolvedSort identifier =
     AST.Sort
         { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
-        , declaration =
+        , sortDeclaration =
             AST.SortDeclarationSort
                 AST.SortDeclaration
                     { name = encodable
@@ -81,7 +81,7 @@ unresolvedData :: Kore.Id -> AST.UnresolvedSort
 unresolvedData identifier =
     AST.Sort
         { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
-        , declaration =
+        , sortDeclaration =
             AST.SortDeclarationDataType
                 AST.DataTypeDeclaration
                     { name = encodable
@@ -116,7 +116,7 @@ unresolvedIndirectSort :: AST.Encodable -> AST.UnresolvedSort
 unresolvedIndirectSort name =
     AST.Sort
         { smtFromSortArgs = const $ const $ Just $ AST.encode name
-        , declaration = AST.SortDeclaredIndirectly name
+        , sortDeclaration = AST.SortDeclaredIndirectly name
         }
 
 unresolvedConstructorSymbolMap ::
@@ -134,7 +134,7 @@ unresolvedConstructorSymbol ::
 unresolvedConstructorSymbol identifier resultSort argumentSorts =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
-        , declaration =
+        , symbolDeclaration =
             AST.SymbolConstructor
                 AST.IndirectSymbolDeclaration
                     { name = encodable
@@ -166,7 +166,7 @@ unresolvedSmtlibSymbol encodedName inputSorts resultSort =
                 const $
                     Just $
                         AST.Atom encodedName
-        , declaration =
+        , symbolDeclaration =
             AST.SymbolDeclaredDirectly
                 AST.FunctionDeclaration
                     { name = AST.AlreadyEncoded (AST.Atom encodedName)
@@ -192,7 +192,7 @@ unresolvedSmthookSymbol encodedName sortDependencies =
                 const $
                     Just $
                         AST.Atom encodedName
-        , declaration =
+        , symbolDeclaration =
             AST.SymbolBuiltin
                 AST.IndirectSymbolDeclaration
                     { name = AST.AlreadyEncoded (AST.Atom encodedName)

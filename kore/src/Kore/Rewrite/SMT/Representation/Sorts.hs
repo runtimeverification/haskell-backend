@@ -181,7 +181,7 @@ builtinSortDeclaration
                 ( sentenceSortName
                 , AST.Sort
                     { smtFromSortArgs = emptySortArgsToSmt smtRepresentation
-                    , declaration =
+                    , sortDeclaration =
                         AST.SortDeclaredIndirectly
                             (AST.AlreadyEncoded smtRepresentation)
                     }
@@ -202,7 +202,7 @@ smtlibSortDeclaration
                 ( sentenceSortName
                 , AST.Sort
                     { smtFromSortArgs = applyToArgs smtRepresentation
-                    , declaration =
+                    , sortDeclaration =
                         AST.SortDeclarationSort
                             SMT.SortDeclaration
                                 { name = AST.AlreadyEncoded $ SMT.Atom smtName
@@ -238,7 +238,7 @@ simpleSortDeclaration
             , AST.Sort
                 { smtFromSortArgs =
                     emptySortArgsToSmt (AST.encode encodedName)
-                , declaration =
+                , sortDeclaration =
                     AST.SortDeclarationSort
                         SMT.SortDeclaration
                             { name = encodedName
@@ -278,7 +278,7 @@ sortWithConstructor sortConstructors sortId = do
         , AST.Sort
             { smtFromSortArgs =
                 emptySortArgsToSmt (AST.encode encodedName)
-            , declaration =
+            , sortDeclaration =
                 AST.SortDeclarationDataType
                     SMT.DataTypeDeclaration
                         { name = encodedName

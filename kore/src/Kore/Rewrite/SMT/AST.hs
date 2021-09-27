@@ -74,7 +74,7 @@ data Sort sort symbol name = Sort
         !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
     , -- | Information needed for declaring the sort, also listing all
       -- dependencies on other sorts and symbols.
-      declaration :: !(KoreSortDeclaration sort symbol name)
+      sortDeclaration :: !(KoreSortDeclaration sort symbol name)
     }
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -86,9 +86,9 @@ instance
     where
     show s@(Sort _ _) =
         case s of
-            Sort{smtFromSortArgs = _, declaration} ->
-                "Sort { smtFromSortArgs, declaration = "
-                    ++ show declaration
+            Sort{smtFromSortArgs = _, sortDeclaration} ->
+                "Sort { smtFromSortArgs, sortDeclaration = "
+                    ++ show sortDeclaration
                     ++ "}"
 
 {- | A representation of the Kore SymbolOrAlias type together with symbol
@@ -105,7 +105,7 @@ data Symbol sort name = Symbol
         !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
     , -- | Information needed for declaring the symbol, also listing all
       -- dependencies on other sorts and symbols.
-      declaration :: !(KoreSymbolDeclaration sort name)
+      symbolDeclaration :: !(KoreSymbolDeclaration sort name)
     }
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -114,9 +114,9 @@ data Symbol sort name = Symbol
 instance (Show sort, Show name) => Show (Symbol sort name) where
     show s@(Symbol _ _) =
         case s of
-            Symbol{smtFromSortArgs = _, declaration} ->
-                "Symbol { smtFromSortArgs, declaration = "
-                    ++ show declaration
+            Symbol{smtFromSortArgs = _, symbolDeclaration} ->
+                "Symbol { smtFromSortArgs, symbolDeclaration = "
+                    ++ show symbolDeclaration
                     ++ "}"
 
 {- | Data needed for declaring an SMT sort.

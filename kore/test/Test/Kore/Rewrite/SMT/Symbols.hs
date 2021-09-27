@@ -313,7 +313,7 @@ test_resolve =
                     & AST.symbols
                     & Map.lookup idC
                     & fromJust
-                    & AST.declaration
+                    & AST.symbolDeclaration
          in case symbolDeclaration' of
                 AST.SymbolBuiltin
                     AST.IndirectSymbolDeclaration{sortDependencies} ->
