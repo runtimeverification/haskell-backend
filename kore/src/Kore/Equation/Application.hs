@@ -7,18 +7,6 @@ module Kore.Equation.Application (
     AttemptEquationResult,
     applyEquation,
     applySubstitutionAndSimplify,
-
-    -- * Errors
-    AttemptEquationError (..),
-    MatchError (..),
-    ApplyMatchResultErrors (..),
-    ApplyMatchResultError (..),
-    CheckRequiresError (..),
-
-    -- * Logging
-    DebugAttemptEquation (..),
-    DebugApplyEquation (..),
-    debugApplyEquation,
 ) where
 
 import Control.Error (
@@ -28,7 +16,6 @@ import Control.Error (
     noteT,
     runExceptT,
     throwE,
-    withExceptT,
  )
 import Control.Monad (
     (>=>),
@@ -44,19 +31,12 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Source as Attribute
-import Kore.Attribute.SourceLocation (
-    SourceLocation (..),
- )
+import Kore.Equation.DebugEquation
 import Kore.Equation.Equation (
     Equation (..),
  )
@@ -65,9 +45,6 @@ import Kore.Internal.Condition (
     Condition,
  )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -109,37 +86,10 @@ import Kore.Simplify.Simplify (
  )
 import qualified Kore.Simplify.Simplify as Simplifier
 import Kore.Substitute
-import Kore.Syntax.Id (
-    AstLocation (..),
-    FileLocation (..),
- )
 import Kore.Syntax.Variable
 import Kore.TopBottom
-import Kore.Unparser (
-    Unparse (..),
- )
-import Log (
-    Entry (..),
-    MonadLog,
-    Severity (..),
-    logEntry,
-    logWhile,
- )
 import qualified Logic
 import Prelude.Kore
-import Pretty (
-    Pretty (..),
- )
-import qualified Pretty
-
-{- | The outcome of an attempt to apply an 'Equation'.
-
-@AttemptEquationResult@ is 'Right' if the equation is applicable, and 'Left'
-otherwise. If the equation is not applicable, the 'AttemptEquationError' will
-indicate the reason.
--}
-type AttemptEquationResult variable =
-    Either (AttemptEquationError variable) (Pattern variable)
 
 {- | Attempt to apply an 'Equation' to the 'TermLike'.
 
@@ -157,15 +107,21 @@ attemptEquation ::
     TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
     simplifier (AttemptEquationResult RewritingVariableName)
-attemptEquation sideCondition termLike equation =
-    whileDebugAttemptEquation' . runExceptT $ do
-        let Equation{left, argument, antiLeft} = equationRenamed
-        (equation', predicate) <- matchAndApplyResults left argument antiLeft
-        let Equation{requires} = equation'
-        checkRequires sideCondition predicate requires & whileCheckRequires
-        let Equation{right, ensures} = equation'
-        return $ Pattern.withCondition right $ from @(Predicate _) ensures
+attemptEquation sideCondition termLike equation = do
+    result <- runMaybeT alreadyAttempted
+    case result of
+        Just attemptResult -> return (Left attemptResult)
+        Nothing -> attemptEquationWorker
   where
+    attemptEquationWorker =
+        whileDebugAttemptEquation' . runExceptT $ do
+            let Equation{left, argument, antiLeft} = equationRenamed
+            (equation', predicate) <- matchAndApplyResults left argument antiLeft
+            let Equation{requires} = equation'
+            checkRequires sideCondition predicate requires & whileCheckRequires
+            let Equation{right, ensures} = equation'
+            return $ Pattern.withCondition right $ from @(Predicate _) ensures
+
     equationRenamed = refreshVariables sideCondition termLike equation
     matchError =
         MatchError
@@ -221,8 +177,51 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' action =
         whileDebugAttemptEquation termLike equationRenamed $ do
             result <- action
+            cacheIfFailure result
             debugAttemptEquationResult equation result
             return result
+
+    cacheIfFailure result =
+        case result of
+            Left failure ->
+                addToCache failure
+            _ -> return ()
+
+    addToCache result = do
+        oldCache <- Simplifier.getCache
+        let newEntry =
+                Simplifier.EvaluationAttempt
+                    { cachedEquation = equation
+                    , cachedTerm = termLike
+                    }
+            newCache =
+                Simplifier.updateCache newEntry result oldCache
+        Simplifier.putCache newCache
+
+    alreadyAttempted = do
+        cache <- Simplifier.getCache
+        let entry =
+                Simplifier.EvaluationAttempt
+                    { cachedEquation = equation
+                    , cachedTerm = termLike
+                    }
+        value <-
+            Simplifier.lookupCache entry cache
+                & (MaybeT . return)
+        checkWithSideCondition value
+      where
+        checkWithSideCondition value =
+            case value of
+                WhileMatch _ -> return value
+                WhileApplyMatchResult _ -> return value
+                WhileCheckRequires
+                    ( CheckRequiresError
+                            { sideCondition = oldSideCondition
+                            }
+                        ) ->
+                        if sideCondition == oldSideCondition
+                            then return value
+                            else empty
 
 {- | Simplify the argument of a function definition equation with the
  match substitution and the priority predicate. This will avoid
@@ -418,273 +417,3 @@ refreshVariables sideCondition initial =
   where
     avoiding = sideConditionVariables <> freeVariables initial
     sideConditionVariables = freeVariables sideCondition
--- * Errors
-
--- | Errors that can occur during 'attemptEquation'.
-data AttemptEquationError variable
-    = WhileMatch !(MatchError variable)
-    | WhileApplyMatchResult !(ApplyMatchResultErrors variable)
-    | WhileCheckRequires !(CheckRequiresError variable)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-whileMatch ::
-    Functor monad =>
-    ExceptT (MatchError RewritingVariableName) monad a ->
-    ExceptT (AttemptEquationError RewritingVariableName) monad a
-whileMatch = withExceptT WhileMatch
-
-whileApplyMatchResult ::
-    Functor monad =>
-    ExceptT (ApplyMatchResultErrors RewritingVariableName) monad a ->
-    ExceptT (AttemptEquationError RewritingVariableName) monad a
-whileApplyMatchResult = withExceptT WhileApplyMatchResult
-
-whileCheckRequires ::
-    Functor monad =>
-    ExceptT (CheckRequiresError RewritingVariableName) monad a ->
-    ExceptT (AttemptEquationError RewritingVariableName) monad a
-whileCheckRequires = withExceptT WhileCheckRequires
-
-instance Pretty (AttemptEquationError RewritingVariableName) where
-    pretty (WhileMatch matchError) =
-        pretty matchError
-    pretty (WhileApplyMatchResult applyMatchResultErrors) =
-        pretty applyMatchResultErrors
-    pretty (WhileCheckRequires checkRequiresError) =
-        pretty checkRequiresError
-
--- | Errors that can occur while matching the equation to the term.
-data MatchError variable = MatchError
-    { matchTerm :: !(TermLike variable)
-    , matchEquation :: !(Equation variable)
-    }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Pretty (MatchError RewritingVariableName) where
-    pretty _ = "equation did not match term"
-
-{- | Errors that can occur during 'applyMatchResult'.
-
-There may be multiple independent reasons the match cannot be applied, so this
-type contains a 'NonEmpty' list of 'ApplyMatchError'.
--}
-data ApplyMatchResultErrors variable = ApplyMatchResultErrors
-    { matchResult :: !(MatchResult variable)
-    , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
-    }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Pretty (ApplyMatchResultErrors RewritingVariableName) where
-    pretty ApplyMatchResultErrors{applyMatchErrors} =
-        Pretty.vsep
-            [ "could not apply match result:"
-            , (Pretty.indent 4 . Pretty.vsep)
-                (pretty <$> toList applyMatchErrors)
-            ]
-
--- | @ApplyMatchResultError@ represents a reason the match could not be applied.
-data ApplyMatchResultError variable
-    = -- | The variable was matched with a symbolic term where a concrete
-      -- term was required.
-      NotConcrete (SomeVariableName variable) (TermLike variable)
-    | -- | The variable was matched with a concrete term where a symbolic
-      -- term was required.
-      NotSymbolic (SomeVariableName variable) (TermLike variable)
-    | -- | The variable was not matched.
-      NotMatched (SomeVariableName variable)
-    | -- | The variable is not part of the matching solution.
-      NonMatchingSubstitution (SomeVariableName variable)
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Pretty (ApplyMatchResultError RewritingVariableName) where
-    pretty (NotConcrete variable _) =
-        Pretty.hsep
-            [ "variable"
-            , unparse variable
-            , "did not match a concrete term"
-            ]
-    pretty (NotSymbolic variable _) =
-        Pretty.hsep
-            [ "variable"
-            , unparse variable
-            , "did not match a symbolic term"
-            ]
-    pretty (NotMatched variable) =
-        Pretty.hsep ["variable", unparse variable, "was not matched"]
-    pretty (NonMatchingSubstitution variable) =
-        Pretty.hsep
-            [ "variable"
-            , unparse variable
-            , "should not be substituted"
-            ]
-
--- | Errors that can occur during 'checkRequires'.
-data CheckRequiresError variable = CheckRequiresError
-    { matchPredicate :: !(Predicate variable)
-    , equationRequires :: !(Predicate variable)
-    , sideCondition :: !(SideCondition variable)
-    , negatedImplication :: !(OrCondition variable)
-    }
-    deriving stock (Eq, Ord, Show)
-    deriving stock (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Pretty (CheckRequiresError RewritingVariableName) where
-    pretty checkRequiresError =
-        Pretty.vsep
-            [ "Could not infer the equation requirement:"
-            , Pretty.indent 4 (pretty equationRequires)
-            , "and the matching requirement:"
-            , Pretty.indent 4 (pretty matchPredicate)
-            , "from the side condition:"
-            , Pretty.indent 4 (pretty sideCondition)
-            , "The negated implication is:"
-            , Pretty.indent 4 (pretty negatedImplication)
-            ]
-      where
-        CheckRequiresError
-            { matchPredicate
-            , equationRequires
-            , sideCondition
-            , negatedImplication
-            } = checkRequiresError
-
--- * Logging
-
--- | Log entries for all phases of equation application.
-data DebugAttemptEquation
-    = -- | Covers the entire scope of 'attemptEquation'.
-      DebugAttemptEquation
-        (Equation RewritingVariableName)
-        (TermLike RewritingVariableName)
-    | -- | Entered into the log when an equation is applicable.
-      DebugAttemptEquationResult
-        (Equation RewritingVariableName)
-        (AttemptEquationResult RewritingVariableName)
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
-
-instance Pretty DebugAttemptEquation where
-    pretty (DebugAttemptEquation equation termLike) =
-        Pretty.vsep
-            [ (Pretty.hsep . catMaybes)
-                [ Just "applying equation"
-                , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
-                , Just "to term:"
-                ]
-            , Pretty.indent 4 (unparse termLike)
-            ]
-    pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
-        Pretty.vsep
-            [ "equation is not applicable:"
-            , pretty attemptEquationError
-            ]
-    pretty (DebugAttemptEquationResult _ (Right _)) =
-        "equation is applicable"
-
-instance Entry DebugAttemptEquation where
-    entrySeverity _ = Debug
-    contextDoc (DebugAttemptEquation equation _) =
-        (Just . Pretty.hsep . catMaybes)
-            [ Just "while applying equation"
-            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
-            ]
-    contextDoc _ = Nothing
-    helpDoc _ = "log equation application attempts"
-    oneLineDoc (DebugAttemptEquation equation _) =
-        maybe
-            mempty
-            (\loc -> Pretty.hsep ["applying equation at", pretty loc])
-            (srcLoc equation)
-    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
-    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
-
--- | Log the result of attempting to apply an 'Equation'.
-debugAttemptEquationResult ::
-    MonadLog log =>
-    Equation RewritingVariableName ->
-    AttemptEquationResult RewritingVariableName ->
-    log ()
-debugAttemptEquationResult equation result =
-    logEntry $ DebugAttemptEquationResult equation result
-
-whileDebugAttemptEquation ::
-    MonadLog log =>
-    TermLike RewritingVariableName ->
-    Equation RewritingVariableName ->
-    log a ->
-    log a
-whileDebugAttemptEquation termLike equation =
-    logWhile (DebugAttemptEquation equation termLike)
-
--- | Log when an 'Equation' is actually applied.
-data DebugApplyEquation
-    = -- | Entered into the log when an equation's result is actually used.
-      DebugApplyEquation
-        (Equation RewritingVariableName)
-        (Pattern RewritingVariableName)
-    deriving stock (Show)
-    deriving stock (GHC.Generic)
-
-instance Pretty DebugApplyEquation where
-    pretty (DebugApplyEquation equation result) =
-        Pretty.vsep
-            [ (Pretty.hsep . catMaybes)
-                [ Just "applied equation"
-                , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
-                , Just "with result:"
-                ]
-            , Pretty.indent 4 (unparse result)
-            ]
-
-srcLoc :: Equation RewritingVariableName -> Maybe Attribute.SourceLocation
-srcLoc equation
-    | (not . isLocEmpty) kLoc = Just kLoc
-    | AstLocationFile fileLocation <- locationFromAst equation =
-        Just (from @FileLocation fileLocation)
-    | otherwise = Nothing
-  where
-    kLoc = Attribute.sourceLocation $ attributes equation
-
-isLocEmpty :: Attribute.SourceLocation -> Bool
-isLocEmpty Attribute.SourceLocation{source = Attribute.Source file} =
-    isNothing file
-
-instance Entry DebugApplyEquation where
-    entrySeverity _ = Debug
-    oneLineDoc
-        ( DebugApplyEquation
-                Equation{attributes = Attribute.Axiom{sourceLocation}}
-                _
-            ) =
-            pretty sourceLocation
-    helpDoc _ = "log equation application successes"
-
-{- | Log when an 'Equation' is actually applied.
-
-@debugApplyEquation@ is different from 'debugAttemptEquationResult', which
-only indicates if an equation is applicable, that is: if it could apply. If
-multiple equations are applicable in the same place, the caller will determine
-which is actually applied. Therefore, the /caller/ should use this log entry
-after 'attemptEquation'.
--}
-debugApplyEquation ::
-    MonadLog log =>
-    Equation RewritingVariableName ->
-    Pattern RewritingVariableName ->
-    log ()
-debugApplyEquation equation result =
-    logEntry $ DebugApplyEquation equation result

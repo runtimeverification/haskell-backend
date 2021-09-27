@@ -49,6 +49,7 @@ data SourceLocation = SourceLocation
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 instance Default SourceLocation where
     def = SourceLocation def def
