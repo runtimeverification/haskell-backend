@@ -1473,9 +1473,9 @@ showDotGraphCatchException gr =
                         [ "Encountered the following exception:\n"
                         , Pretty.indent 4 $ fromString $ displayException e
                         , "Please note that the 'graph' command is not\
-                        \ currently supported on MacOS. The user may\
-                        \ instead wish to save the graph to file using\
-                        \ the command 'graph <filename>'."
+                          \ currently supported on MacOS. The user may\
+                          \ instead wish to save the graph to file using\
+                          \ the command 'graph <filename>'."
                         ]
             _ -> throw e
 
