@@ -26,7 +26,7 @@ module Kore.Repl.Interpreter (
 import Control.Exception (
     catch,
     displayException,
-    throw,
+    throwIO,
  )
 import Control.Lens (
     (%=),
@@ -1477,7 +1477,7 @@ showDotGraphCatchException gr =
                           \ instead wish to save the graph to file using\
                           \ the command 'graph <filename>'."
                         ]
-            _ -> throw e
+            _ -> throwIO e
 
 saveDotGraph ::
     From axiom AttrLabel.Label =>
