@@ -1458,8 +1458,7 @@ showDotGraph gr =
         . Graph.graphToDot (graphParams gr)
         $ gr
 
-{- | A version of @showDotGraph@ that catches a @GVProgramExc@ exception.
--}
+-- | A version of @showDotGraph@ that catches a @GVProgramExc@ exception.
 showDotGraphCatchException ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
