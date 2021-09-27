@@ -191,7 +191,7 @@ Kore.Exec and Kore.Repl control the input/output cycle with the user. These modu
 
 ### [Hooks]{#implementation-hooks}
 
-[Pull request #632](https://github.com/kframework/kore/pull/632/files) is a self-contained example of adding a builtin symbol. When adding a builtin symbol we should add:
+[Pull request #632](https://github.com/kframework/kore/pull/632/files) ([TODO update PR](https://github.com/kframework/kore/pull/2845#discussion_r715497574))is a self-contained example of adding a builtin symbol. When adding a builtin symbol we should add:
 
 1. An entry to the hooks document.
 2. A symbol verifier.
