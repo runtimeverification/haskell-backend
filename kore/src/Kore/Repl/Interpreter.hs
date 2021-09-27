@@ -24,9 +24,9 @@ module Kore.Repl.Interpreter (
 ) where
 
 import Control.Exception (
-    SomeException,
     catch,
     displayException,
+    throw,
  )
 import Control.Lens (
     (%=),
@@ -80,6 +80,9 @@ import Data.Graph.Inductive.PatriciaTree (
 import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
+import Data.GraphViz.Exception (
+    GraphvizException (..),
+ )
 import Data.IORef (
     IORef,
     modifyIORef,
@@ -1455,7 +1458,7 @@ showDotGraph gr =
         . Graph.graphToDot (graphParams gr)
         $ gr
 
-{- | A version of @showDotGraph@ that catches any exceptions.
+{- | A version of @showDotGraph@ that catches a @GVProgramExc@ exception.
 -}
 showDotGraphCatchException ::
     From axiom AttrLabel.Label =>
@@ -1463,14 +1466,19 @@ showDotGraphCatchException ::
     Gr CommonClaimState (Maybe (Seq axiom)) ->
     IO ()
 showDotGraphCatchException gr =
-    catch (showDotGraph gr) $ \(e :: SomeException) ->
-        hPrint stderr $
-            Pretty.vsep
-                [ "Encountered the following exception:"
-                , Pretty.indent 4 $ fromString $ displayException e
-                , "Please note that the graph command is not\
-                \ currently supported on MacOS." 
-                ]
+    catch (showDotGraph gr) $ \(e :: GraphvizException) ->
+        case e of
+            GVProgramExc _ ->
+                hPrint stderr $
+                    Pretty.vsep
+                        [ "Encountered the following exception:\n"
+                        , Pretty.indent 4 $ fromString $ displayException e
+                        , "Please note that the 'graph' command is not\
+                        \ currently supported on MacOS. The user may\
+                        \ instead wish to save the graph to file using\
+                        \ the command 'graph <filename>'."
+                        ]
+            _ -> throw e
 
 saveDotGraph ::
     From axiom AttrLabel.Label =>
