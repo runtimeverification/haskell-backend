@@ -375,8 +375,8 @@ test_checkBothMatch =
                                 [ asSentence mySortDecl
                                 , asSentence $ constructorDecl "a"
                                 , asSentence mySymbDecl
-                                , mkEq "a" makeTruePredicate
-                                , mkEq "a" makeFalsePredicate
+                                , mySentence "a" makeTruePredicate
+                                , mySentence "a" makeFalsePredicate
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -396,8 +396,8 @@ test_checkBothMatch =
                                 , asSentence $ constructorDecl "a"
                                 , asSentence $ constructorDecl "b"
                                 , asSentence mySymbDecl
-                                , mkEq "a" makeTruePredicate
-                                , mkEq "b" makeTruePredicate
+                                , mySentence "a" makeTruePredicate
+                                , mySentence "b" makeTruePredicate
                                 ]
                             , moduleAttributes = Attributes []
                             }
@@ -423,8 +423,8 @@ test_checkBothMatch =
                 , symbolAttributes = Mock.functionalAttributes
                 }
             [x]
-    -- f(x) = name assuming pr
-    mkEq name pr =
+    -- f(v) = name assuming pr
+    mySentence name pr =
         SentenceAxiomSentence $
             mkAxiom [] $
                 toTermLikeOld mySort $

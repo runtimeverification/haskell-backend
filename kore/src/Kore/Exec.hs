@@ -57,6 +57,9 @@ import Data.Generics.Wrapped (
 import Data.Limit (
     Limit (..),
  )
+import Data.List (
+    tails,
+ )
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -104,9 +107,6 @@ import Kore.Internal.Predicate (
     makeMultipleOrPredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition (
-    top,
- )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.ErrorEquationRightFunction (
@@ -186,7 +186,6 @@ import Kore.Simplify.Data (
  )
 import qualified Kore.Simplify.Data as Simplifier
 import qualified Kore.Simplify.Pattern as Pattern
-import qualified Kore.Simplify.Predicate as Predicate
 import qualified Kore.Simplify.Rule as Rule
 import Kore.Simplify.Simplify (
     MonadSimplify,
@@ -677,7 +676,9 @@ bothMatch eq1 eq2 =
                         Predicate.makeAndPredicate arg2 $
                             Predicate.makeAndPredicate prio1 prio2
         check' = Predicate.mapVariables (pure mkConfigVariable) check
-     in (not . isBottom) <$> Predicate.simplify top check'
+        sort = termLikeSort $ right eq1
+        patt = Pattern.fromPredicateSorted sort check'
+     in (not . isBottom) <$> Pattern.simplify patt
 
 {- | Checks if any function definition in the module carries two equations that both match
  - same term.
@@ -693,10 +694,7 @@ checkBothMatch verifiedModule =
   where
     equations = join $ map mkPairs $ Map.elems $ extractEquations verifiedModule
     -- produces all 'in-order' pairs in a list
-    mkPairs xs =
-        case xs of
-            [] -> []
-            (x : ys) -> map ((,) x) ys ++ mkPairs ys
+    mkPairs xs = [(x,y) | (x:ys) <- tails xs, y <- ys]
     checkResults [] = return ExitSuccess
     checkResults eqnPairs =
         mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3

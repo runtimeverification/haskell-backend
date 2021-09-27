@@ -47,7 +47,6 @@ import Kore.Syntax.Module (
 import Prelude.Kore
 import SMT (
     defaultConfig,
-    runNoSMT,
     runSMT,
  )
 import System.Clock (
