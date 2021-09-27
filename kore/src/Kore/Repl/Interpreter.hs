@@ -23,6 +23,11 @@ module Kore.Repl.Interpreter (
     showCurrentClaimIndex,
 ) where
 
+import Control.Exception (
+    SomeException,
+    catch,
+    displayException,
+ )
 import Control.Lens (
     (%=),
     (.=),
@@ -100,6 +105,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Typeable as Typeable
 import GHC.Exts (
+    fromString,
     toList,
  )
 import GHC.IO.Handle (
@@ -204,6 +210,7 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (..),
+    hPrint,
     hPutStrLn,
     stderr,
     withFile,
@@ -487,7 +494,7 @@ showGraph view mfile out = do
         then
             liftIO $
                 maybe
-                    (showDotGraph processedGraph)
+                    (showDotGraphCatchException processedGraph)
                     (saveDotGraph processedGraph format)
                     mfile
         else putStrLn' "Graphviz is not installed."
@@ -1447,6 +1454,23 @@ showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams gr)
         $ gr
+
+{- | A version of @showDotGraph@ that catches any exceptions.
+-}
+showDotGraphCatchException ::
+    From axiom AttrLabel.Label =>
+    From axiom RuleIndex =>
+    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    IO ()
+showDotGraphCatchException gr =
+    catch (showDotGraph gr) $ \(e :: SomeException) ->
+        hPrint stderr $
+            Pretty.vsep
+                [ "Encountered the following exception:"
+                , Pretty.indent 4 $ fromString $ displayException e
+                , "Please note that the graph command is not\
+                \ currently supported on MacOS." 
+                ]
 
 saveDotGraph ::
     From axiom AttrLabel.Label =>
