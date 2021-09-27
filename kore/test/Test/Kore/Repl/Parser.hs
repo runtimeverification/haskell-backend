@@ -13,7 +13,7 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import Kore.Equation.Application (
+import Kore.Equation.DebugEquation (
     DebugApplyEquation,
     DebugAttemptEquation,
  )

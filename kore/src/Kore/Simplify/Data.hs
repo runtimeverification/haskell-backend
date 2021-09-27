@@ -32,6 +32,7 @@ import Control.Monad.Catch (
  )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
+import Control.Monad.State.Strict
 import qualified Data.Map.Strict as Map
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
@@ -96,16 +97,17 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 -}
 newtype SimplifierT smt a = SimplifierT
-    { runSimplifierT :: ReaderT (Env (SimplifierT smt)) smt a
+    { runSimplifierT :: StateT SimplifierCache (ReaderT (Env (SimplifierT smt)) smt) a
     }
     deriving newtype (Functor, Applicative, Monad, MonadSMT)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader (Env (SimplifierT smt)))
+    deriving newtype (MonadState SimplifierCache)
 
 type Simplifier = SimplifierT SMT
 
 instance MonadTrans SimplifierT where
-    lift smt = SimplifierT (lift smt)
+    lift smt = SimplifierT ((lift . lift) smt)
     {-# INLINE lift #-}
 
 instance MonadLog log => MonadLog (SimplifierT log) where
@@ -166,6 +168,12 @@ instance
     askOverloadSimplifier = asks overloadSimplifier
     {-# INLINE askOverloadSimplifier #-}
 
+    getCache = get
+    {-# INLINE getCache #-}
+
+    putCache = put
+    {-# INLINE putCache #-}
+
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
     Monad smt =>
@@ -181,8 +189,9 @@ __Warning__: @runSimplifier@ calls 'error' if the 'Simplifier' does not contain
 exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
 that may branch.
 -}
-runSimplifier :: Env (SimplifierT smt) -> SimplifierT smt a -> smt a
-runSimplifier env simplifier = runReaderT (runSimplifierT simplifier) env
+runSimplifier :: Monad smt => Env (SimplifierT smt) -> SimplifierT smt a -> smt a
+runSimplifier env simplifier =
+    runReaderT (evalStateT (runSimplifierT simplifier) initCache) env
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -198,7 +207,7 @@ evalSimplifier ::
     smt a
 evalSimplifier verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
-    runReaderT (runSimplifierT simplifier) env
+    runSimplifier env simplifier
   where
     !earlyEnv =
         {-# SCC "evalSimplifier/earlyEnv" #-}
@@ -282,5 +291,5 @@ mapSimplifierT ::
     SimplifierT m b ->
     SimplifierT m b
 mapSimplifierT f simplifierT =
-    SimplifierT $
-        Morph.hoist f (runSimplifierT simplifierT)
+    SimplifierT . StateT $ \s ->
+        Morph.hoist f (runStateT (runSimplifierT simplifierT) s)
