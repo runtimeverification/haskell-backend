@@ -70,7 +70,7 @@ data Sort sort symbol name = Sort
       -- Smt representations for sorts and a list of sort arguments, returns
       -- an S-expression that can be used, say, when declaring symbols of
       -- that sort.
-      smtFromSortArgs ::
+      sortSmtFromSortArgs ::
         !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
     , -- | Information needed for declaring the sort, also listing all
       -- dependencies on other sorts and symbols.
@@ -86,8 +86,8 @@ instance
     where
     show s@(Sort _ _) =
         case s of
-            Sort{smtFromSortArgs = _, sortDeclaration} ->
-                "Sort { smtFromSortArgs, sortDeclaration = "
+            Sort{sortSmtFromSortArgs = _, sortDeclaration} ->
+                "Sort { sortSmtFromSortArgs, sortDeclaration = "
                     ++ show sortDeclaration
                     ++ "}"
 
@@ -101,7 +101,7 @@ data Symbol sort name = Symbol
       -- Smt representations for sorts and a list of sort arguments, returns
       -- an s-expression that can be used, say, when building assertions
       -- using that symbol.
-      smtFromSortArgs ::
+      symbolSmtFromSortArgs ::
         !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
     , -- | Information needed for declaring the symbol, also listing all
       -- dependencies on other sorts and symbols.
@@ -114,8 +114,8 @@ data Symbol sort name = Symbol
 instance (Show sort, Show name) => Show (Symbol sort name) where
     show s@(Symbol _ _) =
         case s of
-            Symbol{smtFromSortArgs = _, symbolDeclaration} ->
-                "Symbol { smtFromSortArgs, symbolDeclaration = "
+            Symbol{symbolSmtFromSortArgs = _, symbolDeclaration} ->
+                "Symbol { symbolSmtFromSortArgs, symbolDeclaration = "
                     ++ show symbolDeclaration
                     ++ "}"
 

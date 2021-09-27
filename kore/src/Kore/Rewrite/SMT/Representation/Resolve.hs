@@ -97,8 +97,8 @@ smtResolvers Declarations{sorts, symbols} =
                         [ "All references should be resolved before transforming"
                         , "to smt declarations."
                         ]
-                Just Sort{smtFromSortArgs} ->
-                    case smtFromSortArgs Map.empty [] of
+                Just Sort{sortSmtFromSortArgs} ->
+                    case sortSmtFromSortArgs Map.empty [] of
                         Nothing ->
                             (error . unlines)
                                 [ "Expecting to be able to produce sort representation"
@@ -115,8 +115,8 @@ smtResolvers Declarations{sorts, symbols} =
                     [ "All references should be resolved before transforming"
                     , "to smt declarations."
                     ]
-            Just Symbol{smtFromSortArgs} ->
-                case smtFromSortArgs Map.empty [] of
+            Just Symbol{symbolSmtFromSortArgs} ->
+                case symbolSmtFromSortArgs Map.empty [] of
                     Nothing ->
                         (error . unlines)
                             [ "Expecting to be able to produce symbol"
@@ -204,13 +204,13 @@ resolveSort ::
     Maybe (Sort sort symbol name)
 resolveSort
     resolvers
-    Sort{smtFromSortArgs, sortDeclaration} =
+    Sort{sortSmtFromSortArgs, sortDeclaration} =
         traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration] $
             do
                 newDeclaration <- resolveKoreSortDeclaration resolvers sortDeclaration
                 return
                     Sort
-                        { smtFromSortArgs = smtFromSortArgs
+                        { sortSmtFromSortArgs = sortSmtFromSortArgs
                         , sortDeclaration = newDeclaration
                         }
 
@@ -296,13 +296,13 @@ resolveSymbol ::
 resolveSymbol
     resolvers
     symbolId
-    Symbol{smtFromSortArgs, symbolDeclaration} =
+    Symbol{symbolSmtFromSortArgs, symbolDeclaration} =
         traceMaybe D_SMT_resolveSymbol [debugArg "declaration" symbolDeclaration] $ do
             newDeclaration <-
                 resolveKoreSymbolDeclaration resolvers symbolId symbolDeclaration
             return
                 Symbol
-                    { smtFromSortArgs = smtFromSortArgs
+                    { symbolSmtFromSortArgs = symbolSmtFromSortArgs
                     , symbolDeclaration = newDeclaration
                     }
 

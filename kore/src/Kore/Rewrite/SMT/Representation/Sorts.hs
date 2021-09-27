@@ -89,8 +89,8 @@ translateSort
     sorts
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{smtFromSortArgs} <- Map.lookup sortActualName sorts
-            smtFromSortArgs sorts sortActualSorts
+            AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
+            sortSmtFromSortArgs sorts sortActualSorts
 translateSort _ _ = Nothing
 
 {- | Builds smt representations for sorts in the given module.
@@ -180,7 +180,7 @@ builtinSortDeclaration
             return
                 ( sentenceSortName
                 , AST.Sort
-                    { smtFromSortArgs = emptySortArgsToSmt smtRepresentation
+                    { sortSmtFromSortArgs = emptySortArgsToSmt smtRepresentation
                     , sortDeclaration =
                         AST.SortDeclaredIndirectly
                             (AST.AlreadyEncoded smtRepresentation)
@@ -201,7 +201,7 @@ smtlibSortDeclaration
             return
                 ( sentenceSortName
                 , AST.Sort
-                    { smtFromSortArgs = applyToArgs smtRepresentation
+                    { sortSmtFromSortArgs = applyToArgs smtRepresentation
                     , sortDeclaration =
                         AST.SortDeclarationSort
                             SMT.SortDeclaration
@@ -236,7 +236,7 @@ simpleSortDeclaration
         Just
             ( sentenceSortName
             , AST.Sort
-                { smtFromSortArgs =
+                { sortSmtFromSortArgs =
                     emptySortArgsToSmt (AST.encode encodedName)
                 , sortDeclaration =
                     AST.SortDeclarationSort
@@ -276,7 +276,7 @@ sortWithConstructor sortConstructors sortId = do
     return
         ( sortId
         , AST.Sort
-            { smtFromSortArgs =
+            { sortSmtFromSortArgs =
                 emptySortArgsToSmt (AST.encode encodedName)
             , sortDeclaration =
                 AST.SortDeclarationDataType

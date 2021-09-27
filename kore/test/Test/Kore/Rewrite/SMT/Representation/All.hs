@@ -73,7 +73,7 @@ test_symbolParsing =
   where
     astSortDeclaration name =
         AST.Sort
-            { smtFromSortArgs =
+            { sortSmtFromSortArgs =
                 const $
                     const $
                         Just $

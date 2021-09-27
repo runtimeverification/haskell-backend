@@ -112,7 +112,7 @@ builtinDeclaration
             return
                 ( symbolConstructor
                 , AST.Symbol
-                    { smtFromSortArgs = const . const $ Just smtName
+                    { symbolSmtFromSortArgs = const . const $ Just smtName
                     , symbolDeclaration =
                         AST.SymbolBuiltin
                             AST.IndirectSymbolDeclaration
@@ -144,7 +144,7 @@ smtlibDeclaration
             return
                 ( symbolConstructor
                 , AST.Symbol
-                    { smtFromSortArgs = const . const $ Just smtName
+                    { symbolSmtFromSortArgs = const . const $ Just smtName
                     , symbolDeclaration =
                         AST.SymbolDeclaredDirectly
                             SMT.FunctionDeclaration
@@ -173,7 +173,7 @@ constructorDeclaration
                 return
                     ( symbolConstructor
                     , AST.Symbol
-                        { smtFromSortArgs =
+                        { symbolSmtFromSortArgs =
                             const . const $ Just (AST.encode encodedName)
                         , symbolDeclaration =
                             AST.SymbolConstructor
