@@ -34,7 +34,6 @@ import Kore.Internal.Predicate (
     makeAndPredicate,
     makeEqualsPredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -43,8 +42,6 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Data (
     SimplifierT,
     runSimplifier,
-    runSimplifierBranch,
-    simplifyCondition,
  )
 import qualified Kore.Simplify.Not as Not
 import Kore.Unification.UnifierT (
@@ -114,7 +111,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     name = expectHook symb
@@ -130,7 +127,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asOrPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     name = expectHook symb
@@ -288,11 +285,3 @@ test_contradiction =
                     & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
-  where
-    simplifyCondition' ::
-        Condition RewritingVariableName ->
-        IO [Condition RewritingVariableName]
-    simplifyCondition' condition =
-        simplifyCondition SideCondition.top condition
-            & runSimplifierBranch testEnv
-            & runNoSMT

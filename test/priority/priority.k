@@ -1,6 +1,7 @@
 module PRIORITY
   imports INT
   imports BOOL
+  imports K-EQUAL
 
   syntax S ::= "one" | "two" | "three" | "four" | "five" | "six" | "seven" | start(Int) | middle(Int)
   rule one => two [priority(1)]
@@ -17,12 +18,12 @@ module PRIORITY
 
   syntax S ::= func1(Int)     [function]
   rule func1(X:Int) => four
-    requires X ==Int 4        
+    requires X ==Int 4
   rule func1(4)     => four
-  rule func1(_:Int) => seven  [priority(49)] 
+  rule func1(_:Int) => seven  [priority(49)]
 
   syntax S ::= func2(Int)     [function]
-  rule func2(4)     => four   
+  rule func2(4)     => four
   rule func2(_:Int) => seven  [owise]
 
   syntax S ::= func3(Int)     [function]

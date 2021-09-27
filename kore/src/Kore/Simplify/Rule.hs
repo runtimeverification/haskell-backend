@@ -20,6 +20,7 @@ import Kore.Internal.Predicate (
     pattern PredicateTrue,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (
     TermLike,
@@ -34,7 +35,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.RulePattern
-import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
@@ -64,7 +64,7 @@ simplifyRulePattern ::
     simplifier (RulePattern RewritingVariableName)
 simplifyRulePattern rule = do
     let RulePattern{left} = rule
-    simplifiedLeft <- simplifyPattern left
+    simplifiedLeft <- simplifyPattern' left
     case OrPattern.toPatterns simplifiedLeft of
         [Conditional{term, predicate, substitution}]
             | PredicateTrue <- predicate -> do
@@ -109,7 +109,7 @@ simplifyClaimPattern ::
     simplifier ClaimPattern
 simplifyClaimPattern claim = do
     let ClaimPattern{left} = claim
-    simplifiedLeft <- simplifyPattern (Pattern.term left)
+    simplifiedLeft <- simplifyPattern' (Pattern.term left)
     case OrPattern.toPatterns simplifiedLeft of
         [Conditional{term, predicate, substitution}]
             | PredicateTrue <- predicate ->
@@ -132,10 +132,12 @@ simplifyClaimPattern claim = do
             return claim
 
 -- | Simplify a 'TermLike' using only matching logic rules.
-simplifyPattern ::
+simplifyPattern' ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplifyPattern termLike =
+simplifyPattern' termLike =
     Simplifier.localSimplifierAxioms (const mempty) $
-        Pattern.simplify (Pattern.fromTermLike termLike)
+        Simplifier.simplifyPattern
+            SideCondition.top
+            (Pattern.fromTermLike termLike)

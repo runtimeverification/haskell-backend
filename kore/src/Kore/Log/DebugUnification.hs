@@ -35,6 +35,9 @@ instance Pretty DebugUnification where
 
 instance Entry DebugUnification where
     entrySeverity _ = Debug
+    oneLineDoc (DebugUnificationWhile _) = "DebugUnificationWhile"
+    oneLineDoc (DebugUnificationSolved _) = "DebugUnificationSolved"
+    oneLineDoc (DebugUnificationUnsolved _) = "DebugUnificationUnsolved"
 
 -- | @WhileDebugUnification@ encloses the context of unification log entries.
 data WhileDebugUnification = WhileDebugUnification {term1, term2 :: TermLike VariableName}

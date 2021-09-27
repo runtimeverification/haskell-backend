@@ -48,9 +48,8 @@ import Kore.IndexedModule.MetadataTools (
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import Kore.Internal.TermLike (
-    TermLike,
- )
+import Kore.Internal.Pattern (Pattern)
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier (
     matchAxiomIdentifier,
@@ -66,6 +65,7 @@ import Kore.Rewrite.RewritingVariable (
 import qualified Kore.Simplify.Condition as Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Simplify.Simplify
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
@@ -117,10 +117,10 @@ instance (MonadMask prof, MonadProf prof) => MonadProf (SimplifierT prof) where
 
 traceProfSimplify ::
     MonadProf prof =>
-    TermLike RewritingVariableName ->
+    Pattern RewritingVariableName ->
     prof a ->
     prof a
-traceProfSimplify termLike =
+traceProfSimplify (Pattern.toTermLike -> termLike) =
     maybe id traceProf ident
   where
     ident =
@@ -137,14 +137,12 @@ instance
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
-    simplifyTermLike sideCondition termLike =
-        traceProfSimplify termLike (TermLike.simplify sideCondition termLike)
-    {-# INLINE simplifyTermLike #-}
+    simplifyPattern sideCondition patt =
+        traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
+    {-# INLINE simplifyPattern #-}
 
-    simplifyTermLikeOnly sideCondition termLike =
-        (traceProfSimplify termLike)
-            (TermLike.simplifyOnly sideCondition termLike)
-    {-# INLINE simplifyTermLikeOnly #-}
+    simplifyTerm = TermLike.simplify
+    {-# INLINE simplifyTerm #-}
 
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition

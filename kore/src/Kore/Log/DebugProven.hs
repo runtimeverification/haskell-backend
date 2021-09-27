@@ -6,6 +6,7 @@ module Kore.Log.DebugProven (
     DebugProven (..),
 ) where
 
+import Kore.Attribute.SourceLocation (SourceLocation)
 import Kore.Reachability.SomeClaim (
     SomeClaim (..),
  )
@@ -25,4 +26,5 @@ instance Pretty DebugProven where
 
 instance Entry DebugProven where
     entrySeverity _ = Debug
+    oneLineDoc DebugProven{claim} = pretty @SourceLocation $ from claim
     helpDoc _ = "log proven claims"

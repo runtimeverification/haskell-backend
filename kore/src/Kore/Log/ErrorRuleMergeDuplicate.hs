@@ -59,6 +59,7 @@ instance Exception ErrorRuleMergeDuplicateIds where
 
 instance Entry ErrorRuleMergeDuplicateIds where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorRuleMergeDuplicateIds"
     helpDoc _ =
         "error thrown during rule merging when\
         \ multiple rules have the same id"
@@ -81,6 +82,7 @@ instance Exception ErrorRuleMergeDuplicateLabels where
 
 instance Entry ErrorRuleMergeDuplicateLabels where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorRuleMergeDuplicateLabels"
     helpDoc _ =
         "error thrown during rule merging when\
         \ multiple rules have the same label"

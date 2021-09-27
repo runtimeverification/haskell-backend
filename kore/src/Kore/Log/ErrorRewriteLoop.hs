@@ -20,6 +20,7 @@ import GHC.Stack (
  )
 import Kore.Attribute.Axiom (
     Axiom (..),
+    SourceLocation,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -58,6 +59,7 @@ instance Pretty ErrorRewriteLoop where
                 <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 
 instance Entry ErrorRewriteLoop where
+    oneLineDoc ErrorRewriteLoop{rule} = pretty @SourceLocation $ from rule
     entrySeverity _ = Error
 
 errorRewriteLoop ::

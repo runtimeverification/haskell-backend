@@ -4,6 +4,7 @@ module TEST
   imports LIST
   imports MAP
   imports COLLECTIONS
+  imports K-EQUAL
 
   syntax Val ::= "a" | "b"
 

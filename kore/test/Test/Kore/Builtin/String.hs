@@ -21,9 +21,6 @@ module Test.Kore.Builtin.String (
     asInternal,
 ) where
 
-import Control.Monad.Trans.Maybe (
-    runMaybeT,
- )
 import Data.Text (
     Text,
  )
@@ -35,30 +32,17 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
+import qualified Kore.Builtin.String.String as String
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
- )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
-import Kore.Simplify.Data (
-    runSimplifier,
-    runSimplifierBranch,
-    simplifyCondition,
- )
-import qualified Kore.Simplify.Not as Not
-import qualified Kore.Simplify.Pattern as Pattern
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
  )
 import Prelude.Kore
 import Test.Kore (
@@ -89,7 +73,7 @@ testComparison name impl symb =
         a <- forAll genString
         b <- forAll genString
         let expect = Test.Bool.asOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
 
 test_eq :: TestTree
@@ -462,7 +446,7 @@ testString ::
     [TermLike RewritingVariableName] ->
     OrPattern RewritingVariableName ->
     TestTree
-testString name = testSymbolWithoutSolver evaluate name
+testString name = testSymbolWithoutSolver evaluateTerm name
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
 idName `ofSort` sort = configElementVariableFromId (testId idName) sort
@@ -538,40 +522,7 @@ test_unifyStringEq =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         IO [Maybe (Pattern RewritingVariableName)]
-    unifyStringEq term1 term2 =
-        unify matched
-            & runMaybeT
-            & evalEnvUnifierT Not.notSimplifier
-            & runSimplifierBranch testEnv
-            & runNoSMT
-      where
-        unify Nothing = empty
-        unify (Just unifyData) =
-            String.unifyStringEq
-                (termUnification Not.notSimplifier)
-                Not.notSimplifier
-                unifyData
-                & lift
-
-        matched =
-            String.matchUnifyStringEq term1 term2
-
-    simplifyCondition' ::
-        Condition RewritingVariableName ->
-        IO [Condition RewritingVariableName]
-    simplifyCondition' condition =
-        simplifyCondition SideCondition.top condition
-            & runSimplifierBranch testEnv
-            & runNoSMT
-
-    simplifyPattern ::
-        Pattern RewritingVariableName ->
-        IO [Pattern RewritingVariableName]
-    simplifyPattern pattern1 =
-        Pattern.simplify pattern1
-            & runSimplifier testEnv
-            & runNoSMT
-            & fmap OrPattern.toPatterns
+    unifyStringEq = unifyEq String.eqKey
 
 x, y :: ElementVariable RewritingVariableName
 x = "x" `ofSort` stringSort
@@ -593,11 +544,3 @@ test_contradiction =
                     & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
-  where
-    simplifyCondition' ::
-        Condition RewritingVariableName ->
-        IO [Condition RewritingVariableName]
-    simplifyCondition' condition =
-        simplifyCondition SideCondition.top condition
-            & runSimplifierBranch testEnv
-            & runNoSMT

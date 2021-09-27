@@ -9,8 +9,10 @@ module Test.Kore.Builtin.Builtin (
     testEvaluators,
     testSymbolWithoutSolver,
     simplify,
-    evaluate,
-    evaluateT,
+    evaluateTerm,
+    evaluateTermT,
+    evaluatePredicate,
+    evaluatePredicateT,
     evaluateExpectTopK,
     evaluateToList,
     indexedModule,
@@ -19,11 +21,16 @@ module Test.Kore.Builtin.Builtin (
     runStep,
     runSMT,
     runSMTWithConfig,
+    unifyEq,
+    simplifyCondition',
+    simplifyPattern,
 ) where
 
+import Control.Monad ((>=>))
 import Control.Monad.Catch (
     MonadMask,
  )
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Map.Strict (
     Map,
  )
@@ -35,6 +42,7 @@ import qualified Hedgehog
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Error (
     Error,
  )
@@ -48,6 +56,10 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
  )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.Condition (
+    Condition,
+ )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -56,6 +68,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate (Predicate)
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
@@ -74,17 +88,21 @@ import Kore.Rewrite.RulePattern (
     RulePattern,
  )
 import qualified Kore.Rewrite.Step as Step
+import Kore.Simplify.AndTerms (termUnification)
 import qualified Kore.Simplify.Condition as Simplifier.Condition
-import Kore.Simplify.Data
+import Kore.Simplify.Data hiding (simplifyPattern)
 import Kore.Simplify.InjSimplifier
+import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.OverloadSimplifier
-import Kore.Simplify.Simplify
+import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Simplify hiding (simplifyPattern)
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Simplify.TermLike as TermLike
 import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
  )
+import Kore.Unification.UnifierT (evalEnvUnifierT)
 import Kore.Unparser (
     unparseToText,
  )
@@ -240,22 +258,41 @@ simplify =
         . runNoSMT
         . runSimplifier testEnv
         . Logic.observeAllT
-        . simplifyConditionalTerm SideCondition.top
+        . (simplifyTerm SideCondition.top >=> Logic.scatter)
 
-evaluate ::
+evaluateTerm ::
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
     smt (OrPattern RewritingVariableName)
-evaluate termLike =
-    runSimplifier testEnv $ do
-        TermLike.simplify SideCondition.top termLike
+evaluateTerm termLike =
+    runSimplifier testEnv $
+        Pattern.simplify (Pattern.fromTermLike termLike)
 
-evaluateT ::
+evaluatePredicate ::
+    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
+    Predicate RewritingVariableName ->
+    smt (OrPattern RewritingVariableName)
+evaluatePredicate predicate =
+    runSimplifier testEnv $
+        Pattern.simplify
+            ( Pattern.fromCondition kSort
+                . Condition.fromPredicate
+                $ predicate
+            )
+
+evaluateTermT ::
     MonadTrans t =>
     (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
     t smt (OrPattern RewritingVariableName)
-evaluateT = lift . evaluate
+evaluateTermT = lift . evaluateTerm
+
+evaluatePredicateT ::
+    MonadTrans t =>
+    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
+    Predicate RewritingVariableName ->
+    t smt (OrPattern RewritingVariableName)
+evaluatePredicateT = lift . evaluatePredicate
 
 evaluateExpectTopK ::
     HasCallStack =>
@@ -263,7 +300,7 @@ evaluateExpectTopK ::
     TermLike RewritingVariableName ->
     Hedgehog.PropertyT smt ()
 evaluateExpectTopK termLike = do
-    actual <- evaluateT termLike
+    actual <- evaluateTermT termLike
     OrPattern.topOf kSort Hedgehog.=== actual
 
 evaluateToList ::
@@ -306,3 +343,43 @@ hpropUnparse gen = Hedgehog.property $ do
     let syntax = unparseToText builtin
         expected = externalize builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax
+
+unifyEq ::
+    Text ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    IO [Maybe (Pattern RewritingVariableName)]
+unifyEq eqKey term1 term2 =
+    unify matched
+        & runMaybeT
+        & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+        & runNoSMT
+  where
+    unify Nothing = empty
+    unify (Just unifyData) =
+        Builtin.unifyEq
+            (termUnification Not.notSimplifier)
+            Not.notSimplifier
+            unifyData
+            & lift
+
+    matched =
+        Builtin.matchUnifyEq eqKey term1 term2
+
+simplifyCondition' ::
+    Condition RewritingVariableName ->
+    IO [Condition RewritingVariableName]
+simplifyCondition' condition =
+    simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+simplifyPattern ::
+    Pattern RewritingVariableName ->
+    IO [Pattern RewritingVariableName]
+simplifyPattern pattern1 =
+    Pattern.simplify pattern1
+        & runSimplifier testEnv
+        & runNoSMT
+        & fmap OrPattern.toPatterns

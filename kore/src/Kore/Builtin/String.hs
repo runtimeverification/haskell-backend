@@ -25,7 +25,6 @@ module Kore.Builtin.String (
     asPartialPattern,
     parse,
     unifyString,
-    unifyStringEq,
     matchString,
     matchUnifyStringEq,
 
@@ -47,7 +46,6 @@ module Kore.Builtin.String (
 import Control.Error (
     MaybeT,
  )
-import qualified Control.Monad as Monad
 import Data.Char (
     chr,
     ord,
@@ -66,33 +64,22 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
-import Kore.Attribute.Hook (
-    Hook (..),
- )
 import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Builtin (
+    UnifyEq (..),
+ )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
 import qualified Kore.Error
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
-import Kore.Internal.Conditional (
-    term,
- )
-import Kore.Internal.InternalBool
 import Kore.Internal.InternalString
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    symbolHook,
- )
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -101,12 +88,8 @@ import Kore.Log.WarnNotImplemented
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.NotSimplifier (
-    NotSimplifier (..),
- )
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
-    TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
 import Numeric (
@@ -474,15 +457,6 @@ builtinFunctions =
             op
         )
 
--- | Match the @STRING.eq@ hooked symbol.
-matchStringEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchStringEqual =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
-
 data UnifyString = UnifyString
     { string1, string2 :: !InternalString
     , term1, term2 :: !(TermLike RewritingVariableName)
@@ -527,11 +501,6 @@ unifyString unifyData =
         | otherwise = debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
     UnifyString{string1, string2, term1, term2} = unifyData
 
-data UnifyStringEq = UnifyStringEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 
 @
@@ -543,44 +512,6 @@ symmetric in the two arguments.
 matchUnifyStringEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyStringEq
-matchUnifyStringEq first second
-    | Just eqTerm <- matchStringEqual first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyStringEq{eqTerm, internalBool}
-    | Just eqTerm <- matchStringEqual second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
-        Just UnifyStringEq{eqTerm, internalBool}
-    | otherwise = Nothing
+    Maybe UnifyEq
+matchUnifyStringEq = Builtin.matchUnifyEq eqKey
 {-# INLINE matchUnifyStringEq #-}
-
-{- | Unification of the @STRING.eq@ symbol
-
-This function is suitable only for equality simplification.
--}
-unifyStringEq ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    UnifyStringEq ->
-    unifier (Pattern RewritingVariableName)
-unifyStringEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- OrPattern.gather $ unifyChildren operand1 operand2
-        solution' <-
-            MultiOr.map eraseTerm solution
-                & if internalBoolValue internalBool
-                    then pure
-                    else mkNotSimplified
-        scattered <- Unify.scatter solution'
-        return scattered{term = mkInternalBool internalBool}
-  where
-    UnifyStringEq{eqTerm, internalBool} = unifyData
-    EqTerm{symbol, operand1, operand2} = eqTerm
-    eqSort = applicationSortsResult . symbolSorts $ symbol
-    eraseTerm conditional = conditional $> (mkTop eqSort)
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
