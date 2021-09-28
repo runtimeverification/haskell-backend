@@ -45,6 +45,7 @@ module Kore.Internal.Predicate (
     markSimplifiedMaybeConditional,
     setSimplified,
     forgetSimplified,
+    forgetSimplified',
     wrapPredicate,
     containsSymbolWithIdPred,
     refreshExists,
@@ -1208,6 +1209,31 @@ forgetSimplified = Recursive.fold worker
             synthesize $
                 InF
                     (TermLike.forgetSimplified <$> in')
+        _ -> synthesize predF
+
+forgetSimplified' ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Predicate variable
+forgetSimplified' = Recursive.fold worker
+  where
+    worker (_ :< predF) = case predF of
+        CeilF ceil' ->
+            synthesize $
+                CeilF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
+        FloorF floor' ->
+            synthesize $
+                FloorF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
+        EqualsF equals' ->
+            synthesize $
+                EqualsF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
+        InF in' ->
+            synthesize $
+                InF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> in')
         _ -> synthesize predF
 
 mapVariables ::

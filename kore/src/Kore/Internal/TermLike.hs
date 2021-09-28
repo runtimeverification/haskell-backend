@@ -19,6 +19,7 @@ module Kore.Internal.TermLike (
     setSimplified,
     setAttributeSimplified,
     forgetSimplified,
+    forgetSimplifiedIgnorePredicates,
     simplifiedAttribute,
     attributeSimplifiedAttribute,
     isFunctionPattern,
@@ -435,6 +436,19 @@ forgetSimplified ::
     TermLike variable ->
     TermLike variable
 forgetSimplified = resynthesize
+
+forgetSimplifiedIgnorePredicates ::
+    forall variable .
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
+forgetSimplifiedIgnorePredicates =
+    Recursive.cata worker
+  where
+    worker original@(_ :< ft) =
+        case ft of
+            EqualsF _ -> Recursive.embed original
+            _ -> synthesizeAux synthetic ft
 
 simplifiedAttribute :: TermLike variable -> Attribute.Simplified
 simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes

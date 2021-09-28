@@ -977,6 +977,12 @@ xRuleStringMetaSort =
 xConfigStringMetaSort :: MockRewritingSetVariable
 xConfigStringMetaSort =
     mkConfigSetVariable (testId "xStringMetaSort") mempty stringMetaSort
+eConfigSubSubsort :: MockRewritingSetVariable
+eConfigSubSubsort =
+    mkConfigSetVariable (testId "eConfigSubSubsort") mempty subSubsort
+e2ConfigSubSubsort :: MockRewritingSetVariable
+e2ConfigSubSubsort =
+    mkConfigSetVariable (testId "e2ConfigSubSubsort") mempty subSubsort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =
