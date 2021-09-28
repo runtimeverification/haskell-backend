@@ -1,6 +1,13 @@
 {- |
 Copyright : (c) Runtime Verification, 2021
 License   : BSD-3-Clause
+
+The @kore-check-functions@ executable checks the following properties of
+function definitions:
+1. For every equation in a function definition, the right-hand side of the
+equation is a function pattern.
+2. For every pair of equations in a function definition, the equations cannot
+match the same term.
 -}
 module Main (main) where
 
@@ -66,9 +73,12 @@ checkerInfoModifiers :: InfoMod options
 checkerInfoModifiers =
     fullDesc
         <> progDesc
-            "Checks function definitions in FILE and verifies that for every \
-            \equation in a function definition, the right-hand side of the \
-            \equation is a function pattern."
+            "Checks function definitions in FILE and verifies the following \
+            \properties: \
+            \1. For every equation in a function definition, the right-hand \
+            \side of the equation is a function pattern. \
+            \2. For every pair of equations in a function definition, the \
+            \equations cannot match the same term."
         <> header "kore-check-functions - a tool to check function definitions"
 
 data KoreCheckerOptions = KoreCheckerOptions
