@@ -409,37 +409,34 @@ test_checkBothMatch =
             assertEqual "" expected $ fst actual
         ]
   where
-    myFx ::
+    myF ::
         InternalVariable variable =>
         HasCallStack =>
-        TermLike variable ->
         TermLike variable
-    myFx x =
+    myF =
         mkApplySymbol
             Symbol
                 { symbolConstructor = mySymbolName
                 , symbolParams = []
-                , symbolSorts = applicationSorts [mySort] mySort
+                , symbolSorts = applicationSorts [] mySort
                 , symbolAttributes = Mock.functionalAttributes
                 }
-            [x]
-    -- f(v) = name assuming pr
+            []
+    -- f() = name assuming pr
     mySentence name pr =
         SentenceAxiomSentence $
             mkAxiom [] $
                 toTermLikeOld mySort $
                     Equation
-                        { left = myFx (mkElemVar v)
+                        { left = myF
                         , requires = pr
                         , argument = Nothing
                         , antiLeft = Nothing
-                        , right = wrap name
+                        , right = applyToNoArgs mySort name
                         , ensures = makeTruePredicate
                         , attributes = def
                         }
       where
-        wrap = applyToNoArgs mySort
-        v = mkElementVariable (testId "V") mySort
 
     mySymbolName :: Id
     mySymbolName = Id "MySymbol" AstLocationTest
@@ -455,7 +452,7 @@ test_checkBothMatch =
     mySymbDecl =
         SentenceSymbol
             { sentenceSymbolSymbol = mySymbol
-            , sentenceSymbolSorts = [mySort]
+            , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = mySort
             , sentenceSymbolAttributes = Attributes [functionalAttribute]
             }
