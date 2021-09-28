@@ -89,8 +89,8 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
             simplifyPredicate predicate'
                 -- >>= Logic.scatter
                 -- >>= return . from . Predicate.fromMultiAnd
-            >>= Logic.scatter
-            >>= simplifyPredicates sideCondition . prepareForResimplification
+                >>= Logic.scatter
+                >>= simplifyPredicates sideCondition . prepareForResimplification
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
