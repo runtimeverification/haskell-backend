@@ -438,7 +438,7 @@ forgetSimplified ::
 forgetSimplified = resynthesize
 
 forgetSimplifiedIgnorePredicates ::
-    forall variable .
+    forall variable.
     InternalVariable variable =>
     TermLike variable ->
     TermLike variable
