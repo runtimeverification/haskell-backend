@@ -285,10 +285,12 @@ Bitwise complement of the argument.
 
 ### INT.shl
 
-Shift the bits of the first argument to the left. The second argument specifies
-how many bits to shift by, and will be truncated to the least-significant
-Haskell Int. The second argument can be negative, in which case the first
-argument will be shifted right.
+Shift the bits of the first argument to the left with zeros shifted into
+the lower bits. The second argument specifies how many bits to shift by, and
+will be truncated to the least-significant Haskell Int. The second argument
+can be negative, in which case the first argument will be shifted right. Right
+shifts perform sign extension on signed numbers; i.e. they fill the top bits
+with 1 if the first argument is negative and with 0 otherwise.
 
 ~~~
     hooked-symbol shl{}(Int{}, Int{}) : Int{}
@@ -297,10 +299,12 @@ argument will be shifted right.
 
 ### INT.shr
 
-Shift the bits of the first argument to the right. The second argument specifies
-how many bits to shift by, and will be truncated to the least-significant
-Haskell Int. The second argument can be negative, in which case the first
-argument will be shifted left.
+Shift the bits of the first argument to the right. Right shifts perform sign
+extension on signed numbers; i.e. they fill the top bits with 1 if the first
+argument is negative and with 0 otherwise. The second argument specifies how
+many bits to shift by, and will be truncated to the least-significant Haskell
+Int. The second argument can be negative, in which case the first argument
+will be shifted left with zeros shifted into the lower bits.
 
 ~~~
     hooked-symbol shr{}(Int{}, Int{}) : Int{}
@@ -902,16 +906,16 @@ Conversion to `String`.
 
 ~~~
     hooked-symbol bytes2string{}(Bytes{}) : String{}
-        [hook{}("BYTES.string2bytes")]
+        [hook{}("BYTES.bytes2string")]
 ~~~
 
-### BYTES.bytes2string
-Conversion to `String`. Expects all characters to be in the '\0' .. '\255'
+### BYTES.string2bytes
+Conversion to `Bytes`. Expects all characters to be in the '\0' .. '\255'
 range.
 
 ~~~
     hooked-symbol string2bytes{}(String{}) : Bytes{}
-        [hook{}("BYTES.bytes2string")]
+        [hook{}("BYTES.string2bytes")]
 ~~~
 
 ### BYTES.update

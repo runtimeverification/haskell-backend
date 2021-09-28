@@ -14,6 +14,11 @@ module Kore.Simplify.Simplify (
     liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
+    SimplifierCache (attemptedEquationsCache),
+    EvaluationAttempt (..),
+    initCache,
+    updateCache,
+    lookupCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
     lookupAxiomSimplifier,
@@ -57,6 +62,8 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -65,6 +72,8 @@ import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
+import Kore.Equation.DebugEquation (AttemptEquationError)
+import Kore.Equation.Equation (Equation)
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -231,6 +240,21 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askOverloadSimplifier = lift askOverloadSimplifier
     {-# INLINE askOverloadSimplifier #-}
 
+    getCache :: m SimplifierCache
+    default getCache ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        m SimplifierCache
+    getCache = lift getCache
+    {-# INLINE getCache #-}
+
+    putCache :: SimplifierCache -> m ()
+    default putCache ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        SimplifierCache ->
+        m ()
+    putCache = lift . putCache
+    {-# INLINE putCache #-}
+
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
@@ -299,6 +323,50 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
                 observeAllT $ simplifier sideCondition predicate
         scatter results
 -- * Builtin and axiom simplifiers
+
+{- | Used for keeping track of already attempted equations which failed to
+ apply.
+-}
+newtype SimplifierCache = SimplifierCache
+    { attemptedEquationsCache ::
+        HashMap
+            EvaluationAttempt
+            (AttemptEquationError RewritingVariableName)
+    }
+
+{- | An evaluation attempt is determined by an equation-term pair, since the
+ 'AttemptEquationError' type contains any necessary information about the
+ 'SideCondition'.
+-}
+data EvaluationAttempt = EvaluationAttempt
+    { cachedEquation :: Equation RewritingVariableName
+    , cachedTerm :: TermLike RewritingVariableName
+    }
+    deriving stock (Eq, Ord)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Hashable)
+
+-- | Initialize with an empty cache.
+initCache :: SimplifierCache
+initCache = SimplifierCache HashMap.empty
+
+-- | Update by inserting a new entry into the cache.
+updateCache ::
+    EvaluationAttempt ->
+    AttemptEquationError RewritingVariableName ->
+    SimplifierCache ->
+    SimplifierCache
+updateCache key value (SimplifierCache oldCache) =
+    HashMap.insert key value oldCache
+        & SimplifierCache
+
+-- | Lookup an entry in the cache.
+lookupCache ::
+    EvaluationAttempt ->
+    SimplifierCache ->
+    Maybe (AttemptEquationError RewritingVariableName)
+lookupCache key (SimplifierCache cache) =
+    HashMap.lookup key cache
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.

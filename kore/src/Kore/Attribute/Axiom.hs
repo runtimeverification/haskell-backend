@@ -130,6 +130,7 @@ data Axiom symbol variable = Axiom
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 instance Default (Axiom symbol variable) where
     def =

@@ -83,6 +83,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.MatcherData
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -152,11 +153,6 @@ instance Ord variable => Ord (Constraint variable) where
     compare constraint1@(Constraint pair1) constraint2@(Constraint pair2) =
         compare (findClass constraint1) (findClass constraint2)
             <> compare pair1 pair2
-
-type MatchResult variable =
-    ( Predicate variable
-    , Map.Map (SomeVariableName variable) (TermLike variable)
-    )
 
 {- | Dispatch a single matching constraint.
 
