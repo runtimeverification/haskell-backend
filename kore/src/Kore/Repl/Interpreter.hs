@@ -23,6 +23,11 @@ module Kore.Repl.Interpreter (
     showCurrentClaimIndex,
 ) where
 
+import Control.Exception (
+    catch,
+    displayException,
+    throwIO,
+ )
 import Control.Lens (
     (%=),
     (.=),
@@ -75,6 +80,9 @@ import Data.Graph.Inductive.PatriciaTree (
 import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
+import Data.GraphViz.Exception (
+    GraphvizException (..),
+ )
 import Data.IORef (
     IORef,
     modifyIORef,
@@ -100,6 +108,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Typeable as Typeable
 import GHC.Exts (
+    fromString,
     toList,
  )
 import GHC.IO.Handle (
@@ -204,6 +213,7 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (..),
+    hPrint,
     hPutStrLn,
     stderr,
     withFile,
@@ -487,7 +497,7 @@ showGraph view mfile out = do
         then
             liftIO $
                 maybe
-                    (showDotGraph processedGraph)
+                    (showDotGraphCatchException processedGraph)
                     (saveDotGraph processedGraph format)
                     mfile
         else putStrLn' "Graphviz is not installed."
@@ -1447,6 +1457,27 @@ showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams gr)
         $ gr
+
+-- | A version of @showDotGraph@ that catches a @GVProgramExc@ exception.
+showDotGraphCatchException ::
+    From axiom AttrLabel.Label =>
+    From axiom RuleIndex =>
+    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    IO ()
+showDotGraphCatchException gr =
+    catch (showDotGraph gr) $ \(e :: GraphvizException) ->
+        case e of
+            GVProgramExc _ ->
+                hPrint stderr $
+                    Pretty.vsep
+                        [ "Encountered the following exception:\n"
+                        , Pretty.indent 4 $ fromString $ displayException e
+                        , "Please note that the 'graph' command is not\
+                          \ currently supported on MacOS. The user may\
+                          \ instead wish to save the graph to file using\
+                          \ the command 'graph <filename>'."
+                        ]
+            _ -> throwIO e
 
 saveDotGraph ::
     From axiom AttrLabel.Label =>
