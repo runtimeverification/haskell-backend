@@ -33,7 +33,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
-
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
  )

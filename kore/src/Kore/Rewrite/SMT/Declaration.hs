@@ -27,7 +27,6 @@ import Kore.Rewrite.SMT.AST (
     Sort (sortDeclaration),
     Symbol (symbolDeclaration),
  )
-
 import Prelude.Kore
 import SMT (
     MonadSMT,
