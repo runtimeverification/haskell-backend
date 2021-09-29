@@ -965,6 +965,7 @@ instance
 
 makePredicate ::
     forall variable.
+    HasCallStack =>
     InternalVariable variable =>
     TermLike variable ->
     Either (NotPredicate variable) (Predicate variable)
@@ -1221,19 +1222,19 @@ forgetSimplified' = Recursive.fold worker
         CeilF ceil' ->
             synthesize $
                 CeilF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
+                    (TermLike.forgetSimplifiedIgnorePredicates' <$> ceil')
         FloorF floor' ->
             synthesize $
                 FloorF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
+                    (TermLike.forgetSimplifiedIgnorePredicates' <$> floor')
         EqualsF equals' ->
             synthesize $
                 EqualsF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
+                    (TermLike.forgetSimplifiedIgnorePredicates' <$> equals')
         InF in' ->
             synthesize $
                 InF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> in')
+                    (TermLike.forgetSimplifiedIgnorePredicates' <$> in')
         _ -> synthesize predF
 
 mapVariables ::
