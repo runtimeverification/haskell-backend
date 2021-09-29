@@ -648,8 +648,9 @@ checkFunctions ::
 checkFunctions verifiedModule =
     checkResults $ filter (not . isFunctionPattern . right) equations
   where
-    equations = filter (not . Kore.Equation.isSimplificationRule) $
-        join $ Map.elems $ extractEquations verifiedModule
+    equations =
+        filter (not . Kore.Equation.isSimplificationRule) $
+            join $ Map.elems $ extractEquations verifiedModule
     -- if any equations fail the check, log the equations and
     -- the entire function returns ExitFailure 3.
     checkResults [] = return ExitSuccess
@@ -694,9 +695,11 @@ checkBothMatch verifiedModule =
     filterM (uncurry bothMatch) equations
         >>= checkResults
   where
-    equations = join $ map
-        (mkPairs . filter (not . Kore.Equation.isSimplificationRule))
-        (Map.elems $ extractEquations verifiedModule)
+    equations =
+        join $
+            map
+                (mkPairs . filter (not . Kore.Equation.isSimplificationRule))
+                (Map.elems $ extractEquations verifiedModule)
     -- produces all 'in-order' pairs in a list
     mkPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
     checkResults [] = return ExitSuccess

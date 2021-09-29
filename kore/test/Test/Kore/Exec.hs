@@ -535,27 +535,26 @@ test_checkBothMatch =
 test_checkBothMatchIgnoreSimpl :: TestTree
 test_checkBothMatchIgnoreSimpl =
     testCase "checkBothMatch ignores simplification equations." $ do
-            let verifiedModule =
-                    verifiedMyModule
-                        Module
-                            { moduleName = ModuleName "MY-MODULE"
-                            , moduleSentences =
-                                [ asSentence mySortDecl
-                                , asSentence $ constructorDecl "a"
-                                , asSentence mySymbDecl
-                                , mySentence "a" makeTruePredicate
-                                , mySentence "a" makeFalsePredicate
-                                , mySentenceSimpl "a" makeTruePredicate
-                                ]
-                            , moduleAttributes = Attributes []
-                            }
-                expected = ExitSuccess
-            actual <-
-                checkBothMatch verifiedModule
-                    & evalSimplifier verifiedModule
-                    & runTestLog runNoSMT
-            assertEqual "" expected $ fst actual
-
+        let verifiedModule =
+                verifiedMyModule
+                    Module
+                        { moduleName = ModuleName "MY-MODULE"
+                        , moduleSentences =
+                            [ asSentence mySortDecl
+                            , asSentence $ constructorDecl "a"
+                            , asSentence mySymbDecl
+                            , mySentence "a" makeTruePredicate
+                            , mySentence "a" makeFalsePredicate
+                            , mySentenceSimpl "a" makeTruePredicate
+                            ]
+                        , moduleAttributes = Attributes []
+                        }
+            expected = ExitSuccess
+        actual <-
+            checkBothMatch verifiedModule
+                & evalSimplifier verifiedModule
+                & runTestLog runNoSMT
+        assertEqual "" expected $ fst actual
   where
     myF ::
         InternalVariable variable =>
@@ -587,8 +586,8 @@ test_checkBothMatchIgnoreSimpl =
 
     -- mySentence but with the @simplification@ attribute.
     mySentenceSimpl name pr =
-        SentenceAxiomSentence (
-            mkAxiom [] $
+        SentenceAxiomSentence
+            ( mkAxiom [] $
                 toTermLikeOld mySort $
                     Equation
                         { left = myF
@@ -598,7 +597,8 @@ test_checkBothMatchIgnoreSimpl =
                         , right = applyToNoArgs mySort name
                         , ensures = makeTruePredicate
                         , attributes = def
-                        } )
+                        }
+            )
                 { sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 }
 
