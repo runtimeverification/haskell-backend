@@ -49,8 +49,8 @@ import Kore.Internal.Variable (
 import qualified Kore.Rewrite.SMT.AST as AST hiding (
     Sort (..),
  )
-import qualified Kore.Rewrite.SMT.Declaration.All as Declaration (
-    declare,
+import Kore.Rewrite.SMT.Declaration (
+    declareSortsSymbols,
  )
 import Kore.Rewrite.SMT.Encoder (
     encodeName,
@@ -265,7 +265,7 @@ test_sortDeclaration =
         VerifiedModule Attribute.Symbol ->
         m ()
     declareSymbolsAndSorts m =
-        Declaration.declare
+        declareSortsSymbols
             (Representation.build m (Attribute.Constructors.indexBySort m))
 
 test_resolve :: [TestTree]

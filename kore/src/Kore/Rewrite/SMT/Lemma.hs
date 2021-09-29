@@ -33,8 +33,9 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.SMT.Declaration.All as SMT.All (
-    declare,
+
+import Kore.Rewrite.SMT.Declaration (
+    declareSortsSymbols,
  )
 import Kore.Rewrite.SMT.Translate
 import Kore.Syntax.Sentence (
@@ -68,7 +69,7 @@ declareSMTLemmas ::
     VerifiedModule StepperAttributes ->
     m ()
 declareSMTLemmas m = do
-    SMT.All.declare (smtData tools)
+    declareSortsSymbols $ smtData tools
     mapM_ declareRule (indexedModuleAxioms m)
     result <- SMT.check
     when (isUnsatisfiable result) errorInconsistentDefinitions
