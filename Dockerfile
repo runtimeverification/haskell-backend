@@ -11,6 +11,11 @@ RUN    apt update              \
            libtinfo-dev        \
            curl git make unzip
 
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
+RUN    apt-get update               \
+    && apt-get upgrade --yes        \
+    && apt-get install --yes nodejs
+
 ARG STACK=2.5.1
 RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/etc/scripts/get-stack.sh | sh
 
@@ -38,3 +43,11 @@ RUN    ( cd .tmp-haskell && stack build --only-snapshot --test --bench --haddock
 ADD --chown=user:user docker/ssh/config .ssh/
 RUN    git config --global user.email "admin@runtimeverification.com" \
     && git config --global user.name  "RV Jenkins"
+
+RUN mkdir -p ~/.ssh                                                   \
+    && echo 'host github.com'                       > ~/.ssh/config   \
+    && echo '    hostname github.com'              >> ~/.ssh/config   \
+    && echo '    user git'                         >> ~/.ssh/config   \
+    && echo '    identityagent SSH_AUTH_SOCK'      >> ~/.ssh/config   \
+    && echo '    stricthostkeychecking accept-new' >> ~/.ssh/config   \
+    && chmod go-rwx -R ~/.ssh
