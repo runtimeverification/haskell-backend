@@ -500,9 +500,9 @@ forgetSimplifiedIgnorePredicates' term@(Recursive.project -> (_ :< termF)) =
         _ -> term
   where
     newAttrs =
-        synthetic
-        $ Cofree.headF . Recursive.project
-        <$> termF
+        synthetic $
+            Cofree.headF . Recursive.project
+                <$> termF
     recursiveCall ::
         Functor f =>
         f (TermLike variable) ->
