@@ -87,8 +87,6 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
 
         simplified <-
             simplifyPredicate predicate'
-                -- >>= Logic.scatter
-                -- >>= return . from . Predicate.fromMultiAnd
                 >>= Logic.scatter
                 >>= simplifyPredicates sideCondition . prepareForResimplification
         TopBottom.guardAgainstBottom simplified
@@ -118,7 +116,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
       where
         forgetSimplified p
             | Predicate.isSimplifiedAnyCondition p =
-                Predicate.forgetSimplified' p
+                Predicate.forgetSimplifiedSafe p
             | otherwise = p
 
     -- TODO(Ana): this should also check if the predicate is simplified

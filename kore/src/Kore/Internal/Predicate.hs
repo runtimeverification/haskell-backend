@@ -45,7 +45,7 @@ module Kore.Internal.Predicate (
     markSimplifiedMaybeConditional,
     setSimplified,
     forgetSimplified,
-    forgetSimplified',
+    forgetSimplifiedSafe,
     wrapPredicate,
     containsSymbolWithIdPred,
     refreshExists,
@@ -1187,6 +1187,15 @@ setSimplified
                 Attribute.NotSimplified
             _ -> childSimplified <> simplified
 
+{- | Forget the the 'simplifiedAttribute' associated with a 'Predicate'.
+This is not safe to be used inside the simplifier, see 'forgetSimplifiedSafe',
+but the following will always fold:
+
+@
+isSimplified (forgetSimplified _) == False
+@
+This is not always true for 'forgetSimplifiedSafe'.
+-}
 forgetSimplified ::
     InternalVariable variable =>
     Predicate variable ->
@@ -1212,29 +1221,34 @@ forgetSimplified = Recursive.fold worker
                     (TermLike.forgetSimplified <$> in')
         _ -> synthesize predF
 
-forgetSimplified' ::
+{- | Forget the the 'simplifiedAttribute' associated with a 'Predicate', with
+some special handling of specific subterms.
+This is safe to be used inside the simplifier.
+See 'Kore.Internal.TermLike.forgetSimplifiedIgnorePredicates'.
+-}
+forgetSimplifiedSafe ::
     InternalVariable variable =>
     Predicate variable ->
     Predicate variable
-forgetSimplified' = Recursive.fold worker
+forgetSimplifiedSafe = Recursive.fold worker
   where
     worker (_ :< predF) = case predF of
         CeilF ceil' ->
             synthesize $
                 CeilF
-                    (TermLike.forgetSimplifiedIgnorePredicates' <$> ceil')
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
         FloorF floor' ->
             synthesize $
                 FloorF
-                    (TermLike.forgetSimplifiedIgnorePredicates' <$> floor')
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
         EqualsF equals' ->
             synthesize $
                 EqualsF
-                    (TermLike.forgetSimplifiedIgnorePredicates' <$> equals')
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
         InF in' ->
             synthesize $
                 InF
-                    (TermLike.forgetSimplifiedIgnorePredicates' <$> in')
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> in')
         _ -> synthesize predF
 
 mapVariables ::

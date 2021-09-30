@@ -20,7 +20,6 @@ module Kore.Internal.TermLike (
     setAttributeSimplified,
     forgetSimplified,
     forgetSimplifiedIgnorePredicates,
-    forgetSimplifiedIgnorePredicates',
     simplifiedAttribute,
     attributeSimplifiedAttribute,
     isFunctionPattern,
@@ -438,30 +437,17 @@ forgetSimplified ::
     TermLike variable
 forgetSimplified = resynthesize
 
+{- | Forget the 'simplifiedAttribute' associated with the 'TermLike',
+ignoring any `TermLike`s which can be predicates.
+This is safe to use inside the simplifier, since `TermLike` simplification
+will not attempt to resimplify `TermLike`s which can be predicates.
+-}
 forgetSimplifiedIgnorePredicates ::
     forall variable.
     InternalVariable variable =>
     TermLike variable ->
     TermLike variable
-forgetSimplifiedIgnorePredicates =
-    Recursive.cata worker
-  where
-    worker original@(_ :< ft) =
-        case ft of
-            EqualsF _ -> Recursive.embed original
-            CeilF _ -> Recursive.embed original
-            InF _ -> Recursive.embed original
-            FloorF _ -> Recursive.embed original
-            TopF _ -> Recursive.embed original
-            BottomF _ -> Recursive.embed original
-            _ -> synthesizeAux synthetic ft
-
-forgetSimplifiedIgnorePredicates' ::
-    forall variable.
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable
-forgetSimplifiedIgnorePredicates' term@(Recursive.project -> (_ :< termF)) =
+forgetSimplifiedIgnorePredicates term@(Recursive.project -> (_ :< termF)) =
     case termF of
         AndF and' ->
             Recursive.embed (newAttrs :< AndF (recursiveCall and'))
@@ -508,7 +494,7 @@ forgetSimplifiedIgnorePredicates' term@(Recursive.project -> (_ :< termF)) =
         f (TermLike variable) ->
         f (TermLike variable)
     recursiveCall =
-        fmap forgetSimplifiedIgnorePredicates'
+        fmap forgetSimplifiedIgnorePredicates
 
 simplifiedAttribute :: TermLike variable -> Attribute.Simplified
 simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes
