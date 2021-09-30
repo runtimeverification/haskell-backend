@@ -47,8 +47,8 @@ translateSymbol ::
     Symbol ->
     Maybe SMT.SExpr
 translateSymbol Symbol{symbolConstructor, symbolParams} = do
-    AST.Symbol{smtFromSortArgs} <- Map.lookup symbolConstructor symbols
-    smtFromSortArgs sorts symbolParams
+    AST.Symbol{symbolSmtFromSortArgs} <- Map.lookup symbolConstructor symbols
+    symbolSmtFromSortArgs sorts symbolParams
   where
     MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
 
@@ -62,8 +62,8 @@ translateSort ::
 translateSort
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{smtFromSortArgs} <- Map.lookup sortActualName sorts
-            smtFromSortArgs sorts sortActualSorts
+            AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
+            sortSmtFromSortArgs sorts sortActualSorts
       where
         MetadataTools{smtData = AST.Declarations{sorts}} = tools
 

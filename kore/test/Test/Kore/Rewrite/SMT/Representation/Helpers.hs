@@ -73,11 +73,11 @@ smtForSortIs
                             ++ show (Map.keysSet sorts)
                             ++ ")"
                         )
-                Just AST.Sort{smtFromSortArgs} ->
+                Just AST.Sort{sortSmtFromSortArgs} ->
                     assertEqual
                         ""
                         (Just expectedSExpr)
-                        (AST.showSExpr <$> smtFromSortArgs Map.empty [])
+                        (AST.showSExpr <$> sortSmtFromSortArgs Map.empty [])
 
 smtForSymbolIs ::
     HasCallStack =>
@@ -98,8 +98,8 @@ smtForSymbolIs
                             ++ show (Map.keysSet symbols)
                             ++ ")"
                         )
-                Just AST.Symbol{smtFromSortArgs} ->
+                Just AST.Symbol{symbolSmtFromSortArgs} ->
                     assertEqual
                         ""
                         (Just expectedSExpr)
-                        (AST.showSExpr <$> smtFromSortArgs Map.empty [])
+                        (AST.showSExpr <$> symbolSmtFromSortArgs Map.empty [])
