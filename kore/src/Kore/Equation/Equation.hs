@@ -118,7 +118,6 @@ For more information see:
 * https://github.com/kframework/k/blob/master/USER_MANUAL.md#simplification-attribute-haskell-backend
 * https://github.com/kframework/k/blob/master/USER_MANUAL.md#owise-and-priority-attributes
 * 'Kore.Equation.Sentence.matchEquation', for the structure of all equation types
-
 -}
 data Equation variable = Equation
     { requires :: !(Predicate variable)
