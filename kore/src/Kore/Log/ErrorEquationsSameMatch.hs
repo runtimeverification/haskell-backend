@@ -31,13 +31,13 @@ import Log (
 import Prelude.Kore
 import Pretty (
     Pretty,
+    comma,
+    hsep,
     indent,
     layoutOneLine,
     pretty,
     renderText,
     vsep,
-    hsep,
-    comma,
  )
 import SQL (
     Table,
@@ -77,7 +77,8 @@ instance Entry ErrorEquationsSameMatch where
         ( ErrorEquationsSameMatch
                 Equation{attributes = Axiom{sourceLocation = sourceLoc1}}
                 Equation{attributes = Axiom{sourceLocation = sourceLoc2}}
-            ) = Pretty.hsep
+            ) =
+            Pretty.hsep
                 [ pretty sourceLoc1
                 , Pretty.comma
                 , pretty sourceLoc2
