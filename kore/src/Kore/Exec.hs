@@ -628,17 +628,17 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     match = Search.matchWith SideCondition.top
 
 {- | Ensure that for every equation in a function definition, the right-hand
- - side of the equation is a function pattern. 'checkFunctions' first extracts
- - equations from a verified module to a list of equations. Then it checks that
- - each equation in the list is a function pattern. 'filter' the equations that
- - fail the check, and pass the list to 'checkResults'. If there were no bad
- - equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
- - logs an error message for each bad equation before returning
- - @'ExitFailure' 3@.
- - See 'checkEquation',
- - 'Kore.Equation.Registry.extractEquations',
- - 'Kore.Internal.TermLike.isFunctionPattern',
- - and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
+side of the equation is a function pattern. 'checkFunctions' first extracts
+equations from a verified module to a list of equations. Then it checks that
+each equation in the list is a function pattern. 'filter' the equations that
+fail the check, and pass the list to 'checkResults'. If there were no bad
+equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
+logs an error message for each bad equation before returning
+@'ExitFailure' 3@.
+See 'checkEquation',
+'Kore.Equation.Registry.extractEquations',
+'Kore.Internal.TermLike.isFunctionPattern',
+and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 -}
 checkFunctions ::
     MonadLog m =>
@@ -658,7 +658,7 @@ checkFunctions verifiedModule =
         mapM_ errorEquationRightFunction eqns $> ExitFailure 3
 
 {- | Returns true when both equations match the same term.  See:
- - https://github.com/kframework/kore/issues/2472#issue-833143685
+https://github.com/kframework/kore/issues/2472#issue-833143685
 -}
 bothMatch ::
     MonadSimplify m =>
@@ -684,7 +684,7 @@ bothMatch eq1 eq2 =
      in (not . isBottom) <$> Pattern.simplify patt
 
 {- | Checks if any function definition in the module carries two equations that both match
- - same term.
+same term.
 -}
 checkBothMatch ::
     MonadSimplify m =>
