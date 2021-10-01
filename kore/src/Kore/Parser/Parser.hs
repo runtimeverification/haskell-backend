@@ -136,12 +136,22 @@ parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 -}
 parsePattern :: Parser ParsedPattern
 parsePattern =
-    parseLiteral <|> (parseAnyId >>= parseRemainder)
+    parseLiteral
+    -- <|> (Parse.try (parseAnyId >>= parseLeftAssoc' >> parseAnyId >>= parseOr'))
+    <|> (parseAnyId >>= parseRemainder)
   where
     parseRemainder identifier =
         parseVariableRemainder identifier
             <|> parseKoreRemainder identifier
             <|> parseApplicationRemainder identifier
+    -- parseLeftAssoc' identifier =
+    --     getSpecialId identifier >>= \case
+    --         "left-assoc" -> parseLeftAssoc
+    --         _ -> empty
+    -- parseOr' identifier =
+    --     getSpecialId identifier >>= \case
+    --         "or" -> from <$> parseConnective2 Or
+    --         _ -> empty
 
 parseLiteral :: Parser ParsedPattern
 parseLiteral = (from <$> parseStringLiteral) <?> "string literal"
@@ -300,12 +310,23 @@ parseAssoc ::
     Parser ParsedPattern
 parseAssoc foldAssoc = do
     braces $ pure ()
-    application <- parens $ parseApplication parsePattern
-    let mkApplication child1 child2 =
-            from application{applicationChildren = [child1, child2]}
-    case applicationChildren application of
-        [] -> fail "expected one or more arguments"
-        children -> pure (foldAssoc mkApplication children)
+    Parse.try withOr <|> withApplication
+  where
+    withApplication = do
+        application <- parens $ parseApplication parsePattern
+        let mkApplication child1 child2 =
+                from application{applicationChildren = [child1, child2]}
+        case applicationChildren application of
+            [] -> fail "expected one or more arguments"
+            children -> pure (foldAssoc mkApplication children)
+    withOr = do
+        parens parseOr
+    parseOr = do
+        identifier <- parseAnyId
+        getSpecialId identifier >>= \case
+            "or" -> from <$> parseConnective2 Or
+            _ -> empty
+
 
 {- | Parse a built-in Kore (matching logic) pattern.
 

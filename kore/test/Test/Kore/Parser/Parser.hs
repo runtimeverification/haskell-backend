@@ -475,7 +475,7 @@ applicationPatternParserTests =
                         }
             )
         , success
-            "\\left-assoc{}(\\or{}(\"a\", \"b\"))"
+            "\\left-assoc{}(\\or{s}(\"a\", \"b\"))"
             ( embedParsedPattern $
                 OrF
                     Or
