@@ -475,6 +475,16 @@ applicationPatternParserTests =
                         }
             )
         , success
+            "\\left-assoc{}(\\or{}(\"a\", \"b\"))"
+            ( embedParsedPattern $
+                OrF
+                    Or
+                        { orFirst = StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
+                        , orSecond = StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
+                        , orSort = sortVariableSort "s" :: Sort
+                        }
+            )
+        , success
             "\\right-assoc{}(c{}(\"a\"))"
             ( StringLiteral "a"
                 & Const
