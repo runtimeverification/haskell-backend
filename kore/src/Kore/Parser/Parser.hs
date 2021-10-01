@@ -137,7 +137,7 @@ parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 parsePattern :: Parser ParsedPattern
 parsePattern =
     parseLiteral
-    <|> (parseAnyId >>= parseRemainder)
+        <|> (parseAnyId >>= parseRemainder)
   where
     parseRemainder identifier =
         parseVariableRemainder identifier
@@ -317,7 +317,6 @@ parseAssoc foldAssoc = do
         getSpecialId identifier >>= \case
             "or" -> from <$> parseConnective2 Or
             _ -> empty
-
 
 {- | Parse a built-in Kore (matching logic) pattern.
 
