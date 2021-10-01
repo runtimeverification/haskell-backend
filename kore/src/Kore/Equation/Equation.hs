@@ -52,7 +52,7 @@ import Kore.Internal.TermLike (
     mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewrite.Step (
+import Kore.Rewrite.UnifyingRule (
     Renaming,
  )
 import Kore.Sort
@@ -87,6 +87,7 @@ data Equation variable = Equation
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation ::

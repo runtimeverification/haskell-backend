@@ -7,6 +7,7 @@ module Kore.Log.WarnNotImplemented (
     warnNotImplemented,
 ) where
 
+import Kore.Attribute.Symbol (sourceLocation)
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Log
@@ -28,6 +29,8 @@ instance InternalVariable variable => Pretty (WarnNotImplemented variable) where
 
 instance InternalVariable variable => Entry (WarnNotImplemented variable) where
     entrySeverity _ = Warning
+    oneLineDoc (WarnNotImplemented (Application Symbol{symbolAttributes} _)) =
+        Pretty.pretty $ sourceLocation symbolAttributes
     helpDoc _ = "warn when we try to evaluate a partial builtin function on unimplemented cases"
 
 warnNotImplemented ::

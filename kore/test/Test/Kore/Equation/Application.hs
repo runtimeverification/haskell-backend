@@ -18,6 +18,7 @@ import qualified Kore.Equation as Equation
 import Kore.Equation.Application hiding (
     attemptEquation,
  )
+import Kore.Equation.DebugEquation
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern

@@ -1,5 +1,6 @@
 module Test.Kore.Reachability.Prove (
     test_proveClaims,
+    test_transitionRule,
 ) where
 
 import Data.Default (
@@ -8,6 +9,7 @@ import Data.Default (
 import Data.Limit (
     Limit (..),
  )
+import qualified Data.Sequence as Seq
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -21,6 +23,9 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
+import Kore.Reachability.Prim (
+    Prim (..),
+ )
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
@@ -38,6 +43,7 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Rewrite.Transition (runTransitionT)
 import Kore.Unparser (
     unparseToText2,
  )
@@ -732,6 +738,30 @@ test_proveClaims =
             , mkTest "AllPath" simpleAllPathClaim
             ]
     ]
+
+test_transitionRule :: TestTree
+test_transitionRule =
+    testGroup
+        "transitionRule: AllPath"
+        [ testCase "ApplyAxioms: LHS is undefined" $ do
+            actual <- runTransitionRule [] [[]] ApplyAxioms (Claimed claim)
+            assertEqual
+                "Result is Proven"
+                [(Proven, Seq.empty)]
+                actual
+        , testCase "ApplyClaims: LHS is undefined" $ do
+            actual <-
+                runTransitionRule [] [[]] ApplyClaims (Claimed claim)
+            assertEqual
+                "Result is Proven"
+                [(Proven, Seq.empty)]
+                actual
+        ]
+  where
+    claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
+    runTransitionRule claims axiomGroups prim cState =
+        runSimplifierSMT Mock.env . runTransitionT $
+            transitionRule claims axiomGroups prim cState
 
 simpleAxiom ::
     TermLike VariableName ->
