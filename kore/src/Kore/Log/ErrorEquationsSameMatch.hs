@@ -12,8 +12,11 @@ import Control.Monad.Catch (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.Attribute.Axiom (
+    Axiom (..),
+ )
 import Kore.Equation.Equation (
-    Equation,
+    Equation (..),
  )
 import Kore.Internal.TermLike (
     VariableName,
@@ -33,6 +36,8 @@ import Pretty (
     pretty,
     renderText,
     vsep,
+    hsep,
+    comma,
  )
 import SQL (
     Table,
@@ -68,6 +73,15 @@ instance Entry ErrorEquationsSameMatch where
     helpDoc _ =
         "errors raised when two equations from a\
         \ function definition can match the same term"
+    oneLineDoc
+        ( ErrorEquationsSameMatch
+                Equation{attributes = Axiom{sourceLocation = sourceLoc1}}
+                Equation{attributes = Axiom{sourceLocation = sourceLoc2}}
+            ) = Pretty.hsep
+                [ pretty sourceLoc1
+                , Pretty.comma
+                , pretty sourceLoc2
+                ]
 
 instance SQL.Table ErrorEquationsSameMatch
 
