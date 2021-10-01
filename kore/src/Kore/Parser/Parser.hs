@@ -137,21 +137,12 @@ parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 parsePattern :: Parser ParsedPattern
 parsePattern =
     parseLiteral
-    -- <|> (Parse.try (parseAnyId >>= parseLeftAssoc' >> parseAnyId >>= parseOr'))
     <|> (parseAnyId >>= parseRemainder)
   where
     parseRemainder identifier =
         parseVariableRemainder identifier
             <|> parseKoreRemainder identifier
             <|> parseApplicationRemainder identifier
-    -- parseLeftAssoc' identifier =
-    --     getSpecialId identifier >>= \case
-    --         "left-assoc" -> parseLeftAssoc
-    --         _ -> empty
-    -- parseOr' identifier =
-    --     getSpecialId identifier >>= \case
-    --         "or" -> from <$> parseConnective2 Or
-    --         _ -> empty
 
 parseLiteral :: Parser ParsedPattern
 parseLiteral = (from <$> parseStringLiteral) <?> "string literal"
