@@ -2,7 +2,11 @@ include include.mk
 
 .PHONY: all clean docs haddock \
 		test test-kore test-k \
-		kore-exec kore-repl kore-check-functions
+		kore-exec kore-repl kore-parser kore-check-functions \
+		kore-format kore-match-disjunction kore-prof
+
+all: kore-exec kore-repl kore-parser kore-check-functions kore-format \
+	kore-match-disjunction kore-prof
 
 kore: kore-exec kore-repl kore-parser
 
@@ -13,6 +17,12 @@ kore-repl: $(KORE_REPL)
 kore-parser: $(KORE_PARSER)
 
 kore-check-functions: $(KORE_CHECK_FUNCTIONS)
+
+kore-format: $(KORE_FORMAT)
+
+kore-match-disjunction: $(KORE_MATCH_DISJUNCTION)
+
+kore-prof: $(KORE_PROF)
 
 docs: haddock
 
@@ -31,8 +41,6 @@ haddock:
 
 haskell_documentation: haddock
 	cp -r $$($(STACK_HADDOCK) path --local-doc-root) haskell_documentation
-
-all: kore
 
 test: test-kore test-k
 
