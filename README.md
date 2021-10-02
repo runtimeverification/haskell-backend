@@ -44,6 +44,14 @@ cabal build kore
 
 If using `cabal`, version 3.0 or later is recommended.
 
+Using [make]:
+
+```sh
+make all # builds all binaries
+# or
+make kore # builds only kore-exec, kore-repl, and kore-parser
+```
+
 ## Developing
 
 Developers will require all the dependencies listed above,
