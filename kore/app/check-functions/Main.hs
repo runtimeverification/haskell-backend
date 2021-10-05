@@ -1,11 +1,19 @@
 {- |
 Copyright : (c) Runtime Verification, 2021
 License   : BSD-3-Clause
+
+The @kore-check-functions@ executable checks the following properties of
+function definitions:
+1. For every equation in a function definition, the right-hand side of the
+equation is a function pattern.
+2. For every pair of equations in a function definition, the equations cannot
+match the same term.
 -}
 module Main (main) where
 
 import GlobalMain (
     ExeName (..),
+    LoadedModule,
     Main,
     loadDefinitions,
     loadModule,
@@ -15,11 +23,12 @@ import GlobalMain (
  )
 import Kore.BugReport (
     BugReportOption,
-    ExitCode,
+    ExitCode (..),
     parseBugReportOption,
     withBugReport,
  )
 import Kore.Exec (
+    checkBothMatch,
     checkFunctions,
  )
 import Kore.Log (
@@ -38,10 +47,15 @@ import Kore.Options (
     progDesc,
     str,
  )
+import Kore.Simplify.Data (evalSimplifier)
 import Kore.Syntax.Module (
     ModuleName,
  )
 import Prelude.Kore
+import SMT (
+    defaultConfig,
+    runSMT,
+ )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -59,9 +73,12 @@ checkerInfoModifiers :: InfoMod options
 checkerInfoModifiers =
     fullDesc
         <> progDesc
-            "Checks function definitions in FILE and verifies that for every \
-            \equation in a function definition, the right-hand side of the \
-            \equation is a function pattern."
+            "Checks function definitions in FILE and verifies the following \
+            \properties: \
+            \1. For every equation in a function definition, the right-hand \
+            \side of the equation is a function pattern. \
+            \2. For every pair of equations in a function definition, the \
+            \equations cannot match the same term."
         <> header "kore-check-functions - a tool to check function definitions"
 
 data KoreCheckerOptions = KoreCheckerOptions
@@ -104,14 +121,26 @@ main = do
 
 mainWithOptions :: KoreCheckerOptions -> IO ()
 mainWithOptions opts = do
-    exitCode <-
+    exitCode <- withBugReport' koreCheckFunctions
+    case exitCode of
+        ExitFailure _ -> exitWith exitCode
+        ExitSuccess ->
+            withBugReport' koreCheckBothMatch
+                >>= exitWith
+  where
+    withBugReport' check =
         withBugReport exeName (bugReportOption opts) $ \tmpDir ->
-            koreCheckFunctions opts
+            getLoadedModule opts >>= check
                 & runKoreLog tmpDir (koreLogOptions opts)
-    exitWith exitCode
 
-koreCheckFunctions :: KoreCheckerOptions -> Main ExitCode
-koreCheckFunctions opts =
+getLoadedModule :: KoreCheckerOptions -> Main LoadedModule
+getLoadedModule opts =
     loadDefinitions [fileName opts]
         >>= loadModule (mainModuleName opts)
-        >>= checkFunctions
+
+koreCheckBothMatch :: LoadedModule -> Main ExitCode
+koreCheckBothMatch loadedMod =
+    SMT.runSMT defaultConfig (pure ()) $ evalSimplifier loadedMod $ checkBothMatch loadedMod
+
+koreCheckFunctions :: LoadedModule -> Main ExitCode
+koreCheckFunctions = checkFunctions

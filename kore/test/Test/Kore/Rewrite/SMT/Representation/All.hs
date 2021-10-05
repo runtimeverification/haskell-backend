@@ -73,12 +73,12 @@ test_symbolParsing =
   where
     astSortDeclaration name =
         AST.Sort
-            { smtFromSortArgs =
+            { sortSmtFromSortArgs =
                 const $
                     const $
                         Just $
                             AST.encode (AST.encodable name)
-            , declaration =
+            , sortDeclaration =
                 AST.SortDeclarationSort
                     SMT.SortDeclaration
                         { name = AST.encode (AST.encodable name)
