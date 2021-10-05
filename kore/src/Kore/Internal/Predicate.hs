@@ -1187,9 +1187,9 @@ setSimplified
                 Attribute.NotSimplified
             _ -> childSimplified <> simplified
 
-{- | Forget the the 'simplifiedAttribute' associated with a 'Predicate'.
+{- | Forget the 'simplifiedAttribute' associated with a 'Predicate'.
 This is not safe to be used inside the simplifier, see 'forgetSimplifiedSafe',
-but the following will always fold:
+but the following will always hold:
 
 @
 isSimplified (forgetSimplified _) == False
@@ -1221,7 +1221,7 @@ forgetSimplified = Recursive.fold worker
                     (TermLike.forgetSimplified <$> in')
         _ -> synthesize predF
 
-{- | Forget the the 'simplifiedAttribute' associated with a 'Predicate', with
+{- | Forget the 'simplifiedAttribute' associated with a 'Predicate', with
 some special handling of specific subterms.
 This is safe to be used inside the simplifier.
 See 'Kore.Internal.TermLike.forgetSimplifiedIgnorePredicates'.

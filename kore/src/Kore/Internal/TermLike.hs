@@ -438,7 +438,7 @@ forgetSimplified ::
 forgetSimplified = resynthesize
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike',
-ignoring any `TermLike`s which can be predicates.
+ignoring any 'TermLike's which can be predicates.
 This is safe to use inside the simplifier, since `TermLike` simplification
 will not attempt to resimplify `TermLike`s which can be predicates.
 -}
