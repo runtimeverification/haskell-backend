@@ -13,6 +13,8 @@ module Kore.Rewrite.SMT.Lemma (
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error (
+    hoistMaybe,
+    hush,
     runMaybeT,
  )
 import qualified Control.Lens as Lens
@@ -30,7 +32,9 @@ import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition (
+    top,
+ )
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.SMT.Declaration (
@@ -69,9 +73,9 @@ declareSMTLemmas ::
     m ()
 declareSMTLemmas m = do
     declareSortsSymbols $ smtData tools
-    mapM_ declareRule (indexedModuleAxioms m)
-    result <- SMT.check
-    when (isUnsatisfiable result) errorInconsistentDefinitions
+    mapM_ declareRule $ indexedModuleAxioms m
+    isUnsatisfiable <- (Unsat ==) <$> SMT.check
+    when isUnsatisfiable errorInconsistentDefinitions
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = given
@@ -82,14 +86,54 @@ declareSMTLemmas m = do
         ) ->
         m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
-        guard (isSmtLemma $ Attribute.smtLemma atts)
+        guard $ isSmtLemma $ Attribute.smtLemma atts
+        oldAxiomEncoding <-
+            sentenceAxiomPattern axiomDeclaration
+                & convert
+                & hoistMaybe
         (lemma, TranslatorState{terms, predicates}) <-
-            runTranslator $
-                translatePredicateWith SideCondition.top translateUninterpreted $
-                    wrapPredicate $ sentenceAxiomPattern axiomDeclaration
-        SMT.assert
-            (addQuantifiers (Map.elems terms <> Map.elems predicates) lemma)
+            oldAxiomEncoding
+                & wrapPredicate
+                & translatePredicateWith top translateUninterpreted
+                & runTranslator
+        addQuantifiers (Map.elems terms <> Map.elems predicates) lemma
+            & SMT.assert
 
+    -- Translate an "unparsed" equation for Z3.
+    -- Convert new encoding back to old.
+    -- See https://github.com/kframework/k/pull/2061#issuecomment-927922217
+    convert :: TermLike VariableName -> Maybe (TermLike VariableName)
+    convert
+        ( Implies_
+                impliesSort
+                requires
+                ( Equals_
+                        _ -- equalsOperandSort
+                        _ -- equalsResultSort
+                        left
+                        ( And_
+                                _ -- andSort
+                                right
+                                ensures
+                            )
+                    )
+            ) = do
+            requiresPredicate <- hush $ makePredicate requires
+            ensuresPredicate <- hush $ makePredicate ensures
+            Just $
+                fromPredicate impliesSort $
+                    makeImpliesPredicate
+                        requiresPredicate
+                        ( makeAndPredicate
+                            ( makeEqualsPredicate
+                                left
+                                right
+                            )
+                            ensuresPredicate
+                        )
+    convert termLike = Just termLike
+
+    addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr
     addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma
     addQuantifiers smtDependentAtoms lemma =
         SMT.List
@@ -101,13 +145,10 @@ declareSMTLemmas m = do
             , lemma
             ]
 
-    isUnsatisfiable Unsat = True
-    isUnsatisfiable _ = False
     ~errorInconsistentDefinitions =
         error "The definitions sent to the solver are inconsistent."
 
 translateUninterpreted ::
-    forall m variable.
     ( Ord variable
     , Monad m
     ) =>
@@ -116,13 +157,10 @@ translateUninterpreted ::
     -- | uninterpreted pattern
     TranslateItem variable ->
     Translator variable m SExpr
-translateUninterpreted _ (QuantifiedVariable _) =
-    empty
-translateUninterpreted _ (UninterpretedPredicate _) =
-    empty
+translateUninterpreted _ (QuantifiedVariable _) = empty
+translateUninterpreted _ (UninterpretedPredicate _) = empty
 translateUninterpreted t (UninterpretedTerm pat)
-    | isVariable pat =
-        lookupPattern <|> freeVariable
+    | isVariable pat = lookupPattern <|> freeVariable
     | otherwise = empty
   where
     isVariable p =

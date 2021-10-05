@@ -8,6 +8,9 @@ module Test.Kore.Exec (
     test_execDepthLimitExceeded,
     test_matchDisjunction,
     test_checkFunctions,
+    test_checkBothMatch,
+    test_checkFunctionsIgnoreSimpl,
+    test_checkBothMatchIgnoreSimpl,
 ) where
 
 import Control.Exception as Exception
@@ -31,10 +34,12 @@ import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Priority as Attribute.Axiom
+import Kore.Attribute.Simplification
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import Kore.Equation.Equation (
+    Equation (..),
     mkEquation,
     toTermLikeOld,
  )
@@ -44,6 +49,7 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
+    makeFalsePredicate,
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
@@ -69,6 +75,9 @@ import Kore.Rewrite.Search (
 import qualified Kore.Rewrite.Search as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
+ )
+import Kore.Simplify.Data (
+    evalSimplifier,
  )
 import Kore.Syntax.Definition hiding (
     Alias,
@@ -355,6 +364,262 @@ test_checkFunctions =
             )
                 { sentenceAxiomAttributes = Attributes []
                 }
+
+test_checkFunctionsIgnoreSimpl :: TestTree
+test_checkFunctionsIgnoreSimpl =
+    testGroup
+        "checkFunctionsIgnoreSimpl"
+        [ testCase "checkFunctions ignores simplification equations." $ do
+            let verifiedModule =
+                    verifiedMyModule
+                        Module
+                            { moduleName = ModuleName "MY-MODULE"
+                            , moduleSentences =
+                                [ asSentence mySortDecl
+                                , asSentence mySymbDecl
+                                , -- disfunctionalAxiom will cause
+                                  -- the expected failure
+                                  disfunctionalAxiom
+                                ]
+                            , moduleAttributes = Attributes []
+                            }
+                expected = ExitSuccess
+            actual <-
+                checkFunctions verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
+        ]
+  where
+    mySymbolName :: Id
+    mySymbolName = Id "MySymbol" AstLocationTest
+    mySymbol :: Sentence.Symbol
+    mySymbol =
+        Sentence.Symbol
+            { symbolConstructor = mySymbolName
+            , symbolParams = []
+            }
+    -- Note: symbol attributes should only be
+    -- function or functional, it should not be a constructor.
+    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl =
+        SentenceSymbol
+            { sentenceSymbolSymbol = mySymbol
+            , sentenceSymbolSorts = []
+            , sentenceSymbolResultSort = mySort
+            , sentenceSymbolAttributes = Attributes [functionalAttribute]
+            }
+    -- Note: myF is functional but takes no arguments
+    myF ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable
+    myF =
+        mkApplySymbol
+            Symbol
+                { symbolConstructor = mySymbolName
+                , symbolParams = []
+                , symbolSorts = applicationSorts [] mySort
+                , symbolAttributes = Mock.functionalAttributes
+                }
+            []
+    disfunctionalAxiom :: Verified.Sentence
+    disfunctionalAxiom =
+        SentenceAxiomSentence
+            ( mkAxiom
+                []
+                ( toTermLikeOld
+                    mySort
+                    ( mkEquation
+                        myF
+                        (mkTop mySort) -- Note: \top is not functional
+                    )
+                )
+            )
+                { sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
+                }
+
+test_checkBothMatch :: TestTree
+test_checkBothMatch =
+    testGroup
+        "checkBothMatch"
+        [ testCase "Function patterns do not both match." $ do
+            let verifiedModule =
+                    verifiedMyModule
+                        Module
+                            { moduleName = ModuleName "MY-MODULE"
+                            , moduleSentences =
+                                [ asSentence mySortDecl
+                                , asSentence $ constructorDecl "a"
+                                , asSentence mySymbDecl
+                                , mySentence "a" makeTruePredicate
+                                , mySentence "a" makeFalsePredicate
+                                ]
+                            , moduleAttributes = Attributes []
+                            }
+                expected = ExitSuccess
+            actual <-
+                checkBothMatch verifiedModule
+                    & evalSimplifier verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
+        , testCase "Two function patterns both match." $ do
+            let verifiedModule =
+                    verifiedMyModule
+                        Module
+                            { moduleName = ModuleName "MY-MODULE"
+                            , moduleSentences =
+                                [ asSentence mySortDecl
+                                , asSentence $ constructorDecl "a"
+                                , asSentence $ constructorDecl "b"
+                                , asSentence mySymbDecl
+                                , mySentence "a" makeTruePredicate
+                                , mySentence "b" makeTruePredicate
+                                ]
+                            , moduleAttributes = Attributes []
+                            }
+                expected = ExitFailure 3
+            actual <-
+                checkBothMatch verifiedModule
+                    & evalSimplifier verifiedModule
+                    & runTestLog runNoSMT
+            assertEqual "" expected $ fst actual
+        ]
+  where
+    myF ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable
+    myF =
+        mkApplySymbol
+            Symbol
+                { symbolConstructor = mySymbolName
+                , symbolParams = []
+                , symbolSorts = applicationSorts [] mySort
+                , symbolAttributes = Mock.functionalAttributes
+                }
+            []
+    -- f() = name assuming pr
+    mySentence name pr =
+        SentenceAxiomSentence $
+            mkAxiom [] $
+                toTermLikeOld mySort $
+                    Equation
+                        { left = myF
+                        , requires = pr
+                        , argument = Nothing
+                        , antiLeft = Nothing
+                        , right = applyToNoArgs mySort name
+                        , ensures = makeTruePredicate
+                        , attributes = def
+                        }
+
+    mySymbolName :: Id
+    mySymbolName = Id "MySymbol" AstLocationTest
+    mySymbol :: Sentence.Symbol
+    mySymbol =
+        Sentence.Symbol
+            { symbolConstructor = mySymbolName
+            , symbolParams = []
+            }
+    -- Note: symbol attributes should only be
+    -- function or functional, it should not be a constructor.
+    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl =
+        SentenceSymbol
+            { sentenceSymbolSymbol = mySymbol
+            , sentenceSymbolSorts = []
+            , sentenceSymbolResultSort = mySort
+            , sentenceSymbolAttributes = Attributes [functionalAttribute]
+            }
+
+test_checkBothMatchIgnoreSimpl :: TestTree
+test_checkBothMatchIgnoreSimpl =
+    testCase "checkBothMatch ignores simplification equations." $ do
+        let verifiedModule =
+                verifiedMyModule
+                    Module
+                        { moduleName = ModuleName "MY-MODULE"
+                        , moduleSentences =
+                            [ asSentence mySortDecl
+                            , asSentence $ constructorDecl "a"
+                            , asSentence mySymbDecl
+                            , mySentence "a" makeTruePredicate
+                            , mySentence "a" makeFalsePredicate
+                            , mySentenceSimpl "a" makeTruePredicate
+                            ]
+                        , moduleAttributes = Attributes []
+                        }
+            expected = ExitSuccess
+        actual <-
+            checkBothMatch verifiedModule
+                & evalSimplifier verifiedModule
+                & runTestLog runNoSMT
+        assertEqual "" expected $ fst actual
+  where
+    myF ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable
+    myF =
+        mkApplySymbol
+            Symbol
+                { symbolConstructor = mySymbolName
+                , symbolParams = []
+                , symbolSorts = applicationSorts [] mySort
+                , symbolAttributes = Mock.functionalAttributes
+                }
+            []
+    -- f() = name assuming pr
+    mySentence name pr =
+        SentenceAxiomSentence $
+            mkAxiom [] $
+                toTermLikeOld mySort $
+                    Equation
+                        { left = myF
+                        , requires = pr
+                        , argument = Nothing
+                        , antiLeft = Nothing
+                        , right = applyToNoArgs mySort name
+                        , ensures = makeTruePredicate
+                        , attributes = def
+                        }
+
+    -- mySentence but with the @simplification@ attribute.
+    mySentenceSimpl name pr =
+        SentenceAxiomSentence
+            ( mkAxiom [] $
+                toTermLikeOld mySort $
+                    Equation
+                        { left = myF
+                        , requires = pr
+                        , argument = Nothing
+                        , antiLeft = Nothing
+                        , right = applyToNoArgs mySort name
+                        , ensures = makeTruePredicate
+                        , attributes = def
+                        }
+            )
+                { sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
+                }
+
+    mySymbolName :: Id
+    mySymbolName = Id "MySymbol" AstLocationTest
+    mySymbol :: Sentence.Symbol
+    mySymbol =
+        Sentence.Symbol
+            { symbolConstructor = mySymbolName
+            , symbolParams = []
+            }
+    -- Note: symbol attributes should only be
+    -- function or functional, it should not be a constructor.
+    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl =
+        SentenceSymbol
+            { sentenceSymbolSymbol = mySymbol
+            , sentenceSymbolSorts = []
+            , sentenceSymbolResultSort = mySort
+            , sentenceSymbolAttributes = Attributes [functionalAttribute]
+            }
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
