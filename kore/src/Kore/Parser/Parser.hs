@@ -311,27 +311,26 @@ parseAssoc foldAssoc = do
             [] -> fail "expected one or more arguments"
             children -> pure (foldAssoc mkApplication children)
     withOr = do
-        ParsedMultiOr { multiOrSort, multiOrChildren } <-
+        ParsedMultiOr{multiOrSort, multiOrChildren} <-
             parens $ parseMultiOr parsePattern
         let mkOr child1 child2 =
-                from Or { orFirst = child1, orSecond = child2, orSort = multiOrSort }
+                from Or{orFirst = child1, orSecond = child2, orSort = multiOrSort}
         case multiOrChildren of
             [] -> fail "expected two or more arguments"
             [_] -> fail "expected two or more arguments"
             children -> return (foldAssoc mkOr children)
 
-data ParsedMultiOr child =
-    ParsedMultiOr
-        { multiOrSort :: Sort
-        , multiOrChildren :: [child]
-        }
+data ParsedMultiOr child = ParsedMultiOr
+    { multiOrSort :: Sort
+    , multiOrChildren :: [child]
+    }
 
 parseMultiOr :: Parser child -> Parser (ParsedMultiOr child)
 parseMultiOr parseChild = do
     parseAnyId >>= orLiteral
     multiOrSort <- braces parseSort
     multiOrChildren <- parens . list $ parseChild
-    return ParsedMultiOr { multiOrSort, multiOrChildren }
+    return ParsedMultiOr{multiOrSort, multiOrChildren}
   where
     orLiteral identifier =
         getSpecialId identifier >>= \case
