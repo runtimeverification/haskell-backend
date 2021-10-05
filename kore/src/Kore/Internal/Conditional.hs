@@ -547,7 +547,8 @@ markPredicateSimplifiedConditional
 See 'markPredicateSimplified' for details.
 -}
 setPredicateSimplified ::
-    (InternalVariable variable) =>
+    HasCallStack =>
+    InternalVariable variable =>
     Attribute.Simplified ->
     Conditional variable term ->
     Conditional variable term
