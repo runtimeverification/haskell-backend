@@ -559,6 +559,35 @@ applicationPatternParserTests =
                                 ]
                         }
             )
+        , success
+            "\\right-assoc{}(\\or{s}(\"a\", \"b\"))"
+            ( embedParsedPattern $
+                OrF
+                    Or
+                        { orFirst = StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
+                        , orSecond = StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
+                        , orSort = sortVariableSort "s" :: Sort
+                        }
+            )
+        , success
+            "\\right-assoc{}(\\or{s}(\"a\", \"b\", \"c\"))"
+            ( embedParsedPattern $
+                OrF
+                    Or
+                        { orFirst = StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
+                        , orSecond =
+                            embedParsedPattern $
+                                OrF
+                                    Or
+                                        { orFirst =
+                                            StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
+                                        , orSecond =
+                                            StringLiteral "c" & Const & StringLiteralF & embedParsedPattern
+                                        , orSort = sortVariableSort "s" :: Sort
+                                        }
+                        , orSort = sortVariableSort "s" :: Sort
+                        }
+            )
         , FailureWithoutMessage
             [ ""
             , "var"
