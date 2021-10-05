@@ -311,12 +311,22 @@ parseAssoc foldAssoc = do
             [] -> fail "expected one or more arguments"
             children -> pure (foldAssoc mkApplication children)
     withOr = do
-        parens parseOr
+        (sort, orChildren) <- parens parseOr
+        let mkOr child1 child2 =
+                from Or { orFirst = child1, orSecond = child2, orSort = sort }
+        case orChildren of
+            [] -> fail "expected two or more arguments"
+            [_] -> fail "expected two or more arguments"
+            children -> return (foldAssoc mkOr children)
     parseOr = do
         identifier <- parseAnyId
         getSpecialId identifier >>= \case
-            "or" -> from <$> parseConnective2 Or
+            "or" -> return ()
             _ -> empty
+        sort <- braces parseSort
+        orChildren <- parens . list $ parsePattern
+        return (sort, orChildren)
+
 
 {- | Parse a built-in Kore (matching logic) pattern.
 
