@@ -6,9 +6,6 @@ module Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
 ) where
 
-import Control.Monad (
-    (>=>),
- )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
@@ -119,28 +116,23 @@ simplifyClaimRule ::
     MonadSimplify simplifier =>
     ClaimPattern ->
     simplifier (MultiAnd ClaimPattern)
-simplifyClaimRule =
-    fmap MultiAnd.make . Logic.observeAllT . worker
-  where
-    simplify
-        , filterWithSolver ::
-            Pattern RewritingVariableName ->
-            LogicT simplifier (Pattern RewritingVariableName)
-    simplify =
-        (return . Pattern.requireDefined)
-            >=> Pattern.simplifyTopConfiguration
-            >=> Logic.scatter
-            >=> filterWithSolver
-    filterWithSolver = SMT.Evaluator.filterBranch
-
-    worker :: ClaimPattern -> LogicT simplifier ClaimPattern
-    worker claimPattern = do
-        let lhs = ClaimPattern.left claimPattern
-        simplified <- simplify lhs
+simplifyClaimRule claimPattern = fmap MultiAnd.make $
+    Logic.observeAllT $ do
+        let lhs = Pattern.requireDefined $ ClaimPattern.left claimPattern
+        simplified <-
+            Pattern.simplifyTopConfiguration lhs
+                >>= Logic.scatter
+                >>= filterWithSolver
         let substitution = Pattern.substitution simplified
             lhs' = simplified{Pattern.substitution = mempty}
-        claimPattern
-            { ClaimPattern.left = lhs'
-            }
+        claimPattern{ClaimPattern.left = lhs'}
             & ClaimPattern.applySubstitution substitution
             & return
+  where
+    filterWithSolver ::
+        Pattern RewritingVariableName ->
+        LogicT simplifier (Pattern RewritingVariableName)
+    filterWithSolver conditional =
+        SMT.Evaluator.evalConditional conditional >>= \case
+            Just False -> empty
+            _ -> return conditional

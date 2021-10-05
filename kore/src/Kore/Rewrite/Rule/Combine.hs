@@ -60,8 +60,8 @@ import qualified Kore.Rewrite.RulePattern as Rule.DoNotUse
 import qualified Kore.Rewrite.RulePattern as RulePattern (
     applySubstitution,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT (
-    evaluate,
+import Kore.Rewrite.SMT.Evaluator (
+    evalPredicate,
  )
 import Kore.Rewrite.Step (
     refreshRule,
@@ -158,14 +158,14 @@ mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . toList -> rules) =
     Logic.observeAllT $ do
         Conditional{term = (), predicate, substitution} <-
-            simplifyCondition SideCondition.topTODO . Condition.fromPredicate $
-                makeAndPredicate firstRequires mergedPredicate
-        evaluation <- SMT.evaluate predicate
-        evaluatedPredicate <- case evaluation of
-            Nothing -> return predicate
-            Just True -> return makeTruePredicate
-            Just False -> empty
-
+            makeAndPredicate firstRequires mergedPredicate
+                & Condition.fromPredicate
+                & simplifyCondition SideCondition.topTODO
+        evaluatedPredicate <-
+            evalPredicate predicate >>= \case
+                Nothing -> return predicate
+                Just True -> return makeTruePredicate
+                Just False -> empty
         let finalRule =
                 RulePattern.applySubstitution
                     substitution

@@ -368,16 +368,22 @@ checkRequires sideCondition predicate requires =
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
             condition :: Condition RewritingVariableName
-            condition = from @(Predicate _) (makeNotPredicate requires')
-        return condition
-            -- First try to refute 'condition' without user-defined axioms:
-            >>= withoutAxioms . simplifyCondition
-            -- Next try to refute 'condition' including user-defined axioms:
-            >>= withAxioms . simplifyCondition
-            -- Finally, try to refute the simplified 'condition' using the
-            -- external solver:
-            >>= SMT.filterBranch . withSideCondition
-            >>= return . snd
+            condition = from @(Predicate _) $ makeNotPredicate requires'
+
+        -- First try to refute 'condition' without user-defined axioms:
+        simpleConditionWithoutAxioms <- withoutAxioms $ simplifyCondition condition
+        -- Next try to refute 'condition' including user-defined axioms:
+        simpleConditionWithAxioms <- simplifyCondition simpleConditionWithoutAxioms
+        -- Finally, try to refute the simplified 'condition' using the
+        -- external solver:
+        evaluated <-
+            SMT.evalConditionalWithSideCondition
+                simpleConditionWithAxioms
+                sideCondition
+        case evaluated of
+            Just False -> empty
+            _ -> return simpleConditionWithAxioms
+
         -- Collect the simplified results. If they are \bottom, then \and(predicate,
         -- requires) is valid; otherwise, the required pre-conditions are not met
         -- and the rule will not be applied.
@@ -386,9 +392,8 @@ checkRequires sideCondition predicate requires =
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
     assertBottom negatedImplication
-        | isBottom negatedImplication = done
+        | isBottom negatedImplication = return () -- Done
         | otherwise = requiresNotMet negatedImplication
-    done = return ()
     requiresNotMet negatedImplication =
         throwE
             CheckRequiresError
@@ -398,13 +403,9 @@ checkRequires sideCondition predicate requires =
                 , negatedImplication
                 }
 
-    -- Pair a configuration with sideCondition for evaluation by the solver.
-    withSideCondition = (,) sideCondition
-
     withoutAxioms =
         fmap Condition.forgetSimplified
             . Simplifier.localSimplifierAxioms (const mempty)
-    withAxioms = id
 
 refreshVariables ::
     SideCondition RewritingVariableName ->
