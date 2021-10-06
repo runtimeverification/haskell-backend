@@ -369,20 +369,14 @@ checkRequires sideCondition predicate requires =
             -- The condition to refute:
             condition :: Condition RewritingVariableName
             condition = from @(Predicate _) $ makeNotPredicate requires'
-
-        -- First try to refute 'condition' without user-defined axioms:
-        simpleConditionWithoutAxioms <- withoutAxioms $ simplifyCondition condition
-        -- Next try to refute 'condition' including user-defined axioms:
-        simpleConditionWithAxioms <- simplifyCondition simpleConditionWithoutAxioms
-        -- Finally, try to refute the simplified 'condition' using the
-        -- external solver:
-        evaluated <-
-            SMT.evalConditionalWithSideCondition
-                simpleConditionWithAxioms
-                sideCondition
-        case evaluated of
-            Just False -> empty
-            _ -> return simpleConditionWithAxioms
+        return condition
+            -- First try to refute 'condition' without user-defined axioms:
+            >>= withoutAxioms . simplifyCondition
+            -- Next try to refute 'condition' including user-defined axioms:
+            >>= withAxioms . simplifyCondition
+            -- Finally, try to refute the simplified 'condition' using the
+            -- external solver:
+            >>= filterBranch
 
         -- Collect the simplified results. If they are \bottom, then \and(predicate,
         -- requires) is valid; otherwise, the required pre-conditions are not met
@@ -390,6 +384,14 @@ checkRequires sideCondition predicate requires =
         & (OrCondition.observeAllT >=> assertBottom)
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
+
+    filterBranch condition =
+        SMT.evalConditionalWithSideCondition
+            condition
+            sideCondition
+            >>= \case
+                Just False -> empty
+                _ -> return condition
 
     assertBottom negatedImplication
         | isBottom negatedImplication = return () -- Done
@@ -406,6 +408,7 @@ checkRequires sideCondition predicate requires =
     withoutAxioms =
         fmap Condition.forgetSimplified
             . Simplifier.localSimplifierAxioms (const mempty)
+    withAxioms = id
 
 refreshVariables ::
     SideCondition RewritingVariableName ->
