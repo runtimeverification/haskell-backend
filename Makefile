@@ -1,12 +1,14 @@
 include include.mk
 
-.PHONY: all clean docs haddock \
+.PHONY: all kore clean docs haddock \
 		test test-kore test-k \
 		kore-exec kore-repl kore-parser kore-check-functions \
 		kore-format kore-match-disjunction kore-prof
 
 all: kore-exec kore-repl kore-parser kore-check-functions kore-format \
 	kore-match-disjunction kore-prof
+
+kore: all
 
 kore-exec: $(KORE_EXEC)
 
