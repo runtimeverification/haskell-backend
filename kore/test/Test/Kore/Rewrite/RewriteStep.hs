@@ -21,7 +21,6 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.From
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate as Predicate (
@@ -1369,30 +1368,20 @@ test_applyRewriteRulesParallel =
                         }
                     ]
             aBranch =
-                MultiAnd.make
-                    [ Predicate.fromMultiAnd definedBranches
-                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.a
-                    ]
-            -- Uncomment when using new Equals simplifier:
-            -- Predicate.makeEqualsPredicate
-            --     (mkElemVar Mock.xConfig)
-            --     Mock.a
-            --     & MultiAnd.singleton
-            --     & mappend definedBranches
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.a
+                    & MultiAnd.singleton
+                    & mappend definedBranches
             aBranchNot =
                 Predicate.fromMultiAnd aBranch
                     & makeNotPredicate
             bBranch =
-                MultiAnd.make
-                    [ Predicate.fromMultiAnd definedBranches
-                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.b
-                    ]
-            -- Uncomment when using new Equals simplifier:
-            -- Predicate.makeEqualsPredicate
-            --     (mkElemVar Mock.xConfig)
-            --     Mock.b
-            --     & MultiAnd.singleton
-            --     & mappend definedBranches
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.b
+                    & MultiAnd.singleton
+                    & mappend definedBranches
             bBranchNot =
                 Predicate.fromMultiAnd bBranch
                     & makeNotPredicate
@@ -1606,30 +1595,20 @@ test_applyRewriteRulesSequence =
                         }
                     ]
             aBranch =
-                MultiAnd.make
-                    [ Predicate.fromMultiAnd definedBranches
-                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.a
-                    ]
-            -- Uncomment when using new Equals simplifier:
-            -- Predicate.makeEqualsPredicate
-            --     (mkElemVar Mock.xConfig)
-            --     Mock.a
-            --     & MultiAnd.singleton
-            --     & mappend definedBranches
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.a
+                    & MultiAnd.singleton
+                    & mappend definedBranches
             aBranchNot =
                 Predicate.fromMultiAnd aBranch
                     & makeNotPredicate
             bBranch =
-                MultiAnd.make
-                    [ Predicate.fromMultiAnd definedBranches
-                    , fromEquals_ (mkElemVar Mock.xConfig) Mock.b
-                    ]
-            -- Uncomment when using new Equals simplifier:
-            -- Predicate.makeEqualsPredicate
-            --     (mkElemVar Mock.xConfig)
-            --     Mock.b
-            --     & MultiAnd.singleton
-            --     & mappend definedBranches
+                Predicate.makeEqualsPredicate
+                    (mkElemVar Mock.xConfig)
+                    Mock.b
+                    & MultiAnd.singleton
+                    & mappend definedBranches
             bBranchNot =
                 Predicate.fromMultiAnd bBranch
                     & makeNotPredicate
