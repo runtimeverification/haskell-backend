@@ -8,8 +8,6 @@ include include.mk
 all: kore-exec kore-repl kore-parser kore-check-functions kore-format \
 	kore-match-disjunction kore-prof
 
-kore: kore-exec kore-repl kore-parser
-
 kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
