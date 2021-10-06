@@ -1,8 +1,8 @@
 include include.mk
 
 .PHONY: all clean docs haddock \
-        test test-kore test-k \
-        kore-exec kore-repl
+		test test-kore test-k \
+		kore-exec kore-repl kore-check-functions
 
 kore: kore-exec kore-repl kore-parser
 
@@ -11,6 +11,8 @@ kore-exec: $(KORE_EXEC)
 kore-repl: $(KORE_REPL)
 
 kore-parser: $(KORE_PARSER)
+
+kore-check-functions: $(KORE_CHECK_FUNCTIONS)
 
 docs: haddock
 
