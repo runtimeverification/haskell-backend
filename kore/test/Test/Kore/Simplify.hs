@@ -59,8 +59,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
-import Kore.Rewrite.SMT.Declaration.All as SMT.AST (
-    declare,
+import Kore.Rewrite.SMT.Declaration (
+    declareSortsSymbols,
  )
 import Kore.Simplify.Data (
     Env (..),
@@ -81,7 +81,7 @@ import qualified Test.SMT as Test
 runSimplifierSMT :: Env Simplifier -> Simplifier a -> IO a
 runSimplifierSMT env = Test.runSMT userInit . Kore.runSimplifier env
   where
-    userInit = SMT.AST.declare Mock.smtDeclarations
+    userInit = declareSortsSymbols Mock.smtDeclarations
 
 runSimplifier :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
 runSimplifier env = Test.runNoSMT . Kore.runSimplifier env

@@ -18,6 +18,7 @@ module Kore.Exec (
     boundedModelCheck,
     matchDisjunction,
     checkFunctions,
+    checkBothMatch,
     Rewrite,
     Equality,
 ) where
@@ -31,6 +32,7 @@ import Control.Error (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
+    filterM,
     join,
     (>=>),
  )
@@ -55,6 +57,9 @@ import Data.Generics.Wrapped (
 import Data.Limit (
     Limit (..),
  )
+import Data.List (
+    tails,
+ )
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -69,7 +74,13 @@ import qualified Kore.Builtin as Builtin
 import Kore.Equation (
     Equation,
     extractEquations,
+    isSimplificationRule,
     right,
+ )
+import qualified Kore.Equation as Equation (
+    Equation (antiLeft),
+    argument,
+    requires,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -101,6 +112,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
+ )
+import Kore.Log.ErrorEquationsSameMatch (
+    errorEquationsSameMatch,
  )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
@@ -179,6 +193,9 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Syntax.Module (
     ModuleName,
+ )
+import Kore.TopBottom (
+    isBottom,
  )
 import Kore.Unparser (
     unparseToText,
@@ -611,17 +628,17 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     match = Search.matchWith SideCondition.top
 
 {- | Ensure that for every equation in a function definition, the right-hand
- - side of the equation is a function pattern. 'checkFunctions' first extracts
- - equations from a verified module to a list of equations. Then it checks that
- - each equation in the list is a function pattern. 'filter' the equations that
- - fail the check, and pass the list to 'checkResults'. If there were no bad
- - equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
- - logs an error message for each bad equation before returning
- - @'ExitFailure' 3@.
- - See 'checkEquation',
- - 'Kore.Equation.Registry.extractEquations',
- - 'Kore.Internal.TermLike.isFunctionPattern',
- - and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
+side of the equation is a function pattern. 'checkFunctions' first extracts
+equations from a verified module to a list of equations. Then it checks that
+each equation in the list is a function pattern. 'filter' the equations that
+fail the check, and pass the list to 'checkResults'. If there were no bad
+equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
+logs an error message for each bad equation before returning
+@'ExitFailure' 3@.
+See 'checkEquation',
+'Kore.Equation.Registry.extractEquations',
+'Kore.Internal.TermLike.isFunctionPattern',
+and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 -}
 checkFunctions ::
     MonadLog m =>
@@ -631,12 +648,63 @@ checkFunctions ::
 checkFunctions verifiedModule =
     checkResults $ filter (not . isFunctionPattern . right) equations
   where
-    equations = join $ Map.elems $ extractEquations verifiedModule
+    equations =
+        filter (not . Kore.Equation.isSimplificationRule) $
+            join $ Map.elems $ extractEquations verifiedModule
     -- if any equations fail the check, log the equations and
     -- the entire function returns ExitFailure 3.
     checkResults [] = return ExitSuccess
     checkResults eqns =
         mapM_ errorEquationRightFunction eqns $> ExitFailure 3
+
+{- | Returns true when both equations match the same term.  See:
+https://github.com/kframework/kore/issues/2472#issue-833143685
+-}
+bothMatch ::
+    MonadSimplify m =>
+    Equation VariableName ->
+    Equation VariableName ->
+    m Bool
+bothMatch eq1 eq2 =
+    let pre1 = Equation.requires eq1
+        pre2 = Equation.requires eq2
+        arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1
+        arg2 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq2
+        prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
+        prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
+        check =
+            Predicate.makeAndPredicate pre1 $
+                Predicate.makeAndPredicate pre2 $
+                    Predicate.makeAndPredicate arg1 $
+                        Predicate.makeAndPredicate arg2 $
+                            Predicate.makeAndPredicate prio1 prio2
+        check' = Predicate.mapVariables (pure mkConfigVariable) check
+        sort = termLikeSort $ right eq1
+        patt = Pattern.fromPredicateSorted sort check'
+     in (not . isBottom) <$> Pattern.simplify patt
+
+{- | Checks if any function definition in the module carries two equations that both match
+same term.
+-}
+checkBothMatch ::
+    MonadSimplify m =>
+    -- | The main module
+    VerifiedModule StepperAttributes ->
+    m ExitCode
+checkBothMatch verifiedModule =
+    filterM (uncurry bothMatch) equations
+        >>= checkResults
+  where
+    equations =
+        join $
+            map
+                (mkPairs . filter (not . Kore.Equation.isSimplificationRule))
+                (Map.elems $ extractEquations verifiedModule)
+    -- produces all 'in-order' pairs in a list
+    mkPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
+    checkResults [] = return ExitSuccess
+    checkResults eqnPairs =
+        mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3
 
 -- | Rule merging
 mergeAllRules ::

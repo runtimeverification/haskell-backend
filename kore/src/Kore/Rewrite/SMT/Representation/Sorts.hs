@@ -89,8 +89,8 @@ translateSort
     sorts
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{smtFromSortArgs} <- Map.lookup sortActualName sorts
-            smtFromSortArgs sorts sortActualSorts
+            AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
+            sortSmtFromSortArgs sorts sortActualSorts
 translateSort _ _ = Nothing
 
 {- | Builds smt representations for sorts in the given module.
@@ -180,8 +180,8 @@ builtinSortDeclaration
             return
                 ( sentenceSortName
                 , AST.Sort
-                    { smtFromSortArgs = emptySortArgsToSmt smtRepresentation
-                    , declaration =
+                    { sortSmtFromSortArgs = emptySortArgsToSmt smtRepresentation
+                    , sortDeclaration =
                         AST.SortDeclaredIndirectly
                             (AST.AlreadyEncoded smtRepresentation)
                     }
@@ -201,8 +201,8 @@ smtlibSortDeclaration
             return
                 ( sentenceSortName
                 , AST.Sort
-                    { smtFromSortArgs = applyToArgs smtRepresentation
-                    , declaration =
+                    { sortSmtFromSortArgs = applyToArgs smtRepresentation
+                    , sortDeclaration =
                         AST.SortDeclarationSort
                             SMT.SortDeclaration
                                 { name = AST.AlreadyEncoded $ SMT.Atom smtName
@@ -236,9 +236,9 @@ simpleSortDeclaration
         Just
             ( sentenceSortName
             , AST.Sort
-                { smtFromSortArgs =
+                { sortSmtFromSortArgs =
                     emptySortArgsToSmt (AST.encode encodedName)
-                , declaration =
+                , sortDeclaration =
                     AST.SortDeclarationSort
                         SMT.SortDeclaration
                             { name = encodedName
@@ -276,9 +276,9 @@ sortWithConstructor sortConstructors sortId = do
     return
         ( sortId
         , AST.Sort
-            { smtFromSortArgs =
+            { sortSmtFromSortArgs =
                 emptySortArgsToSmt (AST.encode encodedName)
-            , declaration =
+            , sortDeclaration =
                 AST.SortDeclarationDataType
                     SMT.DataTypeDeclaration
                         { name = encodedName
