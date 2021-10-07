@@ -597,6 +597,7 @@ applicationPatternParserTests =
             , "c{s}"
             , "\\left-assoc{}(c{}())"
             , "\\right-assoc{}(c{}())"
+            , "\\or{s}(\"a\", \"b\", \"c\")"
             ]
         ]
 bottomPatternParserTests :: [TestTree]
