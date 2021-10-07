@@ -320,8 +320,7 @@ parseAssoc foldAssoc = do
             [_] -> fail "expected two or more arguments"
             children -> return (foldAssoc mkOr children)
 
-{- | Datatype for representing multi-argument Or.
--}
+-- | Datatype for representing multi-argument Or.
 data ParsedMultiOr child = ParsedMultiOr
     { multiOrSort :: Sort
     , multiOrChildren :: [child]
