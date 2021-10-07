@@ -270,7 +270,7 @@ parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
 @parseLeftAssoc@ assumes that the initial identifier has already been parsed.
 
 @
-_ '{' '}' '(' <application-pattern> ')'
+_ '{' '}' '(' <application-pattern> | <multi-or> ')'
 @
 -}
 parseLeftAssoc :: Parser ParsedPattern
@@ -281,7 +281,7 @@ parseLeftAssoc = parseAssoc foldl1
 @parseRightAssoc@ assumes that the initial identifier has already been parsed.
 
 @
-_ '{' '}' '(' <application-pattern> ')'
+_ '{' '}' '(' <application-pattern> | <multi-or> ')'
 @
 -}
 parseRightAssoc :: Parser ParsedPattern
@@ -320,11 +320,19 @@ parseAssoc foldAssoc = do
             [_] -> fail "expected two or more arguments"
             children -> return (foldAssoc mkOr children)
 
+{- | Datatype for representing multi-argument Or.
+-}
 data ParsedMultiOr child = ParsedMultiOr
     { multiOrSort :: Sort
     , multiOrChildren :: [child]
     }
 
+{- | Parse an multi-argument Or occurring under an assoc syntatic sugar.
+
+@
+<multi-or> ::= "\or" "{" <sort> "}" "(" <patterns> ")"
+@
+-}
 parseMultiOr :: Parser child -> Parser (ParsedMultiOr child)
 parseMultiOr parseChild = do
     parseAnyId >>= orLiteral
@@ -374,7 +382,9 @@ parseMultiOr parseChild = do
 
     // Syntax sugar
     | "\left-assoc" "{" "}" "(" <application-pattern> ")"
+    | "\left-assoc" "{" "}" "(" <multi-or> ")"
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
+    | "\right-assoc" "{" "}" "(" <multi-or> ")"
 @
 
 Always starts with @\@.
