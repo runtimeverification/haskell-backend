@@ -34,19 +34,16 @@ import Kore.Internal.Predicate (
     makeAndPredicate,
     makeEqualsPredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     SimplifierT,
     runSimplifier,
-    runSimplifierBranch,
-    simplifyCondition,
  )
-import qualified Kore.Step.Simplification.Not as Not
+import qualified Kore.Simplify.Not as Not
 import Kore.Unification.UnifierT (
     UnifierT,
     runUnifierT,
@@ -114,7 +111,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asOrPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     name = expectHook symb
@@ -130,7 +127,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asOrPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
+        actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     name = expectHook symb
@@ -162,12 +159,12 @@ test_unifyBoolValues =
         testCase testName $ do
             case Bool.matchBools term1 term2 of
                 Just unifyData -> do
-                    actual <- unify term1 term2 unifyData
+                    actual <- unify unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term1 term2 unifyData =
-        run (lift $ Bool.unifyBool term1 term2 unifyData)
+    unify unifyData =
+        run (lift $ Bool.unifyBool unifyData)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -194,13 +191,13 @@ test_unifyBoolAnd =
     test testName term1 term2 expected =
         testCase testName $ do
             case Bool.matchUnifyBoolAnd term1 term2 of
-                Just boolAnd -> do
-                    actual <- unify term1 boolAnd
+                Just unifyData -> do
+                    actual <- unify unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term boolAnd =
-        Bool.unifyBoolAnd termSimplifier term boolAnd
+    unify unifyData =
+        Bool.unifyBoolAnd termSimplifier unifyData
             & lift
             & run
 
@@ -229,13 +226,13 @@ test_unifyBoolOr =
     test testName term1 term2 expected =
         testCase testName $ do
             case Bool.matchUnifyBoolOr term1 term2 of
-                Just boolOr -> do
-                    actual <- unify term1 boolOr
+                Just unifyData -> do
+                    actual <- unify unifyData
                     assertEqual "" expected actual
                 Nothing -> assertEqual "" expected [Nothing]
 
-    unify term boolOr =
-        Bool.unifyBoolOr termSimplifier term boolOr
+    unify unifyData =
+        Bool.unifyBoolOr termSimplifier unifyData
             & lift
             & run
 
@@ -288,11 +285,3 @@ test_contradiction =
                     & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
-  where
-    simplifyCondition' ::
-        Condition RewritingVariableName ->
-        IO [Condition RewritingVariableName]
-    simplifyCondition' condition =
-        simplifyCondition SideCondition.top condition
-            & runSimplifierBranch testEnv
-            & runNoSMT

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.PatternF (
     PatternF (..),
@@ -180,7 +180,7 @@ instance From (SomeVariable variable) (PatternF variable child) where
 
 {- | Use the provided mapping to replace all variables in a 'PatternF' head.
 
-__Warning__: @mapVariables@ will capture variables if the provided mapping is
+__Warning__: 'mapVariables' will capture variables if the provided mapping is
 not injective!
 -}
 mapVariables ::
@@ -195,7 +195,7 @@ mapVariables adj =
 
 {- | Use the provided traversal to replace all variables in a 'PatternF' head.
 
-__Warning__: @traverseVariables@ will capture variables if the provided
+__Warning__: 'traverseVariables' will capture variables if the provided
 traversal is not injective!
 -}
 traverseVariables ::

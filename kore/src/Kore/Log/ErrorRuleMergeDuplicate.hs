@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorRuleMergeDuplicate (
     ErrorRuleMergeDuplicateIds,
@@ -32,10 +32,10 @@ import qualified Generics.SOP as SOP
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RewriteRule (..),
  )
 import Log
@@ -59,6 +59,7 @@ instance Exception ErrorRuleMergeDuplicateIds where
 
 instance Entry ErrorRuleMergeDuplicateIds where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorRuleMergeDuplicateIds"
     helpDoc _ =
         "error thrown during rule merging when\
         \ multiple rules have the same id"
@@ -81,6 +82,7 @@ instance Exception ErrorRuleMergeDuplicateLabels where
 
 instance Entry ErrorRuleMergeDuplicateLabels where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorRuleMergeDuplicateLabels"
     helpDoc _ =
         "error thrown during rule merging when\
         \ multiple rules have the same label"

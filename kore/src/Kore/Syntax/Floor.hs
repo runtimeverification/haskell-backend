@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Floor (
     Floor (..),
@@ -16,9 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Floor' corresponds to the @\\floor@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'floorOperandSort' is the sort of the operand.
 
@@ -60,5 +58,5 @@ instance Synthetic (FreeVariables variable) (Floor sort) where
 instance Synthetic Sort (Floor Sort) where
     synthetic Floor{floorOperandSort, floorResultSort, floorChild} =
         floorResultSort
-            & seq (matchSort floorOperandSort floorChild)
+            & seq (sameSort floorOperandSort floorChild)
     {-# INLINE synthetic #-}

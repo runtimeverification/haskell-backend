@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorDecidePredicateUnknown (
     ErrorDecidePredicateUnknown (..),
@@ -50,6 +50,7 @@ instance Pretty ErrorDecidePredicateUnknown where
 
 instance Entry ErrorDecidePredicateUnknown where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorDecidePredicateUnknown"
     helpDoc _ =
         "errors raised when the solver cannot decide satisfiability of a formula"
 

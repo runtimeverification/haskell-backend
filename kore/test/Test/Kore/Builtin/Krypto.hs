@@ -34,21 +34,19 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.Data (
+import Kore.Simplify.Data (
     runSimplifier,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     AttemptedAxiomResults (..),
     BuiltinAndAxiomSimplifier (..),
  )
 import qualified Kore.TopBottom as TopBottom
 import Prelude.Kore
-import Test.Kore.Builtin.Builtin hiding (
-    evaluate,
- )
+import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT (

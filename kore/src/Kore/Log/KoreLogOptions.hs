@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
@@ -40,11 +40,11 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
-import Kore.Equation (
+import qualified Kore.Equation as Equation
+import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )
-import qualified Kore.Equation as Equation
 import Kore.Log.DebugSolver (
     DebugSolverOptions (..),
     parseDebugSolverOptions,
@@ -162,7 +162,7 @@ parseKoreLogFormat = option formatReader info
     info =
         mempty
             <> Options.long "log-format"
-            <> Options.help "Formating style selected"
+            <> Options.help "Log format: standard, oneline"
             <> Options.value def
 
 type EntryTypes = Set SomeTypeRep

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Reachability.Claim (
     Claim (..),
@@ -97,48 +97,51 @@ import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Internal.TermLike (
+    Not (..),
+    Sort,
     isFunctionPattern,
     mkIn,
     termLikeSort,
  )
 import Kore.Log.InfoReachability
+import Kore.Log.WarnClaimRHSIsBottom
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )
 import Kore.Reachability.Prim
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern (
+import Kore.Rewrite.AxiomPattern (
     AxiomPattern (..),
  )
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import qualified Kore.Step.ClaimPattern as ClaimPattern
-import Kore.Step.Result (
+import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.Result (
     Result (..),
     Results (..),
  )
-import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern (
+import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (..),
  )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import Kore.Step.Simplification.Data (
-    MonadSimplify,
- )
-import qualified Kore.Step.Simplification.Exists as Exists
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Pattern (
-    simplifyTopConfigurationDefined,
- )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Step as Step
-import Kore.Step.Strategy (
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
+import qualified Kore.Rewrite.Step as Step
+import Kore.Rewrite.Strategy (
     Strategy,
  )
-import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Step.Transition as Transition
+import qualified Kore.Rewrite.Strategy as Strategy
+import qualified Kore.Rewrite.Transition as Transition
+import Kore.Simplify.Data (
+    MonadSimplify,
+ )
+import qualified Kore.Simplify.Exists as Exists
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Pattern (
+    simplifyTopConfigurationDefined,
+ )
+import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
@@ -274,13 +277,14 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
                 fmap (snd . Step.refreshRule mempty) $
                     Lens.forOf (field @"left") claimPattern $
                         \config -> Compose $ do
+                            let claimPatSort = ClaimPattern.getClaimPatternSort claimPattern
                             results <-
                                 Step.applyClaimsSequence
                                     mkClaim
                                     config
                                     (Lens.view lensClaimPattern <$> claims)
                                     & lift
-                            deriveResults fromAppliedRule results
+                            deriveResults claimPatSort fromAppliedRule results
   where
     fromAppliedRule =
         AppliedClaim
@@ -326,13 +330,17 @@ transitionRule claims axiomGroups = transitionRuleWorker
                     | otherwise -> pure (Claimed a)
         | otherwise = pure claimState
     transitionRuleWorker ApplyClaims (Claimed claim) =
-        applyClaims claims claim
-            >>= return . applyResultToClaimState
+        Transition.ifte
+            (applyClaims claims claim)
+            (return . applyResultToClaimState)
+            (pure Proven)
     transitionRuleWorker ApplyClaims claimState = pure claimState
     transitionRuleWorker ApplyAxioms claimState
         | Just claim <- retractRewritable claimState =
-            applyAxioms axiomGroups claim
-                >>= return . applyResultToClaimState
+            Transition.ifte
+                (applyAxioms axiomGroups claim)
+                (return . applyResultToClaimState)
+                (pure Proven)
         | otherwise = pure claimState
 
     applyResultToClaimState (ApplyRewritten a) = Rewritten a
@@ -515,7 +523,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 >>= Pattern.simplify
                 >>= SMT.Evaluator.filterMultiOr
                 >>= Logic.scatter
-        pure (examine anyUnified stuck)
+        examine anyUnified stuck
         & elseImplied
   where
     ClaimPattern{right, left, existentials} = claimPattern
@@ -555,8 +563,11 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             Exists.makeEvaluate sideCondition existentials removed
                 >>= Logic.scatter
             & OrPattern.observeAllT
-            & (>>= Not.simplifyEvaluated sideCondition)
+            & (>>= mkNotSimplified)
             & wereAnyUnified
+      where
+        mkNotSimplified notChild =
+            Not.simplify sideCondition Not{notSort = sort, notChild}
 
     wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
     wereAnyUnified act = swap <$> runStateT act mempty
@@ -569,17 +580,20 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine ::
         AnyUnified ->
         Pattern RewritingVariableName ->
-        CheckImplicationResult ClaimPattern
+        m (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            Implied
+            pure Implied
         | not didAnyUnify
           , not (isBottom right) =
-            NotImplied claimPattern
-        | otherwise =
-            Lens.set (field @"left") stuck claimPattern
-                & NotImpliedStuck
+            pure $ NotImplied claimPattern
+        | otherwise = do
+            when (isBottom right) $
+                warnClaimRHSIsBottom claimPattern
+            pure $
+                Lens.set (field @"left") stuck claimPattern
+                    & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
 
@@ -590,9 +604,16 @@ simplify' ::
     Strategy.TransitionT (AppliedRule claim) m claim
 simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
-    let sideCondition = extractSideCondition claim'
-    simplifyRightHandSide lensClaimPattern sideCondition claim'
+    let claim'' = Lens.over lensClaimPattern applySubstOnRightHandSide claim'
+        sideCondition = extractSideCondition claim''
+    simplifyRightHandSide lensClaimPattern sideCondition claim''
   where
+    applySubstOnRightHandSide claimPat =
+        let substitution = Pattern.substitution $ Lens.view (field @"left") claimPat
+            noLeftSubst = Lens.set (field @"left" . field @"substitution") mempty claimPat
+            appliedSubst = ClaimPattern.applySubstitution substitution noLeftSubst
+         in appliedSubst
+
     extractSideCondition =
         SideCondition.fromConditionWithReplacements
             . Pattern.withoutTerm
@@ -665,8 +686,9 @@ deriveWith lensClaimPattern mkRule takeStep rewrites claim =
                 fmap (snd . Step.refreshRule mempty) $
                     Lens.forOf (field @"left") claimPattern $
                         \config -> Compose $ do
+                            let claimPatSort = ClaimPattern.getClaimPatternSort claimPattern
                             results <- takeStep rewrites config & lift
-                            deriveResults fromAppliedRule results
+                            deriveResults claimPatSort fromAppliedRule results
   where
     fromAppliedRule =
         AppliedAxiom
@@ -688,6 +710,7 @@ deriveSeq' lensRulePattern mkRule =
 
 deriveResults ::
     Step.UnifyingRuleVariable representation ~ RewritingVariableName =>
+    Sort ->
     (Step.UnifiedRule representation -> AppliedRule claim) ->
     Step.Results representation ->
     Strategy.TransitionT
@@ -695,7 +718,7 @@ deriveResults ::
         simplifier
         (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
-deriveResults fromAppliedRule Results{results, remainders} =
+deriveResults sort fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
@@ -704,7 +727,7 @@ deriveResults fromAppliedRule Results{results, remainders} =
     addResult Result{appliedRule, result} = do
         addRule appliedRule
         case toList result of
-            [] -> addRewritten Pattern.bottom
+            [] -> addRewritten (Pattern.bottomOf sort)
             configs -> asum (addRewritten <$> configs)
 
     addRewritten = pure . ApplyRewritten

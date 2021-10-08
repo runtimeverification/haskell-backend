@@ -63,7 +63,7 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding (
     Symbol,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Syntax (
@@ -74,7 +74,7 @@ import qualified Kore.Syntax.PatternF as PatternF
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 
 -- -------------------------------------------------------------
 

@@ -1,8 +1,8 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2018-2021
 
-Please refer to Section 9 (The Kore Language) of the
-<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+Please refer to
+<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Sort (
     SortVariable (..),
@@ -11,11 +11,8 @@ module Kore.Sort (
     getSortId,
     sortSubstitution,
     substituteSortVariables,
-    rigidSort,
     sameSort,
-    matchSort,
     matchSorts,
-    alignSorts,
 
     -- * Meta-sorts
     MetaSortType (..),
@@ -27,7 +24,6 @@ module Kore.Sort (
     stringMetaSort,
     predicateSortId,
     predicateSortActual,
-    predicateSort,
 
     -- * Exceptions
     SortMismatch (..),
@@ -56,10 +52,9 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- | @SortVariable@ is a Kore sort variable.
+{- | 'SortVariable' is a Kore sort variable.
 
-@SortVariable@ corresponds to the @sort-variable@ syntactic category from the
-Semantics of K, Section 9.1.2 (Sorts).
+'SortVariable' corresponds to the @sort-variable@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 newtype SortVariable = SortVariable
     {getSortVariable :: Id}
@@ -73,9 +68,8 @@ instance Unparse SortVariable where
     unparse = unparse . getSortVariable
     unparse2 SortVariable{getSortVariable} = unparse2 getSortVariable
 
-{- |'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
-@object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
+{- |'SortActual' corresponds to the @sort-identifier{sorts}@ branch of the
+@sort@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 data SortActual = SortActual
     { sortActualName :: !Id
@@ -100,9 +94,8 @@ instance Unparse SortActual where
                     <> parameters2 sortActualSorts
                     <> ")"
 
-{- |'Sort' corresponds to the @object-sort@ and
-@meta-sort@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
+{- |'Sort' corresponds to the @sort@ syntactic category from
+<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 data Sort
     = SortVariableSort !SortVariable
@@ -173,10 +166,7 @@ substituteSortVariables substitution sort =
                         substituteSortVariables substitution <$> sortActualSorts
                     }
 
-{- |'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
-from the Semantics of K, Section 9.1.2 (Sorts).
-
-Ths is not represented directly in the AST, we're using the string
+{- | Ths is not represented directly in the AST, we're using the string
 representation instead.
 -}
 data MetaSortType
@@ -218,29 +208,6 @@ predicateSortActual = SortActual predicateSortId []
 The final predicate sort is unknown until the predicate is attached to a
 pattern.
 -}
-predicateSort :: Sort
-{- TODO PREDICATE (thomas.tuegel):
-
-Add a constructor
-
-> data Sort = ... | FlexibleSort
-
-to use internally as a placeholder where the predicate sort is not yet
-known. Using the sort _PREDICATE{} is a kludge; the backend will melt down if
-the user tries to define a sort named _PREDICATE{}. (At least, this is not
-actually a valid identifier in Kore.)
-
-Until this is fixed, the identifier _PREDICATE is reserved in
-Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
-
--}
-predicateSort = SortActualSort predicateSortActual
-
-rigidSort :: Sort -> Maybe Sort
-rigidSort sort
-    | sort == predicateSort = Nothing
-    | otherwise = Just sort
-
 data SortMismatch = SortMismatch !Sort !Sort
     deriving stock (Eq, Show, Typeable)
 
@@ -290,28 +257,9 @@ sameSort sort1 sort2
     | sort1 == sort2 = sort1
     | otherwise = sortMismatch sort1 sort2
 
-{- | Match the second sort to the first.
-
-If the second sort is flexible, it matches the first sort. If the second sort is
-rigid, it must be equal to the first sort.
--}
-matchSort :: Sort -> Sort -> Sort
-matchSort sort1 sort2 =
-    maybe sort1 (sameSort sort1) (rigidSort sort2)
-
 matchSorts :: [Sort] -> [Sort] -> [Sort]
 matchSorts = alignWith matchTheseSorts
   where
     matchTheseSorts (This sort1) = missingArgument sort1
     matchTheseSorts (That sort2) = unexpectedArgument sort2
-    matchTheseSorts (These sort1 sort2) = matchSort sort1 sort2
-
-alignSorts :: Foldable f => f Sort -> Sort
-alignSorts = fromMaybe predicateSort . foldl' worker Nothing
-  where
-    worker Nothing sort2 = rigidSort sort2
-    worker (Just sort1) sort2 =
-        Just $ maybe sort1 (alignSort sort1) (rigidSort sort2)
-    alignSort sort1 sort2
-        | sort1 == sort2 = sort1
-        | otherwise = sortMismatch sort1 sort2
+    matchTheseSorts (These sort1 sort2) = sameSort sort1 sort2

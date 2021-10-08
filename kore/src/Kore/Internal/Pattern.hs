@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 
 Representation of program configurations as conditional patterns.
 -}
@@ -10,17 +10,14 @@ module Kore.Internal.Pattern (
     syncSort,
     patternSort,
     fromCondition,
-    fromCondition_,
     fromTermAndPredicate,
     fromPredicateSorted,
-    bottom,
     bottomOf,
     isBottom,
     isTop,
     Kore.Internal.Pattern.mapVariables,
     splitTerm,
     toTermLike,
-    top,
     topOf,
     fromTermLike,
     Kore.Internal.Pattern.freeElementVariables,
@@ -62,7 +59,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -77,9 +73,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
     mkBottom,
-    mkBottom_,
     mkTop,
-    mkTop_,
     termLikeSort,
  )
 import qualified Kore.Internal.TermLike as TermLike
@@ -106,11 +100,6 @@ fromTermAndPredicate term predicate =
         , predicate
         , substitution = mempty
         }
-fromCondition_ ::
-    InternalVariable variable =>
-    Condition variable ->
-    Pattern variable
-fromCondition_ = (<$) mkTop_
 fromCondition ::
     InternalVariable variable =>
     Sort ->
@@ -149,7 +138,7 @@ hasSimplifiedChildren sideCondition patt =
         && Substitution.isSimplified sideCondition substitution
   where
     Conditional{term, predicate, substitution} = patt
-    clauses = MultiAnd.fromPredicate predicate
+    clauses = Predicate.toMultiAnd predicate
 
 {- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
 used to simplify the children.
@@ -164,7 +153,7 @@ hasSimplifiedChildrenIgnoreConditions patt =
         && Substitution.isSimplifiedSomeCondition substitution
   where
     Conditional{term, predicate, substitution} = patt
-    clauses = MultiAnd.fromPredicate predicate
+    clauses = Predicate.toMultiAnd predicate
 
 forgetSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
@@ -235,17 +224,6 @@ toTermLike Conditional{term, predicate, substitution} =
         predicateTermLike = Predicate.fromPredicate sort predicate'
         sort = termLikeSort pattern'
 
-{- |'bottom' is an expanded pattern that has a bottom condition and that
-should become Bottom when transformed to a ML pattern.
--}
-bottom :: InternalVariable variable => Pattern variable
-bottom =
-    Conditional
-        { term = mkBottom_
-        , predicate = Predicate.makeFalsePredicate
-        , substitution = mempty
-        }
-
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
 The 'predicate' is set to 'makeFalsePredicate'.
@@ -255,17 +233,6 @@ bottomOf resultSort =
     Conditional
         { term = mkBottom resultSort
         , predicate = Predicate.makeFalsePredicate
-        , substitution = mempty
-        }
-
-{- |'top' is an expanded pattern that has a top condition and that
-should become Top when transformed to a ML pattern.
--}
-top :: InternalVariable variable => Pattern variable
-top =
-    Conditional
-        { term = mkTop_
-        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -338,7 +305,7 @@ coerceSort
             { term =
                 if isTop term
                     then mkTop sort
-                    else TermLike.forceSort sort term
+                    else TermLike.sameTermLikeSort sort term
             , -- Need to override this since a 'ceil' (say) over a predicate is that
               -- predicate with a different sort.
               predicate = predicate
@@ -390,9 +357,10 @@ requireDefined Conditional{term, predicate, substitution} =
 
 fromMultiAnd ::
     InternalVariable variable =>
+    Sort ->
     MultiAnd (Pattern variable) ->
     Pattern variable
-fromMultiAnd patterns =
+fromMultiAnd sort patterns =
     foldr
         ( \pattern1 ->
             pure
@@ -402,4 +370,4 @@ fromMultiAnd patterns =
         )
         Nothing
         patterns
-        & fromMaybe top
+        & fromMaybe (topOf sort)

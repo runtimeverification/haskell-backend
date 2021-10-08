@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorException (
     ErrorException,
@@ -42,6 +42,7 @@ instance Pretty ErrorException where
 
 instance Entry ErrorException where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorException"
     helpDoc _ = "log internal errors"
 
 errorException :: MonadLog log => SomeException -> log ()

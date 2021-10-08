@@ -28,8 +28,8 @@ import Kore.TopBottom (
 import Prelude.Kore
 import Test.Expect
 import Test.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -165,8 +165,8 @@ test_predicate =
             "makePredicate yields wrapPredicate"
             ( traverse_
                 (uncurry makePredicateYieldsWrapPredicate)
-                [ ("Top", mkTop_)
-                , ("Bottom", mkBottom_)
+                [ ("Top", mkTop Mock.testSort)
+                , ("Bottom", mkBottom Mock.testSort)
                 , ("And", mkAnd pa1 pa2)
                 , ("Or", mkOr pa1 pa2)
                 , ("Iff", mkIff pa1 pa2)
@@ -183,24 +183,27 @@ test_predicate =
         , testGroup
             "keeps simplified bit"
             [ testCase "unsimplified stays unsimplified" $
-                (mkEquals_ Mock.cf Mock.cg, NotSimplified)
+                (mkEquals Mock.topSort Mock.cf Mock.cg, NotSimplified)
                     `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
             , testCase "simplified stays simplified" $
-                ( simplifiedTerm $ mkEquals_ Mock.cf Mock.cg
+                ( simplifiedTerm $ mkEquals Mock.topSort Mock.cf Mock.cg
                 , IsSimplified
                 )
                     `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "Partial predicate stays simplified" $
                 ( simplifiedTerm $
-                    mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
+                    mkAnd (mkTop Mock.topSort) (mkEquals Mock.topSort Mock.cf Mock.cg)
                 , IsSimplified
                 )
                     `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "changed simplified becomes unsimplified" $
                 ( simplifiedTerm $
                     mkAnd
-                        (mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg))
-                        (mkEquals_ Mock.cg Mock.ch)
+                        ( mkAnd
+                            (mkTop Mock.topSort)
+                            (mkEquals Mock.topSort Mock.cf Mock.cg)
+                        )
+                        (mkEquals Mock.topSort Mock.cg Mock.ch)
                 , IsSimplified
                 )
                     `makesPredicate` ( makeAndPredicate
@@ -267,29 +270,33 @@ pr2 =
 
 pa1 :: TermLike VariableName
 pa1 =
-    mkEquals_
+    mkEquals
+        Mock.topSort
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
 pa2 :: TermLike VariableName
 pa2 =
-    mkEquals_
+    mkEquals
+        Mock.topSort
         (mkElemVar $ c Mock.testSort)
         (mkElemVar $ d Mock.testSort)
 
 ceilA :: TermLike VariableName
 ceilA =
-    mkCeil_
+    mkCeil
+        Mock.topSort
         (mkElemVar $ a Mock.testSort)
 
 inA :: TermLike VariableName
 inA =
-    mkIn_
+    mkIn
+        Mock.topSort
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
 floorA :: TermLike VariableName
-floorA = mkFloor_ (mkElemVar $ a Mock.testSort)
+floorA = mkFloor Mock.topSort (mkElemVar $ a Mock.testSort)
 
 a, b, c, d :: Sort -> ElementVariable VariableName
 a = mkElementVariable (testId "a")

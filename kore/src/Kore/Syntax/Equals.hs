@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Equals (
     Equals (..),
@@ -19,9 +19,7 @@ import Pretty (
  )
 import qualified Pretty
 
-{- |'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Equals' corresponds to the @\\equals@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'equalsOperandSort' is the sort of the operand.
 
@@ -115,8 +113,8 @@ instance Ord variable => Synthetic (FreeVariables variable) (Equals sort) where
 instance Synthetic Sort (Equals Sort) where
     synthetic equals =
         equalsResultSort
-            & seq (matchSort equalsOperandSort equalsFirst)
-                . seq (matchSort equalsOperandSort equalsSecond)
+            & seq (sameSort equalsOperandSort equalsFirst)
+                . seq (sameSort equalsOperandSort equalsSecond)
       where
         Equals{equalsOperandSort, equalsResultSort} = equals
         Equals{equalsFirst, equalsSecond} = equals

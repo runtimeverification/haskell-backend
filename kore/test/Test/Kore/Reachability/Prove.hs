@@ -1,5 +1,6 @@
 module Test.Kore.Reachability.Prove (
     test_proveClaims,
+    test_transitionRule,
 ) where
 
 import Data.Default (
@@ -8,6 +9,7 @@ import Data.Default (
 import Data.Limit (
     Limit (..),
  )
+import qualified Data.Sequence as Seq
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -21,23 +23,27 @@ import Kore.Internal.Predicate (
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
-import Kore.Rewriting.RewritingVariable (
+import Kore.Reachability.Prim (
+    Prim (..),
+ )
+import Kore.Rewrite.ClaimPattern (
+    ClaimPattern (..),
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
     mkRuleVariable,
  )
-import Kore.Step.ClaimPattern (
-    ClaimPattern (..),
- )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     RulePattern (..),
     injectTermIntoRHS,
     mkRewritingRule,
     rulePattern,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Rewrite.Transition (runTransitionT)
 import Kore.Unparser (
     unparseToText2,
  )
@@ -45,8 +51,8 @@ import Numeric.Natural (
     Natural,
  )
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -426,9 +432,7 @@ test_proveClaims =
                                 )
                             )
                         )
-                    , Pattern.withCondition
-                        Mock.b
-                        (Condition.assign (inject Mock.x) Mock.a)
+                    , Pattern.fromTermLike Mock.b
                     ]
             initialPattern =
                 Pattern.fromTermLike
@@ -721,7 +725,7 @@ test_proveClaims =
     , testGroup "LHS is undefined" $
         let mkTest name mkSimpleClaim =
                 testCase name $ do
-                    let claims = [mkSimpleClaim mkBottom_ Mock.a]
+                    let claims = [mkSimpleClaim (mkBottom Mock.testSort) Mock.a]
                     actual <-
                         proveClaims_
                             Unlimited
@@ -734,6 +738,30 @@ test_proveClaims =
             , mkTest "AllPath" simpleAllPathClaim
             ]
     ]
+
+test_transitionRule :: TestTree
+test_transitionRule =
+    testGroup
+        "transitionRule: AllPath"
+        [ testCase "ApplyAxioms: LHS is undefined" $ do
+            actual <- runTransitionRule [] [[]] ApplyAxioms (Claimed claim)
+            assertEqual
+                "Result is Proven"
+                [(Proven, Seq.empty)]
+                actual
+        , testCase "ApplyClaims: LHS is undefined" $ do
+            actual <-
+                runTransitionRule [] [[]] ApplyClaims (Claimed claim)
+            assertEqual
+                "Result is Proven"
+                [(Proven, Seq.empty)]
+                actual
+        ]
+  where
+    claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
+    runTransitionRule claims axiomGroups prim cState =
+        runSimplifierSMT Mock.env . runTransitionT $
+            transitionRule claims axiomGroups prim cState
 
 simpleAxiom ::
     TermLike VariableName ->

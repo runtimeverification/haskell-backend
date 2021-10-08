@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.StringLiteral (
     StringLiteral (..),
@@ -23,9 +23,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
-Section 9.1.1 (Lexicon).
--}
+-- |'StringLiteral' corresponds to the @string-literal@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#string-literals kore-syntax.md#string-literals>.
 newtype StringLiteral = StringLiteral {getStringLiteral :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.Predicate (
     Predicate, -- Constructor not exported on purpose
@@ -8,7 +8,6 @@ module Kore.Internal.Predicate (
     unparseWithSort,
     unparse2WithSort,
     fromPredicate,
-    fromPredicate_,
     makePredicate,
     makeTruePredicate,
     makeFalsePredicate,
@@ -22,6 +21,7 @@ module Kore.Internal.Predicate (
     makeInPredicate,
     makeEqualsPredicate,
     makeExistsPredicate,
+    makeExistsPredicateN,
     makeForallPredicate,
     makeMultipleAndPredicate,
     makeMultipleOrPredicate,
@@ -34,6 +34,7 @@ module Kore.Internal.Predicate (
     simplifiedAttribute,
     isSimplified,
     isSimplifiedSomeCondition,
+    isSimplifiedAnyCondition,
     isFreeOf,
     freeElementVariables,
     hasFreeVariable,
@@ -44,8 +45,12 @@ module Kore.Internal.Predicate (
     markSimplifiedMaybeConditional,
     setSimplified,
     forgetSimplified,
+    forgetSimplifiedSafe,
     wrapPredicate,
     containsSymbolWithIdPred,
+    refreshExists,
+    toMultiAnd,
+    fromMultiAnd,
     pattern PredicateTrue,
     pattern PredicateFalse,
     pattern PredicateAnd,
@@ -79,6 +84,7 @@ import Data.List.Extra (
     nubOrd,
  )
 import qualified Data.Map.Strict as Map
+import Data.Semigroup
 import Data.Set (
     Set,
  )
@@ -97,6 +103,10 @@ import Kore.Attribute.PredicatePattern (
 import qualified Kore.Attribute.PredicatePattern as PredicatePattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
@@ -128,9 +138,6 @@ import Kore.Internal.TermLike hiding (
     simplifiedAttribute,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort (
-    predicateSort,
- )
 import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
@@ -251,6 +258,7 @@ instance From (Not () child) (PredicateF variable child) where
     from = NotF
     {-# INLINE from #-}
 
+-- | @Predicate@ is the internal form of Kore predicates.
 newtype Predicate variable = Predicate
     { getPredicate ::
         Cofree (PredicateF variable) (PredicatePattern variable)
@@ -301,7 +309,7 @@ instance NFData variable => NFData (Predicate variable) where
         rnf annotation `seq` rnf pat
 
 instance InternalVariable variable => Pretty (Predicate variable) where
-    pretty = unparse . fromPredicate_
+    pretty = unparse . fromPredicate (mkSortVariable "_")
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
     defineColumn = SQL.defineTextColumn
@@ -481,6 +489,20 @@ instance InternalVariable variable => Substitute (Predicate variable) where
           where
             _ :< predF = Recursive.project predicate
 
+instance
+    InternalVariable variable =>
+    From (MultiAnd (Predicate variable)) (Predicate variable)
+    where
+    from = fromMultiAnd
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable =>
+    From (Predicate variable) (MultiAnd (Predicate variable))
+    where
+    from = toMultiAnd
+    {-# INLINE from #-}
+
 unparseWithSort ::
     forall variable ann.
     InternalVariable variable =>
@@ -568,12 +590,6 @@ fromPredicate sort = Recursive.fold worker
                 NotF (Not () t) -> TermLike.mkNot t
                 OrF (Or () t1 t2) -> TermLike.mkOr t1 t2
                 TopF _ -> TermLike.mkTop sort
-
-fromPredicate_ ::
-    InternalVariable variable =>
-    Predicate variable ->
-    TermLike variable
-fromPredicate_ = fromPredicate predicateSort
 
 {- | Simple type used to track whether a predicate building function performed
     a simplification that changed the shape of the resulting term. This is
@@ -797,7 +813,7 @@ makeInPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeInPredicate' t1 t2 =
-    (TermLike.makeSortsAgree makeInWorker t1 t2, NotChanged)
+    (TermLike.checkSortsAgree makeInWorker t1 t2, NotChanged)
   where
     makeInWorker t1' t2' _ = synthesize $ InF $ In () () t1' t2'
 
@@ -814,7 +830,7 @@ makeEqualsPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeEqualsPredicate' t1 t2 =
-    (TermLike.makeSortsAgree makeEqualsWorker t1 t2, NotChanged)
+    (TermLike.checkSortsAgree makeEqualsWorker t1 t2, NotChanged)
   where
     makeEqualsWorker t1' t2' _ = synthesize $ EqualsF $ Equals () () t1' t2'
 
@@ -850,6 +866,14 @@ makeExistsPredicate ::
     Predicate variable ->
     Predicate variable
 makeExistsPredicate v p = fst (makeExistsPredicate' v p)
+
+makeExistsPredicateN ::
+    InternalVariable variable =>
+    Foldable foldable =>
+    foldable (ElementVariable variable) ->
+    Predicate variable ->
+    Predicate variable
+makeExistsPredicateN = appEndo . foldMap (Endo . makeExistsPredicate)
 
 makeForallPredicate' ::
     InternalVariable variable =>
@@ -934,11 +958,14 @@ instance
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
             [ "Expected a predicate, but found:"
-            , Pretty.indent 4 (unparse $ fromPredicate_ <$> termLikeF)
+            , Pretty.indent
+                4
+                (unparse $ fromPredicate (mkSortVariable "_") <$> termLikeF)
             ]
 
 makePredicate ::
     forall variable.
+    HasCallStack =>
     InternalVariable variable =>
     TermLike variable ->
     Either (NotPredicate variable) (Predicate variable)
@@ -1054,6 +1081,14 @@ isSimplifiedSomeCondition :: Predicate variable -> Bool
 isSimplifiedSomeCondition =
     PredicatePattern.isSimplifiedSomeCondition . extractAttributes
 
+{- | Is the 'Predicate' fully simplified under any side condition?
+
+See also: 'isSimplified'.
+-}
+isSimplifiedAnyCondition :: Predicate variable -> Bool
+isSimplifiedAnyCondition =
+    PredicatePattern.isSimplifiedAnyCondition . extractAttributes
+
 cannotSimplifyNotSimplifiedError ::
     (HasCallStack, InternalVariable variable) =>
     PredicateF variable (Predicate variable) ->
@@ -1063,10 +1098,8 @@ cannotSimplifyNotSimplifiedError predF =
         ( "Unexpectedly marking term with NotSimplified children as simplified:\n"
             ++ show predF
             ++ "\n"
-            ++ unparseToString term
+            ++ (show . pretty $ synthesize predF)
         )
-  where
-    term = fromPredicate_ (synthesize predF)
 
 simplifiedFromChildren ::
     HasCallStack =>
@@ -1154,6 +1187,15 @@ setSimplified
                 Attribute.NotSimplified
             _ -> childSimplified <> simplified
 
+{- | Forget the 'simplifiedAttribute' associated with a 'Predicate'.
+This is not safe to be used inside the simplifier, see 'forgetSimplifiedSafe',
+but the following will always hold:
+
+@
+isSimplified (forgetSimplified _) == False
+@
+This is not always true for 'forgetSimplifiedSafe'.
+-}
 forgetSimplified ::
     InternalVariable variable =>
     Predicate variable ->
@@ -1179,6 +1221,36 @@ forgetSimplified = Recursive.fold worker
                     (TermLike.forgetSimplified <$> in')
         _ -> synthesize predF
 
+{- | Forget the 'simplifiedAttribute' associated with a 'Predicate', with
+some special handling of specific subterms.
+This is safe to be used inside the simplifier.
+See 'Kore.Internal.TermLike.forgetSimplifiedIgnorePredicates'.
+-}
+forgetSimplifiedSafe ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Predicate variable
+forgetSimplifiedSafe = Recursive.fold worker
+  where
+    worker (_ :< predF) = case predF of
+        CeilF ceil' ->
+            synthesize $
+                CeilF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
+        FloorF floor' ->
+            synthesize $
+                FloorF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
+        EqualsF equals' ->
+            synthesize $
+                EqualsF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
+        InF in' ->
+            synthesize $
+                InF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> in')
+        _ -> synthesize predF
+
 mapVariables ::
     forall variable1 variable2.
     InternalVariable variable1 =>
@@ -1189,7 +1261,8 @@ mapVariables ::
 mapVariables adj predicate =
     let termPredicate =
             TermLike.mapVariables adj
-                . fromPredicate_
+                -- TODO (Andrei B): Try to avoid TermLike conversion
+                . fromPredicate (mkSortVariable "_")
                 $ predicate
      in either
             errorMappingVariables
@@ -1261,3 +1334,18 @@ containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =
         CeilF x -> any (containsSymbolWithId symId) x
         FloorF x -> any (containsSymbolWithId symId) x
         _ -> any (containsSymbolWithIdPred symId) predicate
+
+fromMultiAnd ::
+    InternalVariable variable =>
+    MultiAnd (Predicate variable) ->
+    Predicate variable
+fromMultiAnd predicates =
+    case toList predicates of
+        [] -> makeTruePredicate
+        _ -> foldr1 makeAndPredicate predicates
+
+toMultiAnd ::
+    Ord variable =>
+    Predicate variable ->
+    MultiAnd (Predicate variable)
+toMultiAnd = MultiAnd.make . getMultiAndPredicate

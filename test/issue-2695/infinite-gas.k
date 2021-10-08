@@ -2,6 +2,7 @@ requires "domains.md"
 
 module EVM
     imports INT
+    imports BOOL
 
     configuration
         <k> $PGM:EthereumSimulation </k>

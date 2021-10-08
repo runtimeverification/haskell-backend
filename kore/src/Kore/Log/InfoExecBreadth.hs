@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.InfoExecBreadth (
     InfoExecBreadth,
@@ -34,6 +34,8 @@ instance Pretty InfoExecBreadth where
 
 instance Entry InfoExecBreadth where
     entrySeverity _ = Info
+    oneLineDoc (InfoExecBreadth (ExecBreadth execBreadth)) =
+        Pretty.pretty execBreadth
     helpDoc _ = "log number of concurrent branches"
 
 infoExecBreadth :: MonadLog log => ExecBreadth -> log ()

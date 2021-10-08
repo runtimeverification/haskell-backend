@@ -16,7 +16,7 @@ git push -u origin _update
 if ! hub pr list --format '%H%n' | grep -q '^_update$'; then
   hub pull-request                      \
     --head _update --base master        \
-    --reviewer ttuegel --assign ttuegel \
+    --reviewer ana-pantilie --assign ana-pantilie \
     --labels automerge                  \
     --message 'Update regression tests'
 fi

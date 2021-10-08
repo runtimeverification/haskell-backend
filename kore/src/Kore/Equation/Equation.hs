@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Equation (
     Equation (..),
@@ -51,10 +51,10 @@ import Kore.Internal.TermLike (
     mkVar,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Sort
-import Kore.Step.Step (
+import Kore.Rewrite.UnifyingRule (
     Renaming,
  )
+import Kore.Sort
 import Kore.Substitute
 import Kore.Syntax.Application (
     Application (..),
@@ -72,6 +72,52 @@ import Pretty (
 import qualified Pretty
 import qualified SQL
 
+{- | A type for representing equational rules, which in K can appear as
+_function definition_ rules or as _simplification_ rules.
+
+The following are common to both types of equational rules:
+* the 'requires' field corresponds to the requires predicate of the K rule
+* the 'ensures' field corresponds to the ensures predicate of the K rule
+* the 'right' field corresponds to the term on the right hand side of the '=>' in the K rule.
+
+The 'left' field will vary in contents (as described below), but its structure
+should be the same: it should be a term with a function symbol at the top.
+
+For function definition rules, the Kore encoding is specified here:
+https://github.com/kframework/kore/blob/master/design-decisions/2020-05-02-function-rules.md#solution
+The _Args_ and _Prio_ predicates correspond to the 'argument' and 'antiLeft' field, respectively.
+See the linked design document for the reasons why the 'argument' is encoded like that.
+The 'antiLeft' is used to encode the priority of the function definition. This corresponds
+to the priority attribute, which only equations which are function definitions may have.
+
+In the case of simplification rules, there is no 'argument' or 'antiLeft'.
+
+The 'left' will differ between function definitions and simplification rules as in the following example:
+A K function definition rule's left hand side which looks like
+@
+    f(term1, term2, term3)
+@
+will be encoded into Kore as follows (in pseudo-Kore):
+@
+    f(Var1, Var2, Var3)
+@
+with the 'argument' predicate (modulo the properties of logical conjunction):
+@
+    \\and(\\and(\\in(Var1, term1), \\in(Var2, term2)), \\in(Var3, term3))
+@
+A K simplification rule's left hand side will get translated directly to Kore, without
+making any changes to the contents of the left hand side.
+Simplification rules are required to have the simplification attribute. Some prioritization
+of simplification rules is allowed, through the argument of the simplification attribute.
+These are regarded as hints for the backend, they don't carry semantic meaning as in the
+case of function rules and their priority attributes.
+
+For more information see:
+* https://github.com/kframework/k/blob/master/USER_MANUAL.md#function-and-functional-attributes
+* https://github.com/kframework/k/blob/master/USER_MANUAL.md#simplification-attribute-haskell-backend
+* https://github.com/kframework/k/blob/master/USER_MANUAL.md#owise-and-priority-attributes
+* 'Kore.Equation.Sentence.matchEquation', for the structure of all equation types
+-}
 data Equation variable = Equation
     { requires :: !(Predicate variable)
     , argument :: !(Maybe (Predicate variable))
@@ -86,6 +132,7 @@ data Equation variable = Equation
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation ::
@@ -282,7 +329,7 @@ refreshVariables
         let rename' :: Map (SomeVariableName variable) (SomeVariable variable)
             rename' =
                 FreeVariables.toSet originalFreeVariables
-                    & Fresh.refreshVariables avoid
+                    & Fresh.refreshVariablesSet avoid
             lookupSomeVariableName ::
                 forall variable'.
                 Injection (SomeVariableName variable) variable' =>

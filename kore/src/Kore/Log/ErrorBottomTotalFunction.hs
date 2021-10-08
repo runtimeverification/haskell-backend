@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction (..),
@@ -51,6 +51,7 @@ instance Exception ErrorBottomTotalFunction where
 
 instance Entry ErrorBottomTotalFunction where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorBottomTotalFunction"
     helpDoc _ = "errors raised when a total function is undefined"
 
 instance SQL.Table ErrorBottomTotalFunction

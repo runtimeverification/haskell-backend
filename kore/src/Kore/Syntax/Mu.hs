@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Mu (
     Mu (..),
@@ -59,7 +59,7 @@ instance
 instance Synthetic Sort (Mu variable) where
     synthetic Mu{muVariable, muChild} =
         muSort
-            & seq (matchSort muSort muChild)
+            & seq (sameSort muSort muChild)
       where
         Variable{variableSort = muSort} = muVariable
     {-# INLINE synthetic #-}

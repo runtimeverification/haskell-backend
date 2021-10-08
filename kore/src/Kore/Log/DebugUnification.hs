@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.DebugUnification (
     DebugUnification (..),
@@ -35,6 +35,9 @@ instance Pretty DebugUnification where
 
 instance Entry DebugUnification where
     entrySeverity _ = Debug
+    oneLineDoc (DebugUnificationWhile _) = "DebugUnificationWhile"
+    oneLineDoc (DebugUnificationSolved _) = "DebugUnificationSolved"
+    oneLineDoc (DebugUnificationUnsolved _) = "DebugUnificationUnsolved"
 
 -- | @WhileDebugUnification@ encloses the context of unification log entries.
 data WhileDebugUnification = WhileDebugUnification {term1, term2 :: TermLike VariableName}

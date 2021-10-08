@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Equation.Validate (
     validateAxiom,
@@ -13,8 +13,8 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Text (
     pack,
  )
+import Kore.AST.AstWithLocation
 import Kore.AST.Error
-import Kore.ASTVerifier.Verifier
 import Kore.Attribute.Axiom (
     Assoc (..),
     Comm (..),
@@ -37,19 +37,28 @@ import Kore.Equation.Sentence (
     fromSentenceAxiom,
  )
 import Kore.Internal.Predicate (
+    Predicate,
     pattern PredicateCeil,
     pattern PredicateIn,
  )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.TermLike (
+    AstLocation,
+    InternalVariable,
+    TermLike,
+    mkSortVariable,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import Kore.Unparser (
     unparse,
  )
+import Kore.Validate.Verifier
 import qualified Kore.Verified as Verified
 import Prelude.Kore
+import Pretty (Doc)
 import qualified Pretty
 
 validateAxiom ::
@@ -121,25 +130,42 @@ validateAxiom attrs verified =
             failOnJust
                 eq
                 "Expected variable, but found:"
-                $ asum $ getNotVar <$> termLikeF
+                (fmap unparseWithLocation $ asum $ getNotVar <$> termLikeF)
 
         getNotVar (TermLike.Var_ _) = Nothing
         getNotVar term = Just term
+
+    unparseWithLocation ::
+        AstWithLocation variable =>
+        InternalVariable variable =>
+        TermLike variable ->
+        (Doc ann, AstLocation)
+    unparseWithLocation t = (unparse t, locationFromAst t)
 
     checkArg _ Nothing = return ()
     checkArg eq (Just arg) =
         traverse_
             ( failOnJust eq "Found invalid subterm in argument of function equation:"
-                . checkArgIn
+                . checkArgInAndUnparse
             )
             $ Predicate.getMultiAndPredicate arg
       where
-        checkArgIn (PredicateIn (TermLike.Var_ _) term) =
-            findBadArgSubterm term
-        checkArgIn (PredicateCeil (TermLike.And_ _ (TermLike.Var_ _) term)) =
-            findBadArgSubterm term
-        checkArgIn badArg = Just $ Predicate.fromPredicate_ badArg
-
+        checkArgInAndUnparse ::
+            AstWithLocation variable =>
+            InternalVariable variable =>
+            Predicate variable ->
+            Maybe (Doc ann, AstLocation)
+        checkArgInAndUnparse predicate =
+            checkArgIn predicate <&> unparseWithLocation
+          where
+            checkArgIn (PredicateIn (TermLike.Var_ _) term) =
+                findBadArgSubterm term
+            checkArgIn (PredicateCeil (TermLike.And_ _ (TermLike.Var_ _) term)) =
+                findBadArgSubterm term
+            checkArgIn badArg =
+                -- use dummy sort variable for pretty printing inside failOnJust
+                -- the term's AstLocation will be AstLocationNone
+                Just $ Predicate.fromPredicate (mkSortVariable "_") badArg
         findBadArgSubterm term = case term of
             _
                 | TermLike.isConstructorLike term -> descend
@@ -175,14 +201,14 @@ validateAxiom attrs verified =
             descend = asum $ findBadArgSubterm <$> termF
 
     failOnJust _ _ Nothing = return ()
-    failOnJust eq errorMessage (Just term) =
+    failOnJust eq errorMessage (Just (term, location)) =
         koreFailWithLocations
-            [term]
+            [location]
             ( pack $
                 show $
                     Pretty.vsep
                         [ errorMessage
-                        , Pretty.indent 4 $ unparse term
+                        , Pretty.indent 4 term
                         , "The equation that the above occurs in is:"
                         , Pretty.indent 4 $ Pretty.pretty eq
                         ]

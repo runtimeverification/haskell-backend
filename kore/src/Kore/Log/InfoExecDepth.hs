@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.InfoExecDepth (
     InfoExecDepth (..),
@@ -37,6 +37,7 @@ instance Pretty InfoExecDepth where
 
 instance Entry InfoExecDepth where
     entrySeverity _ = Info
+    oneLineDoc (InfoExecDepth (ExecDepth execDepth)) = Pretty.pretty execDepth
     helpDoc _ = "log depth of execution graph"
 
 infoExecDepth :: MonadLog log => ExecDepth -> log ()

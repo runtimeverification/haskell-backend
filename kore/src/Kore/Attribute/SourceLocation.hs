@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Attribute.SourceLocation
 Description : Source and location attribute
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Attribute.SourceLocation (
@@ -49,6 +49,7 @@ data SourceLocation = SourceLocation
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving anyclass (Hashable)
 
 instance Default SourceLocation where
     def = SourceLocation def def

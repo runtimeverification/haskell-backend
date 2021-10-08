@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Unification.Procedure
 Description : Unification procedure.
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -23,14 +23,14 @@ import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
  )
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.AndTerms (
+import Kore.Simplify.AndTerms (
     termUnification,
  )
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify (
+import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )

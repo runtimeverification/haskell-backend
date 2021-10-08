@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Internal.From (
     SynthesizeFrom,
@@ -48,7 +48,7 @@ import Prelude.Kore
   always quantify over @a@; it is only visible here to avoid a quantified
   constraint.
 * @v :: Type@ is the type of variable names in the pattern, for example:
-  'VariableName' or 'Kore.Rewriting.RewritingVariable.RewritingVariableName'.
+  'VariableName' or 'Kore.Rewrite.RewritingVariable.RewritingVariableName'.
   @v@ should not appear by itself, but only as the argument of another type. It
   is visible here to aid type inference.
 * @p :: Type -> Type@ is the pattern type, for example: 'Predicate' or
@@ -59,6 +59,11 @@ import Prelude.Kore
   will be fixed to @p@.
 * @f :: Type -> Type -> Type@ is the base functor describing the shape of @p@;
   that is, @Data.Functor.Foldable.Base (p v) ~ CofreeF (f v) a@.
+
+One practical use case of these function is when 't' is 'TermLike'
+and 'p' is 'Predicate', making the following 'from...' functions
+'Predicate' building functions, similar to the more specialized
+'make...' functions from 'Kore.Internal.Predicate'.
 -}
 type SynthesizeFrom
     (s :: Type -> Type)

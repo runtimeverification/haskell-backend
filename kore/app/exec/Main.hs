@@ -55,19 +55,11 @@ import Kore.Internal.MultiAnd (
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
-    Conditional (..),
-    Pattern,
- )
-import Kore.Internal.Predicate (
-    makePredicate,
- )
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
     mkSortVariable,
     mkTop,
-    pattern And_,
  )
 import Kore.Log (
     KoreLogOptions (..),
@@ -91,10 +83,6 @@ import Kore.Log.WarnIfLowProductivity (
 import qualified Kore.ModelChecker.Bounded as Bounded (
     CheckResult (..),
  )
-import Kore.Parser (
-    ParsedPattern,
-    parseKorePattern,
- )
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
@@ -103,19 +91,23 @@ import Kore.Reachability (
     SomeClaim,
     StuckClaim (..),
     getConfiguration,
+    lensClaimPattern,
  )
 import qualified Kore.Reachability.Claim as Claim
-import Kore.Rewriting.RewritingVariable
-import Kore.Step
-import Kore.Step.RulePattern (
+import Kore.Rewrite
+import Kore.Rewrite.ClaimPattern (
+    getClaimPatternSort,
+ )
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.RulePattern (
     mapRuleVariables,
  )
-import Kore.Step.SMT.Lemma
-import Kore.Step.Search (
+import Kore.Rewrite.SMT.Lemma
+import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Strategy (
+import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Syntax.Definition (
@@ -125,9 +117,6 @@ import Kore.Syntax.Definition (
     Sentence (..),
  )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
-import Kore.TopBottom (
-    isTop,
- )
 import Kore.Unparser (
     unparse,
  )
@@ -161,7 +150,6 @@ import Options.SMT (
 import Prelude.Kore
 import Pretty (
     Doc,
-    Pretty (..),
     hPutDoc,
     putDoc,
     vsep,
@@ -727,18 +715,22 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     let ProveClaimsResult{stuckClaims, provenClaims} = proveResult
-    let (exitCode, final)
-            | noStuckClaims = success
-            | otherwise =
-                stuckPatterns
-                    & OrPattern.toTermLike
-                    & failure
+    let (exitCode, final) =
+            case foldFirst stuckClaims of
+                Nothing -> success -- stuckClaims is empty
+                Just claim ->
+                    stuckPatterns
+                        & OrPattern.toTermLike (getClaimPatternSort $ claimPattern claim)
+                        & failure
           where
-            noStuckClaims = isTop stuckClaims
             stuckPatterns =
                 OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
+            claimPattern claim =
+                claim
+                    & getStuckClaim
+                    & Lens.view lensClaimPattern
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, exitCode)
@@ -919,47 +911,11 @@ loadPattern mainModule (Just fileName) =
     mainPatternParseAndVerify mainModule fileName
 loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
-{- | IO action that parses a kore pattern from a filename and prints timing
- information.
--}
-mainPatternParse :: String -> Main ParsedPattern
-mainPatternParse = mainParse parseKorePattern
-
 renderResult :: KoreExecOptions -> Doc ann -> IO ()
 renderResult KoreExecOptions{outputFileName} doc =
     case outputFileName of
         Nothing -> putDoc doc
         Just outputFile -> withFile outputFile WriteMode (`hPutDoc` doc)
-
-{- | IO action that parses a kore pattern from a filename, verifies it,
- converts it to a pure pattern, and prints timing information.
--}
-mainPatternParseAndVerify ::
-    VerifiedModule StepperAttributes ->
-    String ->
-    Main (TermLike VariableName)
-mainPatternParseAndVerify indexedModule patternFileName =
-    mainPatternParse patternFileName >>= mainPatternVerify indexedModule
-
-mainParseSearchPattern ::
-    VerifiedModule StepperAttributes ->
-    String ->
-    Main (Pattern VariableName)
-mainParseSearchPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
-    case purePattern of
-        And_ _ term predicateTerm ->
-            return
-                Conditional
-                    { term
-                    , predicate =
-                        either
-                            (error . show . pretty)
-                            id
-                            (makePredicate predicateTerm)
-                    , substitution = mempty
-                    }
-        _ -> error "Unexpected non-conjunctive pattern"
 
 savedProofsModuleName :: ModuleName
 savedProofsModuleName =

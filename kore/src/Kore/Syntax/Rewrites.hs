@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Rewrites (
     Rewrites (..),
@@ -16,8 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
-syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+{- |'Rewrites' corresponds to the @\\rewrites@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'rewritesSort' is both the sort of the operands and the sort of the result.
 -}
@@ -55,5 +54,5 @@ instance Ord variable => Synthetic (FreeVariables variable) (Rewrites sort) wher
 instance Synthetic Sort (Rewrites Sort) where
     synthetic Rewrites{rewritesSort, rewritesFirst, rewritesSecond} =
         rewritesSort
-            & seq (matchSort rewritesSort rewritesFirst)
-                . seq (matchSort rewritesSort rewritesSecond)
+            & seq (sameSort rewritesSort rewritesFirst)
+                . seq (sameSort rewritesSort rewritesSecond)

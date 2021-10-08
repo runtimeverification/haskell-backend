@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.WarnIfLowProductivity (
     WarnIfLowProductivity (..),
@@ -57,6 +57,8 @@ instance Pretty WarnIfLowProductivity where
                 | otherwise = []
 instance Entry WarnIfLowProductivity where
     entrySeverity _ = Warning
+    oneLineDoc (WarnIfLowProductivity productivityPercent _) =
+        Pretty.pretty productivityPercent
     helpDoc _ = "warn when productivty (MUT time / Total time) drops below 90%"
 
 warnIfLowProductivity ::

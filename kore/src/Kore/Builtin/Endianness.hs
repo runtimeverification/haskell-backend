@@ -1,18 +1,16 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.Endianness (
     verifiers,
     littleEndianKey,
     bigEndianKey,
     unifyEquals,
+    matchUnifyEqualsEndianness,
     module Kore.Builtin.Endianness.Endianness,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.String (
@@ -31,6 +29,7 @@ import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
+import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -77,18 +76,33 @@ littleEndianVerifier = endiannessVerifier LittleEndian
 bigEndianVerifier :: ApplicationVerifier Verified.Pattern
 bigEndianVerifier = endiannessVerifier BigEndian
 
+data UnifyEqualsEndianness = UnifyEqualsEndianness
+    { end1, end2 :: !Endianness
+    , term1, term2 :: !(TermLike RewritingVariableName)
+    }
+
+-- | Matches two terms having the Endianness constructor.
+matchUnifyEqualsEndianness ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsEndianness
+matchUnifyEqualsEndianness term1 term2
+    | Endianness_ end1 <- term1
+      , Endianness_ end2 <- term2 =
+        Just UnifyEqualsEndianness{end1, end2, term1, term2}
+    | otherwise = Nothing
+{-# INLINE matchUnifyEqualsEndianness #-}
+
 unifyEquals ::
-    InternalVariable variable =>
     MonadUnify unifier =>
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyEquals termLike1@(Endianness_ end1) termLike2@(Endianness_ end2)
-    | end1 == end2 = return (Pattern.fromTermLike termLike1)
+    UnifyEqualsEndianness ->
+    unifier (Pattern RewritingVariableName)
+unifyEquals unifyData
+    | end1 == end2 = return (Pattern.fromTermLike term1)
     | otherwise =
-        lift $
-            debugUnifyBottomAndReturnBottom
-                "Cannot unify distinct constructors."
-                termLike1
-                termLike2
-unifyEquals _ _ = empty
+        debugUnifyBottomAndReturnBottom
+            "Cannot unify distinct constructors."
+            term1
+            term2
+  where
+    UnifyEqualsEndianness{end1, end2, term1, term2} = unifyData

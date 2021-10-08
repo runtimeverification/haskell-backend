@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Interpreter
 Description : REPL interpreter
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.Interpreter (
@@ -23,6 +23,11 @@ module Kore.Repl.Interpreter (
     showCurrentClaimIndex,
 ) where
 
+import Control.Exception (
+    catch,
+    displayException,
+    throwIO,
+ )
 import Control.Lens (
     (%=),
     (.=),
@@ -75,6 +80,9 @@ import Data.Graph.Inductive.PatriciaTree (
 import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
+import Data.GraphViz.Exception (
+    GraphvizException (..),
+ )
 import Data.IORef (
     IORef,
     modifyIORef,
@@ -100,6 +108,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Typeable as Typeable
 import GHC.Exts (
+    fromString,
     toList,
  )
 import GHC.IO.Handle (
@@ -139,6 +148,8 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     fromConditionWithReplacements,
  )
 import Kore.Internal.TermLike (
+    Sort (..),
+    SortVariable (..),
     TermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
@@ -163,15 +174,15 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data (
+import qualified Kore.Rewrite.RulePattern as RulePattern
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id (
     Id (..),
@@ -202,6 +213,7 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (..),
+    hPrint,
     hPutStrLn,
     stderr,
     withFile,
@@ -485,7 +497,7 @@ showGraph view mfile out = do
         then
             liftIO $
                 maybe
-                    (showDotGraph processedGraph)
+                    (showDotGraphCatchException processedGraph)
                     (saveDotGraph processedGraph format)
                     mfile
         else putStrLn' "Graphviz is not installed."
@@ -1393,8 +1405,11 @@ prettyClaimStateComponent transformation omitList =
             , provenValue = makeAuxReplOutput "Proven."
             }
   where
+    -- Sort variable used to unparse configurations.
+    -- This is only used for unparsing \bottom.
+    dummySort = SortVariableSort (SortVariable "R")
     prettyComponent =
-        unparseToString . OrPattern.toTermLike
+        unparseToString . OrPattern.toTermLike dummySort
             . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::
@@ -1442,6 +1457,27 @@ showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams gr)
         $ gr
+
+-- | A version of @showDotGraph@ that catches a @GVProgramExc@ exception.
+showDotGraphCatchException ::
+    From axiom AttrLabel.Label =>
+    From axiom RuleIndex =>
+    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    IO ()
+showDotGraphCatchException gr =
+    catch (showDotGraph gr) $ \(e :: GraphvizException) ->
+        case e of
+            GVProgramExc _ ->
+                hPrint stderr $
+                    Pretty.vsep
+                        [ "Encountered the following exception:\n"
+                        , Pretty.indent 4 $ fromString $ displayException e
+                        , "Please note that the 'graph' command is not\
+                          \ currently supported on MacOS. The user may\
+                          \ instead wish to save the graph to file using\
+                          \ the command 'graph <filename>'."
+                        ]
+            _ -> throwIO e
 
 saveDotGraph ::
     From axiom AttrLabel.Label =>

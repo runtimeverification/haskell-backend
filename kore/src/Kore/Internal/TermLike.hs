@@ -1,8 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.TermLike (
     TermLikeF (..),
@@ -19,6 +19,7 @@ module Kore.Internal.TermLike (
     setSimplified,
     setAttributeSimplified,
     forgetSimplified,
+    forgetSimplifiedIgnorePredicates,
     simplifiedAttribute,
     attributeSimplifiedAttribute,
     isFunctionPattern,
@@ -34,13 +35,12 @@ module Kore.Internal.TermLike (
     isConcrete,
     fromConcrete,
     retractKey,
-    refreshElementBinder,
     refreshSetBinder,
     depth,
-    makeSortsAgree,
+    checkSortsAgree,
 
     -- * Utility functions for dealing with sorts
-    forceSort,
+    sameTermLikeSort,
     fullyOverrideSort,
 
     -- * Reachability modalities and application
@@ -90,14 +90,6 @@ module Kore.Internal.TermLike (
     mkInhabitant,
     mkEndianness,
     mkSignedness,
-
-    -- * Predicate constructors
-    mkBottom_,
-    mkCeil_,
-    mkEquals_,
-    mkFloor_,
-    mkIn_,
-    mkTop_,
 
     -- * Sentence constructors
     mkAlias,
@@ -293,7 +285,6 @@ import Kore.Unparser (
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (
-    refreshElementVariable,
     refreshSetVariable,
  )
 import qualified Kore.Variables.Fresh as Fresh
@@ -317,7 +308,7 @@ refreshVariables ::
 refreshVariables (Attribute.FreeVariables.toNames -> avoid) term =
     rename renamed term
   where
-    renamed = Fresh.refreshVariables avoid originalFreeVariables
+    renamed = Fresh.refreshVariablesSet avoid originalFreeVariables
     originalFreeVariables =
         Attribute.FreeVariables.toSet (Attribute.freeVariables term)
 
@@ -445,6 +436,65 @@ forgetSimplified ::
     TermLike variable ->
     TermLike variable
 forgetSimplified = resynthesize
+
+{- | Forget the 'simplifiedAttribute' associated with the 'TermLike',
+ignoring any 'TermLike's which can be predicates.
+This is safe to use inside the simplifier, since `TermLike` simplification
+will not attempt to resimplify `TermLike`s which can be predicates.
+-}
+forgetSimplifiedIgnorePredicates ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
+forgetSimplifiedIgnorePredicates term@(Recursive.project -> (_ :< termF)) =
+    case termF of
+        AndF and' ->
+            Recursive.embed (newAttrs :< AndF (recursiveCall and'))
+        ApplySymbolF app ->
+            Recursive.embed (newAttrs :< ApplySymbolF (recursiveCall app))
+        ExistsF exists ->
+            Recursive.embed (newAttrs :< ExistsF (recursiveCall exists))
+        ForallF forall' ->
+            Recursive.embed (newAttrs :< ForallF (recursiveCall forall'))
+        IffF iff ->
+            Recursive.embed (newAttrs :< IffF (recursiveCall iff))
+        ImpliesF implies ->
+            Recursive.embed (newAttrs :< ImpliesF (recursiveCall implies))
+        MuF mu ->
+            Recursive.embed (newAttrs :< MuF (recursiveCall mu))
+        NuF nu ->
+            Recursive.embed (newAttrs :< NuF (recursiveCall nu))
+        OrF or' ->
+            Recursive.embed (newAttrs :< OrF (recursiveCall or'))
+        StringLiteralF stringLiteral ->
+            Recursive.embed (newAttrs :< StringLiteralF (recursiveCall stringLiteral))
+        InternalBoolF internalBool ->
+            Recursive.embed (newAttrs :< InternalBoolF (recursiveCall internalBool))
+        InternalIntF internalInt ->
+            Recursive.embed (newAttrs :< InternalIntF (recursiveCall internalInt))
+        InternalBytesF internalBytes ->
+            Recursive.embed (newAttrs :< InternalBytesF (recursiveCall internalBytes))
+        InternalStringF internalString ->
+            Recursive.embed (newAttrs :< InternalStringF (recursiveCall internalString))
+        InternalListF internalList ->
+            Recursive.embed (newAttrs :< InternalListF (recursiveCall internalList))
+        InternalMapF internalMap ->
+            Recursive.embed (newAttrs :< InternalMapF (recursiveCall internalMap))
+        InternalSetF internalSet ->
+            Recursive.embed (newAttrs :< InternalSetF (recursiveCall internalSet))
+        _ -> term
+  where
+    newAttrs =
+        synthetic $
+            Cofree.headF . Recursive.project
+                <$> termF
+    recursiveCall ::
+        Functor f =>
+        f (TermLike variable) ->
+        f (TermLike variable)
+    recursiveCall =
+        fmap forgetSimplifiedIgnorePredicates
 
 simplifiedAttribute :: TermLike variable -> Attribute.Simplified
 simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes
@@ -592,27 +642,18 @@ checkedSimplifiedFromChildren termLikeF =
 termLikeSort :: TermLike variable -> Sort
 termLikeSort = termSort . extractAttributes
 
--- | Attempts to modify p to have sort s.
-forceSort ::
+-- | Check the given `TermLike` has the same sort as that supplied
+sameTermLikeSort ::
     (InternalVariable variable, HasCallStack) =>
+    -- | expected sort
     Sort ->
     TermLike variable ->
     TermLike variable
-forceSort forcedSort =
-    if forcedSort == predicateSort
-        then id
-        else Recursive.apo forceSortWorker
+sameTermLikeSort expectedSort term
+    | expectedSort == termSort = term
+    | otherwise = illSorted expectedSort term
   where
-    forceSortWorker original@(Recursive.project -> attrs :< pattern') =
-        (:<)
-            (attrs{termSort = forcedSort})
-            ( case attrs of
-                TermAttributes{termSort = sort}
-                    | sort == forcedSort -> Left <$> pattern'
-                    | sort == predicateSort ->
-                        forceSortPredicate forcedSort original
-                    | otherwise -> illSorted forcedSort original
-            )
+    termSort = termLikeSort term
 
 {- | Attempts to modify the pattern to have the given sort, ignoring the
 previous sort and without assuming that the pattern's sorts are consistent.
@@ -725,35 +766,15 @@ forceSortPredicate
             SignednessF _ -> illSorted forcedSort original
             InjF _ -> illSorted forcedSort original
 
-{- | Call the argument function with two patterns whose sorts agree.
-
-If one pattern is flexibly sorted, the result is the rigid sort of the other
-pattern. If both patterns are flexibly sorted, then the result is
-'predicateSort'. If both patterns have the same rigid sort, that is the
-result. It is an error if the patterns are rigidly sorted but do not have the
-same sort.
--}
-makeSortsAgree ::
-    (InternalVariable variable, HasCallStack) =>
+checkSortsAgree ::
     (TermLike variable -> TermLike variable -> Sort -> a) ->
     TermLike variable ->
     TermLike variable ->
     a
-makeSortsAgree withPatterns = \pattern1 pattern2 ->
-    let sort1 = getRigidSort pattern1
-        sort2 = getRigidSort pattern2
-        sort = fromMaybe predicateSort (sort1 <|> sort2)
-        !pattern1' = forceSort sort pattern1
-        !pattern2' = forceSort sort pattern2
-     in withPatterns pattern1' pattern2' sort
-{-# INLINE makeSortsAgree #-}
-
-getRigidSort :: TermLike variable -> Maybe Sort
-getRigidSort pattern' =
-    case termLikeSort pattern' of
-        sort
-            | sort == predicateSort -> Nothing
-            | otherwise -> Just sort
+checkSortsAgree withPatterns t1 t2 = withPatterns t1 t2 (sameSort s1 s2)
+  where
+    s1 = termLikeSort t1
+    s2 = termLikeSort t2
 
 -- | Construct an 'And' pattern.
 mkAnd ::
@@ -762,7 +783,7 @@ mkAnd ::
     TermLike variable ->
     TermLike variable ->
     TermLike variable
-mkAnd t1 t2 = updateCallStack $ makeSortsAgree mkAndWorker t1 t2
+mkAnd t1 t2 = updateCallStack $ checkSortsAgree mkAndWorker t1 t2
   where
     mkAndWorker andFirst andSecond andSort =
         synthesize (AndF And{andSort, andFirst, andSecond})
@@ -771,23 +792,21 @@ mkAnd t1 t2 = updateCallStack $ makeSortsAgree mkAndWorker t1 t2
 
 It is an error if the lists are not the same length, or if any 'TermLike' cannot
 be coerced to its corresponding 'Sort'.
-
-See also: 'forceSort'
 -}
-forceSorts ::
+sameTermLikeSorts ::
     HasCallStack =>
     InternalVariable variable =>
     [Sort] ->
     [TermLike variable] ->
     [TermLike variable]
-forceSorts operandSorts children =
+sameTermLikeSorts operandSorts children =
     alignWith forceTheseSorts operandSorts children
   where
     forceTheseSorts (This _) =
         (error . show . Pretty.vsep) ("Too few arguments:" : expected)
     forceTheseSorts (That _) =
         (error . show . Pretty.vsep) ("Too many arguments:" : expected)
-    forceTheseSorts (These sort termLike) = forceSort sort termLike
+    forceTheseSorts (These sort termLike) = sameTermLikeSort sort termLike
     expected =
         [ "Expected:"
         , Pretty.indent 4 (Unparser.arguments operandSorts)
@@ -817,7 +836,7 @@ mkApplyAlias alias children =
     application =
         Application
             { applicationSymbolOrAlias = alias
-            , applicationChildren = forceSorts operandSorts children
+            , applicationChildren = sameTermLikeSorts operandSorts children
             }
     operandSorts = applicationSortsOperands (aliasSorts alias)
 
@@ -852,7 +871,7 @@ symbolApplication ::
 symbolApplication symbol children =
     Application
         { applicationSymbolOrAlias = symbol
-        , applicationChildren = forceSorts operandSorts children
+        , applicationChildren = sameTermLikeSorts operandSorts children
         }
   where
     operandSorts = applicationSortsOperands (symbolSorts symbol)
@@ -900,7 +919,7 @@ applyAlias sentence params children =
       where
         forceChildSort =
             \case
-                These sort pattern' -> forceSort sort pattern'
+                These sort pattern' -> sameTermLikeSort sort pattern'
                 This _ ->
                     (error . show . Pretty.vsep)
                         ("Too few parameters:" : expected)
@@ -973,10 +992,7 @@ applySymbol_ ::
     TermLike variable
 applySymbol_ sentence = updateCallStack . applySymbol sentence []
 
-{- | Construct a 'Bottom' pattern in the given sort.
-
-See also: 'mkBottom_'
--}
+-- | Construct a 'Bottom' pattern in the given sort.
 mkBottom ::
     HasCallStack =>
     InternalVariable variable =>
@@ -985,23 +1001,7 @@ mkBottom ::
 mkBottom bottomSort =
     updateCallStack $ synthesize (BottomF Bottom{bottomSort})
 
-{- | Construct a 'Bottom' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use
-'mkBottom' instead.
-
-See also: 'mkBottom'
--}
-mkBottom_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable
-mkBottom_ = updateCallStack $ mkBottom predicateSort
-
-{- | Construct a 'Ceil' pattern in the given sort.
-
-See also: 'mkCeil_'
--}
+-- | Construct a 'Ceil' pattern in the given sort.
 mkCeil ::
     HasCallStack =>
     InternalVariable variable =>
@@ -1013,20 +1013,6 @@ mkCeil ceilResultSort ceilChild =
         synthesize (CeilF Ceil{ceilOperandSort, ceilResultSort, ceilChild})
   where
     ceilOperandSort = termLikeSort ceilChild
-
-{- | Construct a 'Ceil' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use 'mkCeil'
-instead.
-
-See also: 'mkCeil'
--}
-mkCeil_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable
-mkCeil_ = updateCallStack . mkCeil predicateSort
 
 -- | Construct an internal bool pattern.
 mkInternalBool ::
@@ -1084,10 +1070,7 @@ mkDomainValue ::
     TermLike variable
 mkDomainValue = updateCallStack . synthesize . DomainValueF
 
-{- | Construct an 'Equals' pattern in the given sort.
-
-See also: 'mkEquals_'
--}
+-- | Construct an 'Equals' pattern in the given sort.
 mkEquals ::
     HasCallStack =>
     InternalVariable variable =>
@@ -1096,7 +1079,7 @@ mkEquals ::
     TermLike variable ->
     TermLike variable
 mkEquals equalsResultSort t1 =
-    updateCallStack . makeSortsAgree mkEqualsWorker t1
+    updateCallStack . checkSortsAgree mkEqualsWorker t1
   where
     mkEqualsWorker equalsFirst equalsSecond equalsOperandSort =
         synthesize (EqualsF equals)
@@ -1108,21 +1091,6 @@ mkEquals equalsResultSort t1 =
                 , equalsFirst
                 , equalsSecond
                 }
-
-{- | Construct a 'Equals' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use
-'mkEquals' instead.
-
-See also: 'mkEquals'
--}
-mkEquals_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable ->
-    TermLike variable
-mkEquals_ t1 t2 = updateCallStack $ mkEquals predicateSort t1 t2
 
 -- | Construct an 'Exists' pattern.
 mkExists ::
@@ -1147,10 +1115,7 @@ mkExistsN ::
     TermLike variable
 mkExistsN = (updateCallStack .) . appEndo . foldMap (Endo . mkExists)
 
-{- | Construct a 'Floor' pattern in the given sort.
-
-See also: 'mkFloor_'
--}
+-- | Construct a 'Floor' pattern in the given sort.
 mkFloor ::
     HasCallStack =>
     InternalVariable variable =>
@@ -1162,20 +1127,6 @@ mkFloor floorResultSort floorChild =
         synthesize (FloorF Floor{floorOperandSort, floorResultSort, floorChild})
   where
     floorOperandSort = termLikeSort floorChild
-
-{- | Construct a 'Floor' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use 'mkFloor'
-instead.
-
-See also: 'mkFloor'
--}
-mkFloor_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable
-mkFloor_ = updateCallStack . mkFloor predicateSort
 
 -- | Construct a 'Forall' pattern.
 mkForall ::
@@ -1207,7 +1158,7 @@ mkIff ::
     TermLike variable ->
     TermLike variable ->
     TermLike variable
-mkIff t1 t2 = updateCallStack $ makeSortsAgree mkIffWorker t1 t2
+mkIff t1 t2 = updateCallStack $ checkSortsAgree mkIffWorker t1 t2
   where
     mkIffWorker iffFirst iffSecond iffSort =
         synthesize (IffF Iff{iffSort, iffFirst, iffSecond})
@@ -1219,7 +1170,7 @@ mkImplies ::
     TermLike variable ->
     TermLike variable ->
     TermLike variable
-mkImplies t1 t2 = updateCallStack $ makeSortsAgree mkImpliesWorker t1 t2
+mkImplies t1 t2 = updateCallStack $ checkSortsAgree mkImpliesWorker t1 t2
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
         synthesize (ImpliesF implies')
@@ -1237,7 +1188,7 @@ mkIn ::
     TermLike variable ->
     TermLike variable ->
     TermLike variable
-mkIn inResultSort t1 t2 = updateCallStack $ makeSortsAgree mkInWorker t1 t2
+mkIn inResultSort t1 t2 = updateCallStack $ checkSortsAgree mkInWorker t1 t2
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
         synthesize (InF in')
@@ -1250,21 +1201,6 @@ mkIn inResultSort t1 t2 = updateCallStack $ makeSortsAgree mkInWorker t1 t2
                 , inContainingChild
                 }
 
-{- | Construct a 'In' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use 'mkIn'
-instead.
-
-See also: 'mkIn'
--}
-mkIn_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable ->
-    TermLike variable
-mkIn_ t1 t2 = updateCallStack $ mkIn predicateSort t1 t2
-
 -- | Construct a 'Mu' pattern.
 mkMu ::
     HasCallStack =>
@@ -1272,7 +1208,7 @@ mkMu ::
     SetVariable variable ->
     TermLike variable ->
     TermLike variable
-mkMu muVar = updateCallStack . makeSortsAgree mkMuWorker (mkSetVar muVar)
+mkMu muVar = updateCallStack . checkSortsAgree mkMuWorker (mkSetVar muVar)
   where
     mkMuWorker (SetVar_ muVar') muChild _ =
         synthesize (MuF Mu{muVariable = muVar', muChild})
@@ -1307,7 +1243,7 @@ mkNu ::
     SetVariable variable ->
     TermLike variable ->
     TermLike variable
-mkNu nuVar = updateCallStack . makeSortsAgree mkNuWorker (mkSetVar nuVar)
+mkNu nuVar = updateCallStack . checkSortsAgree mkNuWorker (mkSetVar nuVar)
   where
     mkNuWorker (SetVar_ nuVar') nuChild _ =
         synthesize (NuF Nu{nuVariable = nuVar', nuChild})
@@ -1320,7 +1256,7 @@ mkOr ::
     TermLike variable ->
     TermLike variable ->
     TermLike variable
-mkOr t1 t2 = updateCallStack $ makeSortsAgree mkOrWorker t1 t2
+mkOr t1 t2 = updateCallStack $ checkSortsAgree mkOrWorker t1 t2
   where
     mkOrWorker orFirst orSecond orSort =
         synthesize (OrF Or{orSort, orFirst, orSecond})
@@ -1332,7 +1268,7 @@ mkRewrites ::
     TermLike variable ->
     TermLike variable ->
     TermLike variable
-mkRewrites t1 t2 = updateCallStack $ makeSortsAgree mkRewritesWorker t1 t2
+mkRewrites t1 t2 = updateCallStack $ checkSortsAgree mkRewritesWorker t1 t2
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
         synthesize (RewritesF rewrites')
@@ -1350,19 +1286,6 @@ mkTop ::
     TermLike variable
 mkTop topSort =
     updateCallStack $ synthesize (TopF Top{topSort})
-
-{- | Construct a 'Top' pattern in 'predicateSort'.
-
-This should not be used outside "Kore.Internal.Predicate"; please use
-'mkTop' instead.
-
-See also: 'mkTop'
--}
-mkTop_ ::
-    HasCallStack =>
-    InternalVariable variable =>
-    TermLike variable
-mkTop_ = updateCallStack $ mkTop predicateSort
 
 -- | Construct an element variable pattern.
 mkElemVar ::
@@ -1879,13 +1802,6 @@ refreshBinder
             & fromMaybe binder
       where
         Binder{binderVariable, binderChild} = binder
-
-refreshElementBinder ::
-    InternalVariable variable =>
-    Attribute.FreeVariables variable ->
-    Binder (ElementVariable variable) (TermLike variable) ->
-    Binder (ElementVariable variable) (TermLike variable)
-refreshElementBinder = refreshBinder refreshElementVariable
 
 refreshSetBinder ::
     InternalVariable variable =>

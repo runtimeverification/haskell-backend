@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.WarnSymbolSMTRepresentation (
     WarnSymbolSMTRepresentation (..),
@@ -12,6 +12,7 @@ import qualified Generics.SOP as SOP
 import Kore.Attribute.Symbol (
     getSmthook,
     getSmtlib,
+    sourceLocation,
  )
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.TermLike
@@ -40,6 +41,8 @@ instance Pretty WarnSymbolSMTRepresentation where
 
 instance Entry WarnSymbolSMTRepresentation where
     entrySeverity _ = Warning
+    oneLineDoc (WarnSymbolSMTRepresentation Symbol{symbolAttributes}) =
+        Pretty.pretty (sourceLocation symbolAttributes)
     helpDoc _ = "warn when a symbol cannot be translated for the SMT solver, despite being given an explicit translation"
 
 instance SQL.Table WarnSymbolSMTRepresentation

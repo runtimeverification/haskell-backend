@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Or (
     Or (..),
@@ -19,9 +19,7 @@ import Pretty (
  )
 import qualified Pretty
 
-{- |'Or' corresponds to the @\or@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Or' corresponds to the @\\or@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'orSort' is both the sort of the operands and the sort of the result.
 -}
@@ -83,6 +81,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
 instance Synthetic Sort (Or Sort) where
     synthetic Or{orSort, orFirst, orSecond} =
         orSort
-            & seq (matchSort orSort orFirst)
-                . seq (matchSort orSort orSecond)
+            & seq (sameSort orSort orFirst)
+                . seq (sameSort orSort orSecond)
     {-# INLINE synthetic #-}

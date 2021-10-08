@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Exec
 Description : Expose concrete execution as a library
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Stability   : experimental
 Portability : portable
 
@@ -16,6 +16,9 @@ module Kore.Exec (
     prove,
     proveWithRepl,
     boundedModelCheck,
+    matchDisjunction,
+    checkFunctions,
+    checkBothMatch,
     Rewrite,
     Equality,
 ) where
@@ -29,6 +32,8 @@ import Control.Error (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
+    filterM,
+    join,
     (>=>),
  )
 import Control.Monad.Catch (
@@ -39,6 +44,7 @@ import Control.Monad.Trans.Except (
     runExceptT,
     throwE,
  )
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
  )
@@ -51,6 +57,9 @@ import Data.Generics.Wrapped (
 import Data.Limit (
     Limit (..),
  )
+import Data.List (
+    tails,
+ )
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -60,9 +69,18 @@ import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Equation (
     Equation,
+    extractEquations,
+    isSimplificationRule,
+    right,
+ )
+import qualified Kore.Equation as Equation (
+    Equation (antiLeft),
+    argument,
+    requires,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -86,11 +104,18 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    fromPredicate_,
+    fromPredicate,
     makeMultipleOrPredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.ErrorEquationRightFunction (
+    errorEquationRightFunction,
+ )
+import Kore.Log.ErrorEquationsSameMatch (
+    errorEquationsSameMatch,
+ )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
@@ -122,58 +147,62 @@ import Kore.Reachability (
  )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
-import Kore.Rewriting.RewritingVariable
-import Kore.Step
-import Kore.Step.Rule (
+import Kore.Rewrite
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.Rule (
     extractImplicationClaims,
     extractRewriteAxioms,
  )
-import qualified Kore.Step.Rule.Combine as Rules (
+import qualified Kore.Rewrite.Rule.Combine as Rules (
     mergeRules,
     mergeRulesConsecutiveBatches,
  )
-import Kore.Step.Rule.Expand (
+import Kore.Rewrite.Rule.Expand (
     ExpandSingleConstructors (..),
  )
-import Kore.Step.Rule.Simplify (
+import Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     ImplicationRule (..),
     RewriteRule (..),
     getRewriteRule,
     lhsEqualsRhs,
     mapRuleVariables,
  )
-import Kore.Step.RulePattern as RulePattern (
+import Kore.Rewrite.RulePattern as RulePattern (
     RulePattern (..),
  )
-import Kore.Step.Search (
+import Kore.Rewrite.Search (
     searchGraph,
  )
-import qualified Kore.Step.Search as Search
-import Kore.Step.Simplification.Data (
-    evalSimplifier,
- )
-import qualified Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Rule as Rule
-import Kore.Step.Simplification.Simplify (
-    MonadSimplify,
- )
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition (
+import qualified Kore.Rewrite.Search as Search
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
  )
+import Kore.Simplify.Data (
+    evalSimplifier,
+ )
+import qualified Kore.Simplify.Data as Simplifier
+import qualified Kore.Simplify.Pattern as Pattern
+import qualified Kore.Simplify.Rule as Rule
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+ )
 import Kore.Syntax.Module (
     ModuleName,
+ )
+import Kore.TopBottom (
+    isBottom,
  )
 import Kore.Unparser (
     unparseToText,
     unparseToText2,
  )
 import Log (
+    LoggerT,
     MonadLog,
  )
 import qualified Log
@@ -187,6 +216,7 @@ import Prof
 import SMT (
     MonadSMT,
     SMT,
+    runNoSMT,
  )
 import System.Exit (
     ExitCode (..),
@@ -258,7 +288,7 @@ exec
                         , (ExecDepth 0, Start initialConfig)
                         )
             let (depths, finalConfigs) = unzip finals
-            infoExecDepth (maximum depths)
+            infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
                     MultiOr.make $
                         catMaybes $
@@ -266,9 +296,9 @@ exec
                                 <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
-                    forceSort initialSort $
-                        OrPattern.toTermLike
-                            (MultiOr.map getRewritingPattern finalConfigs')
+                    MultiOr.map getRewritingPattern finalConfigs'
+                        & OrPattern.toTermLike initialSort
+                        & sameTermLikeSort initialSort
             return (exitCode, finalTerm)
       where
         dropStrategy = snd
@@ -423,9 +453,9 @@ search
                 orPredicate =
                     makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
             return
-                . forceSort patternSort
+                . sameTermLikeSort patternSort
                 . getRewritingTerm
-                . fromPredicate_
+                . fromPredicate patternSort
                 $ orPredicate
       where
         patternSort = termLikeSort termLike
@@ -574,6 +604,108 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             searchOrder
             (head claims, depthLimit)
 
+matchDisjunction ::
+    VerifiedModule Attribute.Symbol ->
+    Pattern RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    LoggerT IO (TermLike VariableName)
+matchDisjunction mainModule matchPattern disjunctionPattern =
+    do
+        SMT.runNoSMT $
+            evalSimplifier mainModule $ do
+                results <-
+                    traverse (runMaybeT . match matchPattern) disjunctionPattern
+                        <&> catMaybes
+                        <&> concatMap toList
+                results
+                    <&> Condition.toPredicate
+                    & Predicate.makeMultipleOrPredicate
+                    & Predicate.fromPredicate sort
+                    & getRewritingTerm
+                    & return
+  where
+    sort = Pattern.patternSort matchPattern
+    match = Search.matchWith SideCondition.top
+
+{- | Ensure that for every equation in a function definition, the right-hand
+side of the equation is a function pattern. 'checkFunctions' first extracts
+equations from a verified module to a list of equations. Then it checks that
+each equation in the list is a function pattern. 'filter' the equations that
+fail the check, and pass the list to 'checkResults'. If there were no bad
+equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
+logs an error message for each bad equation before returning
+@'ExitFailure' 3@.
+See 'checkEquation',
+'Kore.Equation.Registry.extractEquations',
+'Kore.Internal.TermLike.isFunctionPattern',
+and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
+-}
+checkFunctions ::
+    MonadLog m =>
+    -- | The main module
+    VerifiedModule StepperAttributes ->
+    m ExitCode
+checkFunctions verifiedModule =
+    checkResults $ filter (not . isFunctionPattern . right) equations
+  where
+    equations =
+        filter (not . Kore.Equation.isSimplificationRule) $
+            join $ Map.elems $ extractEquations verifiedModule
+    -- if any equations fail the check, log the equations and
+    -- the entire function returns ExitFailure 3.
+    checkResults [] = return ExitSuccess
+    checkResults eqns =
+        mapM_ errorEquationRightFunction eqns $> ExitFailure 3
+
+{- | Returns true when both equations match the same term.  See:
+https://github.com/kframework/kore/issues/2472#issue-833143685
+-}
+bothMatch ::
+    MonadSimplify m =>
+    Equation VariableName ->
+    Equation VariableName ->
+    m Bool
+bothMatch eq1 eq2 =
+    let pre1 = Equation.requires eq1
+        pre2 = Equation.requires eq2
+        arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1
+        arg2 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq2
+        prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
+        prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
+        check =
+            Predicate.makeAndPredicate pre1 $
+                Predicate.makeAndPredicate pre2 $
+                    Predicate.makeAndPredicate arg1 $
+                        Predicate.makeAndPredicate arg2 $
+                            Predicate.makeAndPredicate prio1 prio2
+        check' = Predicate.mapVariables (pure mkConfigVariable) check
+        sort = termLikeSort $ right eq1
+        patt = Pattern.fromPredicateSorted sort check'
+     in (not . isBottom) <$> Pattern.simplify patt
+
+{- | Checks if any function definition in the module carries two equations that both match
+same term.
+-}
+checkBothMatch ::
+    MonadSimplify m =>
+    -- | The main module
+    VerifiedModule StepperAttributes ->
+    m ExitCode
+checkBothMatch verifiedModule =
+    filterM (uncurry bothMatch) equations
+        >>= checkResults
+  where
+    equations =
+        join $
+            map
+                (mkPairs . filter (not . Kore.Equation.isSimplificationRule))
+                (Map.elems $ extractEquations verifiedModule)
+    -- produces all 'in-order' pairs in a list
+    mkPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
+    checkResults [] = return ExitSuccess
+    checkResults eqnPairs =
+        mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3
+
 -- | Rule merging
 mergeAllRules ::
     ( MonadLog smt
@@ -669,10 +801,10 @@ extractAndSimplifyRules rules names = do
             return
             (Map.lookup ruleName registry)
 
-    whenDuplicate logError withNames = do
+    whenDuplicate logErr withNames = do
         let duplicateNames =
                 findCollisions . mkMapWithCollisions $ withNames
-        unless (null duplicateNames) (logError duplicateNames)
+        unless (null duplicateNames) (logErr duplicateNames)
 
 mkMapWithCollisions ::
     Ord key =>

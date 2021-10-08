@@ -3,8 +3,8 @@
 {- |
 Module      : Kore.Builtin.Int
 Description : Built-in arbitrary-precision integer sort
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -27,7 +27,6 @@ module Kore.Builtin.Int (
     asPattern,
     asPartialPattern,
     parse,
-    unifyIntEq,
     unifyInt,
     matchInt,
     matchUnifyIntEq,
@@ -101,22 +100,15 @@ import GHC.Integer.GMP.Internals (
 import GHC.Integer.Logarithms (
     integerLog2#,
  )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
 import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Builtin (
+    UnifyEq (..),
+ )
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional (
-    term,
- )
-import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -125,20 +117,13 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol (
-    symbolHook,
- )
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Step.Simplification.NotSimplifier (
-    NotSimplifier (..),
- )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
-    TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -424,17 +409,9 @@ evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
     conditions = foldMap mkCeilUnlessDefined arguments
 evalEq _ _ _ = Builtin.wrongArity eqKey
 
--- | Match the @INT.eq@ hooked symbol.
-matchIntEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
-matchIntEqual =
-    matchEqTerm $ \symbol ->
-        do
-            hook2 <- (getHook . symbolHook) symbol
-            Monad.guard (hook2 == eqKey)
-            & isJust
-
 data UnifyInt = UnifyInt
     { int1, int2 :: !InternalInt
+    , term1, term2 :: !(TermLike RewritingVariableName)
     }
 
 {- | Matches
@@ -453,10 +430,10 @@ matchInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyInt
-matchInt first second
-    | InternalInt_ int1 <- first
-      , InternalInt_ int2 <- second =
-        Just UnifyInt{int1, int2}
+matchInt term1 term2
+    | InternalInt_ int1 <- term1
+      , InternalInt_ int2 <- term2 =
+        Just UnifyInt{int1, int2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchInt #-}
 
@@ -464,14 +441,12 @@ matchInt first second
 unifyInt ::
     forall unifier.
     MonadUnify unifier =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
     UnifyInt ->
     unifier (Pattern RewritingVariableName)
-unifyInt term1 term2 unifyData =
+unifyInt unifyData =
     assert (on (==) internalIntSort int1 int2) worker
   where
-    UnifyInt{int1, int2} = unifyData
+    UnifyInt{int1, int2, term1, term2} = unifyData
     worker :: unifier (Pattern RewritingVariableName)
     worker
         | on (==) internalIntValue int1 int2 =
@@ -479,50 +454,16 @@ unifyInt term1 term2 unifyData =
         | otherwise =
             debugUnifyBottomAndReturnBottom "distinct integers" term1 term2
 
-data UnifyIntEq = UnifyIntEq
-    { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
-    , internalBool :: !InternalBool
-    }
-
 {- | Matches
 @
-\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_))
+\\equals{_, _}(eqInt{_}(_, _), \\dv{Bool}(_)),
 @
+
+symmetric in the two arguments.
 -}
 matchUnifyIntEq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    Maybe UnifyIntEq
-matchUnifyIntEq first second
-    | Just eqTerm <- matchIntEqual first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
-        Just UnifyIntEq{eqTerm, internalBool}
-    | otherwise = Nothing
+    Maybe UnifyEq
+matchUnifyIntEq = Builtin.matchUnifyEq eqKey
 {-# INLINE matchUnifyIntEq #-}
-
-{- | Unification of the @INT.eq@ symbol.
-
-This function is suitable only for equality simplification.
--}
-unifyIntEq ::
-    forall unifier.
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
-    UnifyIntEq ->
-    unifier (Pattern RewritingVariableName)
-unifyIntEq unifyChildren (NotSimplifier notSimplifier) unifyData =
-    do
-        solution <- OrPattern.gather $ unifyChildren operand1 operand2
-        solution' <-
-            MultiOr.map eraseTerm solution
-                & if internalBoolValue internalBool
-                    then pure
-                    else notSimplifier SideCondition.top
-        scattered <- Unify.scatter solution'
-        return scattered{term = mkInternalBool internalBool}
-  where
-    UnifyIntEq{eqTerm, internalBool} = unifyData
-    EqTerm{operand1, operand2} = eqTerm
-    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm

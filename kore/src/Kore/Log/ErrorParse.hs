@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.ErrorParse (
     ErrorParse (..),
@@ -30,6 +30,7 @@ instance Pretty ErrorParse where
 
 instance Entry ErrorParse where
     entrySeverity _ = Error
+    oneLineDoc _ = "ErrorParse"
 
 errorParse :: MonadThrow log => String -> log a
 errorParse message =

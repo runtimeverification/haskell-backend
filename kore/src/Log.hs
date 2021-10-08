@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Log (
     -- * Entries
@@ -102,6 +102,7 @@ data LogMessage = LogMessage
 
 instance Entry LogMessage where
     entrySeverity LogMessage{severity} = severity
+    oneLineDoc (LogMessage{severity}) = prettySeverity severity
 
 instance Pretty LogMessage where
     pretty LogMessage{message, callstack} =

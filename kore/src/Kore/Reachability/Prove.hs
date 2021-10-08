@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 
 This should be imported qualified.
@@ -76,6 +76,7 @@ import Kore.Internal.Predicate (
     pattern PredicateCeil,
     pattern PredicateNot,
  )
+import Kore.Internal.TermLike (Sort)
 import Kore.Log.DebugBeginClaim
 import Kore.Log.DebugProven
 import Kore.Log.DebugTransition (
@@ -99,25 +100,25 @@ import qualified Kore.Reachability.Prim as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
-import Kore.Rewriting.RewritingVariable (
+import Kore.Rewrite.ClaimPattern (
+    mkGoal,
+ )
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import Kore.Step.ClaimPattern (
-    mkGoal,
- )
-import Kore.Step.Simplification.Simplify
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,
     Strategy,
     executionHistoryStep,
  )
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition (
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import qualified Kore.Step.Transition as Transition
+import qualified Kore.Rewrite.Transition as Transition
+import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Kore.Unparser
 import Log (
@@ -144,16 +145,17 @@ type CommonTransitionRule m =
  the configuration will be '\\bottom'.
 -}
 lhsClaimStateTransformer ::
+    Sort ->
     ClaimStateTransformer
         SomeClaim
         (Pattern RewritingVariableName)
-lhsClaimStateTransformer =
+lhsClaimStateTransformer sort =
     ClaimStateTransformer
         { claimedTransformer = getConfiguration
         , remainingTransformer = getConfiguration
         , rewrittenTransformer = getConfiguration
         , stuckTransformer = getConfiguration
-        , provenValue = Pattern.bottom
+        , provenValue = Pattern.bottomOf sort
         }
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.

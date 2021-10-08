@@ -1,11 +1,12 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 
 Representation of conditional terms.
 -}
 module Kore.Internal.Conditional (
     Conditional (..),
+    Condition,
     withoutTerm,
     withCondition,
     andCondition,
@@ -36,6 +37,9 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified,
  )
 import Kore.Debug
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import Kore.Internal.Predicate (
     Predicate,
     unparse2WithSort,
@@ -96,6 +100,9 @@ data Conditional variable child = Conditional
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
+
+-- | A predicate and substitution without an accompanying term.
+type Condition variable = Conditional variable ()
 
 instance
     ( Debug child
@@ -230,6 +237,13 @@ instance
             . from
                 @(Map (SomeVariable variable) (TermLike variable))
                 @(Substitution variable)
+
+instance
+    InternalVariable variable =>
+    From (Condition variable) (MultiAnd (Predicate variable))
+    where
+    from = Predicate.toMultiAnd . from @(Condition _) @(Predicate _)
+    {-# INLINE from #-}
 
 instance
     ( Substitute child
@@ -533,7 +547,8 @@ markPredicateSimplifiedConditional
 See 'markPredicateSimplified' for details.
 -}
 setPredicateSimplified ::
-    (InternalVariable variable) =>
+    HasCallStack =>
+    InternalVariable variable =>
     Attribute.Simplified ->
     Conditional variable term ->
     Conditional variable term

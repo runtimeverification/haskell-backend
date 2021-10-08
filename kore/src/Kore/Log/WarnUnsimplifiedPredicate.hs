@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Log.WarnUnsimplifiedPredicate (
     WarnUnsimplifiedPredicate (..),
@@ -16,7 +16,7 @@ import Kore.Internal.MultiOr (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import Kore.Rewriting.RewritingVariable
+import Kore.Rewrite.RewritingVariable
 import Log
 import Prelude.Kore
 import Pretty (
@@ -51,6 +51,7 @@ instance Pretty WarnUnsimplifiedPredicate where
 
 instance Entry WarnUnsimplifiedPredicate where
     entrySeverity _ = Warning
+    oneLineDoc WarnUnsimplifiedPredicate{limit} = Pretty.pretty limit
     helpDoc _ = "warn when a predicate is not simplified"
 
 warnUnsimplifiedPredicate ::

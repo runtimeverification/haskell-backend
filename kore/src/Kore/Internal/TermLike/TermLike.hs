@@ -1,8 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2019-2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.TermLike.TermLike (
     TermLike (..),
@@ -137,6 +137,9 @@ import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (refreshVariable)
 import Prelude.Kore
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 import qualified SQL
 
@@ -744,6 +747,9 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
     unparse2 term =
         case Recursive.project term of
             (_ :< pat) -> unparse2 pat
+
+instance InternalVariable variable => Pretty (TermLike variable) where
+    pretty = unparse
 
 type instance
     Base (TermLike variable) =

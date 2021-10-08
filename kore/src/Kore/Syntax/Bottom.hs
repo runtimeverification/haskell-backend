@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Bottom (
     Bottom (..),
@@ -15,8 +15,7 @@ import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
 
-{- | 'Bottom' corresponds to the @\bottom@ branches of the @pattern@ syntactic
-category from the Semantics of K, Section 9.1.4 (Patterns).
+{- | 'Bottom' corresponds to the @\\bottom@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'bottomSort' is the sort of the result.
 -}

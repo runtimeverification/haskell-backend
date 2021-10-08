@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Not (
     Not (..),
@@ -17,9 +17,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Not' corresponds to the @\not@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Not' corresponds to the @\\not@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'notSort' is both the sort of the operand and the sort of the result.
 -}
@@ -61,5 +59,5 @@ instance Synthetic (FreeVariables variable) (Not child) where
 
 instance Synthetic Sort (Not Sort) where
     synthetic Not{notSort, notChild} =
-        notSort `matchSort` notChild
+        notSort `sameSort` notChild
     {-# INLINE synthetic #-}

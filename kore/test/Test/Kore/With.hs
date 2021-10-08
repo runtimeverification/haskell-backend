@@ -32,10 +32,7 @@ import Kore.Internal.InternalSet
 import Kore.Internal.TermLike (
     Key,
  )
-import qualified Kore.Sort as Kore (
-    Sort,
- )
-import qualified Kore.Step.SMT.AST as AST (
+import qualified Kore.Rewrite.SMT.AST as AST (
     Declarations (Declarations),
     IndirectSymbolDeclaration (IndirectSymbolDeclaration),
     KoreSortDeclaration (..),
@@ -47,17 +44,20 @@ import qualified Kore.Step.SMT.AST as AST (
     UnresolvedKoreSymbolDeclaration,
     UnresolvedSymbol,
  )
-import qualified Kore.Step.SMT.AST as AST.Declarations (
+import qualified Kore.Rewrite.SMT.AST as AST.Declarations (
     Declarations (..),
  )
-import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration (
+import qualified Kore.Rewrite.SMT.AST as AST.IndirectSymbolDeclaration (
     IndirectSymbolDeclaration (..),
  )
-import qualified Kore.Step.SMT.AST as AST.Sort (
+import qualified Kore.Rewrite.SMT.AST as AST.Sort (
     Sort (..),
  )
-import qualified Kore.Step.SMT.AST as AST.Symbol (
+import qualified Kore.Rewrite.SMT.AST as AST.Symbol (
     Symbol (..),
+ )
+import qualified Kore.Sort as Kore (
+    Sort,
  )
 import Kore.Syntax.Definition (
     Definition (Definition),
@@ -240,9 +240,9 @@ instance
 
 instance With (AST.Sort sort symbol name) (AST.Constructor sort symbol name) where
     with
-        s@AST.Sort{declaration}
+        s@AST.Sort{sortDeclaration}
         constructor =
-            s{AST.Sort.declaration = declaration `with` constructor}
+            s{AST.Sort.sortDeclaration = sortDeclaration `with` constructor}
 
 instance
     With
@@ -288,9 +288,9 @@ instance With (Kore.Id, AST.UnresolvedSymbol) Kore.Sort where
 
 instance With AST.UnresolvedSymbol Kore.Sort where
     with
-        s@AST.Symbol{declaration}
+        s@AST.Symbol{symbolDeclaration}
         sort =
-            s{AST.Symbol.declaration = declaration `with` sort}
+            s{AST.Symbol.symbolDeclaration = symbolDeclaration `with` sort}
 
 instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
     with (AST.SymbolDeclaredDirectly _) _ =

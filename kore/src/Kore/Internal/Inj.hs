@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.Inj (
     Inj (..),
@@ -85,7 +85,7 @@ instance Unparse a => Unparse (Inj a) where
 
 instance Synthetic Sort Inj where
     synthetic Inj{injFrom, injTo, injChild} =
-        injTo & seq (matchSort injFrom injChild)
+        injTo & seq (sameSort injFrom injChild)
     {-# INLINE synthetic #-}
 
 instance Synthetic (FreeVariables variable) Inj where

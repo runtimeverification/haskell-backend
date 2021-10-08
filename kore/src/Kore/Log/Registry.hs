@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.Registry (
     parseEntryType,
@@ -34,7 +34,7 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import Kore.Equation.Application (
+import Kore.Equation.DebugEquation (
     DebugApplyEquation,
     DebugAttemptEquation,
  )
@@ -108,6 +108,9 @@ import Kore.Log.InfoReachability (
  )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
+ )
+import Kore.Log.WarnClaimRHSIsBottom (
+    WarnClaimRHSIsBottom,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
@@ -193,6 +196,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnStuckClaimState
             , mk $ Proxy @WarnDepthLimitExceeded
             , mk $ Proxy @WarnBoundedModelChecker
+            , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
             , mk $ Proxy @WarnRetrySolverQuery

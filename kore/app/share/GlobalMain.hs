@@ -22,6 +22,8 @@ module GlobalMain (
     LoadedModule,
     loadDefinitions,
     loadModule,
+    mainParseSearchPattern,
+    mainPatternParseAndVerify,
 ) where
 
 import Control.Exception (
@@ -51,17 +53,15 @@ import Data.Version (
 import GHC.Stack (
     emptyCallStack,
  )
-import Kore.ASTVerifier.DefinitionVerifier (
-    sortModuleClaims,
-    verifyAndIndexDefinitionWithBase,
- )
-import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.Attribute.Definition (
     KFileLocations (..),
     parseKFileAttributes,
  )
 import Kore.Attribute.SourceLocation (
     notDefault,
+ )
+import Kore.Attribute.Symbol (
+    StepperAttributes,
  )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
@@ -70,6 +70,10 @@ import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
+import Kore.Internal.Conditional (Conditional (..))
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Predicate (makePredicate)
+import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
 import Kore.Log.ErrorParse (
     errorParse,
@@ -80,21 +84,27 @@ import Kore.Log.ErrorVerify (
 import Kore.Parser (
     ParsedPattern,
     parseKoreDefinition,
+    parseKorePattern,
  )
 import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils (
     parseOnly,
  )
-import Kore.Step.Strategy (
+import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
-import Kore.Syntax
+import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
     ParsedDefinition,
     definitionAttributes,
     getModuleNameForError,
  )
+import Kore.Validate.DefinitionVerifier (
+    sortModuleClaims,
+    verifyAndIndexDefinitionWithBase,
+ )
+import Kore.Validate.PatternVerifier as PatternVerifier
 import qualified Kore.Verified as Verified
 import Kore.VersionInfo
 import Options.Applicative (
@@ -130,6 +140,7 @@ import qualified Paths_kore as MetaData (
     version,
  )
 import Prelude.Kore
+import qualified Pretty as KorePretty
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
@@ -513,3 +524,39 @@ loadDefinitions filePaths =
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
+
+mainParseSearchPattern ::
+    VerifiedModule StepperAttributes ->
+    String ->
+    Main (Pattern VariableName)
+mainParseSearchPattern indexedModule patternFileName = do
+    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+    case purePattern of
+        And_ _ term predicateTerm ->
+            return
+                Conditional
+                    { term
+                    , predicate =
+                        either
+                            (error . show . KorePretty.pretty)
+                            id
+                            (makePredicate predicateTerm)
+                    , substitution = mempty
+                    }
+        _ -> error "Unexpected non-conjunctive pattern"
+
+{- | IO action that parses a kore pattern from a filename, verifies it,
+ converts it to a pure pattern, and prints timing information.
+-}
+mainPatternParseAndVerify ::
+    VerifiedModule StepperAttributes ->
+    String ->
+    Main (TermLike VariableName)
+mainPatternParseAndVerify indexedModule patternFileName =
+    mainPatternParse patternFileName >>= mainPatternVerify indexedModule
+
+{- | IO action that parses a kore pattern from a filename and prints timing
+ information.
+-}
+mainPatternParse :: String -> Main ParsedPattern
+mainPatternParse = mainParse parseKorePattern

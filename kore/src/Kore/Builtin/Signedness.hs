@@ -1,18 +1,16 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Builtin.Signedness (
     verifiers,
     signedKey,
     unsignedKey,
     unifyEquals,
+    matchUnifyEqualsSignedness,
     module Kore.Builtin.Signedness.Signedness,
 ) where
 
-import Control.Error (
-    MaybeT,
- )
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.String (
@@ -31,6 +29,7 @@ import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
+import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -77,18 +76,33 @@ signedVerifier = signednessVerifier Signed
 unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
+data UnifyEqualsSignedness = UnifyEqualsSignedness
+    { sign1, sign2 :: !Signedness
+    , term1, term2 :: !(TermLike RewritingVariableName)
+    }
+
+-- | Matches two terms having the Signedness constructor.
+matchUnifyEqualsSignedness ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Maybe UnifyEqualsSignedness
+matchUnifyEqualsSignedness term1 term2
+    | Signedness_ sign1 <- term1
+      , Signedness_ sign2 <- term2 =
+        Just UnifyEqualsSignedness{sign1, sign2, term1, term2}
+    | otherwise = Nothing
+{-# INLINE matchUnifyEqualsSignedness #-}
+
 unifyEquals ::
-    InternalVariable variable =>
     MonadUnify unifier =>
-    TermLike variable ->
-    TermLike variable ->
-    MaybeT unifier (Pattern variable)
-unifyEquals termLike1@(Signedness_ sign1) termLike2@(Signedness_ sign2)
-    | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
+    UnifyEqualsSignedness ->
+    unifier (Pattern RewritingVariableName)
+unifyEquals unifyData
+    | sign1 == sign2 = return (Pattern.fromTermLike term1)
     | otherwise =
-        lift $
-            debugUnifyBottomAndReturnBottom
-                "Cannot unify distinct constructors."
-                termLike1
-                termLike2
-unifyEquals _ _ = empty
+        debugUnifyBottomAndReturnBottom
+            "Cannot unify distinct constructors."
+            term1
+            term2
+  where
+    UnifyEqualsSignedness{sign1, sign2, term1, term2} = unifyData

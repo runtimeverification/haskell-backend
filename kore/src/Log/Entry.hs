@@ -2,8 +2,8 @@
 {-# LANGUAGE NoStrictData #-}
 
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Log.Entry (
     -- * Severity
@@ -58,8 +58,7 @@ class (Show entry, Typeable entry) => Entry entry where
     default longDoc :: Pretty entry => entry -> Pretty.Doc ann
     longDoc = Pretty.pretty
 
-    oneLineDoc :: entry -> Maybe (Pretty.Doc ann)
-    oneLineDoc = const $ Just "One line logging not implemented for this entry"
+    oneLineDoc :: entry -> Pretty.Doc ann
 
     contextDoc :: entry -> Maybe (Pretty.Doc ann)
     contextDoc = const Nothing

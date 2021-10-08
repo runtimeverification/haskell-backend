@@ -39,7 +39,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike (
     TermLike,
-    mkBottom_,
+    mkBottom,
     mkElemVar,
  )
 import qualified Kore.Log as Log
@@ -54,15 +54,15 @@ import Kore.Reachability hiding (
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
-import Kore.Rewriting.RewritingVariable
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,
  )
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RewritingVariable
+import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import qualified Kore.Step.Simplification.Data as Kore
+import qualified Kore.Simplify.Data as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -85,7 +85,7 @@ import Test.Kore (
  )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Step.Simplification
+import Test.Kore.Simplify
 import Test.Tasty (
     TestTree,
  )
@@ -553,6 +553,7 @@ logUpdatesState = do
                 , logEntries =
                     Map.keysSet . Log.typeToText $ Log.registry
                 , logType = Log.LogStdErr
+                , logFormat = Log.Standard
                 , timestampsSwitch = Log.TimestampsEnable
                 }
         command = Log options
@@ -662,7 +663,10 @@ zeroToTen =
 emptyClaim :: SomeClaim
 emptyClaim =
     OnePath . OnePathClaim $
-        claimWithName mkBottom_ mkBottom_ "emptyClaim"
+        claimWithName
+            (mkBottom kSort)
+            (mkBottom kSort)
+            "emptyClaim"
 
 zeroToZero :: SomeClaim
 zeroToZero =

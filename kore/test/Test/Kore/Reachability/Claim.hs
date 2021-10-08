@@ -38,18 +38,18 @@ import Kore.Reachability.Claim (
     checkImplicationWorker,
     simplifyRightHandSide,
  )
-import Kore.Rewriting.RewritingVariable (
-    mkConfigVariable,
-    mkRewritingPattern,
- )
-import Kore.Step.ClaimPattern (
+import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,
  )
+import Kore.Rewrite.RewritingVariable (
+    mkConfigVariable,
+    mkRewritingPattern,
+ )
 import qualified Logic
 import Prelude.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification (
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Simplify (
     runSimplifierSMT,
  )
 import Test.Tasty
@@ -229,7 +229,7 @@ test_checkImplication =
         actual <- checkImplication goal
         assertEqual "" [NotImpliedStuck goal] actual
     , testCase "Implied if both sides are \\bottom" $ do
-        let config = Pattern.bottom
+        let config = Pattern.bottomOf Mock.topSort
             dest = OrPattern.bottom
             goal = mkGoal config dest []
         actual <- checkImplication goal
@@ -243,19 +243,19 @@ test_simplifyRightHandSide =
                 Pattern.fromTermAndPredicate
                     Mock.b
                     ( makeEqualsPredicate
-                        TermLike.mkTop_
+                        (TermLike.mkTop Mock.boolSort)
                         (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
                     )
             claim =
                 mkGoal
-                    Pattern.top
+                    (Pattern.topOf Mock.testSort)
                     ( [Pattern.fromTermLike Mock.a, unsatisfiableBranch]
                         & OrPattern.fromPatterns
                     )
                     []
             expected =
                 mkGoal
-                    Pattern.top
+                    (Pattern.topOf Mock.testSort)
                     (Mock.a & OrPattern.fromTermLike)
                     []
         actual <-

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Nu (
     Nu (..),
@@ -59,7 +59,7 @@ instance
 instance Synthetic Sort (Nu variable) where
     synthetic Nu{nuVariable, nuChild} =
         nuSort
-            & seq (matchSort nuSort nuChild)
+            & seq (sameSort nuSort nuChild)
       where
         Variable{variableSort = nuSort} = nuVariable
     {-# INLINE synthetic #-}

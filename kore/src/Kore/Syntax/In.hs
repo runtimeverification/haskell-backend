@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.In (
     In (..),
@@ -16,9 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'In' corresponds to the @\in@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'In' corresponds to the @\\in@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'inOperandSort' is the sort of the operands.
 
@@ -91,8 +89,8 @@ instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
 instance Synthetic Sort (In Sort) where
     synthetic in' =
         inResultSort
-            & seq (matchSort inOperandSort inContainedChild)
-                . seq (matchSort inOperandSort inContainingChild)
+            & seq (sameSort inOperandSort inContainedChild)
+                . seq (sameSort inOperandSort inContainingChild)
       where
         In{inResultSort, inOperandSort} = in'
         In{inContainedChild, inContainingChild} = in'

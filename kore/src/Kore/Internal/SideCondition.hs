@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.SideCondition (
     SideCondition, -- Constructor not exported on purpose
@@ -85,6 +85,7 @@ import Kore.Internal.NormalizedAc (
     getConcreteValuesOfAc,
     getSymbolicKeysOfAc,
     getSymbolicValuesOfAc,
+    unwrapElement,
     pattern AcPair,
  )
 import Kore.Internal.Predicate (
@@ -108,8 +109,8 @@ import Kore.Internal.TermLike (
     Application,
     Key,
     TermLike,
+    isConstructorLike,
     pattern App_,
-    pattern Equals_,
     pattern Exists_,
     pattern Forall_,
     pattern Inj_,
@@ -200,7 +201,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             (Pretty.vsep . concat)
                 [ ["Assumed true condition:"]
                 , (pure . Pretty.indent 4 . Pretty.pretty)
-                    (MultiAnd.toPredicate assumedTrue)
+                    (Predicate.fromMultiAnd assumedTrue)
                 , ["TermLike replacements:"]
                 , HashMap.foldlWithKey' (acc unparse) [] replacementsTermLike
                 , ["Predicate replacements:"]
@@ -280,6 +281,23 @@ addAssumptions predicates sideCondition =
             predicates <> assumedTrue sideCondition
         }
 
+areIncludedIn ::
+    Eq variable =>
+    Foldable f =>
+    f (Predicate variable) ->
+    SideCondition variable ->
+    Bool
+areIncludedIn predicates sideCondition =
+    all (flip isIncludedIn sideCondition) predicates
+
+isIncludedIn ::
+    Eq variable =>
+    Predicate variable ->
+    SideCondition variable ->
+    Bool
+isIncludedIn predicate SideCondition{assumedTrue} =
+    predicate `elem` assumedTrue
+
 {- | Assumes a 'Condition' to be true in the context of another
 'SideCondition' and recalculates the term replacements table
 from the combined predicate.
@@ -291,19 +309,22 @@ addConditionWithReplacements ::
     SideCondition variable
 addConditionWithReplacements
     (from @(Condition _) @(MultiAnd _) -> newCondition)
-    sideCondition =
-        let combinedConditions = oldCondition <> newCondition
-            (assumedTrue, assumptions) =
-                simplifyConjunctionByAssumption combinedConditions
-                    & extract
-            Assumptions replacementsTermLike replacementsPredicate = assumptions
-         in SideCondition
-                { assumedTrue
-                , replacementsTermLike
-                , replacementsPredicate
-                , definedTerms
-                , simplifiedFunctions
-                }
+    sideCondition
+        | newCondition `areIncludedIn` sideCondition =
+            sideCondition
+        | otherwise =
+            let combinedConditions = oldCondition <> newCondition
+                (assumedTrue, assumptions) =
+                    simplifyConjunctionByAssumption combinedConditions
+                        & extract
+                Assumptions replacementsTermLike replacementsPredicate = assumptions
+             in SideCondition
+                    { assumedTrue
+                    , replacementsTermLike
+                    , replacementsPredicate
+                    , definedTerms
+                    , simplifiedFunctions
+                    }
       where
         SideCondition
             { assumedTrue = oldCondition
@@ -380,13 +401,13 @@ toPredicate condition@(SideCondition _ _ _ _ _) =
         definedPredicate
   where
     SideCondition{assumedTrue, definedTerms} = condition
-    assumedTruePredicate = MultiAnd.toPredicate assumedTrue
+    assumedTruePredicate = Predicate.fromMultiAnd assumedTrue
     definedPredicate =
         definedTerms
             & HashSet.toList
             & fmap Predicate.makeCeilPredicate
             & MultiAnd.make
-            & MultiAnd.toPredicate
+            & Predicate.fromMultiAnd
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>
@@ -560,7 +581,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         assumeEqualTerms =
             case predicate of
                 PredicateEquals t1 t2 ->
-                    case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
+                    case retractLocalFunction (Predicate.makeEqualsPredicate t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
                                 HashMap.insert t1' t2'
@@ -665,11 +686,11 @@ in either order, but the function pattern is always returned first in the
 'Pair'.
 -}
 retractLocalFunction ::
-    TermLike variable ->
+    Predicate variable ->
     Maybe (Pair (TermLike variable))
 retractLocalFunction =
     \case
-        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
+        PredicateEquals term1 term2 -> go term1 term2 <|> go term2 term1
         _ -> Nothing
   where
     go term1@(App_ symbol1 _) term2
@@ -856,15 +877,26 @@ generateNormalizedAcs ::
     InternalAc Key normalized (TermLike variable) ->
     HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    [ HashSet.map symbolicToAc symbolicPairs
-    , HashSet.map concreteToAc concretePairs
-    , HashSet.map opaqueToAc opaquePairs
-    , HashSet.map symbolicConcreteToAc symbolicConcretePairs
-    , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
-    , HashSet.map concreteOpaqueToAc concreteOpaquePairs
-    ]
-        & fold
+    if alwaysDefined internalAc
+        then mempty
+        else
+            [ HashSet.map symbolicToAc symbolicPairs
+            , HashSet.map concreteToAc concretePairs
+            , HashSet.map opaqueToAc opaquePairs
+            , HashSet.map symbolicConcreteToAc symbolicConcretePairs
+            , HashSet.map symbolicOpaqueToAc symbolicOpaquePairs
+            , HashSet.map concreteOpaqueToAc concreteOpaquePairs
+            ]
+                & fold
+                & HashSet.filter (not . alwaysDefined)
   where
+    alwaysDefined InternalAc{builtinAcChild = normalized} =
+        all isConstructorLike children && null opaques
+      where
+        children =
+            fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
+        opaques =
+            opaque (unwrapAc normalized)
     InternalAc
         { builtinAcChild
         , builtinAcSort

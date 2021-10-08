@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Attribute.Axiom.Constructor
 Description : Constructor axiom attribute
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Attribute.Axiom.Constructor (
@@ -21,16 +21,10 @@ import Prelude.Kore
 -- | @Constructor@ represents the @constructor@ attribute for axioms.
 newtype Constructor = Constructor {isConstructor :: Bool}
     deriving stock (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Constructor
-
-instance SOP.HasDatatypeInfo Constructor
-
-instance Debug Constructor
-
-instance Diff Constructor
-
-instance NFData Constructor
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving anyclass (NFData)
+    deriving anyclass (Hashable)
 
 instance Default Constructor where
     def = Constructor False

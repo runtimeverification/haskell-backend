@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
@@ -21,22 +21,23 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
-    mkCeil_,
+    mkCeil,
     mkElemVar,
     mkNot,
     pattern Forall_,
     pattern Implies_,
  )
-import Kore.Rewriting.RewritingVariable (
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
     filterMultiOr,
  )
-import qualified Kore.Step.Simplification.Pattern as Pattern (
+import qualified Kore.Simplify.Pattern as Pattern (
     simplifyTopConfiguration,
  )
-import Kore.Step.Simplification.Simplify
+import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
@@ -54,12 +55,13 @@ checkImplicationIsTop ::
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         (forallQuantifiers, Implies_ _ implicationLHS implicationRHS) -> do
-            let rename' = refreshVariables lhsFreeVariables forallQuantifiers
+            let rename' = refreshVariablesSet lhsFreeVariables forallQuantifiers
                 subst = mkElemVar <$> Map.mapKeys inject rename'
                 implicationLHS' = substitute subst implicationLHS
                 implicationRHS' = substitute subst implicationRHS
                 resultTerm =
-                    mkCeil_
+                    mkCeil
+                        sort
                         ( mkAnd
                             (mkAnd lhsMLPatt implicationLHS')
                             (mkNot implicationRHS')
@@ -87,6 +89,7 @@ checkImplicationIsTop lhs rhs =
             & map variableName
             & Set.fromList
     lhsMLPatt = Pattern.toTermLike lhs
+    sort = TermLike.termLikeSort rhs
 
 stripForallQuantifiers ::
     TermLike RewritingVariableName ->

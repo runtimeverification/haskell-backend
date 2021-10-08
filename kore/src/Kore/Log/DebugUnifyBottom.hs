@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom (..),
@@ -55,6 +55,7 @@ instance Pretty DebugUnifyBottom where
 
 instance Entry DebugUnifyBottom where
     entrySeverity _ = Debug
+    oneLineDoc _ = "DebugUnifyBottom"
     helpDoc _ = "log failed unification"
 
 mkDebugUnifyBottom ::
@@ -93,6 +94,6 @@ debugUnifyBottomAndReturnBottom ::
 debugUnifyBottomAndReturnBottom info first second = do
     debugUnifyBottom
         info
-        (TermLike.mapVariables (pure $ from @_ @VariableName) first)
-        (TermLike.mapVariables (pure $ from @_ @VariableName) second)
+        first
+        second
     empty

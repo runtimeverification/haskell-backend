@@ -14,6 +14,44 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.53.0.0] - 2021-09-08
+
+### Added
+
+- Display log-format option values (#2808).
+
+### Fixed
+
+- Performance issues related to `SideCondition.definedTerms` (#2778, #2779).
+
+## [0.52.0.0] - 2021-08-11
+
+### Added
+
+- Warn when RHS of claim is #Bottom (#2703).
+- New tool: `kore-match-disjunction` (#2649).
+
+## [0.51.0.0] - 2021-07-28
+
+### Added
+
+- Added log `DebugBeginClaim` (#2682).
+- CL option for proving: maximum number of counterexamples (#2648).
+- `kore-repl`: option to turn on one-line logs (#2726).
+- Relicensing to BSD-3-Clause (PR #2742).
+- New (minor) matching case for AC structures (PR #2738).
+
+### Changed
+
+- Changed `DebugClaimState` to `DebugTransition` (#2682).
+
+### Fixed
+
+- Fixed bug in Bool unification (#2695).
+- Symbolic execution: don't crash when configuration starts as #Bottom (#2765).
+- Fixed substitution application during claim simplification (#2740).
+- Fixes looping behavior in the simplifier (#2570).
+
 ## [0.49.0.0] - 2021-06-30
 
 ### Added

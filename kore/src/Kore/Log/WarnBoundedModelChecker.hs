@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker (..),
@@ -9,7 +9,7 @@ module Kore.Log.WarnBoundedModelChecker (
 
 import Kore.Attribute.SourceLocation
 import Kore.Internal.TermLike
-import Kore.Step.RulePattern (
+import Kore.Rewrite.RulePattern (
     ImplicationRule,
  )
 import Log
@@ -32,6 +32,8 @@ instance Pretty WarnBoundedModelChecker where
 
 instance Entry WarnBoundedModelChecker where
     entrySeverity _ = Warning
+    oneLineDoc (WarnBoundedModelChecker rule) =
+        Pretty.pretty @SourceLocation $ from rule
     helpDoc _ = "warn when the bounded model checker does not terminate within the given bound"
 
 warnBoundedModelChecker ::

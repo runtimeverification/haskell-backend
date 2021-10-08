@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Attribute.Sort.Concat
 Description : Concat sort attribute
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Sort.Concat (

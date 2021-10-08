@@ -29,7 +29,6 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
@@ -65,7 +64,7 @@ import Test.Kore.Internal.TermLike hiding (
     markSimplified,
     simplifiedAttribute,
  )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty
@@ -227,7 +226,7 @@ test_hasSimplifiedChildren =
                             (setSimplifiedPred simplified mockPredicate2)
                         )
                 patt =
-                    Pattern.fromCondition_
+                    Pattern.fromCondition Mock.testSort
                         . Condition.fromPredicate
                         $ predicate
             assertEqual
@@ -248,7 +247,7 @@ test_hasSimplifiedChildren =
                         (setSimplifiedPred simplified mockPredicate2)
                     )
             patt =
-                Pattern.fromCondition_
+                Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
                     $ predicate
         assertEqual
@@ -286,7 +285,7 @@ test_hasSimplifiedChildren =
                     (setSimplifiedPred simplified mockPredicate1)
                     (setSimplifiedPred simplified mockPredicate2)
             patt =
-                Pattern.fromCondition_
+                Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
                     $ predicate
         assertEqual
@@ -310,17 +309,17 @@ test_hasSimplifiedChildren =
                     ( Predicate.makeFloorPredicate
                         ( Mock.functional20
                             (mkNu Mock.setX Mock.c)
-                            (Mock.functionalConstr10 mkTop_)
+                            (Mock.functionalConstr10 (mkTop Mock.testSort))
                         )
                         & Predicate.setSimplified fullySimplified
                     )
                     ( Predicate.makeCeilPredicate
-                        (Mock.tdivInt mkTop_ mkTop_)
+                        (Mock.tdivInt (mkTop Mock.intSort) (mkTop Mock.intSort))
                         & Predicate.setSimplified fullySimplified
                     )
                     & Predicate.setSimplified partiallySimplified
             patt =
-                Pattern.fromCondition_
+                Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
                     $ predicate
         assertEqual
@@ -394,7 +393,7 @@ normalizeConj ::
 normalizeConj Conditional{term, predicate, substitution} =
     NormalizedAndPattern
         { term
-        , predicate = MultiAnd.fromPredicate predicate
+        , predicate = Predicate.toMultiAnd predicate
         , substitution
         }
 

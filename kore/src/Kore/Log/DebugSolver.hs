@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.DebugSolver (
     DebugSolverSend (..),
@@ -62,10 +62,12 @@ instance Pretty DebugSolverRecv where
 
 instance Entry DebugSolverSend where
     entrySeverity _ = Debug
+    oneLineDoc _ = "DebugSolverSend"
     helpDoc _ = "log commands sent to SMT solver"
 
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
+    oneLineDoc _ = "DebugSolverRecv"
     helpDoc _ = "log responses received from SMT solver"
 
 logDebugSolverSendWith ::

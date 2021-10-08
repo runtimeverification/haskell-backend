@@ -37,7 +37,7 @@ import Kore.Syntax.Id (
     Id (getId),
  )
 import Prelude.Kore
-import Test.Kore.Step.SMT.Builders (
+import Test.Kore.Rewrite.SMT.Builders (
     emptyModule,
     hookedSortDeclaration,
     indexModule,
@@ -45,12 +45,12 @@ import Test.Kore.Step.SMT.Builders (
     sortDeclaration,
     symbolDeclaration,
  )
-import qualified Test.Kore.Step.SMT.Builders as Attribute (
+import qualified Test.Kore.Rewrite.SMT.Builders as Attribute (
     constructor,
     functional,
     hook,
  )
-import Test.Kore.Step.SMT.Helpers (
+import Test.Kore.Rewrite.SMT.Helpers (
     constructorAxiom,
  )
 import Test.Kore.With (

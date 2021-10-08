@@ -1,6 +1,6 @@
 {- |
 Copyright : (c) 2020 Runtime Verification
-License   : NCSA
+License   : BSD-3-Clause
 -}
 module Prelude.Kore (
     module Prelude,
@@ -31,6 +31,9 @@ module Prelude.Kore (
 
     -- * Filterable
     Filterable (..),
+
+    -- * Foldable
+    foldFirst,
 
     -- * Witherable
     Witherable (..),
@@ -201,3 +204,6 @@ minMaxBy :: (a -> a -> Ordering) -> a -> a -> (a, a)
 minMaxBy cmp a b
     | cmp a b == LT = (a, b)
     | otherwise = (b, a)
+
+foldFirst :: Foldable f => f a -> Maybe a
+foldFirst = foldr (\x _ -> pure x) Nothing

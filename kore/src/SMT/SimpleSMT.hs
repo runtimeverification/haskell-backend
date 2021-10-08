@@ -2,8 +2,8 @@
 Module      : SimpleSMT
 Description : Simple SMT-LIB 2 interface
 Copyright   : (c) Iavor S. Diatchki, 2014
-              (c) Runtime Verification, 2018
-License     : NCSA
+              (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 A module for interacting with an external SMT solver, using SMT-LIB 2 format.

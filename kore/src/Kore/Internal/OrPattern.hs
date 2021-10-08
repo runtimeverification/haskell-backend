@@ -1,10 +1,11 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Internal.OrPattern (
     OrPattern,
     coerceSort,
+    markSimplified,
     isSimplified,
     hasSimplifiedChildren,
     hasSimplifiedChildrenIgnoreConditions,
@@ -17,7 +18,8 @@ module Kore.Internal.OrPattern (
     bottom,
     isFalse,
     isPredicate,
-    top,
+    getSortIfNotBottom,
+    topOf,
     isTrue,
     toPattern,
     toTermLike,
@@ -59,7 +61,7 @@ import Kore.Internal.TermLike (
     InternalVariable,
     Sort,
     TermLike,
-    mkBottom_,
+    mkBottom,
     mkOr,
  )
 import Kore.Syntax.Variable
@@ -79,6 +81,12 @@ import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.
 type OrPattern variable = MultiOr (Pattern variable)
+
+markSimplified ::
+    InternalVariable variable =>
+    OrPattern variable ->
+    OrPattern variable
+markSimplified = MultiOr.map Pattern.markSimplified
 
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
@@ -147,7 +155,7 @@ fromTermLike = fromPattern . Pattern.fromTermLike
 {- | @\\bottom@
 
 @
-'isFalse' bottom == True
+isFalse bottom == True
 @
 -}
 bottom :: InternalVariable variable => OrPattern variable
@@ -160,11 +168,11 @@ isFalse = isBottom
 {- | @\\top@
 
 @
-'isTrue' top == True
+isTrue (topOf _) == True
 @
 -}
-top :: InternalVariable variable => OrPattern variable
-top = fromPattern Pattern.top
+topOf :: InternalVariable variable => Sort -> OrPattern variable
+topOf sort = fromPattern (Pattern.topOf sort)
 
 -- | 'isTrue' checks if the 'Or' has a single top pattern.
 isTrue :: OrPattern variable -> Bool
@@ -174,11 +182,12 @@ isTrue = isTop
 toPattern ::
     forall variable.
     InternalVariable variable =>
+    Sort ->
     OrPattern variable ->
     Pattern variable
-toPattern multiOr =
+toPattern sort multiOr =
     case toList multiOr of
-        [] -> Pattern.bottom
+        [] -> Pattern.bottomOf sort
         [patt] -> patt
         patts -> foldr1 mergeWithOr patts
   where
@@ -208,14 +217,22 @@ toPattern multiOr =
 isPredicate :: OrPattern variable -> Bool
 isPredicate = all Pattern.isPredicate
 
+-- | Gets the `Sort` of a non-empty 'OrPattern' and othewise returns `Nothing`.
+getSortIfNotBottom :: OrPattern variable -> Maybe Sort
+getSortIfNotBottom multiOr =
+    case toList multiOr of
+        [] -> Nothing
+        p : _ -> Just (Pattern.patternSort p)
+
 -- | Transforms a 'Pattern' into a 'TermLike'.
 toTermLike ::
     InternalVariable variable =>
+    Sort ->
     OrPattern variable ->
     TermLike variable
-toTermLike multiOr =
+toTermLike sort multiOr =
     case toList multiOr of
-        [] -> mkBottom_
+        [] -> mkBottom sort
         [patt] -> Pattern.toTermLike patt
         patts -> foldr1 mkOr (Pattern.toTermLike <$> patts)
 

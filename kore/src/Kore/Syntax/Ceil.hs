@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Ceil (
     Ceil (..),
@@ -16,9 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Ceil' corresponds to the @\\ceil@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'ceilOperandSort' is the sort of the operand.
 
@@ -62,5 +60,5 @@ instance Synthetic (FreeVariables variable) (Ceil sort) where
 instance Synthetic Sort (Ceil Sort) where
     synthetic Ceil{ceilOperandSort, ceilResultSort, ceilChild} =
         ceilResultSort
-            & seq (matchSort ceilOperandSort ceilChild)
+            & seq (sameSort ceilOperandSort ceilChild)
     {-# INLINE synthetic #-}

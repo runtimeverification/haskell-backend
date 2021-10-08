@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Unification.Unify (
     MonadUnify,
@@ -13,7 +13,7 @@ module Kore.Unification.Unify (
 import Kore.Internal.TermLike (
     InternalVariable,
  )
-import Kore.Step.Simplification.Simplify (
+import Kore.Simplify.Simplify (
     MonadSimplify (..),
  )
 import Logic

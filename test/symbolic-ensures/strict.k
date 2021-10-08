@@ -1,5 +1,7 @@
 module STRICT
   imports INT
+  imports BOOL
+
   syntax Exp ::= Int
                | checkInterval(Int, Int, Exp) [strict(3)]
                | interval(Int, Int)

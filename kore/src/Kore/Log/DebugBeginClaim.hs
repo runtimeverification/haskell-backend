@@ -1,6 +1,6 @@
 {- |
 Copyright   : (c) Runtime Verification, 2021
-License     : NCSA
+License     : BSD-3-Clause
 -}
 module Kore.Log.DebugBeginClaim (
     DebugBeginClaim (..),
@@ -31,7 +31,7 @@ instance Entry DebugBeginClaim where
     entrySeverity _ = Debug
     helpDoc _ = "log starting claims"
     oneLineDoc DebugBeginClaim{claim} =
-        Just $ pretty @SourceLocation $ from claim
+        pretty @SourceLocation $ from claim
 
 debugBeginClaim ::
     MonadLog log =>

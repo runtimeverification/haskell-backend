@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 -}
 module Kore.Syntax.Iff (
     Iff (..),
@@ -16,9 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import qualified Pretty
 
-{- |'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{- |'Iff' corresponds to the @\\iff@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'iffSort' is both the sort of the operands and the sort of the result.
 -}
@@ -70,6 +68,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (Iff sort) where
 instance Synthetic Sort (Iff Sort) where
     synthetic Iff{iffSort, iffFirst, iffSecond} =
         iffSort
-            & seq (matchSort iffSort iffFirst)
-                . seq (matchSort iffSort iffSecond)
+            & seq (sameSort iffSort iffFirst)
+                . seq (sameSort iffSort iffSecond)
     {-# INLINE synthetic #-}

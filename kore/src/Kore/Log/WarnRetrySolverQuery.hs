@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2020-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log.WarnRetrySolverQuery (
     WarnRetrySolverQuery,
@@ -44,6 +44,7 @@ instance Pretty WarnRetrySolverQuery where
 
 instance Entry WarnRetrySolverQuery where
     entrySeverity _ = Warning
+    oneLineDoc _ = "WarnRetrySolverQuery"
     helpDoc _ =
         "warning raised when the solver failed to decide\
         \ the satisfiability of a formula, indicating that\

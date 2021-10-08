@@ -1,8 +1,8 @@
 {- |
 Module      : Kore.Repl.Data
 Description : REPL data structures.
-Copyright   : (c) Runtime Verification, 2019
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2019-2021
+License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.State (
@@ -133,16 +133,16 @@ import Kore.Reachability (
  )
 import Kore.Reachability.Prove
 import Kore.Repl.Data
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Step.AxiomPattern (
+import Kore.Rewrite.AxiomPattern (
     AxiomPattern (..),
  )
-import Kore.Step.Simplification.Data (
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Definition (
     Definition (..),
     Module (..),

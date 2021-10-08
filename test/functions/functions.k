@@ -4,6 +4,7 @@ module FUNCTIONS
 
   imports HARNESS
   imports INT
+  imports BOOL
 
   rule <k> begin => next true </k>
 

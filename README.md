@@ -23,9 +23,11 @@ And Kore is such a language.
 
 ## Structure of this project
 
-The `/docs` directory contains a comprehensive document _Semantics of K_
-that describes the mathematical foundation of Kore, and a BNF grammar
-that defines the syntax of Kore language.
+The [docs] directory contains a collection of documents
+that describe the mathematical foundation of Kore and a BNF grammar
+that defines the syntax of Kore language. See
+[/docs/introduction.md](https://github.com/kframework/kore/blob/master/docs/introduction.md)
+for an overview of the components of Kore.
 
 The `kore` project is an implementation in Haskell of a Kore parser and symbolic execution engine,
 for use with the [K Framework] as a backend.
@@ -41,6 +43,12 @@ cabal build kore
 ```
 
 If using `cabal`, version 3.0 or later is recommended.
+
+Using [make]:
+
+```sh
+make all # builds all binaries
+```
 
 ## Developing
 
@@ -60,7 +68,7 @@ Use `docker.sh` to run commands inside the container:
 
 ``` sh
 ./docker/build.sh  # run once when dependencies change
-./docker/run.sh make kore  # build the backend
+./docker/run.sh make all  # build the backend
 ./docker/run.sh make test  # run all tests
 ./docker/run.sh make -C test/imp test  # run all tests in test/imp
 ```
@@ -125,6 +133,7 @@ nix-build test.nix --argstr test imp  # run the integration tests in test/imp
 nix-shell test.nix  # enter a shell where we can run tests manually
 ```
 
+[docs]: https://github.com/kframework/kore/tree/master/docs
 [git]: https://git-scm.com/
 [stack]: https://www.haskellstack.org/
 [cabal]: https://haskell.org/cabal

@@ -1,6 +1,6 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
 -}
 module Kore.Log (
     koreLogFilters,
@@ -212,8 +212,7 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
     exeName' = Pretty.pretty exeName <> Pretty.colon
     prettyActualEntry timestamp ActualEntry{actualEntry, entryContext}
         | OneLine <- koreLogFormat =
-            Pretty.hsep $
-                catMaybes [Just header, oneLineDoc actualEntry]
+            Pretty.hsep [header, oneLineDoc actualEntry]
         | otherwise =
             (Pretty.vsep . concat)
                 [ [header]
