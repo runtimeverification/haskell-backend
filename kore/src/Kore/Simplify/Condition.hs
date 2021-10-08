@@ -88,7 +88,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         simplified <-
             simplifyPredicate predicate'
                 >>= Logic.scatter
-                >>= simplifyPredicates sideCondition
+                >>= simplifyPredicates sideCondition . prepareForResimplification
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -106,6 +106,18 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
+
+    prepareForResimplification predicates
+        -- If the 'MultiAnd' is singular, we should avoid resimplification.
+        | length predicates <= 1 =
+            predicates
+        | otherwise =
+            MultiAnd.map forgetSimplified predicates
+      where
+        forgetSimplified p
+            | Predicate.isSimplifiedAnyCondition p =
+                Predicate.forgetSimplifiedSafe p
+            | otherwise = p
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional{predicate, substitution}) =
