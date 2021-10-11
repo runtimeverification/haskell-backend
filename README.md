@@ -44,6 +44,12 @@ cabal build kore
 
 If using `cabal`, version 3.0 or later is recommended.
 
+Using [make]:
+
+```sh
+make all # builds all binaries
+```
+
 ## Developing
 
 Developers will require all the dependencies listed above,
@@ -62,7 +68,7 @@ Use `docker.sh` to run commands inside the container:
 
 ``` sh
 ./docker/build.sh  # run once when dependencies change
-./docker/run.sh make kore  # build the backend
+./docker/run.sh make all  # build the backend
 ./docker/run.sh make test  # run all tests
 ./docker/run.sh make -C test/imp test  # run all tests in test/imp
 ```
