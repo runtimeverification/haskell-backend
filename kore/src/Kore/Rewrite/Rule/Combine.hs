@@ -162,7 +162,7 @@ mergeRules (renameRulesVariables . toList -> rules) =
                 & Condition.fromPredicate
                 & simplifyCondition SideCondition.topTODO
         evaluatedPredicate <-
-            evalPredicate predicate >>= \case
+            evalPredicate predicate Nothing >>= \case
                 Nothing -> return predicate
                 Just True -> return makeTruePredicate
                 Just False -> empty

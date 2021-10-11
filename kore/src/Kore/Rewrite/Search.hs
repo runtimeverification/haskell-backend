@@ -152,7 +152,7 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [Conditional.substitution predSubst]
-            lift (evalConditional merged) >>= \case
+            lift (evalConditional merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition

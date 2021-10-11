@@ -9,8 +9,6 @@ module Kore.Rewrite.SMT.Evaluator (
     decidePredicate,
     evalPredicate,
     evalConditional,
-    evalPredicateWithSideCondition,
-    evalConditionalWithSideCondition,
     filterMultiOr,
     translateTerm,
     translatePredicate,
@@ -87,61 +85,42 @@ import SMT (
 import qualified SMT
 import qualified SMT.SimpleSMT as SimpleSMT
 
--- | Attempt to evaluate the 'Predicate' argument using an external SMT solver.
+{- | Attempt to evaluate the 'Predicate' argument with an optional side
+ condition using an external SMT solver.
+-}
 evalPredicate ::
     MonadSimplify m =>
     InternalVariable variable =>
     Predicate variable ->
+    Maybe (SideCondition variable) ->
     m (Maybe Bool)
-evalPredicate = \case
+evalPredicate predicate sideConditionM = case predicate of
     Predicate.PredicateTrue -> return $ Just True
     Predicate.PredicateFalse -> return $ Just False
-    predicate ->
-        predicate :| []
-            & decidePredicate SideCondition.top
+    _ -> case sideConditionM of
+        Nothing ->
+            predicate :| []
+                & decidePredicate SideCondition.top
+        Just sideCondition ->
+            predicate :| [from @_ @(Predicate _) sideCondition]
+                & decidePredicate sideCondition
 
-{- | Attempt to evaluate the 'Predicate' argument with 'SideCondition' using
- an external SMT solver.
--}
-evalPredicateWithSideCondition ::
-    MonadSimplify m =>
-    InternalVariable variable =>
-    Predicate variable ->
-    SideCondition variable ->
-    m (Maybe Bool)
-evalPredicateWithSideCondition predicate sideCondition = case predicate of
-    Predicate.PredicateTrue -> return $ Just True
-    Predicate.PredicateFalse -> return $ Just False
-    _ ->
-        predicate :| [from @_ @(Predicate _) sideCondition]
-            & decidePredicate sideCondition
-
-{- | Attempt to evaluate the 'Conditional' argument using an external SMT
- solver.
+{- | Attempt to evaluate the 'Conditional' argument with an optional side
+ condition using an external SMT solver.
 -}
 evalConditional ::
     MonadSimplify m =>
     InternalVariable variable =>
     Conditional variable term ->
+    Maybe (SideCondition variable) ->
     m (Maybe Bool)
-evalConditional conditional =
-    evalPredicate (Conditional.predicate conditional)
-        & assert (Conditional.isNormalized conditional)
-
-{- | Attempt to evaluate the 'Conditional' argument with 'SideCondition'
- using an external SMT solver.
--}
-evalConditionalWithSideCondition ::
-    MonadSimplify m =>
-    InternalVariable variable =>
-    Conditional variable term ->
-    SideCondition variable ->
-    m (Maybe Bool)
-evalConditionalWithSideCondition conditional sideCondition =
-    evalPredicateWithSideCondition (Condition.toPredicate condition) sideCondition
+evalConditional conditional sideConditionM =
+    evalPredicate predicate sideConditionM
         & assert (Conditional.isNormalized conditional)
   where
-    condition = Conditional.withoutTerm conditional
+    predicate = case sideConditionM of
+        Nothing -> Conditional.predicate conditional
+        Just _ -> Condition.toPredicate $ Conditional.withoutTerm conditional
 
 -- | Removes from a MultiOr all items refuted by an external SMT solver.
 filterMultiOr ::
@@ -161,7 +140,7 @@ filterMultiOr multiOr = do
         Conditional variable term ->
         simplifier (Maybe (Conditional variable term))
     refute p =
-        evalConditional p <&> \case
+        evalConditional p Nothing <&> \case
             Nothing -> Just p
             Just False -> Nothing
             Just True -> Just p

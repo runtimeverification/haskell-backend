@@ -386,9 +386,9 @@ checkRequires sideCondition predicate requires =
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
     filterBranch condition =
-        SMT.evalConditionalWithSideCondition
+        SMT.evalConditional
             condition
-            sideCondition
+            (Just sideCondition)
             >>= \case
                 Just False -> empty
                 _ -> return condition
