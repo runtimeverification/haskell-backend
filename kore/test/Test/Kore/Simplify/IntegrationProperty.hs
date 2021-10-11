@@ -22,6 +22,7 @@ import Hedgehog (
     forAll,
     (===),
  )
+import Kore.Internal.From (fromIn_)
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -30,6 +31,7 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -124,6 +126,36 @@ test_regressionGeneratedTerms =
         simplified <-
             Pattern.simplify
                 (Pattern.fromTermLike term)
+                & runSimplifier Mock.env
+        assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
+    , -- See https://github.com/kframework/kore/pull/2819#issuecomment-929492780
+      testCase "Don't forget simplified of sub-term predicates" $ do
+        let iffTerm =
+                mkIff
+                    ( mkAnd
+                        Mock.aSubSubsort
+                        Mock.functional00SubSubSort
+                    )
+                    ( mkMu
+                        Mock.eConfigSubSubsort
+                        ( mkForall
+                            Mock.xConfigList
+                            Mock.functional00SubSubSort
+                        )
+                    )
+            notTerm =
+                mkMu
+                    Mock.e2ConfigSubSubsort
+                    (mkTop Mock.subSubsort)
+            pred' :: Predicate RewritingVariableName
+            pred' =
+                fromIn_
+                    notTerm
+                    iffTerm
+            patt = Pattern.fromCondition Mock.subSubsort (from pred')
+        simplified <-
+            Pattern.simplify
+                patt
                 & runSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     ]

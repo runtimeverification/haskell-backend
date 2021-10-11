@@ -171,6 +171,7 @@ makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
             & return
 
 applyAndIdempotenceAndFindContradictions ::
+    HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 applyAndIdempotenceAndFindContradictions patt =
