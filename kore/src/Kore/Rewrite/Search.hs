@@ -152,22 +152,17 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [Conditional.substitution predSubst]
-            let simplified = merged
-            evaluated <- lift $ evalConditional simplified
-            case evaluated of
+            lift (evalConditional merged) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition
-                        [Conditional.predicate simplified]
-                        [ Conditional.substitution merged
-                        , Conditional.substitution simplified
-                        ]
+                        [Conditional.predicate merged]
+                        [Conditional.substitution merged]
                 Just False -> return Condition.bottom
                 Just True ->
-                    return
-                        ( Condition.fromSubstitution
-                            (Conditional.substitution merged)
-                        )
+                    Conditional.substitution merged
+                        & Condition.fromSubstitution
+                        & return
     results <- lift $ traverse mergeAndEvaluate unifiers
     let orResults :: OrCondition RewritingVariableName
         orResults = MultiOr.mergeAll results
