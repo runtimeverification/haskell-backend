@@ -74,7 +74,6 @@ import SQL (
 --    AxiomPattern,
 --    getAxiomPattern,
 -- )
-
 -- cyclical dependency
 -- import Kore.Rewrite.RulePattern (
 --    RewriteRule (..),

@@ -85,12 +85,12 @@ import Kore.Log.DebugTransition (
     debugFinalTransition,
  )
 import Kore.Log.Info (
-  ExecBreadth (..),
-  infoExecBreadth,
-  infoProvenDepth,
-  ProofDepth (..),
-  infoUnprovenDepth,
-  whileReachability,
+    ExecBreadth (..),
+    ProofDepth (..),
+    infoExecBreadth,
+    infoProvenDepth,
+    infoUnprovenDepth,
+    whileReachability,
  )
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim

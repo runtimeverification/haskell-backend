@@ -77,7 +77,7 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Log.Warn (
-  warnNotImplemented,
+    warnNotImplemented,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,

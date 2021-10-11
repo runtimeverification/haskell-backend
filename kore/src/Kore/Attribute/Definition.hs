@@ -14,7 +14,6 @@ import Kore.Attribute.Attributes (Attributes (..))
 import Kore.Attribute.Parser (ParseAttributes (..))
 import Kore.Attribute.SourceLocation (SourceLocation)
 import Kore.Error (printError)
-
 import Kore.Log.Error (
     errorParse,
  )

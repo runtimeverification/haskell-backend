@@ -56,12 +56,10 @@ import Kore.Internal.TermLike (
 -- import Kore.Rewrite.RulePattern (
 --    ImplicationRule,
 -- )
-
 -- Causes cyclical module dependency
 -- import Kore.Reachability.SomeClaim (
 --     SomeClaim,
 -- )
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Numeric.Natural (
@@ -72,7 +70,6 @@ import Numeric.Natural (
 --import Kore.Attribute.Definition (
 --    KFileLocations (..),
 -- )
-
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )

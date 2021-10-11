@@ -64,9 +64,9 @@ import Kore.Internal.TermLike
 import Kore.Log.Debug (
     debugUnificationSolved,
     debugUnificationUnsolved,
-    whileDebugUnification,
     debugUnifyBottom,
     debugUnifyBottomAndReturnBottom,
+    whileDebugUnification,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
