@@ -112,7 +112,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (
     InternalVariable,
  )
-import Kore.Log.WarnFunctionWithoutEvaluators (
+import Kore.Log.Warn (
     warnFunctionWithoutEvaluators,
  )
 import Kore.Rewrite.Axiom.Identifier (

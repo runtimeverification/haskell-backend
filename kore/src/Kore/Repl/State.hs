@@ -119,7 +119,7 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import Kore.Log.DebugUnifyBottom (
+import Kore.Log.Debug (
     DebugUnifyBottom,
  )
 import Kore.Reachability (

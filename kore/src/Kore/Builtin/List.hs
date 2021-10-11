@@ -103,7 +103,7 @@ import qualified Kore.Internal.TermLike as TermLike (
     isFunctionPattern,
     markSimplified,
  )
-import Kore.Log.DebugUnifyBottom (
+import Kore.Log.Debug (
     debugUnifyBottom,
  )
 import Kore.Rewrite.RewritingVariable (

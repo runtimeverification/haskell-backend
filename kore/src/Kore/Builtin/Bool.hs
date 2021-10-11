@@ -56,7 +56,7 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Log.DebugUnifyBottom (
+import Kore.Log.Debug (
     debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewrite.RewritingVariable

@@ -118,7 +118,9 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
+import Kore.Log.Debug (
+    debugUnifyBottomAndReturnBottom,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

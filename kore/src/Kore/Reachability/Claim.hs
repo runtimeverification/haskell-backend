@@ -21,7 +21,7 @@ module Kore.Reachability.Claim (
 
     -- * Re-exports
     RewriteRule (..),
-    module Kore.Log.InfoReachability,
+    module Kore.Log.Info,
 
     -- * For Claim implementations
     deriveSeqClaim,
@@ -103,8 +103,12 @@ import Kore.Internal.TermLike (
     mkIn,
     termLikeSort,
  )
-import Kore.Log.InfoReachability
-import Kore.Log.WarnClaimRHSIsBottom
+import Kore.Log.Info (
+    InfoReachability,
+ )
+import Kore.Log.Warn (
+    warnClaimRHSIsBottom,
+ )
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )

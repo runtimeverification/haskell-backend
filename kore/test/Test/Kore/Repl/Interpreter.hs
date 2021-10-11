@@ -43,7 +43,7 @@ import Kore.Internal.TermLike (
     mkElemVar,
  )
 import qualified Kore.Log as Log
-import Kore.Log.DebugUnifyBottom (
+import Kore.Log.Debug (
     DebugUnifyBottom (..),
     mkDebugUnifyBottom,
  )

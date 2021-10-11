@@ -54,7 +54,9 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnDepthLimitExceeded
+import Kore.Log.Warn (
+    WarnDepthLimitExceeded (..),
+ )
 import Kore.Rewrite (
     ExecutionMode (..),
  )

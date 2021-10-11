@@ -47,7 +47,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.ErrorBottomTotalFunction (
+import Kore.Log.Error (
     errorBottomTotalFunction,
  )
 import qualified Kore.Rewrite.Function.Memo as Memo

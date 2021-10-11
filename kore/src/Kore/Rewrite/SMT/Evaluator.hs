@@ -57,14 +57,14 @@ import Kore.Internal.TermLike (
     Variable (..),
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugEvaluateCondition (
+import Kore.Log.Debug (
     debugEvaluateConditionResult,
     whileDebugEvaluateCondition,
  )
-import Kore.Log.ErrorDecidePredicateUnknown (
+import Kore.Log.Error (
     errorDecidePredicateUnknown,
  )
-import Kore.Log.WarnRetrySolverQuery (
+import Kore.Log.Warn (
     warnRetrySolverQuery,
  )
 import Kore.Rewrite.SMT.Translate

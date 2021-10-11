@@ -81,10 +81,12 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugUnifyBottom (
+import Kore.Log.Debug (
     debugUnifyBottomAndReturnBottom,
  )
-import Kore.Log.WarnNotImplemented
+import Kore.Log.Warn (
+    warnNotImplemented,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

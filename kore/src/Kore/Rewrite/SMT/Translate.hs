@@ -71,7 +71,7 @@ import Kore.Internal.SideCondition (
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnSymbolSMTRepresentation (
+import Kore.Log.Warn (
     warnSymbolSMTRepresentation,
  )
 import Kore.Rewrite.SMT.Resolvers (

@@ -28,7 +28,7 @@ import Kore.Log (
     swappableLogger,
     withLogger,
  )
-import Kore.Log.ErrorException (
+import Kore.Log.Error (
     errorException,
  )
 import Kore.Log.KoreLogOptions (

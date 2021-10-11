@@ -38,14 +38,15 @@ import Kore.Equation.DebugEquation (
     DebugApplyEquation,
     DebugAttemptEquation,
  )
-import Kore.Log.DebugAppliedRewriteRules (
+import Kore.Log.Debug (
     DebugAppliedRewriteRules,
+    DebugEvaluateCondition,
+    DebugSubstitutionSimplifier,
+    DebugUnification,
+    DebugUnifyBottom,
  )
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
- )
-import Kore.Log.DebugEvaluateCondition (
-    DebugEvaluateCondition,
  )
 import Kore.Log.DebugProven (
     DebugProven,
@@ -54,29 +55,15 @@ import Kore.Log.DebugSolver (
     DebugSolverRecv,
     DebugSolverSend,
  )
-import Kore.Log.DebugSubstitutionSimplifier (
-    DebugSubstitutionSimplifier,
- )
 import Kore.Log.DebugTransition (
     DebugTransition,
  )
-import Kore.Log.DebugUnification (
-    DebugUnification,
- )
-import Kore.Log.DebugUnifyBottom (
-    DebugUnifyBottom,
- )
-import Kore.Log.ErrorBottomTotalFunction (
+import Kore.Log.Error (
     ErrorBottomTotalFunction,
- )
-import Kore.Log.ErrorDecidePredicateUnknown (
     ErrorDecidePredicateUnknown,
- )
-import Kore.Log.ErrorException (
     ErrorException,
- )
-import Kore.Log.ErrorParse (
     ErrorParse,
+    ErrorVerify,
  )
 import Kore.Log.ErrorRewriteLoop (
     ErrorRewriteLoop,
@@ -88,53 +75,32 @@ import Kore.Log.ErrorRuleMergeDuplicate (
     ErrorRuleMergeDuplicateIds,
     ErrorRuleMergeDuplicateLabels,
  )
-import Kore.Log.ErrorVerify (
-    ErrorVerify,
- )
-import Kore.Log.InfoAttemptUnification (
+import Kore.Log.Info (
     InfoAttemptUnification,
- )
-import Kore.Log.InfoExecBreadth (
     InfoExecBreadth,
- )
-import Kore.Log.InfoExecDepth (
     InfoExecDepth,
- )
-import Kore.Log.InfoProofDepth (
     InfoProofDepth,
- )
-import Kore.Log.InfoReachability (
     InfoReachability,
+ )
+import Kore.Log.Warn (
+    WarnClaimRHSIsBottom,
+    WarnDepthLimitExceeded,
+    WarnFunctionWithoutEvaluators,
+    WarnRetrySolverQuery,
+    WarnSymbolSMTRepresentation,
+    WarnUnsimplifiedPredicate,
  )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
  )
-import Kore.Log.WarnClaimRHSIsBottom (
-    WarnClaimRHSIsBottom,
- )
-import Kore.Log.WarnDepthLimitExceeded (
-    WarnDepthLimitExceeded,
- )
-import Kore.Log.WarnFunctionWithoutEvaluators (
-    WarnFunctionWithoutEvaluators,
- )
 import Kore.Log.WarnIfLowProductivity (
     WarnIfLowProductivity,
- )
-import Kore.Log.WarnRetrySolverQuery (
-    WarnRetrySolverQuery,
  )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
  )
-import Kore.Log.WarnSymbolSMTRepresentation (
-    WarnSymbolSMTRepresentation,
- )
 import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
- )
-import Kore.Log.WarnUnsimplifiedPredicate (
-    WarnUnsimplifiedPredicate,
  )
 import Log (
     Entry (..),

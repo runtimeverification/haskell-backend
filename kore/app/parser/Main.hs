@@ -21,7 +21,7 @@ import Kore.Log (
     runLoggerT,
  )
 import qualified Kore.Log as Log
-import Kore.Log.ErrorVerify (
+import Kore.Log.Error (
     errorVerify,
  )
 import Kore.Options

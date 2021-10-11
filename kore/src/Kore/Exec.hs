@@ -110,10 +110,8 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Log.ErrorEquationRightFunction (
+import Kore.Log.Error (
     errorEquationRightFunction,
- )
-import Kore.Log.ErrorEquationsSameMatch (
     errorEquationsSameMatch,
  )
 import Kore.Log.ErrorRewriteLoop (
@@ -123,11 +121,14 @@ import Kore.Log.ErrorRuleMergeDuplicate (
     errorRuleMergeDuplicateIds,
     errorRuleMergeDuplicateLabels,
  )
-import Kore.Log.InfoExecDepth
+import Kore.Log.Info (
+    ExecDepth (..),
+    infoExecDepth,
+ )
 import Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
  )
-import Kore.Log.WarnDepthLimitExceeded (
+import Kore.Log.Warn (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim

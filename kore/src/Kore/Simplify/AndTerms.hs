@@ -61,12 +61,10 @@ import qualified Kore.Internal.SideCondition as SideCondition (
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-import Kore.Log.DebugUnification (
+import Kore.Log.Debug (
     debugUnificationSolved,
     debugUnificationUnsolved,
     whileDebugUnification,
- )
-import Kore.Log.DebugUnifyBottom (
     debugUnifyBottom,
     debugUnifyBottomAndReturnBottom,
  )

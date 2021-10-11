@@ -18,19 +18,15 @@ import Control.Monad.Reader (
 import Data.Default
 import Data.Proxy
 import qualified Database.SQLite.Simple as SQLite
-import Kore.Log.DebugEvaluateCondition (
+import Kore.Log.Debug (
     DebugEvaluateCondition,
- )
-import Kore.Log.DebugSubstitutionSimplifier (
     DebugSubstitutionSimplifier,
  )
-import Kore.Log.ErrorBottomTotalFunction (
+import Kore.Log.Error (
     ErrorBottomTotalFunction,
  )
-import Kore.Log.WarnFunctionWithoutEvaluators (
+import Kore.Log.Warn (
     WarnFunctionWithoutEvaluators,
- )
-import Kore.Log.WarnSymbolSMTRepresentation (
     WarnSymbolSMTRepresentation,
  )
 import Log (

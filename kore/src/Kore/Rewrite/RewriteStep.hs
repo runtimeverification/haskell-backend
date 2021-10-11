@@ -36,7 +36,7 @@ import Kore.Internal.SideCondition (SideCondition)
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugAppliedRewriteRules (
+import Kore.Log.Debug (
     debugAppliedRewriteRules,
  )
 import Kore.Log.ErrorRewritesInstantiation (

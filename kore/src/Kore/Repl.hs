@@ -50,7 +50,7 @@ import Kore.Internal.TermLike (
     mkTop,
  )
 import qualified Kore.Log as Log
-import Kore.Log.ErrorException (
+import Kore.Log.Error (
     errorException,
  )
 import Kore.Reachability (

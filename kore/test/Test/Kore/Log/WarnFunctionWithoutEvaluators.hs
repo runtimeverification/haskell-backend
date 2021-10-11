@@ -2,7 +2,9 @@ module Test.Kore.Log.WarnFunctionWithoutEvaluators (
     test_instance_Table_WarnFunctionWithoutEvaluators,
 ) where
 
-import Kore.Log.WarnFunctionWithoutEvaluators
+import Kore.Log.Warn (
+    WarnFunctionWithoutEvaluators (..),
+ )
 import Prelude.Kore ()
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.SQL

@@ -14,7 +14,10 @@ import Kore.Attribute.Attributes (Attributes (..))
 import Kore.Attribute.Parser (ParseAttributes (..))
 import Kore.Attribute.SourceLocation (SourceLocation)
 import Kore.Error (printError)
-import Kore.Log.ErrorParse
+
+import Kore.Log.Error (
+    errorParse,
+ )
 import Prelude.Kore
 
 {- | Location attribute for some of the K files used during execution, displayed

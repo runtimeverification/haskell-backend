@@ -2,7 +2,9 @@ module Test.Kore.Log.WarnSymbolSMTRepresentation (
     test_instance_Table_WarnSymbolSMTRepresentation,
 ) where
 
-import Kore.Log.WarnSymbolSMTRepresentation
+import Kore.Log.Warn (
+    WarnSymbolSMTRepresentation (..),
+ )
 import Prelude.Kore ()
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.SQL

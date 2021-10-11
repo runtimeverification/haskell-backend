@@ -321,44 +321,24 @@ library
     Kore.Internal.TermLike.TermLike
     Kore.Internal.Variable
     Kore.Log
-    Kore.Log.DebugAppliedRewriteRules
+    Kore.Log.Debug
     Kore.Log.DebugBeginClaim
-    Kore.Log.DebugEvaluateCondition
     Kore.Log.DebugProven
     Kore.Log.DebugSolver
-    Kore.Log.DebugSubstitutionSimplifier
     Kore.Log.DebugTransition
-    Kore.Log.DebugUnification
-    Kore.Log.DebugUnifyBottom
-    Kore.Log.ErrorBottomTotalFunction
-    Kore.Log.ErrorDecidePredicateUnknown
-    Kore.Log.ErrorEquationRightFunction
-    Kore.Log.ErrorEquationsSameMatch
-    Kore.Log.ErrorException
-    Kore.Log.ErrorParse
+    Kore.Log.Error
     Kore.Log.ErrorRewriteLoop
     Kore.Log.ErrorRewritesInstantiation
     Kore.Log.ErrorRuleMergeDuplicate
-    Kore.Log.ErrorVerify
-    Kore.Log.InfoAttemptUnification
-    Kore.Log.InfoExecBreadth
-    Kore.Log.InfoExecDepth
-    Kore.Log.InfoProofDepth
-    Kore.Log.InfoReachability
+    Kore.Log.Info
     Kore.Log.KoreLogOptions
     Kore.Log.Registry
     Kore.Log.SQLite
+    Kore.Log.Warn
     Kore.Log.WarnBoundedModelChecker
-    Kore.Log.WarnClaimRHSIsBottom
-    Kore.Log.WarnDepthLimitExceeded
-    Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity
-    Kore.Log.WarnNotImplemented
-    Kore.Log.WarnRetrySolverQuery
     Kore.Log.WarnStuckClaimState
-    Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim
-    Kore.Log.WarnUnsimplifiedPredicate
     Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step

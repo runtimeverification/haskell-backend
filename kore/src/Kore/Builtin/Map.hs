@@ -97,7 +97,7 @@ import Kore.Internal.TermLike (
     pattern InternalMap_,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugUnifyBottom (
+import Kore.Log.Debug (
     debugUnifyBottomAndReturnBottom,
  )
 import Kore.Rewrite.RewritingVariable (

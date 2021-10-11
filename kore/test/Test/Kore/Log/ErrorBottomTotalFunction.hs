@@ -2,7 +2,9 @@ module Test.Kore.Log.ErrorBottomTotalFunction (
     test_instance_Table_ErrorBottomTotalFunction,
 ) where
 
-import Kore.Log.ErrorBottomTotalFunction
+import Kore.Log.Error (
+    ErrorBottomTotalFunction (..),
+ )
 import Prelude.Kore ()
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.SQL

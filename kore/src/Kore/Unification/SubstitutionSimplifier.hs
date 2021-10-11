@@ -35,7 +35,7 @@ import Kore.Internal.Substitution (
 import Kore.Internal.TermLike (
     TermLike,
  )
-import Kore.Log.DebugSubstitutionSimplifier (
+import Kore.Log.Debug (
     debugSubstitutionSimplifierResult,
     whileDebugSubstitutionSimplifier,
  )

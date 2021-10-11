@@ -19,8 +19,10 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike
-import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
-import Kore.Log.InfoAttemptUnification (
+import Kore.Log.Debug (
+    debugUnifyBottomAndReturnBottom,
+ )
+import Kore.Log.Info (
     infoAttemptUnification,
  )
 import Kore.Rewrite.RewritingVariable (

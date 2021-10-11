@@ -75,10 +75,8 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (makePredicate)
 import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
-import Kore.Log.ErrorParse (
+import Kore.Log.Error (
     errorParse,
- )
-import Kore.Log.ErrorVerify (
     errorVerify,
  )
 import Kore.Parser (
