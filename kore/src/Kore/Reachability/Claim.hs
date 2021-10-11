@@ -611,13 +611,11 @@ simplify' lensClaimPattern claim = do
     applySubstOnRightHandSide claimPat =
         let substitution =
                 Pattern.substitution $ Lens.view (field @"left") claimPat
-            noLeftSubst =
-                Lens.set (field @"left" . field @"substitution") mempty claimPat
             mapSubstitution ::
                 OrPattern RewritingVariableName -> OrPattern RewritingVariableName
             mapSubstitution =
-                MultiOr.map (Lens.over (field @"substitution") (<> substitution))
-         in Lens.over (field @"right") mapSubstitution noLeftSubst
+                MultiOr.map (Lens.over (field @"substitution") (substitution <>))
+         in Lens.over (field @"right") mapSubstitution claimPat
 
     extractSideCondition =
         SideCondition.fromConditionWithReplacements
