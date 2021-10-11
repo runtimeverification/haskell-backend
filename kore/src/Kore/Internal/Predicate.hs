@@ -1248,20 +1248,25 @@ traverseVariablesF adj =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         AndF andP -> pure (AndF andP)
         BottomF botP -> pure (BottomF botP)
-        CeilF ceilP ->
-            let ceilP' = (traverse . TermLike.traverseVariables) adj ceilP
-             in fmap CeilF ceilP'
-        EqualsF eqP ->
-            let eqP' = (traverse . TermLike.traverseVariables) adj eqP
-             in fmap EqualsF eqP'
-        FloorF flrP ->
-            let flrP' = (traverse . TermLike.traverseVariables) adj flrP
-             in fmap FloorF flrP'
+        -- TODO: this ceil has to be the issue
+        -- CeilF ceilP -> pure (CeilF ceilP)
+        -- EqualsF equalsP -> pure (EqualsF equalsP)
+        -- FloorF floorP -> pure (FloorF floorP)
+        -- InF inP -> pure (InF inP)
+        -- CeilF ceilP ->
+        --     let ceilP' = (traverse . TermLike.traverseVariables) adj ceilP
+        --      in fmap CeilF ceilP'
+        -- EqualsF eqP ->
+        --     let eqP' = (traverse . TermLike.traverseVariables) adj eqP
+        --      in fmap EqualsF eqP'
+        -- FloorF flrP ->
+        --     let flrP' = (traverse . TermLike.traverseVariables) adj flrP
+        --      in fmap FloorF flrP'
         IffF iffP -> pure (IffF iffP)
         ImpliesF impP -> pure (ImpliesF impP)
-        InF inP ->
-            let inP' = (traverse . TermLike.traverseVariables) adj inP
-             in fmap InF inP'
+        -- InF inP ->
+        --     let inP' = (traverse . TermLike.traverseVariables) adj inP
+        --      in fmap InF inP'
         NotF notP -> pure (NotF notP)
         OrF orP -> pure (OrF orP)
         TopF topP -> pure (TopF topP)
