@@ -14,6 +14,20 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.55.0.0] - 2021-10-11
+
+### Added
+
+- Add `oneLineDoc` implementations to all existing `Entry` instances (#2781).
+- Cache the results of equation application (#2321).
+- Parses multi-argument `\\or` with `\\left-assoc` and `\\right-assoc` (#2833).
+
+### Fixed
+
+- Fix bug which lost `Proven` states (#2786).
+- `graph` command does not crash `kore-repl` on MacOS (#2817).
+- Fix bug related to equation application (#2785, #2849, #2793).
+
 ## [0.53.0.0] - 2021-09-08
 
 ### Added
