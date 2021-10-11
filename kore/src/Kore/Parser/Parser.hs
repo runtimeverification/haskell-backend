@@ -136,7 +136,8 @@ parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 -}
 parsePattern :: Parser ParsedPattern
 parsePattern =
-    parseLiteral <|> (parseAnyId >>= parseRemainder)
+    parseLiteral
+        <|> (parseAnyId >>= parseRemainder)
   where
     parseRemainder identifier =
         parseVariableRemainder identifier
@@ -269,7 +270,7 @@ parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
 @parseLeftAssoc@ assumes that the initial identifier has already been parsed.
 
 @
-_ '{' '}' '(' <application-pattern> ')'
+_ '{' '}' '(' <application-pattern> | <multi-or> ')'
 @
 -}
 parseLeftAssoc :: Parser ParsedPattern
@@ -280,7 +281,7 @@ parseLeftAssoc = parseAssoc foldl1
 @parseRightAssoc@ assumes that the initial identifier has already been parsed.
 
 @
-_ '{' '}' '(' <application-pattern> ')'
+_ '{' '}' '(' <application-pattern> | <multi-or> ')'
 @
 -}
 parseRightAssoc :: Parser ParsedPattern
@@ -300,12 +301,48 @@ parseAssoc ::
     Parser ParsedPattern
 parseAssoc foldAssoc = do
     braces $ pure ()
-    application <- parens $ parseApplication parsePattern
-    let mkApplication child1 child2 =
-            from application{applicationChildren = [child1, child2]}
-    case applicationChildren application of
-        [] -> fail "expected one or more arguments"
-        children -> pure (foldAssoc mkApplication children)
+    Parse.try withOr <|> withApplication
+  where
+    withApplication = do
+        application <- parens $ parseApplication parsePattern
+        let mkApplication child1 child2 =
+                from application{applicationChildren = [child1, child2]}
+        case applicationChildren application of
+            [] -> fail "expected one or more arguments"
+            children -> pure (foldAssoc mkApplication children)
+    withOr = do
+        ParsedMultiOr{multiOrSort, multiOrChildren} <-
+            parens $ parseMultiOr parsePattern
+        let mkOr child1 child2 =
+                from Or{orFirst = child1, orSecond = child2, orSort = multiOrSort}
+        case multiOrChildren of
+            [] -> fail "expected two or more arguments"
+            [_] -> fail "expected two or more arguments"
+            children -> return (foldAssoc mkOr children)
+
+-- | Datatype for representing multi-argument Or.
+data ParsedMultiOr child = ParsedMultiOr
+    { multiOrSort :: Sort
+    , multiOrChildren :: [child]
+    }
+
+{- | Parse an multi-argument Or occurring under an assoc syntatic sugar.
+
+@
+<multi-or> ::= "\or" "{" <sort> "}" "(" <patterns> ")"
+@
+-}
+parseMultiOr :: Parser child -> Parser (ParsedMultiOr child)
+parseMultiOr parseChild = do
+    parseAnyId >>= orLiteral
+    multiOrSort <- braces parseSort
+    multiOrChildren <- parens . list $ parseChild
+    return ParsedMultiOr{multiOrSort, multiOrChildren}
+  where
+    orLiteral identifier =
+        getSpecialId identifier >>= \case
+            "or" -> return ()
+            _ -> empty
 
 {- | Parse a built-in Kore (matching logic) pattern.
 
@@ -344,7 +381,9 @@ parseAssoc foldAssoc = do
 
     // Syntax sugar
     | "\left-assoc" "{" "}" "(" <application-pattern> ")"
+    | "\left-assoc" "{" "}" "(" <multi-or> ")"
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
+    | "\right-assoc" "{" "}" "(" <multi-or> ")"
 @
 
 Always starts with @\@.
