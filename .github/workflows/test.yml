@@ -6,7 +6,7 @@ jobs:
     name: 'Nix / Build'
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code
@@ -36,7 +36,7 @@ jobs:
     name: 'Nix / Shell'
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code
@@ -67,7 +67,7 @@ jobs:
     needs: nix-build
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code
