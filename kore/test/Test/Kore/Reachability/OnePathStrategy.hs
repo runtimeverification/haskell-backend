@@ -27,6 +27,8 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike (
     TermLike,
  )
@@ -808,7 +810,14 @@ test_onePathStrategy =
                         )
                     )
             left' =
-                Pattern.fromTermLike Mock.a
+                Conditional
+                    { term = Mock.a
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution =
+                        Substitution.wrap
+                            [Substitution.assign (mkSomeVariable Mock.x) Mock.a]
+                    }
+
             right =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
