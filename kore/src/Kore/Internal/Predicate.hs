@@ -95,7 +95,8 @@ import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
  )
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Attribute.PredicatePattern (
-    PredicatePattern, FreeVariables
+    FreeVariables,
+    PredicatePattern,
  )
 import qualified Kore.Attribute.PredicatePattern as PredicatePattern
 import Kore.Attribute.Synthetic
@@ -132,8 +133,8 @@ import Kore.Internal.TermLike hiding (
     traverseVariables,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Internal.TermLike.TermLike as TermLike
 import Kore.Internal.TermLike.Renaming
+import qualified Kore.Internal.TermLike.TermLike as TermLike
 import Kore.Sort (
     predicateSort,
  )
@@ -1241,7 +1242,7 @@ traverseVariables adj predicate =
         (pure . Recursive.embed) (attrs' :< predicateF')
 
 traverseVariablesF ::
-    forall variable1 variable2 m child .
+    forall variable1 variable2 m child.
     Show variable1 =>
     Show variable2 =>
     Ord variable1 =>
@@ -1285,11 +1286,12 @@ traverseVariablesF env avoiding adj =
         Forall forallSort
             <$> trElemVar forallVariable
             <*> pure forallChild
-    -- transCeil :: AdjSomeVariableName (variable1 -> m variable2) -> TermLike variable1 -> m (TermLike variable2)
-    -- transCeil f t@(Recursive.project -> (attrs :< termLikeF)) = do
-    --     attrs' <- TermLike.traverseAttributeVariables f attrs
-    --     x <- TermLike.traverseVariablesF f termLikeF
-    --     (pure . Recursive.embed) (attrs' :< x)
+
+-- transCeil :: AdjSomeVariableName (variable1 -> m variable2) -> TermLike variable1 -> m (TermLike variable2)
+-- transCeil f t@(Recursive.project -> (attrs :< termLikeF)) = do
+--     attrs' <- TermLike.traverseAttributeVariables f attrs
+--     x <- TermLike.traverseVariablesF f termLikeF
+--     (pure . Recursive.embed) (attrs' :< x)
 
 mapVariables ::
     forall variable1 variable2.
@@ -1299,23 +1301,23 @@ mapVariables ::
     Predicate variable1 ->
     Predicate variable2
 mapVariables adj predicate =
---     let termPredicate =
---             TermLike.mapVariables adj
---                 -- TODO (Andrei B): Try to avoid TermLike conversion
---                 . fromPredicate (mkSortVariable "_")
---                 $ predicate
---      in either
---             errorMappingVariables
---             id
---             (makePredicate termPredicate)
---   where
---     errorMappingVariables termPredicate =
---         error . show . Pretty.vsep $
---             [ "Error when mapping the variables of predicate:"
---             , Pretty.pretty predicate
---             , "The resulting term is not a predicate:"
---             , Pretty.pretty termPredicate
---             ]
+    --     let termPredicate =
+    --             TermLike.mapVariables adj
+    --                 -- TODO (Andrei B): Try to avoid TermLike conversion
+    --                 . fromPredicate (mkSortVariable "_")
+    --                 $ predicate
+    --      in either
+    --             errorMappingVariables
+    --             id
+    --             (makePredicate termPredicate)
+    --   where
+    --     errorMappingVariables termPredicate =
+    --         error . show . Pretty.vsep $
+    --             [ "Error when mapping the variables of predicate:"
+    --             , Pretty.pretty predicate
+    --             , "The resulting term is not a predicate:"
+    --             , Pretty.pretty termPredicate
+    --             ]
     runIdentity (traverseVariables ((.) pure <$> adj) predicate)
 
 -- |Is the predicate free of the given variables?

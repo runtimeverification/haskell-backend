@@ -216,8 +216,8 @@ test_mapVariables :: [TestTree]
 test_mapVariables =
     [ testCase "TESTING calls mapVariables on TermLike children" $ do
         let input = makeCeilPredicate (mkExists Mock.x Mock.a) -- (mkElemVar Mock.x))
-            -- Does not actually rename anything, but will trigger the error if
-            -- the wrong function is passed to TermLike.mapVariables.
+        -- Does not actually rename anything, but will trigger the error if
+        -- the wrong function is passed to TermLike.mapVariables.
             actual = Predicate.mapVariables (pure id) input
             expect = input
         assertEqual "" expect actual

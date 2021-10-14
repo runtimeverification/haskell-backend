@@ -103,9 +103,9 @@ askSomeVariableName =
         let lookup' x =
                 let res = Map.lookup variable1 x
                  in trace ("\n" <> show (variable1, res, idx) <> "\n") (Maybe.fromJust res)
-        -- let err i v = error $ "Not found for key: " <> show v <> " and idx: " <> show i
-        -- Maybe.fromJust is safe because the variable must be renamed
-        in Reader.asks $ lookup' . flip index idx
+         in -- let err i v = error $ "Not found for key: " <> show v <> " and idx: " <> show i
+            -- Maybe.fromJust is safe because the variable must be renamed
+            Reader.asks $ lookup' . flip index idx
 {-# INLINE askSomeVariableName #-}
 
 askElementVariableName ::
