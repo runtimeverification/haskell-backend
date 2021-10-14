@@ -37,8 +37,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          name: runtimeverification
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Materialize
         run: ./nix/rematerialize.sh
@@ -101,8 +101,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          name: runtimeverification
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Format
         run: ./nix/fourmolu.sh
