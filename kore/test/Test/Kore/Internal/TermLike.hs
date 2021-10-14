@@ -445,12 +445,16 @@ test_renaming =
     traverseElementVariables' Variable{variableName} =
         runIdentity
             . traverseVariables
+                mempty
+                mempty
                 (pure return)
                     { adjSomeVariableNameElement = const . return <$> variableName
                     }
     traverseSetVariables' Variable{variableName} =
         runIdentity
             . traverseVariables
+                mempty
+                mempty
                 (pure return)
                     { adjSomeVariableNameSet = const . return <$> variableName
                     }

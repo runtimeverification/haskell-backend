@@ -92,16 +92,25 @@ renameFreeVariables adj =
 {-# INLINE renameFreeVariables #-}
 
 askSomeVariableName ::
+    HasCallStack =>
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     MonadReader (VariableNameMap variable1 variable2) m =>
     AdjSomeVariableName (variable1 -> m variable2)
 askSomeVariableName =
     tabulate $ \idx variable1 ->
+        let lookup' x =
+                let res = Map.lookup variable1 x
+                 in trace ("\n" <> show (variable1, res, idx) <> "\n") (Maybe.fromJust res)
+        -- let err i v = error $ "Not found for key: " <> show v <> " and idx: " <> show i
         -- Maybe.fromJust is safe because the variable must be renamed
-        Reader.asks $ Maybe.fromJust . Map.lookup variable1 . flip index idx
+        in Reader.asks $ lookup' . flip index idx
 {-# INLINE askSomeVariableName #-}
 
 askElementVariableName ::
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     MonadReader (VariableNameMap variable1 variable2) m =>
     ElementVariableName variable1 ->
@@ -109,6 +118,8 @@ askElementVariableName ::
 askElementVariableName = traverseElementVariableName askSomeVariableName
 
 askSetVariableName ::
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     MonadReader (VariableNameMap variable1 variable2) m =>
     SetVariableName variable1 ->
@@ -116,6 +127,8 @@ askSetVariableName ::
 askSetVariableName = traverseSetVariableName askSomeVariableName
 
 askSomeVariable ::
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     MonadReader (VariableNameMap variable1 variable2) m =>
     SomeVariable variable1 ->
@@ -124,6 +137,8 @@ askSomeVariable =
     traverse $ traverseSomeVariableName askSomeVariableName
 
 askElementVariable ::
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     MonadReader (VariableNameMap variable1 variable2) m =>
     ElementVariable variable1 ->
@@ -131,6 +146,8 @@ askElementVariable ::
 askElementVariable = traverse askElementVariableName
 
 askSetVariable ::
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     MonadReader (VariableNameMap variable1 variable2) m =>
     SetVariable variable1 ->

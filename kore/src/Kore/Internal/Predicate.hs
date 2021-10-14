@@ -95,7 +95,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
  )
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Attribute.PredicatePattern (
-    PredicatePattern,
+    PredicatePattern, FreeVariables
  )
 import qualified Kore.Attribute.PredicatePattern as PredicatePattern
 import Kore.Attribute.Synthetic
@@ -132,6 +132,7 @@ import Kore.Internal.TermLike hiding (
     traverseVariables,
  )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Internal.TermLike.TermLike as TermLike
 import Kore.Internal.TermLike.Renaming
 import Kore.Sort (
     predicateSort,
@@ -1200,6 +1201,8 @@ traverseAttributeVariables adj =
 
 traverseVariables ::
     forall variable1 variable2 m.
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     FreshPartialOrd variable2 =>
     Monad m =>
@@ -1230,35 +1233,37 @@ traverseVariables adj predicate =
         predicateF' <- case predicateF of
             ExistsF exists -> ExistsF <$> traverseExists avoiding exists
             ForallF forall -> ForallF <$> traverseForall avoiding forall
-            _ ->
+            _ -> do
+                env <- Reader.ask
+                -- The error comes from here
                 sequence predicateF
-                    >>= traverseVariablesF askSomeVariableName
+                    >>= traverseVariablesF env avoiding askSomeVariableName
         (pure . Recursive.embed) (attrs' :< predicateF')
 
 traverseVariablesF ::
+    forall variable1 variable2 m child .
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     FreshPartialOrd variable2 =>
     Monad m =>
+    VariableNameMap variable1 variable2 ->
+    FreeVariables variable2 ->
     AdjSomeVariableName (variable1 -> m variable2) ->
     PredicateF variable1 child ->
     m (PredicateF variable2 child)
-traverseVariablesF adj =
+traverseVariablesF env avoiding adj =
     \case
-        ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
-        ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        -- ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
+        -- ForallF all0 -> ForallF <$> traverseVariablesForall all0
         AndF andP -> pure (AndF andP)
         BottomF botP -> pure (BottomF botP)
-        -- TODO: this ceil has to be the issue
-        -- CeilF ceilP -> pure (CeilF ceilP)
-        -- EqualsF equalsP -> pure (EqualsF equalsP)
-        -- FloorF floorP -> pure (FloorF floorP)
-        -- InF inP -> pure (InF inP)
-        -- CeilF ceilP ->
-        --     let ceilP' = (traverse . TermLike.traverseVariables) adj ceilP
-        --      in fmap CeilF ceilP'
-        -- EqualsF eqP ->
-        --     let eqP' = (traverse . TermLike.traverseVariables) adj eqP
-        --      in fmap EqualsF eqP'
+        CeilF ceilP ->
+            let ceilP' = (traverse . TermLike.traverseVariables env avoiding) adj ceilP
+             in fmap CeilF ceilP'
+        EqualsF eqP ->
+            let eqP' = (traverse . TermLike.traverseVariables env avoiding) adj eqP
+             in fmap EqualsF eqP'
         -- FloorF flrP ->
         --     let flrP' = (traverse . TermLike.traverseVariables) adj flrP
         --      in fmap FloorF flrP'
@@ -1280,6 +1285,11 @@ traverseVariablesF adj =
         Forall forallSort
             <$> trElemVar forallVariable
             <*> pure forallChild
+    -- transCeil :: AdjSomeVariableName (variable1 -> m variable2) -> TermLike variable1 -> m (TermLike variable2)
+    -- transCeil f t@(Recursive.project -> (attrs :< termLikeF)) = do
+    --     attrs' <- TermLike.traverseAttributeVariables f attrs
+    --     x <- TermLike.traverseVariablesF f termLikeF
+    --     (pure . Recursive.embed) (attrs' :< x)
 
 mapVariables ::
     forall variable1 variable2.
@@ -1289,6 +1299,23 @@ mapVariables ::
     Predicate variable1 ->
     Predicate variable2
 mapVariables adj predicate =
+--     let termPredicate =
+--             TermLike.mapVariables adj
+--                 -- TODO (Andrei B): Try to avoid TermLike conversion
+--                 . fromPredicate (mkSortVariable "_")
+--                 $ predicate
+--      in either
+--             errorMappingVariables
+--             id
+--             (makePredicate termPredicate)
+--   where
+--     errorMappingVariables termPredicate =
+--         error . show . Pretty.vsep $
+--             [ "Error when mapping the variables of predicate:"
+--             , Pretty.pretty predicate
+--             , "The resulting term is not a predicate:"
+--             , Pretty.pretty termPredicate
+--             ]
     runIdentity (traverseVariables ((.) pure <$> adj) predicate)
 
 -- |Is the predicate free of the given variables?

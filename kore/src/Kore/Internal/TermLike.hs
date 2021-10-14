@@ -388,12 +388,17 @@ because the entire tree must be traversed to inspect for variables before
 deciding if the result is @Nothing@ or @Just _@.
 -}
 asConcrete ::
+    Show variable =>
     Ord variable =>
     TermLike variable ->
     Maybe (TermLike Concrete)
-asConcrete = traverseVariables (pure toConcrete)
+asConcrete = traverseVariables mempty mempty (pure toConcrete)
 
-isConcrete :: Ord variable => TermLike variable -> Bool
+isConcrete ::
+    Show variable =>
+    Ord variable =>
+    TermLike variable ->
+    Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -406,6 +411,7 @@ composes with other tree transformations without allocating intermediates.
 -}
 fromConcrete ::
     FreshPartialOrd variable =>
+    Show variable =>
     TermLike Concrete ->
     TermLike variable
 fromConcrete = mapVariables (pure $ from @Concrete)

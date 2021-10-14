@@ -13,6 +13,7 @@ module Kore.Internal.TermLike.TermLike (
     extractAttributes,
     mapVariables,
     traverseVariables,
+    traverseAttributeVariables,
     mkVar,
     traverseVariablesF,
     updateCallStack,
@@ -65,7 +66,7 @@ import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
-    HasFreeVariables (..),
+    HasFreeVariables (..), FreeVariables
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
@@ -805,7 +806,7 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance
-    (FreshPartialOrd variable) =>
+    (Show variable, FreshPartialOrd variable) =>
     From (TermLike Concrete) (TermLike variable)
     where
     from = mapVariables (pure $ from @Concrete)
@@ -1140,13 +1141,15 @@ See also: 'traverseVariables'
 -}
 mapVariables ::
     forall variable1 variable2.
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     FreshPartialOrd variable2 =>
     AdjSomeVariableName (variable1 -> variable2) ->
     TermLike variable1 ->
     TermLike variable2
 mapVariables adj termLike =
-    runIdentity (traverseVariables ((.) pure <$> adj) termLike)
+    runIdentity (traverseVariables mempty mempty ((.) pure <$> adj) termLike)
 {-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
@@ -1160,17 +1163,21 @@ See also: 'mapVariables'
 -}
 traverseVariables ::
     forall variable1 variable2 m.
+    Show variable1 =>
+    Show variable2 =>
     Ord variable1 =>
     FreshPartialOrd variable2 =>
     Monad m =>
+    VariableNameMap variable1 variable2 ->
+    FreeVariables variable2 ->
     AdjSomeVariableName (variable1 -> m variable2) ->
     TermLike variable1 ->
     m (TermLike variable2)
-traverseVariables adj termLike =
+traverseVariables env avoiding' adj termLike =
     renameFreeVariables
         adj
         (Attribute.freeVariables @_ @variable1 termLike)
-        >>= Reader.runReaderT (Recursive.fold worker termLike)
+        >>= Reader.runReaderT (Reader.local (<> env) (Recursive.fold worker termLike))
   where
     adjReader = (.) lift <$> adj
     trElemVar = traverse $ traverseElementVariableName adjReader
@@ -1190,8 +1197,9 @@ traverseVariables adj termLike =
             (RenamingT variable1 variable2 m (TermLike variable2)) ->
         RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
+        -- TODO: the issue is with askSomeVariableName, try to see which one
         ~attrs' <- traverseAttributeVariables askSomeVariableName attrs
-        let ~avoiding = freeVariables attrs'
+        let ~avoiding = freeVariables attrs' <> avoiding'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
                 unifiedVariable' <- askSomeVariable unifiedVariable
