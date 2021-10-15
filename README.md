@@ -113,7 +113,7 @@ cabal build --enable-tests --enable-benchmarks --only-dependencies kore
 ### Developing with Nix
 
 We provide a `shell.nix` expression with a suitable development environment and
-a binary cache at [kore.cachix.org]. The development environment is intended to
+a binary cache at [runtimeverification.cachix.org]. The development environment is intended to
 be used with `nix-shell` and `cabal`.
 
 When the `.cabal` package description file changes, run:
@@ -144,7 +144,7 @@ nix-shell test.nix  # enter a shell where we can run tests manually
 [haskell-language-server]: https://github.com/haskell/haskell-language-server
 [language server]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
-[kore.cachix.org]: https://kore.cachix.org/
+[runtimeverification.cachix.org]: https://runtimeverification.cachix.org/
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
 [fd]: https://github.com/sharkdp/fd
