@@ -511,6 +511,7 @@ library
     Kore.Validate.DefinitionVerifier
     Kore.Validate.Error
     Kore.Validate.ModuleVerifier
+    Kore.Validate.Pattern
     Kore.Validate.PatternVerifier
     Kore.Validate.PatternVerifier.PatternVerifier
     Kore.Validate.SentenceVerifier
