@@ -72,6 +72,12 @@ import Kore.Log.ErrorBottomTotalFunction (
 import Kore.Log.ErrorDecidePredicateUnknown (
     ErrorDecidePredicateUnknown,
  )
+import Kore.Log.ErrorEquationRightFunction (
+    ErrorEquationRightFunction,
+ )
+import Kore.Log.ErrorEquationsSameMatch (
+    ErrorEquationsSameMatch,
+ )
 import Kore.Log.ErrorException (
     ErrorException,
  )
@@ -218,6 +224,8 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
             , mk $ Proxy @ErrorDecidePredicateUnknown
+            , mk $ Proxy @ErrorEquationRightFunction
+            , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorParse
             , mk $ Proxy @ErrorVerify
             , mk $ Proxy @ErrorRuleMergeDuplicateIds
