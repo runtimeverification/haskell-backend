@@ -18,10 +18,10 @@ module Kore.Validate (
 import qualified Kore.Internal.Alias as Internal (
     Alias,
  )
+import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Validate.Pattern (
     Pattern,
  )
-import qualified Kore.Syntax.Sentence as Syntax
 import Prelude.Kore ()
 
 type Alias = Internal.Alias Pattern
