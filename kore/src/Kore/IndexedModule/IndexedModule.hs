@@ -25,7 +25,7 @@ module Kore.IndexedModule.IndexedModule (
     IndexModuleError,
     KoreImplicitIndexedModule,
     KoreIndexedModule,
-    VerifiedModule,
+    ValidatedModule,
     indexedModuleWithDefaultImports,
     eraseAttributes,
     eraseAxiomAttributes,
@@ -40,8 +40,8 @@ module Kore.IndexedModule.IndexedModule (
     internalIndexedModuleSubsorts,
     indexedModulesInScope,
     toModule,
-    toVerifiedModule,
-    toVerifiedDefinition,
+    toValidatedModule,
+    toValidatedDefinition,
     recursiveIndexedModuleAxioms,
     recursiveIndexedModuleSortDescriptions,
     recursiveIndexedModuleSymbolSentences,
@@ -91,7 +91,7 @@ import Kore.Error
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax
 import Kore.Syntax.Definition
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 type SortDescription = SentenceSort
@@ -300,9 +300,9 @@ mapPatterns mapping indexedModule =
 
 type KoreIndexedModule = IndexedModule ParsedPattern
 
-type VerifiedModule declAtts =
+type ValidatedModule declAtts =
     IndexedModule
-        Verified.Pattern
+        Validated.Pattern
         declAtts
         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 
@@ -320,16 +320,16 @@ toModule module' =
         , moduleAttributes = snd (indexedModuleAttributes module')
         }
 
-{- | Convert a 'VerifiedModule' back into a 'Module'.
+{- | Convert a 'ValidatedModule' back into a 'Module'.
 
 The original module attributes /are/ preserved.
 -}
-toVerifiedModule ::
-    VerifiedModule declAtts ->
-    Module Verified.Sentence
-toVerifiedModule = toModule
+toValidatedModule ::
+    ValidatedModule declAtts ->
+    Module Validated.Sentence
+toValidatedModule = toModule
 
-{- | Convert any collection of 'VerifiedModule's back into a 'Definition'.
+{- | Convert any collection of 'ValidatedModule's back into a 'Definition'.
 
 The definition attributes are lost in the process of indexing the original
 definition.
@@ -337,17 +337,17 @@ definition.
 Although all 'IndexedModule's refer to the implicit Kore module, it is not
 included in the output of this function because it is /implicit/.
 
-See also: 'toVerifiedPureModule'
+See also: 'toValidatedPureModule'
 -}
-toVerifiedDefinition ::
+toValidatedDefinition ::
     Foldable t =>
-    t (VerifiedModule declAtts) ->
-    Definition Verified.Sentence
-toVerifiedDefinition idx =
+    t (ValidatedModule declAtts) ->
+    Definition Validated.Sentence
+toValidatedDefinition idx =
     Definition
         { definitionAttributes = Default.def
         , definitionModules =
-            toVerifiedModule
+            toValidatedModule
                 <$> filter notImplicitKoreModule (toList idx)
         }
   where

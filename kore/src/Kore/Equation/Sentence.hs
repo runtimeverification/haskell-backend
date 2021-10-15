@@ -99,12 +99,10 @@ instance InternalVariable variable => Pretty (MatchEquationError variable) where
     pretty SubsortAxiom = "The term is a subsort axiom."
 
 matchEquation ::
-    forall variable.
-    InternalVariable variable =>
-    Attribute.Axiom Symbol variable ->
-    TermLike variable ->
-    Either (MatchEquationError variable) (Equation variable)
-matchEquation attributes termLike
+    Attribute.Axiom Symbol VariableName ->
+    Validated.Pattern ->
+    Either (MatchEquationError VariableName) (Equation VariableName)
+matchEquation attributes validPattern
     | isFunctionalAxiom = Left FunctionalAxiom
     | isConstructorAxiom = Left ConstructorAxiom
     | isSubsortAxiom = Left SubsortAxiom

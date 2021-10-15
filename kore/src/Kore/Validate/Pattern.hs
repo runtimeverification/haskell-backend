@@ -63,25 +63,25 @@ import Kore.Internal.Key (
  )
 
 -- | 'PatternF' is the 'Base' functor of validated patterns.
-data PatternF variable child
+data PatternF child
     = AndF !(And Sort child)
     | ApplySymbolF !(Application Symbol child)
     | -- TODO (thomas.tuegel): Expand aliases during validation?
-      ApplyAliasF !(Application (Alias (Pattern VariableName)) child)
+      ApplyAliasF !(Application (Alias Pattern) child)
     | BottomF !(Bottom Sort child)
     | CeilF !(Ceil Sort child)
     | DomainValueF !(DomainValue Sort child)
     | EqualsF !(Equals Sort child)
-    | ExistsF !(Exists Sort variable child)
+    | ExistsF !(Exists Sort VariableName child)
     | FloorF !(Floor Sort child)
-    | ForallF !(Forall Sort variable child)
+    | ForallF !(Forall Sort VariableName child)
     | IffF !(Iff Sort child)
     | ImpliesF !(Implies Sort child)
     | InF !(In Sort child)
-    | MuF !(Mu variable child)
+    | MuF !(Mu VariableName child)
     | NextF !(Next Sort child)
     | NotF !(Not Sort child)
-    | NuF !(Nu variable child)
+    | NuF !(Nu VariableName child)
     | OrF !(Or Sort child)
     | RewritesF !(Rewrites Sort child)
     | TopF !(Top Sort child)
@@ -94,7 +94,7 @@ data PatternF variable child
     | InternalListF !(InternalList child)
     | InternalMapF !(InternalMap Key child)
     | InternalSetF !(InternalSet Key child)
-    | VariableF !(Const (SomeVariable variable) child)
+    | VariableF !(Const (SomeVariable VariableName) child)
     | EndiannessF !(Const Endianness child)
     | SignednessF !(Const Signedness child)
     | InjF !(Inj child)
@@ -103,21 +103,21 @@ data PatternF variable child
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
-newtype Pattern variable = Pattern
+newtype Pattern = Pattern
     { getPattern ::
         CofreeF
-            (PatternF variable)
-            (PatternAttributes variable)
-            (Pattern variable)
+            PatternF
+            PatternAttributes
+            Pattern
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 -- | @PatternAttributes@ are the attributes of a pattern collected during validation.
-data PatternAttributes variable = PatternAttributes
+data PatternAttributes = PatternAttributes
     { termSort :: !Sort
-    , termFreeVariables :: !(Attribute.FreeVariables variable)
+    , termFreeVariables :: !(Attribute.FreeVariables VariableName)
     , termFunctional :: !Attribute.Functional
     , termFunction :: !Attribute.Function
     , termDefined :: !Attribute.Defined

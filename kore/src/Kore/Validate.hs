@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
-module Kore.Verified (
+module Kore.Validate (
     Pattern,
     Alias,
     Sentence,
@@ -18,14 +18,11 @@ module Kore.Verified (
 import qualified Kore.Internal.Alias as Internal (
     Alias,
  )
-import Kore.Internal.TermLike (
-    TermLike,
-    VariableName,
+import Kore.Validate.Pattern (
+    Pattern,
  )
 import qualified Kore.Syntax.Sentence as Syntax
 import Prelude.Kore ()
-
-type Pattern = TermLike VariableName
 
 type Alias = Internal.Alias Pattern
 

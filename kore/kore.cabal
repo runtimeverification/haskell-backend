@@ -176,7 +176,6 @@ library
     ErrorContext
     From
     Injection
-    Kore.AST.ApplicativeKore
     Kore.AST.AstWithLocation
     Kore.AST.Common
     Kore.AST.Error
