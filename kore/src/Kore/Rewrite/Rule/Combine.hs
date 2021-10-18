@@ -60,7 +60,7 @@ import qualified Kore.Rewrite.RulePattern as Rule.DoNotUse
 import qualified Kore.Rewrite.RulePattern as RulePattern (
     applySubstitution,
  )
-import Kore.Rewrite.SMT.Evaluator (
+import qualified Kore.Rewrite.SMT.Evaluator as SMT (
     evalPredicate,
  )
 import Kore.Rewrite.Step (
@@ -162,7 +162,7 @@ mergeRules (renameRulesVariables . toList -> rules) =
                 & Condition.fromPredicate
                 & simplifyCondition SideCondition.topTODO
         evaluatedPredicate <-
-            evalPredicate predicate Nothing >>= \case
+            SMT.evalPredicate predicate Nothing >>= \case
                 Nothing -> return predicate
                 Just True -> return makeTruePredicate
                 Just False -> empty

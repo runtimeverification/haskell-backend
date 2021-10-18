@@ -41,7 +41,7 @@ import Kore.Internal.SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Rewrite.SMT.Evaluator (
+import qualified Kore.Rewrite.SMT.Evaluator as SMT (
     evalConditional,
  )
 import qualified Kore.Rewrite.Strategy as Strategy
@@ -152,7 +152,7 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [Conditional.substitution predSubst]
-            lift (evalConditional merged Nothing) >>= \case
+            lift (SMT.evalConditional merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition
