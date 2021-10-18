@@ -27,8 +27,8 @@ build-evm() {
     cd evm-semantics
     git submodule update --init --recursive
     make plugin-deps
-    make build-haskell
     export PATH=$(pwd)/.build/usr/bin:$PATH
+    make build-haskell
 }
 
 build-wasm() {
@@ -58,7 +58,7 @@ generate-evm() {
 
     kollect-file test-pop1 "$testpop1.haskell-out" \
         make "$testpop1.run-interactive" -e
-    
+
     kollect-file test-add0 "$testadd0.haskell-out" \
         make "$testadd0.run-interactive" -e
 
@@ -67,7 +67,7 @@ generate-evm() {
 
     kollect-file test-and0 "$testand0.haskell-out" \
         make "$testand0.run-interactive" -e
-    
+
     kollect-file test-sha3_bigSize "$testsha3_bigSize.haskell-out" \
         make "$testsha3_bigSize.run-interactive" -e
 
@@ -87,7 +87,7 @@ generate-evm() {
 
     kollect test-lemmas \
         make tests/specs/functional/lemmas-spec.k.prove -s -e
-    
+
     kollect test-storagevar03 \
         make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
 

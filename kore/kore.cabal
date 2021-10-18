@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.53.0.0
+version:        0.55.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -333,6 +333,7 @@ library
     Kore.Log.ErrorBottomTotalFunction
     Kore.Log.ErrorDecidePredicateUnknown
     Kore.Log.ErrorEquationRightFunction
+    Kore.Log.ErrorEquationsSameMatch
     Kore.Log.ErrorException
     Kore.Log.ErrorParse
     Kore.Log.ErrorRewriteLoop
@@ -402,9 +403,7 @@ library
     Kore.Rewrite.RulePattern
     Kore.Rewrite.Search
     Kore.Rewrite.SMT.AST
-    Kore.Rewrite.SMT.Declaration.All
-    Kore.Rewrite.SMT.Declaration.Sorts
-    Kore.Rewrite.SMT.Declaration.Symbols
+    Kore.Rewrite.SMT.Declaration
     Kore.Rewrite.SMT.Encoder
     Kore.Rewrite.SMT.Evaluator
     Kore.Rewrite.SMT.Lemma

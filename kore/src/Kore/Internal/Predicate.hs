@@ -34,6 +34,7 @@ module Kore.Internal.Predicate (
     simplifiedAttribute,
     isSimplified,
     isSimplifiedSomeCondition,
+    isSimplifiedAnyCondition,
     isFreeOf,
     freeElementVariables,
     hasFreeVariable,
@@ -44,6 +45,7 @@ module Kore.Internal.Predicate (
     markSimplifiedMaybeConditional,
     setSimplified,
     forgetSimplified,
+    forgetSimplifiedSafe,
     wrapPredicate,
     containsSymbolWithIdPred,
     refreshExists,
@@ -963,6 +965,7 @@ instance
 
 makePredicate ::
     forall variable.
+    HasCallStack =>
     InternalVariable variable =>
     TermLike variable ->
     Either (NotPredicate variable) (Predicate variable)
@@ -1078,6 +1081,14 @@ isSimplifiedSomeCondition :: Predicate variable -> Bool
 isSimplifiedSomeCondition =
     PredicatePattern.isSimplifiedSomeCondition . extractAttributes
 
+{- | Is the 'Predicate' fully simplified under any side condition?
+
+See also: 'isSimplified'.
+-}
+isSimplifiedAnyCondition :: Predicate variable -> Bool
+isSimplifiedAnyCondition =
+    PredicatePattern.isSimplifiedAnyCondition . extractAttributes
+
 cannotSimplifyNotSimplifiedError ::
     (HasCallStack, InternalVariable variable) =>
     PredicateF variable (Predicate variable) ->
@@ -1176,6 +1187,15 @@ setSimplified
                 Attribute.NotSimplified
             _ -> childSimplified <> simplified
 
+{- | Forget the 'simplifiedAttribute' associated with a 'Predicate'.
+This is not safe to be used inside the simplifier, see 'forgetSimplifiedSafe',
+but the following will always hold:
+
+@
+isSimplified (forgetSimplified _) == False
+@
+This is not always true for 'forgetSimplifiedSafe'.
+-}
 forgetSimplified ::
     InternalVariable variable =>
     Predicate variable ->
@@ -1199,6 +1219,36 @@ forgetSimplified = Recursive.fold worker
             synthesize $
                 InF
                     (TermLike.forgetSimplified <$> in')
+        _ -> synthesize predF
+
+{- | Forget the 'simplifiedAttribute' associated with a 'Predicate', with
+some special handling of specific subterms.
+This is safe to be used inside the simplifier.
+See 'Kore.Internal.TermLike.forgetSimplifiedIgnorePredicates'.
+-}
+forgetSimplifiedSafe ::
+    InternalVariable variable =>
+    Predicate variable ->
+    Predicate variable
+forgetSimplifiedSafe = Recursive.fold worker
+  where
+    worker (_ :< predF) = case predF of
+        CeilF ceil' ->
+            synthesize $
+                CeilF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
+        FloorF floor' ->
+            synthesize $
+                FloorF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
+        EqualsF equals' ->
+            synthesize $
+                EqualsF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
+        InF in' ->
+            synthesize $
+                InF
+                    (TermLike.forgetSimplifiedIgnorePredicates <$> in')
         _ -> synthesize predF
 
 mapVariables ::
