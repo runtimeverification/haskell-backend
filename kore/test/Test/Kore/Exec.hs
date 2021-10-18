@@ -54,6 +54,12 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Log.ErrorEquationRightFunction (
+    ErrorEquationRightFunction,
+ )
+import Kore.Log.ErrorEquationsSameMatch (
+    ErrorEquationsSameMatch,
+ )
 import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
@@ -310,11 +316,11 @@ test_checkFunctions =
                                 ]
                             , moduleAttributes = Attributes []
                             }
-                expected = ExitFailure 3
             actual <-
                 checkFunctions verifiedModule
                     & runTestLog runNoSMT
-            assertEqual "" expected $ fst actual
+                    & try @ErrorEquationRightFunction
+            assertEqual "" True $ isLeft actual
         ]
   where
     mySymbolName :: Id
@@ -477,12 +483,12 @@ test_checkBothMatch =
                                 ]
                             , moduleAttributes = Attributes []
                             }
-                expected = ExitFailure 3
             actual <-
                 checkBothMatch verifiedModule
                     & evalSimplifier verifiedModule
                     & runTestLog runNoSMT
-            assertEqual "" expected $ fst actual
+                    & try @ErrorEquationsSameMatch
+            assertEqual "" True $ isLeft actual
         ]
   where
     myF ::
