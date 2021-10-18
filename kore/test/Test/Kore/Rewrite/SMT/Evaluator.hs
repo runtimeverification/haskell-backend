@@ -167,12 +167,14 @@ test_evaluableMultiOr =
 evaluatePredicate ::
     Predicate VariableName ->
     IO (Maybe Bool)
-evaluatePredicate = runSimplifierSMT Mock.env . flip SMT.Evaluator.evalPredicate Nothing
+evaluatePredicate =
+    runSimplifierSMT Mock.env . flip SMT.Evaluator.evalPredicate Nothing
 
 evaluateConditional ::
     Pattern VariableName ->
     IO (Maybe Bool)
-evaluateConditional = runSimplifierSMT Mock.env . flip SMT.Evaluator.evalConditional Nothing
+evaluateConditional =
+    runSimplifierSMT Mock.env . flip SMT.Evaluator.evalConditional Nothing
 
 evaluateMultiOr ::
     MultiOr (Conditional VariableName (TermLike VariableName)) ->
@@ -206,7 +208,10 @@ test_andNegation =
 evaluateSMT ::
     Predicate VariableName ->
     PropertyT SMT (Maybe Bool)
-evaluateSMT = lift . Kore.runSimplifier testEnv . flip SMT.Evaluator.evalPredicate Nothing
+evaluateSMT =
+    lift
+        . Kore.runSimplifier testEnv
+        . flip SMT.Evaluator.evalPredicate Nothing
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates
