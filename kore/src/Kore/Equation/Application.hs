@@ -394,8 +394,9 @@ checkRequires sideCondition predicate requires =
                 _ -> return condition
 
     assertBottom negatedImplication
-        | isBottom negatedImplication = return () -- Done
+        | isBottom negatedImplication = done
         | otherwise = requiresNotMet negatedImplication
+    done = return ()
     requiresNotMet negatedImplication =
         throwE
             CheckRequiresError

@@ -133,8 +133,8 @@ filterMultiOr ::
     MultiOr (Conditional variable term) ->
     simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
-    elements <- mapM refute $ toList multiOr
-    return $ MultiOr.make $ catMaybes elements
+    elements <- mapM refute (toList multiOr)
+    return (MultiOr.make (catMaybes elements))
   where
     refute ::
         Conditional variable term ->
