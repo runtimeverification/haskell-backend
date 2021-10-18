@@ -59,6 +59,11 @@ import Prelude.Kore
   will be fixed to @p@.
 * @f :: Type -> Type -> Type@ is the base functor describing the shape of @p@;
   that is, @Data.Functor.Foldable.Base (p v) ~ CofreeF (f v) a@.
+
+One practical use case of these function is when 't' is 'TermLike'
+and 'p' is 'Predicate', making the following 'from...' functions
+'Predicate' building functions, similar to the more specialized
+'make...' functions from 'Kore.Internal.Predicate'.
 -}
 type SynthesizeFrom
     (s :: Type -> Type)

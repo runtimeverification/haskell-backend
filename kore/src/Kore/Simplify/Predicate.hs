@@ -108,6 +108,7 @@ fromOrCondition = MultiOr.map (from @(Condition _))
 
 simplify ::
     forall simplifier.
+    HasCallStack =>
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
