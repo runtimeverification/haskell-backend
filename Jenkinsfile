@@ -114,6 +114,38 @@ pipeline {
         }
       }
     }
+    stage('Deploy') {
+      when { branch 'master' }
+      stages {
+        stage('GitHub Pages') {
+          steps {
+            sshagent(['rv-jenkins-github']) {
+              dir('project-site') {
+                sh '''
+                  git clone 'ssh://github.com/kframework/kore.git'
+                  cd kore
+                  git checkout -B gh-pages origin/master
+                  git submodule update --init --recursive -- ./web
+                  cd web
+                  npm install
+                  npm run build
+                  npm run build-sitemap
+                  cd -
+                  mv web/public_content ./
+                  rm -rf $(find . -maxdepth 1 -not -name public_content -a -not -name .git -a -not -path . -a -not -path .. -a -not -name CNAME)
+                  mv public_content/* ./
+                  rm -rf public_content
+                  git add ./
+                  git commit -m 'gh-pages: Updated the website'
+                  git merge --strategy ours origin/gh-pages --allow-unrelated-histories
+                  git push origin gh-pages
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
   }
   post {
     unsuccessful {
