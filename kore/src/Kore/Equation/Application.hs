@@ -368,7 +368,7 @@ checkRequires sideCondition predicate requires =
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
             condition :: Condition RewritingVariableName
-            condition = from @(Predicate _) $ makeNotPredicate requires'
+            condition = from @(Predicate _) (makeNotPredicate requires')
         return condition
             -- First try to refute 'condition' without user-defined axioms:
             >>= withoutAxioms . simplifyCondition
