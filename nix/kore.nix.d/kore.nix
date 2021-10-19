@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.53.0.0"; };
+      identifier = { name = "kore"; version = "0.55.0.0"; };
       license = "BSD-3-Clause";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "ana.pantilie@runtimeverification.com";
@@ -254,6 +254,7 @@
           "Kore/Log/ErrorBottomTotalFunction"
           "Kore/Log/ErrorDecidePredicateUnknown"
           "Kore/Log/ErrorEquationRightFunction"
+          "Kore/Log/ErrorEquationsSameMatch"
           "Kore/Log/ErrorException"
           "Kore/Log/ErrorParse"
           "Kore/Log/ErrorRewriteLoop"
@@ -323,9 +324,7 @@
           "Kore/Rewrite/RulePattern"
           "Kore/Rewrite/Search"
           "Kore/Rewrite/SMT/AST"
-          "Kore/Rewrite/SMT/Declaration/All"
-          "Kore/Rewrite/SMT/Declaration/Sorts"
-          "Kore/Rewrite/SMT/Declaration/Symbols"
+          "Kore/Rewrite/SMT/Declaration"
           "Kore/Rewrite/SMT/Encoder"
           "Kore/Rewrite/SMT/Evaluator"
           "Kore/Rewrite/SMT/Lemma"

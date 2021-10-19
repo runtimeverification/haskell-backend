@@ -63,8 +63,8 @@ unresolvedSortMap identifier = (identifier, unresolvedSort identifier)
 unresolvedSort :: Kore.Id -> AST.UnresolvedSort
 unresolvedSort identifier =
     AST.Sort
-        { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
-        , declaration =
+        { sortSmtFromSortArgs = const $ const $ Just $ AST.encode encodable
+        , sortDeclaration =
             AST.SortDeclarationSort
                 AST.SortDeclaration
                     { name = encodable
@@ -80,8 +80,8 @@ unresolvedDataMap identifier = (identifier, unresolvedData identifier)
 unresolvedData :: Kore.Id -> AST.UnresolvedSort
 unresolvedData identifier =
     AST.Sort
-        { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
-        , declaration =
+        { sortSmtFromSortArgs = const $ const $ Just $ AST.encode encodable
+        , sortDeclaration =
             AST.SortDeclarationDataType
                 AST.DataTypeDeclaration
                     { name = encodable
@@ -115,8 +115,8 @@ unresolvedIndirectSortMap identifier name =
 unresolvedIndirectSort :: AST.Encodable -> AST.UnresolvedSort
 unresolvedIndirectSort name =
     AST.Sort
-        { smtFromSortArgs = const $ const $ Just $ AST.encode name
-        , declaration = AST.SortDeclaredIndirectly name
+        { sortSmtFromSortArgs = const $ const $ Just $ AST.encode name
+        , sortDeclaration = AST.SortDeclaredIndirectly name
         }
 
 unresolvedConstructorSymbolMap ::
@@ -133,8 +133,8 @@ unresolvedConstructorSymbol ::
     Kore.Id -> Kore.Sort -> [Kore.Sort] -> AST.UnresolvedSymbol
 unresolvedConstructorSymbol identifier resultSort argumentSorts =
     AST.Symbol
-        { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
-        , declaration =
+        { symbolSmtFromSortArgs = const $ const $ Just $ AST.encode encodable
+        , symbolDeclaration =
             AST.SymbolConstructor
                 AST.IndirectSymbolDeclaration
                     { name = encodable
@@ -161,12 +161,12 @@ unresolvedSmtlibSymbol ::
     AST.UnresolvedSymbol
 unresolvedSmtlibSymbol encodedName inputSorts resultSort =
     AST.Symbol
-        { smtFromSortArgs =
+        { symbolSmtFromSortArgs =
             const $
                 const $
                     Just $
                         AST.Atom encodedName
-        , declaration =
+        , symbolDeclaration =
             AST.SymbolDeclaredDirectly
                 AST.FunctionDeclaration
                     { name = AST.AlreadyEncoded (AST.Atom encodedName)
@@ -187,12 +187,12 @@ unresolvedSmthookSymbol ::
     Text -> [Kore.Sort] -> AST.UnresolvedSymbol
 unresolvedSmthookSymbol encodedName sortDependencies =
     AST.Symbol
-        { smtFromSortArgs =
+        { symbolSmtFromSortArgs =
             const $
                 const $
                     Just $
                         AST.Atom encodedName
-        , declaration =
+        , symbolDeclaration =
             AST.SymbolBuiltin
                 AST.IndirectSymbolDeclaration
                     { name = AST.AlreadyEncoded (AST.Atom encodedName)

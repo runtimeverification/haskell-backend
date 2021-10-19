@@ -3,9 +3,9 @@
         .
       </k>
       <state>
-        y |-> ?_I0:Int
-        x |-> ?_I:Int
         r |-> 0
+        x |-> ?_I:Int
+        y |-> ?_I0:Int
       </state>
     </T>
   #And
@@ -20,9 +20,9 @@
         .
       </k>
       <state>
-        y |-> ?_I0:Int
-        x |-> ?_I:Int
         r |-> 0
+        x |-> ?_I:Int
+        y |-> ?_I0:Int
       </state>
     </T>
   #And

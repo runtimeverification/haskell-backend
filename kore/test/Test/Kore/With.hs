@@ -240,9 +240,9 @@ instance
 
 instance With (AST.Sort sort symbol name) (AST.Constructor sort symbol name) where
     with
-        s@AST.Sort{declaration}
+        s@AST.Sort{sortDeclaration}
         constructor =
-            s{AST.Sort.declaration = declaration `with` constructor}
+            s{AST.Sort.sortDeclaration = sortDeclaration `with` constructor}
 
 instance
     With
@@ -288,9 +288,9 @@ instance With (Kore.Id, AST.UnresolvedSymbol) Kore.Sort where
 
 instance With AST.UnresolvedSymbol Kore.Sort where
     with
-        s@AST.Symbol{declaration}
+        s@AST.Symbol{symbolDeclaration}
         sort =
-            s{AST.Symbol.declaration = declaration `with` sort}
+            s{AST.Symbol.symbolDeclaration = symbolDeclaration `with` sort}
 
 instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
     with (AST.SymbolDeclaredDirectly _) _ =

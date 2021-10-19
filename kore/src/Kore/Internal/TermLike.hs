@@ -19,6 +19,7 @@ module Kore.Internal.TermLike (
     setSimplified,
     setAttributeSimplified,
     forgetSimplified,
+    forgetSimplifiedIgnorePredicates,
     simplifiedAttribute,
     attributeSimplifiedAttribute,
     isFunctionPattern,
@@ -435,6 +436,65 @@ forgetSimplified ::
     TermLike variable ->
     TermLike variable
 forgetSimplified = resynthesize
+
+{- | Forget the 'simplifiedAttribute' associated with the 'TermLike',
+ignoring any 'TermLike's which can be predicates.
+This is safe to use inside the simplifier, since `TermLike` simplification
+will not attempt to resimplify `TermLike`s which can be predicates.
+-}
+forgetSimplifiedIgnorePredicates ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
+forgetSimplifiedIgnorePredicates term@(Recursive.project -> (_ :< termF)) =
+    case termF of
+        AndF and' ->
+            Recursive.embed (newAttrs :< AndF (recursiveCall and'))
+        ApplySymbolF app ->
+            Recursive.embed (newAttrs :< ApplySymbolF (recursiveCall app))
+        ExistsF exists ->
+            Recursive.embed (newAttrs :< ExistsF (recursiveCall exists))
+        ForallF forall' ->
+            Recursive.embed (newAttrs :< ForallF (recursiveCall forall'))
+        IffF iff ->
+            Recursive.embed (newAttrs :< IffF (recursiveCall iff))
+        ImpliesF implies ->
+            Recursive.embed (newAttrs :< ImpliesF (recursiveCall implies))
+        MuF mu ->
+            Recursive.embed (newAttrs :< MuF (recursiveCall mu))
+        NuF nu ->
+            Recursive.embed (newAttrs :< NuF (recursiveCall nu))
+        OrF or' ->
+            Recursive.embed (newAttrs :< OrF (recursiveCall or'))
+        StringLiteralF stringLiteral ->
+            Recursive.embed (newAttrs :< StringLiteralF (recursiveCall stringLiteral))
+        InternalBoolF internalBool ->
+            Recursive.embed (newAttrs :< InternalBoolF (recursiveCall internalBool))
+        InternalIntF internalInt ->
+            Recursive.embed (newAttrs :< InternalIntF (recursiveCall internalInt))
+        InternalBytesF internalBytes ->
+            Recursive.embed (newAttrs :< InternalBytesF (recursiveCall internalBytes))
+        InternalStringF internalString ->
+            Recursive.embed (newAttrs :< InternalStringF (recursiveCall internalString))
+        InternalListF internalList ->
+            Recursive.embed (newAttrs :< InternalListF (recursiveCall internalList))
+        InternalMapF internalMap ->
+            Recursive.embed (newAttrs :< InternalMapF (recursiveCall internalMap))
+        InternalSetF internalSet ->
+            Recursive.embed (newAttrs :< InternalSetF (recursiveCall internalSet))
+        _ -> term
+  where
+    newAttrs =
+        synthetic $
+            Cofree.headF . Recursive.project
+                <$> termF
+    recursiveCall ::
+        Functor f =>
+        f (TermLike variable) ->
+        f (TermLike variable)
+    recursiveCall =
+        fmap forgetSimplifiedIgnorePredicates
 
 simplifiedAttribute :: TermLike variable -> Attribute.Simplified
 simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes
