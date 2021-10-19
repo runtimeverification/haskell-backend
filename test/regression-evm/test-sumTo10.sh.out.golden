@@ -117,6 +117,28 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'refund'-GT-'{}(
                         /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    ),
+                    /* Fl Fn D Sfa Cl */
+                    Lbl'-LT-'accessedAccounts'-GT-'{}(
+                        /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
+                    ),
+                    /* Fl Fn D Sfa Cl */
+                    Lbl'-LT-'accessedStorage'-GT-'{}(
+                        /* Fl Fn D Sfa Cl */
+                        /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                            /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                \dv{SortInt{}}("7")
+                            ),
+                            /* Fl Fn D Sfa Cli */
+                            /* Inj: */ inj{SortSet{}, SortKItem{}}(
+                                /* Fl Fn D Sfa Cl */
+                                /* InternalSet: */ /* concrete element: */ LblSetItem{}(
+                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                        \dv{SortInt{}}("0")
+                                    )
+                                )
+                            )
+                        )
                     )
                 ),
                 /* Fl Fn D Sfa Cl */
