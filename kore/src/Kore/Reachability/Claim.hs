@@ -608,12 +608,14 @@ simplify' lensClaimPattern claim = do
         sideCondition = extractSideCondition claim''
     simplifyRightHandSide lensClaimPattern sideCondition claim''
   where
-    applySubstOnRightHandSide claimPat =
-        let substitution = Pattern.substitution $ Lens.view (field @"left") claimPat
-            noLeftSubst = Lens.set (field @"left" . field @"substitution") mempty claimPat
-            appliedSubst = ClaimPattern.applySubstitution substitution noLeftSubst
-         in appliedSubst
-
+    applySubstOnRightHandSide :: ClaimPattern -> ClaimPattern
+    applySubstOnRightHandSide claimPat@ClaimPattern{left, right} =
+        let substitution = Pattern.substitution left
+            mapSubstitution ::
+                Pattern RewritingVariableName -> Pattern RewritingVariableName
+            mapSubstitution = Lens.over (field @"substitution") (substitution <>)
+            right' = MultiOr.map mapSubstitution right
+         in claimPat{right = right'}
     extractSideCondition =
         SideCondition.fromConditionWithReplacements
             . Pattern.withoutTerm
