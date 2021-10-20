@@ -50,6 +50,9 @@ import Kore.Log.DebugEvaluateCondition (
 import Kore.Log.DebugProven (
     DebugProven,
  )
+import Kore.Log.DebugRetrySolverQuery (
+    DebugRetrySolverQuery,
+ )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,
     DebugSolverSend,
@@ -120,9 +123,6 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
  )
 import Kore.Log.WarnIfLowProductivity (
     WarnIfLowProductivity,
- )
-import Kore.Log.WarnRetrySolverQuery (
-    WarnRetrySolverQuery,
  )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
@@ -199,7 +199,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
-            , mk $ Proxy @WarnRetrySolverQuery
+            , mk $ Proxy @DebugRetrySolverQuery
             , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
             , mk $ Proxy @LogMessage
