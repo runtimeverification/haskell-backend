@@ -62,9 +62,9 @@ type SmtMetadataTools attributes =
 -}
 extractMetadataTools ::
     forall declAtts smt sortConstructors.
-    VerifiedModule declAtts ->
-    (VerifiedModule declAtts -> Map Id sortConstructors) ->
-    (VerifiedModule declAtts -> Map Id sortConstructors -> smt) ->
+    ValidatedModule declAtts ->
+    (ValidatedModule declAtts -> Map Id sortConstructors) ->
+    (ValidatedModule declAtts -> Map Id sortConstructors -> smt) ->
     MetadataTools sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools

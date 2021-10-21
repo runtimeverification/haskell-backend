@@ -35,6 +35,7 @@ module Kore.Builtin.Bool (
 
 import qualified Control.Monad as Monad
 import Data.Functor.Const
+import qualified Kore.Validate as Validated
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
@@ -118,9 +119,9 @@ patternVerifierHook =
   where
     patternVerifierWorker domainValue =
         case externalChild of
-            StringLiteral_ lit -> do
+            Validated.StringLiteral_ lit -> do
                 internalBoolValue <- Builtin.parseString parse lit
-                (return . InternalBoolF . Const)
+                (return . Validated.InternalBoolF . Const)
                     InternalBool
                         { internalBoolSort = domainValueSort
                         , internalBoolValue

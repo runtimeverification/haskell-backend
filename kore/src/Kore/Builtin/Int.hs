@@ -74,6 +74,7 @@ import Control.Error (
     MaybeT,
  )
 import qualified Control.Monad as Monad
+import qualified Kore.Validate as Validated
 import Data.Bits (
     complement,
     shift,
@@ -201,9 +202,9 @@ patternVerifierHook =
   where
     patternVerifierWorker external =
         case externalChild of
-            StringLiteral_ lit -> do
+            Validated.StringLiteral_ lit -> do
                 internalIntValue <- Builtin.parseString parse lit
-                (return . InternalIntF . Const)
+                (return . Validated.InternalIntF . Const)
                     InternalInt
                         { internalIntSort
                         , internalIntValue

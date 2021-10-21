@@ -3,7 +3,6 @@ Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
 module Kore.Validate (
-    Pattern,
     Alias,
     Sentence,
     SentenceAlias,
@@ -13,15 +12,14 @@ module Kore.Validate (
     SentenceImport,
     SentenceSort,
     SentenceSymbol,
+    module Kore.Validate.Pattern,
 ) where
 
 import qualified Kore.Internal.Alias as Internal (
     Alias,
  )
 import qualified Kore.Syntax.Sentence as Syntax
-import Kore.Validate.Pattern (
-    Pattern,
- )
+import Kore.Validate.Pattern
 import Prelude.Kore ()
 
 type Alias = Internal.Alias Pattern

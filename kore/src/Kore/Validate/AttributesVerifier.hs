@@ -60,7 +60,7 @@ import Kore.Unparser (
     unparse,
  )
 import Kore.Validate.Error
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import Pretty
 
@@ -142,7 +142,7 @@ verifyNoHookAttribute attributes = do
 
 verifyNoHookedSupersort ::
     MonadError (Error VerifyError) error =>
-    IndexedModule Verified.Pattern Attribute.Symbol.Symbol attrs ->
+    IndexedModule Validated.Pattern Attribute.Symbol.Symbol attrs ->
     Attribute.Axiom SymbolOrAlias VariableName ->
     [Subsort.Subsort] ->
     error ()
@@ -169,7 +169,7 @@ verifyNoHookedSupersort indexedModule axiom subsorts = do
 verifyAxiomAttributes ::
     forall error attrs.
     MonadError (Error VerifyError) error =>
-    IndexedModule Verified.Pattern Attribute.Symbol.Symbol attrs ->
+    IndexedModule Validated.Pattern Attribute.Symbol.Symbol attrs ->
     Attribute.Axiom SymbolOrAlias VariableName ->
     error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 verifyAxiomAttributes indexedModule axiom = do
@@ -207,7 +207,7 @@ verifyAxiomAttributes indexedModule axiom = do
 verifySymbolAttributes ::
     forall error a.
     MonadError (Error VerifyError) error =>
-    IndexedModule Verified.Pattern Attribute.Symbol.Symbol a ->
+    IndexedModule Validated.Pattern Attribute.Symbol.Symbol a ->
     Attribute.Symbol.Symbol ->
     error Attribute.Symbol.Symbol
 verifySymbolAttributes _ attrs = return attrs
@@ -215,7 +215,7 @@ verifySymbolAttributes _ attrs = return attrs
 verifySortAttributes ::
     forall error a.
     MonadError (Error VerifyError) error =>
-    IndexedModule Verified.Pattern Attribute.Symbol.Symbol a ->
+    IndexedModule Validated.Pattern Attribute.Symbol.Symbol a ->
     Attribute.Symbol.Symbol ->
     error Attribute.Symbol.Symbol
 verifySortAttributes _ attrs = return attrs

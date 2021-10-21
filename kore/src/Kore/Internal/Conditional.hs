@@ -7,6 +7,8 @@ Representation of conditional terms.
 module Kore.Internal.Conditional (
     Conditional (..),
     Condition,
+    fromTerm,
+    fromTermAndPredicate,
     withoutTerm,
     withCondition,
     andCondition,
@@ -554,3 +556,26 @@ setPredicateSimplified ::
     Conditional variable term
 setPredicateSimplified simplified conditional@Conditional{predicate} =
     conditional{predicate = Predicate.setSimplified simplified predicate}
+
+fromTerm ::
+    InternalVariable variable =>
+    term ->
+    Conditional variable term
+fromTerm term =
+    Conditional
+        { term
+        , predicate = Predicate.makeTruePredicate
+        , substitution = mempty
+        }
+
+fromTermAndPredicate ::
+    InternalVariable variable =>
+    child ->
+    Predicate variable ->
+    Conditional variable child
+fromTermAndPredicate term predicate =
+    Conditional
+        { term
+        , predicate
+        , substitution = mempty
+        }

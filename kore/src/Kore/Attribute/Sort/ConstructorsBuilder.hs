@@ -22,7 +22,7 @@ import Kore.Attribute.Sort.Constructors (
  )
 import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
     recursiveIndexedModuleAxioms,
  )
 import Kore.Internal.Symbol (
@@ -50,13 +50,11 @@ import Kore.Syntax.Sentence (
  )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Syntax.Variable
-import qualified Kore.Verified as Verified (
-    SentenceAxiom,
- )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 indexBySort ::
-    VerifiedModule symbolAttribute ->
+    ValidatedModule symbolAttribute ->
     Map.Map Id Constructors
 indexBySort indexedModule =
     Map.fromList
@@ -67,7 +65,7 @@ indexBySort indexedModule =
 
 parseNoJunkAxiom ::
     ( Attribute.Axiom Symbol variable
-    , Verified.SentenceAxiom
+    , Validated.SentenceAxiom
     ) ->
     Maybe (Id, Constructors)
 parseNoJunkAxiom (attributes, SentenceAxiom{sentenceAxiomPattern})
@@ -76,7 +74,7 @@ parseNoJunkAxiom (attributes, SentenceAxiom{sentenceAxiomPattern})
     | otherwise = Nothing
 
 parseNoJunkPattern ::
-    TermLike VariableName ->
+    Validated.Pattern ->
     Maybe (Id, Constructors)
 parseNoJunkPattern patt = do
     -- Maybe
@@ -92,14 +90,14 @@ parseNoJunkPattern patt = do
     return (name, sortBuilder constructors)
 
 parseNoJunkPatternHelper ::
-    TermLike VariableName ->
+    Validated.Pattern ->
     Maybe
         ( Id
         , [ConstructorLike] -> Constructors
         , [ConstructorLike]
         )
 parseNoJunkPatternHelper
-    ( Bottom_
+    ( Validated.Bottom_
             ( SortActualSort
                     SortActual
                         { sortActualName
@@ -114,17 +112,17 @@ parseNoJunkPatternHelper
         fromConstructors [] = Constructors Nothing
         fromConstructors (constructor : constructors) =
             Constructors (Just (constructor :| constructors))
-parseNoJunkPatternHelper (Or_ _ first second) = do
+parseNoJunkPatternHelper (Validated.Or_ _ first second) = do
     -- Maybe
     (name, sortBuilder, constructors) <- parseNoJunkPatternHelper second
     constructor <- parseSMTConstructor first
     return (name, sortBuilder, constructor : constructors)
 parseNoJunkPatternHelper _ = Nothing
 
-parseSMTConstructor :: TermLike VariableName -> Maybe ConstructorLike
+parseSMTConstructor :: Validated.Pattern -> Maybe ConstructorLike
 parseSMTConstructor patt =
     case parsedPatt of
-        App_ symbol children -> do
+        Validated.App_ symbol children -> do
             childVariables <-
                 checkOnlyQuantifiedVariablesOnce quantifiedVariables children
             buildConstructor symbol childVariables
@@ -133,9 +131,9 @@ parseSMTConstructor patt =
     (quantifiedVariables, parsedPatt) = parseExists patt
 
     parseExists ::
-        TermLike VariableName ->
-        (Set.Set (ElementVariable VariableName), TermLike VariableName)
-    parseExists (Exists_ _ variable child) =
+        Validated.Pattern ->
+        (Set.Set (ElementVariable VariableName), Validated.Pattern)
+    parseExists (Validated.Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
         (childVars, unquantifiedPatt) = parseExists child
@@ -143,7 +141,7 @@ parseSMTConstructor patt =
 
     checkOnlyQuantifiedVariablesOnce ::
         Set.Set (ElementVariable VariableName) ->
-        [TermLike VariableName] ->
+        [Validated.Pattern] ->
         Maybe [ElementVariable VariableName]
     checkOnlyQuantifiedVariablesOnce
         allowedVars

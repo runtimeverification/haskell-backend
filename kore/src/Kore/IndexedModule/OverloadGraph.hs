@@ -28,7 +28,7 @@ import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
     recursiveIndexedModuleAxioms,
  )
 import Kore.Internal.Symbol
@@ -103,7 +103,7 @@ associated to overloading equations in a verified module.
 Assumes the overloading relation is already transitive.
 -}
 fromIndexedModule ::
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     OverloadGraph
 fromIndexedModule verifiedModule = fromOverloads overloadPairList
   where

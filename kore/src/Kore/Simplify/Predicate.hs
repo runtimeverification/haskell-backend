@@ -133,12 +133,15 @@ simplify sideCondition original =
 
     replacePredicate = SideCondition.replacePredicate sideCondition
 
+    -- TODO(Ana): this will need attention when TermLike is changed
+    -- to not support predicate types anymore
+    --
     -- If the child 'TermLike' is a term representing a predicate,
     -- 'simplifyTerm' will not attempt to simplify it, so
     -- it should be transformed into a 'Predicate' and simplified
     -- accordingly.
     simplifyTerm' term
-        | Right predicate <- Predicate.makePredicate term =
+        | Right predicate <- Predicate.makePredicateOld term =
             toOrPattern (termLikeSort term) <$> worker predicate
         | otherwise =
             simplifyTerm sideCondition term

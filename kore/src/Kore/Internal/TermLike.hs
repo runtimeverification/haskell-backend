@@ -8,6 +8,7 @@ module Kore.Internal.TermLike (
     TermLikeF (..),
     TermAttributes (..),
     TermLike (..),
+    NotTermLike (..),
     extractAttributes,
     isSimplified,
     isSimplifiedSomeCondition,
@@ -38,6 +39,7 @@ module Kore.Internal.TermLike (
     refreshSetBinder,
     depth,
     checkSortsAgree,
+    makeTermLike,
 
     -- * Utility functions for dealing with sorts
     sameTermLikeSort,
@@ -184,6 +186,10 @@ module Kore.Internal.TermLike (
 ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
+import qualified Kore.Validate as Validated
 import Data.Align (
     alignWith,
  )
@@ -1883,3 +1889,13 @@ containsSymbolWithId symId term
         any
             (containsSymbolWithId symId)
             (Cofree.tailF $ Recursive.project term)
+
+-- TODO:
+data NotTermLike variable
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
+
+-- TODO:
+makeTermLike :: Validated.Pattern -> Either (NotTermLike VariableName) (TermLike VariableName)
+makeTermLike = undefined

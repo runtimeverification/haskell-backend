@@ -33,7 +33,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 verifiers :: Verifiers
@@ -55,7 +55,7 @@ bigEndianKey = "bigEndianBytes"
 endiannessVerifier ::
     -- | Constructor
     (Symbol -> Endianness) ->
-    ApplicationVerifier Verified.Pattern
+    ApplicationVerifier Validated.Pattern
 endiannessVerifier ctor =
     ApplicationVerifier worker
   where
@@ -65,15 +65,15 @@ endiannessVerifier ctor =
         let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
         unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
-        return (EndiannessF . Const $ ctor symbol)
+        return (Validated.EndiannessF . Const $ ctor symbol)
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-littleEndianVerifier :: ApplicationVerifier Verified.Pattern
+littleEndianVerifier :: ApplicationVerifier Validated.Pattern
 littleEndianVerifier = endiannessVerifier LittleEndian
 
-bigEndianVerifier :: ApplicationVerifier Verified.Pattern
+bigEndianVerifier :: ApplicationVerifier Validated.Pattern
 bigEndianVerifier = endiannessVerifier BigEndian
 
 data UnifyEqualsEndianness = UnifyEqualsEndianness

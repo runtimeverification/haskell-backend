@@ -21,6 +21,7 @@ module Kore.Rewrite.Implication (
 import Control.Error.Util (
     hush,
  )
+import qualified Kore.Validate as Validated
 import Control.Monad.State.Strict (
     evalState,
  )
@@ -411,52 +412,51 @@ resetConfigVariables implication'@(Implication _ _ _ _ _) =
   where
     Implication{left, right, existentials} = implication'
 
+-- TODO:
 parseRightHandSide ::
-    forall variable.
-    InternalVariable variable =>
-    TermLike variable ->
-    OrPattern variable
-parseRightHandSide term =
-    let (term', condition) =
-            parsePatternFromTermLike term
-                & Pattern.splitTerm
-     in OrPattern.map
-            (flip Pattern.andCondition condition)
-            (parseOrPatternFromTermLike term')
-  where
-    parseOrPatternFromTermLike ::
-        TermLike variable ->
-        OrPattern variable
-    parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
-        parseOrPatternFromTermLike term1
-            <> parseOrPatternFromTermLike term2
-    parseOrPatternFromTermLike term' =
-        OrPattern.fromPattern
-            . parsePatternFromTermLike
-            $ term'
-
-    parsePatternFromTermLike ::
-        TermLike variable ->
-        Pattern variable
-    parsePatternFromTermLike original@(TermLike.And_ _ term1 term2)
-        | isTop term1 = Pattern.fromTermLike term2
-        | isTop term2 = Pattern.fromTermLike term1
-        | otherwise =
-            case (tryPredicate term1, tryPredicate term2) of
-                (Nothing, Nothing) ->
-                    Pattern.fromTermLike original
-                (Just predicate, Nothing) ->
-                    Pattern.fromTermAndPredicate
-                        term2
-                        predicate
-                (Nothing, Just predicate) ->
-                    Pattern.fromTermAndPredicate
-                        term1
-                        predicate
-                (Just predicate, _) ->
-                    Pattern.fromTermAndPredicate
-                        term2
-                        predicate
-      where
-        tryPredicate = hush . Predicate.makePredicate
-    parsePatternFromTermLike term' = Pattern.fromTermLike term'
+    Validated.Pattern ->
+    OrPattern VariableName
+parseRightHandSide term = undefined
+--     let (term', condition) =
+--             parsePatternFromTermLike term
+--                 & Pattern.splitTerm
+--      in OrPattern.map
+--             (flip Pattern.andCondition condition)
+--             (parseOrPatternFromTermLike term')
+--   where
+--     parseOrPatternFromTermLike ::
+--         TermLike variable ->
+--         OrPattern variable
+--     parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
+--         parseOrPatternFromTermLike term1
+--             <> parseOrPatternFromTermLike term2
+--     parseOrPatternFromTermLike term' =
+--         OrPattern.fromPattern
+--             . parsePatternFromTermLike
+--             $ term'
+--
+--     parsePatternFromTermLike ::
+--         TermLike variable ->
+--         Pattern variable
+--     parsePatternFromTermLike original@(TermLike.And_ _ term1 term2)
+--         | isTop term1 = Pattern.fromTermLike term2
+--         | isTop term2 = Pattern.fromTermLike term1
+--         | otherwise =
+--             case (tryPredicate term1, tryPredicate term2) of
+--                 (Nothing, Nothing) ->
+--                     Pattern.fromTermLike original
+--                 (Just predicate, Nothing) ->
+--                     Pattern.fromTermAndPredicate
+--                         term2
+--                         predicate
+--                 (Nothing, Just predicate) ->
+--                     Pattern.fromTermAndPredicate
+--                         term1
+--                         predicate
+--                 (Just predicate, _) ->
+--                     Pattern.fromTermAndPredicate
+--                         term2
+--                         predicate
+--       where
+--         tryPredicate = hush . Predicate.makePredicate
+--     parsePatternFromTermLike term' = Pattern.fromTermLike term'

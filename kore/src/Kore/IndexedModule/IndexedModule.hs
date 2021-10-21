@@ -351,8 +351,8 @@ toValidatedDefinition idx =
                 <$> filter notImplicitKoreModule (toList idx)
         }
   where
-    notImplicitKoreModule verifiedModule =
-        indexedModuleName verifiedModule /= "kore"
+    notImplicitKoreModule validatedModule =
+        indexedModuleName validatedModule /= "kore"
 
 indexedModuleRawSentences ::
     IndexedModule pat atts atts' -> [Sentence pat]

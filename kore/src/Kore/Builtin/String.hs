@@ -46,6 +46,7 @@ module Kore.Builtin.String (
 import Control.Error (
     MaybeT,
  )
+import qualified Kore.Validate as Validated
 import Data.Char (
     chr,
     ord,
@@ -206,8 +207,8 @@ patternVerifierHook =
   where
     patternVerifierWorker domainValue =
         case externalChild of
-            StringLiteral_ internalStringValue ->
-                (return . InternalStringF . Const)
+            Validated.StringLiteral_ internalStringValue ->
+                (return . Validated.InternalStringF . Const)
                     InternalString
                         { internalStringSort
                         , internalStringValue

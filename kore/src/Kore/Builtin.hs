@@ -62,7 +62,7 @@ import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools (
@@ -110,7 +110,7 @@ koreVerifiers =
 -}
 koreEvaluators ::
     -- | Module under which evaluation takes place
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     Map AxiomIdentifier BuiltinAndAxiomSimplifier
 koreEvaluators = evaluators builtins
   where
@@ -139,7 +139,7 @@ evaluators ::
     -- | Builtin functions indexed by name
     Map Text BuiltinAndAxiomSimplifier ->
     -- | Module under which evaluation takes place
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     Map AxiomIdentifier BuiltinAndAxiomSimplifier
 evaluators builtins indexedModule =
     Map.mapMaybe
@@ -150,7 +150,7 @@ evaluators builtins indexedModule =
         )
   where
     hookedSymbolAttributes ::
-        VerifiedModule StepperAttributes ->
+        ValidatedModule StepperAttributes ->
         Map Id StepperAttributes
     hookedSymbolAttributes im =
         Map.union
@@ -162,7 +162,7 @@ evaluators builtins indexedModule =
         justAttributes (attrs, _) = attrs
 
     importHookedSymbolAttributes ::
-        (a, b, VerifiedModule StepperAttributes) ->
+        (a, b, ValidatedModule StepperAttributes) ->
         Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 

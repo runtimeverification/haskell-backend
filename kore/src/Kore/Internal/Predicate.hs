@@ -9,6 +9,7 @@ module Kore.Internal.Predicate (
     unparse2WithSort,
     fromPredicate,
     makePredicate,
+    makePredicateOld,
     makeTruePredicate,
     makeFalsePredicate,
     makeNotPredicate,
@@ -65,6 +66,7 @@ module Kore.Internal.Predicate (
 ) where
 
 import qualified Control.Comonad.Trans.Env as Env
+import qualified Kore.Validate as Validated
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
@@ -963,13 +965,19 @@ instance
                 (unparse $ fromPredicate (mkSortVariable "_") <$> termLikeF)
             ]
 
+-- TODO:
 makePredicate ::
+    Validated.Pattern ->
+    Either (NotPredicate VariableName) (Predicate VariableName)
+makePredicate = undefined
+
+makePredicateOld ::
     forall variable.
     HasCallStack =>
     InternalVariable variable =>
     TermLike variable ->
     Either (NotPredicate variable) (Predicate variable)
-makePredicate t = fst <$> makePredicateWorker t
+makePredicateOld t = fst <$> makePredicateWorker t
   where
     makePredicateWorker ::
         TermLike variable ->
@@ -1055,7 +1063,7 @@ makePredicate t = fst <$> makePredicateWorker t
         oldSimplified = TermLike.attributeSimplifiedAttribute att
 
 isPredicate :: InternalVariable variable => TermLike variable -> Bool
-isPredicate = Either.isRight . makePredicate
+isPredicate = Either.isRight . makePredicateOld
 
 extractAttributes :: Predicate variable -> PredicatePattern variable
 extractAttributes (Recursive.project -> attr :< _) = attr
@@ -1267,7 +1275,7 @@ mapVariables adj predicate =
      in either
             errorMappingVariables
             id
-            (makePredicate termPredicate)
+            (makePredicateOld termPredicate)
   where
     errorMappingVariables termPredicate =
         error . show . Pretty.vsep $
@@ -1314,7 +1322,7 @@ wrapPredicate =
     either
         (error "Term cannot be wrapped.\nInput TermLike is not a Predicate despite being supposed to be\n")
         id
-        . makePredicate
+        . makePredicateOld
 
 depth :: Predicate variable -> Int
 depth = Recursive.fold levelDepth

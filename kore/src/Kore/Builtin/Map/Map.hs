@@ -50,7 +50,7 @@ import qualified Kore.Error as Kore (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.Internal.TermLike as TermLike
 import Prelude.Kore
@@ -100,63 +100,63 @@ inclusionKey = "MAP.inclusion"
 -- | Find the symbol hooked to @MAP.update@ in an indexed module.
 lookupSymbolUpdate ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 
 -- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
 lookupSymbolLookup ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
 -- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
 lookupSymbolInKeys ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 
 -- | Find the symbol hooked to @MAP.keys@ in an indexed module.
 lookupSymbolKeys ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
 -- | Find the symbol hooked to @MAP.remove@ in an indexed module.
 lookupSymbolRemove ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolRemove = Builtin.lookupSymbol removeKey
 
 -- | Find the symbol hooked to @MAP.removeAll@ in an indexed module.
 lookupSymbolRemoveAll ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
 
 -- | Find the symbol hooked to @MAP.size@ in an indexed module.
 lookupSymbolSize ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolSize = Builtin.lookupSymbol sizeKey
 
 -- | Find the symbol hooked to @MAP.values@ in an indexed module.
 lookupSymbolValues ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolValues = Builtin.lookupSymbol valuesKey
 
 -- | Find the symbol hooked to @MAP.inclusion@ in an indexed module.
 lookupSymbolInclusion ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolInclusion = Builtin.lookupSymbol inclusionKey
 

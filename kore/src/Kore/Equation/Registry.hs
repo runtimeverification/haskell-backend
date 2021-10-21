@@ -47,12 +47,12 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
 extractEquations ::
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     Map AxiomIdentifier [Equation VariableName]
 extractEquations =
     foldl' moduleWorker Map.empty
@@ -60,7 +60,7 @@ extractEquations =
   where
     moduleWorker ::
         Map AxiomIdentifier [Equation VariableName] ->
-        VerifiedModule StepperAttributes ->
+        ValidatedModule StepperAttributes ->
         Map AxiomIdentifier [Equation VariableName]
     moduleWorker axioms imod =
         foldl' sentenceWorker axioms sentences
@@ -68,7 +68,7 @@ extractEquations =
         sentences = indexedModuleAxioms imod
     sentenceWorker ::
         Map AxiomIdentifier [Equation VariableName] ->
-        (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom) ->
+        (Attribute.Axiom Symbol VariableName, Validated.SentenceAxiom) ->
         Map AxiomIdentifier [Equation VariableName]
     sentenceWorker axioms sentence =
         foldl' insertAxiom axioms (identifyEquation sentence)
@@ -81,7 +81,7 @@ extractEquations =
 
 identifyEquation ::
     ( Attribute.Axiom Symbol VariableName
-    , SentenceAxiom (TermLike VariableName)
+    , SentenceAxiom Validated.Pattern
     ) ->
     Maybe (AxiomIdentifier, Equation VariableName)
 identifyEquation axiom = do

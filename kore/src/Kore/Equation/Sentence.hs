@@ -33,6 +33,8 @@ import Kore.Internal.TermLike (
     Symbol,
     TermLike,
     VariableName,
+    NotTermLike,
+    makeTermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Sentence (
@@ -41,18 +43,20 @@ import Kore.Syntax.Sentence (
 import Kore.Unparser (
     unparse,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import Pretty
 
 fromSentenceAxiom ::
-    (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom) ->
+    (Attribute.Axiom Symbol VariableName, Validated.SentenceAxiom) ->
     Either (MatchEquationError VariableName) (Equation VariableName)
 fromSentenceAxiom (attributes, SentenceAxiom{sentenceAxiomPattern}) =
     matchEquation attributes sentenceAxiomPattern
 
 data MatchEquationError variable
-    = NotEquation !(TermLike variable)
+    = NotEquation Validated.Pattern
+    | LeftError !(NotTermLike variable)
+    | RightError !(NotTermLike variable)
     | RequiresError !(NotPredicate variable)
     | ArgumentError !(NotPredicate variable)
     | AntiLeftError !(NotPredicate variable)
@@ -106,8 +110,10 @@ matchEquation attributes validPattern
     | isFunctionalAxiom = Left FunctionalAxiom
     | isConstructorAxiom = Left ConstructorAxiom
     | isSubsortAxiom = Left SubsortAxiom
-    | TermLike.Forall_ _ _ child <- termLike = matchEquation attributes child
-    | otherwise = match termLike >>= removeRedundantEnsures
+    | Validated.Forall_ _ _ child <- validPattern =
+        matchEquation attributes child
+    | otherwise =
+        match validPattern >>= removeRedundantEnsures
   where
     isFunctionalAxiom = (isDeclaredFunctional . Attribute.functional) attributes
     isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
@@ -117,24 +123,26 @@ matchEquation attributes validPattern
     -- TODO The pattern match below should be removed after the frontend is updated
     -- to use the correct format
     match
-        ( TermLike.Implies_
+        ( Validated.Implies_
                 _
-                ( TermLike.And_
+                ( Validated.And_
                         _
                         requires
-                        argument@( TermLike.And_
+                        argument@( Validated.And_
                                         _
-                                        (TermLike.In_ _ _ _ _)
+                                        (Validated.In_ _ _ _ _)
                                         _
                                     )
                     )
-                ( TermLike.And_
+                ( Validated.And_
                         _
-                        (TermLike.Equals_ _ _ left right)
+                        (Validated.Equals_ _ _ left right)
                         ensures
                     )
             ) =
             do
+                left' <- makeTermLike left & Bifunctor.first LeftError
+                right' <- makeTermLike right & Bifunctor.first RightError
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 argument' <- makePredicate argument & Bifunctor.first ArgumentError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
@@ -143,31 +151,33 @@ matchEquation attributes validPattern
                         { requires = requires'
                         , argument = Just argument'
                         , antiLeft = Nothing
-                        , left
-                        , right
+                        , left = left'
+                        , right = right'
                         , ensures = ensures'
                         , attributes
                         }
     match
-        ( TermLike.Implies_
+        ( Validated.Implies_
                 _
-                ( TermLike.And_
+                ( Validated.And_
                         _
                         requires
-                        argument@( TermLike.And_
+                        argument@( Validated.And_
                                         _
-                                        (TermLike.In_ _ _ _ _)
+                                        (Validated.In_ _ _ _ _)
                                         _
                                     )
                     )
-                ( TermLike.Equals_
+                ( Validated.Equals_
                         _
                         _
                         left
-                        (TermLike.And_ _ right ensures)
+                        (Validated.And_ _ right ensures)
                     )
             ) =
             do
+                left' <- makeTermLike left & Bifunctor.first LeftError
+                right' <- makeTermLike right & Bifunctor.first RightError
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 argument' <- makePredicate argument & Bifunctor.first ArgumentError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
@@ -176,8 +186,8 @@ matchEquation attributes validPattern
                         { requires = requires'
                         , argument = Just argument'
                         , antiLeft = Nothing
-                        , left
-                        , right
+                        , left = left'
+                        , right = right'
                         , ensures = ensures'
                         , attributes
                         }
@@ -186,24 +196,26 @@ matchEquation attributes validPattern
     -- TODO The pattern match below should be removed after the frontend is updated
     -- to use the correct format
     match
-        ( TermLike.Implies_
+        ( Validated.Implies_
                 _
-                ( TermLike.And_
+                ( Validated.And_
                         _
                         antiLeft
-                        ( TermLike.And_
+                        ( Validated.And_
                                 _
                                 requires
                                 argument
                             )
                     )
-                ( TermLike.And_
+                ( Validated.And_
                         _
-                        (TermLike.Equals_ _ _ left right)
+                        (Validated.Equals_ _ _ left right)
                         ensures
                     )
             ) =
             do
+                left' <- makeTermLike left & Bifunctor.first LeftError
+                right' <- makeTermLike right & Bifunctor.first RightError
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 argument' <- makePredicate argument & Bifunctor.first ArgumentError
                 antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
@@ -213,31 +225,33 @@ matchEquation attributes validPattern
                         { requires = requires'
                         , argument = Just argument'
                         , antiLeft = Just antiLeft'
-                        , left
-                        , right
+                        , left = left'
+                        , right = right'
                         , ensures = ensures'
                         , attributes
                         }
     match
-        ( TermLike.Implies_
+        ( Validated.Implies_
                 _
-                ( TermLike.And_
+                ( Validated.And_
                         _
                         antiLeft
-                        ( TermLike.And_
+                        ( Validated.And_
                                 _
                                 requires
                                 argument
                             )
                     )
-                ( TermLike.Equals_
+                ( Validated.Equals_
                         _
                         _
                         left
-                        (TermLike.And_ _ right ensures)
+                        (Validated.And_ _ right ensures)
                     )
             ) =
             do
+                left' <- makeTermLike left & Bifunctor.first LeftError
+                right' <- makeTermLike right & Bifunctor.first RightError
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 argument' <- makePredicate argument & Bifunctor.first ArgumentError
                 antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
@@ -247,24 +261,26 @@ matchEquation attributes validPattern
                         { requires = requires'
                         , argument = Just argument'
                         , antiLeft = Just antiLeft'
-                        , left
-                        , right
+                        , left = left'
+                        , right = right'
                         , ensures = ensures'
                         , attributes
                         }
     -- TODO The pattern match below should be removed after the frontend is updated
     -- to use the correct format
     match
-        ( TermLike.Implies_
+        ( Validated.Implies_
                 _
                 requires
-                ( TermLike.And_
+                ( Validated.And_
                         _
-                        (TermLike.Equals_ _ _ left right)
+                        (Validated.Equals_ _ _ left right)
                         ensures
                     )
             ) =
             do
+                left' <- makeTermLike left & Bifunctor.first LeftError
+                right' <- makeTermLike right & Bifunctor.first RightError
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
                 pure
@@ -272,23 +288,25 @@ matchEquation attributes validPattern
                         { requires = requires'
                         , argument = Nothing
                         , antiLeft = Nothing
-                        , left
-                        , right
+                        , left = left'
+                        , right = right'
                         , ensures = ensures'
                         , attributes
                         }
     match
-        ( TermLike.Implies_
+        ( Validated.Implies_
                 _
                 requires
-                ( TermLike.Equals_
+                ( Validated.Equals_
                         _
                         _
                         left
-                        (TermLike.And_ _ right ensures)
+                        (Validated.And_ _ right ensures)
                     )
             ) =
             do
+                left' <- makeTermLike left & Bifunctor.first LeftError
+                right' <- makeTermLike right & Bifunctor.first RightError
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
                 pure
@@ -296,34 +314,37 @@ matchEquation attributes validPattern
                         { requires = requires'
                         , argument = Nothing
                         , antiLeft = Nothing
-                        , left
-                        , right
+                        , left = left'
+                        , right = right'
                         , ensures = ensures'
                         , attributes
                         }
-    match (TermLike.Equals_ _ _ left right) =
+    match (Validated.Equals_ _ _ left right) = do
+        left' <- makeTermLike left & Bifunctor.first LeftError
+        right' <- makeTermLike right & Bifunctor.first RightError
         pure
             Equation
                 { requires = Predicate.makeTruePredicate
                 , argument = Nothing
                 , antiLeft = Nothing
-                , left
-                , right
+                , left = left'
+                , right = right'
                 , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
-    match left@(TermLike.Ceil_ _ sort _) =
+    match left@(Validated.Ceil_ _ sort _) = do
+        left' <- makeTermLike left & Bifunctor.first LeftError
         pure
             Equation
                 { requires = Predicate.makeTruePredicate
                 , argument = Nothing
                 , antiLeft = Nothing
-                , left
+                , left = left'
                 , right = TermLike.mkTop sort
                 , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
-    match termLike' = Left (NotEquation termLike')
+    match validPattern = Left (NotEquation validPattern)
 
     -- If the ensures and requires are the same, then the ensures is redundant.
     removeRedundantEnsures equation@Equation{requires, ensures}

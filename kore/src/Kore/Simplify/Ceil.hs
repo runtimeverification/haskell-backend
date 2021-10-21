@@ -160,6 +160,8 @@ makeEvaluateTerm resultSort sideCondition ceilChild =
             , newInjCeilSimplifier
             ]
 
+-- TODO(Ana): this will need attention when TermLike is changed
+-- to not support predicate types anymore
 newPredicateCeilSimplifier ::
     Monad simplifier =>
     CeilSimplifier
@@ -167,7 +169,7 @@ newPredicateCeilSimplifier ::
         (TermLike RewritingVariableName)
         (OrCondition RewritingVariableName)
 newPredicateCeilSimplifier = CeilSimplifier $ \input ->
-    case Predicate.makePredicate (ceilChild input) of
+    case Predicate.makePredicateOld (ceilChild input) of
         Left _ -> empty
         Right predicate -> return (OrCondition.fromPredicate predicate)
 

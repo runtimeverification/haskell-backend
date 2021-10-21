@@ -61,7 +61,7 @@ import Kore.Syntax.Definition
 import Kore.Unparser
 import Kore.Validate.Error
 import Kore.Validate.SortVerifier
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import Pretty (
     (<+>),
@@ -79,7 +79,7 @@ newtype DeclaredVariables = DeclaredVariables
 emptyDeclaredVariables :: DeclaredVariables
 emptyDeclaredVariables = mempty
 
-{- | 'PatternVerifierHook' is a hook run after verifying a 'Verified.Pattern'.
+{- | 'PatternVerifierHook' is a hook run after verifying a 'Validated.Pattern'.
 
 These are usually used to construct and verify internal representations after
 parsing.
@@ -89,8 +89,8 @@ in sequence.
 -}
 newtype PatternVerifierHook = PatternVerifierHook
     { runPatternVerifierHook ::
-        Verified.Pattern ->
-        PatternVerifier Verified.Pattern
+        Validated.Pattern ->
+        PatternVerifier Validated.Pattern
     }
 
 instance Semigroup PatternVerifierHook where
@@ -109,12 +109,12 @@ data Context = Context
       declaredSortVariables :: !(Set SortVariable)
     , -- | The indexed Kore module containing all definitions in scope.
       indexedModule ::
-        !(IndexedModule Verified.Pattern Attribute.Symbol Attribute.Null)
+        !(IndexedModule Validated.Pattern Attribute.Symbol Attribute.Null)
     , patternVerifierHook :: !PatternVerifierHook
     }
     deriving stock (GHC.Generic)
 
-verifiedModuleContext :: VerifiedModule Attribute.Symbol -> Context
+verifiedModuleContext :: ValidatedModule Attribute.Symbol -> Context
 verifiedModuleContext verifiedModule =
     Context
         { declaredVariables = mempty
@@ -140,13 +140,13 @@ runPatternVerifier ::
 runPatternVerifier ctx PatternVerifier{getPatternVerifier} =
     runReaderT getPatternVerifier ctx
 
-lookupSortDeclaration :: Id -> PatternVerifier Verified.SentenceSort
+lookupSortDeclaration :: Id -> PatternVerifier Validated.SentenceSort
 lookupSortDeclaration sortId = do
     Context{indexedModule} <- Reader.ask
     (_, sortDecl) <- resolveSort indexedModule sortId
     return sortDecl
 
-lookupAlias :: SymbolOrAlias -> MaybeT PatternVerifier Verified.Alias
+lookupAlias :: SymbolOrAlias -> MaybeT PatternVerifier Validated.Alias
 lookupAlias symbolOrAlias = do
     Context{indexedModule} <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor

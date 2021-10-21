@@ -38,7 +38,7 @@ import qualified Kore.Error as Kore (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.Internal.TermLike as TermLike
 import Prelude.Kore
@@ -76,28 +76,28 @@ inclusionKey = "SET.inclusion"
 -- | Find the symbol hooked to @SET.get@ in an indexed module.
 lookupSymbolIn ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
 -- | Find the symbol hooked to @SET.difference@ in an indexed module.
 lookupSymbolDifference ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
 -- | Find the symbol hooked to @SET.list2set@ in an indexed module.
 lookupSymbolList2set ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolList2set = Builtin.lookupSymbol list2setKey
 
 -- | Find the symbol hooked to @SET.inclusion@ in an indexed module.
 lookupSymbolInclusion ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolInclusion = Builtin.lookupSymbol inclusionKey
 

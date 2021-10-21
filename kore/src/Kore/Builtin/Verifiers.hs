@@ -84,7 +84,7 @@ import Kore.Error (
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule (
     IndexedModule,
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.TermLike as TermLike
@@ -104,7 +104,7 @@ import Kore.Validate.PatternVerifier.PatternVerifier (
     PatternVerifierHook (..),
  )
 import qualified Kore.Validate.PatternVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import Text.Megaparsec (
     Parsec,
@@ -116,7 +116,7 @@ type Parser = Parsec Void Text
 -- | Verify a sort declaration.
 type SortDeclVerifier =
     -- | Indexed module, to look up sort declarations
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     -- | Sort declaration to verify
     ParsedSentenceSort ->
     -- | Declared sort attributes
@@ -148,8 +148,8 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 -- | Verify (and internalize) an application pattern.
 newtype ApplicationVerifier patternType = ApplicationVerifier
     { runApplicationVerifier ::
-        Application Symbol Verified.Pattern ->
-        PatternVerifier (TermLikeF VariableName Verified.Pattern)
+        Application Symbol Validated.Pattern ->
+        PatternVerifier (Validated.PatternF Validated.Pattern)
     }
 
 -- | @SymbolKey@ names builtin functions and constructors.
@@ -192,7 +192,7 @@ applicationPatternVerifierHooks applicationVerifiers =
     PatternVerifierHook $ \termLike ->
         let _ :< termLikeF = Recursive.project termLike
          in case termLikeF of
-                ApplySymbolF application
+                Validated.ApplySymbolF application
                     | Just verifier <- lookupVerifier symbol ->
                         synthesize <$> runApplicationVerifier verifier application
                   where
@@ -204,15 +204,15 @@ applicationPatternVerifierHooks applicationVerifiers =
 
 domainValuePatternVerifierHook ::
     Text ->
-    ( DomainValue Sort Verified.Pattern ->
-      PatternVerifier (TermLikeF VariableName Verified.Pattern)
+    ( DomainValue Sort Validated.Pattern ->
+      PatternVerifier (Validated.PatternF Validated.Pattern)
     ) ->
     PatternVerifierHook
 domainValuePatternVerifierHook hook verifier =
     PatternVerifierHook $ \termLike ->
         let _ :< termLikeF = Recursive.project termLike
          in case termLikeF of
-                DomainValueF domainValue
+                Validated.DomainValueF domainValue
                     | SortActualSort _ <- domainValueSort -> do
                         hook' <- lookupHookSort domainValueSort
                         fromMaybe (return termLike) $ do

@@ -42,7 +42,7 @@ import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
     recursiveIndexedModuleSortDescriptions,
  )
 import Kore.Internal.TermLike
@@ -56,7 +56,7 @@ import qualified Kore.Syntax.Sentence as SentenceSort (
 import Kore.Unparser (
     unparseToString,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import qualified SMT (
     Constructor (Constructor),
@@ -101,7 +101,7 @@ All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations ::
     forall symbolAttribute.
-    VerifiedModule symbolAttribute ->
+    ValidatedModule symbolAttribute ->
     Map.Map Id Attribute.Constructors ->
     AST.UnresolvedDeclarations
 buildRepresentations indexedModule sortConstructors =
@@ -154,7 +154,7 @@ buildRepresentations indexedModule sortConstructors =
 
     extractDefinitionsFromSentences ::
         ( ( Attribute.Sort
-          , Verified.SentenceSort
+          , Validated.SentenceSort
           ) ->
           Maybe (Id, AST.UnresolvedSort)
         ) ->
@@ -166,7 +166,7 @@ buildRepresentations indexedModule sortConstructors =
 
 builtinSortDeclaration ::
     ( Attribute.Sort
-    , Verified.SentenceSort
+    , Validated.SentenceSort
     ) ->
     Maybe (Id, AST.UnresolvedSort)
 builtinSortDeclaration
@@ -191,7 +191,7 @@ builtinSortDeclaration
 
 smtlibSortDeclaration ::
     ( Attribute.Sort
-    , Verified.SentenceSort
+    , Validated.SentenceSort
     ) ->
     Maybe (Id, AST.UnresolvedSort)
 smtlibSortDeclaration
@@ -223,7 +223,7 @@ smtlibSortDeclaration
 
 simpleSortDeclaration ::
     ( Attribute.Sort
-    , Verified.SentenceSort
+    , Validated.SentenceSort
     ) ->
     Maybe (Id, AST.UnresolvedSort)
 simpleSortDeclaration

@@ -45,7 +45,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Error as Kore
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -131,7 +131,7 @@ internalize _ termLike = termLike
 -- | Find the symbol hooked to @LIST.get@ in an indexed module.
 lookupSymbolGet ::
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Kore.Error e) Symbol
 lookupSymbolGet = Builtin.lookupSymbol getKey
 

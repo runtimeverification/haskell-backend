@@ -8,10 +8,10 @@ module Kore.Validate.Verifier (
     VerifierState (..),
     runVerifier,
     --
-    VerifiedModule',
+    ValidatedModule',
     ImplicitModule,
     --
-    lookupVerifiedModule,
+    lookupValidatedModule,
     lookupParsedModule,
     whileImporting,
 ) where
@@ -43,16 +43,16 @@ import qualified Kore.Internal.Symbol as Internal.Symbol (
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import Kore.Validate.Error
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 type ImplicitModule =
     ImplicitIndexedModule
-        Verified.Pattern
+        Validated.Pattern
         Attribute.Symbol
         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 
-type VerifiedModule' = VerifiedModule Attribute.Symbol
+type ValidatedModule' = ValidatedModule Attribute.Symbol
 
 data VerifierContext = VerifierContext
     { implicitModule :: !ImplicitModule
@@ -63,7 +63,7 @@ data VerifierContext = VerifierContext
     deriving stock (GHC.Generic)
 
 newtype VerifierState = VerifierState
-    { verifiedModules :: Map ModuleName VerifiedModule'
+    { verifiedModules :: Map ModuleName ValidatedModule'
     }
     deriving stock (GHC.Generic)
 
@@ -86,11 +86,11 @@ deriving newtype instance MonadError (Error VerifyError) Verifier
 
 runVerifier ::
     Verifier a ->
-    Map ModuleName VerifiedModule' ->
+    Map ModuleName ValidatedModule' ->
     ImplicitModule ->
     Map ModuleName (Module ParsedSentence) ->
     Builtin.Verifiers ->
-    Either (Error VerifyError) (a, Map ModuleName VerifiedModule')
+    Either (Error VerifyError) (a, Map ModuleName ValidatedModule')
 runVerifier
     moduleVerifier
     alreadyVerifiedModules
@@ -115,9 +115,9 @@ runVerifier
                 , builtinVerifiers
                 }
 
--- | Find the named 'VerifiedModule' in the cache, if present.
-lookupVerifiedModule :: ModuleName -> Verifier (Maybe VerifiedModule')
-lookupVerifiedModule name = State.gets (Map.lookup name . verifiedModules)
+-- | Find the named 'ValidatedModule' in the cache, if present.
+lookupValidatedModule :: ModuleName -> Verifier (Maybe ValidatedModule')
+lookupValidatedModule name = State.gets (Map.lookup name . verifiedModules)
 
 {- | Find the named 'ParsedModule'.
 

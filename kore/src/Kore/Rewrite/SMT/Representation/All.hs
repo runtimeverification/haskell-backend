@@ -17,7 +17,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.Rewrite.SMT.AST as AST
 import Kore.Rewrite.SMT.Representation.Resolve (
@@ -41,7 +41,7 @@ It may ignore sorts and symbols that it can't handle yet (e.g. parameterized
 sorts).
 -}
 build ::
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Map.Map Id Attribute.Constructors ->
     AST.SmtDeclarations
 build indexedModule sortConstructors =

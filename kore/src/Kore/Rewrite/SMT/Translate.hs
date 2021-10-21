@@ -179,7 +179,7 @@ translatePredicateWith sideCondition translateTerm predicate =
                     ( either
                         (const empty)
                         translatePredicatePattern
-                        (makePredicate child)
+                        (makePredicateOld child)
                     )
 
     translatePredicateIff Iff{iffFirst, iffSecond} =

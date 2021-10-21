@@ -26,7 +26,7 @@ import Kore.Error (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -44,7 +44,7 @@ lookupSymbol ::
     Text ->
     -- | the hooked sort
     Sort ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Either (Error e) Symbol
 lookupSymbol builtinName builtinSort indexedModule = do
     symbolConstructor <-

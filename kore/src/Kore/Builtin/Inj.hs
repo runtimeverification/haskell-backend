@@ -20,7 +20,7 @@ import Kore.Internal.TermLike
 import Kore.Validate.PatternVerifier.PatternVerifier (
     PatternVerifier,
  )
-import Kore.Verified as Verified
+import Kore.Validate as Validated
 import Prelude.Kore
 
 verifiers :: Verifiers
@@ -34,7 +34,7 @@ verifiers =
     patternVerifierHook = PatternVerifierHook $ \termLike -> do
         let _ :< termLikeF = Recursive.project termLike
         case termLikeF of
-            ApplySymbolF application
+            Validated.ApplySymbolF application
                 | Symbol.isSortInjection symbol -> internalizeInj application
               where
                 Application{applicationSymbolOrAlias = symbol} = application
@@ -49,8 +49,8 @@ verifiers =
     expectInjChildren _ = koreFail "Expected one argument"
 
     internalizeInj ::
-        Application Symbol Verified.Pattern ->
-        PatternVerifier Verified.Pattern
+        Application Symbol Validated.Pattern ->
+        PatternVerifier Validated.Pattern
     internalizeInj application = do
         (injFrom, injTo) <- expectInjParams symbolParams
         injChild <- expectInjChildren applicationChildren
@@ -76,7 +76,7 @@ verifiers =
         --     ]
         -- let InjSimplifier { evaluateInj } = injSimplifier
         -- (return . evaluateInj) inj
-        return (synthesize $ InjF inj)
+        return (synthesize $ Validated.InjF inj)
       where
         Application{applicationSymbolOrAlias = symbol} = application
         Application{applicationChildren} = application

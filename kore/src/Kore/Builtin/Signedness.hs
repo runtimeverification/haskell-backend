@@ -33,7 +33,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 verifiers :: Verifiers
@@ -55,7 +55,7 @@ unsignedKey = "unsignedBytes"
 signednessVerifier ::
     -- | Constructor
     (Symbol -> Signedness) ->
-    ApplicationVerifier Verified.Pattern
+    ApplicationVerifier Validated.Pattern
 signednessVerifier ctor =
     ApplicationVerifier worker
   where
@@ -65,15 +65,15 @@ signednessVerifier ctor =
         let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
         unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
-        return (SignednessF . Const $ ctor symbol)
+        return (Validated.SignednessF . Const $ ctor symbol)
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-signedVerifier :: ApplicationVerifier Verified.Pattern
+signedVerifier :: ApplicationVerifier Validated.Pattern
 signedVerifier = signednessVerifier Signed
 
-unsignedVerifier :: ApplicationVerifier Verified.Pattern
+unsignedVerifier :: ApplicationVerifier Validated.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
 data UnifyEqualsSignedness = UnifyEqualsSignedness

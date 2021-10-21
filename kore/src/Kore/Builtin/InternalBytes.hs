@@ -86,7 +86,7 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Log (MonadLog)
 import Prelude.Kore
 import System.IO.Unsafe (
@@ -195,9 +195,9 @@ patternVerifierHook =
   where
     patternVerifierWorker external =
         case externalChild of
-            StringLiteral_ literal -> do
+            Validated.StringLiteral_ literal -> do
                 internalBytesValue <- Builtin.parseString Encoding.parse8Bit literal
-                (return . InternalBytesF . Const)
+                (return . Validated.InternalBytesF . Const)
                     InternalBytes{internalBytesSort, internalBytesValue}
             _ -> Kore.Error.koreFail "Expected literal string"
       where
@@ -208,13 +208,13 @@ dotBytes :: IsString str => str
 dotBytes = "BYTES.empty"
 
 dotBytesVerifier ::
-    Builtin.ApplicationVerifier Verified.Pattern
+    Builtin.ApplicationVerifier Validated.Pattern
 dotBytesVerifier =
     Builtin.ApplicationVerifier worker
   where
     worker application = do
         unless (null arguments) (Kore.Error.koreFail "expected zero arguments")
-        (return . InternalBytesF . Const)
+        (return . Validated.InternalBytesF . Const)
             InternalBytes{internalBytesSort, internalBytesValue = Encoding.encode8Bit ""}
       where
         arguments = applicationChildren application

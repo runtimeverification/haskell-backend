@@ -45,7 +45,7 @@ import qualified Kore.Syntax.Sentence as Sentence (
 import qualified Kore.Syntax.Sentence as Sentence.Symbol (
     Symbol (..),
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import qualified SMT
 
@@ -58,7 +58,7 @@ All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations ::
     forall axiom.
-    IndexedModule Verified.Pattern Attribute.Symbol axiom ->
+    IndexedModule Validated.Pattern Attribute.Symbol axiom ->
     AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations
@@ -75,7 +75,7 @@ buildRepresentations indexedModule =
             }
 
     extractDefinitionsFromSentences ::
-        ( (Attribute.Symbol, Verified.SentenceSymbol) ->
+        ( (Attribute.Symbol, Validated.SentenceSymbol) ->
           Maybe (Id, AST.UnresolvedSymbol)
         ) ->
         [(Id, AST.UnresolvedSymbol)]
@@ -97,7 +97,7 @@ buildRepresentations indexedModule =
         extractDefinitionsFromSentences constructorDeclaration
 
 builtinDeclaration ::
-    (Attribute.Symbol, Verified.SentenceSymbol) ->
+    (Attribute.Symbol, Validated.SentenceSymbol) ->
     Maybe (Id, AST.UnresolvedSymbol)
 builtinDeclaration
     ( attributes
@@ -128,7 +128,7 @@ builtinDeclaration
         Attribute.Smthook{getSmthook} = Attribute.Symbol.smthook attributes
 
 smtlibDeclaration ::
-    (Attribute.Symbol, Verified.SentenceSymbol) ->
+    (Attribute.Symbol, Validated.SentenceSymbol) ->
     Maybe (Id, AST.UnresolvedSymbol)
 smtlibDeclaration
     ( attributes
@@ -158,7 +158,7 @@ smtlibDeclaration
         Attribute.Smtlib{getSmtlib} = Attribute.Symbol.smtlib attributes
 
 constructorDeclaration ::
-    (Attribute.Symbol, Verified.SentenceSymbol) ->
+    (Attribute.Symbol, Validated.SentenceSymbol) ->
     Maybe (Id, AST.UnresolvedSymbol)
 constructorDeclaration
     ( attributes

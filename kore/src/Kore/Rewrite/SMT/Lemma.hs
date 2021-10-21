@@ -18,6 +18,7 @@ import Control.Error (
     runMaybeT,
  )
 import qualified Control.Lens as Lens
+import qualified Kore.Validate as Validated
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.Except
 import qualified Control.Monad.State as State
@@ -69,7 +70,7 @@ declareSMTLemmas ::
     , MonadSMT m
     , MonadLog m
     ) =>
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     m ()
 declareSMTLemmas m = do
     declareSortsSymbols $ smtData tools
@@ -82,7 +83,7 @@ declareSMTLemmas m = do
 
     declareRule ::
         ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-        , SentenceAxiom (TermLike VariableName)
+        , SentenceAxiom Validated.Pattern
         ) ->
         m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
@@ -102,22 +103,24 @@ declareSMTLemmas m = do
     -- Translate an "unparsed" equation for Z3.
     -- Convert new encoding back to old.
     -- See https://github.com/kframework/k/pull/2061#issuecomment-927922217
-    convert :: TermLike VariableName -> Maybe (TermLike VariableName)
+    convert :: Validated.Pattern -> Maybe (TermLike VariableName)
     convert
-        ( Implies_
+        ( Validated.Implies_
                 impliesSort
                 requires
-                ( Equals_
+                ( Validated.Equals_
                         _ -- equalsOperandSort
                         _ -- equalsResultSort
                         left
-                        ( And_
+                        ( Validated.And_
                                 _ -- andSort
                                 right
                                 ensures
                             )
                     )
             ) = do
+            left' <- hush $ makeTermLike left
+            right' <- hush $ makeTermLike right
             requiresPredicate <- hush $ makePredicate requires
             ensuresPredicate <- hush $ makePredicate ensures
             Just $
@@ -126,12 +129,12 @@ declareSMTLemmas m = do
                         requiresPredicate
                         ( makeAndPredicate
                             ( makeEqualsPredicate
-                                left
-                                right
+                                left'
+                                right'
                             )
                             ensuresPredicate
                         )
-    convert termLike = Just termLike
+    convert patt = hush $ makeTermLike patt
 
     addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr
     addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma

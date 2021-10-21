@@ -25,6 +25,7 @@ import Control.Monad.State.Strict (
     evalState,
  )
 import qualified Control.Monad.State.Strict as State
+import qualified Kore.Validate as Validated
 import qualified Data.Default as Default
 import Data.Map.Strict (
     Map,
@@ -40,15 +41,17 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern (
+import Kore.Internal.Conditional (Conditional)
+import qualified Kore.Internal.Pattern as Internal.Pattern
+import qualified Kore.Internal.Pattern as Internal (
     Pattern,
- )
-import qualified Kore.Internal.Pattern as Pattern
+                                                   )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution (
     Substitution,
@@ -96,7 +99,7 @@ import qualified Pretty
 
 -- | Representation of reachability claim types.
 data ClaimPattern = ClaimPattern
-    { left :: !(Pattern RewritingVariableName)
+    { left :: !(Internal.Pattern RewritingVariableName)
     , existentials :: ![ElementVariable RewritingVariableName]
     , right :: !(OrPattern RewritingVariableName)
     , attributes :: !(Attribute.Axiom Symbol RewritingVariableName)
@@ -145,7 +148,7 @@ getClaimPatternSort ::
     ClaimPattern ->
     Sort
 getClaimPatternSort (ClaimPattern left _ _ _) =
-    Pattern.patternSort left
+    Internal.Pattern.patternSort left
 
 freeVariablesRight ::
     ClaimPattern ->
@@ -195,7 +198,7 @@ instance Substitute ClaimPattern where
  in the right hand side.
 -}
 mkClaimPattern ::
-    Pattern RewritingVariableName ->
+    Internal.Pattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
     [ElementVariable RewritingVariableName] ->
     ClaimPattern
@@ -232,13 +235,13 @@ claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
   where
     ClaimPattern{left, right, existentials} = representation
     leftTerm =
-        Pattern.term left
+        Internal.Pattern.term left
             & getRewritingTerm
     sort = TermLike.termLikeSort leftTerm
     leftCondition =
-        Pattern.withoutTerm left
-            & Pattern.fromCondition sort
-            & Pattern.toTermLike
+        Internal.Pattern.withoutTerm left
+            & Internal.Pattern.fromCondition sort
+            & Internal.Pattern.toTermLike
             & getRewritingTerm
     rightPattern =
         TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
@@ -328,7 +331,7 @@ termToExistentials term = (term, [])
 forgetSimplified :: ClaimPattern -> ClaimPattern
 forgetSimplified claimPattern'@(ClaimPattern _ _ _ _) =
     claimPattern'
-        { left = Pattern.forgetSimplified left
+        { left = Internal.Pattern.forgetSimplified left
         , right = OrPattern.forgetSimplified right
         }
   where
@@ -353,12 +356,12 @@ instance UnifyingRule ClaimPattern where
     type UnifyingRuleVariable ClaimPattern = RewritingVariableName
 
     matchingPattern claim@(ClaimPattern _ _ _ _) =
-        Pattern.term left
+        Internal.Pattern.term left
       where
         ClaimPattern{left} = claim
 
     precondition claim@(ClaimPattern _ _ _ _) =
-        Condition.toPredicate . Pattern.withoutTerm $ left
+        Condition.toPredicate . Internal.Pattern.withoutTerm $ left
       where
         ClaimPattern{left} = claim
 
@@ -394,10 +397,10 @@ mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
     claimPattern'
         { left =
-            Pattern.mapVariables resetConfigVariable left
+            Internal.Pattern.mapVariables resetConfigVariable left
         , right =
             OrPattern.map
-                (Pattern.mapVariables resetConfigVariable)
+                (Internal.Pattern.mapVariables resetConfigVariable)
                 right
         , existentials =
             TermLike.mapElementVariable resetConfigVariable
@@ -407,51 +410,55 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
     ClaimPattern{left, right, existentials} = claimPattern'
 
 parseRightHandSide ::
-    forall variable.
-    InternalVariable variable =>
-    TermLike variable ->
-    OrPattern variable
+    Validated.Pattern ->
+    OrPattern VariableName
 parseRightHandSide term =
     let (term', condition) =
-            parsePatternFromTermLike term
-                & Pattern.splitTerm
+            parseConditionalValidatedPattern term
+                & Conditional.splitTerm
      in OrPattern.map
-            (flip Pattern.andCondition condition)
-            (parseOrPatternFromTermLike term')
+            (flip Internal.Pattern.andCondition condition)
+            (parseOrPattern term')
   where
-    parseOrPatternFromTermLike ::
-        TermLike variable ->
-        OrPattern variable
-    parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
-        parseOrPatternFromTermLike term1
-            <> parseOrPatternFromTermLike term2
-    parseOrPatternFromTermLike term' =
+    parseOrPattern ::
+        Validated.Pattern ->
+        OrPattern VariableName
+    parseOrPattern (Validated.Or_ _ patt1 patt2) =
+        parseOrPattern patt1
+            <> parseOrPattern patt2
+    parseOrPattern patt =
         OrPattern.fromPattern
-            . parsePatternFromTermLike
-            $ term'
+            . parseInternalPattern
+            $ patt
 
-    parsePatternFromTermLike ::
-        TermLike variable ->
-        Pattern variable
-    parsePatternFromTermLike original@(TermLike.And_ _ term1 term2)
-        | isTop term1 = Pattern.fromTermLike term2
-        | isTop term2 = Pattern.fromTermLike term1
+    parseConditionalValidatedPattern ::
+        Validated.Pattern ->
+        Conditional VariableName Validated.Pattern
+    parseConditionalValidatedPattern original@(Validated.And_ _ term1 term2)
+        | isTop term1 = Conditional.fromTerm term2
+        | isTop term2 = Conditional.fromTerm term1
         | otherwise =
             case (tryPredicate term1, tryPredicate term2) of
                 (Nothing, Nothing) ->
-                    Pattern.fromTermLike original
+                    Conditional.fromTerm original
                 (Just predicate, Nothing) ->
-                    Pattern.fromTermAndPredicate
+                    Conditional.fromTermAndPredicate
                         term2
                         predicate
                 (Nothing, Just predicate) ->
-                    Pattern.fromTermAndPredicate
+                    Conditional.fromTermAndPredicate
                         term1
                         predicate
                 (Just predicate, _) ->
-                    Pattern.fromTermAndPredicate
+                    Conditional.fromTermAndPredicate
                         term2
                         predicate
       where
         tryPredicate = hush . Predicate.makePredicate
-    parsePatternFromTermLike term' = Pattern.fromTermLike term'
+    parseConditionalValidatedPattern term' = Conditional.fromTerm term'
+
+    parseInternalPattern ::
+        Validated.Pattern ->
+        Internal.Pattern VariableName
+    parseInternalPattern = undefined
+
