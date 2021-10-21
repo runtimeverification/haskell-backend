@@ -35,7 +35,6 @@ module Kore.Builtin.Bool (
 
 import qualified Control.Monad as Monad
 import Data.Functor.Const
-import qualified Kore.Validate as Validated
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (
     Map,
@@ -68,6 +67,7 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify (
     MonadUnify,
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec

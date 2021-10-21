@@ -186,10 +186,6 @@ module Kore.Internal.TermLike (
 ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Validate as Validated
 import Data.Align (
     alignWith,
  )
@@ -216,6 +212,9 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import Data.These
+import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables (
@@ -289,6 +288,7 @@ import Kore.Unparser (
     Unparse (..),
  )
 import qualified Kore.Unparser as Unparser
+import qualified Kore.Validate as Validated
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (
     refreshSetVariable,

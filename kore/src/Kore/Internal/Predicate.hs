@@ -66,7 +66,6 @@ module Kore.Internal.Predicate (
 ) where
 
 import qualified Control.Comonad.Trans.Env as Env
-import qualified Kore.Validate as Validated
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
@@ -145,6 +144,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import qualified Kore.Validate as Validated
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )

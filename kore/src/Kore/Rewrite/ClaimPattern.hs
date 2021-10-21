@@ -25,7 +25,6 @@ import Control.Monad.State.Strict (
     evalState,
  )
 import qualified Control.Monad.State.Strict as State
-import qualified Kore.Validate as Validated
 import qualified Data.Default as Default
 import Data.Map.Strict (
     Map,
@@ -41,17 +40,17 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
-import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (Conditional)
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Conditional (Conditional)
-import qualified Kore.Internal.Pattern as Internal.Pattern
 import qualified Kore.Internal.Pattern as Internal (
     Pattern,
-                                                   )
+ )
+import qualified Kore.Internal.Pattern as Internal.Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution (
     Substitution,
@@ -88,6 +87,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
+import qualified Kore.Validate as Validated
 import Kore.Variables.Fresh (
     refreshVariablesSet,
  )
@@ -461,4 +461,3 @@ parseRightHandSide term =
         Validated.Pattern ->
         Internal.Pattern VariableName
     parseInternalPattern = undefined
-

@@ -45,30 +45,25 @@ module Kore.Validate.Pattern (
     pattern Inj_,
 ) where
 
-import Data.Functor.Const (
-    Const (..),
- )
 import Control.Comonad.Trans.Cofree (
     tailF,
  )
-import qualified GHC.Generics as GHC
-import Kore.AST.AstWithLocation
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
-import Kore.Unparser (Unparse (..))
-import qualified Kore.Unparser as Unparser
-import Kore.Debug
-import Kore.TopBottom
-import Data.Text (Text)
-import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Foldable(
-    Base,
-    Recursive (..),
-    Corecursive (..),
-                            )
 import Data.ByteString (
     ByteString,
  )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive (..),
+    Recursive (..),
+ )
+import qualified Data.Functor.Foldable as Recursive
+import Data.Text (Text)
+import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
 import qualified Kore.Attribute.Pattern.Created as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute
@@ -76,12 +71,15 @@ import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute
 import qualified Kore.Attribute.Pattern.Functional as Attribute
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
+import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
  )
 import Kore.Builtin.Signedness.Signedness (
     Signedness,
  )
+import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
 import Kore.Internal.InternalBool
@@ -118,9 +116,11 @@ import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
+import Kore.TopBottom
+import Kore.Unparser (Unparse (..))
+import qualified Kore.Unparser as Unparser
 import Prelude.Kore
 import qualified Pretty
-import Kore.Attribute.Synthetic
 
 -- | 'PatternF' is the 'Base' functor of validated patterns.
 data PatternF child
@@ -218,9 +218,7 @@ instance
             InternalSetF InternalAc{builtinAcSort} ->
                 locationFromAst builtinAcSort
 
-instance
-    Synthetic (Attribute.FreeVariables VariableName) PatternF
-    where
+instance Synthetic (Attribute.FreeVariables VariableName) PatternF where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -665,7 +663,7 @@ pattern And_ ::
 
 pattern App_ ::
     Symbol ->
-    [Pattern ] ->
+    [Pattern] ->
     Pattern
 
 pattern ApplyAlias_ ::
@@ -680,12 +678,12 @@ pattern Bottom_ ::
 pattern Ceil_ ::
     Sort ->
     Sort ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern DV_ ::
     Sort ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern InternalBool_ ::
@@ -697,15 +695,15 @@ pattern InternalInt_ ::
     Pattern
 
 pattern InternalList_ ::
-    InternalList (Pattern ) ->
+    InternalList (Pattern) ->
     Pattern
 
 pattern InternalMap_ ::
-    InternalMap Key (Pattern ) ->
+    InternalMap Key (Pattern) ->
     Pattern
 
 pattern InternalSet_ ::
-    InternalSet Key (Pattern ) ->
+    InternalSet Key (Pattern) ->
     Pattern
 
 pattern InternalString_ :: InternalString -> Pattern
@@ -713,77 +711,77 @@ pattern InternalString_ :: InternalString -> Pattern
 pattern Equals_ ::
     Sort ->
     Sort ->
-    Pattern  ->
-    Pattern  ->
+    Pattern ->
+    Pattern ->
     Pattern
 
 pattern Exists_ ::
     Sort ->
     ElementVariable variable ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Floor_ ::
     Sort ->
     Sort ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Forall_ ::
     Sort ->
     ElementVariable variable ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Iff_ ::
     Sort ->
-    Pattern  ->
-    Pattern  ->
+    Pattern ->
+    Pattern ->
     Pattern
 
 pattern Implies_ ::
     Sort ->
-    Pattern  ->
-    Pattern  ->
+    Pattern ->
+    Pattern ->
     Pattern
 
 pattern In_ ::
     Sort ->
     Sort ->
-    Pattern  ->
-    Pattern  ->
+    Pattern ->
+    Pattern ->
     Pattern
 
 pattern Mu_ ::
     SetVariable variable ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Next_ ::
     Sort ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Not_ ::
     Sort ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Nu_ ::
     SetVariable variable ->
-    Pattern  ->
+    Pattern ->
     Pattern
 
 pattern Or_ ::
     Sort ->
-    Pattern  ->
-    Pattern  ->
+    Pattern ->
+    Pattern ->
     Pattern
 
 pattern Rewrites_ ::
     Sort ->
-    Pattern  ->
-    Pattern  ->
+    Pattern ->
+    Pattern ->
     Pattern
 
 pattern Top_ :: Sort -> Pattern

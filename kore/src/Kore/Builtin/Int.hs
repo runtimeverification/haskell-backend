@@ -74,7 +74,6 @@ import Control.Error (
     MaybeT,
  )
 import qualified Control.Monad as Monad
-import qualified Kore.Validate as Validated
 import Data.Bits (
     complement,
     shift,
@@ -127,6 +126,7 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Kore.Unification.Unify as Unify
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 

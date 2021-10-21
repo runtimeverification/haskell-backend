@@ -18,7 +18,6 @@ import Control.Error (
     runMaybeT,
  )
 import qualified Control.Lens as Lens
-import qualified Kore.Validate as Validated
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.Except
 import qualified Control.Monad.State as State
@@ -45,6 +44,7 @@ import Kore.Rewrite.SMT.Translate
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
+import qualified Kore.Validate as Validated
 import Log (
     MonadLog (..),
  )

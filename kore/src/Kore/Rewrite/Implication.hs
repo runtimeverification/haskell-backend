@@ -21,7 +21,6 @@ module Kore.Rewrite.Implication (
 import Control.Error.Util (
     hush,
  )
-import qualified Kore.Validate as Validated
 import Control.Monad.State.Strict (
     evalState,
  )
@@ -87,6 +86,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
+import qualified Kore.Validate as Validated
 import Kore.Variables.Fresh (
     refreshVariables,
     refreshVariablesSet,
@@ -417,6 +417,7 @@ parseRightHandSide ::
     Validated.Pattern ->
     OrPattern VariableName
 parseRightHandSide term = undefined
+
 --     let (term', condition) =
 --             parsePatternFromTermLike term
 --                 & Pattern.splitTerm

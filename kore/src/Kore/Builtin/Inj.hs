@@ -17,10 +17,10 @@ import Kore.Builtin.Verifiers (
 import Kore.Error
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Validate as Validated
 import Kore.Validate.PatternVerifier.PatternVerifier (
     PatternVerifier,
  )
-import Kore.Validate as Validated
 import Prelude.Kore
 
 verifiers :: Verifiers

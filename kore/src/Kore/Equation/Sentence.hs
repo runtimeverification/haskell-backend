@@ -30,10 +30,10 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     InternalVariable,
+    NotTermLike,
     Symbol,
     TermLike,
     VariableName,
-    NotTermLike,
     makeTermLike,
  )
 import qualified Kore.Internal.TermLike as TermLike

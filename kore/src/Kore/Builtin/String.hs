@@ -46,7 +46,6 @@ module Kore.Builtin.String (
 import Control.Error (
     MaybeT,
  )
-import qualified Kore.Validate as Validated
 import Data.Char (
     chr,
     ord,
@@ -93,6 +92,7 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Kore.Unification.Unify as Unify
+import qualified Kore.Validate as Validated
 import Numeric (
     readInt,
     showIntAtBase,

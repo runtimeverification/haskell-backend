@@ -42,8 +42,8 @@ import qualified Kore.Internal.Symbol as Internal.Symbol (
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
-import Kore.Validate.Error
 import qualified Kore.Validate as Validated
+import Kore.Validate.Error
 import Prelude.Kore
 
 type ImplicitModule =
