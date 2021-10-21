@@ -41,13 +41,17 @@ import qualified Kore.Builtin.Int as Int
 import Kore.Equation.Equation (
     Equation (..),
     mkEquation,
-    toTermLikeOld,
+    toTermLike,
  )
 import qualified Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern (
+    Pattern,
+    Conditional (Conditional),
+                             )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
@@ -266,12 +270,12 @@ test_matchDisjunction =
                     ]
                 , moduleAttributes = Attributes []
                 }
-    initial = fromTermLike $ applyToNoArgs mySort "initial"
-    next1 = fromTermLike $ applyToNoArgs mySort "next1"
-    next2 = fromTermLike $ applyToNoArgs mySort "next2"
-    final1 = fromTermLike $ applyToNoArgs mySort "final1"
-    final2 = fromTermLike $ applyToNoArgs mySort "final2"
-    unreachable = fromTermLike $ applyToNoArgs mySort "unreachable"
+    initial = Pattern.fromTermLike $ applyToNoArgs mySort "initial"
+    next1 = Pattern.fromTermLike $ applyToNoArgs mySort "next1"
+    next2 = Pattern.fromTermLike $ applyToNoArgs mySort "next2"
+    final1 = Pattern.fromTermLike $ applyToNoArgs mySort "final1"
+    final2 = Pattern.fromTermLike $ applyToNoArgs mySort "final2"
+    unreachable = Pattern.fromTermLike $ applyToNoArgs mySort "unreachable"
 
 test_checkFunctions :: TestTree
 test_checkFunctions =
@@ -354,7 +358,7 @@ test_checkFunctions =
         SentenceAxiomSentence
             ( mkAxiom
                 []
-                ( toTermLikeOld
+                ( toTermLike
                     mySort
                     ( mkEquation
                         myF
@@ -427,7 +431,7 @@ test_checkFunctionsIgnoreSimpl =
         SentenceAxiomSentence
             ( mkAxiom
                 []
-                ( toTermLikeOld
+                ( toTermLike
                     mySort
                     ( mkEquation
                         myF
@@ -502,7 +506,7 @@ test_checkBothMatch =
     mySentence name pr =
         SentenceAxiomSentence $
             mkAxiom [] $
-                toTermLikeOld mySort $
+                toTermLike mySort $
                     Equation
                         { left = myF
                         , requires = pr
@@ -573,7 +577,7 @@ test_checkBothMatchIgnoreSimpl =
     mySentence name pr =
         SentenceAxiomSentence $
             mkAxiom [] $
-                toTermLikeOld mySort $
+                toTermLike mySort $
                     Equation
                         { left = myF
                         , requires = pr
@@ -588,7 +592,7 @@ test_checkBothMatchIgnoreSimpl =
     mySentenceSimpl name pr =
         SentenceAxiomSentence
             ( mkAxiom [] $
-                toTermLikeOld mySort $
+                toTermLike mySort $
                     Equation
                         { left = myF
                         , requires = pr
