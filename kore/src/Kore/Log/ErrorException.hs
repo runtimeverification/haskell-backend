@@ -5,14 +5,17 @@ License     : BSD-3-Clause
 module Kore.Log.ErrorException (
     ErrorException,
     errorException,
+    handleSomeException,
 ) where
 
 import Control.Exception (
     AssertionFailed,
  )
 import Control.Monad.Catch (
+    MonadThrow,
     SomeException,
     fromException,
+    throwM,
  )
 import Log
 import Prelude.Kore
@@ -47,3 +50,19 @@ instance Entry ErrorException where
 
 errorException :: MonadLog log => SomeException -> log ()
 errorException = logEntry . ErrorException
+
+{- | Handle and catch exceptions. If 'SomeException is 'cast' to 'SomeEntry'
+ then log the entry and re-throw the exception. If it is not 'SomeEntry' then
+ wrap the exception within 'ErrorException', log the entry, and re-throw the
+ exception.
+-}
+handleSomeException ::
+    MonadLog m =>
+    MonadThrow m =>
+    SomeException ->
+    m a
+handleSomeException someException = handleSomeEntry >> throwM someException
+  where
+    handleSomeEntry = case fromException someException of
+        Just (SomeEntry entry) -> logEntry entry
+        Nothing -> errorException someException

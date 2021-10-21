@@ -3,8 +3,6 @@ module Main (main) where
 import qualified Control.Lens as Lens
 import Control.Monad.Catch (
     MonadMask,
-    SomeException,
-    fromException,
     handle,
     throwM,
  )
@@ -64,15 +62,13 @@ import Kore.Internal.TermLike (
 import Kore.Log (
     KoreLogOptions (..),
     LogMessage,
-    SomeEntry (..),
     WithLog,
-    logEntry,
     parseKoreLogOptions,
     runKoreLog,
     unparseKoreLogOptions,
  )
 import Kore.Log.ErrorException (
-    errorException,
+    handleSomeException,
  )
 import Kore.Log.WarnBoundedModelChecker (
     warnBoundedModelChecker,
@@ -604,13 +600,6 @@ mainWithOptions execOptions = do
     exitWith exitCode
   where
     KoreExecOptions{koreLogOptions} = execOptions
-
-    handleSomeException :: SomeException -> Main ExitCode
-    handleSomeException someException = do
-        case fromException someException of
-            Just (SomeEntry entry) -> logEntry entry
-            Nothing -> errorException someException
-        throwM someException
 
     handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
     handleWithConfiguration

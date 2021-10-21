@@ -18,7 +18,6 @@ module Kore.Exec (
     boundedModelCheck,
     matchDisjunction,
     checkFunctions,
-    checkBothMatch,
     Rewrite,
     Equality,
 ) where
@@ -33,7 +32,6 @@ import Control.Error (
 import qualified Control.Lens as Lens
 import Control.Monad (
     filterM,
-    join,
     (>=>),
  )
 import Control.Monad.Catch (
@@ -642,20 +640,25 @@ and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 -}
 checkFunctions ::
     MonadLog m =>
+    MonadSimplify m =>
     -- | The main module
     VerifiedModule StepperAttributes ->
-    m ExitCode
-checkFunctions verifiedModule =
-    checkResults $ filter (not . isFunctionPattern . right) equations
+    m ()
+checkFunctions verifiedModule = do
+    -- check RHS is not function pattern
+    equations >>= filter (not . isFunctionPattern . right)
+        & mapM_ errorEquationRightFunction
+    -- check if two equations both match the same term
+    equations >>= inOrderPairs
+        & filterM (uncurry bothMatch)
+        >>= mapM_ (uncurry errorEquationsSameMatch)
   where
+    equations :: [[Equation VariableName]]
     equations =
-        filter (not . Kore.Equation.isSimplificationRule) $
-            join $ Map.elems $ extractEquations verifiedModule
-    -- if any equations fail the check, log the equations and
-    -- the entire function returns ExitFailure 3.
-    checkResults [] = return ExitSuccess
-    checkResults eqns =
-        mapM_ errorEquationRightFunction eqns $> ExitFailure 3
+        extractEquations verifiedModule
+            & Map.elems
+            & map (filter (not . Kore.Equation.isSimplificationRule))
+    inOrderPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
 
 {- | Returns true when both equations match the same term.  See:
 https://github.com/kframework/kore/issues/2472#issue-833143685
@@ -673,38 +676,19 @@ bothMatch eq1 eq2 =
         prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
         prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
         check =
-            Predicate.makeAndPredicate pre1 $
-                Predicate.makeAndPredicate pre2 $
-                    Predicate.makeAndPredicate arg1 $
-                        Predicate.makeAndPredicate arg2 $
-                            Predicate.makeAndPredicate prio1 prio2
-        check' = Predicate.mapVariables (pure mkConfigVariable) check
+            Predicate.makeAndPredicate prio1 prio2
+                & Predicate.makeAndPredicate arg2
+                & Predicate.makeAndPredicate arg1
+                & Predicate.makeAndPredicate pre2
+                & Predicate.makeAndPredicate pre1
+                & Predicate.mapVariables (pure mkConfigVariable)
         sort = termLikeSort $ right eq1
-        patt = Pattern.fromPredicateSorted sort check'
+        patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
 
 {- | Checks if any function definition in the module carries two equations that both match
 same term.
 -}
-checkBothMatch ::
-    MonadSimplify m =>
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    m ExitCode
-checkBothMatch verifiedModule =
-    filterM (uncurry bothMatch) equations
-        >>= checkResults
-  where
-    equations =
-        join $
-            map
-                (mkPairs . filter (not . Kore.Equation.isSimplificationRule))
-                (Map.elems $ extractEquations verifiedModule)
-    -- produces all 'in-order' pairs in a list
-    mkPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
-    checkResults [] = return ExitSuccess
-    checkResults eqnPairs =
-        mapM_ (uncurry errorEquationsSameMatch) eqnPairs $> ExitFailure 3
 
 -- | Rule merging
 mergeAllRules ::

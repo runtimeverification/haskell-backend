@@ -103,6 +103,7 @@ common global-main
   build-depends: kore
   build-depends: clock >=0.8
   build-depends: containers >=0.5
+  build-depends: exceptions >=0.10
   build-depends: filepath >=1.4
   build-depends: lens >=4.17
   build-depends: megaparsec >=7.0
