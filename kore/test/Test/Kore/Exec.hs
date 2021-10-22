@@ -48,9 +48,9 @@ import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern (
-    Pattern,
     Conditional (Conditional),
-                             )
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeFalsePredicate,
