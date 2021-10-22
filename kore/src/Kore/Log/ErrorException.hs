@@ -51,18 +51,18 @@ instance Entry ErrorException where
 errorException :: MonadLog log => SomeException -> log ()
 errorException = logEntry . ErrorException
 
-{- | Handle and catch exceptions. If 'SomeException is 'cast' to 'SomeEntry'
- then log the entry and re-throw the exception. If it is not 'SomeEntry' then
- wrap the exception within 'ErrorException', log the entry, and re-throw the
- exception.
+{- | Handle and catch exceptions. If 'SomeException' is 'cast' to 'SomeEntry'
+ using 'fromException' then log the entry. If it
+ is not 'SomeEntry' then use 'errorException' to wrap the exception within
+ 'ErrorException' and log the entry. Lastly, re-throw the exception.
 -}
 handleSomeException ::
     MonadLog m =>
     MonadThrow m =>
     SomeException ->
     m a
-handleSomeException someException = handleSomeEntry >> throwM someException
-  where
-    handleSomeEntry = case fromException someException of
+handleSomeException someException = do
+    case fromException someException of
         Just (SomeEntry entry) -> logEntry entry
         Nothing -> errorException someException
+    throwM someException
