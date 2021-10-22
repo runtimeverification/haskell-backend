@@ -626,17 +626,21 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     match = Search.matchWith SideCondition.top
 
 {- | Ensure that for every equation in a function definition, the right-hand
-side of the equation is a function pattern. 'checkFunctions' first extracts
-equations from a verified module to a list of equations. Then it checks that
-each equation in the list is a function pattern. 'filter' the equations that
-fail the check, and pass the list to 'checkResults'. If there were no bad
-equations, 'checkResults' returns 'ExitSuccess'. Otherwise, 'checkResults'
-logs an error message for each bad equation before returning
-@'ExitFailure' 3@.
+side of the equation is a function pattern. Additionally, check if any function
+definition in the module carries two equations that both match the same term.
+'checkFunctions' first extracts equations from a verified module to a list of
+lists of equations, ignoring any equations that are simplification rules. Then
+check that the 'right' side of each equation is a function pattern. Any
+equations whose 'right' side is __not__ a function pattern are thrown as an
+'ErrorEquationRightFunction'. Finally, check if two equations both match the
+same term. Start by constructing all in-order pairs of equations in each
+sub-list. Then check that for each pair they both do __not__ match the same
+term. Any pairs that do match the same term throw 'ErrorEquationsSameMatch'.
 See 'checkEquation',
 'Kore.Equation.Registry.extractEquations',
 'Kore.Internal.TermLike.isFunctionPattern',
-and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
+'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction',
+'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
     MonadLog m =>
@@ -645,7 +649,7 @@ checkFunctions ::
     VerifiedModule StepperAttributes ->
     m ()
 checkFunctions verifiedModule = do
-    -- check RHS is not function pattern
+    -- check if RHS is function pattern
     equations >>= filter (not . isFunctionPattern . right)
         & mapM_ errorEquationRightFunction
     -- check if two equations both match the same term
@@ -658,6 +662,7 @@ checkFunctions verifiedModule = do
         extractEquations verifiedModule
             & Map.elems
             & map (filter (not . Kore.Equation.isSimplificationRule))
+    -- https://stackoverflow.com/q/34044366/4051020
     inOrderPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
 
 {- | Returns true when both equations match the same term.  See:
@@ -685,10 +690,6 @@ bothMatch eq1 eq2 =
         sort = termLikeSort $ right eq1
         patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
-
-{- | Checks if any function definition in the module carries two equations that both match
-same term.
--}
 
 -- | Rule merging
 mergeAllRules ::
