@@ -36,7 +36,6 @@ import Control.Error (
     hoistMaybe,
  )
 import qualified Control.Monad as Monad
-import qualified Kore.Validate as Validated
 import Data.HashMap.Strict (
     HashMap,
  )
@@ -116,6 +115,7 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import qualified Kore.Unification.Unify as Unify
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | Builtin name of the @Map@ sort.
@@ -503,6 +503,7 @@ internalize ::
     Validated.Pattern ->
     Validated.Pattern
 internalize tools termLike = undefined
+
 --     -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
 --     -- apply it if we know the term head is a constructor-like symbol.
 --     | Validated.App_ symbol _ <- termLike

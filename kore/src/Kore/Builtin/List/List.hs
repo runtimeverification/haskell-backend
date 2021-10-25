@@ -31,7 +31,6 @@ import Data.Reflection (
     Given,
  )
 import qualified Data.Reflection as Reflection
-import qualified Kore.Validate as Validated
 import Data.Sequence (
     Seq,
  )
@@ -57,6 +56,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | Builtin variable name of the @List@ sort.

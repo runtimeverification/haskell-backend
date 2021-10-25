@@ -60,7 +60,6 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
-import qualified Kore.Validate as Validated
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     ValidatedModule,
@@ -79,6 +78,7 @@ import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 {- | Verifiers for Kore builtin sorts.
@@ -174,6 +174,7 @@ evaluators builtins indexedModule =
             Map.lookup name builtins
 
 -- TODO: these should use a Validated.Pattern -> TermLike transformation
+
 {- | Convert a 'TermLike' to its internal representation.
 
 @internalize@ modifies the term recursively from the bottom up, so any internal

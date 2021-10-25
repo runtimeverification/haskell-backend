@@ -36,7 +36,6 @@ import Data.Text (
     Text,
  )
 import qualified Kore.Builtin.Encoding as Encoding
-import qualified Kore.Validate as Validated
 import qualified Kore.Builtin.Symbols as Builtin
 import Kore.Internal.Pattern (
     Pattern,
@@ -56,6 +55,7 @@ import qualified Kore.Internal.TermLike as TermLike (
     pattern App_,
     pattern StringLiteral_,
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | Builtin name for the Bytes sort.
