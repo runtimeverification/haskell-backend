@@ -26,8 +26,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          name: runtimeverification
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Build
         run: nix-build -A kore
@@ -56,8 +56,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          name: runtimeverification
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Check shell
         run: nix-shell --run "echo OK"
@@ -87,8 +87,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          name: runtimeverification
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Run unit tests
         run: nix-build -A project.kore.checks
@@ -115,7 +115,7 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
+          name: runtimeverification
           skipPush: true
           extraPullNames: runtimeverification
 
@@ -237,9 +237,9 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v8
         with:
-          name: kore
+          name: runtimeverification
           extraPullNames: runtimeverification
-          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
           skipPush: true
 
       - name: Collect performance statistics

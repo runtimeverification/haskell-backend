@@ -12,6 +12,9 @@ import Data.Limit (
 import qualified Data.Sequence as Seq
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
@@ -20,6 +23,8 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
@@ -432,13 +437,31 @@ test_proveClaims =
                                 )
                             )
                         )
-                    , Pattern.fromTermLike Mock.b
+                    , Conditional
+                        { term = Mock.b
+                        , predicate = Predicate.makeTruePredicate
+                        , substitution =
+                            Substitution.wrap
+                                [Substitution.assign (mkSomeVariable Mock.x) Mock.a]
+                        }
                     ]
             initialPattern =
                 Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkElemVar Mock.x))
                     & mkRewritingPattern
-            finalPatterns = OrPattern.fromTermLike Mock.b
+            finalPatterns =
+                OrPattern.fromPattern
+                    Conditional
+                        { term = Mock.b
+                        , predicate = Predicate.makeTruePredicate
+                        , substitution =
+                            Substitution.wrap
+                                [ Substitution.assign
+                                    (mkSomeVariable Mock.xConfig)
+                                    Mock.a
+                                ]
+                        }
+
             mkTest name mkSomeClaim =
                 testCase name $ do
                     actual <-

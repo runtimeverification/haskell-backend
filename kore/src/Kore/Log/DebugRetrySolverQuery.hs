@@ -2,9 +2,9 @@
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
-module Kore.Log.WarnRetrySolverQuery (
-    WarnRetrySolverQuery,
-    warnRetrySolverQuery,
+module Kore.Log.DebugRetrySolverQuery (
+    DebugRetrySolverQuery,
+    debugRetrySolverQuery,
 ) where
 
 import Kore.Internal.Predicate (
@@ -23,12 +23,12 @@ import Pretty (
  )
 import qualified Pretty
 
-newtype WarnRetrySolverQuery = WarnRetrySolverQuery
+newtype DebugRetrySolverQuery = DebugRetrySolverQuery
     {predicates :: NonEmpty (Predicate VariableName)}
     deriving stock (Show)
 
-instance Pretty WarnRetrySolverQuery where
-    pretty WarnRetrySolverQuery{predicates} =
+instance Pretty DebugRetrySolverQuery where
+    pretty DebugRetrySolverQuery{predicates} =
         Pretty.vsep $
             [ "The SMT solver initially failed to solve the following query:"
             , Pretty.indent 2 "Decide predicate:"
@@ -42,21 +42,21 @@ instance Pretty WarnRetrySolverQuery where
       where
         predicate :| sideConditions = predicates
 
-instance Entry WarnRetrySolverQuery where
-    entrySeverity _ = Warning
-    oneLineDoc _ = "WarnRetrySolverQuery"
+instance Entry DebugRetrySolverQuery where
+    entrySeverity _ = Debug
+    oneLineDoc _ = "DebugRetrySolverQuery"
     helpDoc _ =
         "warning raised when the solver failed to decide\
         \ the satisfiability of a formula, indicating that\
         \ the solver was reset and the formula retried"
 
-warnRetrySolverQuery ::
+debugRetrySolverQuery ::
     InternalVariable variable =>
     MonadLog log =>
     NonEmpty (Predicate variable) ->
     log ()
-warnRetrySolverQuery predicates' =
-    logEntry WarnRetrySolverQuery{predicates}
+debugRetrySolverQuery predicates' =
+    logEntry DebugRetrySolverQuery{predicates}
   where
     predicates =
         Predicate.mapVariables (pure toVariableName) <$> predicates'

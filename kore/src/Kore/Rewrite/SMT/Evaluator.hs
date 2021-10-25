@@ -61,11 +61,11 @@ import Kore.Log.DebugEvaluateCondition (
     debugEvaluateConditionResult,
     whileDebugEvaluateCondition,
  )
+import Kore.Log.DebugRetrySolverQuery (
+    debugRetrySolverQuery,
+ )
 import Kore.Log.ErrorDecidePredicateUnknown (
     errorDecidePredicateUnknown,
- )
-import Kore.Log.WarnRetrySolverQuery (
-    warnRetrySolverQuery,
  )
 import Kore.Rewrite.SMT.Translate
 import Kore.Simplify.Simplify as Simplifier
@@ -186,7 +186,7 @@ decidePredicate sideCondition predicates =
     retry = do
         SMT.reinit
         result <- query
-        warnRetrySolverQuery predicates
+        debugRetrySolverQuery predicates
         return result
 
 translatePredicate ::
