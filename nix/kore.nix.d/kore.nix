@@ -472,7 +472,6 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
@@ -480,6 +479,7 @@
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
@@ -499,7 +499,6 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
@@ -521,12 +520,12 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -557,12 +556,12 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             ];
           buildable = true;
@@ -580,7 +579,6 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
@@ -603,12 +601,12 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
