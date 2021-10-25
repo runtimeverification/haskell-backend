@@ -31,6 +31,7 @@ import Data.Reflection (
     Given,
  )
 import qualified Data.Reflection as Reflection
+import qualified Kore.Validate as Validated
 import Data.Sequence (
     Seq,
  )
@@ -108,25 +109,22 @@ asPattern resultSort =
     tools = Reflection.given
 
 internalize ::
-    InternalVariable variable =>
     SmtMetadataTools Attribute.Symbol ->
-    TermLike variable ->
-    TermLike variable
-internalize tools termLike@(App_ symbol args)
-    | isSymbolUnit symbol, [] <- args = asInternal' (Seq.fromList args)
-    | isSymbolElement symbol, [_] <- args = asInternal' (Seq.fromList args)
+    Validated.Pattern ->
+    Validated.Pattern
+internalize tools termLike@(Validated.App_ symbol args)
+    | isSymbolUnit symbol, [] <- args = undefined (Seq.fromList args)
+    | isSymbolElement symbol, [_] <- args = undefined (Seq.fromList args)
     | isSymbolConcat symbol =
         case args of
-            [InternalList_ list1, arg2]
+            [Validated.InternalList_ list1, arg2]
                 | (null . internalListChild) list1 -> arg2
-            [arg1, InternalList_ list2]
+            [arg1, Validated.InternalList_ list2]
                 | (null . internalListChild) list2 -> arg1
-            [InternalList_ list1, InternalList_ list2] ->
-                asInternal' (on (<>) internalListChild list1 list2)
+            [Validated.InternalList_ list1, Validated.InternalList_ list2] ->
+                undefined (on (<>) internalListChild list1 list2)
             _ -> termLike
-  where
-    asInternal' = asInternal tools (termLikeSort termLike)
-internalize _ termLike = termLike
+internalize _ termLike = undefined termLike
 
 -- | Find the symbol hooked to @LIST.get@ in an indexed module.
 lookupSymbolGet ::

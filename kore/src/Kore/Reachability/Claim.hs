@@ -74,7 +74,7 @@ import qualified Kore.Attribute.SourceLocation as Attribute (
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -149,7 +149,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Logic (
     LogicT,
     MonadLogic,
@@ -249,13 +249,13 @@ instance (Unparse claim, Unparse (Rule claim)) => Unparse (AppliedRule claim) wh
 type AxiomAttributes = Attribute.Axiom.Axiom Symbol VariableName
 
 class ClaimExtractor claim where
-    extractClaim :: (AxiomAttributes, Verified.SentenceClaim) -> Maybe claim
+    extractClaim :: (AxiomAttributes, Validated.SentenceClaim) -> Maybe claim
 
 -- | Extracts all One-Path claims from a verified module.
 extractClaims ::
     ClaimExtractor claim =>
     -- | 'IndexedModule' containing the definition
-    VerifiedModule declAtts ->
+    ValidatedModule declAtts ->
     [claim]
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 

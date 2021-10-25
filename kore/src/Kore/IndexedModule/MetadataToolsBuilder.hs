@@ -18,7 +18,7 @@ import Kore.Attribute.Symbol (
     StepperAttributes,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -36,7 +36,7 @@ import Prelude.Kore ()
  its argument and result sorts.
 -}
 build ::
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     SmtMetadataTools StepperAttributes
 build m =
     extractMetadataTools

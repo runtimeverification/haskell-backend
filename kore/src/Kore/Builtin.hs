@@ -60,6 +60,7 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
+import qualified Kore.Validate as Validated
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     ValidatedModule,
@@ -172,16 +173,16 @@ evaluators builtins indexedModule =
             name <- getHook
             Map.lookup name builtins
 
+-- TODO: these should use a Validated.Pattern -> TermLike transformation
 {- | Convert a 'TermLike' to its internal representation.
 
 @internalize@ modifies the term recursively from the bottom up, so any internal
 representations are fully normalized.
 -}
 internalize ::
-    InternalVariable variable =>
     SmtMetadataTools Attribute.Symbol ->
-    TermLike variable ->
-    TermLike variable
+    Validated.Pattern ->
+    Validated.Pattern
 internalize tools =
     Recursive.fold (internalize1 . Recursive.embed)
   where

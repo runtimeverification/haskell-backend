@@ -717,7 +717,7 @@ pattern Equals_ ::
 
 pattern Exists_ ::
     Sort ->
-    ElementVariable variable ->
+    ElementVariable VariableName ->
     Pattern ->
     Pattern
 
@@ -729,7 +729,7 @@ pattern Floor_ ::
 
 pattern Forall_ ::
     Sort ->
-    ElementVariable variable ->
+    ElementVariable VariableName ->
     Pattern ->
     Pattern
 

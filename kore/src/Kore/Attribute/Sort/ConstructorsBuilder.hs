@@ -152,7 +152,7 @@ parseSMTConstructor patt =
         allowedVars
         (patt0 : patts) =
             case patt0 of
-                ElemVar_ var ->
+                Validated.ElemVar_ var ->
                     if var `Set.member` allowedVars
                         then do
                             vars <-

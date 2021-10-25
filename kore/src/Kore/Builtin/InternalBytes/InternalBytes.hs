@@ -36,6 +36,7 @@ import Data.Text (
     Text,
  )
 import qualified Kore.Builtin.Encoding as Encoding
+import qualified Kore.Validate as Validated
 import qualified Kore.Builtin.Symbols as Builtin
 import Kore.Internal.Pattern (
     Pattern,
@@ -79,18 +80,17 @@ asInternal bytesSort bytesValue =
     TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
 
 internalize ::
-    InternalVariable variable =>
-    TermLike variable ->
-    TermLike variable
+    Validated.Pattern ->
+    Validated.Pattern
 internalize =
     \case
-        TermLike.App_ symbol args
+        Validated.App_ symbol args
             | isSymbolString2Bytes symbol
-              , [TermLike.StringLiteral_ str] <- args ->
+              , [Validated.StringLiteral_ str] <- args ->
                 let Symbol{symbolSorts} = symbol
                     ApplicationSorts{applicationSortsResult} = symbolSorts
                     literal = Encoding.encode8Bit str
-                 in asInternal applicationSortsResult literal
+                 in undefined applicationSortsResult literal
         termLike -> termLike
 
 isSymbolString2Bytes :: Symbol -> Bool

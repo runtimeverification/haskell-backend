@@ -10,7 +10,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.Rewrite.SMT.AST as AST (
     Declarations (Declarations),
@@ -30,8 +30,8 @@ import Test.Tasty.HUnit.Ext
 
 testsForModule ::
     String ->
-    (VerifiedModule Attribute.Symbol -> AST.Declarations sort symbol name) ->
-    VerifiedModule Attribute.Symbol ->
+    (ValidatedModule Attribute.Symbol -> AST.Declarations sort symbol name) ->
+    ValidatedModule Attribute.Symbol ->
     [AST.Declarations sort symbol name -> TestTree] ->
     TestTree
 testsForModule name functionToTest indexedModule tests =

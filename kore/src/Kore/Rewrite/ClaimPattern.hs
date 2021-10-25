@@ -411,7 +411,7 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
 
 parseRightHandSide ::
     Validated.Pattern ->
-    OrPattern VariableName
+    OrPattern RewritingVariableName
 parseRightHandSide term =
     let (term', condition) =
             parseConditionalValidatedPattern term
