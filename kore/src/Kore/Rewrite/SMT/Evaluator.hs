@@ -7,8 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Rewrite.SMT.Evaluator (
     decidePredicate,
-    Evaluable (..),
-    filterBranch,
+    evalPredicate,
+    evalConditional,
     filterMultiOr,
     translateTerm,
     translatePredicate,
@@ -73,9 +73,6 @@ import Kore.TopBottom (
     TopBottom,
  )
 import Log
-import Logic (
-    LogicT,
- )
 import Prelude.Kore
 import Pretty (
     Pretty,
@@ -88,58 +85,42 @@ import SMT (
 import qualified SMT
 import qualified SMT.SimpleSMT as SimpleSMT
 
-{- | Class for things that can be evaluated with an SMT solver,
-or which contain things that can be evaluated with an SMT solver.
+{- | Attempt to evaluate the 'Predicate' argument with an optional side
+ condition using an external SMT solver.
 -}
-class Evaluable thing where
-    -- | Attempt to evaluate the argument with an external SMT solver.
-    evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
-
-instance InternalVariable variable => Evaluable (Predicate variable) where
-    evaluate predicate =
-        case predicate of
-            Predicate.PredicateTrue -> return (Just True)
-            Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate SideCondition.top (predicate :| [])
-
-instance
+evalPredicate ::
+    MonadSimplify m =>
     InternalVariable variable =>
-    Evaluable (SideCondition variable, Predicate variable)
-    where
-    evaluate (sideCondition, predicate) =
-        case predicate of
-            Predicate.PredicateTrue -> return (Just True)
-            Predicate.PredicateFalse -> return (Just False)
-            _ ->
-                decidePredicate sideCondition $
-                    predicate :| [from @_ @(Predicate _) sideCondition]
+    Predicate variable ->
+    Maybe (SideCondition variable) ->
+    m (Maybe Bool)
+evalPredicate predicate sideConditionM = case predicate of
+    Predicate.PredicateTrue -> return $ Just True
+    Predicate.PredicateFalse -> return $ Just False
+    _ -> case sideConditionM of
+        Nothing ->
+            predicate :| []
+                & decidePredicate SideCondition.top
+        Just sideCondition ->
+            predicate :| [from @_ @(Predicate _) sideCondition]
+                & decidePredicate sideCondition
 
-instance InternalVariable variable => Evaluable (Conditional variable term) where
-    evaluate conditional =
-        assert (Conditional.isNormalized conditional) $
-            evaluate (Conditional.predicate conditional)
-
-instance
+{- | Attempt to evaluate the 'Conditional' argument with an optional side
+ condition using an external SMT solver.
+-}
+evalConditional ::
+    MonadSimplify m =>
     InternalVariable variable =>
-    Evaluable (SideCondition variable, Conditional variable term)
-    where
-    evaluate (sideCondition, conditional) =
-        assert (Conditional.isNormalized conditional) $
-            evaluate (sideCondition, Condition.toPredicate condition)
-      where
-        condition = Conditional.withoutTerm conditional
-
--- | Removes all branches refuted by an external SMT solver.
-filterBranch ::
-    forall simplifier thing.
-    MonadSimplify simplifier =>
-    Evaluable thing =>
-    thing ->
-    LogicT simplifier thing
-filterBranch thing =
-    evaluate thing >>= \case
-        Just False -> empty
-        _ -> return thing
+    Conditional variable term ->
+    Maybe (SideCondition variable) ->
+    m (Maybe Bool)
+evalConditional conditional sideConditionM =
+    evalPredicate predicate sideConditionM
+        & assert (Conditional.isNormalized conditional)
+  where
+    predicate = case sideConditionM of
+        Nothing -> Conditional.predicate conditional
+        Just _ -> Condition.toPredicate $ Conditional.withoutTerm conditional
 
 -- | Removes from a MultiOr all items refuted by an external SMT solver.
 filterMultiOr ::
@@ -158,9 +139,8 @@ filterMultiOr multiOr = do
     refute ::
         Conditional variable term ->
         simplifier (Maybe (Conditional variable term))
-    refute p = do
-        evaluated <- evaluate p
-        return $ case evaluated of
+    refute p =
+        evalConditional p Nothing <&> \case
             Nothing -> Just p
             Just False -> Nothing
             Just True -> Just p
