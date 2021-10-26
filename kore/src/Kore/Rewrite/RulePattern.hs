@@ -39,7 +39,6 @@ import Control.Monad.State.Strict (
     evalState,
  )
 import qualified Control.Monad.State.Strict as State
-import qualified Kore.Validate as Validated
 import Data.Coerce (
     Coercible,
     coerce,
@@ -123,6 +122,7 @@ import Kore.Unparser (
     unparse,
     unparse2,
  )
+import qualified Kore.Validate as Validated
 import Kore.Variables.Fresh hiding (
     refreshVariables',
  )

@@ -49,7 +49,6 @@ module Kore.Validate.Pattern (
     mkInhabitant,
     mkEndianness,
     mkSignedness,
-
     symbolApplication,
 
     -- * Pattern synonyms
@@ -92,18 +91,13 @@ module Kore.Validate.Pattern (
 import Control.Comonad.Trans.Cofree (
     tailF,
  )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import Data.Align (
     alignWith,
  )
-import Data.Semigroup (appEndo, Endo(..))
-import Data.These
-import qualified Data.Generics.Product as Lens.Product
-import qualified GHC.Generics as GHC
-import Control.Lens (
-    Lens',
- )
-import qualified GHC.Stack as GHC
 import Data.ByteString (
     ByteString,
  )
@@ -116,8 +110,12 @@ import Data.Functor.Foldable (
     Recursive (..),
  )
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Generics.Product as Lens.Product
+import Data.Semigroup (Endo (..), appEndo)
 import Data.Text (Text)
+import Data.These
 import qualified GHC.Generics as GHC
+import qualified GHC.Stack as GHC
 import qualified Generics.SOP as SOP
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
