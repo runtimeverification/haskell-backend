@@ -96,6 +96,7 @@ import Kore.Syntax.Definition (
  )
 import Kore.Unparser
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import qualified Kore.Validate.AttributesVerifier as Verifier.Attributes
 import Kore.Validate.Error (
     VerifyError,
@@ -148,8 +149,8 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 -- | Verify (and internalize) an application pattern.
 newtype ApplicationVerifier patternType = ApplicationVerifier
     { runApplicationVerifier ::
-        Application Symbol Validated.Pattern ->
-        PatternVerifier (Validated.PatternF Validated.Pattern)
+        Application Symbol ValidatedPattern ->
+        PatternVerifier (Validated.PatternF VariableName ValidatedPattern)
     }
 
 -- | @SymbolKey@ names builtin functions and constructors.
@@ -204,8 +205,8 @@ applicationPatternVerifierHooks applicationVerifiers =
 
 domainValuePatternVerifierHook ::
     Text ->
-    ( DomainValue Sort Validated.Pattern ->
-      PatternVerifier (Validated.PatternF Validated.Pattern)
+    ( DomainValue Sort ValidatedPattern ->
+      PatternVerifier (Validated.PatternF VariableName ValidatedPattern)
     ) ->
     PatternVerifierHook
 domainValuePatternVerifierHook hook verifier =

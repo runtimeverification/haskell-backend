@@ -34,6 +34,7 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 verifiers :: Verifiers
@@ -55,7 +56,7 @@ bigEndianKey = "bigEndianBytes"
 endiannessVerifier ::
     -- | Constructor
     (Symbol -> Endianness) ->
-    ApplicationVerifier Validated.Pattern
+    ApplicationVerifier ValidatedPattern
 endiannessVerifier ctor =
     ApplicationVerifier worker
   where
@@ -70,10 +71,10 @@ endiannessVerifier ctor =
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-littleEndianVerifier :: ApplicationVerifier Validated.Pattern
+littleEndianVerifier :: ApplicationVerifier ValidatedPattern
 littleEndianVerifier = endiannessVerifier LittleEndian
 
-bigEndianVerifier :: ApplicationVerifier Validated.Pattern
+bigEndianVerifier :: ApplicationVerifier ValidatedPattern
 bigEndianVerifier = endiannessVerifier BigEndian
 
 data UnifyEqualsEndianness = UnifyEqualsEndianness

@@ -318,13 +318,13 @@ isFreeOf rule =
         FreeVariables.toSet $
             freeVariables rule
 
--- TODO(Ana): move this to Internal.TermLike?
+-- TODO(Ana): move this to Validated.Pattern?
 
 -- | Extracts all top level existential quantifications.
 termToExistentials ::
-    TermLike RewritingVariableName ->
-    (TermLike RewritingVariableName, [ElementVariable RewritingVariableName])
-termToExistentials (TermLike.Exists_ _ v term) =
+    Validated.Pattern variable ->
+    (Validated.Pattern variable, [ElementVariable variable])
+termToExistentials (Validated.Exists_ _ v term) =
     fmap (v :) (termToExistentials term)
 termToExistentials term = (term, [])
 
@@ -410,8 +410,10 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
     ClaimPattern{left, right, existentials} = claimPattern'
 
 parseRightHandSide ::
-    Validated.Pattern ->
-    OrPattern RewritingVariableName
+    forall variable .
+    InternalVariable variable =>
+    Validated.Pattern variable ->
+    OrPattern variable
 parseRightHandSide term =
     let (term', condition) =
             parseConditionalValidatedPattern term
@@ -421,8 +423,8 @@ parseRightHandSide term =
             (parseOrPattern term')
   where
     parseOrPattern ::
-        Validated.Pattern ->
-        OrPattern VariableName
+        Validated.Pattern variable ->
+        OrPattern variable
     parseOrPattern (Validated.Or_ _ patt1 patt2) =
         parseOrPattern patt1
             <> parseOrPattern patt2
@@ -432,8 +434,8 @@ parseRightHandSide term =
             $ patt
 
     parseConditionalValidatedPattern ::
-        Validated.Pattern ->
-        Conditional VariableName Validated.Pattern
+        Validated.Pattern variable ->
+        Conditional variable (Validated.Pattern variable)
     parseConditionalValidatedPattern original@(Validated.And_ _ term1 term2)
         | isTop term1 = Conditional.fromTerm term2
         | isTop term2 = Conditional.fromTerm term1
@@ -458,6 +460,6 @@ parseRightHandSide term =
     parseConditionalValidatedPattern term' = Conditional.fromTerm term'
 
     parseInternalPattern ::
-        Validated.Pattern ->
-        Internal.Pattern VariableName
+        Validated.Pattern variable ->
+        Internal.Pattern variable
     parseInternalPattern = undefined

@@ -49,8 +49,8 @@ verifiers =
     expectInjChildren _ = koreFail "Expected one argument"
 
     internalizeInj ::
-        Application Symbol Validated.Pattern ->
-        PatternVerifier Validated.Pattern
+        Application Symbol ValidatedPattern ->
+        PatternVerifier ValidatedPattern
     internalizeInj application = do
         (injFrom, injTo) <- expectInjParams symbolParams
         injChild <- expectInjChildren applicationChildren

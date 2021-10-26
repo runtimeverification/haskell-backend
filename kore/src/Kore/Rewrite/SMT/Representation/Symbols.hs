@@ -46,6 +46,7 @@ import qualified Kore.Syntax.Sentence as Sentence.Symbol (
     Symbol (..),
  )
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 import qualified SMT
 
@@ -58,7 +59,7 @@ All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations ::
     forall axiom.
-    IndexedModule Validated.Pattern Attribute.Symbol axiom ->
+    IndexedModule ValidatedPattern Attribute.Symbol axiom ->
     AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations

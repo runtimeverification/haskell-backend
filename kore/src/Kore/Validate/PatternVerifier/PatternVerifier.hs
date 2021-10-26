@@ -60,6 +60,7 @@ import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Kore.Validate.Error
 import Kore.Validate.SortVerifier
 import Prelude.Kore
@@ -79,7 +80,7 @@ newtype DeclaredVariables = DeclaredVariables
 emptyDeclaredVariables :: DeclaredVariables
 emptyDeclaredVariables = mempty
 
-{- | 'PatternVerifierHook' is a hook run after verifying a 'Validated.Pattern'.
+{- | 'PatternVerifierHook' is a hook run after verifying a 'ValidatedPattern'.
 
 These are usually used to construct and verify internal representations after
 parsing.
@@ -89,8 +90,8 @@ in sequence.
 -}
 newtype PatternVerifierHook = PatternVerifierHook
     { runPatternVerifierHook ::
-        Validated.Pattern ->
-        PatternVerifier Validated.Pattern
+        ValidatedPattern ->
+        PatternVerifier ValidatedPattern
     }
 
 instance Semigroup PatternVerifierHook where
@@ -109,7 +110,7 @@ data Context = Context
       declaredSortVariables :: !(Set SortVariable)
     , -- | The indexed Kore module containing all definitions in scope.
       indexedModule ::
-        !(IndexedModule Validated.Pattern Attribute.Symbol Attribute.Null)
+        !(IndexedModule ValidatedPattern Attribute.Symbol Attribute.Null)
     , patternVerifierHook :: !PatternVerifierHook
     }
     deriving stock (GHC.Generic)

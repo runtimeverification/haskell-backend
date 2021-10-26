@@ -54,7 +54,7 @@ fromSentenceAxiom (attributes, SentenceAxiom{sentenceAxiomPattern}) =
     matchEquation attributes sentenceAxiomPattern
 
 data MatchEquationError variable
-    = NotEquation Validated.Pattern
+    = NotEquation (Validated.Pattern variable)
     | LeftError !(NotTermLike variable)
     | RightError !(NotTermLike variable)
     | RequiresError !(NotPredicate variable)
@@ -103,9 +103,10 @@ instance InternalVariable variable => Pretty (MatchEquationError variable) where
     pretty SubsortAxiom = "The term is a subsort axiom."
 
 matchEquation ::
-    Attribute.Axiom Symbol VariableName ->
-    Validated.Pattern ->
-    Either (MatchEquationError VariableName) (Equation VariableName)
+    InternalVariable variable =>
+    Attribute.Axiom Symbol variable ->
+    Validated.Pattern variable ->
+    Either (MatchEquationError variable) (Equation variable)
 matchEquation attributes validPattern
     | isFunctionalAxiom = Left FunctionalAxiom
     | isConstructorAxiom = Left ConstructorAxiom

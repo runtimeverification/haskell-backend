@@ -123,25 +123,25 @@ import Prelude.Kore
 import qualified Pretty
 
 -- | 'PatternF' is the 'Base' functor of validated patterns.
-data PatternF child
+data PatternF variable child
     = AndF !(And Sort child)
     | ApplySymbolF !(Application Symbol child)
     | -- TODO (thomas.tuegel): Expand aliases during validation?
-      ApplyAliasF !(Application (Alias Pattern) child)
+      ApplyAliasF !(Application (Alias (Pattern variable)) child)
     | BottomF !(Bottom Sort child)
     | CeilF !(Ceil Sort child)
     | DomainValueF !(DomainValue Sort child)
     | EqualsF !(Equals Sort child)
-    | ExistsF !(Exists Sort VariableName child)
+    | ExistsF !(Exists Sort variable child)
     | FloorF !(Floor Sort child)
-    | ForallF !(Forall Sort VariableName child)
+    | ForallF !(Forall Sort variable child)
     | IffF !(Iff Sort child)
     | ImpliesF !(Implies Sort child)
     | InF !(In Sort child)
-    | MuF !(Mu VariableName child)
+    | MuF !(Mu variable child)
     | NextF !(Next Sort child)
     | NotF !(Not Sort child)
-    | NuF !(Nu VariableName child)
+    | NuF !(Nu variable child)
     | OrF !(Or Sort child)
     | RewritesF !(Rewrites Sort child)
     | TopF !(Top Sort child)
@@ -154,7 +154,7 @@ data PatternF child
     | InternalListF !(InternalList child)
     | InternalMapF !(InternalMap Key child)
     | InternalSetF !(InternalSet Key child)
-    | VariableF !(Const (SomeVariable VariableName) child)
+    | VariableF !(Const (SomeVariable variable) child)
     | EndiannessF !(Const Endianness child)
     | SignednessF !(Const Signedness child)
     | InjF !(Inj child)
@@ -166,8 +166,9 @@ data PatternF child
 
 instance
     ( AstWithLocation child
+    , AstWithLocation variable
     ) =>
-    AstWithLocation (PatternF child)
+    AstWithLocation (PatternF variable child)
     where
     locationFromAst =
         \case
@@ -218,7 +219,10 @@ instance
             InternalSetF InternalAc{builtinAcSort} ->
                 locationFromAst builtinAcSort
 
-instance Synthetic (Attribute.FreeVariables VariableName) PatternF where
+instance
+    Ord variable =>
+    Synthetic (Attribute.FreeVariables variable) (PatternF variable)
+  where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -255,7 +259,7 @@ instance Synthetic (Attribute.FreeVariables VariableName) PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Sort PatternF where
+instance Synthetic Sort (PatternF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -292,7 +296,7 @@ instance Synthetic Sort PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Attribute.Functional PatternF where
+instance Synthetic Attribute.Functional (PatternF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -329,7 +333,7 @@ instance Synthetic Attribute.Functional PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Attribute.Function PatternF where
+instance Synthetic Attribute.Function (PatternF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -366,7 +370,7 @@ instance Synthetic Attribute.Function PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Attribute.Defined PatternF where
+instance Synthetic Attribute.Defined (PatternF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -403,7 +407,7 @@ instance Synthetic Attribute.Defined PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Attribute.Simplified PatternF where
+instance Synthetic Attribute.Simplified (PatternF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -440,7 +444,7 @@ instance Synthetic Attribute.Simplified PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Attribute.ConstructorLike PatternF where
+instance Synthetic Attribute.ConstructorLike (PatternF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -477,46 +481,47 @@ instance Synthetic Attribute.ConstructorLike PatternF where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance (Unparse child) => Unparse (PatternF child) where
+instance (Unparse variable, Unparse child) => Unparse (PatternF variable child) where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
 
-newtype Pattern = Pattern
+newtype Pattern variable = Pattern
     { getPattern ::
         CofreeF
-            PatternF
-            PatternAttributes
-            Pattern
+            (PatternF variable)
+            (PatternAttributes variable)
+            (Pattern variable)
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
-type instance Base Pattern = CofreeF PatternF PatternAttributes
+type instance Base (Pattern variable) =
+    CofreeF (PatternF variable) (PatternAttributes variable)
 
-instance Recursive Pattern where
+instance Recursive (Pattern variable) where
     project = getPattern
     {-# INLINE project #-}
 
-instance Corecursive Pattern where
+instance Corecursive (Pattern variable) where
     embed = Pattern
     {-# INLINE embed #-}
 
-instance TopBottom Pattern where
+instance TopBottom (Pattern variable) where
     isTop (Recursive.project -> _ :< TopF Top{}) = True
     isTop _ = False
     isBottom (Recursive.project -> _ :< BottomF Bottom{}) = True
     isBottom _ = False
 
-instance Attribute.HasFreeVariables Pattern VariableName where
+instance Attribute.HasFreeVariables (Pattern variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
 
-instance AstWithLocation Pattern where
+instance AstWithLocation variable => AstWithLocation (Pattern variable) where
     locationFromAst = locationFromAst . tailF . Recursive.project
 
 -- TODO: can this and TermLike's instance be factored out?
-instance Unparse Pattern where
+instance Unparse variable => Unparse (Pattern variable) where
     unparse term =
         case Recursive.project term of
             (attrs :< termLikeF)
@@ -576,9 +581,9 @@ instance Unparse Pattern where
             (_ :< pat) -> unparse2 pat
 
 -- | @PatternAttributes@ are the attributes of a pattern collected during validation.
-data PatternAttributes = PatternAttributes
+data PatternAttributes variable = PatternAttributes
     { termSort :: !Sort
-    , termFreeVariables :: !(Attribute.FreeVariables VariableName)
+    , termFreeVariables :: !(Attribute.FreeVariables variable)
     , termFunctional :: !Attribute.Functional
     , termFunction :: !Attribute.Function
     , termDefined :: !Attribute.Defined
@@ -592,20 +597,20 @@ data PatternAttributes = PatternAttributes
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
-instance Attribute.HasFreeVariables PatternAttributes VariableName where
+instance Attribute.HasFreeVariables (PatternAttributes variable) variable where
     freeVariables = termFreeVariables
 
 instance
     ( Functor base
     , Synthetic Sort base
-    , Synthetic (Attribute.FreeVariables VariableName) base
+    , Synthetic (Attribute.FreeVariables variable) base
     , Synthetic Attribute.Functional base
     , Synthetic Attribute.Function base
     , Synthetic Attribute.Defined base
     , Synthetic Attribute.Simplified base
     , Synthetic Attribute.ConstructorLike base
     ) =>
-    Synthetic PatternAttributes base
+    Synthetic (PatternAttributes variable) base
     where
     synthetic base =
         PatternAttributes
@@ -625,27 +630,27 @@ instance
         constructorLikeAttr :: Attribute.ConstructorLike
         constructorLikeAttr = synthetic (termConstructorLike <$> base)
 
-instance Attribute.HasConstructorLike PatternAttributes where
+instance Attribute.HasConstructorLike (PatternAttributes variable) where
     extractConstructorLike
         PatternAttributes{termConstructorLike} =
             termConstructorLike
 
 attributeSimplifiedAttribute ::
     HasCallStack =>
-    PatternAttributes ->
+    PatternAttributes variable ->
     Attribute.Simplified
 attributeSimplifiedAttribute patt@PatternAttributes{termSimplified} =
     assertSimplifiedConsistency patt termSimplified
 
 constructorLikeAttribute ::
-    PatternAttributes ->
+    PatternAttributes variable ->
     Attribute.ConstructorLike
 constructorLikeAttribute PatternAttributes{termConstructorLike} =
     termConstructorLike
 
 assertSimplifiedConsistency ::
     HasCallStack =>
-    PatternAttributes ->
+    PatternAttributes variable ->
     a ->
     a
 assertSimplifiedConsistency
@@ -657,143 +662,138 @@ assertSimplifiedConsistency
 
 pattern And_ ::
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern App_ ::
     Symbol ->
-    [Pattern] ->
-    Pattern
+    [Pattern variable] ->
+    Pattern variable
 
 pattern ApplyAlias_ ::
-    Alias Pattern ->
-    [Pattern] ->
-    Pattern
+    Alias (Pattern variable) ->
+    [Pattern variable] ->
+    Pattern variable
 
 pattern Bottom_ ::
     Sort ->
-    Pattern
+    Pattern variable
 
 pattern Ceil_ ::
     Sort ->
     Sort ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern DV_ ::
     Sort ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern InternalBool_ ::
     InternalBool ->
-    Pattern
+    Pattern variable
 
 pattern InternalInt_ ::
     InternalInt ->
-    Pattern
+    Pattern variable
 
 pattern InternalList_ ::
-    InternalList (Pattern) ->
-    Pattern
+    InternalList (Pattern variable) ->
+    Pattern variable
 
 pattern InternalMap_ ::
-    InternalMap Key (Pattern) ->
-    Pattern
+    InternalMap Key (Pattern variable) ->
+    Pattern variable
 
 pattern InternalSet_ ::
-    InternalSet Key (Pattern) ->
-    Pattern
+    InternalSet Key (Pattern variable) ->
+    Pattern variable
 
-pattern InternalString_ :: InternalString -> Pattern
+pattern InternalString_ :: InternalString -> Pattern variable
 
 pattern Equals_ ::
     Sort ->
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern Exists_ ::
     Sort ->
-    ElementVariable VariableName ->
-    Pattern ->
-    Pattern
+    ElementVariable variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern Floor_ ::
     Sort ->
     Sort ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern Forall_ ::
     Sort ->
-    ElementVariable VariableName ->
-    Pattern ->
-    Pattern
+    ElementVariable variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern Iff_ ::
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern Implies_ ::
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern In_ ::
     Sort ->
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern Mu_ ::
     SetVariable variable ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern Next_ ::
     Sort ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern Not_ ::
     Sort ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern Nu_ ::
     SetVariable variable ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable
 
 pattern Or_ ::
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
 pattern Rewrites_ ::
     Sort ->
-    Pattern ->
-    Pattern ->
-    Pattern
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
 
-pattern Top_ :: Sort -> Pattern
-
-pattern Var_ :: SomeVariable VariableName -> Pattern
-
-pattern ElemVar_ :: ElementVariable VariableName -> Pattern
-
-pattern SetVar_ :: SetVariable VariableName -> Pattern
-
-pattern StringLiteral_ :: Text -> Pattern
-
+pattern Top_ :: Sort -> Pattern variable
+pattern Var_ :: SomeVariable variable -> Pattern variable
+pattern ElemVar_ :: ElementVariable variable -> Pattern variable
+pattern SetVar_ :: SetVariable variable -> Pattern variable
+pattern StringLiteral_ :: Text -> Pattern variable
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And{andSort, andFirst, andSecond})
 
@@ -820,7 +820,7 @@ pattern App_ applicationSymbolOrAlias applicationChildren <-
 pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom{bottomSort})
 
-pattern InternalBytes_ :: Sort -> ByteString -> Pattern
+pattern InternalBytes_ :: Sort -> ByteString -> Pattern variable
 pattern InternalBytes_ internalBytesSort internalBytesValue <-
     ( Recursive.project ->
             _
@@ -963,20 +963,20 @@ pattern ElemVar_ elemVariable <- Var_ (retract -> Just elemVariable)
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
 
-pattern Endianness_ :: Endianness -> Pattern
+pattern Endianness_ :: Endianness -> Pattern variable
 pattern Endianness_ endianness <-
     (Recursive.project -> _ :< EndiannessF (Const endianness))
 
-pattern Signedness_ :: Signedness -> Pattern
+pattern Signedness_ :: Signedness -> Pattern variable
 pattern Signedness_ signedness <-
     (Recursive.project -> _ :< SignednessF (Const signedness))
 
-pattern Inj_ :: Inj Pattern -> Pattern
+pattern Inj_ :: Inj (Pattern variable) -> Pattern variable
 pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)
 
-extractAttributes :: Pattern -> PatternAttributes
+extractAttributes :: Pattern variable -> PatternAttributes variable
 extractAttributes (Pattern (attrs :< _)) = attrs
 
 -- | Get the 'Sort' of a 'Pattern' from the 'Attribute.Pattern' annotation.
-patternSort :: Pattern -> Sort
+patternSort :: Pattern variable -> Sort
 patternSort = termSort . extractAttributes

@@ -44,11 +44,12 @@ import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Validate as Validated
 import Kore.Validate.Error
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 type ImplicitModule =
     ImplicitIndexedModule
-        Validated.Pattern
+        ValidatedPattern
         Attribute.Symbol
         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 

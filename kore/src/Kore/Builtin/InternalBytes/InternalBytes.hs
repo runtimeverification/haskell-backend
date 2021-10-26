@@ -80,8 +80,9 @@ asInternal bytesSort bytesValue =
     TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
 
 internalize ::
-    Validated.Pattern ->
-    Validated.Pattern
+    InternalVariable variable =>
+    Validated.Pattern variable ->
+    Validated.Pattern variable
 internalize =
     \case
         Validated.App_ symbol args

@@ -414,8 +414,8 @@ resetConfigVariables implication'@(Implication _ _ _ _ _) =
 
 -- TODO:
 parseRightHandSide ::
-    Validated.Pattern ->
-    OrPattern VariableName
+    Validated.Pattern variable ->
+    OrPattern variable
 parseRightHandSide term = undefined
 
 --     let (term', condition) =

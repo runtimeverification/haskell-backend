@@ -1897,5 +1897,7 @@ data NotTermLike variable
     deriving anyclass (Debug)
 
 -- TODO:
-makeTermLike :: Validated.Pattern -> Either (NotTermLike VariableName) (TermLike VariableName)
+makeTermLike ::
+    Validated.Pattern variable ->
+    Either (NotTermLike variable) (TermLike variable)
 makeTermLike = undefined

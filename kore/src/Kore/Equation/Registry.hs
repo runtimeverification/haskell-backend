@@ -48,6 +48,7 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
@@ -81,7 +82,7 @@ extractEquations =
 
 identifyEquation ::
     ( Attribute.Axiom Symbol VariableName
-    , SentenceAxiom Validated.Pattern
+    , SentenceAxiom ValidatedPattern
     ) ->
     Maybe (AxiomIdentifier, Equation VariableName)
 identifyEquation axiom = do

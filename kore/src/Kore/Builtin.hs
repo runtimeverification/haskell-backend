@@ -181,9 +181,10 @@ evaluators builtins indexedModule =
 representations are fully normalized.
 -}
 internalize ::
+    InternalVariable variable =>
     SmtMetadataTools Attribute.Symbol ->
-    Validated.Pattern ->
-    Validated.Pattern
+    Validated.Pattern variable ->
+    Validated.Pattern variable
 internalize tools =
     Recursive.fold (internalize1 . Recursive.embed)
   where

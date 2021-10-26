@@ -109,9 +109,10 @@ asPattern resultSort =
     tools = Reflection.given
 
 internalize ::
+    InternalVariable variable =>
     SmtMetadataTools Attribute.Symbol ->
-    Validated.Pattern ->
-    Validated.Pattern
+    Validated.Pattern variable ->
+    Validated.Pattern variable
 internalize tools termLike@(Validated.App_ symbol args)
     | isSymbolUnit symbol, [] <- args = undefined (Seq.fromList args)
     | isSymbolElement symbol, [_] <- args = undefined (Seq.fromList args)

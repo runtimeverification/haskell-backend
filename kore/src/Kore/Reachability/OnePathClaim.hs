@@ -26,6 +26,9 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Syntax.Variable as Variable
+import qualified Kore.Internal.OrPattern as OrPattern
+import Control.Error.Util (hush)
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     ElementVariable,
@@ -36,6 +39,7 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
+import qualified Kore.Validate as Validated
 import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
@@ -183,37 +187,41 @@ instance From OnePathClaim (AxiomPattern RewritingVariableName) where
 
 instance ClaimExtractor OnePathClaim where
     extractClaim (attributes, sentence) =
-        case termLike of
-            TermLike.Implies_
+        case validatedPattern of
+            Validated.Implies_
                 _
-                (TermLike.And_ _ requires lhs)
-                (TermLike.ApplyAlias_ alias [rhs])
+                (Validated.And_ _ requires lhs)
+                (Validated.ApplyAlias_ alias [rhs])
                     | aliasId == weakExistsFinally -> do
-                        let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
-                            attributes' =
+                        let attributes' =
                                 Attribute.mapAxiomVariables
                                     (pure mkRuleVariable)
                                     attributes
                             (right', existentials') =
-                                ClaimPattern.termToExistentials rhs'
+                                ClaimPattern.termToExistentials rhs
+                        lhs' <- hush $ TermLike.makeTermLike lhs
+                        requires' <- hush $ Predicate.makePredicate requires
                         pure $
                             OnePathClaim $
                                 ClaimPattern.refreshExistentials
                                     ClaimPattern
                                         { ClaimPattern.left =
                                             Pattern.fromTermAndPredicate
-                                                lhs
-                                                (Predicate.wrapPredicate requires)
+                                                lhs'
+                                                requires'
                                                 & Pattern.mapVariables (pure mkRuleVariable)
-                                        , ClaimPattern.right = parseRightHandSide right'
-                                        , ClaimPattern.existentials = existentials'
+                                        , ClaimPattern.right =
+                                                parseRightHandSide right'
+                                                & OrPattern.mapVariables (pure mkRuleVariable)
+                                        , ClaimPattern.existentials =
+                                            Variable.mapElementVariable (pure mkRuleVariable) <$> existentials'
                                         , ClaimPattern.attributes = attributes'
                                         }
                   where
                     aliasId = (getId . aliasConstructor) alias
             _ -> Nothing
       where
-        termLike =
+        validatedPattern =
             (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveSeqAxiomOnePath ::

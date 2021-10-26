@@ -13,6 +13,7 @@ module Kore.Validate.PatternVerifier (
 ) where
 
 import qualified Control.Monad as Monad
+import Kore.Validate (ValidatedPattern)
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
@@ -118,7 +119,7 @@ verifyPattern ::
     -- | If present, represents the expected sort of the pattern.
     Maybe Sort ->
     ParsedPattern ->
-    PatternVerifier Validated.Pattern
+    PatternVerifier ValidatedPattern
 verifyPattern expectedSort korePattern = do
     verified <- Recursive.fold verifyBasePattern korePattern
     assertExpectedSort expectedSort (Validated.patternSort verified)
@@ -134,7 +135,7 @@ See also: 'verifyPattern', 'verifyFreeVariables', 'withDeclaredVariables'
 verifyStandalonePattern ::
     Maybe Sort ->
     ParsedPattern ->
-    PatternVerifier Validated.Pattern
+    PatternVerifier ValidatedPattern
 verifyStandalonePattern expectedSort korePattern = do
     declaredVariables <- verifyFreeVariables korePattern
     withDeclaredVariables
@@ -149,12 +150,12 @@ type variables.
 verifyNoPatterns ::
     MonadError (Error VerifyError) m =>
     ParsedPattern ->
-    m Validated.Pattern
+    m ValidatedPattern
 verifyNoPatterns _ = koreFail "Unexpected pattern."
 
 verifyBasePattern ::
-    Base ParsedPattern (PatternVerifier Validated.Pattern) ->
-    PatternVerifier Validated.Pattern
+    Base ParsedPattern (PatternVerifier ValidatedPattern) ->
+    PatternVerifier ValidatedPattern
 verifyBasePattern (_ :< patternF) =
     withLocationAndContext patternF (patternNameForContext patternF) $ do
         Context{patternVerifierHook} <- Reader.ask
@@ -214,8 +215,8 @@ verifyPatternSort patternSort = do
 verifyOperands ::
     Traversable operator =>
     (forall a. operator a -> Sort) ->
-    operator (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (operator Validated.Pattern)
+    operator (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (operator ValidatedPattern)
 verifyOperands operandSort = \operator -> do
     let patternSort = operandSort operator
         expectedSort = Just patternSort
@@ -228,43 +229,43 @@ verifyOperands operandSort = \operator -> do
 {-# INLINE verifyOperands #-}
 
 verifyAnd ::
-    And Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (And Sort Validated.Pattern)
+    And Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (And Sort ValidatedPattern)
 verifyAnd = verifyOperands andSort
 
 verifyOr ::
-    Or Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Or Sort Validated.Pattern)
+    Or Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Or Sort ValidatedPattern)
 verifyOr = verifyOperands orSort
 
 verifyIff ::
-    Iff Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Iff Sort Validated.Pattern)
+    Iff Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Iff Sort ValidatedPattern)
 verifyIff = verifyOperands iffSort
 
 verifyImplies ::
-    Implies Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Implies Sort Validated.Pattern)
+    Implies Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Implies Sort ValidatedPattern)
 verifyImplies = verifyOperands impliesSort
 
 verifyBottom ::
-    Bottom Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Bottom Sort Validated.Pattern)
+    Bottom Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Bottom Sort ValidatedPattern)
 verifyBottom = verifyOperands bottomSort
 
 verifyTop ::
-    Top Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Top Sort Validated.Pattern)
+    Top Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Top Sort ValidatedPattern)
 verifyTop = verifyOperands topSort
 
 verifyNot ::
-    Not Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Not Sort Validated.Pattern)
+    Not Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Not Sort ValidatedPattern)
 verifyNot = verifyOperands notSort
 
 verifyRewrites ::
-    Rewrites Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Rewrites Sort Validated.Pattern)
+    Rewrites Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Rewrites Sort ValidatedPattern)
 verifyRewrites = verifyOperands rewritesSort
 
 verifyPredicate ::
@@ -273,8 +274,8 @@ verifyPredicate ::
     (forall a. predicate a -> Sort) ->
     -- | Result sort
     (forall a. predicate a -> Sort) ->
-    predicate (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (predicate Validated.Pattern)
+    predicate (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (predicate ValidatedPattern)
 verifyPredicate operandSort resultSort = \predicate -> do
     let patternSort = resultSort predicate
     verifyPatternSort patternSort
@@ -282,28 +283,28 @@ verifyPredicate operandSort resultSort = \predicate -> do
 {-# INLINE verifyPredicate #-}
 
 verifyCeil ::
-    Ceil Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Ceil Sort Validated.Pattern)
+    Ceil Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Ceil Sort ValidatedPattern)
 verifyCeil = verifyPredicate ceilOperandSort ceilResultSort
 
 verifyFloor ::
-    Floor Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Floor Sort Validated.Pattern)
+    Floor Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Floor Sort ValidatedPattern)
 verifyFloor = verifyPredicate floorOperandSort floorResultSort
 
 verifyEquals ::
-    Equals Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Equals Sort Validated.Pattern)
+    Equals Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Equals Sort ValidatedPattern)
 verifyEquals = verifyPredicate equalsOperandSort equalsResultSort
 
 verifyIn ::
-    In Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (In Sort Validated.Pattern)
+    In Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (In Sort ValidatedPattern)
 verifyIn = verifyPredicate inOperandSort inResultSort
 
 verifyNext ::
-    Next Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Next Sort Validated.Pattern)
+    Next Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Next Sort ValidatedPattern)
 verifyNext = verifyOperands nextSort
 
 verifyPatternsWithSorts ::
@@ -333,10 +334,10 @@ verifyPatternsWithSorts getChildSort sorts operands = do
     actualOperandCount = length operands
 
 verifyApplyAlias ::
-    Application SymbolOrAlias (PatternVerifier Validated.Pattern) ->
+    Application SymbolOrAlias (PatternVerifier ValidatedPattern) ->
     MaybeT
         PatternVerifier
-        (Application (Internal.Alias Validated.Pattern) Validated.Pattern)
+        (Application (Internal.Alias ValidatedPattern) ValidatedPattern)
 verifyApplyAlias application =
     lookupAlias symbolOrAlias >>= \alias -> Trans.lift $ do
         let verified = application{applicationSymbolOrAlias = alias}
@@ -361,7 +362,7 @@ verifyApplyAlias application =
     -- If it was defined using a set variable, we can use it with any argument.
     -- Otherwise, it is a verification error.
     ensureChildIsDeclaredVarType ::
-        (SomeVariable VariableName, PatternVerifier Validated.Pattern) ->
+        (SomeVariable VariableName, PatternVerifier ValidatedPattern) ->
         PatternVerifier ()
     ensureChildIsDeclaredVarType (var, mpat)
         | isElementVariable var = do
@@ -400,8 +401,8 @@ verifyApplicationChildren getChildSort application sorts = do
     Application{applicationChildren = children} = application
 
 verifyApplication ::
-    Application SymbolOrAlias (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Validated.PatternF Validated.Pattern)
+    Application SymbolOrAlias (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Validated.PatternF VariableName ValidatedPattern)
 verifyApplication application = do
     result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
     maybe (koreFail . noHead $ symbolOrAlias) return result
@@ -418,8 +419,8 @@ verifyBinder ::
     Traversable binder =>
     (forall a. binder a -> Sort) ->
     (forall a. binder a -> SomeVariable VariableName) ->
-    binder (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (binder Validated.Pattern)
+    binder (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (binder ValidatedPattern)
 verifyBinder binderSort binderVariable = \binder -> do
     let variable = binderVariable binder
         patternSort = binderSort binder
@@ -436,32 +437,32 @@ verifyBinder binderSort binderVariable = \binder -> do
 {-# INLINE verifyBinder #-}
 
 verifyExists ::
-    Exists Sort VariableName (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Exists Sort VariableName Validated.Pattern)
+    Exists Sort VariableName (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Exists Sort VariableName ValidatedPattern)
 verifyExists = verifyBinder existsSort (inject . existsVariable)
 
 verifyForall ::
-    Forall Sort VariableName (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Forall Sort VariableName Validated.Pattern)
+    Forall Sort VariableName (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Forall Sort VariableName ValidatedPattern)
 verifyForall = verifyBinder forallSort (inject . forallVariable)
 
 verifyMu ::
-    Mu VariableName (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Mu VariableName Validated.Pattern)
+    Mu VariableName (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Mu VariableName ValidatedPattern)
 verifyMu = verifyBinder muSort (inject . muVariable)
   where
     muSort = variableSort . muVariable
 
 verifyNu ::
-    Nu VariableName (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Nu VariableName Validated.Pattern)
+    Nu VariableName (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Nu VariableName ValidatedPattern)
 verifyNu = verifyBinder nuSort (inject . nuVariable)
   where
     nuSort = variableSort . nuVariable
 
 verifyVariable ::
     SomeVariable VariableName ->
-    PatternVerifier (Const (SomeVariable VariableName) Validated.Pattern)
+    PatternVerifier (Const (SomeVariable VariableName) ValidatedPattern)
 verifyVariable var = do
     declaredVariable <- lookupDeclaredVariable varName
     let declaredSort = variableSort declaredVariable
@@ -475,8 +476,8 @@ verifyVariable var = do
     varSort = variableSort var
 
 verifyDomainValue ::
-    DomainValue Sort (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Validated.PatternF Validated.Pattern)
+    DomainValue Sort (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Validated.PatternF VariableName ValidatedPattern)
 verifyDomainValue domain = do
     let DomainValue{domainValueSort = patternSort} = domain
     verifyPatternSort patternSort
@@ -509,8 +510,8 @@ verifySortHasDomainValues patternSort = do
         SortActualSort SortActual{sortActualName} -> sortActualName
 
 verifyStringLiteral ::
-    Const StringLiteral (PatternVerifier Validated.Pattern) ->
-    PatternVerifier (Const StringLiteral Validated.Pattern)
+    Const StringLiteral (PatternVerifier ValidatedPattern) ->
+    PatternVerifier (Const StringLiteral ValidatedPattern)
 verifyStringLiteral = sequence
 
 verifyVariableDeclaration ::

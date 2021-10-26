@@ -967,8 +967,8 @@ instance
 
 -- TODO:
 makePredicate ::
-    Validated.Pattern ->
-    Either (NotPredicate VariableName) (Predicate VariableName)
+    Validated.Pattern variable ->
+    Either (NotPredicate variable) (Predicate variable)
 makePredicate = undefined
 
 makePredicateOld ::

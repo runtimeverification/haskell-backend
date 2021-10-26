@@ -51,6 +51,7 @@ import Kore.Syntax.Sentence (
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Syntax.Variable
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 indexBySort ::
@@ -74,7 +75,7 @@ parseNoJunkAxiom (attributes, SentenceAxiom{sentenceAxiomPattern})
     | otherwise = Nothing
 
 parseNoJunkPattern ::
-    Validated.Pattern ->
+    ValidatedPattern ->
     Maybe (Id, Constructors)
 parseNoJunkPattern patt = do
     -- Maybe
@@ -90,7 +91,7 @@ parseNoJunkPattern patt = do
     return (name, sortBuilder constructors)
 
 parseNoJunkPatternHelper ::
-    Validated.Pattern ->
+    ValidatedPattern ->
     Maybe
         ( Id
         , [ConstructorLike] -> Constructors
@@ -119,7 +120,7 @@ parseNoJunkPatternHelper (Validated.Or_ _ first second) = do
     return (name, sortBuilder, constructor : constructors)
 parseNoJunkPatternHelper _ = Nothing
 
-parseSMTConstructor :: Validated.Pattern -> Maybe ConstructorLike
+parseSMTConstructor :: ValidatedPattern -> Maybe ConstructorLike
 parseSMTConstructor patt =
     case parsedPatt of
         Validated.App_ symbol children -> do
@@ -131,8 +132,8 @@ parseSMTConstructor patt =
     (quantifiedVariables, parsedPatt) = parseExists patt
 
     parseExists ::
-        Validated.Pattern ->
-        (Set.Set (ElementVariable VariableName), Validated.Pattern)
+        ValidatedPattern ->
+        (Set.Set (ElementVariable VariableName), ValidatedPattern)
     parseExists (Validated.Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -141,7 +142,7 @@ parseSMTConstructor patt =
 
     checkOnlyQuantifiedVariablesOnce ::
         Set.Set (ElementVariable VariableName) ->
-        [Validated.Pattern] ->
+        [ValidatedPattern] ->
         Maybe [ElementVariable VariableName]
     checkOnlyQuantifiedVariablesOnce
         allowedVars

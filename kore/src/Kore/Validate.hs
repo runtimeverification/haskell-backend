@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
 module Kore.Validate (
+    ValidatedPattern,
     Alias,
     Sentence,
     SentenceAlias,
@@ -20,17 +21,20 @@ import qualified Kore.Internal.Alias as Internal (
  )
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Validate.Pattern
+import Kore.Internal.Variable (VariableName)
 import Prelude.Kore ()
 
-type Alias = Internal.Alias Pattern
+type ValidatedPattern = Pattern VariableName
 
-type Sentence = Syntax.Sentence Pattern
+type Alias = Internal.Alias ValidatedPattern
 
-type SentenceAlias = Syntax.SentenceAlias Pattern
+type Sentence = Syntax.Sentence ValidatedPattern
 
-type SentenceAxiom = Syntax.SentenceAxiom Pattern
+type SentenceAlias = Syntax.SentenceAlias ValidatedPattern
 
-type SentenceClaim = Syntax.SentenceClaim Pattern
+type SentenceAxiom = Syntax.SentenceAxiom ValidatedPattern
+
+type SentenceClaim = Syntax.SentenceClaim ValidatedPattern
 
 type SentenceHook = Syntax.SentenceHook
 

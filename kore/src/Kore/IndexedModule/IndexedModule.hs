@@ -92,6 +92,7 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 type SortDescription = SentenceSort
@@ -302,7 +303,7 @@ type KoreIndexedModule = IndexedModule ParsedPattern
 
 type ValidatedModule declAtts =
     IndexedModule
-        Validated.Pattern
+        ValidatedPattern
         declAtts
         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 

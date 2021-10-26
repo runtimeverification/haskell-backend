@@ -16,6 +16,10 @@ import Data.Generics.Wrapped (
     _Unwrapped,
  )
 import qualified GHC.Generics as GHC
+import qualified Kore.Validate as Validated
+import qualified Kore.Syntax.Variable as Variable
+import qualified Kore.Internal.OrPattern as OrPattern
+import Control.Error.Util (hush)
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
@@ -163,37 +167,41 @@ instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
 
 instance ClaimExtractor AllPathClaim where
     extractClaim (attributes, sentence) =
-        case termLike of
-            TermLike.Implies_
+        case validatedPattern of
+            Validated.Implies_
                 _
-                (TermLike.And_ _ requires lhs)
-                (TermLike.ApplyAlias_ alias [rhs])
+                (Validated.And_ _ requires lhs)
+                (Validated.ApplyAlias_ alias [rhs])
                     | aliasId == weakAlwaysFinally -> do
-                        let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
-                            attributes' =
+                        let attributes' =
                                 Attribute.mapAxiomVariables
                                     (pure mkRuleVariable)
                                     attributes
                             (right', existentials') =
-                                ClaimPattern.termToExistentials rhs'
+                                ClaimPattern.termToExistentials rhs
+                        lhs' <- hush $ TermLike.makeTermLike lhs
+                        requires' <- hush $ Predicate.makePredicate requires
                         pure $
                             AllPathClaim $
                                 ClaimPattern.refreshExistentials
                                     ClaimPattern
                                         { ClaimPattern.left =
                                             Pattern.fromTermAndPredicate
-                                                lhs
-                                                (Predicate.wrapPredicate requires)
+                                                lhs'
+                                                requires'
                                                 & Pattern.mapVariables (pure mkRuleVariable)
-                                        , ClaimPattern.right = parseRightHandSide right'
-                                        , ClaimPattern.existentials = existentials'
+                                        , ClaimPattern.right =
+                                                parseRightHandSide right'
+                                                & OrPattern.mapVariables (pure mkRuleVariable)
+                                        , ClaimPattern.existentials =
+                                            Variable.mapElementVariable (pure mkRuleVariable) <$> existentials'
                                         , ClaimPattern.attributes = attributes'
                                         }
                   where
                     aliasId = (getId . aliasConstructor) alias
             _ -> Nothing
       where
-        termLike =
+        validatedPattern =
             (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveParAxiomAllPath ::

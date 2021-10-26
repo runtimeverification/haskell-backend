@@ -87,6 +87,7 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Log (MonadLog)
 import Prelude.Kore
 import System.IO.Unsafe (
@@ -208,7 +209,7 @@ dotBytes :: IsString str => str
 dotBytes = "BYTES.empty"
 
 dotBytesVerifier ::
-    Builtin.ApplicationVerifier Validated.Pattern
+    Builtin.ApplicationVerifier ValidatedPattern
 dotBytesVerifier =
     Builtin.ApplicationVerifier worker
   where

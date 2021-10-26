@@ -34,6 +34,7 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 verifiers :: Verifiers
@@ -55,7 +56,7 @@ unsignedKey = "unsignedBytes"
 signednessVerifier ::
     -- | Constructor
     (Symbol -> Signedness) ->
-    ApplicationVerifier Validated.Pattern
+    ApplicationVerifier ValidatedPattern
 signednessVerifier ctor =
     ApplicationVerifier worker
   where
@@ -70,10 +71,10 @@ signednessVerifier ctor =
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-signedVerifier :: ApplicationVerifier Validated.Pattern
+signedVerifier :: ApplicationVerifier ValidatedPattern
 signedVerifier = signednessVerifier Signed
 
-unsignedVerifier :: ApplicationVerifier Validated.Pattern
+unsignedVerifier :: ApplicationVerifier ValidatedPattern
 unsignedVerifier = signednessVerifier Unsigned
 
 data UnifyEqualsSignedness = UnifyEqualsSignedness

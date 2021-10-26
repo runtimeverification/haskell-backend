@@ -45,6 +45,7 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Log (
     MonadLog (..),
  )
@@ -83,7 +84,7 @@ declareSMTLemmas m = do
 
     declareRule ::
         ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-        , SentenceAxiom Validated.Pattern
+        , SentenceAxiom ValidatedPattern
         ) ->
         m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
@@ -103,7 +104,7 @@ declareSMTLemmas m = do
     -- Translate an "unparsed" equation for Z3.
     -- Convert new encoding back to old.
     -- See https://github.com/kframework/k/pull/2061#issuecomment-927922217
-    convert :: Validated.Pattern -> Maybe (TermLike VariableName)
+    convert :: ValidatedPattern -> Maybe (TermLike VariableName)
     convert
         ( Validated.Implies_
                 impliesSort

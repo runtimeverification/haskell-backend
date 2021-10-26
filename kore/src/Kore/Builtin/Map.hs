@@ -500,8 +500,8 @@ internalize subterms.
 -}
 internalize ::
     SmtMetadataTools Attribute.Symbol ->
-    Validated.Pattern ->
-    Validated.Pattern
+    Validated.Pattern variable ->
+    Validated.Pattern variable
 internalize tools termLike = undefined
 
 --     -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
