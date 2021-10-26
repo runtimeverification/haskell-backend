@@ -572,8 +572,45 @@ fromPredicate ::
     -- | Sort of resulting pattern
     Sort ->
     Predicate variable ->
-    TermLike variable
+    Validated.Pattern variable
 fromPredicate sort = Recursive.fold worker
+  where
+    worker (pat :< predF) =
+        Validated.setSimplified
+            (PredicatePattern.simplifiedAttribute pat)
+            $ case predF of
+                AndF (And () t1 t2) -> Validated.mkAnd t1 t2
+                BottomF _ -> Validated.mkBottom sort
+                CeilF (Ceil () () t) ->
+                    Validated.mkCeil sort (TermLike.fromTermLike t)
+                EqualsF (Equals () () t1 t2) ->
+                    Validated.mkEquals
+                        sort
+                        (TermLike.fromTermLike t1)
+                        (TermLike.fromTermLike t2)
+                ExistsF (Exists () v t) -> Validated.mkExists v t
+                FloorF (Floor () () t) ->
+                    Validated.mkFloor sort (TermLike.fromTermLike t)
+                ForallF (Forall () v t) -> Validated.mkForall v t
+                IffF (Iff () t1 t2) -> Validated.mkIff t1 t2
+                ImpliesF (Implies () t1 t2) -> Validated.mkImplies t1 t2
+                InF (In () () t1 t2) ->
+                    Validated.mkIn
+                        sort
+                        (TermLike.fromTermLike t1)
+                        (TermLike.fromTermLike t2)
+                NotF (Not () t) -> Validated.mkNot t
+                OrF (Or () t1 t2) -> Validated.mkOr t1 t2
+                TopF _ -> Validated.mkTop sort
+
+-- | Return the 'TermLike' corresponding to the given 'Predicate'.
+fromPredicateOld ::
+    InternalVariable variable =>
+    -- | Sort of resulting pattern
+    Sort ->
+    Predicate variable ->
+    TermLike variable
+fromPredicateOld sort = Recursive.fold worker
   where
     worker (pat :< predF) =
         TermLike.setSimplified
@@ -1270,7 +1307,7 @@ mapVariables adj predicate =
     let termPredicate =
             TermLike.mapVariables adj
                 -- TODO (Andrei B): Try to avoid TermLike conversion
-                . fromPredicate (mkSortVariable "_")
+                . fromPredicateOld (mkSortVariable "_")
                 $ predicate
      in either
             errorMappingVariables

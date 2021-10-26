@@ -18,12 +18,13 @@ import Kore.Rewrite.RulePattern (
 import Kore.Unparser (
     Unparse (..),
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 {- | A wrapper over 'TermLike variable'. It represents a rewrite axiom
  or claim as a Matching Logic pattern.
 -}
-newtype AxiomPattern variable = AxiomPattern {getAxiomPattern :: TermLike variable}
+newtype AxiomPattern variable = AxiomPattern {getAxiomPattern :: Validated.Pattern variable}
     deriving stock (Show, Eq)
 
 instance Unparse (AxiomPattern VariableName) where

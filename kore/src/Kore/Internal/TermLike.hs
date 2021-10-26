@@ -40,6 +40,7 @@ module Kore.Internal.TermLike (
     depth,
     checkSortsAgree,
     makeTermLike,
+    fromTermLike,
 
     -- * Utility functions for dealing with sorts
     sameTermLikeSort,
@@ -1901,3 +1902,6 @@ makeTermLike ::
     Validated.Pattern variable ->
     Either (NotTermLike variable) (TermLike variable)
 makeTermLike = undefined
+
+fromTermLike :: TermLike variable -> Validated.Pattern variable
+fromTermLike = undefined

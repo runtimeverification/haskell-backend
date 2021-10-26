@@ -39,6 +39,7 @@ import Control.Monad.State.Strict (
     evalState,
  )
 import qualified Control.Monad.State.Strict as State
+import qualified Kore.Validate as Validated
 import Data.Coerce (
     Coercible,
     coerce,
@@ -324,13 +325,13 @@ lhsToTerm ::
     TermLike variable ->
     Maybe (AntiLeft variable) ->
     Predicate variable ->
-    TermLike variable
+    Validated.Pattern variable
 lhsToTerm left Nothing requires =
-    TermLike.mkAnd (Predicate.fromPredicate (termLikeSort left) requires) left
+    Validated.mkAnd (Predicate.fromPredicate (termLikeSort left) requires) left
 lhsToTerm left (Just antiLeft) requires =
-    TermLike.mkAnd
-        (TermLike.mkNot (AntiLeft.toTermLike antiLeft))
-        ( TermLike.mkAnd
+    Validated.mkAnd
+        (Validated.mkNot (AntiLeft.toTermLike antiLeft))
+        ( Validated.mkAnd
             (Predicate.fromPredicate (termLikeSort left) requires)
             left
         )
@@ -510,12 +511,12 @@ instance
 rewriteRuleToTerm ::
     InternalVariable variable =>
     RewriteRule variable ->
-    TermLike.TermLike variable
+    Validated.Pattern variable
 rewriteRuleToTerm
     ( RewriteRule
             (RulePattern left antiLeft requires rhs _)
         ) =
-        TermLike.mkRewrites
+        Validated.mkRewrites
             (lhsToTerm left antiLeft requires)
             (rhsToTerm rhs)
 

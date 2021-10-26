@@ -7,6 +7,50 @@ module Kore.Validate.Pattern (
     PatternF (..),
     extractAttributes,
     patternSort,
+    setSimplified,
+
+    -- * Pure Kore pattern constructors
+    mkAnd,
+    mkApplyAlias,
+    mkApplySymbol,
+    mkBottom,
+    mkInternalBytes,
+    mkInternalBytes',
+    mkInternalBool,
+    mkInternalInt,
+    mkInternalString,
+    mkInternalList,
+    mkInternalMap,
+    mkInternalSet,
+    mkCeil,
+    mkDomainValue,
+    mkEquals,
+    mkExists,
+    mkExistsN,
+    mkFloor,
+    mkForall,
+    mkForallN,
+    mkIff,
+    mkImplies,
+    mkIn,
+    mkMu,
+    mkNext,
+    mkNot,
+    mkNu,
+    mkOr,
+    mkRewrites,
+    mkTop,
+    mkVar,
+    mkSetVar,
+    mkElemVar,
+    mkStringLiteral,
+    mkSort,
+    mkSortVariable,
+    mkInhabitant,
+    mkEndianness,
+    mkSignedness,
+
+    symbolApplication,
 
     -- * Pattern synonyms
     pattern And_,
@@ -48,6 +92,18 @@ module Kore.Validate.Pattern (
 import Control.Comonad.Trans.Cofree (
     tailF,
  )
+import qualified Control.Lens as Lens
+import Data.Align (
+    alignWith,
+ )
+import Data.Semigroup (appEndo, Endo(..))
+import Data.These
+import qualified Data.Generics.Product as Lens.Product
+import qualified GHC.Generics as GHC
+import Control.Lens (
+    Lens',
+ )
+import qualified GHC.Stack as GHC
 import Data.ByteString (
     ByteString,
  )
@@ -127,7 +183,7 @@ data PatternF variable child
     = AndF !(And Sort child)
     | ApplySymbolF !(Application Symbol child)
     | -- TODO (thomas.tuegel): Expand aliases during validation?
-      ApplyAliasF !(Application (Alias (Pattern variable)) child)
+      ApplyAliasF !(Application (Alias (Pattern VariableName)) child)
     | BottomF !(Bottom Sort child)
     | CeilF !(Ceil Sort child)
     | DomainValueF !(DomainValue Sort child)
@@ -158,7 +214,7 @@ data PatternF variable child
     | EndiannessF !(Const Endianness child)
     | SignednessF !(Const Signedness child)
     | InjF !(Inj child)
-    deriving stock (Show)
+    deriving stock (Show, Eq)
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -492,7 +548,7 @@ newtype Pattern variable = Pattern
             (PatternAttributes variable)
             (Pattern variable)
     }
-    deriving stock (Show)
+    deriving stock (Show, Eq)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -521,7 +577,7 @@ instance Attribute.HasFreeVariables (Pattern variable) variable where
 instance AstWithLocation variable => AstWithLocation (Pattern variable) where
     locationFromAst = locationFromAst . tailF . Recursive.project
 
--- TODO: can this and TermLike's instance be factored out?
+-- TODO: can this and Pattern's instance be factored out?
 instance Unparse variable => Unparse (Pattern variable) where
     unparse term =
         case Recursive.project term of
@@ -673,7 +729,7 @@ pattern App_ ::
     Pattern variable
 
 pattern ApplyAlias_ ::
-    Alias (Pattern variable) ->
+    Alias (Pattern VariableName) ->
     [Pattern variable] ->
     Pattern variable
 
@@ -981,3 +1037,598 @@ extractAttributes (Pattern (attrs :< _)) = attrs
 -- | Get the 'Sort' of a 'Pattern' from the 'Attribute.Pattern' annotation.
 patternSort :: Pattern variable -> Sort
 patternSort = termSort . extractAttributes
+
+-- | Construct an 'And' pattern.
+mkAnd ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkAnd t1 t2 = updateCallStack $ checkSortsAgree mkAndWorker t1 t2
+  where
+    mkAndWorker andFirst andSecond andSort =
+        synthesize (AndF And{andSort, andFirst, andSecond})
+
+{- | Construct an 'Application' pattern.
+
+The result sort of the 'Alias' must be provided. The sorts of arguments
+are not checked. Use 'applySymbol' or 'applyAlias' whenever possible to avoid
+these shortcomings.
+
+See also: 'applyAlias', 'applySymbol'
+-}
+mkApplyAlias ::
+    HasCallStack =>
+    InternalVariable variable =>
+    -- | Application symbol or alias
+    Alias (Pattern VariableName) ->
+    -- | Application arguments
+    [Pattern variable] ->
+    Pattern variable
+mkApplyAlias alias children =
+    updateCallStack $ synthesize (ApplyAliasF application)
+  where
+    application =
+        Application
+            { applicationSymbolOrAlias = alias
+            , applicationChildren = samePatternSorts operandSorts children
+            }
+    operandSorts = applicationSortsOperands (aliasSorts alias)
+
+{- | Construct an 'Application' pattern.
+
+The result sort of the 'SymbolOrAlias' must be provided. The sorts of arguments
+are not checked. Use 'applySymbol' or 'applyAlias' whenever possible to avoid
+these shortcomings.
+
+See also: 'applyAlias', 'applySymbol'
+-}
+mkApplySymbol ::
+    HasCallStack =>
+    InternalVariable variable =>
+    -- | Application symbol or alias
+    Symbol ->
+    -- | Application arguments
+    [Pattern variable] ->
+    Pattern variable
+mkApplySymbol symbol children =
+    updateCallStack $
+        synthesize (ApplySymbolF (symbolApplication symbol children))
+
+symbolApplication ::
+    HasCallStack =>
+    InternalVariable variable =>
+    -- | Application symbol or alias
+    Symbol ->
+    -- | Application arguments
+    [Pattern variable] ->
+    Application Symbol (Pattern variable)
+symbolApplication symbol children =
+    Application
+        { applicationSymbolOrAlias = symbol
+        , applicationChildren = samePatternSorts operandSorts children
+        }
+  where
+    operandSorts = applicationSortsOperands (symbolSorts symbol)
+
+-- | Construct a 'Bottom' pattern in the given sort.
+mkBottom ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    Pattern variable
+mkBottom bottomSort =
+    updateCallStack $ synthesize (BottomF Bottom{bottomSort})
+
+-- | Construct a 'Ceil' pattern in the given sort.
+mkCeil ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    Pattern variable ->
+    Pattern variable
+mkCeil ceilResultSort ceilChild =
+    updateCallStack $
+        synthesize (CeilF Ceil{ceilOperandSort, ceilResultSort, ceilChild})
+  where
+    ceilOperandSort = patternSort ceilChild
+
+-- | Construct an internal bool pattern.
+mkInternalBool ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalBool ->
+    Pattern variable
+mkInternalBool = updateCallStack . synthesize . InternalBoolF . Const
+
+-- | Construct an internal integer pattern.
+mkInternalInt ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalInt ->
+    Pattern variable
+mkInternalInt = updateCallStack . synthesize . InternalIntF . Const
+
+-- | Construct an internal string pattern.
+mkInternalString ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalString ->
+    Pattern variable
+mkInternalString = updateCallStack . synthesize . InternalStringF . Const
+
+-- | Construct a builtin list pattern.
+mkInternalList ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalList (Pattern variable) ->
+    Pattern variable
+mkInternalList = updateCallStack . synthesize . InternalListF
+
+-- | Construct a builtin map pattern.
+mkInternalMap ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalMap Key (Pattern variable) ->
+    Pattern variable
+mkInternalMap = updateCallStack . synthesize . InternalMapF
+
+-- | Construct a builtin set pattern.
+mkInternalSet ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalSet Key (Pattern variable) ->
+    Pattern variable
+mkInternalSet = updateCallStack . synthesize . InternalSetF
+
+-- | Construct a 'DomainValue' pattern.
+mkDomainValue ::
+    HasCallStack =>
+    InternalVariable variable =>
+    DomainValue Sort (Pattern variable) ->
+    Pattern variable
+mkDomainValue = updateCallStack . synthesize . DomainValueF
+
+-- | Construct an 'Equals' pattern in the given sort.
+mkEquals ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkEquals equalsResultSort t1 =
+    updateCallStack . checkSortsAgree mkEqualsWorker t1
+  where
+    mkEqualsWorker equalsFirst equalsSecond equalsOperandSort =
+        synthesize (EqualsF equals)
+      where
+        equals =
+            Equals
+                { equalsOperandSort
+                , equalsResultSort
+                , equalsFirst
+                , equalsSecond
+                }
+
+-- | Construct an 'Exists' pattern.
+mkExists ::
+    HasCallStack =>
+    InternalVariable variable =>
+    ElementVariable variable ->
+    Pattern variable ->
+    Pattern variable
+mkExists existsVariable existsChild =
+    updateCallStack $
+        synthesize (ExistsF Exists{existsSort, existsVariable, existsChild})
+  where
+    existsSort = patternSort existsChild
+
+-- | Construct a sequence of 'Exists' patterns over several variables.
+mkExistsN ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Foldable foldable =>
+    foldable (ElementVariable variable) ->
+    Pattern variable ->
+    Pattern variable
+mkExistsN = (updateCallStack .) . appEndo . foldMap (Endo . mkExists)
+
+-- | Construct a 'Floor' pattern in the given sort.
+mkFloor ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    Pattern variable ->
+    Pattern variable
+mkFloor floorResultSort floorChild =
+    updateCallStack $
+        synthesize (FloorF Floor{floorOperandSort, floorResultSort, floorChild})
+  where
+    floorOperandSort = patternSort floorChild
+
+-- | Construct a 'Forall' pattern.
+mkForall ::
+    HasCallStack =>
+    InternalVariable variable =>
+    ElementVariable variable ->
+    Pattern variable ->
+    Pattern variable
+mkForall forallVariable forallChild =
+    updateCallStack $
+        synthesize (ForallF Forall{forallSort, forallVariable, forallChild})
+  where
+    forallSort = patternSort forallChild
+
+-- | Construct a sequence of 'Forall' patterns over several variables.
+mkForallN ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Foldable foldable =>
+    foldable (ElementVariable variable) ->
+    Pattern variable ->
+    Pattern variable
+mkForallN = (updateCallStack .) . appEndo . foldMap (Endo . mkForall)
+
+-- | Construct an 'Iff' pattern.
+mkIff ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkIff t1 t2 = updateCallStack $ checkSortsAgree mkIffWorker t1 t2
+  where
+    mkIffWorker iffFirst iffSecond iffSort =
+        synthesize (IffF Iff{iffSort, iffFirst, iffSecond})
+
+-- | Construct an 'Implies' pattern.
+mkImplies ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkImplies t1 t2 = updateCallStack $ checkSortsAgree mkImpliesWorker t1 t2
+  where
+    mkImpliesWorker impliesFirst impliesSecond impliesSort =
+        synthesize (ImpliesF implies')
+      where
+        implies' = Implies{impliesSort, impliesFirst, impliesSecond}
+
+{- | Construct a 'In' pattern in the given sort.
+
+See also: 'mkIn_'
+-}
+mkIn ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkIn inResultSort t1 t2 = updateCallStack $ checkSortsAgree mkInWorker t1 t2
+  where
+    mkInWorker inContainedChild inContainingChild inOperandSort =
+        synthesize (InF in')
+      where
+        in' =
+            In
+                { inOperandSort
+                , inResultSort
+                , inContainedChild
+                , inContainingChild
+                }
+
+-- | Construct a 'Mu' pattern.
+mkMu ::
+    HasCallStack =>
+    InternalVariable variable =>
+    SetVariable variable ->
+    Pattern variable ->
+    Pattern variable
+mkMu muVar = updateCallStack . checkSortsAgree mkMuWorker (mkSetVar muVar)
+  where
+    mkMuWorker (SetVar_ muVar') muChild _ =
+        synthesize (MuF Mu{muVariable = muVar', muChild})
+    mkMuWorker _ _ _ = error "Unreachable code"
+
+-- | Construct a 'Next' pattern.
+mkNext ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable
+mkNext nextChild =
+    updateCallStack $ synthesize (NextF Next{nextSort, nextChild})
+  where
+    nextSort = patternSort nextChild
+
+-- | Construct a 'Not' pattern.
+mkNot ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable
+mkNot notChild =
+    updateCallStack $ synthesize (NotF Not{notSort, notChild})
+  where
+    notSort = patternSort notChild
+
+-- | Construct a 'Nu' pattern.
+mkNu ::
+    HasCallStack =>
+    InternalVariable variable =>
+    SetVariable variable ->
+    Pattern variable ->
+    Pattern variable
+mkNu nuVar = updateCallStack . checkSortsAgree mkNuWorker (mkSetVar nuVar)
+  where
+    mkNuWorker (SetVar_ nuVar') nuChild _ =
+        synthesize (NuF Nu{nuVariable = nuVar', nuChild})
+    mkNuWorker _ _ _ = error "Unreachable code"
+
+-- | Construct an 'Or' pattern.
+mkOr ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkOr t1 t2 = updateCallStack $ checkSortsAgree mkOrWorker t1 t2
+  where
+    mkOrWorker orFirst orSecond orSort =
+        synthesize (OrF Or{orSort, orFirst, orSecond})
+
+-- | Construct a 'Rewrites' pattern.
+mkRewrites ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable ->
+    Pattern variable
+mkRewrites t1 t2 = updateCallStack $ checkSortsAgree mkRewritesWorker t1 t2
+  where
+    mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
+        synthesize (RewritesF rewrites')
+      where
+        rewrites' = Rewrites{rewritesSort, rewritesFirst, rewritesSecond}
+
+{- | Construct a 'Top' pattern in the given sort.
+
+See also: 'mkTop_'
+-}
+mkTop ::
+    HasCallStack =>
+    Ord variable =>
+    Sort ->
+    Pattern variable
+mkTop topSort =
+    updateCallStack $ synthesize (TopF Top{topSort})
+
+-- | Construct an element variable pattern.
+mkElemVar ::
+    HasCallStack =>
+    InternalVariable variable =>
+    ElementVariable variable ->
+    Pattern variable
+mkElemVar = updateCallStack . mkVar . inject @(SomeVariable _)
+
+-- | Construct a set variable pattern.
+mkSetVar ::
+    HasCallStack =>
+    InternalVariable variable =>
+    SetVariable variable ->
+    Pattern variable
+mkSetVar = updateCallStack . mkVar . inject @(SomeVariable _)
+
+-- | Construct a 'StringLiteral' pattern.
+mkStringLiteral ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Text ->
+    Pattern variable
+mkStringLiteral =
+    updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
+
+mkInternalBytes ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    ByteString ->
+    Pattern variable
+mkInternalBytes sort value =
+    updateCallStack . synthesize . InternalBytesF . Const $
+        InternalBytes
+            { internalBytesSort = sort
+            , internalBytesValue = value
+            }
+
+mkInternalBytes' ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalBytes ->
+    Pattern variable
+mkInternalBytes' = updateCallStack . synthesize . InternalBytesF . Const
+
+mkInhabitant ::
+    HasCallStack =>
+    InternalVariable variable =>
+    Sort ->
+    Pattern variable
+mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
+
+-- | Construct an 'Endianness' pattern.
+mkEndianness ::
+    HasCallStack =>
+    Ord variable =>
+    Endianness ->
+    Pattern variable
+mkEndianness = updateCallStack . synthesize . EndiannessF . Const
+
+-- | Construct an 'Signedness' pattern.
+mkSignedness ::
+    HasCallStack =>
+    Ord variable =>
+    Signedness ->
+    Pattern variable
+mkSignedness = updateCallStack . synthesize . SignednessF . Const
+
+-- | Construct a variable pattern.
+mkVar ::
+    HasCallStack =>
+    Ord variable =>
+    SomeVariable variable ->
+    Pattern variable
+mkVar = updateCallStack . synthesize . VariableF . Const
+
+mkSort :: Id -> Sort
+mkSort name = SortActualSort $ SortActual name []
+
+mkSortVariable :: Id -> Sort
+mkSortVariable name = SortVariableSort $ SortVariable name
+
+updateCallStack ::
+    forall variable.
+    HasCallStack =>
+    Pattern variable ->
+    Pattern variable
+updateCallStack = Lens.set created callstack
+  where
+    created = _attributes . Lens.Product.field @"termCreated"
+    callstack =
+        Attribute.Created
+            . Just
+            . GHC.popCallStack
+            . GHC.popCallStack
+            $ GHC.callStack
+
+    _attributes :: Lens' (Pattern variable) (PatternAttributes variable)
+    _attributes =
+        Lens.lens
+            (\(Pattern (attrs :< _)) -> attrs)
+            ( \(Pattern (_ :< termLikeF)) attrs ->
+                Pattern (attrs :< termLikeF)
+            )
+
+checkSortsAgree ::
+    (Pattern variable -> Pattern variable -> Sort -> a) ->
+    Pattern variable ->
+    Pattern variable ->
+    a
+checkSortsAgree withPatterns t1 t2 = withPatterns t1 t2 (sameSort s1 s2)
+  where
+    s1 = patternSort t1
+    s2 = patternSort t2
+
+{- | Force the 'Pattern's to conform to their 'Sort's.
+
+It is an error if the lists are not the same length, or if any 'Pattern' cannot
+be coerced to its corresponding 'Sort'.
+-}
+samePatternSorts ::
+    HasCallStack =>
+    InternalVariable variable =>
+    [Sort] ->
+    [Pattern variable] ->
+    [Pattern variable]
+samePatternSorts operandSorts children =
+    alignWith forceTheseSorts operandSorts children
+  where
+    forceTheseSorts (This _) =
+        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
+    forceTheseSorts (That _) =
+        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
+    forceTheseSorts (These sort termLike) = samePatternSort sort termLike
+    expected =
+        [ "Expected:"
+        , Pretty.indent 4 (Unparser.arguments operandSorts)
+        , "but found:"
+        , Pretty.indent 4 (Unparser.arguments children)
+        ]
+
+-- | Check the given `Pattern` has the same sort as that supplied
+samePatternSort ::
+    (InternalVariable variable, HasCallStack) =>
+    -- | expected sort
+    Sort ->
+    Pattern variable ->
+    Pattern variable
+samePatternSort expectedSort term
+    | expectedSort == termSort = term
+    | otherwise = illSorted expectedSort term
+  where
+    termSort = patternSort term
+
+illSorted ::
+    (InternalVariable variable, HasCallStack) =>
+    Sort ->
+    Pattern variable ->
+    a
+illSorted forcedSort original =
+    (error . show . Pretty.vsep)
+        [ Pretty.cat
+            [ "Could not force pattern to sort "
+            , Pretty.squotes (unparse forcedSort)
+            , ", instead it has sort "
+            , Pretty.squotes (unparse (patternSort original))
+            , ":"
+            ]
+        , Pretty.indent 4 (unparse original)
+        ]
+
+setSimplified ::
+    (HasCallStack, InternalVariable variable) =>
+    Attribute.Simplified ->
+    Pattern variable ->
+    Pattern variable
+setSimplified
+    simplified
+    (Recursive.project -> attrs :< termLikeF) =
+        Recursive.embed
+            ( setAttributeSimplified mergedSimplified attrs
+                :< termLikeF
+            )
+      where
+        childSimplified = simplifiedFromChildren termLikeF
+        mergedSimplified = case (childSimplified, simplified) of
+            (Attribute.NotSimplified, Attribute.NotSimplified) ->
+                Attribute.NotSimplified
+            (Attribute.NotSimplified, _) ->
+                cannotSimplifyNotSimplifiedError termLikeF
+            (_, Attribute.NotSimplified) ->
+                Attribute.NotSimplified
+            _ -> childSimplified <> simplified
+
+setAttributeSimplified ::
+    Attribute.Simplified ->
+    PatternAttributes variable ->
+    PatternAttributes variable
+setAttributeSimplified termSimplified attrs =
+    attrs{termSimplified}
+
+simplifiedFromChildren ::
+    HasCallStack =>
+    PatternF variable (Pattern variable) ->
+    Attribute.Simplified
+simplifiedFromChildren termLikeF =
+    case mergedSimplified of
+        Attribute.NotSimplified -> Attribute.NotSimplified
+        _ -> mergedSimplified `Attribute.simplifiedTo` Attribute.fullySimplified
+  where
+    mergedSimplified =
+        foldMap (attributeSimplifiedAttribute . extractAttributes) termLikeF
+
+cannotSimplifyNotSimplifiedError ::
+    (HasCallStack, InternalVariable variable) =>
+    PatternF variable (Pattern variable) ->
+    a
+cannotSimplifyNotSimplifiedError termLikeF =
+    error
+        ( "Unexpectedly marking term with NotSimplified children as \
+          \simplified:\n"
+            ++ show termLikeF
+            ++ "\n"
+            ++ Unparser.unparseToString termLikeF
+        )

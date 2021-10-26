@@ -61,7 +61,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -133,7 +133,7 @@ instance From SomeClaim (AxiomPattern VariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
 
-instance From SomeClaim Verified.Sentence where
+instance From SomeClaim Validated.Sentence where
     from claim =
         Syntax.SentenceClaimSentence $
             Syntax.SentenceClaim
