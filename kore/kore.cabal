@@ -605,6 +605,7 @@ executable kore-check-functions
   import: global-main
   main-is: Main.hs
   hs-source-dirs: app/check-functions
+  build-depends: exceptions >=0.10
 
 test-suite kore-test
   import: haskell
