@@ -49,11 +49,11 @@ generate-evm() {
         CHECK=true \
         KEEP_OUTPUTS=true
 
-    local testpop1=tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json
-    local testadd0=tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json
-    local testmul0=tests/ethereum-tests/VMTests/vmArithmeticTest/mul0.json
-    local testsha3_bigSize=tests/ethereum-tests/VMTests/vmSha3Test/sha3_bigSize.json
-    local testand0=tests/ethereum-tests/VMTests/vmBitwiseLogicOperation/and0.json
+    local testpop1=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmIOandFlowOperations/pop1.json
+    local testadd0=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmArithmeticTest/add0.json
+    local testmul0=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmArithmeticTest/mul0.json
+    local testsha3_bigSize=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmSha3Test/sha3_bigSize.json
+    local testand0=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmBitwiseLogicOperation/and0.json
     local testsumTo10=tests/interactive/sumTo10.evm
 
     kollect-file test-pop1 "$testpop1.haskell-out" \

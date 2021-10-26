@@ -7,8 +7,9 @@ module Kore.Log.ErrorEquationsSameMatch (
     errorEquationsSameMatch,
 ) where
 
-import Control.Monad.Catch (
+import Control.Exception (
     Exception (..),
+    throw,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -23,10 +24,8 @@ import Kore.Internal.TermLike (
  )
 import Log (
     Entry (..),
-    MonadLog,
     Severity (Error),
     SomeEntry (SomeEntry),
-    logError,
  )
 import Prelude.Kore
 import Pretty (
@@ -34,9 +33,7 @@ import Pretty (
     comma,
     hsep,
     indent,
-    layoutOneLine,
     pretty,
-    renderText,
     vsep,
  )
 import SQL (
@@ -87,10 +84,7 @@ instance Entry ErrorEquationsSameMatch where
 instance SQL.Table ErrorEquationsSameMatch
 
 errorEquationsSameMatch ::
-    MonadLog m =>
     Equation VariableName ->
     Equation VariableName ->
     m ()
-errorEquationsSameMatch eq1 eq2 =
-    logError . renderText . layoutOneLine . pretty $
-        ErrorEquationsSameMatch eq1 eq2
+errorEquationsSameMatch eq1 = throw . ErrorEquationsSameMatch eq1
