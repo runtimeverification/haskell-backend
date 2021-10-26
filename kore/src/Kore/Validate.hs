@@ -19,9 +19,9 @@ module Kore.Validate (
 import qualified Kore.Internal.Alias as Internal (
     Alias,
  )
+import Kore.Internal.Variable (VariableName)
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Validate.Pattern
-import Kore.Internal.Variable (VariableName)
 import Prelude.Kore ()
 
 type ValidatedPattern = Pattern VariableName

@@ -59,8 +59,8 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Kore.Validate.Error
 import Kore.Validate.SortVerifier
 import Prelude.Kore

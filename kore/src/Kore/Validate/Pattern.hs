@@ -222,7 +222,7 @@ instance
 instance
     Ord variable =>
     Synthetic (Attribute.FreeVariables variable) (PatternF variable)
-  where
+    where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -497,8 +497,9 @@ newtype Pattern variable = Pattern
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
-type instance Base (Pattern variable) =
-    CofreeF (PatternF variable) (PatternAttributes variable)
+type instance
+    Base (Pattern variable) =
+        CofreeF (PatternF variable) (PatternAttributes variable)
 
 instance Recursive (Pattern variable) where
     project = getPattern

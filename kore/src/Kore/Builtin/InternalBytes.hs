@@ -86,8 +86,8 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Log (MonadLog)
 import Prelude.Kore
 import System.IO.Unsafe (

@@ -13,7 +13,6 @@ module Kore.Validate.PatternVerifier (
 ) where
 
 import qualified Control.Monad as Monad
-import Kore.Validate (ValidatedPattern)
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
@@ -46,6 +45,7 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
+import Kore.Validate (ValidatedPattern)
 import qualified Kore.Validate as Validated
 import Kore.Validate.Error
 import Kore.Validate.PatternVerifier.PatternVerifier

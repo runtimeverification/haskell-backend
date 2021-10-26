@@ -59,8 +59,8 @@ import Kore.Syntax.Variable (
 import Kore.Unparser (
     unparse,
  )
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Kore.Validate.Error
 import Prelude.Kore
 import Pretty

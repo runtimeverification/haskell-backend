@@ -50,8 +50,8 @@ import Kore.Syntax.Sentence (
  )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Syntax.Variable
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 indexBySort ::

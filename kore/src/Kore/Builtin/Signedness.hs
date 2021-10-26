@@ -33,8 +33,8 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 verifiers :: Verifiers

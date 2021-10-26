@@ -9,6 +9,7 @@ module Kore.Reachability.AllPathClaim (
     Rule (..),
 ) where
 
+import Control.Error.Util (hush)
 import Control.Monad (
     foldM,
  )
@@ -16,10 +17,6 @@ import Data.Generics.Wrapped (
     _Unwrapped,
  )
 import qualified GHC.Generics as GHC
-import qualified Kore.Validate as Validated
-import qualified Kore.Syntax.Variable as Variable
-import qualified Kore.Internal.OrPattern as OrPattern
-import Control.Error.Util (hush)
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
@@ -29,6 +26,7 @@ import Kore.Internal.Alias (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -59,12 +57,14 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Syntax.Sentence as Syntax
+import qualified Kore.Syntax.Variable as Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser (
     Unparse (..),
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | All-Path-Claim claim pattern.
@@ -191,7 +191,7 @@ instance ClaimExtractor AllPathClaim where
                                                 requires'
                                                 & Pattern.mapVariables (pure mkRuleVariable)
                                         , ClaimPattern.right =
-                                                parseRightHandSide right'
+                                            parseRightHandSide right'
                                                 & OrPattern.mapVariables (pure mkRuleVariable)
                                         , ClaimPattern.existentials =
                                             Variable.mapElementVariable (pure mkRuleVariable) <$> existentials'

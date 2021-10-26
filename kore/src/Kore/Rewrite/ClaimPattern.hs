@@ -410,7 +410,7 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
     ClaimPattern{left, right, existentials} = claimPattern'
 
 parseRightHandSide ::
-    forall variable .
+    forall variable.
     InternalVariable variable =>
     Validated.Pattern variable ->
     OrPattern variable

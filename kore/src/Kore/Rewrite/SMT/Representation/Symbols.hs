@@ -45,8 +45,8 @@ import qualified Kore.Syntax.Sentence as Sentence (
 import qualified Kore.Syntax.Sentence as Sentence.Symbol (
     Symbol (..),
  )
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import qualified SMT
 

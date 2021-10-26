@@ -95,8 +95,8 @@ import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
 import Kore.Unparser
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import qualified Kore.Validate.AttributesVerifier as Verifier.Attributes
 import Kore.Validate.Error (
     VerifyError,

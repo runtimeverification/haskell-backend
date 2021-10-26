@@ -44,8 +44,8 @@ import Kore.Rewrite.SMT.Translate
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Log (
     MonadLog (..),
  )

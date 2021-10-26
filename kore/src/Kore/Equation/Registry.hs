@@ -47,8 +47,8 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
-import qualified Kore.Validate as Validated
 import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | Create a mapping from symbol identifiers to their defining axioms.

@@ -9,6 +9,7 @@ module Kore.Reachability.OnePathClaim (
     Rule (..),
 ) where
 
+import Control.Error.Util (hush)
 import Data.Generics.Wrapped (
     _Unwrapped,
  )
@@ -22,13 +23,11 @@ import Kore.Internal.Alias (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Syntax.Variable as Variable
-import qualified Kore.Internal.OrPattern as OrPattern
-import Control.Error.Util (hush)
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike (
     ElementVariable,
@@ -39,7 +38,6 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import qualified Kore.Validate as Validated
 import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
@@ -56,12 +54,14 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Syntax.Sentence as Syntax
+import qualified Kore.Syntax.Variable as Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser (
     Unparse (..),
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 -- | One-Path-Claim claim pattern.
@@ -211,7 +211,7 @@ instance ClaimExtractor OnePathClaim where
                                                 requires'
                                                 & Pattern.mapVariables (pure mkRuleVariable)
                                         , ClaimPattern.right =
-                                                parseRightHandSide right'
+                                            parseRightHandSide right'
                                                 & OrPattern.mapVariables (pure mkRuleVariable)
                                         , ClaimPattern.existentials =
                                             Variable.mapElementVariable (pure mkRuleVariable) <$> existentials'
