@@ -50,6 +50,19 @@ Using [make]:
 make all # builds all binaries
 ```
 
+### Apple Silicon
+
+If you are building the project on an Apple Silicon machine, a temporary
+workaround is necessary to install a new enough version of GHC with support for
+ARM64 Darwin. To do so, follow the instructions in [this
+comment](https://github.com/commercialhaskell/stack/pull/5562#issuecomment-913015550).
+The command-line flags for `stack` should then be specified _everywhere_ an
+execution of `stack` is required. For `make` invocations in this project, set
+the environment variable `STACK_BUILD_OPTS=--compiler ghc-8.10.7 --system-ghc`.
+
+When `stack` and `ghc` merge their full support for ARM64 Darwin in future
+releases, it should be possible to remove this workaround.
+
 ## Developing
 
 Developers will require all the dependencies listed above,
