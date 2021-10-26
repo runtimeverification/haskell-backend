@@ -275,7 +275,7 @@
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnNotImplemented"
-          "Kore/Log/WarnRetrySolverQuery"
+          "Kore/Log/DebugRetrySolverQuery"
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"

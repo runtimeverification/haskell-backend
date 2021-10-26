@@ -50,6 +50,19 @@ Using [make]:
 make all # builds all binaries
 ```
 
+### Apple Silicon
+
+If you are building the project on an Apple Silicon machine, a temporary
+workaround is necessary to install a new enough version of GHC with support for
+ARM64 Darwin. To do so, follow the instructions in [this
+comment](https://github.com/commercialhaskell/stack/pull/5562#issuecomment-913015550).
+The command-line flags for `stack` should then be specified _everywhere_ an
+execution of `stack` is required. For `make` invocations in this project, set
+the environment variable `STACK_BUILD_OPTS=--compiler ghc-8.10.7 --system-ghc`.
+
+When `stack` and `ghc` merge their full support for ARM64 Darwin in future
+releases, it should be possible to remove this workaround.
+
 ## Developing
 
 Developers will require all the dependencies listed above,
@@ -113,7 +126,7 @@ cabal build --enable-tests --enable-benchmarks --only-dependencies kore
 ### Developing with Nix
 
 We provide a `shell.nix` expression with a suitable development environment and
-a binary cache at [kore.cachix.org]. The development environment is intended to
+a binary cache at [runtimeverification.cachix.org]. The development environment is intended to
 be used with `nix-shell` and `cabal`.
 
 When the `.cabal` package description file changes, run:
@@ -144,7 +157,7 @@ nix-shell test.nix  # enter a shell where we can run tests manually
 [haskell-language-server]: https://github.com/haskell/haskell-language-server
 [language server]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
-[kore.cachix.org]: https://kore.cachix.org/
+[runtimeverification.cachix.org]: https://runtimeverification.cachix.org/
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
 [fd]: https://github.com/sharkdp/fd
