@@ -116,40 +116,6 @@ matchEquation attributes termLike
     isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
 
     -- function rule without priority
-    -- TODO The pattern match below should be removed after the frontend is updated
-    -- to use the correct format
-    match
-        ( TermLike.Implies_
-                _
-                ( TermLike.And_
-                        _
-                        requires
-                        argument@( TermLike.And_
-                                        _
-                                        (TermLike.In_ _ _ _ _)
-                                        _
-                                    )
-                    )
-                ( TermLike.And_
-                        _
-                        (TermLike.Equals_ _ _ left right)
-                        ensures
-                    )
-            ) =
-            do
-                requires' <- makePredicate requires & Bifunctor.first RequiresError
-                argument' <- makePredicate argument & Bifunctor.first ArgumentError
-                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Just argument'
-                        , antiLeft = Nothing
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
     match
         ( TermLike.Implies_
                 _
@@ -185,41 +151,6 @@ matchEquation attributes termLike
                         }
 
     -- function rule with priority
-    -- TODO The pattern match below should be removed after the frontend is updated
-    -- to use the correct format
-    match
-        ( TermLike.Implies_
-                _
-                ( TermLike.And_
-                        _
-                        antiLeft
-                        ( TermLike.And_
-                                _
-                                requires
-                                argument
-                            )
-                    )
-                ( TermLike.And_
-                        _
-                        (TermLike.Equals_ _ _ left right)
-                        ensures
-                    )
-            ) =
-            do
-                requires' <- makePredicate requires & Bifunctor.first RequiresError
-                argument' <- makePredicate argument & Bifunctor.first ArgumentError
-                antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
-                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Just argument'
-                        , antiLeft = Just antiLeft'
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
     match
         ( TermLike.Implies_
                 _
@@ -249,31 +180,6 @@ matchEquation attributes termLike
                         { requires = requires'
                         , argument = Just argument'
                         , antiLeft = Just antiLeft'
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
-    -- TODO The pattern match below should be removed after the frontend is updated
-    -- to use the correct format
-    match
-        ( TermLike.Implies_
-                _
-                requires
-                ( TermLike.And_
-                        _
-                        (TermLike.Equals_ _ _ left right)
-                        ensures
-                    )
-            ) =
-            do
-                requires' <- makePredicate requires & Bifunctor.first RequiresError
-                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Nothing
-                        , antiLeft = Nothing
                         , left
                         , right
                         , ensures = ensures'

@@ -20,12 +20,12 @@ module KSEQ
                 \top{R}()
             ))
         ),
-        \and{R}(
-            \equals{SortK{}, R}(
-                append{}(X0:SortK{}, X1:SortK{}),
-                TAIL:SortK{}
-            ),
-            \top{R}()
+        \equals{SortK{}, R}(
+            append{}(X0:SortK{}, X1:SortK{}),
+            \and{SortK{}}(
+                TAIL:SortK{},
+                \top{SortK{}}()
+            )
         )
     ) []
     axiom {R} \implies{R}(
@@ -38,12 +38,12 @@ module KSEQ
                 \top{R}()
             ))
         ),
-        \and{R}(
-            \equals{SortK{}, R}(
-                append{}(X0:SortK{}, X1:SortK{}),
-                kseq{}(K:SortKItem{}, append{}(KS:SortK{}, TAIL:SortK{}))
-            ),
-            \top{R}()
+        \equals{SortK{}, R}(
+            append{}(X0:SortK{}, X1:SortK{}),
+            \and{SortK{}}(
+                kseq{}(K:SortKItem{}, append{}(KS:SortK{}, TAIL:SortK{})),
+                \top{SortK{}}()
+            )
         )
     ) []
 endmodule
@@ -61,6 +61,7 @@ module K
     alias allPathGlobally{A}(A) : A where allPathGlobally{A}(@X:A) := @X:A []
 endmodule
 []
+
 module WRC20-LEMMAS
 
 // imports
