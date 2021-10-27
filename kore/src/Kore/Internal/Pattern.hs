@@ -17,6 +17,7 @@ module Kore.Internal.Pattern (
     Kore.Internal.Pattern.mapVariables,
     splitTerm,
     toTermLike,
+    toValidatedPattern,
     topOf,
     fromTermLike,
     Kore.Internal.Pattern.freeElementVariables,
@@ -45,6 +46,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
  )
+import qualified Kore.Validate as Validated
 import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified,
  )
@@ -189,6 +191,38 @@ patterns. Conversion erases the distinction between terms, predicates, and
 substitutions; this function should be used with care where that distinction is
 important.
 -}
+toValidatedPattern ::
+    forall variable.
+    (InternalVariable variable, HasCallStack) =>
+    Pattern variable ->
+    Validated.Pattern variable
+toValidatedPattern Conditional{term, predicate, substitution} =
+    let koreTerm = TermLike.fromTermLike term
+    in  simpleAnd
+            (simpleAnd koreTerm predicate)
+            (Substitution.toPredicate substitution)
+  where
+    simpleAnd ::
+        Validated.Pattern variable ->
+        Predicate variable ->
+        Validated.Pattern variable
+    simpleAnd koreTerm predicate'
+        | isTop predicate' = koreTerm
+        | isBottom predicate' = Validated.mkBottom sort
+        | isTop koreTerm = korePredicate
+        | isBottom koreTerm = koreTerm
+        | otherwise = Validated.mkAnd koreTerm korePredicate
+      where
+        korePredicate = Predicate.fromPredicate sort predicate'
+        sort = Validated.patternSort koreTerm
+
+-- TODO: remove
+{- | Convert an 'Pattern' to an ordinary 'TermLike'.
+Conversion relies on the interpretation of 'Pattern' as a conjunction of
+patterns. Conversion erases the distinction between terms, predicates, and
+substitutions; this function should be used with care where that distinction is
+important.
+-}
 toTermLike ::
     forall variable.
     (InternalVariable variable, HasCallStack) =>
@@ -210,7 +244,7 @@ toTermLike Conditional{term, predicate, substitution} =
         | isBottom pattern' = pattern'
         | otherwise = mkAnd pattern' predicateTermLike
       where
-        predicateTermLike = Predicate.fromPredicate sort predicate'
+        predicateTermLike = Predicate.fromPredicateOld sort predicate'
         sort = termLikeSort pattern'
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.

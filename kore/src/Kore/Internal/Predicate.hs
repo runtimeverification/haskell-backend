@@ -8,6 +8,7 @@ module Kore.Internal.Predicate (
     unparseWithSort,
     unparse2WithSort,
     fromPredicate,
+    fromPredicateOld,
     makePredicate,
     makePredicateOld,
     makeTruePredicate,

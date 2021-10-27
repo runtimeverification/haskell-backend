@@ -95,7 +95,6 @@ declareSMTLemmas m = do
                 & hoistMaybe
         (lemma, TranslatorState{terms, predicates}) <-
             oldAxiomEncoding
-                & wrapPredicate
                 & translatePredicateWith top translateUninterpreted
                 & runTranslator
         addQuantifiers (Map.elems terms <> Map.elems predicates) lemma
@@ -104,7 +103,7 @@ declareSMTLemmas m = do
     -- Translate an "unparsed" equation for Z3.
     -- Convert new encoding back to old.
     -- See https://github.com/kframework/k/pull/2061#issuecomment-927922217
-    convert :: ValidatedPattern -> Maybe (TermLike VariableName)
+    convert :: ValidatedPattern -> Maybe (Predicate VariableName)
     convert
         ( Validated.Implies_
                 impliesSort
@@ -125,17 +124,16 @@ declareSMTLemmas m = do
             requiresPredicate <- hush $ makePredicate requires
             ensuresPredicate <- hush $ makePredicate ensures
             Just $
-                fromPredicate impliesSort $
-                    makeImpliesPredicate
-                        requiresPredicate
-                        ( makeAndPredicate
-                            ( makeEqualsPredicate
-                                left'
-                                right'
-                            )
-                            ensuresPredicate
+                makeImpliesPredicate
+                    requiresPredicate
+                    ( makeAndPredicate
+                        ( makeEqualsPredicate
+                            left'
+                            right'
                         )
-    convert patt = hush $ makeTermLike patt
+                        ensuresPredicate
+                        )
+    convert patt = hush $ makePredicate patt
 
     addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr
     addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma

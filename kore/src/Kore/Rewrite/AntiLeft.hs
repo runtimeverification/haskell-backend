@@ -9,12 +9,14 @@ module Kore.Rewrite.AntiLeft (
     mapVariables,
     parse,
     toTermLike,
+    toValidatedPattern,
 ) where
 
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
+import qualified Kore.Validate as Validated
 import Data.Set (
     Set,
  )
@@ -256,6 +258,10 @@ forgetSimplifiedLeft antiLeftLhs@(AntiLeftLhs _ _ _) =
   where
     AntiLeftLhs{existentials, predicate, term} = antiLeftLhs
 
+toValidatedPattern :: AntiLeft variable -> Validated.Pattern variable
+toValidatedPattern AntiLeft{aliasTerm} = TermLike.fromTermLike aliasTerm
+
+-- TODO: remove
 toTermLike :: AntiLeft variable -> TermLike variable
 toTermLike AntiLeft{aliasTerm} = aliasTerm
 

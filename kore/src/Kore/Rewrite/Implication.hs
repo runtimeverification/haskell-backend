@@ -211,6 +211,7 @@ mkImplication modality left right existentials =
         , attributes = Default.def
         }
 
+-- TODO: rename and docs
 {- | Construct a 'TermLike' from the parts of an implication-based rule.
 
 The 'TermLike' has the following form:
@@ -226,26 +227,24 @@ left ∧ requires → modality(∃ {Xₙ:Sₙ}. right)
 @
 -}
 implicationToTerm ::
-    Implication Modality ->
-    TermLike VariableName
+    Implication Validated.Modality ->
+    Validated.Pattern RewritingVariableName
 implicationToTerm representation@(Implication _ _ _ _ _) =
-    TermLike.mkImplies
-        (TermLike.mkAnd leftCondition leftTerm)
-        (TermLike.applyModality modality rightPattern)
+    Validated.mkImplies
+        (Validated.mkAnd leftCondition leftTerm)
+        (Validated.applyModality modality rightPattern)
   where
     Implication{left, modality, right, existentials} = representation
     leftTerm =
         Pattern.term left
-            & getRewritingTerm
+            & TermLike.fromTermLike
     sort = getImplicationSort representation
     leftCondition =
         Pattern.withoutTerm left
             & Condition.toPredicate
             & Predicate.fromPredicate sort
-            & getRewritingTerm
     rightPattern =
-        TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
-            & getRewritingTerm
+        Validated.mkExistsN existentials (OrPattern.toValidatedPattern sort right)
 
 substituteRight ::
     Map

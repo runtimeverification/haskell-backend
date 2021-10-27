@@ -6,7 +6,6 @@ module Kore.Equation.Equation (
     Equation (..),
     mkEquation,
     toTermLike,
-    toTermLikeOld,
     mapVariables,
     refreshVariables,
     isSimplificationRule,
@@ -15,6 +14,7 @@ module Kore.Equation.Equation (
 ) where
 
 import qualified Control.Lens as Lens
+import qualified Kore.Validate as Validated
 import qualified Data.Default as Default
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Wrapped (
@@ -210,78 +210,11 @@ instance InternalVariable variable => Substitute (Equation variable) where
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
 
--- This function must be removed as part of https://github.com/kframework/kore/issues/2593
-toTermLikeOld ::
-    InternalVariable variable =>
-    Sort ->
-    Equation variable ->
-    TermLike variable
-toTermLikeOld sort equation
-    -- \ceil axiom
-    | isTop requires
-      , isTop ensures
-      , TermLike.Ceil_ _ sort1 _ <- left
-      , TermLike.Top_ sort2 <- right
-      , sort1 == sort2 =
-        left
-    -- function rule
-    | Just argument' <- argument
-      , Just antiLeft' <- antiLeft =
-        let antiLeftTerm = fromPredicate sort antiLeft'
-            argumentTerm = fromPredicate sort argument'
-         in TermLike.mkImplies
-                ( TermLike.mkAnd
-                    antiLeftTerm
-                    ( TermLike.mkAnd
-                        requires'
-                        argumentTerm
-                    )
-                )
-                ( TermLike.mkAnd
-                    (TermLike.mkEquals sort left right)
-                    ensures'
-                )
-    -- function rule without priority
-    | Just argument' <- argument =
-        let argumentTerm = fromPredicate sort argument'
-         in TermLike.mkImplies
-                ( TermLike.mkAnd
-                    requires'
-                    (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
-                )
-                ( TermLike.mkAnd
-                    (TermLike.mkEquals sort left right)
-                    ensures'
-                )
-    -- unconditional equation
-    | isTop requires
-      , isTop ensures =
-        TermLike.mkEquals sort left right
-    -- conditional equation
-    | otherwise =
-        TermLike.mkImplies
-            requires'
-            ( TermLike.mkAnd
-                (TermLike.mkEquals sort left right)
-                ensures'
-            )
-  where
-    requires' = fromPredicate sort requires
-    ensures' = fromPredicate sort ensures
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        } = equation
-
 toTermLike ::
     InternalVariable variable =>
     Sort ->
     Equation variable ->
-    TermLike variable
+    Validated.Pattern variable
 toTermLike sort equation
     -- \ceil axiom
     | isTop requires
@@ -289,48 +222,53 @@ toTermLike sort equation
       , TermLike.Ceil_ _ sort1 _ <- left
       , TermLike.Top_ sort2 <- right
       , sort1 == sort2 =
-        left
+          leftKoreTerm
     -- function rule
     | Just argument' <- argument
       , Just antiLeft' <- antiLeft =
-        let antiLeftTerm = fromPredicate sort antiLeft'
-            argumentTerm = fromPredicate sort argument'
-         in TermLike.mkImplies
-                ( TermLike.mkAnd
-                    antiLeftTerm
-                    ( TermLike.mkAnd
+        let antiLeftKoreTerm = fromPredicate sort antiLeft'
+            argumentKoreTerm = fromPredicate sort argument'
+         in Validated.mkImplies
+                ( Validated.mkAnd
+                    antiLeftKoreTerm
+                    ( Validated.mkAnd
                         requires'
-                        argumentTerm
+                        argumentKoreTerm
                     )
                 )
-                ( TermLike.mkEquals sort left $
-                    TermLike.mkAnd right ensures'
+                ( Validated.mkEquals sort leftKoreTerm $
+                    Validated.mkAnd rightKoreTerm ensures'
                 )
     -- function rule without priority
     | Just argument' <- argument =
-        let argumentTerm = fromPredicate sort argument'
-         in TermLike.mkImplies
-                ( TermLike.mkAnd
+        let argumentKoreTerm = fromPredicate sort argument'
+         in Validated.mkImplies
+                ( Validated.mkAnd
                     requires'
-                    (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
+                    (Validated.mkAnd argumentKoreTerm $ Validated.mkTop sort)
                 )
-                ( TermLike.mkEquals sort left $
-                    TermLike.mkAnd right ensures'
+                ( Validated.mkEquals sort leftKoreTerm $
+                    Validated.mkAnd rightKoreTerm ensures'
                 )
     -- unconditional equation
     | isTop requires
       , isTop ensures =
-        TermLike.mkEquals sort left right
+        Validated.mkEquals
+            sort
+            (TermLike.fromTermLike left)
+            (TermLike.fromTermLike right)
     -- conditional equation
     | otherwise =
-        TermLike.mkImplies
+        Validated.mkImplies
             requires'
-            ( TermLike.mkEquals sort left $
-                TermLike.mkAnd right ensures'
+            ( Validated.mkEquals sort leftKoreTerm $
+                Validated.mkAnd rightKoreTerm ensures'
             )
   where
     requires' = fromPredicate sort requires
     ensures' = fromPredicate rightSort ensures
+    leftKoreTerm = TermLike.fromTermLike left
+    rightKoreTerm = TermLike.fromTermLike right
     Equation
         { requires
         , argument

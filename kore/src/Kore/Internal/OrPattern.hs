@@ -23,6 +23,7 @@ module Kore.Internal.OrPattern (
     isTrue,
     toPattern,
     toTermLike,
+    toValidatedPattern,
     targetBinder,
     mapVariables,
     MultiOr.flatten,
@@ -42,6 +43,7 @@ import qualified Kore.Internal.Condition as Condition (
     toPredicate,
  )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Validate as Validated
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -224,6 +226,19 @@ getSortIfNotBottom multiOr =
         [] -> Nothing
         p : _ -> Just (Pattern.patternSort p)
 
+-- | Transforms an 'OrPattern' into a 'Validated.Pattern'.
+toValidatedPattern ::
+    InternalVariable variable =>
+    Sort ->
+    OrPattern variable ->
+    Validated.Pattern variable
+toValidatedPattern sort multiOr =
+    case toList multiOr of
+        [] -> Validated.mkBottom sort
+        [patt] -> Pattern.toValidatedPattern patt
+        patts -> foldr1 Validated.mkOr (Pattern.toValidatedPattern <$> patts)
+
+-- TODO: remove
 -- | Transforms a 'Pattern' into a 'TermLike'.
 toTermLike ::
     InternalVariable variable =>

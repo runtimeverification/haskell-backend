@@ -293,13 +293,14 @@ leftPattern =
 rhsToTerm ::
     InternalVariable variable =>
     RHS variable ->
-    TermLike.TermLike variable
+    Validated.Pattern variable
 rhsToTerm RHS{existentials, right, ensures} =
-    TermLike.mkExistsN existentials rhs
+    Validated.mkExistsN existentials rhs
   where
     rhs = case ensures of
-        Predicate.PredicateTrue -> right
-        _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
+        Predicate.PredicateTrue -> rightKoreTerm
+        _ -> Validated.mkAnd (Predicate.fromPredicate sort ensures) rightKoreTerm
+    rightKoreTerm = TermLike.fromTermLike right
     sort = TermLike.termLikeSort right
 
 -- | Converts the 'RHS' back to the term form.
@@ -327,13 +328,15 @@ lhsToTerm ::
     Predicate variable ->
     Validated.Pattern variable
 lhsToTerm left Nothing requires =
-    Validated.mkAnd (Predicate.fromPredicate (termLikeSort left) requires) left
+    Validated.mkAnd
+        (Predicate.fromPredicate (termLikeSort left) requires)
+        (TermLike.fromTermLike left)
 lhsToTerm left (Just antiLeft) requires =
     Validated.mkAnd
-        (Validated.mkNot (AntiLeft.toTermLike antiLeft))
+        (Validated.mkNot (AntiLeft.toValidatedPattern antiLeft))
         ( Validated.mkAnd
             (Predicate.fromPredicate (termLikeSort left) requires)
-            left
+            (TermLike.fromTermLike left)
         )
 
 -- | Wraps a term as a RHS

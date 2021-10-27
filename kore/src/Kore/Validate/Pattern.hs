@@ -9,6 +9,9 @@ module Kore.Validate.Pattern (
     patternSort,
     setSimplified,
 
+    Modality (..),
+    applyModality,
+
     -- * Pure Kore pattern constructors
     mkAnd,
     mkApplyAlias,
@@ -1630,3 +1633,73 @@ cannotSimplifyNotSimplifiedError termLikeF =
             ++ "\n"
             ++ Unparser.unparseToString termLikeF
         )
+
+data Modality = WEF | WAF
+
+-- | Weak exists finally modality symbol.
+weakExistsFinally :: Text
+weakExistsFinally = "weakExistsFinally"
+
+-- | Weak always finally modality symbol.
+weakAlwaysFinally :: Text
+weakAlwaysFinally = "weakAlwaysFinally"
+
+-- | 'Alias' construct for weak exist finally.
+wEF ::
+    InternalVariable variable =>
+    Sort ->
+    Alias (Pattern variable)
+wEF sort =
+    Alias
+        { aliasConstructor =
+            Id
+                { getId = weakExistsFinally
+                , idLocation = AstLocationNone
+                }
+        , aliasParams = [sort]
+        , aliasSorts =
+            ApplicationSorts
+                { applicationSortsOperands = [sort]
+                , applicationSortsResult = sort
+                }
+        , aliasLeft = []
+        , aliasRight = mkTop sort
+        }
+
+-- | 'Alias' construct for weak always finally.
+wAF ::
+    InternalVariable variable =>
+    Sort ->
+    Alias (Pattern variable)
+wAF sort =
+    Alias
+        { aliasConstructor =
+            Id
+                { getId = weakAlwaysFinally
+                , idLocation = AstLocationNone
+                }
+        , aliasParams = [sort]
+        , aliasSorts =
+            ApplicationSorts
+                { applicationSortsOperands = [sort]
+                , applicationSortsResult = sort
+                }
+        , aliasLeft = []
+        , aliasRight = mkTop sort
+        }
+{- | Apply one of the reachability modality aliases
+ to a term.
+-}
+applyModality ::
+    InternalVariable variable =>
+    Modality ->
+    Pattern variable ->
+    Pattern variable
+applyModality modality term =
+    case modality of
+        WEF ->
+            mkApplyAlias (wEF sort) [term]
+        WAF ->
+            mkApplyAlias (wAF sort) [term]
+  where
+    sort = patternSort term
