@@ -212,6 +212,7 @@ mkImplication modality left right existentials =
         }
 
 -- TODO: rename and docs
+
 {- | Construct a 'TermLike' from the parts of an implication-based rule.
 
 The 'TermLike' has the following form:

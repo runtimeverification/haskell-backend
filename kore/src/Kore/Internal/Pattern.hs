@@ -46,7 +46,6 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
  )
-import qualified Kore.Validate as Validated
 import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified,
  )
@@ -83,6 +82,7 @@ import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 {- | The conjunction of a pattern, predicate, and substitution.
@@ -198,7 +198,7 @@ toValidatedPattern ::
     Validated.Pattern variable
 toValidatedPattern Conditional{term, predicate, substitution} =
     let koreTerm = TermLike.fromTermLike term
-    in  simpleAnd
+     in simpleAnd
             (simpleAnd koreTerm predicate)
             (Substitution.toPredicate substitution)
   where
@@ -217,6 +217,7 @@ toValidatedPattern Conditional{term, predicate, substitution} =
         sort = Validated.patternSort koreTerm
 
 -- TODO: remove
+
 {- | Convert an 'Pattern' to an ordinary 'TermLike'.
 Conversion relies on the interpretation of 'Pattern' as a conjunction of
 patterns. Conversion erases the distinction between terms, predicates, and

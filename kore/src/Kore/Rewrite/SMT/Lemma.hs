@@ -132,7 +132,7 @@ declareSMTLemmas m = do
                             right'
                         )
                         ensuresPredicate
-                        )
+                    )
     convert patt = hush $ makePredicate patt
 
     addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr

@@ -8,7 +8,6 @@ module Kore.Validate.Pattern (
     extractAttributes,
     patternSort,
     setSimplified,
-
     Modality (..),
     applyModality,
 
@@ -1687,6 +1686,7 @@ wAF sort =
         , aliasLeft = []
         , aliasRight = mkTop sort
         }
+
 {- | Apply one of the reachability modality aliases
  to a term.
 -}

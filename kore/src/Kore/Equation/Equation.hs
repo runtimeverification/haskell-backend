@@ -14,7 +14,6 @@ module Kore.Equation.Equation (
 ) where
 
 import qualified Control.Lens as Lens
-import qualified Kore.Validate as Validated
 import qualified Data.Default as Default
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Wrapped (
@@ -65,6 +64,7 @@ import Kore.TopBottom
 import Kore.Unparser (
     Unparse (..),
  )
+import qualified Kore.Validate as Validated
 import qualified Kore.Variables.Fresh as Fresh
 import Prelude.Kore
 import Pretty (
@@ -222,7 +222,7 @@ toTermLike sort equation
       , TermLike.Ceil_ _ sort1 _ <- left
       , TermLike.Top_ sort2 <- right
       , sort1 == sort2 =
-          leftKoreTerm
+        leftKoreTerm
     -- function rule
     | Just argument' <- argument
       , Just antiLeft' <- antiLeft =

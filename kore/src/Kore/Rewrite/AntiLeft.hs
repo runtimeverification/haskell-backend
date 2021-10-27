@@ -16,7 +16,6 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-import qualified Kore.Validate as Validated
 import Data.Set (
     Set,
  )
@@ -69,6 +68,7 @@ import Kore.Syntax.Variable (
     Variable (variableName),
     mapElementVariable,
  )
+import qualified Kore.Validate as Validated
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )

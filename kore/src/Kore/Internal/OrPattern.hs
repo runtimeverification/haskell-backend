@@ -43,7 +43,6 @@ import qualified Kore.Internal.Condition as Condition (
     toPredicate,
  )
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Validate as Validated
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -70,6 +69,7 @@ import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import qualified Kore.Validate as Validated
 import Kore.Variables.Binding (
     Binder (..),
  )
@@ -239,6 +239,7 @@ toValidatedPattern sort multiOr =
         patts -> foldr1 Validated.mkOr (Pattern.toValidatedPattern <$> patts)
 
 -- TODO: remove
+
 -- | Transforms a 'Pattern' into a 'TermLike'.
 toTermLike ::
     InternalVariable variable =>
