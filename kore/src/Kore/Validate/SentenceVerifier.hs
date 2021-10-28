@@ -89,7 +89,8 @@ import Kore.Validate.Error
 import Kore.Validate.PatternVerifier as PatternVerifier
 import Kore.Validate.SortVerifier
 import Kore.Validate.Verifier
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 {- |'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -148,7 +149,7 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
 definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
 
-type SentenceVerifier = StateT VerifiedModule' Verifier
+type SentenceVerifier = StateT ValidatedModule' Verifier
 
 -- | Look up a sort declaration.
 findSort :: Id -> SentenceVerifier SentenceSort
@@ -185,8 +186,8 @@ lookupSortAttributes name = do
 
 runSentenceVerifier ::
     SentenceVerifier a ->
-    VerifiedModule' ->
-    Verifier (a, VerifiedModule')
+    ValidatedModule' ->
+    Verifier (a, ValidatedModule')
 runSentenceVerifier sentenceVerifier verifiedModule =
     runStateT sentenceVerifier verifiedModule
 
@@ -240,8 +241,8 @@ verifyHookedSymbolSentence sentence =
 addIndexedModuleHook ::
     Id ->
     Attribute.Hook ->
-    VerifiedModule' ->
-    VerifiedModule'
+    ValidatedModule' ->
+    ValidatedModule'
 addIndexedModuleHook name hook =
     Lens.over (field @"indexedModuleHookedIdentifiers") (Set.insert name)
         . Lens.over (field @"indexedModuleHooks") addHook
@@ -259,7 +260,7 @@ verifySymbols = traverse_ verifySymbolSentence . mapMaybe project
 
 verifySymbolSentence ::
     SentenceSymbol ->
-    SentenceVerifier Verified.SentenceSymbol
+    SentenceVerifier Validated.SentenceSymbol
 verifySymbolSentence sentence =
     withSentenceSymbolContext sentence $ do
         let sortParams = (symbolParams . sentenceSymbolSymbol) sentence
@@ -285,7 +286,7 @@ verifySymbolSentence sentence =
         Symbol{symbolConstructor = name} = sentenceSymbolSymbol verified
 
 verifyConstructor ::
-    Verified.SentenceSymbol ->
+    Validated.SentenceSymbol ->
     SentenceVerifier ()
 verifyConstructor verified = do
     resultSortId <-
@@ -316,7 +317,7 @@ verifyConstructor verified = do
 
 verifyAliasSentence ::
     ParsedSentenceAlias ->
-    SentenceVerifier Verified.SentenceAlias
+    SentenceVerifier Validated.SentenceAlias
 verifyAliasSentence sentence = do
     variables <- buildDeclaredSortVariables sortParams
     mapM_ (verifySort findSort variables) sentenceAliasSorts
@@ -367,7 +368,7 @@ verifyAxiomSentence sentence =
 
 verifyAxiomSentenceWorker ::
     ParsedSentenceAxiom ->
-    SentenceVerifier Verified.SentenceAxiom
+    SentenceVerifier Validated.SentenceAxiom
 verifyAxiomSentenceWorker sentence = do
     let sortParams = sentenceAxiomParameters sentence
     variables <- buildDeclaredSortVariables sortParams
@@ -426,7 +427,7 @@ verifySorts = traverse_ verifySortSentence . mapMaybe project
 
 verifySortSentence ::
     SentenceSort ->
-    SentenceVerifier Verified.SentenceSort
+    SentenceVerifier Validated.SentenceSort
 verifySortSentence sentence =
     withSentenceSortContext sentence $ do
         _ <- buildDeclaredSortVariables $ sentenceSortParameters sentence
@@ -482,7 +483,7 @@ parseAttributes' =
 
 parseAndVerifyAxiomAttributes ::
     MonadError (Error VerifyError) error =>
-    IndexedModule Verified.Pattern Attribute.Symbol attrs ->
+    IndexedModule ValidatedPattern Attribute.Symbol attrs ->
     FreeVariables VariableName ->
     Attributes ->
     error (Attribute.Axiom Symbol.Symbol VariableName)

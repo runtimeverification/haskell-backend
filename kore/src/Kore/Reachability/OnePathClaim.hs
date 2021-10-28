@@ -77,9 +77,9 @@ newtype OnePathClaim = OnePathClaim {getOnePathClaim :: ClaimPattern}
  as some of the variable information related to the
  rewriting algorithm is lost.
 -}
-onePathRuleToTerm :: OnePathClaim -> TermLike VariableName
+onePathRuleToTerm :: OnePathClaim -> Validated.Pattern RewritingVariableName
 onePathRuleToTerm (OnePathClaim claimPattern') =
-    claimPatternToTerm TermLike.WEF claimPattern'
+    claimPatternToTerm Validated.WEF claimPattern'
 
 mkOnePathClaim ::
     Pattern RewritingVariableName ->
@@ -176,14 +176,8 @@ instance Claim OnePathClaim where
 instance From (Rule OnePathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleOnePath
 
-instance From OnePathClaim (AxiomPattern VariableName) where
-    from = AxiomPattern . onePathRuleToTerm
-
 instance From OnePathClaim (AxiomPattern RewritingVariableName) where
-    from =
-        AxiomPattern
-            . TermLike.mapVariables (pure mkRuleVariable)
-            . onePathRuleToTerm
+    from = AxiomPattern . onePathRuleToTerm
 
 instance ClaimExtractor OnePathClaim where
     extractClaim (attributes, sentence) =

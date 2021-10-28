@@ -8,6 +8,8 @@ module Kore.Validate.Pattern (
     extractAttributes,
     patternSort,
     setSimplified,
+    mapVariables,
+
     Modality (..),
     applyModality,
 
@@ -93,6 +95,16 @@ module Kore.Validate.Pattern (
 import Control.Comonad.Trans.Cofree (
     tailF,
  )
+import Data.Functor.Identity (Identity, runIdentity)
+import Kore.Substitute
+import Kore.Variables.Fresh (refreshVariable)
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+import Data.Set (Set)
+import Data.Map.Strict (Map)
+import Kore.Internal.TermLike.Renaming
+import Kore.Variables.Binding
+import qualified Control.Monad.Reader as Reader
 import Control.Lens (
     Lens',
  )
@@ -1703,3 +1715,269 @@ applyModality modality term =
             mkApplyAlias (wAF sort) [term]
   where
     sort = patternSort term
+
+-- TODO: this and Pattern.mapVariables should use the same code
+{- | Use the provided mapping to replace all variables in a 'StepPattern'.
+
+@mapVariables@ is lazy: it descends into its argument only as the result is
+demanded. Intermediate allocation from composing multiple transformations with
+@mapVariables@ is amortized; the intermediate trees are never fully resident.
+
+See also: 'traverseVariables'
+-}
+mapVariables ::
+    forall variable1 variable2.
+    Ord variable1 =>
+    FreshPartialOrd variable2 =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    Pattern variable1 ->
+    Pattern variable2
+mapVariables adj termLike =
+    runIdentity (traverseVariables ((.) pure <$> adj) termLike)
+{-# INLINE mapVariables #-}
+
+{- | Use the provided traversal to replace all variables in a 'Pattern'.
+
+@traverseVariables@ is strict, i.e. its argument is fully evaluated before it
+returns. When composing multiple transformations with @traverseVariables@, the
+intermediate trees will be fully allocated; @mapVariables@ is more composable in
+this respect.
+
+See also: 'mapVariables'
+-}
+traverseVariables ::
+    forall variable1 variable2 m.
+    Ord variable1 =>
+    FreshPartialOrd variable2 =>
+    Monad m =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    Pattern variable1 ->
+    m (Pattern variable2)
+traverseVariables adj termLike =
+    renameFreeVariables
+        adj
+        (Attribute.freeVariables @_ @variable1 termLike)
+        >>= Reader.runReaderT (Recursive.fold worker termLike)
+  where
+    adjReader = (.) lift <$> adj
+    trElemVar = traverse $ traverseElementVariableName adjReader
+    trSetVar = traverse $ traverseSetVariableName adjReader
+    traverseExists avoiding =
+        existsBinder (renameElementBinder trElemVar avoiding)
+    traverseForall avoiding =
+        forallBinder (renameElementBinder trElemVar avoiding)
+    traverseMu avoiding =
+        muBinder (renameSetBinder trSetVar avoiding)
+    traverseNu avoiding =
+        nuBinder (renameSetBinder trSetVar avoiding)
+
+    worker ::
+        Base
+            (Pattern variable1)
+            (RenamingT variable1 variable2 m (Pattern variable2)) ->
+        RenamingT variable1 variable2 m (Pattern variable2)
+    worker (attrs :< termLikeF) = do
+        ~attrs' <- traverseAttributeVariables askSomeVariableName attrs
+        let ~avoiding = Attribute.freeVariables attrs'
+        termLikeF' <- case termLikeF of
+            VariableF (Const unifiedVariable) -> do
+                unifiedVariable' <- askSomeVariable unifiedVariable
+                (pure . VariableF) (Const unifiedVariable')
+            ExistsF exists -> ExistsF <$> traverseExists avoiding exists
+            ForallF forall -> ForallF <$> traverseForall avoiding forall
+            MuF mu -> MuF <$> traverseMu avoiding mu
+            NuF nu -> NuF <$> traverseNu avoiding nu
+            _ ->
+                sequence termLikeF
+                    >>=
+                    -- traverseVariablesF will not actually call the traversals
+                    -- because all the cases with variables are handled above.
+                    traverseVariablesF askSomeVariableName
+        (pure . Recursive.embed) (attrs' :< termLikeF')
+
+{- | Use the provided traversal to replace the free variables in a 'PatternAttributes'.
+
+See also: 'mapVariables'
+-}
+traverseAttributeVariables ::
+    forall m variable1 variable2.
+    Monad m =>
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    PatternAttributes variable1 ->
+    m (PatternAttributes variable2)
+traverseAttributeVariables adj =
+    Lens.Product.field @"termFreeVariables" (Attribute.traverseFreeVariables adj)
+
+{- | Use the provided traversal to replace all variables in a 'PatternF' head.
+
+__Warning__: @traverseVariablesF@ will capture variables if the provided
+traversal is not injective!
+-}
+traverseVariablesF ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    PatternF variable1 child ->
+    f (PatternF variable2 child)
+traverseVariablesF adj =
+    \case
+        -- Non-trivial cases
+        ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
+        ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        MuF any0 -> MuF <$> traverseVariablesMu any0
+        NuF any0 -> NuF <$> traverseVariablesNu any0
+        VariableF variable -> VariableF <$> traverseConstVariable variable
+        -- Trivial cases
+        AndF andP -> pure (AndF andP)
+        ApplySymbolF applySymbolF -> pure (ApplySymbolF applySymbolF)
+        ApplyAliasF applyAliasF -> pure (ApplyAliasF applyAliasF)
+        BottomF botP -> pure (BottomF botP)
+        CeilF ceilP -> pure (CeilF ceilP)
+        DomainValueF dvP -> pure (DomainValueF dvP)
+        EqualsF eqP -> pure (EqualsF eqP)
+        FloorF flrP -> pure (FloorF flrP)
+        IffF iffP -> pure (IffF iffP)
+        ImpliesF impP -> pure (ImpliesF impP)
+        InF inP -> pure (InF inP)
+        NextF nxtP -> pure (NextF nxtP)
+        NotF notP -> pure (NotF notP)
+        OrF orP -> pure (OrF orP)
+        RewritesF rewP -> pure (RewritesF rewP)
+        StringLiteralF strP -> pure (StringLiteralF strP)
+        InternalBoolF boolP -> pure (InternalBoolF boolP)
+        InternalBytesF bytesP -> pure (InternalBytesF bytesP)
+        InternalIntF intP -> pure (InternalIntF intP)
+        InternalStringF stringP -> pure (InternalStringF stringP)
+        InternalListF listP -> pure (InternalListF listP)
+        InternalMapF mapP -> pure (InternalMapF mapP)
+        InternalSetF setP -> pure (InternalSetF setP)
+        TopF topP -> pure (TopF topP)
+        InhabitantF s -> pure (InhabitantF s)
+        EndiannessF endianness -> pure (EndiannessF endianness)
+        SignednessF signedness -> pure (SignednessF signedness)
+        InjF inj -> pure (InjF inj)
+  where
+    trElemVar = traverse $ traverseElementVariableName adj
+    trSetVar = traverse $ traverseSetVariableName adj
+    traverseConstVariable (Const variable) =
+        Const <$> traverseSomeVariable adj variable
+    traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
+        Exists existsSort
+            <$> trElemVar existsVariable
+            <*> pure existsChild
+    traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
+        Forall forallSort
+            <$> trElemVar forallVariable
+            <*> pure forallChild
+    traverseVariablesMu Mu{muVariable, muChild} =
+        Mu <$> trSetVar muVariable <*> pure muChild
+    traverseVariablesNu Nu{nuVariable, nuChild} =
+        Nu <$> trSetVar nuVariable <*> pure nuChild
+
+instance InternalVariable variable => Substitute (Pattern variable) where
+    type TermType (Pattern variable) = Pattern variable
+
+    type VariableNameType (Pattern variable) = variable
+
+    rename = substitute . fmap mkVar
+    {-# INLINE rename #-}
+
+    substitute = substituteWorker . Map.map Left
+      where
+        extractFreeVariables ::
+            Pattern variable -> Set (SomeVariableName variable)
+        extractFreeVariables = Attribute.toNames . Attribute.freeVariables
+
+        getTargetFreeVariables ::
+            Either (Pattern variable) (SomeVariable variable) ->
+            Set (SomeVariableName variable)
+        getTargetFreeVariables =
+            either extractFreeVariables (Set.singleton . variableName)
+
+        renaming ::
+            -- | Original variable
+            SomeVariable variable ->
+            -- | Renamed variable
+            Maybe (SomeVariable variable) ->
+            -- | Substitution
+            Map
+                (SomeVariableName variable)
+                (Either (Pattern variable) (SomeVariable variable)) ->
+            Map
+                (SomeVariableName variable)
+                (Either (Pattern variable) (SomeVariable variable))
+        renaming Variable{variableName} =
+            maybe id (Map.insert variableName . Right)
+
+        substituteWorker ::
+            Map
+                (SomeVariableName variable)
+                (Either (Pattern variable) (SomeVariable variable)) ->
+            Pattern variable ->
+            Pattern variable
+        substituteWorker subst termLike =
+            substituteNone <|> substituteBinder <|> substituteVariable
+                & fromMaybe substituteDefault
+          where
+            substituteNone :: Maybe (Pattern variable)
+            substituteNone
+                | Map.null subst' = pure termLike
+                | otherwise = empty
+
+            substituteBinder :: Maybe (Pattern variable)
+            substituteBinder =
+                runIdentity <$> matchWith traverseBinder worker termLike
+              where
+                worker ::
+                    Binder (SomeVariable variable) (Pattern variable) ->
+                    Identity (Binder (SomeVariable variable) (Pattern variable))
+                worker Binder{binderVariable, binderChild} = do
+                    let binderVariable' = avoidCapture binderVariable
+                        -- Rename the freshened bound variable in the subterms.
+                        subst'' = renaming binderVariable binderVariable' subst'
+                    return
+                        Binder
+                            { binderVariable = fromMaybe binderVariable binderVariable'
+                            , binderChild = substituteWorker subst'' binderChild
+                            }
+
+            substituteVariable :: Maybe (Pattern variable)
+            substituteVariable =
+                either id id <$> matchWith traverseVariable worker termLike
+              where
+                worker ::
+                    SomeVariable variable ->
+                    Either (Pattern variable) (SomeVariable variable)
+                worker Variable{variableName} =
+                    -- If the variable is not substituted or renamed, return the
+                    -- original pattern.
+                    fromMaybe
+                        (Left termLike)
+                        -- If the variable is renamed, 'Map.lookup' returns a
+                        -- 'Right' which @traverseVariable@ embeds into
+                        -- @patternType@. If the variable is substituted,
+                        -- 'Map.lookup' returns a 'Left' which is used directly as
+                        -- the result, exiting early from @traverseVariable@.
+                        (Map.lookup variableName subst')
+
+            substituteDefault =
+                synthesize termLikeHead'
+              where
+                _ :< termLikeHead = Recursive.project termLike
+                termLikeHead' = substituteWorker subst' <$> termLikeHead
+
+            freeVars = extractFreeVariables termLike
+
+            subst' = Map.intersection subst (Map.fromSet id freeVars)
+
+            originalVariables = Set.difference freeVars (Map.keysSet subst')
+
+            freeVariables' = Set.union originalVariables targetFreeVariables
+              where
+                targetFreeVariables =
+                    foldl'
+                        Set.union
+                        Set.empty
+                        (getTargetFreeVariables <$> subst')
+
+            avoidCapture = refreshVariable freeVariables'

@@ -6,6 +6,7 @@ module Kore.Simplify.ExpandAlias (
     expandSingleAlias,
     matchExpandAlias,
     substituteInAlias,
+    substituteInAliasPattern,
     UnifyExpandAlias (..),
 ) where
 
@@ -28,6 +29,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Substitute
 import Prelude.Kore
+import qualified Kore.Validate as Validated
 
 data UnifyExpandAlias = UnifyExpandAlias
     { term1, term2 :: !(TermLike RewritingVariableName)
@@ -67,6 +69,24 @@ substituteInAlias Alias{aliasLeft, aliasRight} children =
     assert (length aliasLeft == length children) $
         substitute substitutionMap $
             mapVariables (pure fromVariableName) aliasRight
+  where
+    aliasLeft' =
+        mapSomeVariableName (pure fromVariableName) . variableName
+            <$> aliasLeft
+    substitutionMap = Map.fromList $ zip aliasLeft' children
+
+-- TODO(Vladimir): Check aliases such that the intersection of alias variables
+-- with the *bounded* variables in the rhs is empty (because we can't currently
+-- handle things like \mu.
+substituteInAliasPattern ::
+    InternalVariable variable =>
+    Alias (Validated.Pattern VariableName) ->
+    [Validated.Pattern variable] ->
+    Validated.Pattern variable
+substituteInAliasPattern Alias{aliasLeft, aliasRight} children =
+    assert (length aliasLeft == length children) $
+        substitute substitutionMap $
+            Validated.mapVariables (pure fromVariableName) aliasRight
   where
     aliasLeft' =
         mapSomeVariableName (pure fromVariableName) . variableName

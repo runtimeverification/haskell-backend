@@ -110,9 +110,9 @@ instance From AllPathClaim Attribute.Trusted where
  as some of the variable information related to the
  rewriting algorithm is lost.
 -}
-allPathRuleToTerm :: AllPathClaim -> TermLike VariableName
+allPathRuleToTerm :: AllPathClaim -> Validated.Pattern RewritingVariableName
 allPathRuleToTerm (AllPathClaim claimPattern') =
-    claimPatternToTerm TermLike.WAF claimPattern'
+    claimPatternToTerm Validated.WAF claimPattern'
 
 instance UnifyingRule AllPathClaim where
     type UnifyingRuleVariable AllPathClaim = RewritingVariableName
@@ -124,14 +124,8 @@ instance UnifyingRule AllPathClaim where
     refreshRule stale (AllPathClaim claim) =
         AllPathClaim <$> refreshRule stale claim
 
-instance From AllPathClaim (AxiomPattern VariableName) where
-    from = AxiomPattern . allPathRuleToTerm
-
 instance From AllPathClaim (AxiomPattern RewritingVariableName) where
-    from =
-        AxiomPattern
-            . TermLike.mapVariables (pure mkRuleVariable)
-            . allPathRuleToTerm
+    from = AxiomPattern . allPathRuleToTerm
 
 instance Claim AllPathClaim where
     newtype Rule AllPathClaim = AllPathRewriteRule

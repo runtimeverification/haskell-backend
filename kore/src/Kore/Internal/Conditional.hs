@@ -31,6 +31,7 @@ import Data.Map.Strict (
     Map,
  )
 import qualified GHC.Generics as GHC
+import qualified Kore.Validate as Validated
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
@@ -344,6 +345,34 @@ instance
             (unparse2WithSort sort <$> termLikeSubstitution)
       where
         sort = termLikeSort term
+        termLikeSubstitution =
+            Substitution.singleSubstitutionToPredicate
+                <$> Substitution.unwrap substitution
+
+instance
+    InternalVariable variable =>
+    Unparse (Conditional variable (Validated.Pattern variable))
+    where
+    unparse Conditional{term, predicate, substitution} =
+        prettyConditional
+            sort
+            (unparse term)
+            (unparseWithSort sort predicate)
+            (unparseWithSort sort <$> termLikeSubstitution)
+      where
+        sort = Validated.patternSort term
+        termLikeSubstitution =
+            Substitution.singleSubstitutionToPredicate
+                <$> Substitution.unwrap substitution
+
+    unparse2 Conditional{term, predicate, substitution} =
+        prettyConditional
+            sort
+            (unparse2 term)
+            (unparse2WithSort sort predicate)
+            (unparse2WithSort sort <$> termLikeSubstitution)
+      where
+        sort = Validated.patternSort term
         termLikeSubstitution =
             Substitution.singleSubstitutionToPredicate
                 <$> Substitution.unwrap substitution

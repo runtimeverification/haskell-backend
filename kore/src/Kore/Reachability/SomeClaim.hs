@@ -129,7 +129,7 @@ instance From SomeClaim Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From SomeClaim (AxiomPattern VariableName) where
+instance From SomeClaim (AxiomPattern RewritingVariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
 
@@ -143,7 +143,8 @@ instance From SomeClaim Validated.Sentence where
                     , sentenceAxiomAttributes = Default.def
                     }
       where
-        AxiomPattern sentenceAxiomPattern = from claim
+        AxiomPattern sentenceAxiomPattern' = undefined -- from claim
+        sentenceAxiomPattern = undefined sentenceAxiomPattern'
 
 getConfiguration :: SomeClaim -> Pattern RewritingVariableName
 getConfiguration = Lens.view (lensClaimPattern . field @"left")

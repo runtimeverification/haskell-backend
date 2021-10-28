@@ -29,6 +29,7 @@ import Data.List.Extra (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified Kore.Syntax as Syntax
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor (
     isConstructor,
@@ -91,7 +92,7 @@ import Kore.Syntax.Id (
 import Kore.Unparser (
     unparse,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import qualified Pretty
 
@@ -119,9 +120,9 @@ data QualifiedAxiomPattern variable
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
--- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
+-- | Extracts all 'RewriteRule' axioms from a 'ValidatedModule'.
 extractRewriteAxioms ::
-    VerifiedModule declAtts ->
+    ValidatedModule declAtts ->
     [RewriteRule VariableName]
 extractRewriteAxioms idxMod =
     extractRewrites
@@ -138,18 +139,18 @@ extractRewriteAxioms idxMod =
         map (uncurry simpleRewriteTermToRule) simple
             ++ map (uncurry complexRewriteTermToRule) (concat complex)
 
-    stripForall (TermLike.Forall_ _ _ child) = stripForall child
+    stripForall (Validated.Forall_ _ _ child) = stripForall child
     stripForall child = child
 
     filterRewrites xys =
-        [(a, x) | (a, _ TermLike.:< TermLike.RewritesF x) <- xys]
+        [(a, x) | (a, _ :< Validated.RewritesF x) <- xys]
 
 {- | Extract all 'ImplicationRule' claims matching a given @level@ from
  a verified definition.
 -}
 extractImplicationClaims ::
     -- |'IndexedModule' containing the definition
-    VerifiedModule declAtts ->
+    ValidatedModule declAtts ->
     [ ( Attribute.Axiom Internal.Symbol.Symbol VariableName
       , ImplicationRule VariableName
       )
@@ -160,7 +161,7 @@ extractImplicationClaims =
 extractImplicationClaimFrom ::
     -- | Sentence to extract axiom pattern from
     ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-    , Verified.SentenceClaim
+    , Validated.SentenceClaim
     ) ->
     Maybe
         ( Attribute.Axiom Internal.Symbol.Symbol VariableName
@@ -171,10 +172,10 @@ extractImplicationClaimFrom (attrs, sentence) =
         Right (ImplicationAxiomPattern axiomPat) -> Just (attrs, axiomPat)
         _ -> Nothing
 
--- | Attempts to extract a rule from the 'Verified.Sentence'.
+-- | Attempts to extract a rule from the 'Validated.Sentence'.
 fromSentence ::
     ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-    , Verified.Sentence
+    , Validated.Sentence
     ) ->
     Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 fromSentence (attrs, Syntax.SentenceAxiomSentence sentenceAxiom) =
@@ -182,10 +183,10 @@ fromSentence (attrs, Syntax.SentenceAxiomSentence sentenceAxiom) =
 fromSentence _ =
     koreFail "Only axiom sentences can be translated to rules"
 
--- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
+-- | Attempts to extract a rule from the 'Validated.SentenceAxiom'.
 fromSentenceAxiom ::
     ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-    , Verified.SentenceAxiom
+    , Validated.SentenceAxiom
     ) ->
     Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 fromSentenceAxiom (attributes, sentenceAxiom) =
@@ -194,16 +195,16 @@ fromSentenceAxiom (attributes, sentenceAxiom) =
 simpleRewriteTermToRule ::
     InternalVariable variable =>
     Attribute.Axiom Internal.Symbol.Symbol variable ->
-    TermLike.Rewrites TermLike.Sort (TermLike.TermLike variable) ->
+    Syntax.Rewrites Sort (Validated.Pattern variable) ->
     RewriteRule variable
 simpleRewriteTermToRule attributes pat =
     case pat of
-        TermLike.Rewrites sort (TermLike.ApplyAlias_ alias params) rhs ->
+        Syntax.Rewrites sort (Validated.ApplyAlias_ alias params) rhs ->
             case substituteInAlias alias params of
-                TermLike.And_ _ requires lhs ->
+                Validated.And_ _ requires lhs ->
                     simpleRewriteTermToRule
                         attributes
-                        (TermLike.Rewrites sort (TermLike.mkAnd requires lhs) rhs)
+                        (Syntax.Rewrites sort (Validated.mkAnd requires lhs) rhs)
                 _ ->
                     (error . show . Pretty.vsep)
                         [ "LHS alias of rule is ill-formed."
@@ -228,7 +229,7 @@ simpleRewriteTermToRule attributes pat =
 complexRewriteTermToRule ::
     InternalVariable variable =>
     Attribute.Axiom Internal.Symbol.Symbol variable ->
-    TermLike.Rewrites TermLike.Sort (TermLike.TermLike variable) ->
+    Syntax.Rewrites Sort (Validated.Pattern variable) ->
     RewriteRule variable
 complexRewriteTermToRule attributes pat =
     case pat of
@@ -312,7 +313,7 @@ the right hand side condition is pushed into the disjunction when parsing.
 -}
 termToAxiomPattern ::
     Attribute.Axiom Internal.Symbol.Symbol VariableName ->
-    TermLike.TermLike VariableName ->
+    Validated.Pattern VariableName ->
     Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 termToAxiomPattern attributes pat =
     case pat of
@@ -398,7 +399,7 @@ mkRewriteAxiom ::
     TermLike.TermLike VariableName ->
     -- | requires clause
     Maybe (Sort -> TermLike.TermLike VariableName) ->
-    Verified.Sentence
+    Validated.Sentence
 mkRewriteAxiom lhs rhs requires =
     (Syntax.SentenceAxiomSentence . TermLike.mkAxiom_)
         ( TermLike.mkRewrites
@@ -419,7 +420,7 @@ mkEqualityAxiom ::
     TermLike.TermLike VariableName ->
     -- | requires clause
     Maybe (Sort -> TermLike.TermLike VariableName) ->
-    Verified.Sentence
+    Validated.Sentence
 mkEqualityAxiom lhs rhs requires =
     Syntax.SentenceAxiomSentence $
         TermLike.mkAxiom [sortVariableR] $
@@ -438,7 +439,7 @@ mkEqualityAxiom lhs rhs requires =
 mkCeilAxiom ::
     -- | the child of 'Ceil'
     TermLike.TermLike VariableName ->
-    Verified.Sentence
+    Validated.Sentence
 mkCeilAxiom child =
     Syntax.SentenceAxiomSentence $
         TermLike.mkAxiom [sortVariableR] $

@@ -225,27 +225,25 @@ left ∧ requires → alias(right)
 @
 -}
 claimPatternToTerm ::
-    Modality ->
+    Validated.Modality ->
     ClaimPattern ->
-    TermLike VariableName
+    Validated.Pattern RewritingVariableName
 claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
-    TermLike.mkImplies
-        (TermLike.mkAnd leftCondition leftTerm)
-        (TermLike.applyModality modality rightPattern)
+    Validated.mkImplies
+        (Validated.mkAnd leftCondition leftTerm)
+        (Validated.applyModality modality rightPattern)
   where
     ClaimPattern{left, right, existentials} = representation
     leftTerm =
         Internal.Pattern.term left
-            & getRewritingTerm
-    sort = TermLike.termLikeSort leftTerm
+            & TermLike.fromTermLike
+    sort = Validated.patternSort leftTerm
     leftCondition =
         Internal.Pattern.withoutTerm left
             & Internal.Pattern.fromCondition sort
-            & Internal.Pattern.toTermLike
-            & getRewritingTerm
+            & Internal.Pattern.toValidatedPattern
     rightPattern =
-        TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
-            & getRewritingTerm
+        Validated.mkExistsN existentials (OrPattern.toValidatedPattern sort right)
 
 substituteRight ::
     Map

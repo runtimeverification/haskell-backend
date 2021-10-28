@@ -165,7 +165,7 @@ validateAxiom attrs verified =
             checkArgIn badArg =
                 -- use dummy sort variable for pretty printing inside failOnJust
                 -- the term's AstLocation will be AstLocationNone
-                Just $ Predicate.fromPredicate (mkSortVariable "_") badArg
+                Just $ Predicate.fromPredicateOld (mkSortVariable "_") badArg
         findBadArgSubterm term = case term of
             _
                 | TermLike.isConstructorLike term -> descend
