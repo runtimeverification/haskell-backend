@@ -1,5 +1,9 @@
 Fixes #nnnn
 
+### Scope:
+
+### Estimate:
+
 ---
 
 ###### Review checklist

@@ -186,52 +186,52 @@ testDef =
                                     (mkTop sortVarS)
                                 )
                             )
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    ( mkApplySymbol
-                                        (injHead sortS sortS)
-                                        [ mkElemVar $
-                                            mkElementVariable (testId "tVar") sortS
-                                        ]
-                                    )
-                                    (mkApplySymbol sHead [])
+                            ( mkEquals
+                                sortVarS
+                                ( mkApplySymbol
+                                    (injHead sortS sortS)
+                                    [ mkElemVar $
+                                        mkElementVariable (testId "tVar") sortS
+                                    ]
                                 )
-                                (mkTop sortVarS)
-                            )
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol gHead [])
+                                ( mkAnd
                                     (mkApplySymbol sHead [])
-                                )
-                                (mkTop sortVarS)
-                            )
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
                                     (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
+                            )
+                }
+        , SentenceAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    externalize $
+                        mkImplies
+                            (mkTop sortVarS)
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol gHead [])
+                                ( mkAnd
+                                    (mkApplySymbol sHead [])
+                                    (mkTop sortS)
+                                )
+                            )
+                }
+        , SentenceAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    externalize $
+                        mkImplies
+                            (mkTop sortVarS)
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
+                                    (mkTop sortS)
+                                    (mkTop sortS)
+                                )
                             )
                 }
         , SentenceAxiomSentence
@@ -243,13 +243,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
                                     (mkApplySymbol sHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -261,13 +261,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
                                     (mkApplySymbol sHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -279,13 +279,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
                                     (mkApplySymbol tHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -297,13 +297,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
                                     (mkApplySymbol tHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -314,13 +314,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
                                     (mkApplySymbol tHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -331,13 +331,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol fHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol fHead [])
+                                ( mkAnd
                                     (mkApplySymbol gHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -351,13 +351,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol pHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol pHead [])
+                                ( mkAnd
                                     (mkApplySymbol qHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -371,13 +371,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol pHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol pHead [])
+                                ( mkAnd
                                     (mkApplySymbol tHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -391,13 +391,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkApplySymbol pHead [])
+                            ( mkEquals
+                                sortVarS
+                                (mkApplySymbol pHead [])
+                                ( mkAnd
                                     (mkApplySymbol qHead [])
+                                    (mkTop sortS)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -418,13 +418,13 @@ testDef =
                     externalize $
                         mkImplies
                             (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
-                                    sortVarS
-                                    (mkCeil sortVar1S (mkApplySymbol fHead []))
+                            ( mkEquals
+                                sortVarS
+                                (mkCeil sortVar1S (mkApplySymbol fHead []))
+                                ( mkAnd
+                                    (mkTop sortVar1S)
                                     (mkTop sortVar1S)
                                 )
-                                (mkTop sortVarS)
                             )
                 }
         ]
