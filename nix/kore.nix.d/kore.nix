@@ -606,6 +606,7 @@
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];

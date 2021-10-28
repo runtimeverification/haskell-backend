@@ -1,0 +1,20 @@
+  <generatedTop>
+    <k>
+      .
+    </k>
+    <size>
+      1
+    </size>
+  </generatedTop>
+#And
+  {
+    L
+  #Equals
+    .MyList
+  }
+#And
+  {
+    _0
+  #Equals
+    _E .MyList
+  }

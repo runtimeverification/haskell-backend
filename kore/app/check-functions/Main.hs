@@ -11,10 +11,11 @@ match the same term.
 -}
 module Main (main) where
 
+import Control.Monad.Catch (
+    handle,
+ )
 import GlobalMain (
     ExeName (..),
-    LoadedModule,
-    Main,
     loadDefinitions,
     loadModule,
     localOptions,
@@ -28,13 +29,15 @@ import Kore.BugReport (
     withBugReport,
  )
 import Kore.Exec (
-    checkBothMatch,
     checkFunctions,
  )
 import Kore.Log (
     KoreLogOptions,
     parseKoreLogOptions,
     runKoreLog,
+ )
+import Kore.Log.ErrorException (
+    handleSomeException,
  )
 import Kore.Options (
     InfoMod,
@@ -64,9 +67,6 @@ import System.Clock (
 import System.Exit (
     exitWith,
  )
-
-exeName :: ExeName
-exeName = ExeName "kore-check-functions"
 
 -- | Modifiers for the command line parser description
 checkerInfoModifiers :: InfoMod options
@@ -108,39 +108,38 @@ parseKoreCheckerOptions startTime =
             "module"
             "The name of the main module in the Kore definition."
 
+-- | Executable name
+exeName :: ExeName
+exeName = ExeName "kore-check-functions"
+
+-- | Environment variable name for extra arguments
+envName :: String
+envName = "KORE_CHECK_FUNCTIONS_OPTS"
+
 main :: IO ()
 main = do
     startTime <- getTime Monotonic
     options <-
         mainGlobal
             exeName
-            Nothing -- environment variable name for extra arguments
+            (Just envName) -- environment variable name for extra arguments
             (parseKoreCheckerOptions startTime)
             checkerInfoModifiers
     mapM_ mainWithOptions $ localOptions options
 
 mainWithOptions :: KoreCheckerOptions -> IO ()
-mainWithOptions opts = do
-    exitCode <- withBugReport' koreCheckFunctions
-    case exitCode of
-        ExitFailure _ -> exitWith exitCode
-        ExitSuccess ->
-            withBugReport' koreCheckBothMatch
-                >>= exitWith
-  where
-    withBugReport' check =
-        withBugReport exeName (bugReportOption opts) $ \tmpDir ->
-            getLoadedModule opts >>= check
-                & runKoreLog tmpDir (koreLogOptions opts)
+mainWithOptions opts =
+    withBugReport exeName (bugReportOption opts) (koreCheckFunctions opts)
+        >>= exitWith
 
-getLoadedModule :: KoreCheckerOptions -> Main LoadedModule
-getLoadedModule opts =
-    loadDefinitions [fileName opts]
-        >>= loadModule (mainModuleName opts)
-
-koreCheckBothMatch :: LoadedModule -> Main ExitCode
-koreCheckBothMatch loadedMod =
-    SMT.runSMT defaultConfig (pure ()) $ evalSimplifier loadedMod $ checkBothMatch loadedMod
-
-koreCheckFunctions :: LoadedModule -> Main ExitCode
-koreCheckFunctions = checkFunctions
+koreCheckFunctions :: KoreCheckerOptions -> FilePath -> IO ExitCode
+koreCheckFunctions opts tmpDir =
+    do
+        definitions <- loadDefinitions [fileName opts]
+        loadedModule <- loadModule (mainModuleName opts) definitions
+        checkFunctions loadedModule
+            & evalSimplifier loadedModule
+            & SMT.runSMT defaultConfig (pure ())
+        return ExitSuccess
+        & handle handleSomeException
+        & runKoreLog tmpDir (koreLogOptions opts)
