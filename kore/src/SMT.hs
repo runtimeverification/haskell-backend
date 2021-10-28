@@ -66,6 +66,7 @@ import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
     MonadThrow,
+    catch,
  )
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Counter as Counter
@@ -518,10 +519,15 @@ stopSolver mvar = do
 -- | Run an external SMT solver.
 runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
 runSMT config userInit smt =
-    Exception.bracket
-        (newSolver config)
-        stopSolver
-        (\mvar -> runSMT' config userInit mvar smt)
+    runBracketSMT `catch` \(_ :: Exception.SomeException) -> do
+        -- debugSMTCrash
+        runBracketSMT
+  where
+    runBracketSMT =
+        Exception.bracket
+            (newSolver config)
+            stopSolver
+            (\mvar -> runSMT' config userInit mvar smt)
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
 runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
@@ -572,6 +578,4 @@ setRLimit RLimit{getRLimit} =
 
 -- | Extract the reset interval value from the configuration.
 extractResetInterval :: SMT ResetInterval
-extractResetInterval =
-    SMT (Reader.asks config)
-        >>= return . resetInterval
+extractResetInterval = SMT $ Reader.asks $ resetInterval . config
