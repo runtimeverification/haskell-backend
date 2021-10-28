@@ -31,7 +31,6 @@ import Data.Map.Strict (
     Map,
  )
 import qualified GHC.Generics as GHC
-import qualified Kore.Validate as Validated
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
@@ -72,6 +71,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 import Pretty (
     Doc,

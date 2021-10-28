@@ -84,13 +84,13 @@ import Kore.Rewrite.ClaimPattern (
 import Kore.Sort
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
+import Kore.Validate (ValidatedPattern)
+import qualified Kore.Validate as Validated
 import Kore.Validate.AttributesVerifier
 import Kore.Validate.Error
 import Kore.Validate.PatternVerifier as PatternVerifier
 import Kore.Validate.SortVerifier
 import Kore.Validate.Verifier
-import qualified Kore.Validate as Validated
-import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 {- |'verifyUniqueNames' verifies that names defined in a list of sentences are

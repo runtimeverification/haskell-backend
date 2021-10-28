@@ -28,8 +28,8 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Substitute
-import Prelude.Kore
 import qualified Kore.Validate as Validated
+import Prelude.Kore
 
 data UnifyExpandAlias = UnifyExpandAlias
     { term1, term2 :: !(TermLike RewritingVariableName)

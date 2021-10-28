@@ -29,7 +29,6 @@ import Data.List.Extra (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Kore.Syntax as Syntax
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor (
     isConstructor,
@@ -85,6 +84,7 @@ import Kore.Sort (
     Sort (..),
     SortVariable (SortVariable),
  )
+import qualified Kore.Syntax as Syntax
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id (
     Id (..),

@@ -9,7 +9,6 @@ module Kore.Validate.Pattern (
     patternSort,
     setSimplified,
     mapVariables,
-
     Modality (..),
     applyModality,
 
@@ -95,20 +94,11 @@ module Kore.Validate.Pattern (
 import Control.Comonad.Trans.Cofree (
     tailF,
  )
-import Data.Functor.Identity (Identity, runIdentity)
-import Kore.Substitute
-import Kore.Variables.Fresh (refreshVariable)
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
-import Data.Set (Set)
-import Data.Map.Strict (Map)
-import Kore.Internal.TermLike.Renaming
-import Kore.Variables.Binding
-import qualified Control.Monad.Reader as Reader
 import Control.Lens (
     Lens',
  )
 import qualified Control.Lens as Lens
+import qualified Control.Monad.Reader as Reader
 import Data.Align (
     alignWith,
  )
@@ -124,8 +114,13 @@ import Data.Functor.Foldable (
     Recursive (..),
  )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Identity (Identity, runIdentity)
 import qualified Data.Generics.Product as Lens.Product
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import Data.Semigroup (Endo (..), appEndo)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import Data.These
 import qualified GHC.Generics as GHC
@@ -161,8 +156,10 @@ import Kore.Internal.Key (
     Key,
  )
 import Kore.Internal.Symbol
+import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
+import Kore.Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
@@ -187,6 +184,8 @@ import Kore.Syntax.Top
 import Kore.TopBottom
 import Kore.Unparser (Unparse (..))
 import qualified Kore.Unparser as Unparser
+import Kore.Variables.Binding
+import Kore.Variables.Fresh (refreshVariable)
 import Prelude.Kore
 import qualified Pretty
 
@@ -1717,6 +1716,7 @@ applyModality modality term =
     sort = patternSort term
 
 -- TODO: this and Pattern.mapVariables should use the same code
+
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 
 @mapVariables@ is lazy: it descends into its argument only as the result is
