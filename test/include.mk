@@ -107,6 +107,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
 	$(KOMPILE) $(KOMPILE_OPTS) --main-module $(KPROVE_MODULE) $(KPROVE_SPEC)
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) >$@ || true
+	rm -rf $(KOMPILED)
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
 
