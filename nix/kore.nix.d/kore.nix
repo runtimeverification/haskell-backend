@@ -275,7 +275,7 @@
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnNotImplemented"
-          "Kore/Log/WarnRetrySolverQuery"
+          "Kore/Log/DebugRetrySolverQuery"
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"
@@ -606,6 +606,7 @@
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];

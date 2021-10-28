@@ -50,6 +50,9 @@ import Kore.Log.DebugEvaluateCondition (
 import Kore.Log.DebugProven (
     DebugProven,
  )
+import Kore.Log.DebugRetrySolverQuery (
+    DebugRetrySolverQuery,
+ )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,
     DebugSolverSend,
@@ -71,6 +74,12 @@ import Kore.Log.ErrorBottomTotalFunction (
  )
 import Kore.Log.ErrorDecidePredicateUnknown (
     ErrorDecidePredicateUnknown,
+ )
+import Kore.Log.ErrorEquationRightFunction (
+    ErrorEquationRightFunction,
+ )
+import Kore.Log.ErrorEquationsSameMatch (
+    ErrorEquationsSameMatch,
  )
 import Kore.Log.ErrorException (
     ErrorException,
@@ -120,9 +129,6 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
  )
 import Kore.Log.WarnIfLowProductivity (
     WarnIfLowProductivity,
- )
-import Kore.Log.WarnRetrySolverQuery (
-    WarnRetrySolverQuery,
  )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
@@ -199,7 +205,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
-            , mk $ Proxy @WarnRetrySolverQuery
+            , mk $ Proxy @DebugRetrySolverQuery
             , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
             , mk $ Proxy @LogMessage
@@ -218,6 +224,8 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
             , mk $ Proxy @ErrorDecidePredicateUnknown
+            , mk $ Proxy @ErrorEquationRightFunction
+            , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorParse
             , mk $ Proxy @ErrorVerify
             , mk $ Proxy @ErrorRuleMergeDuplicateIds

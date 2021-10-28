@@ -143,19 +143,19 @@
 7. [Application Notes](#application-notes)
 8. [Glossary](#glossary)
 
-## [Introduction]{#introduction}
+## Introduction {#introduction}
 
-### [Motivation]{#introduction-motivation}
+### Motivation {#introduction-motivation}
 
-### [Document Structure]{#introduction-document-structure}
+### Document Structure {#introduction-document-structure}
 
-## [Basics]{#basics}
+## Basics {#basics}
 
-## [Design]{#design}
+## Design {#design}
 
-## [Implementation]{#implementation}
+## Implementation {#implementation}
 
-### [Context Map]{#implementation-context-map}
+### Context Map {#implementation-context-map}
 
 > [Domain Driven Design] deals with large models by dividing them into different Bounded Contexts and being explicit about their interrelationships."
 
@@ -168,7 +168,7 @@ Our boundaries are not very strict, because our domain is well-defined; that is,
 
 Sometimes *languages* and *workflows* overlap, but this should be avoided.
 
-#### [Low-level]{#implementation-context-map-low-level}
+#### Low-level {#implementation-context-map-low-level}
 
 
 ![context-map-low-level.jpg](./img/implementation/context-map/context-map-low-level.jpg)
@@ -176,13 +176,13 @@ Sometimes *languages* and *workflows* overlap, but this should be avoided.
 
 This diagram is intended to be normative. Question carefully any instance where the actual dependencies differ significantly from the relationships shown here. Note that all internal modules depend on Kore.Internal, but these are omitted for clarity. The diagram only depicts the core domain models. There are utility contexts for logging, databases, etc. which are not shown.
 
-#### [Interface]{#implementation-context-map-interface}
+#### Interface {#implementation-context-map-interface}
 
 
 ![context-map-interface.jpg](./img/implementation/context-map/context-map-interface.jpg)
 
 
-#### [Workflow]{#implementation-context-map-workflow}
+#### Workflow {#implementation-context-map-workflow}
 
 
 ![context-map-workflow.jpg](./img/implementation/context-map/context-map-workflow.jpg)
@@ -190,9 +190,9 @@ This diagram is intended to be normative. Question carefully any instance where 
 
 Kore.Exec and Kore.Repl control the input/output cycle with the user. These modules drive the data flow through the backend. Input passes through parsing and validation. The interface between these is mediated by Kore.Syntax. The valid definition and claims or patterns pass to Kore.Reachability, with the interface mediated by Kore.Internal and the other representations. The claims or program iterate through Kore.Rewrite and Kore.Simplify according to the controller, Kore.Reachability.
 
-### [Hooks]{#implementation-hooks}
+### Hooks {#implementation-hooks}
 
-#### [How To: Add Builtin Hook]{#implementation-hooks-add-builtin-hook}
+#### How To: Add Builtin Hook {#implementation-hooks-add-builtin-hook}
 
 [Pull request #632](https://github.com/kframework/kore/pull/632/files) ([TODO update PR](https://github.com/kframework/kore/pull/2845#discussion_r715497574))is a self-contained example of adding a builtin symbol. When adding a builtin symbol we should add:
 
@@ -204,11 +204,11 @@ Kore.Exec and Kore.Repl control the input/output cycle with the user. These modu
 
 The builtin domains are listed below, categorized by sort. Each sort and symbol is described and an example hooked declaration is given. Note that some domains depend on others being defined!
 
-#### [BOOL]{#implementation-hooks-bool}
+#### BOOL {#implementation-hooks-bool}
 
 No dependencies.
 
-##### [BOOL.Bool]{#implementation-hooks-bool-bool}
+##### BOOL.Bool {#implementation-hooks-bool-bool}
 
 The builtin Boolean sort:
 
@@ -224,7 +224,7 @@ Two domain values are recognized:
 \dv{Bool{}}("false") // Boolean false
 ```
 
-##### [BOOL.or]{#implementation-hooks-bool-or}
+##### BOOL.or {#implementation-hooks-bool-or}
 
 Logical OR: `\dv{Bool{}}("true")` if either operand is `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
 
@@ -234,7 +234,7 @@ hooked-symbol or{}(Bool{}, Bool{}) : Bool{}
 ```
 
 
-##### [BOOL.and]{#implementation-hooks-bool-and}
+##### BOOL.and {#implementation-hooks-bool-and}
 
 Logical AND: `\dv{Bool{}}("true")` if both operands are `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
 
@@ -243,7 +243,7 @@ hooked-symbol and{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.and")]
 ```
 
-##### [BOOL.xor]{#implementation-hooks-bool-xor}
+##### BOOL.xor {#implementation-hooks-bool-xor}
 
 Logical XOR: `\dv{Bool{}}("true")` if exactly one operand is `\dv{Bool{}}("true")`, otherwise `\dv{Bool{}}("false")`.
 
@@ -252,7 +252,7 @@ hooked-symbol xor{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.xor")]
 ```
 
-##### [BOOL.eq]{#implementation-hooks-bool-eq}
+##### BOOL.eq {#implementation-hooks-bool-eq}
 
 `\dv{Bool{}}("true")` if the operands are equal, otherwise `\dv{Bool{}}("false")`.
 
@@ -261,7 +261,7 @@ hooked-symbol eq{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.eq")]
 ```
 
-##### [BOOL.ne]{#implementation-hooks-bool-ne}
+##### BOOL.ne {#implementation-hooks-bool-ne}
 
 `\dv{Bool{}}("true")` if the operands are **not** equal, otherwise `\dv{Bool{}}("false")`.
 
@@ -270,7 +270,7 @@ hooked-symbol ne{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.ne")]
 ```
 
-##### [BOOL.not]{#implementation-hooks-bool-not}
+##### BOOL.not {#implementation-hooks-bool-not}
 
 Logical negation: `\dv{Bool{}}("true")` when its argument is `\dv{Bool{}}("false")` and vice versa.
 
@@ -279,7 +279,7 @@ hooked-symbol not{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.not")]
 ```
 
-##### [BOOL.implies]{#implementation-hooks-bool-implies}
+##### BOOL.implies {#implementation-hooks-bool-implies}
 
 Logical implication.
 
@@ -288,11 +288,11 @@ hooked-symbol implies{}(Bool{}, Bool{}) : Bool{}
     [hook{}("BOOL.implies")]
 ```
 
-#### [INT]{#implementation-hooks-int}
+#### INT {#implementation-hooks-int}
 
 Depends on `BOOL`.
 
-##### [INT.Int]{#implementation-hooks-int-int}
+##### INT.Int {#implementation-hooks-int-int}
 
 The builtin sort of arbitrary-precision integers.
 
@@ -309,7 +309,7 @@ Valid domain values are a string of decimal digits, optionally preceeded by a si
 \dv{Int{}}("+3")    // positive 3
 ```
 
-##### [INT.gt]{#implementation-hooks-int-gt}
+##### INT.gt {#implementation-hooks-int-gt}
 
 Comparison: is the first argument greater than the second?
 
@@ -318,7 +318,7 @@ hooked-symbol gt{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.gt")]
 ```
 
-##### [INT.ge]{#implementation-hooks-int-ge}
+##### INT.ge {#implementation-hooks-int-ge}
 
 Comparison: is the first argument greater than or equal to the second?
 
@@ -327,7 +327,7 @@ hooked-symbol ge{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.ge")]
 ```
 
-##### [INT.eq]{#implementation-hooks-int-eq}
+##### INT.eq {#implementation-hooks-int-eq}
 
 Comparison: is the first argument equal to the second?
 
@@ -336,7 +336,7 @@ hooked-symbol eq{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.eq")]
 ```
 
-##### [INT.le]{#implementation-hooks-int-le}
+##### INT.le {#implementation-hooks-int-le}
 
 Comparison: is the first argument less than or equal to the second?
 
@@ -345,7 +345,7 @@ hooked-symbol le{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.le")]
 ```
 
-##### [INT.lt]{#implementation-hooks-int-lt}
+##### INT.lt {#implementation-hooks-int-lt}
 
 Comparison: is the first argument less than the second?
 
@@ -354,7 +354,7 @@ hooked-symbol lt{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.lt")]
 ```
 
-##### [INT.ne]{#implementation-hooks-int-ne}
+##### INT.ne {#implementation-hooks-int-ne}
 
 Comparison: is the first argument inequal to the second?
 
@@ -363,7 +363,7 @@ hooked-symbol ne{}(Int{}, Int{}) : Bool{}
     [hook{}("INT.ne")]
 ```
 
-##### [INT.add]{#implementation-hooks-int-add}
+##### INT.add {#implementation-hooks-int-add}
 
 The sum of the arguments.
 
@@ -372,7 +372,7 @@ hooked-symbol add{}(Int{}, Int{}) : Int{}
     [hook{}("INT.add")]
 ```
 
-##### [INT.sub]{#implementation-hooks-int-sub}
+##### INT.sub {#implementation-hooks-int-sub}
 
 The difference of the arguments (the first less the second).
 
@@ -381,7 +381,7 @@ hooked-symbol sub{}(Int{}, Int{}) : Int{}
     [hook{}("INT.sub")]
 ```
 
-##### [INT.mul]{#implementation-hooks-int-mul}
+##### INT.mul {#implementation-hooks-int-mul}
 
 The product of the arguments.
 
@@ -390,7 +390,7 @@ hooked-symbol mul{}(Int{}, Int{}) : Int{}
     [hook{}("INT.mul")]
 ```
 
-##### [INT.abs]{#implementation-hooks-int-abs}
+##### INT.abs {#implementation-hooks-int-abs}
 
 The absolute value of the argument.
 
@@ -399,7 +399,7 @@ hooked-symbol abs{}(Int{}) : Int{}
     [hook{}("INT.abs")]
 ```
 
-##### [INT.tdiv]{#implementation-hooks-int-tdiv}
+##### INT.tdiv {#implementation-hooks-int-tdiv}
 
 Quotient of the first argument divided by the second (truncated toward zero). The result is `bottom{}()` if the second argument is zero.
 
@@ -408,7 +408,7 @@ hooked-symbol tdiv{}(Int{}, Int{}) : Int{}
     [hook{}("INT.tdiv")]
 ```
 
-##### [INT.tmod]{#implementation-hooks-int-tmod}
+##### INT.tmod {#implementation-hooks-int-tmod}
 
 Remainder of the first argument divided by the second (truncated toward zero). The result is `bottom{}()` if the second argument is zero.
 
@@ -417,7 +417,7 @@ hooked-symbol tmod{}(Int{}, Int{}) : Int{}
     [hook{}("INT.tmod")]
 ```
 
-##### [INT.ediv]{#implementation-hooks-int-ediv}
+##### INT.ediv {#implementation-hooks-int-ediv}
 
 Quotient of the first argument divided by the second (using the euclidean algorithm). The result is `bottom{}()` if the second argument is zero.
 
@@ -426,7 +426,7 @@ hooked-symbol ediv{}(Int{}, Int{}) : Int{}
     [hook{}("INT.ediv")]
 ```
 
-##### [INT.emod]{#implementation-hooks-int-emod}
+##### INT.emod {#implementation-hooks-int-emod}
 
 Remainder of the first argument divided by the second (using the euclidean algorithm). The result is guaranteed to be positive. The result is `bottom{}()` if the second argument is zero.
 
@@ -435,7 +435,7 @@ hooked-symbol emod{}(Int{}, Int{}) : Int{}
     [hook{}("INT.emod")]
 ```
 
-##### [INT.and]{#implementation-hooks-int-and}
+##### INT.and {#implementation-hooks-int-and}
 
 Bitwise and of the arguments.
 
@@ -444,7 +444,7 @@ hooked-symbol and{}(Int{}, Int{}) : Int{}
     [hook{}("INT.and")]
 ```
 
-##### [INT.or]{#implementation-hooks-int-or}
+##### INT.or {#implementation-hooks-int-or}
 
 Bitwise or of the arguments.
 
@@ -453,7 +453,7 @@ hooked-symbol or{}(Int{}, Int{}) : Int{}
     [hook{}("INT.or")]
 ```
 
-##### [INT.xor]{#implementation-hooks-int-xor}
+##### INT.xor {#implementation-hooks-int-xor}
 
 Bitwise exclusive or of the arguments.
 
@@ -462,7 +462,7 @@ hooked-symbol xor{}(Int{}, Int{}) : Int{}
     [hook{}("INT.xor")]
 ```
 
-##### [INT.not]{#implementation-hooks-int-not}
+##### INT.not {#implementation-hooks-int-not}
 
 Bitwise complement of the argument.
 
@@ -471,7 +471,7 @@ hooked-symbol not{}(Int{}) : Int{}
     [hook{}("INT.not")]
 ```
 
-##### [INT.shl]{#implementation-hooks-int-shl}
+##### INT.shl {#implementation-hooks-int-shl}
 
 Shift the bits of the first argument to the left. The second argument specifies how many bits to shift by, and will be truncated to the least-significant Haskell Int. The second argument can be negative, in which case the first argument will be shifted right.
 
@@ -480,7 +480,7 @@ hooked-symbol shl{}(Int{}, Int{}) : Int{}
     [hook{}("INT.shl")]
 ```
 
-##### [INT.shr]{#implementation-hooks-int-shr}
+##### INT.shr {#implementation-hooks-int-shr}
 
 Shift the bits of the first argument to the right. The second argument specifies how many bits to shift by, and will be truncated to the least-significant Haskell Int. The second argument can be negative, in which case the first argument will be shifted left.
 
@@ -489,7 +489,7 @@ hooked-symbol shr{}(Int{}, Int{}) : Int{}
     [hook{}("INT.shr")]
 ```
 
-##### [INT.pow]{#implementation-hooks-int-pow}
+##### INT.pow {#implementation-hooks-int-pow}
 
 The first argument raised to the power of the second argument. The result is `bottom{}()` if the second argument is negative.
 
@@ -498,7 +498,7 @@ hooked-symbol pow{}(Int{}, Int{}) : Int{}
     [hook{}("INT.pow")]
 ```
 
-##### [INT.powmod]{#implementation-hooks-int-powmod}
+##### INT.powmod {#implementation-hooks-int-powmod}
 
 The first argument raised to the power of the second argument, but performed modulo the third argument. The result is `\bottom{}()` if either:
 
@@ -510,7 +510,7 @@ hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
     [hook{}("INT.powmod")]
 ```
 
-##### [INT.log2]{#implementation-hooks-int-log2}
+##### INT.log2 {#implementation-hooks-int-log2}
 
 The base 2 logarithm of the argument. The result is `\bottom{}()` if the second argument is not positive.
 
@@ -519,18 +519,18 @@ hooked-symbol log2{}(Int{}) : Int{}
     [hook{}("INT.log2")]
 ```
 
-## [Language]{#language}
+## Language {#language}
 
-### [Lexical Structure]{#language-lexical-structure}
+### Lexical Structure {#language-lexical-structure}
 
-#### [Comments]{#language-lexical-structure-comments}
+#### Comments {#language-lexical-structure-comments}
 
 Kore allows C-style comments:
 
 * `//` line comment
 * `/*` block comment (non-nested) `*/`
 
-#### [String literals]{#language-lexical-structure-string-literals}
+#### String literals {#language-lexical-structure-string-literals}
 
 ```
 <string-literal>
@@ -548,7 +548,7 @@ The following table summarizes the escape sequences allowed in string literals. 
 
 TODO insert table
 
-#### [Keywords]{#language-lexical-structure-keywords}
+#### Keywords {#language-lexical-structure-keywords}
 
 ```
 <keyword>
@@ -560,7 +560,7 @@ TODO insert table
     | "alias"   | "where"
 ```
 
-#### [Identifiers]{#language-lexical-structure-identifiers}
+#### Identifiers {#language-lexical-structure-identifiers}
 
 ```
 <identifier>
@@ -594,7 +594,7 @@ TODO insert table
 
 Identifiers must not be `<keyword>`s.
 
-### [Syntax]{#language-syntax}
+### Syntax {#language-syntax}
 
 The syntax of Kore is defined here in [Backus-Naur form](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form), augmented with the following meta-syntactic notations for brevity:
 
@@ -609,7 +609,7 @@ The syntax of Kore is defined here in [Backus-Naur form](https://en.wikipedia.or
 
 ```
 
-#### [Sorts]{#language-syntax-sorts}
+#### Sorts {#language-syntax-sorts}
 
 A sort is either a *sort variable* or a *sort constructor* applied to a list of *sort parameters*.
 
@@ -628,7 +628,7 @@ A sort is either a *sort variable* or a *sort constructor* applied to a list of 
   ::= <[sort-variable]-sep-by-[","]>
 ```
 
-#### [Patterns]{#language-syntax-patterns}
+#### Patterns {#language-syntax-patterns}
 
 ```
 <pattern>
@@ -685,7 +685,7 @@ A sort is either a *sort variable* or a *sort constructor* applied to a list of 
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
 ```
 
-#### [Attributes]{#language-syntax-attributes}
+#### Attributes {#language-syntax-attributes}
 
 Attributes are hints to the backend, often collected by the frontend. Some attributes express syntactic information, while others express semantic information. All semantic information contained in attributes should correspond to axioms declared explicitly. The hints indicate when the backend may use faster algorithms, more efficient data structures, etc. (TODO be more specific). The meaning of particular attributes is implementation-defined. The order of attributes is **never** significant.
 
@@ -697,7 +697,7 @@ Attributes are hints to the backend, often collected by the frontend. Some attri
   ::= <[attribute]-sep-by-[","]>
 ```
 
-#### [Sentences]{#language-syntax-sentences}
+#### Sentences {#language-syntax-sentences}
 
 A sentence is a single declaration. Sentences always appear inside modules, defined below.
 
@@ -741,7 +741,7 @@ A sentence is a single declaration. Sentences always appear inside modules, defi
 <symbol-or-alias> ::= <symbol-id> "{" <sort-variables> "}"
 ```
 
-#### [Definition and modules]{#language-syntax-definition-and-modules}
+#### Definition and modules {#language-syntax-definition-and-modules}
 
 A definition is a non-empty sequence of modules.
 
@@ -756,7 +756,7 @@ A definition is a non-empty sequence of modules.
   :: <[module]-sep-by-1-[whitespace]>
 ```
 
-### [Validity]{#language-validity}
+### Validity {#language-validity}
 
 A valid Kore definition conforms to the grammar of `<definition>` described above and the following conditions:
 
@@ -789,9 +789,9 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 4. In any matching logic pattern, the sort of pattern arguments agrees with the specified argument sort parameter.
 5. In any binder (quantifier or fixpoint), the sort of the variable argument agrees with its free occurrences in the pattern argument.
 
-### [Implicit Sort Signatures]{#language-implicit-sort-signatures}
+### Implicit Sort Signatures {#language-implicit-sort-signatures}
 
-#### [Connectives]{#language-implicit-sort-signatures-connectives}
+#### Connectives {#language-implicit-sort-signatures-connectives}
 
 ```
 \top{S}() : S
@@ -803,44 +803,44 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 \iff{S}(S, S) : S
 ```
 
-#### [Quantifiers]{#language-implicit-sort-signatures-quantifiers}
+#### Quantifiers {#language-implicit-sort-signatures-quantifiers}
 
 ```
 \exists{S}(x:T, S)
 \forall{S}(x:T, S)
 ```
 
-#### [Fixpoints]{#language-implicit-sort-signatures-fixpoints}
+#### Fixpoints {#language-implicit-sort-signatures-fixpoints}
 
 ```
 \mu{}(@X:S, S) : S
 \nu{}(@X:S, S) : S
 ```
 
-#### [Rewriting]{#language-implicit-sort-signatures-rewriting}
+#### Rewriting {#language-implicit-sort-signatures-rewriting}
 
 ```
 \next{S}(S) : S
 \rewrites{S}(S, S) : S
 ```
 
-#### [Domain values]{#language-implicit-sort-signatures-domain-values}
+#### Domain values {#language-implicit-sort-signatures-domain-values}
 
 ```
 \dv{S}(#String) : S
 ```
 
-## [Commands]{#commands}
+## Commands {#commands}
 
-### [kore-exec]{#commands-kore-exec}
+### kore-exec {#commands-kore-exec}
 
-### [kore-repl]{#commands-kore-repl}
+### kore-repl {#commands-kore-repl}
 
-## [K Framework]{#kframework}
+## K Framework {#kframework}
 
-## [Application Notes]{#application-notes}
+## Application Notes {#application-notes}
 
-## [Glossary]{#glossary}
+## Glossary {#glossary}
 
 [*BMC*]{#glossary-bmc}
 
@@ -885,7 +885,7 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 
   1. (noun) A [predicate](#glossary-predicate) of the form $x_1=\varphi_1 \land x_2=\varphi_2 \land \dots \land x_n=\varphi_n$ where $x_i$ are variables and $\varphi_i$ are patterns.
 
-[*symbol]{#glossary-symbol}
+[*symbol*]{#glossary-symbol}
 
   1. TODO
 
