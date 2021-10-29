@@ -41,8 +41,8 @@ import Kore.Internal.SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
-    evaluate,
+import qualified Kore.Rewrite.SMT.Evaluator as SMT (
+    evalConditional,
  )
 import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Rewrite.Substitution (
@@ -152,23 +152,17 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [Conditional.substitution predSubst]
-            let simplified = merged
-            smtEvaluation <-
-                lift $ SMT.Evaluator.evaluate simplified
-            case smtEvaluation of
+            lift (SMT.evalConditional merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition
-                        [Conditional.predicate simplified]
-                        [ Conditional.substitution merged
-                        , Conditional.substitution simplified
-                        ]
+                        [Conditional.predicate merged]
+                        [Conditional.substitution merged]
                 Just False -> return Condition.bottom
                 Just True ->
-                    return
-                        ( Condition.fromSubstitution
-                            (Conditional.substitution merged)
-                        )
+                    Conditional.substitution merged
+                        & Condition.fromSubstitution
+                        & return
     results <- lift $ traverse mergeAndEvaluate unifiers
     let orResults :: OrCondition RewritingVariableName
         orResults = MultiOr.mergeAll results

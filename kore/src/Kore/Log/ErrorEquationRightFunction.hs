@@ -7,8 +7,9 @@ module Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
 ) where
 
-import Control.Monad.Catch (
+import Control.Exception (
     Exception (..),
+    throw,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -23,18 +24,14 @@ import Kore.Internal.TermLike (
  )
 import Log (
     Entry (..),
-    MonadLog,
     Severity (Error),
     SomeEntry (SomeEntry),
-    logError,
  )
 import Prelude.Kore
 import Pretty (
     Pretty,
     indent,
-    layoutOneLine,
     pretty,
-    renderText,
     vsep,
  )
 import SQL (
@@ -76,9 +73,5 @@ instance Entry ErrorEquationRightFunction where
 instance SQL.Table ErrorEquationRightFunction
 
 -- | Error when RHS of equation is not a function pattern.
-errorEquationRightFunction ::
-    MonadLog m =>
-    Equation VariableName ->
-    m ()
-errorEquationRightFunction =
-    logError . renderText . layoutOneLine . pretty . ErrorEquationRightFunction
+errorEquationRightFunction :: Equation VariableName -> m ()
+errorEquationRightFunction = throw . ErrorEquationRightFunction
