@@ -11,11 +11,11 @@ module Kore.Rewrite.AntiLeft (
     toValidatedPattern,
 ) where
 
+import Control.Error (hush)
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-import Control.Error (hush)
 import Data.Set (
     Set,
  )
