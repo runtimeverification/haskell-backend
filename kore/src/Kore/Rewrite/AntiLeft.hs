@@ -8,7 +8,6 @@ module Kore.Rewrite.AntiLeft (
     forgetSimplified,
     mapVariables,
     parse,
-    toTermLike,
     toValidatedPattern,
 ) where
 
@@ -16,6 +15,7 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
+import Control.Error (hush)
 import Data.Set (
     Set,
  )
@@ -59,6 +59,7 @@ import Kore.Internal.Variable (
  )
 import Kore.Simplify.ExpandAlias (
     substituteInAlias,
+    substituteInAliasPattern,
  )
 import Kore.Substitute
 import Kore.Syntax.Variable (
@@ -149,7 +150,7 @@ higher priority (i.e. lower priority number)
 -}
 data AntiLeft variable = AntiLeft
     { -- | The alias that was expanded.
-      aliasTerm :: !(TermLike variable)
+      aliasTerm :: !(Validated.Pattern variable)
     , -- | The nextAntiLeft, if any.
       maybeInner :: !(Maybe (AntiLeft variable))
     , -- | patterns corresponding to rules with the same priority number.
@@ -188,7 +189,7 @@ instance
         AntiLeftLhs{existentials, predicate, term} = antiLeft
 
 instance InternalVariable variable => Substitute (AntiLeft variable) where
-    type TermType (AntiLeft variable) = TermLike variable
+    type TermType (AntiLeft variable) = Validated.Pattern variable
 
     type VariableNameType (AntiLeft variable) = variable
 
@@ -196,12 +197,14 @@ instance InternalVariable variable => Substitute (AntiLeft variable) where
         AntiLeft
             { aliasTerm = substitute subst aliasTerm
             , maybeInner = substitute subst <$> maybeInner
-            , leftHands = map (substitute subst) leftHands
+            , leftHands = map (substitute subst') leftHands
             }
       where
         AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
+        -- TODO: should this extract all TermLike substitutions from the Map?
+        subst' = undefined subst
 
-    rename = substitute . fmap mkVar
+    rename = substitute . fmap Validated.mkVar
     {-# INLINE rename #-}
 
 mapVariables ::
@@ -211,7 +214,7 @@ mapVariables ::
     AntiLeft variable2
 mapVariables adj antiLeft@(AntiLeft _ _ _) =
     AntiLeft
-        { aliasTerm = TermLike.mapVariables adj aliasTerm
+        { aliasTerm = Validated.mapVariables adj aliasTerm
         , maybeInner = mapVariables adj <$> maybeInner
         , leftHands = map (mapVariablesLeft adj) leftHands
         }
@@ -238,7 +241,7 @@ forgetSimplified ::
     AntiLeft variable
 forgetSimplified antiLeft@(AntiLeft _ _ _) =
     AntiLeft
-        { aliasTerm = TermLike.forgetSimplified aliasTerm
+        { aliasTerm = Validated.forgetSimplified aliasTerm
         , maybeInner = forgetSimplified <$> maybeInner
         , leftHands = map forgetSimplifiedLeft leftHands
         }
@@ -259,11 +262,7 @@ forgetSimplifiedLeft antiLeftLhs@(AntiLeftLhs _ _ _) =
     AntiLeftLhs{existentials, predicate, term} = antiLeftLhs
 
 toValidatedPattern :: AntiLeft variable -> Validated.Pattern variable
-toValidatedPattern AntiLeft{aliasTerm} = TermLike.fromTermLike aliasTerm
-
--- TODO: remove
-toTermLike :: AntiLeft variable -> TermLike variable
-toTermLike AntiLeft{aliasTerm} = aliasTerm
+toValidatedPattern AntiLeft{aliasTerm} = aliasTerm
 
 {-
 Supported syntax:
@@ -282,12 +281,12 @@ and(lhsPredicate, lhsTerm)
 -}
 parse ::
     InternalVariable variable =>
-    TermLike variable ->
+    Validated.Pattern variable ->
     Maybe (AntiLeft variable)
-parse aliasTerm@(ApplyAlias_ alias params) = do
+parse aliasTerm@(Validated.ApplyAlias_ alias params) = do
     (maybeInner, lhss) <-
-        case substituteInAlias alias params of
-            substituted@(Or_ _ first remaining) ->
+        case substituteInAliasPattern alias params of
+            substituted@(Validated.Or_ _ first remaining) ->
                 case parse first of
                     Just nextAntiLeft ->
                         Just (Just nextAntiLeft, remaining)
@@ -299,22 +298,23 @@ parse _ = Nothing
 
 parseLhss ::
     InternalVariable variable =>
-    TermLike variable ->
+    Validated.Pattern variable ->
     Maybe [AntiLeftLhs variable]
-parseLhss (Or_ _ first nexts) = do
+parseLhss (Validated.Or_ _ first nexts) = do
     firstParsed <- parseLhs first
     nextsParsed <- parseLhss nexts
     return (firstParsed : nextsParsed)
-parseLhss (Bottom_ _) = Just []
+parseLhss (Validated.Bottom_ _) = Just []
 parseLhss _ = Nothing
 
 parseLhs ::
     InternalVariable variable =>
-    TermLike variable ->
+    Validated.Pattern variable ->
     Maybe (AntiLeftLhs variable)
 parseLhs lhs = case aliasTerm of
-    (ApplyAlias_ alias params) -> case substituteInAlias alias params of
-        (And_ _ predicate term) ->
+    (Validated.ApplyAlias_ alias params) -> case substituteInAliasPattern alias params of
+        (Validated.And_ _ predicate term) -> do
+            term <- hush $ TermLike.makeTermLike term
             Just
                 AntiLeftLhs
                     { existentials
@@ -327,8 +327,8 @@ parseLhs lhs = case aliasTerm of
     (existentials, aliasTerm) = stripExistentials lhs
 
     stripExistentials ::
-        TermLike variable -> ([ElementVariable variable], TermLike variable)
-    stripExistentials (Exists_ _ var term) = (var : vars, remaining)
+        Validated.Pattern variable -> ([ElementVariable variable], Validated.Pattern variable)
+    stripExistentials (Validated.Exists_ _ var term) = (var : vars, remaining)
       where
         (vars, remaining) = stripExistentials term
     stripExistentials term = ([], term)

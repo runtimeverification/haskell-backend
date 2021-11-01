@@ -8,6 +8,7 @@ module Kore.Validate.Pattern (
     extractAttributes,
     patternSort,
     setSimplified,
+    forgetSimplified,
     mapVariables,
     Modality (..),
     applyModality,
@@ -225,11 +226,12 @@ data PatternF variable child
     | EndiannessF !(Const Endianness child)
     | SignednessF !(Const Signedness child)
     | InjF !(Inj child)
-    deriving stock (Show, Eq)
+    deriving stock (Eq, Ord, Show)
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug)
+    deriving anyclass (Debug, Diff)
 
 instance
     ( AstWithLocation child
@@ -559,7 +561,7 @@ newtype Pattern variable = Pattern
             (PatternAttributes variable)
             (Pattern variable)
     }
-    deriving stock (Show, Eq)
+    deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -587,6 +589,43 @@ instance Attribute.HasFreeVariables (Pattern variable) variable where
 
 instance AstWithLocation variable => AstWithLocation (Pattern variable) where
     locationFromAst = locationFromAst . tailF . Recursive.project
+
+instance (Debug variable, Diff variable) => Diff (Pattern variable) where
+    diffPrec
+        termLike1@(Recursive.project -> attrs1 :< termLikeF1)
+        termLike2@(Recursive.project -> _ :< termLikeF2) =
+            -- If the patterns differ, do not display the difference in the
+            -- attributes, which would overload the user with redundant information.
+            diffPrecGeneric
+                (Recursive.embed (attrs1 :< termLikeF1))
+                (Recursive.embed (attrs1 :< termLikeF2))
+                <|> diffPrecGeneric termLike1 termLike2
+
+instance
+    (Eq variable, Eq (PatternF variable (Pattern variable))) =>
+    Eq (Pattern variable)
+    where
+    (==)
+        (Recursive.project -> _ :< pat1)
+        (Recursive.project -> _ :< pat2) =
+            pat1 == pat2
+
+instance
+    (Ord variable, Ord (PatternF variable (Pattern variable))) =>
+    Ord (Pattern variable)
+    where
+    compare
+        (Recursive.project -> _ :< pat1)
+        (Recursive.project -> _ :< pat2) =
+            compare pat1 pat2
+
+instance Hashable variable => Hashable (Pattern variable) where
+    hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
+    {-# INLINE hashWithSalt #-}
+
+instance NFData variable => NFData (Pattern variable) where
+    rnf (Recursive.project -> annotation :< pat) =
+        rnf annotation `seq` rnf pat
 
 -- TODO: can this and Pattern's instance be factored out?
 instance Unparse variable => Unparse (Pattern variable) where
@@ -667,6 +706,8 @@ data PatternAttributes variable = PatternAttributes
 
 instance Attribute.HasFreeVariables (PatternAttributes variable) variable where
     freeVariables = termFreeVariables
+
+instance (Debug variable, Diff variable) => Diff (PatternAttributes variable)
 
 instance
     ( Functor base
@@ -1981,3 +2022,44 @@ instance InternalVariable variable => Substitute (Pattern variable) where
                         (getTargetFreeVariables <$> subst')
 
             avoidCapture = refreshVariable freeVariables'
+
+instance InternalVariable variable => Binding (Pattern variable) where
+    type VariableType (Pattern variable) = variable
+
+    traverseVariable traversal termLike =
+        case termLikeF of
+            VariableF (Const unifiedVariable) ->
+                mkVar <$> traversal unifiedVariable
+            _ -> pure termLike
+      where
+        _ :< termLikeF = Recursive.project termLike
+
+    traverseSetBinder traversal termLike =
+        case termLikeF of
+            MuF mu -> synthesize . MuF <$> muBinder traversal mu
+            NuF nu -> synthesize . NuF <$> nuBinder traversal nu
+            _ -> pure termLike
+      where
+        _ :< termLikeF = Recursive.project termLike
+
+    traverseElementBinder traversal termLike =
+        case termLikeF of
+            ExistsF exists ->
+                synthesize . ExistsF <$> existsBinder traversal exists
+            ForallF forall ->
+                synthesize . ForallF <$> forallBinder traversal forall
+            _ -> pure termLike
+      where
+        _ :< termLikeF = Recursive.project termLike
+
+{- | Forget the 'simplifiedAttribute' associated with the 'Pattern.
+
+@
+isSimplified (forgetSimplified _) == False
+@
+-}
+forgetSimplified ::
+    InternalVariable variable =>
+    Pattern variable ->
+    Pattern variable
+forgetSimplified = resynthesize

@@ -79,6 +79,7 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Simplify.ExpandAlias (
     substituteInAlias,
+    substituteInAliasPattern,
  )
 import Kore.Sort (
     Sort (..),
@@ -200,7 +201,7 @@ simpleRewriteTermToRule ::
 simpleRewriteTermToRule attributes pat =
     case pat of
         Syntax.Rewrites sort (Validated.ApplyAlias_ alias params) rhs ->
-            case substituteInAlias alias params of
+            case substituteInAliasPattern alias params of
                 Validated.And_ _ requires lhs ->
                     simpleRewriteTermToRule
                         attributes
@@ -211,7 +212,7 @@ simpleRewriteTermToRule attributes pat =
                         , Pretty.indent 4 $ unparse pat
                         ]
         -- normal rewrite axioms
-        TermLike.Rewrites _ (TermLike.And_ _ requires lhs) rhs ->
+        Syntax.Rewrites _ (Validated.And_ _ requires lhs) rhs ->
             RewriteRule
                 RulePattern
                     { left = lhs

@@ -49,6 +49,7 @@ module Kore.Internal.Predicate (
     forgetSimplified,
     forgetSimplifiedSafe,
     wrapPredicate,
+    wrapPredicateOld,
     containsSymbolWithIdPred,
     refreshExists,
     toMultiAnd,
@@ -1354,9 +1355,22 @@ hasFreeVariable variableName =
 
 wrapPredicate ::
     InternalVariable variable =>
-    TermLike variable ->
+    Validated.Pattern variable ->
     Predicate variable
 wrapPredicate =
+    either
+        (error "Term cannot be wrapped.\nInput TermLike is not a Predicate despite being supposed to be\n")
+        id
+        . makePredicate
+
+-- !!  TODO The following is just a temporary solution and  !!
+-- !!  the code using wrapPredicate should be refactored    !!
+
+wrapPredicateOld ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Predicate variable
+wrapPredicateOld =
     either
         (error "Term cannot be wrapped.\nInput TermLike is not a Predicate despite being supposed to be\n")
         id
