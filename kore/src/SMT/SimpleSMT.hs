@@ -217,14 +217,17 @@ import System.Exit (
  )
 import System.IO (
     Handle,
-    hClose,
     hFlush,
     hPutChar,
  )
 import System.Process (
+    CreateProcess (..),
     ProcessHandle,
+    StdStream (CreatePipe),
+    cleanupProcess,
+    createProcess,
     getProcessExitCode,
-    runInteractiveProcess,
+    proc,
     waitForProcess,
  )
 import qualified Text.Megaparsec as Parser
@@ -332,7 +335,7 @@ newSolver ::
     Logger ->
     IO SolverHandle
 newSolver exe opts logger = do
-    (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
+    (Just hIn, Just hOut, Just hErr, hProc) <- createProcess solverProcess
     let solverHandle = SolverHandle{hIn, hOut, hErr, hProc, queryCounter = 0}
         solver = Solver{solverHandle, logger}
 
@@ -348,6 +351,13 @@ newSolver exe opts logger = do
         setOption solver ":produce-assertions" "true"
 
     return solverHandle
+  where
+    solverProcess =
+        (proc exe opts)
+            { std_in = CreatePipe
+            , std_out = CreatePipe
+            , std_err = CreatePipe
+            }
 
 logMessageWith ::
     HasCallStack =>
@@ -405,13 +415,12 @@ stop solver@Solver{solverHandle = SolverHandle{hIn, hOut, hErr, hProc}} =
     trySolver hProc $ do
         send solver (List [Atom "exit"])
         ec <- waitForProcess hProc
-        let handler :: X.IOException -> IO ()
-            handler ex = (debug solver . Text.pack) (show ex)
-        X.handle handler $ do
-            hClose hIn
-            hClose hOut
-            hClose hErr
+        cleanupProcess (Just hIn, Just hOut, Just hErr, hProc)
+            & X.handle handler
         return ec
+  where
+    handler :: X.IOException -> IO ()
+    handler = debug solver . Text.pack . show
 
 -- | Load the contents of a file.
 loadFile :: Solver -> FilePath -> IO ()
@@ -440,13 +449,11 @@ ackCommand solver c =
 
 -- | A command with no interesting result.
 ackCommandIgnoreErr :: Solver -> SExpr -> IO ()
-ackCommandIgnoreErr proc c = do
-    _ <- command proc c
-    pure ()
+ackCommandIgnoreErr solver = void . command solver
 
 -- | A command entirely made out of atoms, with no interesting result.
 simpleCommand :: Solver -> [Text] -> IO ()
-simpleCommand proc = ackCommand proc . List . map Atom
+simpleCommand solver = ackCommand solver . List . map Atom
 
 {- | Run a command and return True if successful, and False if unsupported.
  This is useful for setting options that unsupported by some solvers, but used
@@ -491,19 +498,19 @@ produceUnsatCores s = setOptionMaybe s ":produce-unsat-cores" "true"
 
 -- | Checkpoint state.  A special case of 'pushMany'.
 push :: Solver -> IO ()
-push proc = pushMany proc 1
+push solver = pushMany solver 1
 
 -- | Restore to last check-point.  A special case of 'popMany'.
 pop :: Solver -> IO ()
-pop proc = popMany proc 1
+pop solver = popMany solver 1
 
 -- | Push multiple scopes.
 pushMany :: Solver -> Integer -> IO ()
-pushMany proc n = simpleCommand proc ["push", Text.pack (show n)]
+pushMany solver n = simpleCommand solver ["push", Text.pack (show n)]
 
 -- | Pop multiple scopes.
 popMany :: Solver -> Integer -> IO ()
-popMany proc n = simpleCommand proc ["pop", Text.pack (show n)]
+popMany solver n = simpleCommand solver ["pop", Text.pack (show n)]
 
 -- | Execute the IO action in a new solver scope (push before, pop after)
 inNewScope :: Solver -> IO a -> IO a
@@ -515,23 +522,23 @@ inNewScope s m = do
  For convenience, returns an the declared name as a constant expression.
 -}
 declare :: Solver -> SExpr -> SExpr -> IO SExpr
-declare proc f t = declareFun proc (FunctionDeclaration f [] t)
+declare solver f t = declareFun solver (FunctionDeclaration f [] t)
 
 {- | Declare a function or a constant.
  For convenience, returns an the declared name as a constant expression.
 -}
 declareFun :: Solver -> SmtFunctionDeclaration -> IO SExpr
-declareFun proc FunctionDeclaration{name, inputSorts, resultSort} = do
-    ackCommand proc $
+declareFun solver FunctionDeclaration{name, inputSorts, resultSort} = do
+    ackCommand solver $
         fun "declare-fun" [name, List inputSorts, resultSort]
     pure name
 
 declareSort :: Solver -> SmtSortDeclaration -> IO SExpr
 declareSort
-    proc
+    solver
     SortDeclaration{name, arity} =
         do
-            ackCommand proc $
+            ackCommand solver $
                 fun "declare-sort" [name, (Atom . Text.pack . show) arity]
             pure name
 
@@ -540,14 +547,14 @@ declareDatatypes ::
     Solver ->
     [SmtDataTypeDeclaration] ->
     IO ()
-declareDatatypes proc datatypes = do
+declareDatatypes solver datatypes = do
     mapM_ declareDatatypeSort datatypes
     mapM_ addSortConstructors datatypes
   where
     declareDatatypeSort :: SmtDataTypeDeclaration -> IO SExpr
     declareDatatypeSort DataTypeDeclaration{name, typeArguments} =
         declareSort
-            proc
+            solver
             SortDeclaration{name, arity = length typeArguments}
 
     addSortConstructors :: SmtDataTypeDeclaration -> IO ()
@@ -555,7 +562,7 @@ declareDatatypes proc datatypes = do
         d@DataTypeDeclaration{constructors} =
             do
                 declareConstructors d constructors
-                assert proc (noJunkAxiom d constructors)
+                assert solver (noJunkAxiom d constructors)
                 return ()
 
     declareConstructors :: SmtDataTypeDeclaration -> [SmtConstructor] -> IO ()
@@ -573,7 +580,7 @@ declareDatatypes proc datatypes = do
     declareConstructor :: SExpr -> SmtConstructor -> IO SExpr
     declareConstructor sort Constructor{name = symbol, arguments} =
         declareFun
-            proc
+            solver
             FunctionDeclaration
                 { name = Atom symbol
                 , inputSorts = map argType arguments
@@ -661,7 +668,7 @@ declareDatatypes proc datatypes =
 
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype :: Solver -> SmtDataTypeDeclaration -> IO ()
-declareDatatype proc declaration = declareDatatypes proc [declaration]
+declareDatatype solver declaration = declareDatatypes solver [declaration]
 
 {- | Declare a constant.  A common abbreviation for 'declareFun'.
  For convenience, returns the defined name as a constant expression.
@@ -675,7 +682,7 @@ define ::
     -- | Symbol definition
     SExpr ->
     IO SExpr
-define proc f = defineFun proc f []
+define solver f = defineFun solver f []
 
 {- | Define a function or a constant.
  For convenience, returns an the defined name as a constant expression.
@@ -691,8 +698,8 @@ defineFun ::
     -- | Definition
     SExpr ->
     IO SExpr
-defineFun proc f as t e = do
-    ackCommand proc $
+defineFun solver f as t e = do
+    ackCommand solver $
         fun
             "define-fun"
             [Atom f, List [List [const x, a] | (x, a) <- as], t, e]
@@ -700,7 +707,7 @@ defineFun proc f as t e = do
 
 -- | Assume a fact.
 assert :: Solver -> SExpr -> IO ()
-assert proc e = ackCommand proc $ fun "assert" [e]
+assert solver e = ackCommand solver $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
@@ -786,21 +793,21 @@ getExprs solver vals =
  Only valid after a 'Sat' result.
 -}
 getConsts :: Solver -> [Text] -> IO [(Text, Value)]
-getConsts proc xs =
+getConsts solver xs =
     do
-        ans <- getExprs proc (map Atom xs)
+        ans <- getExprs solver (map Atom xs)
         return [(x, e) | (Atom x, e) <- ans]
 
 -- | Get the value of a single expression.
 getExpr :: Solver -> SExpr -> IO Value
-getExpr proc x =
+getExpr solver x =
     do
-        [(_, v)] <- getExprs proc [x]
+        [(_, v)] <- getExprs solver [x]
         return v
 
 -- | Get the value of a single constant.
 getConst :: Solver -> Text -> IO Value
-getConst proc x = getExpr proc (Atom x)
+getConst solver x = getExpr solver (Atom x)
 
 -- | Returns the names of the (named) formulas involved in a contradiction.
 getUnsatCore :: Solver -> IO [Text]
