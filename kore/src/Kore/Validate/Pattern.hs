@@ -95,6 +95,12 @@ module Kore.Validate.Pattern (
 import Control.Comonad.Trans.Cofree (
     tailF,
  )
+import qualified Kore.Syntax.Definition as Syntax
+import Kore.Attribute.Attributes (Attributes (..))
+import Kore.Syntax.Sentence (SentenceAxiom (..)
+  , SentenceSymbol (..)
+  , SentenceAlias (..)
+                    )
 import Control.Lens (
     Lens',
  )
@@ -2063,3 +2069,98 @@ forgetSimplified ::
     Pattern variable ->
     Pattern variable
 forgetSimplified = resynthesize
+
+-- TODO: these might not be needed
+-- -- | Construct an axiom declaration with the given parameters and pattern.
+-- mkAxiom ::
+--     [SortVariable] ->
+--     Pattern variable ->
+--     SentenceAxiom (Pattern variable)
+-- mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
+--     SentenceAxiom
+--         { sentenceAxiomParameters
+--         , sentenceAxiomPattern
+--         , sentenceAxiomAttributes = Attributes []
+--         }
+--
+-- {- | Construct an axiom declaration with no parameters.
+--
+-- See also: 'mkAxiom'
+-- -}
+-- mkAxiom_ :: Pattern variable -> SentenceAxiom (Pattern variable)
+-- mkAxiom_ = mkAxiom []
+--
+-- -- | Construct a symbol declaration with the given parameters and sorts.
+-- mkSymbol ::
+--     Id ->
+--     [SortVariable] ->
+--     [Sort] ->
+--     Sort ->
+--     SentenceSymbol
+-- mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
+--     SentenceSymbol
+--         { sentenceSymbolSymbol =
+--             Syntax.Symbol
+--                 { symbolConstructor
+--                 , symbolParams
+--                 }
+--         , sentenceSymbolSorts = argumentSorts
+--         , sentenceSymbolResultSort = resultSort'
+--         , sentenceSymbolAttributes = Attributes []
+--         }
+--
+-- {- | Construct a symbol declaration with no parameters.
+--
+-- See also: 'mkSymbol'
+-- -}
+-- mkSymbol_ ::
+--     Id ->
+--     [Sort] ->
+--     Sort ->
+--     SentenceSymbol
+-- mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
+--
+-- -- | Construct an alias declaration with the given parameters and sorts.
+-- mkAlias ::
+--     Id ->
+--     [SortVariable] ->
+--     Sort ->
+--     [SomeVariable VariableName] ->
+--     Pattern VariableName ->
+--     SentenceAlias (Pattern VariableName)
+-- mkAlias aliasConstructor aliasParams resultSort' arguments right =
+--     SentenceAlias
+--         { sentenceAliasAlias =
+--             Syntax.Alias
+--                 { aliasConstructor
+--                 , aliasParams
+--                 }
+--         , sentenceAliasSorts = argumentSorts
+--         , sentenceAliasResultSort = resultSort'
+--         , sentenceAliasLeftPattern =
+--             Application
+--                 { applicationSymbolOrAlias =
+--                     SymbolOrAlias
+--                         { symbolOrAliasConstructor = aliasConstructor
+--                         , symbolOrAliasParams =
+--                             SortVariableSort <$> aliasParams
+--                         }
+--                 , applicationChildren = arguments
+--                 }
+--         , sentenceAliasRightPattern = right
+--         , sentenceAliasAttributes = Attributes []
+--         }
+--   where
+--     argumentSorts = variableSort <$> arguments
+--
+-- {- | Construct an alias declaration with no parameters.
+--
+-- See also: 'mkAlias'
+-- -}
+-- mkAlias_ ::
+--     Id ->
+--     Sort ->
+--     [SomeVariable VariableName] ->
+--     Pattern VariableName ->
+--     SentenceAlias (Pattern VariableName)
+-- mkAlias_ aliasConstructor = mkAlias aliasConstructor []

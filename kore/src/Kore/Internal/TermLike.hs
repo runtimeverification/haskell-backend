@@ -40,6 +40,7 @@ module Kore.Internal.TermLike (
     depth,
     checkSortsAgree,
     makeTermLike,
+    wrapTermLike,
     fromTermLike,
 
     -- * Utility functions for dealing with sorts
@@ -1905,3 +1906,7 @@ makeTermLike = undefined
 
 fromTermLike :: TermLike variable -> Validated.Pattern variable
 fromTermLike = undefined
+
+-- TODO(Ana): this should be removed
+wrapTermLike :: Validated.Pattern variable -> TermLike variable
+wrapTermLike = undefined

@@ -189,22 +189,22 @@ instance
         AntiLeftLhs{existentials, predicate, term} = antiLeft
 
 instance InternalVariable variable => Substitute (AntiLeft variable) where
-    type TermType (AntiLeft variable) = Validated.Pattern variable
+    type TermType (AntiLeft variable) = TermLike variable
 
     type VariableNameType (AntiLeft variable) = variable
 
     substitute subst antiLeft@(AntiLeft _ _ _) =
         AntiLeft
-            { aliasTerm = substitute subst aliasTerm
+            { aliasTerm = substitute subst' aliasTerm
             , maybeInner = substitute subst <$> maybeInner
-            , leftHands = map (substitute subst') leftHands
+            , leftHands = map (substitute subst) leftHands
             }
       where
         AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
-        -- TODO: should this extract all TermLike substitutions from the Map?
+        -- TODO:
         subst' = undefined subst
 
-    rename = substitute . fmap Validated.mkVar
+    rename = substitute . fmap TermLike.mkVar
     {-# INLINE rename #-}
 
 mapVariables ::

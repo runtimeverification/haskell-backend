@@ -10,7 +10,6 @@ module Kore.Rewrite.RulePattern (
     RHS (..),
     HasAttributes (..),
     UnifyingRule (..),
-    rulePattern,
     leftPattern,
     applySubstitution,
     topExistsToImplicitForall,
@@ -260,21 +259,6 @@ instance InternalVariable variable => Substitute (RulePattern variable) where
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
 
--- | Creates a basic, unconstrained, Equality pattern
-rulePattern ::
-    InternalVariable variable =>
-    TermLike.TermLike variable ->
-    TermLike.TermLike variable ->
-    RulePattern variable
-rulePattern left right =
-    RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate
-        , rhs = termToRHS right
-        , attributes = Default.def
-        }
-
 -- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
 leftPattern ::
     InternalVariable variable =>
@@ -354,15 +338,23 @@ injectTermIntoRHS right =
 -- | Parses a term representing a RHS into a RHS
 termToRHS ::
     InternalVariable variable =>
-    TermLike.TermLike variable ->
+    Validated.Pattern variable ->
     RHS variable
-termToRHS (TermLike.Exists_ _ v pat) =
+termToRHS (Validated.Exists_ _ v pat) =
     rhs{existentials = v : existentials rhs}
   where
     rhs = termToRHS pat
-termToRHS (TermLike.And_ _ ensures right) =
-    RHS{existentials = [], right, ensures = Predicate.wrapPredicate ensures}
-termToRHS term = injectTermIntoRHS term
+termToRHS (Validated.And_ _ ensures right) =
+    RHS
+        { existentials = []
+        , right = TermLike.wrapTermLike right
+        , ensures = Predicate.wrapPredicate ensures
+        }
+termToRHS term =
+    (error . show . Pretty.vsep)
+        [ "Expected well-formed RHS, but got:"
+        , Pretty.indent 4 $ unparse term
+        ]
 
 instance
     InternalVariable variable =>
@@ -527,10 +519,10 @@ rewriteRuleToTerm
 implicationRuleToTerm ::
     InternalVariable variable =>
     ImplicationRule variable ->
-    TermLike.TermLike variable
+    Validated.Pattern variable
 implicationRuleToTerm
     (ImplicationRule (RulePattern left _ _ (RHS _ right _) _)) =
-        TermLike.mkImplies left right
+        Validated.mkImplies (TermLike.fromTermLike left) (TermLike.fromTermLike right)
 
 -- | 'Alias' construct for all path globally
 aPG :: Sort -> Alias (TermLike.TermLike VariableName)

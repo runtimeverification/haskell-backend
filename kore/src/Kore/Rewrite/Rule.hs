@@ -9,9 +9,6 @@ module Kore.Rewrite.Rule (
     axiomPatternToTerm,
     extractRewriteAxioms,
     extractImplicationClaims,
-    mkRewriteAxiom,
-    mkEqualityAxiom,
-    mkCeilAxiom,
     onePathRuleToTerm,
     termToAxiomPattern,
     QualifiedAxiomPattern (..),
@@ -104,7 +101,7 @@ newtype AxiomPatternError = AxiomPatternError ()
 instance NFData AxiomPatternError
 
 reachabilityModalityToConstructor ::
-    Alias (TermLike.TermLike VariableName) ->
+    Alias (Validated.Pattern VariableName) ->
     Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
 reachabilityModalityToConstructor _ = Nothing
 
@@ -215,7 +212,7 @@ simpleRewriteTermToRule attributes pat =
         Syntax.Rewrites _ (Validated.And_ _ requires lhs) rhs ->
             RewriteRule
                 RulePattern
-                    { left = lhs
+                    { left = TermLike.wrapTermLike lhs
                     , antiLeft = Nothing
                     , requires = Predicate.wrapPredicate requires
                     , rhs = termToRHS rhs
@@ -234,23 +231,23 @@ complexRewriteTermToRule ::
     RewriteRule variable
 complexRewriteTermToRule attributes pat =
     case pat of
-        TermLike.Rewrites
+        Syntax.Rewrites
             sort
-            ( TermLike.And_
+            ( Validated.And_
                     _
-                    (TermLike.Not_ _ antiLeft)
-                    (TermLike.ApplyAlias_ alias params)
+                    (Validated.Not_ _ antiLeft)
+                    (Validated.ApplyAlias_ alias params)
                 )
             rhs ->
-                case substituteInAlias alias params of
-                    TermLike.And_ _ requires lhs ->
+                case substituteInAliasPattern alias params of
+                    Validated.And_ _ requires lhs ->
                         complexRewriteTermToRule
                             attributes
-                            ( TermLike.Rewrites
+                            ( Syntax.Rewrites
                                 sort
-                                ( TermLike.mkAnd
-                                    (TermLike.mkNot antiLeft)
-                                    (TermLike.mkAnd requires lhs)
+                                ( Validated.mkAnd
+                                    (Validated.mkNot antiLeft)
+                                    (Validated.mkAnd requires lhs)
                                 )
                                 rhs
                             )
@@ -259,12 +256,12 @@ complexRewriteTermToRule attributes pat =
                             [ "LHS alias of rule is ill-formed."
                             , Pretty.indent 4 $ unparse pat
                             ]
-        TermLike.Rewrites
+        Syntax.Rewrites
             _
-            ( TermLike.And_
+            ( Validated.And_
                     _
-                    (TermLike.Not_ _ antiLeft)
-                    (TermLike.And_ _ requires lhs)
+                    (Validated.Not_ _ antiLeft)
+                    (Validated.And_ _ requires lhs)
                 )
             rhs -> case AntiLeft.parse antiLeft of
                 Nothing ->
@@ -277,7 +274,7 @@ complexRewriteTermToRule attributes pat =
                 Just parsedAntiLeft ->
                     RewriteRule
                         RulePattern
-                            { left = lhs
+                            { left = TermLike.wrapTermLike lhs
                             , antiLeft = Just parsedAntiLeft
                             , requires = makePredicate "requires" requires
                             , rhs = termToRHS rhs
@@ -289,10 +286,11 @@ complexRewriteTermToRule attributes pat =
                 , Pretty.indent 4 $ unparse pat
                 ]
   where
+    -- TODO(Ana): this should definitely go away
     makePredicate ::
         InternalVariable variable =>
         String ->
-        TermLike.TermLike variable ->
+        Validated.Pattern variable ->
         Predicate.Predicate variable
     makePredicate name term = case Predicate.makePredicate term of
         Left err ->
@@ -319,12 +317,12 @@ termToAxiomPattern ::
 termToAxiomPattern attributes pat =
     case pat of
         -- Reachability claims
-        TermLike.Implies_
+        Validated.Implies_
             _
-            (TermLike.And_ _ requires lhs)
-            (TermLike.ApplyAlias_ op [rhs])
+            (Validated.And_ _ requires lhs)
+            (Validated.ApplyAlias_ op [rhs])
                 | Just constructor <- reachabilityModalityToConstructor op -> do
-                    let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                    let rhs' = Validated.mapVariables (pure mkRuleVariable) rhs
                         attributes' =
                             Attribute.mapAxiomVariables
                                 (pure mkRuleVariable)
@@ -336,29 +334,29 @@ termToAxiomPattern attributes pat =
                                 ClaimPattern
                                     { ClaimPattern.left =
                                         Pattern.fromTermAndPredicate
-                                            lhs
+                                            (TermLike.wrapTermLike lhs)
                                             (Predicate.wrapPredicate requires)
                                             & Pattern.mapVariables (pure mkRuleVariable)
                                     , ClaimPattern.right = parseRightHandSide right'
                                     , ClaimPattern.existentials = existentials'
                                     , ClaimPattern.attributes = attributes'
                                     }
-        TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
+        Validated.Forall_ _ _ child -> termToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
-        TermLike.Implies_ _ lhs rhs@(TermLike.ApplyAlias_ op _)
+        Validated.Implies_ _ lhs rhs@(Validated.ApplyAlias_ op _)
             | isModalSymbol op ->
                 pure $
                     ImplicationAxiomPattern $
                         ImplicationRule
                             RulePattern
-                                { left = lhs
+                                { left = TermLike.wrapTermLike lhs
                                 , antiLeft = Nothing
                                 , requires = Predicate.makeTruePredicate
-                                , rhs = injectTermIntoRHS rhs
+                                , rhs = termToRHS rhs
                                 , attributes
                                 }
-        (TermLike.Rewrites_ _ _ _) ->
+        (Validated.Rewrites_ _ _ _) ->
             koreFail "Rewrite patterns should not be parsed through this"
         _
             | (isDeclaredFunctional . Attribute.functional $ attributes)
@@ -382,69 +380,7 @@ termToAxiomPattern attributes pat =
 -}
 axiomPatternToTerm ::
     QualifiedAxiomPattern VariableName ->
-    TermLike.TermLike VariableName
+    Validated.Pattern VariableName
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
     ImplicationAxiomPattern rule -> implicationRuleToTerm rule
-
--- TODO(Ana): are these three functions used anywhere anymore?
-
-{- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
-
-The requires clause must be a predicate, i.e. it can occur in any sort.
--}
-mkRewriteAxiom ::
-    -- | left-hand side
-    TermLike.TermLike VariableName ->
-    -- | right-hand side
-    TermLike.TermLike VariableName ->
-    -- | requires clause
-    Maybe (Sort -> TermLike.TermLike VariableName) ->
-    Validated.Sentence
-mkRewriteAxiom lhs rhs requires =
-    (Syntax.SentenceAxiomSentence . TermLike.mkAxiom_)
-        ( TermLike.mkRewrites
-            (TermLike.mkAnd (fromMaybe TermLike.mkTop requires patternSort) lhs)
-            (TermLike.mkAnd (TermLike.mkTop patternSort) rhs)
-        )
-  where
-    patternSort = TermLike.termLikeSort lhs
-
-{- | Construct a 'VerifiedKoreSentence' corresponding to 'EqualityRule'.
-
-The requires clause must be a predicate, i.e. it can occur in any sort.
--}
-mkEqualityAxiom ::
-    -- | left-hand side
-    TermLike.TermLike VariableName ->
-    -- | right-hand side
-    TermLike.TermLike VariableName ->
-    -- | requires clause
-    Maybe (Sort -> TermLike.TermLike VariableName) ->
-    Validated.Sentence
-mkEqualityAxiom lhs rhs requires =
-    Syntax.SentenceAxiomSentence $
-        TermLike.mkAxiom [sortVariableR] $
-            case requires of
-                Just requires' ->
-                    TermLike.mkImplies
-                        (requires' sortR)
-                        (TermLike.mkAnd function (TermLike.mkTop sortR))
-                Nothing -> function
-  where
-    sortVariableR = SortVariable "R"
-    sortR = SortVariableSort sortVariableR
-    function = TermLike.mkEquals sortR lhs rhs
-
--- | Construct a 'VerifiedKoreSentence' corresponding to a 'Ceil' axiom.
-mkCeilAxiom ::
-    -- | the child of 'Ceil'
-    TermLike.TermLike VariableName ->
-    Validated.Sentence
-mkCeilAxiom child =
-    Syntax.SentenceAxiomSentence $
-        TermLike.mkAxiom [sortVariableR] $
-            TermLike.mkCeil sortR child
-  where
-    sortVariableR = SortVariable "R"
-    sortR = SortVariableSort sortVariableR
