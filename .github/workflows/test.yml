@@ -17,14 +17,15 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v12
+        uses: cachix/install-nix-action@v14.1
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v8
+        uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
@@ -47,14 +48,15 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v12
+        uses: cachix/install-nix-action@v14.1
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v8
+        uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
@@ -78,14 +80,15 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v12
+        uses: cachix/install-nix-action@v14.1
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v8
+        uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
@@ -106,14 +109,15 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v12
+        uses: cachix/install-nix-action@v14.1
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v8
+        uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
           skipPush: true
@@ -228,14 +232,15 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v12
+        uses: cachix/install-nix-action@v14.1
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v8
+        uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
           extraPullNames: runtimeverification
