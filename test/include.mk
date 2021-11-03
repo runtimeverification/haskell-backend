@@ -64,7 +64,7 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 %.golden: %
 	cp $< $@
 
-## RUN
+### RUN
 
 %.$(EXT).out: $(TEST_DIR)/%.$(EXT) $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "krun" $<
