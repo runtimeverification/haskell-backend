@@ -17,6 +17,7 @@ import Kore.Rewrite.RulePattern
 import Prelude.Kore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Tasty
+import qualified Kore.Validate as Validated
 import Test.Tasty.HUnit.Ext
 
 test_freeVariables :: TestTree
@@ -83,7 +84,7 @@ testRulePattern =
         , antiLeft =
             Just $
                 AntiLeft
-                    { aliasTerm = mkElemVar Mock.u
+                    { aliasTerm = Validated.mkElemVar Mock.u
                     , maybeInner = Nothing
                     , leftHands = []
                     }

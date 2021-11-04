@@ -36,12 +36,13 @@ import Kore.Validate.SentenceVerifier (
     SentenceVerifier,
  )
 import qualified Kore.Validate.SentenceVerifier as SentenceVerifier
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 {- | Project the 'SentenceAlias'es from the list and verify them.
 
-The verified aliases are added to the current 'VerifiedModule'. The aliases are
+The verified aliases are added to the current 'ValidatedModule'. The aliases are
 verified in the order they occur in the list, except that the dependencies of
 each alias are verified before itself.
 
@@ -71,11 +72,11 @@ data AliasContext = AliasContext
     }
     deriving stock (GHC.Generic)
 
-type VerifiedAlias = (Attribute.Symbol, SentenceAlias Verified.Pattern)
+type ValidatedAlias = (Attribute.Symbol, SentenceAlias ValidatedPattern)
 
--- | Look up a 'VerifiedAlias' in the cache, if present.
-lookupVerifiedAlias :: Id -> AliasVerifier (Maybe VerifiedAlias)
-lookupVerifiedAlias name = do
+-- | Look up a 'ValidatedAlias' in the cache, if present.
+lookupValidatedAlias :: Id -> AliasVerifier (Maybe ValidatedAlias)
+lookupValidatedAlias name = do
     verifiedAliases <- State.gets indexedModuleAliasSentences
     return $ Map.lookup name verifiedAliases
 
@@ -98,7 +99,7 @@ verifyAlias :: Id -> AliasVerifier ()
 verifyAlias name =
     withLocationAndContext name aliasContext $ do
         checkAliasCycle
-        lookupVerifiedAlias name >>= maybe notCached cached
+        lookupValidatedAlias name >>= maybe notCached cached
   where
     aliasContext = "alias '" <> getId name <> "' declaration"
     checkAliasCycle = do

@@ -22,17 +22,14 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Validate as Validated
+import Kore.Internal.From
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike (
     Alias (Alias),
     TermLike,
-    mkAnd,
-    mkApplyAlias,
-    mkBottom,
     mkElemVar,
-    mkEquals,
-    mkOr,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Rewrite.AntiLeft (
     AntiLeft,
     mapVariables,
@@ -105,7 +102,7 @@ withAntiLeft (RewriteRule rule) antiLeft =
     RewriteRule rule{RulePattern.antiLeft = Just antiLeft}
 
 parseAntiLeft ::
-    TermLike VariableName ->
+    Validated.Pattern VariableName ->
     IO (AntiLeft VariableName)
 parseAntiLeft term =
     case AntiLeft.parse term of
@@ -123,7 +120,7 @@ test_combineRulesPredicate =
                     [Mock.a `rewritesTo` Mock.cf]
          in assertEqual "" expected actual
     , testCase "Two rules" $
-        let expected = makeCeilPredicate (mkAnd Mock.cf Mock.b)
+        let expected = makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.b)
             actual =
                 mergeRulesPredicate
                     [ Mock.a `rewritesTo` Mock.cf
@@ -133,8 +130,8 @@ test_combineRulesPredicate =
     , testCase "Three rules case" $
         let expected =
                 makeAndPredicate
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.b))
-                    (makeCeilPredicate (mkAnd Mock.cg Mock.c))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.b))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cg Mock.c))
 
             actual =
                 mergeRulesPredicate
@@ -147,12 +144,12 @@ test_combineRulesPredicate =
         let expected =
                 makeMultipleAndPredicate
                     [ makeMultipleAndPredicate
-                        [ makeCeilPredicate (mkAnd Mock.cf Mock.b)
+                        [ makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.b)
                         , makeCeilPredicate (Mock.g Mock.a)
                         , makeCeilPredicate (Mock.f Mock.b)
                         ]
                     , makeMultipleAndPredicate
-                        [ makeCeilPredicate (mkAnd Mock.cg Mock.c)
+                        [ makeCeilPredicate (TermLike.mkAnd Mock.cg Mock.c)
                         , makeCeilPredicate (Mock.g Mock.b)
                         , makeCeilPredicate (Mock.f Mock.c)
                         ]
@@ -170,7 +167,8 @@ test_combineRulesPredicate =
     , testCase "Rules with variables" $
         let expected =
                 makeMultipleAndPredicate
-                    [ makeCeilPredicate (mkAnd (Mock.g x) (Mock.constr11 x_0))
+                    [ makeCeilPredicate
+                        (TermLike.mkAnd (Mock.g x) (Mock.constr11 x_0))
                     , makeCeilPredicate (Mock.g x)
                     , makeCeilPredicate (Mock.h x_0)
                     ]
@@ -186,16 +184,21 @@ test_combineRulesPredicate =
         let expected =
                 makeMultipleAndPredicate
                     [ makeCeilPredicate
-                        (mkAnd Mock.a (mkElemVar Mock.var_xConfig_0))
+                        (TermLike.mkAnd
+                            Mock.a
+                            (TermLike.mkElemVar Mock.var_xConfig_0)
+                        )
                     , makeCeilPredicate
-                        (mkAnd Mock.b (mkElemVar Mock.var_xConfig_1))
+                        (TermLike.mkAnd Mock.b
+                            (TermLike.mkElemVar Mock.var_xConfig_1)
+                        )
                     ]
 
             actual =
                 mergeRulesPredicate
-                    [ mkElemVar Mock.xConfig `rewritesTo` Mock.a
-                    , mkElemVar Mock.xConfig `rewritesTo` Mock.b
-                    , mkElemVar Mock.xConfig `rewritesTo` Mock.c
+                    [ TermLike.mkElemVar Mock.xConfig `rewritesTo` Mock.a
+                    , TermLike.mkElemVar Mock.xConfig `rewritesTo` Mock.b
+                    , TermLike.mkElemVar Mock.xConfig `rewritesTo` Mock.c
                     ]
          in assertEqual "" expected actual
     , testCase "Anti Left" $ do
@@ -203,44 +206,53 @@ test_combineRulesPredicate =
             parseAntiLeft
                 ( applyAlias
                     "A"
-                    ( mkOr
+                    ( Validated.mkOr
                         ( applyAlias
                             "B"
-                            ( mkAnd
-                                (mkEquals Mock.testSort Mock.cf Mock.cg)
-                                Mock.ch
+                            ( Validated.mkAnd
+                                (Validated.mkEquals Mock.testSort
+                                    (TermLike.fromTermLike Mock.cf)
+                                    (TermLike.fromTermLike Mock.cg)
+                                )
+                                (TermLike.fromTermLike Mock.ch)
                             )
                         )
-                        (mkBottom Mock.testSort)
+                        (Validated.mkBottom Mock.testSort)
                     )
                 )
         let expected =
                 makeMultipleAndPredicate
-                    [ makeCeilPredicate
-                        (mkAnd Mock.a (mkElemVar Mock.var_xConfig_0))
-                    , makeNotPredicate
-                        ( makeAndPredicate
-                            (makeEqualsPredicate Mock.cf Mock.cg)
-                            (makeCeilPredicate (mkAnd Mock.a Mock.ch))
+                    [ fromCeil_
+                        (TermLike.mkAnd
+                            Mock.a
+                            (TermLike.mkElemVar Mock.var_xConfig_0)
                         )
-                    , makeCeilPredicate
-                        (mkAnd Mock.b (mkElemVar Mock.var_xConfig_1))
+                    , fromNot
+                        ( fromAnd
+                            (fromEquals_ Mock.cf Mock.cg)
+                            (fromCeil_ (TermLike.mkAnd Mock.a Mock.ch))
+                        )
+                    , fromCeil_
+                        (TermLike.mkAnd
+                            Mock.b
+                            (TermLike.mkElemVar Mock.var_xConfig_1)
+                        )
                     ]
 
             actual =
                 mergeRulesPredicate
-                    [ mkElemVar Mock.xConfig `rewritesTo` Mock.a
-                    , mkElemVar Mock.xConfig `rewritesTo` Mock.b
+                    [ TermLike.mkElemVar Mock.xConfig `rewritesTo` Mock.a
+                    , TermLike.mkElemVar Mock.xConfig `rewritesTo` Mock.b
                         `withAntiLeft` mapVariables (pure mkConfigVariable) antiLeft
-                    , mkElemVar Mock.xConfig `rewritesTo` Mock.c
+                    , TermLike.mkElemVar Mock.xConfig `rewritesTo` Mock.c
                     ]
         assertEqual "" expected actual
     ]
   where
     x :: TermLike RewritingVariableName
-    x = mkElemVar Mock.xConfig
+    x = TermLike.mkElemVar Mock.xConfig
     x_0 :: TermLike RewritingVariableName
-    x_0 = mkElemVar Mock.var_xConfig_0
+    x_0 = TermLike.mkElemVar Mock.var_xConfig_0
 
 test_combineRules :: [TestTree]
 test_combineRules =
@@ -343,9 +355,9 @@ test_combineRules =
         assertEqual "" expected actual
     ]
   where
-    x = mkElemVar Mock.xConfig
-    x0 = mkElemVar Mock.var_xConfig_0
-    y = mkElemVar Mock.yConfig
+    x = TermLike.mkElemVar Mock.xConfig
+    x0 = TermLike.mkElemVar Mock.var_xConfig_0
+    y = TermLike.mkElemVar Mock.yConfig
 
 test_combineRulesGrouped :: [TestTree]
 test_combineRulesGrouped =
@@ -386,9 +398,9 @@ test_combineRulesGrouped =
     y = mkElemVar Mock.yConfig
     z = mkElemVar Mock.zConfig
 
-applyAlias :: Text -> TermLike VariableName -> TermLike VariableName
+applyAlias :: Text -> Validated.Pattern VariableName -> Validated.Pattern VariableName
 applyAlias name aliasRight =
-    mkApplyAlias
+    Validated.mkApplyAlias
         Alias
             { aliasConstructor = testId name
             , aliasParams = []

@@ -1249,3 +1249,7 @@ depth :: TermLike variable -> Int
 depth = Recursive.fold levelDepth
   where
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
+
+instance From (And Sort child) (TermLikeF variable child) where
+    from = AndF
+    {-# INLINE from #-}

@@ -19,6 +19,7 @@ import Kore.Internal.Predicate (
     makeExistsPredicate,
     makeOrPredicate,
  )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike (
     mkAnd,
     mkApplyAlias,
@@ -45,26 +46,30 @@ import qualified Pretty (
  )
 import Test.Kore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import qualified Kore.Validate as Validated
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
-newtype AntiLeftTerm = AntiLeftTerm {_getAntileftTerm :: TermLike VariableName}
+newtype AntiLeftTerm = AntiLeftTerm {_getAntileftTerm :: Validated.Pattern VariableName}
 
 test_antiLeft :: [TestTree]
 test_antiLeft =
     [ testCase "Simple antiLeft" $ do
-        let expect = makeCeilPredicate (mkAnd Mock.cf Mock.a)
+        let expect = makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.a)
         actual <-
             parseAndApply
                 ( AntiLeftTerm
                     ( applyAliasToNoArgs
                         "A"
-                        ( mkOr
+                        ( Validated.mkOr
                             ( applyAliasToNoArgs
                                 "B"
-                                (mkAnd (mkTop Mock.testSort) Mock.a)
+                                (Validated.mkAnd
+                                    (Validated.mkTop Mock.testSort)
+                                    (TermLike.fromTermLike Mock.a)
+                                )
                             )
-                            (mkBottom Mock.testSort)
+                            (Validated.mkBottom Mock.testSort)
                         )
                     )
                 )
@@ -74,18 +79,21 @@ test_antiLeft =
         let expect =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cg)
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.a))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.a))
         actual <-
             parseAndApply
                 ( AntiLeftTerm
                     ( applyAliasToNoArgs
                         "A"
-                        ( mkOr
+                        ( Validated.mkOr
                             ( applyAliasToNoArgs
                                 "B"
-                                (mkAnd (mkCeil Mock.testSort Mock.cg) Mock.a)
+                                (Validated.mkAnd
+                                    (Validated.mkCeil Mock.testSort (TermLike.fromTermLike Mock.cg))
+                                    (TermLike.fromTermLike Mock.a)
+                                )
                             )
-                            (mkBottom Mock.testSort)
+                            (Validated.mkBottom Mock.testSort)
                         )
                     )
                 )
@@ -94,24 +102,24 @@ test_antiLeft =
     , testCase "AntiLeft multiple rules" $ do
         let expect =
                 makeOrPredicate
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.a))
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.b))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.a))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.b))
         actual <-
             parseAndApply
                 ( AntiLeftTerm
                     ( applyAliasToNoArgs
                         "A"
-                        ( mkOr
+                        ( Validated.mkOr
                             ( applyAliasToNoArgs
                                 "B"
-                                (mkAnd (mkTop Mock.testSort) Mock.a)
+                                (Validated.mkAnd (mkTop Mock.testSort) Mock.a)
                             )
-                            ( mkOr
+                            ( Validated.mkOr
                                 ( applyAliasToNoArgs
                                     "C"
-                                    (mkAnd (mkTop Mock.testSort) Mock.b)
+                                    (Validated.mkAnd (mkTop Mock.testSort) Mock.b)
                                 )
-                                (mkBottom Mock.testSort)
+                                (Validated.mkBottom Mock.testSort)
                             )
                         )
                     )
@@ -121,30 +129,30 @@ test_antiLeft =
     , testCase "Recursive antiLeft" $ do
         let expect =
                 makeOrPredicate
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.a))
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.b))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.a))
+                    (makeCeilPredicate (TermLike.mkAnd Mock.cf Mock.b))
         actual <-
             parseAndApply
                 ( AntiLeftTerm
                     ( applyAliasToNoArgs
                         "A"
-                        ( mkOr
+                        ( Validated.mkOr
                             ( applyAliasToNoArgs
                                 "B"
-                                ( mkOr
+                                ( Validated.mkOr
                                     ( applyAliasToNoArgs
                                         "C"
-                                        (mkAnd (mkTop Mock.testSort) Mock.a)
+                                        (Validated.mkAnd (mkTop Mock.testSort) Mock.a)
                                     )
-                                    (mkBottom Mock.testSort)
+                                    (Validated.mkBottom Mock.testSort)
                                 )
                             )
-                            ( mkOr
+                            ( Validated.mkOr
                                 ( applyAliasToNoArgs
                                     "D"
-                                    (mkAnd (mkTop Mock.testSort) Mock.b)
+                                    (Validated.mkAnd (mkTop Mock.testSort) Mock.b)
                                 )
-                                (mkBottom Mock.testSort)
+                                (Validated.mkBottom Mock.testSort)
                             )
                         )
                     )
@@ -156,9 +164,9 @@ test_antiLeft =
                 makeExistsPredicate
                     Mock.var_x_0
                     ( makeCeilPredicate
-                        ( mkAnd
-                            (Mock.g (mkElemVar Mock.x))
-                            (Mock.f (mkElemVar Mock.var_x_0))
+                        ( Validated.mkAnd
+                            (Mock.g (Validated.mkElemVar Mock.x))
+                            (Mock.f (Validated.mkElemVar Mock.var_x_0))
                         )
                     )
         actual <-
@@ -166,22 +174,22 @@ test_antiLeft =
                 ( AntiLeftTerm
                     ( applyAliasToNoArgs
                         "A"
-                        ( mkOr
-                            ( mkExists
+                        ( Validated.mkOr
+                            ( Validated.mkExists
                                 Mock.x
                                 ( applyAliasToNoArgs
                                     "B"
-                                    ( mkAnd
-                                        (mkTop Mock.testSort)
-                                        (Mock.f (mkElemVar Mock.x))
+                                    ( Validated.mkAnd
+                                        (Validated.mkTop Mock.testSort)
+                                        (Mock.f (Validated.mkElemVar Mock.x))
                                     )
                                 )
                             )
-                            (mkBottom Mock.testSort)
+                            (Validated.mkBottom Mock.testSort)
                         )
                     )
                 )
-                (Mock.g (mkElemVar Mock.x))
+                (Mock.g (Validated.mkElemVar Mock.x))
         assertEqual "" expect actual
     ]
 
@@ -200,9 +208,9 @@ parseAndApply (AntiLeftTerm antiLeftTerm) configurationTerm = do
     return (antiLeftPredicate antiLeft configurationTerm)
 
 applyAliasToNoArgs ::
-    Text -> TermLike VariableName -> TermLike VariableName
+    Text -> Validated.Pattern VariableName -> Validated.Pattern VariableName
 applyAliasToNoArgs name right =
-    mkApplyAlias
+    Validated.mkApplyAlias
         Alias
             { aliasConstructor = testId name
             , aliasParams = []

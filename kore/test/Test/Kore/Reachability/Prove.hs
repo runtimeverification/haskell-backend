@@ -38,7 +38,6 @@ import Kore.Rewrite.RulePattern (
     RulePattern (..),
     injectTermIntoRHS,
     mkRewritingRule,
-    rulePattern,
  )
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -828,7 +827,15 @@ simpleRewrite ::
     TermLike VariableName ->
     RewriteRule RewritingVariableName
 simpleRewrite left right =
-    mkRewritingRule $ RewriteRule $ rulePattern left right
+    mkRewritingRule
+    $ RewriteRule
+    $ RulePattern
+        { left
+        , rhs = injectTermIntoRHS right
+        , antiLeft = Nothing
+        , requires = makeTruePredicate
+        , attributes = def
+        }
 
 proveClaims ::
     Limit Natural ->

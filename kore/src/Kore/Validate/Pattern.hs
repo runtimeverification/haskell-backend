@@ -13,6 +13,8 @@ module Kore.Validate.Pattern (
     Modality (..),
     applyModality,
 
+    mkAxiom,
+
     -- * Pure Kore pattern constructors
     mkAnd,
     mkApplyAlias,
@@ -96,6 +98,7 @@ import Control.Comonad.Trans.Cofree (
     tailF,
  )
 import qualified Kore.Syntax.Definition as Syntax
+import Kore.Error (assertRight)
 import Kore.Attribute.Attributes (Attributes (..))
 import Kore.Syntax.Sentence (SentenceAxiom (..)
   , SentenceSymbol (..)
@@ -2070,19 +2073,19 @@ forgetSimplified ::
     Pattern variable
 forgetSimplified = resynthesize
 
--- TODO: these might not be needed
--- -- | Construct an axiom declaration with the given parameters and pattern.
--- mkAxiom ::
---     [SortVariable] ->
---     Pattern variable ->
---     SentenceAxiom (Pattern variable)
--- mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
---     SentenceAxiom
---         { sentenceAxiomParameters
---         , sentenceAxiomPattern
---         , sentenceAxiomAttributes = Attributes []
---         }
---
+-- | Construct an axiom declaration with the given parameters and pattern.
+mkAxiom ::
+    [SortVariable] ->
+    Pattern variable ->
+    SentenceAxiom (Pattern variable)
+mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
+    SentenceAxiom
+        { sentenceAxiomParameters
+        , sentenceAxiomPattern
+        , sentenceAxiomAttributes = Attributes []
+        }
+
+-- TODO: are these needed?
 -- {- | Construct an axiom declaration with no parameters.
 --
 -- See also: 'mkAxiom'
@@ -2164,3 +2167,74 @@ forgetSimplified = resynthesize
 --     Pattern VariableName ->
 --     SentenceAlias (Pattern VariableName)
 -- mkAlias_ aliasConstructor = mkAlias aliasConstructor []
+--
+-- {- | Construct an 'Application' pattern from a 'Alias' declaration.
+--
+-- The provided sort parameters must match the declaration.
+--
+-- See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
+-- -}
+-- applyAlias ::
+--     HasCallStack =>
+--     InternalVariable variable =>
+--     -- | 'Alias' declaration
+--     SentenceAlias (Pattern VariableName) ->
+--     -- | 'Alias' sort parameters
+--     [Sort] ->
+--     -- | 'Application' arguments
+--     [Pattern variable] ->
+--     Pattern variable
+-- applyAlias sentence params children =
+--     updateCallStack $ mkApplyAlias internal children'
+--   where
+--     SentenceAlias{sentenceAliasAlias = external} = sentence
+--     Syntax.Alias{aliasConstructor} = external
+--     Syntax.Alias{aliasParams} = external
+--     internal =
+--         Alias
+--             { aliasConstructor
+--             , aliasParams = params
+--             , aliasSorts =
+--                 symbolOrAliasSorts params sentence
+--                     & assertRight
+--             , aliasLeft =
+--                 applicationChildren
+--                     . sentenceAliasLeftPattern
+--                     $ sentence
+--             , aliasRight = sentenceAliasRightPattern sentence
+--             }
+--     substitution = sortSubstitution aliasParams params
+--     childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
+--       where
+--         SentenceAlias{sentenceAliasSorts} = sentence
+--     children' = alignWith forceChildSort childSorts children
+--       where
+--         forceChildSort =
+--             \case
+--                 These sort pattern' -> samePatternSort sort pattern'
+--                 This _ ->
+--                     (error . show . Pretty.vsep)
+--                         ("Too few parameters:" : expected)
+--                 That _ ->
+--                     (error . show . Pretty.vsep)
+--                         ("Too many parameters:" : expected)
+--         expected =
+--             [ "Expected:"
+--             , Pretty.indent 4 (Unparser.arguments childSorts)
+--             , "but found:"
+--             , Pretty.indent 4 (Unparser.arguments children)
+--             ]
+--
+-- {- | Construct an 'Application' pattern from a 'Alias' declaration.
+--
+-- The 'Alias' must not be declared with sort parameters.
+--
+-- See also: 'mkApp', 'applyAlias'
+-- -}
+-- applyAlias_ ::
+--     HasCallStack =>
+--     InternalVariable variable =>
+--     SentenceAlias (Pattern VariableName) ->
+--     [Pattern variable] ->
+--     Pattern variable
+-- applyAlias_ sentence = updateCallStack . applyAlias sentence []
