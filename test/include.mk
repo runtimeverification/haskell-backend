@@ -35,7 +35,7 @@ GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
 
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
-KPROVE_OPTS += -d $(DEF_DIR)
+#KPROVE_OPTS += -d $(DEF_DIR)
 KORE_EXEC_OPTS += \
 	$(if $(STORE_PROOFS),\
 		--save-proofs $(STORE_PROOFS),\
@@ -43,7 +43,7 @@ KORE_EXEC_OPTS += \
 			--save-proofs $(@:.out=.save-proofs.kore)\
 		)\
 	)
-KPROVE_REPL_OPTS += -d $(DEF_DIR) #-m $(KPROVE_MODULE)
+#KPROVE_REPL_OPTS += -d $(DEF_DIR) #-m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
 
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
@@ -69,11 +69,9 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 %.$(EXT).out: $(TEST_DIR)/%.$(EXT) $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "krun" $<
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
-	#rm -rf *-kompiled
 	rm -f $@
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 	$(DIFF) $@.golden $@ || $(FAILED)
-	#rm -rf *-kompiled
 
 %.verify.out: $(DEF_KORE_DEFAULT)
 	$(KORE_PARSER) $(DEF_KORE_DEFAULT) --verify >/dev/null 2>$@ || true
@@ -107,12 +105,14 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
-	#rm -rf *-kompiled
 	$(KOMPILE) $(KOMPILE_OPTS) --main-module $(KPROVE_MODULE) $(KPROVE_SPEC)
-	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) >$@ || true
-	#rm -rf $(KOMPILED)
+	mkdir $*-tmpdir
+	mv $*-spec-kompiled $*-tmpdir
+	$(KPROVE) $(KPROVE_OPTS) -d $*-tmpdir $(KPROVE_SPEC) >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
+	rm -rf $*-tmpdir
+
 
 %-save-proofs-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
 

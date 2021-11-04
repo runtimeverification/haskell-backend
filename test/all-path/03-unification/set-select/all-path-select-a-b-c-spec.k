@@ -1,3 +1,5 @@
+requires "path.k"
+
 module VERIFICATION
   imports PATH
 
