@@ -17,6 +17,7 @@ module SMT.SimpleSMT (
     stop,
     Logger,
     newSolver,
+    withSolver,
     ackCommand,
     ackCommandIgnoreErr,
     simpleCommand,
@@ -168,6 +169,9 @@ import qualified Control.Monad.Catch as Exception
 import Data.Bits (
     testBit,
  )
+import Data.Maybe (
+    fromJust,
+ )
 import Data.Ratio (
     denominator,
     numerator,
@@ -229,6 +233,7 @@ import System.Process (
     getProcessExitCode,
     proc,
     waitForProcess,
+    withCreateProcess,
  )
 import qualified Text.Megaparsec as Parser
 import Text.Read (
@@ -351,6 +356,46 @@ newSolver exe opts logger = do
         setOption solver ":produce-assertions" "true"
 
     return solverHandle
+  where
+    solverProcess =
+        (proc exe opts)
+            { std_in = CreatePipe
+            , std_out = CreatePipe
+            , std_err = CreatePipe
+            }
+
+withSolver ::
+    -- | Executable
+    FilePath ->
+    -- | Arguments
+    [String] ->
+    -- | Logger
+    Logger ->
+    -- | Solver action
+    (Solver -> IO a) ->
+    IO (ExitCode, a)
+withSolver exe opts logger action = withCreateProcess solverProcess $
+    \hInM hOutM hErrM hProc -> do
+        let hIn = fromJust hInM
+            hOut = fromJust hOutM
+            hErr = fromJust hErrM
+            solverHandle =
+                SolverHandle{hIn, hOut, hErr, hProc, queryCounter = 0}
+            solver = Solver{solverHandle, logger}
+        -- TODO this should use withAsync, race, or withBackgroundLogger if
+        -- possible to ensure that the resource is properly cleaned up
+        Text.hGetLine hErr >>= debug (Solver solverHandle logger)
+            & Monad.forever
+            & X.handle (\X.SomeException{} -> return ())
+            & forkIO
+            & void
+        setOption solver ":print-success" "true"
+        Monad.when featureProduceAssertions $
+            setOption solver ":produce-assertions" "true"
+        result <- action solver
+        send solver $ List [Atom "exit"]
+        exitCode <- waitForProcess hProc
+        return (exitCode, result)
   where
     solverProcess =
         (proc exe opts)
