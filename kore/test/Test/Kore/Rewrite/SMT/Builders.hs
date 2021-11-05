@@ -33,7 +33,7 @@ import Kore.Error (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.Sort (
     Sort (SortActualSort),
@@ -59,14 +59,14 @@ import Test.Kore.With (
 
 indexModule ::
     ParsedModule ->
-    VerifiedModule Attribute.Symbol
+    ValidatedModule Attribute.Symbol
 indexModule m@Module{moduleName} =
     indexModules moduleName [m]
 
 indexModules ::
     ModuleName ->
     [ParsedModule] ->
-    VerifiedModule Attribute.Symbol
+    ValidatedModule Attribute.Symbol
 indexModules moduleName modules =
     case perhapsIndexedDefinition of
         Left err ->
@@ -85,7 +85,7 @@ indexModules moduleName modules =
     perhapsIndexedDefinition ::
         Either
             (Error VerifyError)
-            (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
+            (Map.Map ModuleName (ValidatedModule Attribute.Symbol))
     perhapsIndexedDefinition =
         verifyAndIndexDefinition
             Builtin.koreVerifiers

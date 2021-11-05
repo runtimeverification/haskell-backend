@@ -30,6 +30,7 @@ import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
+import qualified Kore.Validate as Validated
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -42,7 +43,7 @@ test_predicate =
         ( assertEqual
             ""
             ( wrapPredicate $
-                mkAnd pa1 pa2
+                Validated.mkAnd pa1 pa2
             )
             (makeAndPredicate pr1 pr2)
         )
@@ -51,7 +52,7 @@ test_predicate =
         ( assertEqual
             ""
             ( wrapPredicate $
-                mkOr pa1 pa2
+                Validated.mkOr pa1 pa2
             )
             (makeOrPredicate pr1 pr2)
         )
@@ -60,7 +61,7 @@ test_predicate =
         ( assertEqual
             ""
             ( wrapPredicate $
-                mkImplies pa1 pa2
+                Validated.mkImplies pa1 pa2
             )
             (makeImpliesPredicate pr1 pr2)
         )
@@ -69,7 +70,7 @@ test_predicate =
         ( assertEqual
             ""
             ( wrapPredicate $
-                mkIff pa1 pa2
+                Validated.mkIff pa1 pa2
             )
             (makeIffPredicate pr1 pr2)
         )
@@ -78,7 +79,7 @@ test_predicate =
         ( assertEqual
             ""
             ( wrapPredicate $
-                mkNot pa1
+                Validated.mkNot pa1
             )
             (makeNotPredicate pr1)
         )
@@ -165,15 +166,15 @@ test_predicate =
             "makePredicate yields wrapPredicate"
             ( traverse_
                 (uncurry makePredicateYieldsWrapPredicate)
-                [ ("Top", mkTop Mock.testSort)
-                , ("Bottom", mkBottom Mock.testSort)
-                , ("And", mkAnd pa1 pa2)
-                , ("Or", mkOr pa1 pa2)
-                , ("Iff", mkIff pa1 pa2)
-                , ("Implies", mkImplies pa1 pa2)
-                , ("Not", mkNot pa1)
-                , ("Exists", mkExists (a Mock.testSort) pa1)
-                , ("Forall", mkForall (a Mock.testSort) pa1)
+                [ ("Top", Validated.mkTop Mock.testSort)
+                , ("Bottom", Validated.mkBottom Mock.testSort)
+                , ("And", Validated.mkAnd pa1 pa2)
+                , ("Or", Validated.mkOr pa1 pa2)
+                , ("Iff", Validated.mkIff pa1 pa2)
+                , ("Implies", Validated.mkImplies pa1 pa2)
+                , ("Not", Validated.mkNot pa1)
+                , ("Exists", Validated.mkExists (a Mock.testSort) pa1)
+                , ("Forall", Validated.mkForall (a Mock.testSort) pa1)
                 , ("Equals", pa1)
                 , ("Ceil", ceilA)
                 , ("Floor", floorA)
@@ -183,27 +184,33 @@ test_predicate =
         , testGroup
             "keeps simplified bit"
             [ testCase "unsimplified stays unsimplified" $
-                (mkEquals Mock.topSort Mock.cf Mock.cg, NotSimplified)
+                (Validated.mkEquals Mock.topSort (fromTermLike Mock.cf) (fromTermLike Mock.cg), NotSimplified)
                     `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
             , testCase "simplified stays simplified" $
-                ( simplifiedTerm $ mkEquals Mock.topSort Mock.cf Mock.cg
+                ( simplifiedValidatedPattern $
+                    Validated.mkEquals
+                        Mock.topSort
+                        (fromTermLike Mock.cf)
+                        (fromTermLike Mock.cg)
                 , IsSimplified
                 )
                     `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "Partial predicate stays simplified" $
-                ( simplifiedTerm $
-                    mkAnd (mkTop Mock.topSort) (mkEquals Mock.topSort Mock.cf Mock.cg)
+                ( simplifiedValidatedPattern $
+                    Validated.mkAnd
+                        (Validated.mkTop Mock.topSort)
+                        (Validated.mkEquals Mock.topSort (fromTermLike Mock.cf) (fromTermLike Mock.cg))
                 , IsSimplified
                 )
                     `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "changed simplified becomes unsimplified" $
-                ( simplifiedTerm $
-                    mkAnd
-                        ( mkAnd
-                            (mkTop Mock.topSort)
-                            (mkEquals Mock.topSort Mock.cf Mock.cg)
+                ( simplifiedValidatedPattern $
+                    Validated.mkAnd
+                        ( Validated.mkAnd
+                            (Validated.mkTop Mock.topSort)
+                            (Validated.mkEquals Mock.topSort (fromTermLike Mock.cf) (fromTermLike Mock.cg))
                         )
-                        (mkEquals Mock.topSort Mock.cg Mock.ch)
+                        (Validated.mkEquals Mock.topSort (fromTermLike Mock.cg) (fromTermLike Mock.ch))
                 , IsSimplified
                 )
                     `makesPredicate` ( makeAndPredicate
@@ -230,7 +237,7 @@ data Simplified = IsSimplified | NotSimplified
 
 makesPredicate ::
     HasCallStack =>
-    (TermLike VariableName, Simplified) ->
+    (Validated.Pattern VariableName, Simplified) ->
     (Predicate VariableName, Simplified) ->
     IO ()
 makesPredicate
@@ -242,7 +249,7 @@ makesPredicate
             assertEqual
                 "Term simplification"
                 (toBool termSimplification)
-                (TermLike.isSimplified sideRepresentation term)
+                (Validated.isSimplified sideRepresentation term)
             assertEqual
                 "Predicate simplification"
                 (toBool predicateSimplification)
@@ -251,7 +258,7 @@ makesPredicate
         toBool IsSimplified = True
         toBool NotSimplified = False
 
-makePredicateYieldsWrapPredicate :: String -> TermLike VariableName -> IO ()
+makePredicateYieldsWrapPredicate :: String -> Validated.Pattern VariableName -> IO ()
 makePredicateYieldsWrapPredicate msg p = do
     p' <- expectRight (makePredicate p)
     assertEqual msg (wrapPredicate p) p'
@@ -268,35 +275,35 @@ pr2 =
         (mkElemVar $ c Mock.testSort)
         (mkElemVar $ d Mock.testSort)
 
-pa1 :: TermLike VariableName
+pa1 :: Validated.Pattern VariableName
 pa1 =
-    mkEquals
+    Validated.mkEquals
         Mock.topSort
-        (mkElemVar $ a Mock.testSort)
-        (mkElemVar $ b Mock.testSort)
+        (Validated.mkElemVar $ a Mock.testSort)
+        (Validated.mkElemVar $ b Mock.testSort)
 
-pa2 :: TermLike VariableName
+pa2 :: Validated.Pattern VariableName
 pa2 =
-    mkEquals
+    Validated.mkEquals
         Mock.topSort
-        (mkElemVar $ c Mock.testSort)
-        (mkElemVar $ d Mock.testSort)
+        (Validated.mkElemVar $ c Mock.testSort)
+        (Validated.mkElemVar $ d Mock.testSort)
 
-ceilA :: TermLike VariableName
+ceilA :: Validated.Pattern VariableName
 ceilA =
-    mkCeil
+    Validated.mkCeil
         Mock.topSort
-        (mkElemVar $ a Mock.testSort)
+        (Validated.mkElemVar $ a Mock.testSort)
 
-inA :: TermLike VariableName
+inA :: Validated.Pattern VariableName
 inA =
-    mkIn
+    Validated.mkIn
         Mock.topSort
-        (mkElemVar $ a Mock.testSort)
-        (mkElemVar $ b Mock.testSort)
+        (Validated.mkElemVar $ a Mock.testSort)
+        (Validated.mkElemVar $ b Mock.testSort)
 
-floorA :: TermLike VariableName
-floorA = mkFloor Mock.topSort (mkElemVar $ a Mock.testSort)
+floorA :: Validated.Pattern VariableName
+floorA = Validated.mkFloor Mock.topSort (Validated.mkElemVar $ a Mock.testSort)
 
 a, b, c, d :: Sort -> ElementVariable VariableName
 a = mkElementVariable (testId "a")

@@ -61,13 +61,11 @@ import Data.Text (
  )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Internal.Symbol as Internal
 import Kore.Debug
 import Kore.Error
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.TermLike (
-    TermLike,
- )
-import qualified Kore.Internal.TermLike as Internal
+import qualified Kore.Validate as Validated
 import Kore.Sort
 import Kore.Syntax hiding (
     PatternF (..),
@@ -219,7 +217,7 @@ simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
 simpleAliasSentence alias sort =
     asSentence @ParsedSentenceAlias (simpleAliasSentenceAux alias sort r)
   where
-    r = externalize $ Internal.mkTop (simpleSort sort)
+    r = externalize $ Validated.mkTop (simpleSort sort)
 simpleAliasSentenceAux ::
     AliasName ->
     SortName ->
@@ -325,7 +323,7 @@ metaAliasSentenceWithSortParameters
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    externalize $ Internal.mkTop sort
+                    externalize $ Validated.mkTop sort
                 , sentenceAliasAttributes = Attributes []
                 }
 
@@ -590,7 +588,7 @@ objectAliasSentenceWithArguments a b c =
         a
         b
         c
-        (externalize $ Internal.mkTop b)
+        (externalize $ Validated.mkTop b)
 
 aliasSentenceWithArguments ::
     AliasName ->
@@ -640,7 +638,7 @@ namedSortVariable (SortVariableName name) = sortVariable name
 
 stringParsedPattern :: Text -> ParsedPattern
 stringParsedPattern =
-    externalize . Internal.mkStringLiteral
+    externalize . Validated.mkStringLiteral
 
 variable :: Text -> Sort -> ElementVariable VariableName
 variable name sort = mkElementVariable (testId name) sort
@@ -648,12 +646,12 @@ variable name sort = mkElementVariable (testId name) sort
 setVariable :: Text -> Sort -> SetVariable VariableName
 setVariable name sort = mkSetVariable (testId ("@" <> name)) sort
 
-variableTermLike :: Text -> Sort -> TermLike VariableName
-variableTermLike name sort = Internal.mkElemVar (variable name sort)
+variableValidatedPattern :: Text -> Sort -> Validated.Pattern VariableName
+variableValidatedPattern name sort = Validated.mkElemVar (variable name sort)
 
 variableParsedPattern :: Text -> Sort -> ParsedPattern
 variableParsedPattern name sort =
-    externalize $ variableTermLike name sort
+    externalize $ variableValidatedPattern name sort
 
 simpleExistsPattern ::
     ElementVariable VariableName ->
@@ -665,7 +663,7 @@ simpleExistsPattern quantifiedVariable resultSort =
             { existsSort = resultSort
             , existsVariable = quantifiedVariable
             , existsChild =
-                externalize $ Internal.mkElemVar quantifiedVariable
+                externalize $ Validated.mkElemVar quantifiedVariable
             }
 
 simpleMuPattern ::
@@ -676,7 +674,7 @@ simpleMuPattern quantifiedVariable =
         Mu
             { muVariable = quantifiedVariable
             , muChild =
-                externalize $ Internal.mkSetVar quantifiedVariable
+                externalize $ Validated.mkSetVar quantifiedVariable
             }
 
 simpleNuPattern ::
@@ -687,13 +685,13 @@ simpleNuPattern quantifiedVariable =
         Nu
             { nuVariable = quantifiedVariable
             , nuChild =
-                externalize $ Internal.mkSetVar quantifiedVariable
+                externalize $ Validated.mkSetVar quantifiedVariable
             }
 
 simpleExistsUnifiedPattern ::
-    Text -> Sort -> TermLike VariableName
+    Text -> Sort -> Validated.Pattern VariableName
 simpleExistsUnifiedPattern name sort =
-    Internal.mkExists quantifiedVariable (Internal.mkElemVar quantifiedVariable)
+    Validated.mkExists quantifiedVariable (Validated.mkElemVar quantifiedVariable)
   where
     quantifiedVariable = variable name sort
 
@@ -708,21 +706,21 @@ simpleExistsEqualsParsedPattern ::
     ParsedPattern
 simpleExistsEqualsParsedPattern name operandSort resultSort =
     externalize $
-        simpleExistsEqualsTermLike name operandSort resultSort
+        simpleExistsEqualsValidatedPattern name operandSort resultSort
 
-simpleExistsEqualsTermLike ::
+simpleExistsEqualsValidatedPattern ::
     Text ->
     OperandSort ->
     ResultSort ->
-    TermLike VariableName
-simpleExistsEqualsTermLike
+    Validated.Pattern VariableName
+simpleExistsEqualsValidatedPattern
     name
     (OperandSort operandSort)
     (ResultSort resultSort) =
-        Internal.mkExists var $
-            Internal.mkEquals resultSort variablePattern' variablePattern'
+        Validated.mkExists var $
+            Validated.mkEquals resultSort variablePattern' variablePattern'
       where
-        variablePattern' = Internal.mkElemVar var
+        variablePattern' = Validated.mkElemVar var
         var = mkElementVariable (testId name) operandSort
 
 applicationPatternWithChildren ::
@@ -753,9 +751,9 @@ applicationUnifiedPatternWithParams ::
     Sort ->
     SymbolName ->
     [Sort] ->
-    TermLike VariableName
+    Validated.Pattern VariableName
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
-    Internal.mkApplySymbol
+    Validated.mkApplySymbol
         Internal.Symbol
             { symbolConstructor = testId name
             , symbolParams = params

@@ -31,8 +31,9 @@ import Kore.Internal.Symbol (
     toSymbolOrAlias,
  )
 import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike (InternalVariable, Key, DomainValue (..), InternalBytes (..), mapHead, Application (..), symbolApplication, StringLiteral (..))
 import qualified Kore.Syntax.Pattern as Syntax
+import qualified Kore.Validate as Validated
 import Prelude.Kore
 
 type FutuPattern variable t =
@@ -40,7 +41,7 @@ type FutuPattern variable t =
         (Syntax.Pattern variable Attribute.Null)
         (Free (Recursive.Base (Syntax.Pattern variable Attribute.Null)) t)
 
-{- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
+{- | Externalize the 'Validated.Pattern' into a 'Syntax.Pattern'.
 
 All builtins will be rendered using their concrete Kore syntax.
 
@@ -49,60 +50,61 @@ See also: 'asPattern'
 externalize ::
     forall variable.
     InternalVariable variable =>
-    TermLike variable ->
+    Validated.Pattern variable ->
     Syntax.Pattern variable Attribute.Null
 externalize = Recursive.futu externalize1
   where
     externalize1 ::
-        TermLike variable -> FutuPattern variable (TermLike variable)
+        Validated.Pattern variable ->
+        FutuPattern variable (Validated.Pattern variable)
     externalize1 termLike =
         -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
-            AndF andF -> mkPurePattern Syntax.AndF andF
-            ApplyAliasF applyAliasF -> mkApp $ mapHead Alias.toSymbolOrAlias applyAliasF
-            ApplySymbolF applySymbolF -> mkApp $ mapHead Symbol.toSymbolOrAlias applySymbolF
-            BottomF bottomF -> mkPurePattern Syntax.BottomF bottomF
-            CeilF ceilF -> mkPurePattern Syntax.CeilF ceilF
-            DomainValueF domainValueF -> mkPurePattern Syntax.DomainValueF domainValueF
-            EqualsF equalsF -> mkPurePattern Syntax.EqualsF equalsF
-            ExistsF existsF -> mkPurePattern Syntax.ExistsF existsF
-            FloorF floorF -> mkPurePattern Syntax.FloorF floorF
-            ForallF forallF -> mkPurePattern Syntax.ForallF forallF
-            IffF iffF -> mkPurePattern Syntax.IffF iffF
-            ImpliesF impliesF -> mkPurePattern Syntax.ImpliesF impliesF
-            InF inF -> mkPurePattern Syntax.InF inF
-            MuF muF -> mkPurePattern Syntax.MuF muF
-            NextF nextF -> mkPurePattern Syntax.NextF nextF
-            NotF notF -> mkPurePattern Syntax.NotF notF
-            NuF nuF -> mkPurePattern Syntax.NuF nuF
-            OrF orF -> mkPurePattern Syntax.OrF orF
-            RewritesF rewritesF -> mkPurePattern Syntax.RewritesF rewritesF
-            StringLiteralF stringLiteralF -> mkPurePattern Syntax.StringLiteralF stringLiteralF
-            TopF topF -> mkPurePattern Syntax.TopF topF
-            VariableF variableF -> mkPurePattern Syntax.VariableF variableF
-            InhabitantF inhabitantF -> mkPurePattern Syntax.InhabitantF inhabitantF
-            EndiannessF endiannessF ->
+            Validated.AndF andF -> mkPurePattern Syntax.AndF andF
+            Validated.ApplyAliasF applyAliasF -> mkApp $ mapHead Alias.toSymbolOrAlias applyAliasF
+            Validated.ApplySymbolF applySymbolF -> mkApp $ mapHead Symbol.toSymbolOrAlias applySymbolF
+            Validated.BottomF bottomF -> mkPurePattern Syntax.BottomF bottomF
+            Validated.CeilF ceilF -> mkPurePattern Syntax.CeilF ceilF
+            Validated.DomainValueF domainValueF -> mkPurePattern Syntax.DomainValueF domainValueF
+            Validated.EqualsF equalsF -> mkPurePattern Syntax.EqualsF equalsF
+            Validated.ExistsF existsF -> mkPurePattern Syntax.ExistsF existsF
+            Validated.FloorF floorF -> mkPurePattern Syntax.FloorF floorF
+            Validated.ForallF forallF -> mkPurePattern Syntax.ForallF forallF
+            Validated.IffF iffF -> mkPurePattern Syntax.IffF iffF
+            Validated.ImpliesF impliesF -> mkPurePattern Syntax.ImpliesF impliesF
+            Validated.InF inF -> mkPurePattern Syntax.InF inF
+            Validated.MuF muF -> mkPurePattern Syntax.MuF muF
+            Validated.NextF nextF -> mkPurePattern Syntax.NextF nextF
+            Validated.NotF notF -> mkPurePattern Syntax.NotF notF
+            Validated.NuF nuF -> mkPurePattern Syntax.NuF nuF
+            Validated.OrF orF -> mkPurePattern Syntax.OrF orF
+            Validated.RewritesF rewritesF -> mkPurePattern Syntax.RewritesF rewritesF
+            Validated.StringLiteralF stringLiteralF -> mkPurePattern Syntax.StringLiteralF stringLiteralF
+            Validated.TopF topF -> mkPurePattern Syntax.TopF topF
+            Validated.VariableF variableF -> mkPurePattern Syntax.VariableF variableF
+            Validated.InhabitantF inhabitantF -> mkPurePattern Syntax.InhabitantF inhabitantF
+            Validated.EndiannessF endiannessF ->
                 mkApp $
                     mapHead Symbol.toSymbolOrAlias $
                         Endianness.toApplication $ getConst endiannessF
-            SignednessF signednessF ->
+            Validated.SignednessF signednessF ->
                 mkApp $
                     mapHead Symbol.toSymbolOrAlias $
                         Signedness.toApplication $ getConst signednessF
             -- Internals
-            InternalBoolF (Const internalBool) -> externalizeBool internalBool
-            InternalIntF (Const internalInt) -> externalizeInt internalInt
-            InternalBytesF (Const internalBytes) -> externalizeBytes internalBytes
-            InternalStringF (Const internalString) -> externalizeString internalString
-            InternalListF internalList -> externalizeList internalList
-            InternalSetF internalSet ->
+            Validated.InternalBoolF (Const internalBool) -> externalizeBool internalBool
+            Validated.InternalIntF (Const internalInt) -> externalizeInt internalInt
+            Validated.InternalBytesF (Const internalBytes) -> externalizeBytes internalBytes
+            Validated.InternalStringF (Const internalString) -> externalizeString internalString
+            Validated.InternalListF internalList -> externalizeList internalList
+            Validated.InternalSetF internalSet ->
                 either externalize1 id $
                     externalizeSet internalSet
-            InternalMapF internalMap ->
+            Validated.InternalMapF internalMap ->
                 either externalize1 id $
                     externalizeMap internalMap
             -- Inj
-            InjF inj -> mkApp $ mapHead Symbol.toSymbolOrAlias (Inj.toApplication inj)
+            Validated.InjF inj -> mkApp $ mapHead Symbol.toSymbolOrAlias (Inj.toApplication inj)
       where
         _ :< termLikeF = Recursive.project termLike
         mkPurePattern pattF = (Attribute.Null :<) . pattF . fmap Pure
@@ -110,14 +112,15 @@ externalize = Recursive.futu externalize1
 
 -- | Externalizes a 'Domain.InternalAc'
 externalizeAc ::
+    forall variable .
     UnitSymbol ->
     ConcatSymbol ->
-    [FutuPattern variable (TermLike variable)] ->
-    [FutuPattern variable (TermLike variable)] ->
-    [TermLike variable] ->
+    [FutuPattern variable (Validated.Pattern variable)] ->
+    [FutuPattern variable (Validated.Pattern variable)] ->
+    [Validated.Pattern variable] ->
     Either
-        (TermLike variable)
-        (FutuPattern variable (TermLike variable))
+        (Validated.Pattern variable)
+        (FutuPattern variable (Validated.Pattern variable))
 externalizeAc
     (UnitSymbol unitSymbol)
     (ConcatSymbol concatSymbol) = worker
@@ -146,11 +149,12 @@ externalizeAc
 
 -- | Externalizes a 'Domain.InternalMap'
 externalizeMap ::
+    forall variable.
     InternalVariable variable =>
-    InternalMap Key (TermLike variable) ->
+    InternalMap Key (Validated.Pattern variable) ->
     Either
-        (TermLike variable)
-        (FutuPattern variable (TermLike variable))
+        (Validated.Pattern variable)
+        (FutuPattern variable (Validated.Pattern variable))
 externalizeMap builtin =
     externalizeAc
         (UnitSymbol unitSymbol)
@@ -170,25 +174,31 @@ externalizeMap builtin =
     NormalizedAc{concreteElements} = normalizedAc
     NormalizedAc{opaque} = normalizedAc
 
-    concreteElement (key, mapValue) = element (into key, mapValue)
+    -- concreteElement ::
+    --     (Key, Value NormalizedMap (Validated.Pattern variable)) ->
+    --     FutuPattern variable (Validated.Pattern variable)
+    concreteElement (key, mapValue) = undefined -- element (into key, mapValue)
 
-    element (key, MapValue value) =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication elementSymbol [key, value]
+    -- element ::
+    --     (Validated.Pattern variable, Value NormalizedMap (Validated.Pattern variable)) ->
+    --     FutuPattern variable (Validated.Pattern variable)
+    element (key, MapValue value) = undefined
+    --     (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+    --         . mapHead toSymbolOrAlias
+    --         $ symbolApplication elementSymbol [undefined, undefined] -- [key, value]
 
-    isEmptyMap (InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
+    isEmptyMap (Validated.InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
         unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptyMap (App_ symbol _) = unitSymbol == symbol
+    isEmptyMap (Validated.App_ symbol _) = unitSymbol == symbol
     isEmptyMap _ = False
 
 -- | Externalizes a 'Domain.InternalSet'
 externalizeSet ::
     InternalVariable variable =>
-    InternalSet Key (TermLike variable) ->
+    InternalSet Key (Validated.Pattern variable) ->
     Either
-        (TermLike variable)
-        (FutuPattern variable (TermLike variable))
+        (Validated.Pattern variable)
+        (FutuPattern variable (Validated.Pattern variable))
 externalizeSet builtin =
     externalizeAc
         (UnitSymbol unitSymbol)
@@ -208,22 +218,22 @@ externalizeSet builtin =
     NormalizedAc{concreteElements} = normalizedAc
     NormalizedAc{opaque} = normalizedAc
 
-    concreteElement (key, value) = element (from @Key key, value)
+    concreteElement (key, value) = undefined -- element (from @Key key, value)
 
-    element (key, SetValue) =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication elementSymbol [key]
+    element (key, SetValue) = undefined
+        -- (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+        --     . mapHead toSymbolOrAlias
+        --     $ symbolApplication elementSymbol [key]
 
-    isEmptySet (InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
+    isEmptySet (Validated.InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
         unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptySet (App_ symbol _) = unitSymbol == symbol
+    isEmptySet (Validated.App_ symbol _) = unitSymbol == symbol
     isEmptySet _ = False
 
 externalizeList ::
     InternalVariable variable =>
-    InternalList (TermLike variable) ->
-    FutuPattern variable (TermLike variable)
+    InternalList (Validated.Pattern variable) ->
+    FutuPattern variable (Validated.Pattern variable)
 externalizeList builtin
     | Seq.null list = unit
     | otherwise = foldr1 concat' (element <$> list)
@@ -233,14 +243,14 @@ externalizeList builtin
     InternalList{internalListElement = elementSymbol} = builtin
     InternalList{internalListConcat = concatSymbol} = builtin
 
-    unit =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication unitSymbol []
-    element elem' =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication elementSymbol [elem']
+    unit = undefined
+    --     (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+    --         . mapHead toSymbolOrAlias
+    --         $ symbolApplication unitSymbol []
+    element elem' = undefined
+    --     (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+    --         . mapHead toSymbolOrAlias
+    --         $ symbolApplication elementSymbol [elem']
     concat' list1 list2 =
         (Attribute.Null :<) $
             Syntax.ApplicationF $
@@ -255,7 +265,7 @@ externalizeList builtin
 -}
 externalizeBool ::
     InternalBool ->
-    FutuPattern variable (TermLike variable)
+    FutuPattern variable (Validated.Pattern variable)
 externalizeBool builtin =
     Attribute.Null
         :< Syntax.DomainValueF
@@ -282,7 +292,7 @@ externalizeBool builtin =
 -}
 externalizeString ::
     InternalString ->
-    FutuPattern variable (TermLike variable)
+    FutuPattern variable (Validated.Pattern variable)
 externalizeString builtin =
     Attribute.Null
         :< Syntax.DomainValueF
@@ -306,7 +316,7 @@ See also: 'sort'.
 -}
 externalizeBytes ::
     InternalBytes ->
-    FutuPattern variable (TermLike variable)
+    FutuPattern variable (Validated.Pattern variable)
 externalizeBytes builtin =
     Attribute.Null
         :< Syntax.DomainValueF
@@ -330,7 +340,7 @@ externalizeBytes builtin =
 -}
 externalizeInt ::
     InternalInt ->
-    FutuPattern variable (TermLike variable)
+    FutuPattern variable (Validated.Pattern variable)
 externalizeInt builtin =
     Attribute.Null
         :< Syntax.DomainValueF

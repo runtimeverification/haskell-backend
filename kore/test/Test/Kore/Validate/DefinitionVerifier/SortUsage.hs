@@ -5,6 +5,7 @@ module Test.Kore.Validate.DefinitionVerifier.SortUsage (
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
+import qualified Kore.Validate as Validated
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import Kore.Error
 import Kore.IndexedModule.Error (
@@ -605,7 +606,7 @@ unfilteredTestExamplesForSort
                                     aliasName
                                     sort
                                     sortVariables
-                                    (externalize $ mkTop sort)
+                                    (externalize $ Validated.mkTop sort)
                                 ) :
                               additionalSentences
                             )
@@ -633,7 +634,7 @@ unfilteredTestExamplesForSort
                                     sort
                                     additionalSort
                                     sortVariables
-                                    (externalize $ mkTop additionalSort)
+                                    (externalize $ Validated.mkTop additionalSort)
                                 ) :
                               additionalSentences
                             )

@@ -8,7 +8,9 @@ module Kore.Validate.Pattern (
     extractAttributes,
     patternSort,
     setSimplified,
+    isSimplified,
     forgetSimplified,
+    setAttributeSimplified,
     mapVariables,
     Modality (..),
     applyModality,
@@ -98,6 +100,7 @@ import Control.Comonad.Trans.Cofree (
     tailF,
  )
 import qualified Kore.Syntax.Definition as Syntax
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Error (assertRight)
 import Kore.Attribute.Attributes (Attributes (..))
 import Kore.Syntax.Sentence (SentenceAxiom (..)
@@ -2073,6 +2076,24 @@ forgetSimplified ::
     Pattern variable
 forgetSimplified = resynthesize
 
+{- | Is the 'Pattern' fully simplified under the given side condition?
+-}
+isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
+isSimplified sideCondition =
+    isAttributeSimplified sideCondition . extractAttributes
+
+{- Checks whether the pattern is simplified relative to the given side
+condition.
+-}
+isAttributeSimplified ::
+    HasCallStack =>
+    SideCondition.Representation ->
+    PatternAttributes variable ->
+    Bool
+isAttributeSimplified sideCondition patt@PatternAttributes{termSimplified} =
+    assertSimplifiedConsistency patt $
+        Attribute.isSimplified sideCondition termSimplified
+
 -- | Construct an axiom declaration with the given parameters and pattern.
 mkAxiom ::
     [SortVariable] ->
@@ -2238,3 +2259,4 @@ mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
 --     [Pattern variable] ->
 --     Pattern variable
 -- applyAlias_ sentence = updateCallStack . applyAlias sentence []
+--

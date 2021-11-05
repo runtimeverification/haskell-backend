@@ -3,6 +3,7 @@ module Test.Kore.Rewrite.Axiom.Registry (
 ) where
 
 import qualified Data.Default as Default
+import qualified Kore.Validate as Validated
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -24,7 +25,7 @@ import Kore.Error (
     printError,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -41,7 +42,7 @@ import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
 import Kore.Rewrite.Axiom.Registry
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
-    mkConfigVariable,
+   mkConfigVariable,
  )
 import Kore.Rewrite.Rule (
     extractRewriteAxioms,
@@ -172,32 +173,32 @@ testDef =
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            ( mkAnd
-                                (mkTop sortVarS)
-                                ( mkAnd
-                                    ( mkIn
+                        Validated.mkImplies
+                            ( Validated.mkAnd
+                                (Validated.mkTop sortVarS)
+                                ( Validated.mkAnd
+                                    ( Validated.mkIn
                                         sortVarS
-                                        ( mkElemVar $
-                                            mkElementVariable (testId "tVar") sortS
+                                        ( Validated.mkElemVar $
+                                         mkElementVariable (testId "tVar") sortS
                                         )
-                                        (mkApplySymbol tHead [])
+                                        (Validated.mkApplySymbol tHead [])
                                     )
-                                    (mkTop sortVarS)
+                                    (Validated.mkTop sortVarS)
                                 )
                             )
-                            ( mkAnd
-                                ( mkEquals
+                            ( Validated.mkAnd
+                                ( Validated.mkEquals
                                     sortVarS
-                                    ( mkApplySymbol
+                                    ( Validated.mkApplySymbol
                                         (injHead sortS sortS)
-                                        [ mkElemVar $
-                                            mkElementVariable (testId "tVar") sortS
+                                        [ Validated.mkElemVar $
+                                           mkElementVariable (testId "tVar") sortS
                                         ]
                                     )
-                                    (mkApplySymbol sHead [])
+                                    (Validated.mkApplySymbol sHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -206,15 +207,15 @@ testDef =
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol gHead [])
-                                    (mkApplySymbol sHead [])
+                                    (Validated.mkApplySymbol gHead [])
+                                    (Validated.mkApplySymbol sHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -223,15 +224,15 @@ testDef =
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkTop sortS)
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkTop sortS)
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -241,15 +242,15 @@ testDef =
                     Attributes [Attribute.priorityAttribute 2]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkApplySymbol sHead [])
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkApplySymbol sHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -259,15 +260,15 @@ testDef =
                     Attributes [Attribute.priorityAttribute 3]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkApplySymbol sHead [])
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkApplySymbol sHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -277,15 +278,15 @@ testDef =
                     Attributes [Attribute.owiseAttribute]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkApplySymbol tHead [])
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkApplySymbol tHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -295,15 +296,15 @@ testDef =
                     Attributes [Attribute.priorityAttribute 1]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkApplySymbol tHead [])
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkApplySymbol tHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -312,15 +313,15 @@ testDef =
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkApplySymbol tHead [])
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkApplySymbol tHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -329,15 +330,15 @@ testDef =
                 , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol fHead [])
-                                    (mkApplySymbol gHead [])
+                                    (Validated.mkApplySymbol fHead [])
+                                    (Validated.mkApplySymbol gHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -349,15 +350,15 @@ testDef =
                         ]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol pHead [])
-                                    (mkApplySymbol qHead [])
+                                    (Validated.mkApplySymbol pHead [])
+                                    (Validated.mkApplySymbol qHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -369,15 +370,15 @@ testDef =
                         ]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol pHead [])
-                                    (mkApplySymbol tHead [])
+                                    (Validated.mkApplySymbol pHead [])
+                                    (Validated.mkApplySymbol tHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -389,15 +390,15 @@ testDef =
                         ]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkApplySymbol pHead [])
-                                    (mkApplySymbol qHead [])
+                                    (Validated.mkApplySymbol pHead [])
+                                    (Validated.mkApplySymbol qHead [])
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         , SentenceAxiomSentence
@@ -406,9 +407,9 @@ testDef =
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkRewrites
-                            (mkAnd (mkTop sortS) (mkApplySymbol fHead []))
-                            (mkAnd (mkTop sortS) (mkApplySymbol tHead []))
+                       Validated.mkRewrites
+                            (Validated.mkAnd (Validated.mkTop sortS) (Validated.mkApplySymbol fHead []))
+                            (Validated.mkAnd (Validated.mkTop sortS) (Validated.mkApplySymbol tHead []))
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -416,20 +417,20 @@ testDef =
                 , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 , sentenceAxiomPattern =
                     externalize $
-                        mkImplies
-                            (mkTop sortVarS)
-                            ( mkAnd
-                                ( mkEquals
+                       Validated.mkImplies
+                            (Validated.mkTop sortVarS)
+                            (Validated.mkAnd
+                                (Validated.mkEquals
                                     sortVarS
-                                    (mkCeil sortVar1S (mkApplySymbol fHead []))
-                                    (mkTop sortVar1S)
+                                    (Validated.mkCeil sortVar1S (Validated.mkApplySymbol fHead []))
+                                    (Validated.mkTop sortVar1S)
                                 )
-                                (mkTop sortVarS)
+                                (Validated.mkTop sortVarS)
                             )
                 }
         ]
 
-testIndexedModule :: VerifiedModule Attribute.Symbol
+testIndexedModule :: ValidatedModule Attribute.Symbol
 testIndexedModule =
     let verifyResult = verifyAndIndexDefinition Builtin.koreVerifiers testDef
      in case verifyResult of

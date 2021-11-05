@@ -9,6 +9,7 @@ module Test.Kore.Simplify (
     simplifiedPredicate,
     simplifiedSubstitution,
     simplifiedTerm,
+    simplifiedValidatedPattern,
 
     -- * Re-exports
     Simplifier,
@@ -20,6 +21,7 @@ module Test.Kore.Simplify (
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
+import qualified Kore.Validate as Validated
 import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern (
     setSimplified,
  )
@@ -91,6 +93,16 @@ runSimplifierBranch ::
     LogicT (SimplifierT NoSMT) a ->
     IO [a]
 runSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
+
+simplifiedValidatedPattern ::
+    Validated.Pattern variable ->
+    Validated.Pattern variable
+simplifiedValidatedPattern =
+    Recursive.unfold (simplifiedWorker . Recursive.project)
+  where
+    simplifiedWorker (attrs :< patt) =
+        Validated.setAttributeSimplified Attribute.fullySimplified attrs
+            :< patt
 
 simplifiedTerm :: TermLike variable -> TermLike variable
 simplifiedTerm =

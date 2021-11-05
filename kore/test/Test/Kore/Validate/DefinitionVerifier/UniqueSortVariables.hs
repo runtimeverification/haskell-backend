@@ -12,6 +12,7 @@ import Kore.Syntax.Definition (
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External
+import qualified Kore.Validate as Validated
 import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,
@@ -489,5 +490,5 @@ test_uniqueSortVariables =
         )
     ]
   where
-    topS = externalize $ mkTop $ simpleSort $ SortName "s"
-    topS1 = externalize $ mkTop $ simpleSort $ SortName "s1"
+    topS = externalize $ Validated.mkTop $ simpleSort $ SortName "s"
+    topS1 = externalize $ Validated.mkTop $ simpleSort $ SortName "s1"

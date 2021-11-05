@@ -13,7 +13,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.Rewrite.SMT.AST as AST (
     Declarations (Declarations),
@@ -88,7 +88,7 @@ test_symbolParsing =
 
 testsForModule ::
     String ->
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     [ AST.Declarations SMT.SExpr Text SMT.SExpr ->
     TestTree
     ] ->

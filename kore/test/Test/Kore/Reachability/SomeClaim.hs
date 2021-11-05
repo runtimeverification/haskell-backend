@@ -7,6 +7,7 @@ import Data.Default (
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Validate as Validated
 import Kore.Internal.Predicate (
     fromPredicate,
     makeEqualsPredicate,
@@ -77,13 +78,13 @@ test_extractClaim =
                 leftSort = termLikeSort leftTerm
                 rightSort = termLikeSort rightTerm
                 termLike =
-                    mkImplies
-                        (mkAnd (fromPredicate leftSort requires) leftTerm)
-                        ( applyModality
-                            WAF
+                    Validated.mkImplies
+                        (Validated.mkAnd (fromPredicate leftSort requires) (fromTermLike leftTerm))
+                        ( Validated.applyModality
+                            Validated.WAF
                             ( foldr
-                                mkExists
-                                (mkAnd (fromPredicate rightSort ensures) rightTerm)
+                                Validated.mkExists
+                                (Validated.mkAnd (fromPredicate rightSort ensures) (fromTermLike rightTerm))
                                 existentials
                             )
                         )

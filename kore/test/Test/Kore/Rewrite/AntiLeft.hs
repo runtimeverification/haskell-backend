@@ -112,12 +112,18 @@ test_antiLeft =
                         ( Validated.mkOr
                             ( applyAliasToNoArgs
                                 "B"
-                                (Validated.mkAnd (mkTop Mock.testSort) Mock.a)
+                                (Validated.mkAnd
+                                    (Validated.mkTop Mock.testSort)
+                                    (TermLike.fromTermLike Mock.a)
+                                )
                             )
                             ( Validated.mkOr
                                 ( applyAliasToNoArgs
                                     "C"
-                                    (Validated.mkAnd (mkTop Mock.testSort) Mock.b)
+                                    (Validated.mkAnd
+                                        (Validated.mkTop Mock.testSort)
+                                        (TermLike.fromTermLike Mock.b)
+                                    )
                                 )
                                 (Validated.mkBottom Mock.testSort)
                             )
@@ -142,7 +148,10 @@ test_antiLeft =
                                 ( Validated.mkOr
                                     ( applyAliasToNoArgs
                                         "C"
-                                        (Validated.mkAnd (mkTop Mock.testSort) Mock.a)
+                                        (Validated.mkAnd
+                                            (Validated.mkTop Mock.testSort)
+                                            (TermLike.fromTermLike Mock.a)
+                                        )
                                     )
                                     (Validated.mkBottom Mock.testSort)
                                 )
@@ -150,7 +159,10 @@ test_antiLeft =
                             ( Validated.mkOr
                                 ( applyAliasToNoArgs
                                     "D"
-                                    (Validated.mkAnd (mkTop Mock.testSort) Mock.b)
+                                    (Validated.mkAnd
+                                        (Validated.mkTop Mock.testSort)
+                                        (TermLike.fromTermLike Mock.b)
+                                    )
                                 )
                                 (Validated.mkBottom Mock.testSort)
                             )
@@ -164,9 +176,9 @@ test_antiLeft =
                 makeExistsPredicate
                     Mock.var_x_0
                     ( makeCeilPredicate
-                        ( Validated.mkAnd
-                            (Mock.g (Validated.mkElemVar Mock.x))
-                            (Mock.f (Validated.mkElemVar Mock.var_x_0))
+                        ( TermLike.mkAnd
+                            (Mock.g (TermLike.mkElemVar Mock.x))
+                            (Mock.f (TermLike.mkElemVar Mock.var_x_0))
                         )
                     )
         actual <-
@@ -181,7 +193,7 @@ test_antiLeft =
                                     "B"
                                     ( Validated.mkAnd
                                         (Validated.mkTop Mock.testSort)
-                                        (Mock.f (Validated.mkElemVar Mock.x))
+                                        (TermLike.fromTermLike (Mock.f (mkElemVar Mock.x)))
                                     )
                                 )
                             )
@@ -189,7 +201,7 @@ test_antiLeft =
                         )
                     )
                 )
-                (Mock.g (Validated.mkElemVar Mock.x))
+                (Mock.g (mkElemVar Mock.x))
         assertEqual "" expect actual
     ]
 

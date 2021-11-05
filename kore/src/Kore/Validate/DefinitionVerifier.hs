@@ -50,7 +50,8 @@ import Kore.Validate.AttributesVerifier hiding (
 import Kore.Validate.Error
 import Kore.Validate.ModuleVerifier
 import Kore.Validate.Verifier
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Prelude.Kore
 
 {- |'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
@@ -88,7 +89,7 @@ verifyAndIndexDefinition ::
     ParsedDefinition ->
     Either
         (Error VerifyError)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol.Symbol))
+        (Map.Map ModuleName (ValidatedModule Attribute.Symbol.Symbol))
 verifyAndIndexDefinition builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
@@ -104,25 +105,25 @@ If verification is successfull, it returns the updated maps of indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase ::
-    (Map ModuleName VerifiedModule', Map Text AstLocation) ->
+    (Map ModuleName ValidatedModule', Map Text AstLocation) ->
     Builtin.Verifiers ->
     ParsedDefinition ->
     Either
         (Error VerifyError)
-        (Map ModuleName VerifiedModule', Map Text AstLocation)
+        (Map ModuleName ValidatedModule', Map Text AstLocation)
 verifyAndIndexDefinitionWithBase
-    alreadyVerified
+    alreadyValidated
     builtinVerifiers
     definition =
         do
             let (verifiedModulesCache, baseNames) =
-                    (implicitModules, implicitNames) <> alreadyVerified
+                    (implicitModules, implicitNames) <> alreadyValidated
 
             names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
             let implicitModule ::
                     ImplicitIndexedModule
-                        Verified.Pattern
+                        ValidatedPattern
                         Attribute.Symbol.Symbol
                         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
                 implicitModule = ImplicitIndexedModule implicitIndexedModule
@@ -145,8 +146,8 @@ verifyAndIndexDefinitionWithBase
         modulesByName = Map.fromList . map (\m -> (moduleName m, m))
 
 sortModuleClaims ::
-    VerifiedModule declAtts ->
-    VerifiedModule declAtts
+    ValidatedModule declAtts ->
+    ValidatedModule declAtts
 sortModuleClaims verifiedModule =
     verifiedModule
         & field @"indexedModuleClaims"

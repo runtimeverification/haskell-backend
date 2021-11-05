@@ -179,6 +179,9 @@ instance From (Rule OnePathClaim) Attribute.PriorityAttributes where
 instance From OnePathClaim (AxiomPattern RewritingVariableName) where
     from = AxiomPattern . onePathRuleToTerm
 
+instance From OnePathClaim (AxiomPattern VariableName) where
+    from = AxiomPattern . Validated.mapVariables undefined . onePathRuleToTerm
+
 instance ClaimExtractor OnePathClaim where
     extractClaim (attributes, sentence) =
         case validatedPattern of

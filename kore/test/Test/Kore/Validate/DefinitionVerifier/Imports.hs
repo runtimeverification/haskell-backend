@@ -8,6 +8,7 @@ import Kore.IndexedModule.Error (
     noSort,
  )
 import qualified Kore.Internal.Alias as Internal
+import qualified Kore.Validate as Validated
 import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding (
@@ -349,8 +350,8 @@ sortVisibilityTests =
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
                 }
-    topSortPattern = mkTop sort
-    metaTopSortPattern = mkTop stringMetaSort
+    topSortPattern = Validated.mkTop sort
+    metaTopSortPattern = Validated.mkTop stringMetaSort
     sortReferenceInSort =
         SortActualSort
             SortActual
@@ -362,7 +363,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkTop sortReferenceInSort
+                    externalize $ Validated.mkTop sortReferenceInSort
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInSortSupportingSentences =
@@ -395,7 +396,7 @@ sortVisibilityTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkExists existsVariable (mkElemVar existsVariable)
+                        Validated.mkExists existsVariable (Validated.mkElemVar existsVariable)
                 , sentenceAxiomAttributes = Attributes []
                 }
       where
@@ -405,7 +406,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkAnd (mkTop sort) (mkTop sort)
+                    externalize $ Validated.mkAnd (Validated.mkTop sort) (Validated.mkTop sort)
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInNextPatternSentence =
@@ -413,7 +414,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkNext (mkTop sort)
+                    externalize $ Validated.mkNext (Validated.mkTop sort)
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInPatternInPatternSentence =
@@ -422,11 +423,11 @@ sortVisibilityTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkNext $
-                            mkEquals
+                        Validated.mkNext $
+                            Validated.mkEquals
                                 anotherSort
-                                (mkTop sort)
-                                (mkTop sort)
+                                (Validated.mkTop sort)
+                                (Validated.mkTop sort)
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInPatternInPatternSupportingSentences =
@@ -477,7 +478,7 @@ sortVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    externalize $ mkTop sort :: ParsedPattern
+                    externalize $ Validated.mkTop sort :: ParsedPattern
                 , sentenceAliasAttributes = Attributes []
                 }
     sortReferenceInSentenceAliasSortsSentence =
@@ -502,7 +503,7 @@ sortVisibilityTests =
                             ]
                         }
                 , sentenceAliasRightPattern =
-                    externalize $ mkTop anotherSort :: ParsedPattern
+                    externalize $ Validated.mkTop anotherSort :: ParsedPattern
                 , sentenceAliasAttributes = Attributes []
                 }
     sortReferenceInSentenceAliasSortsSupportSentences =
@@ -513,7 +514,7 @@ sortVisibilityTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkApplySymbol
+                        Validated.mkApplySymbol
                             Internal.Symbol
                                 { symbolConstructor = testId "symbol2"
                                 , symbolParams = [sort]
@@ -613,7 +614,7 @@ symbolVisibilityTests =
     ]
   where
     symbolPattern =
-        mkApplySymbol
+        Validated.mkApplySymbol
             Internal.Symbol
                 { symbolConstructor = testId "symbol1"
                 , symbolParams = [defaultSort]
@@ -636,7 +637,7 @@ symbolVisibilityTests =
                 }
     defaultSymbolSupportSentences = [defaultSortDeclaration]
     metaSymbolPattern =
-        mkApplySymbol
+        Validated.mkApplySymbol
             Internal.Symbol
                 { symbolConstructor = testId "#symbol1"
                 , symbolParams = [stringMetaSort]
@@ -678,7 +679,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    mkAnd symbolPattern (mkTop $ termLikeSort symbolPattern)
+                    Validated.mkAnd symbolPattern (Validated.mkTop $ Validated.patternSort symbolPattern)
                         & externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -687,7 +688,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    mkExists
+                    Validated.mkExists
                         (mkElementVariable (testId "var") defaultSort)
                         symbolPattern
                         & externalize
@@ -698,7 +699,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkNext symbolPattern
+                    externalize $ Validated.mkNext symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInSymbolOrAliasSentence =
@@ -707,14 +708,14 @@ symbolVisibilityTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkApplySymbol
+                        Validated.mkApplySymbol
                             Internal.Symbol
                                 { symbolConstructor = testId "symbol2"
                                 , symbolParams = [defaultSort]
                                 , symbolAttributes = Attribute.defaultSymbolAttributes
                                 , symbolSorts =
                                     applicationSorts
-                                        [termLikeSort symbolPattern]
+                                        [Validated.patternSort symbolPattern]
                                         defaultSort
                                 }
                             [symbolPattern]
@@ -811,13 +812,13 @@ aliasVisibilityTests =
     ]
   where
     aliasPattern =
-        mkApplyAlias
+        Validated.mkApplyAlias
             Internal.Alias
                 { aliasConstructor = testId "alias1"
                 , aliasParams = [defaultSort]
                 , aliasSorts = applicationSorts [] defaultSort
                 , aliasLeft = []
-                , aliasRight = mkTop defaultSort
+                , aliasRight = Validated.mkTop defaultSort
                 }
             []
     aliasDeclaration =
@@ -842,18 +843,18 @@ aliasVisibilityTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        externalize $ mkTop sentenceAliasResultSort
+                        externalize $ Validated.mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
                     }
     defaultAliasSupportSentences = [defaultSortDeclaration]
     metaAliasPattern =
-        mkApplyAlias
+        Validated.mkApplyAlias
             Internal.Alias
                 { aliasConstructor = testId "#alias1"
                 , aliasParams = [stringMetaSort]
                 , aliasSorts = applicationSorts [] stringMetaSort
                 , aliasLeft = []
-                , aliasRight = mkTop stringMetaSort
+                , aliasRight = Validated.mkTop stringMetaSort
                 }
             []
     metaAliasDeclaration =
@@ -878,7 +879,7 @@ aliasVisibilityTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        externalize $ mkTop sentenceAliasResultSort
+                        externalize $ Validated.mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
                     }
     aliasReferenceInAxiomSentence =
@@ -902,7 +903,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    mkAnd aliasPattern (mkTop $ termLikeSort aliasPattern)
+                    Validated.mkAnd aliasPattern (Validated.mkTop $ Validated.patternSort aliasPattern)
                         & externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -911,7 +912,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    mkExists
+                    Validated.mkExists
                         (mkElementVariable (testId "var") defaultSort)
                         aliasPattern
                         & externalize
@@ -922,7 +923,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize $ mkNext aliasPattern
+                    externalize $ Validated.mkNext aliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAliasOrAliasSentence =
@@ -931,17 +932,17 @@ aliasVisibilityTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     externalize $
-                        mkApplyAlias
+                        Validated.mkApplyAlias
                             Internal.Alias
                                 { aliasConstructor = testId "alias2"
                                 , aliasParams = [defaultSort]
                                 , aliasSorts =
                                     applicationSorts
-                                        [termLikeSort aliasPattern]
+                                        [Validated.patternSort aliasPattern]
                                         defaultSort
                                 , aliasLeft = []
                                 , aliasRight =
-                                    mkTop $ termLikeSort aliasPattern
+                                    Validated.mkTop $ Validated.patternSort aliasPattern
                                 }
                             [aliasPattern]
                 , sentenceAxiomAttributes = Attributes []
@@ -977,7 +978,7 @@ aliasVisibilityTests =
                                 ]
                             }
                     , sentenceAliasRightPattern =
-                        externalize $ mkTop sentenceAliasResultSort
+                        externalize $ Validated.mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
                     } :
             defaultAliasSupportSentences
@@ -1345,7 +1346,7 @@ nameDuplicationTests =
                                     }
                             , sentenceAliasRightPattern =
                                 externalize $
-                                    mkTop (SortVariableSort sv1)
+                                    Validated.mkTop (SortVariableSort sv1)
                             , sentenceAliasAttributes = Attributes []
                             }
                     ]

@@ -10,6 +10,7 @@ import Kore.Attribute.Null (
  )
 import Kore.Error
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Validate as Validated
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike (
@@ -81,7 +82,7 @@ test_FreeVarInRHS =
             sortR
             sortR
             [sortVariableR]
-            (externalize $ mkSetVar x)
+            (externalize $ Validated.mkSetVar x)
             & Lens.over
                 (field @"sentenceAliasLeftPattern")
                 (setField @"applicationChildren" [inject x])

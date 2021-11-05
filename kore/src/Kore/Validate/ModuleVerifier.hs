@@ -69,25 +69,25 @@ verifyUniqueNames existingNames koreModule =
 
 {- | Verify the named module.
 
-The cached 'VerifiedModule' is returned if available; otherwise the module is
+The cached 'ValidatedModule' is returned if available; otherwise the module is
 verified and cached.
 
 See also: 'verifyUncachedModule'
 -}
-verifyModule :: ModuleName -> Verifier VerifiedModule'
-verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
+verifyModule :: ModuleName -> Verifier ValidatedModule'
+verifyModule name = lookupValidatedModule name >>= maybe notCached cached
   where
     cached = return
     notCached = verifyUncachedModule name
 
 -- | Verify the named module, irrespective of the cache.
-verifyUncachedModule :: ModuleName -> Verifier VerifiedModule'
+verifyUncachedModule :: ModuleName -> Verifier ValidatedModule'
 verifyUncachedModule name = whileImporting name $ do
     module' <- lookupParsedModule name
     let Module{moduleSentences} = module'
         sentences = List.sort moduleSentences
     (_, indexedModule) <-
-        withModuleContext name (newVerifiedModule module')
+        withModuleContext name (newValidatedModule module')
             >>= SentenceVerifier.runSentenceVerifier
                 ( do
                     verifyImports sentences
@@ -107,13 +107,13 @@ verifyUncachedModule name = whileImporting name $ do
     field @"verifiedModules" %= Map.insert name indexedModule
     return indexedModule
 
-{- | Construct a new 'VerifiedModule' for the 'ParsedModule'.
+{- | Construct a new 'ValidatedModule' for the 'ParsedModule'.
 
-The new 'VerifiedModule' is empty except for its 'ModuleName', its 'Attributes',
+The new 'ValidatedModule' is empty except for its 'ModuleName', its 'Attributes',
 and the 'ImplicitModule' import.
 -}
-newVerifiedModule :: ParsedModule -> Verifier VerifiedModule'
-newVerifiedModule module' = do
+newValidatedModule :: ParsedModule -> Verifier ValidatedModule'
+newValidatedModule module' = do
     VerifierContext{implicitModule} <- Reader.ask
     let Module{moduleName, moduleAttributes} = module'
     attrs <- parseAttributes' moduleAttributes
@@ -124,7 +124,7 @@ newVerifiedModule module' = do
 
 {- | Project the 'SentenceImport's out the list and verify them.
 
-The named modules are verified and imported into the current 'VerifiedModule'.
+The named modules are verified and imported into the current 'ValidatedModule'.
 -}
 verifyImports :: [ParsedSentence] -> SentenceVerifier ()
 verifyImports = traverse_ verifyImport . mapMaybe projectSentenceImport

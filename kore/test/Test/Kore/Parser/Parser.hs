@@ -13,7 +13,7 @@ import Data.Text (
     Text,
     pack,
  )
-import qualified Kore.Internal.TermLike as Internal
+import qualified Kore.Validate as Validated
 import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Syntax
@@ -648,10 +648,10 @@ domainValuePatternParserTests =
         parsePattern
         [ success "\\dv{s1}(\"a\")" $
             externalize $
-                Internal.mkDomainValue
+                Validated.mkDomainValue
                     DomainValue
                         { domainValueSort = sortVariableSort "s1"
-                        , domainValueChild = Internal.mkStringLiteral "a"
+                        , domainValueChild = Validated.mkStringLiteral "a"
                         }
         , FailureWithoutMessage
             [ ""
@@ -1281,10 +1281,10 @@ sentenceAliasParserTests =
                                 }
                         , sentenceAliasRightPattern =
                             externalize $
-                                Internal.mkDomainValue
+                                Validated.mkDomainValue
                                     DomainValue
                                         { domainValueSort = resultSort
-                                        , domainValueChild = Internal.mkStringLiteral "f"
+                                        , domainValueChild = Validated.mkStringLiteral "f"
                                         }
                         , sentenceAliasAttributes = Attributes []
                         }
@@ -1302,7 +1302,7 @@ sentenceAliasParserTests =
                         , symbolOrAliasParams = [resultSort]
                         }
                   var name = mkElementVariable (testId name) resultSort
-                  argument name = Internal.mkElemVar (var name)
+                  argument name = Validated.mkElemVar (var name)
                   varA = var "a"
                   varB = var "b"
                   argA = argument "a"
@@ -1323,7 +1323,7 @@ sentenceAliasParserTests =
                                 }
                         , sentenceAliasRightPattern =
                             externalize $
-                                Internal.mkRewrites argA argB
+                                Validated.mkRewrites argA argB
                         , sentenceAliasAttributes = Attributes []
                         }
             )
@@ -1340,7 +1340,7 @@ sentenceAliasParserTests =
                         , symbolOrAliasParams = [resultSort]
                         }
                   var = mkElementVariable (testId "a") resultSort
-                  arg = Internal.mkElemVar var
+                  arg = Validated.mkElemVar var
                in SentenceAliasSentence
                     SentenceAlias
                         { sentenceAliasAlias =
@@ -1356,7 +1356,7 @@ sentenceAliasParserTests =
                                 , applicationChildren = [inject var]
                                 }
                         , sentenceAliasRightPattern =
-                            externalize $ Internal.mkNext arg
+                            externalize $ Validated.mkNext arg
                         , sentenceAliasAttributes = Attributes []
                         }
             )
