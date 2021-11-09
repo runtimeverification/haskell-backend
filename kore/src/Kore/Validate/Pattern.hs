@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Validate.Pattern (
     Pattern,
     PatternF (..),
+    PatternAttributes (..),
     extractAttributes,
     patternSort,
     setSimplified,
@@ -14,8 +15,11 @@ module Kore.Validate.Pattern (
     mapVariables,
     Modality (..),
     applyModality,
+    updateCallStack,
+    samePatternSort,
 
     mkAxiom,
+    mkAxiom_,
 
     -- * Pure Kore pattern constructors
     mkAnd,
@@ -2105,14 +2109,14 @@ mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
         , sentenceAxiomPattern
         , sentenceAxiomAttributes = Attributes []
         }
+{- | Construct an axiom declaration with no parameters.
+
+See also: 'mkAxiom'
+-}
+mkAxiom_ :: Pattern variable -> SentenceAxiom (Pattern variable)
+mkAxiom_ = mkAxiom []
 
 -- TODO: are these needed?
--- {- | Construct an axiom declaration with no parameters.
---
--- See also: 'mkAxiom'
--- -}
--- mkAxiom_ :: Pattern variable -> SentenceAxiom (Pattern variable)
--- mkAxiom_ = mkAxiom []
 --
 -- -- | Construct a symbol declaration with the given parameters and sorts.
 -- mkSymbol ::

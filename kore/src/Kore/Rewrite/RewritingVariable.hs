@@ -38,9 +38,11 @@ module Kore.Rewrite.RewritingVariable (
     -- * Exported for unparsing/testing
     getRewritingPattern,
     getRewritingTerm,
+    getRewritingValidatedPattern,
 ) where
 
 import qualified Data.Map.Strict as Map
+import qualified Kore.Validate as Validated
 import qualified Data.Set as Set
 import Debug
 import qualified GHC.Generics as GHC
@@ -194,6 +196,11 @@ getRewritingTerm ::
     TermLike RewritingVariableName ->
     TermLike VariableName
 getRewritingTerm = TermLike.mapVariables getRewritingVariable
+
+getRewritingValidatedPattern ::
+    Validated.Pattern RewritingVariableName ->
+    Validated.Pattern VariableName
+getRewritingValidatedPattern = Validated.mapVariables getRewritingVariable
 
 resetConfigVariable ::
     AdjSomeVariableName

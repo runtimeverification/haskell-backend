@@ -105,6 +105,9 @@ instance From AllPathClaim Attribute.RuleIndex where
 instance From AllPathClaim Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathClaim
 
+instance From AllPathClaim (AxiomPattern VariableName) where
+    from = AxiomPattern . Validated.mapVariables undefined . allPathRuleToTerm
+
 {- | Converts an 'AllPathClaim' into its term representation.
  This is intended to be used only in unparsing situations,
  as some of the variable information related to the

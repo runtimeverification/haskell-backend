@@ -24,6 +24,7 @@ module Kore.Exec (
 ) where
 
 import Control.Concurrent.MVar
+import qualified Kore.Validate as Validated
 import Control.DeepSeq (
     deepseq,
  )
@@ -83,7 +84,7 @@ import qualified Kore.Equation as Equation (
     requires,
  )
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools (
@@ -243,17 +244,17 @@ exec ::
     Limit Natural ->
     Limit Natural ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     ExecutionMode ->
     -- | The input pattern
     TermLike VariableName ->
-    smt (ExitCode, TermLike VariableName)
+    smt (ExitCode, Validated.Pattern VariableName)
 exec
     depthLimit
     breadthLimit
     verifiedModule
     strategy
-    (mkRewritingTerm -> initialTerm) =
+    (mkRewritingTerm -> initialTerm) = do
         evalSimplifier verifiedModule' $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
@@ -295,11 +296,13 @@ exec
                             extractProgramState
                                 <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
+            -- TODO(Ana): this will need to return a Validated.Pattern
             let finalTerm =
                     MultiOr.map getRewritingPattern finalConfigs'
                         & OrPattern.toTermLike initialSort
                         & sameTermLikeSort initialSort
             return (exitCode, finalTerm)
+        & (fmap . fmap) fromTermLike
       where
         dropStrategy = snd
         getFinalConfigsOf act = observeAllT $ fmap snd act
@@ -353,7 +356,7 @@ getExitCode ::
     forall simplifier.
     (MonadIO simplifier, MonadSimplify simplifier) =>
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The final configuration(s) of execution
     OrPattern.OrPattern RewritingVariableName ->
     simplifier ExitCode
@@ -400,14 +403,14 @@ search ::
     Limit Natural ->
     Limit Natural ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The input pattern
     TermLike VariableName ->
     -- | The pattern to match during execution
     Pattern VariableName ->
     -- | The bound on the number of search matches and the search type
     Search.Config ->
-    smt (TermLike VariableName)
+    smt (Validated.Pattern VariableName)
 search
     depthLimit
     breadthLimit
@@ -453,8 +456,8 @@ search
                 orPredicate =
                     makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
             return
-                . sameTermLikeSort patternSort
-                . getRewritingTerm
+                . Validated.samePatternSort patternSort
+                . getRewritingValidatedPattern
                 . fromPredicate patternSort
                 $ orPredicate
       where
@@ -474,11 +477,11 @@ prove ::
     Limit Natural ->
     Natural ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The spec module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
-    Maybe (VerifiedModule StepperAttributes) ->
+    Maybe (ValidatedModule StepperAttributes) ->
     smt ProveClaimsResult
 prove
     searchOrder
@@ -517,11 +520,11 @@ prove
 -}
 proveWithRepl ::
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The spec module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
-    Maybe (VerifiedModule StepperAttributes) ->
+    Maybe (ValidatedModule StepperAttributes) ->
     MVar (Log.LogAction IO Log.ActualEntry) ->
     -- | Optional script
     Repl.Data.ReplScript ->
@@ -577,9 +580,9 @@ boundedModelCheck ::
     Limit Natural ->
     Limit Natural ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The spec module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     Strategy.GraphSearchOrder ->
     smt
         ( Bounded.CheckResult
@@ -605,10 +608,10 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             (head claims, depthLimit)
 
 matchDisjunction ::
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    LoggerT IO (TermLike VariableName)
+    LoggerT IO (Validated.Pattern VariableName)
 matchDisjunction mainModule matchPattern disjunctionPattern =
     do
         SMT.runNoSMT $
@@ -621,7 +624,7 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
                     <&> Condition.toPredicate
                     & Predicate.makeMultipleOrPredicate
                     & Predicate.fromPredicate sort
-                    & getRewritingTerm
+                    & getRewritingValidatedPattern
                     & return
   where
     sort = Pattern.patternSort matchPattern
@@ -643,7 +646,7 @@ and 'Kore.Log.ErrorEquationRightFunction.errorEquationRightFunction'.
 checkFunctions ::
     MonadLog m =>
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     m ExitCode
 checkFunctions verifiedModule =
     checkResults $ filter (not . isFunctionPattern . right) equations
@@ -689,7 +692,7 @@ same term.
 checkBothMatch ::
     MonadSimplify m =>
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     m ExitCode
 checkBothMatch verifiedModule =
     filterM (uncurry bothMatch) equations
@@ -715,7 +718,7 @@ mergeAllRules ::
     , MonadMask smt
     ) =>
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The list of rules to merge
     [Text] ->
     smt (Either Text [RewriteRule RewritingVariableName])
@@ -732,7 +735,7 @@ mergeRulesConsecutiveBatches ::
     -- | Batch size
     Int ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The list of rules to merge
     [Text] ->
     smt (Either Text [RewriteRule RewritingVariableName])
@@ -752,7 +755,7 @@ mergeRules ::
       Simplifier.SimplifierT smt [RewriteRule RewritingVariableName]
     ) ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     -- | The list of rules to merge
     [Text] ->
     smt (Either Text [RewriteRule RewritingVariableName])
@@ -849,14 +852,14 @@ simplifySomeClaim rule = do
 
 initializeAndSimplify ::
     MonadSimplify simplifier =>
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     simplifier Initialized
 initializeAndSimplify verifiedModule =
     initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
 
 initializeWithoutSimplification ::
     MonadSimplify simplifier =>
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     simplifier Initialized
 initializeWithoutSimplification verifiedModule =
     initialize return verifiedModule
@@ -866,7 +869,7 @@ initialize ::
     forall simplifier.
     MonadSimplify simplifier =>
     (RewriteRule RewritingVariableName -> LogicT simplifier (RewriteRule RewritingVariableName)) ->
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     simplifier Initialized
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
@@ -901,9 +904,9 @@ fromMaybeChanged (Unchanged a) = a
 initializeProver ::
     forall simplifier.
     MonadSimplify simplifier =>
-    VerifiedModule StepperAttributes ->
-    VerifiedModule StepperAttributes ->
-    Maybe (VerifiedModule StepperAttributes) ->
+    ValidatedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
+    Maybe (ValidatedModule StepperAttributes) ->
     simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule

@@ -525,7 +525,7 @@ implicationRuleToTerm
         Validated.mkImplies (TermLike.fromTermLike left) (TermLike.fromTermLike right)
 
 -- | 'Alias' construct for all path globally
-aPG :: Sort -> Alias (TermLike.TermLike VariableName)
+aPG :: Sort -> Alias (Validated.Pattern VariableName)
 aPG sort =
     Alias
         { aliasConstructor =
@@ -540,7 +540,7 @@ aPG sort =
                 , applicationSortsResult = sort
                 }
         , aliasLeft = []
-        , aliasRight = TermLike.mkTop sort
+        , aliasRight = Validated.mkTop sort
         }
 
 -- | all path globally modality symbol

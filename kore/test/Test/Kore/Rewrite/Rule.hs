@@ -17,15 +17,18 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Syntax.Sentence as Sentence
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import qualified Kore.Syntax as Syntax
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (..),
+    symbolOrAliasSorts,
  )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike (TermLike, VariableName, Sort, Alias (..), TermAttributes (..), SortVariable, Rewrites, fromTermLike, Id, InternalVariable, termLikeSort)
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike (TermLike, VariableName, Sort (..), Alias (..), TermAttributes (..), SortVariable (..), Rewrites, fromTermLike, Id, InternalVariable, termLikeSort, Rewrites(..))
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern
@@ -103,20 +106,20 @@ axiomPatternsUnitTests =
         , let axiom1, axiom2 :: Validated.Sentence
               axiom1 =
                 (SentenceAxiomSentence . mkAxiom_)
-                    ( applyInj
+                    ( applyInjPattern
                         sortKItem
                         ( Validated.mkRewrites
-                            (Validated.mkAnd (Validated.mkTop sortAInt) varI1)
-                            (Validated.mkAnd (Validated.mkTop sortAInt) varI2)
+                            (Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI1))
+                            (Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI2))
                         )
                     )
               axiom2 =
                 (SentenceAxiomSentence . mkAxiom_)
-                    ( applyInj
+                    ( applyInjPattern
                         sortKItem
                         ( Validated.mkRewrites
-                            (Validated.mkAnd (Validated.mkTop sortAInt) varI1)
-                            (Validated.mkAnd (Validated.mkTop sortAInt) varI2)
+                            (Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI1))
+                            (Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI2))
                         )
                     )
               moduleTest =
@@ -162,8 +165,8 @@ axiomPatternsUnitTests =
                                     symbolInj
                                     [sortAInt, sortKItem]
                                     [ Validated.mkRewrites
-                                        (Validated.mkAnd (Validated.mkTop sortAInt) varI1)
-                                        (Validated.mkAnd (Validated.mkTop sortAInt) varI2)
+                                        (Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI1))
+                                        (Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI2))
                                     ]
                                 )
                             )
@@ -182,7 +185,7 @@ axiomPatternsIntegrationTests =
                 (RewriteRule rule)
                 ( simpleRewriteTermToRule
                     def
-                    (mkRewriteAxiomPattern left right Nothing)
+                    (mkRewriteAxiomPattern (fromTermLike left) (fromTermLike right) Nothing)
                 )
             )
         ]
@@ -232,14 +235,14 @@ test_rewritePatternToRewriteRuleAndBack :: TestTree
 test_rewritePatternToRewriteRuleAndBack =
     testGroup
         "rewrite pattern to rewrite rule to pattern"
-        [ let leftPSort = termLikeSort leftP
+        [ let leftPSort = Validated.patternSort leftP
               initialLhs =
                 Validated.mkAnd
                     (Predicate.fromPredicate leftPSort requiresP)
-                    (fromTermLike leftP)
+                    leftP
               initialPattern =
-                Syntax.Rewrites Mock.testSort initialLhs (fromTermLike initialRhs)
-              finalTerm = Validated.mkRewrites initialLhs (fromTermLike initialRhs)
+                Syntax.Rewrites Mock.testSort initialLhs initialRhs
+              finalTerm = Validated.mkRewrites initialLhs initialRhs
            in testCase "RewriteRule without antileft" $
                 assertEqual
                     ""
@@ -254,10 +257,10 @@ test_patternToAxiomPatternAndBack :: TestTree
 test_patternToAxiomPatternAndBack =
     testGroup
         "pattern to axiomPattern to pattern"
-        [ let op = aPG $ Validated.patternSort (fromTermLike leftP)
+        [ let op = aPG $ Validated.patternSort leftP
               initialPattern =
                 Validated.mkImplies
-                    (fromTermLike leftP)
+                    leftP
                     (Validated.mkApplyAlias op [Validated.mkElemVar Mock.x])
            in testCase "implication axioms:" $
                 assertEqual
@@ -270,22 +273,22 @@ test_patternToAxiomPatternAndBack =
         axiomPatternToTerm
             <$> termToAxiomPattern attribute initialPattern
 
-leftP, rightP, initialRhs :: TermLike VariableName
+leftP, rightP, initialRhs :: Validated.Pattern VariableName
 leftP = Validated.mkElemVar Mock.x
-rightP = Validated.mkExists Mock.y (mkElemVar Mock.y)
+rightP = Validated.mkExists Mock.y (Validated.mkElemVar Mock.y)
 initialRhs = Validated.mkAnd (Predicate.fromPredicate sort ensuresP) rightP
   where
     sort = Validated.patternSort rightP
 
 requiresP, ensuresP :: Predicate.Predicate VariableName
-requiresP = Predicate.makeCeilPredicate (Validated.mkElemVar Mock.z)
-ensuresP = Predicate.makeCeilPredicate (Validated.mkElemVar Mock.t)
+requiresP = Predicate.makeCeilPredicate (TermLike.mkElemVar Mock.z)
+ensuresP = Predicate.makeCeilPredicate (TermLike.mkElemVar Mock.t)
 
 varI1, varI2, varKRemainder, varStateCell :: TermLike VariableName
-varI1 = Validated.mkElemVar $ mkElementVariable (testId "VarI1") sortAInt
-varI2 = Validated.mkElemVar $ mkElementVariable (testId "VarI2") sortAInt
-varKRemainder = Validated.mkElemVar $ mkElementVariable (testId "VarDotVar1") sortK
-varStateCell = Validated.mkElemVar $ mkElementVariable (testId "VarDotVar0") sortStateCell
+varI1 = TermLike.mkElemVar $ Syntax.mkElementVariable (testId "VarI1") sortAInt
+varI2 = TermLike.mkElemVar $ Syntax.mkElementVariable (testId "VarI2") sortAInt
+varKRemainder = TermLike.mkElemVar $ Syntax.mkElementVariable (testId "VarDotVar1") sortK
+varStateCell = TermLike.mkElemVar $ Syntax.mkElementVariable (testId "VarDotVar0") sortStateCell
 
 sortABool, sortAInt, sortAExp, sortBExp :: Sort
 sortABool = simpleSort (SortName "ABool")
@@ -308,7 +311,7 @@ applyAliasLHS =
                     }
             , aliasLeft = []
             , aliasRight =
-                Validated.mkAnd (Validated.mkTop sortAInt) varI1
+                Validated.mkAnd (Validated.mkTop sortAInt) (fromTermLike varI1)
             }
 
 applyInj ::
@@ -318,9 +321,20 @@ applyInj ::
     TermLike VariableName ->
     TermLike VariableName
 applyInj sortTo child =
+    TermLike.applySymbol symbolInj [sortFrom, sortTo] [child]
+  where
+    TermAttributes{termSort = sortFrom} = TermLike.extractAttributes child
+
+applyInjPattern ::
+    -- | destination sort
+    Sort ->
+    -- | argument
+    Validated.Pattern VariableName ->
+    Validated.Pattern VariableName
+applyInjPattern sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    TermAttributes{termSort = sortFrom} = extractAttributes child
+    Validated.PatternAttributes{termSort = sortFrom} = Validated.extractAttributes child
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
@@ -377,7 +391,7 @@ applyLeqAInt ::
     TermLike VariableName ->
     TermLike VariableName ->
     TermLike VariableName
-applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
+applyLeqAInt child1 child2 = TermLike.applySymbol_ symbolLeqAInt [child1, child2]
 
 symbolLeqAExp :: SentenceSymbol
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
@@ -387,7 +401,7 @@ applyLeqAExp ::
     TermLike VariableName ->
     TermLike VariableName
 applyLeqAExp child1 child2 =
-    applySymbol_ symbolLeqAExp [child1, child2]
+    TermLike.applySymbol_ symbolLeqAExp [child1, child2]
 
 symbolKSeq, symbolInj :: SentenceSymbol
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
@@ -409,13 +423,13 @@ applyTCell ::
     TermLike VariableName ->
     TermLike VariableName
 applyTCell kCell stateCell =
-    applySymbol_ symbolTCell [kCell, stateCell]
+    TermLike.applySymbol_ symbolTCell [kCell, stateCell]
 
 symbolKCell = mkSymbol_ (testId "k") [sortK] sortKCell
 applyKCell ::
     TermLike VariableName ->
     TermLike VariableName
-applyKCell child = applySymbol_ symbolKCell [child]
+applyKCell child = TermLike.applySymbol_ symbolKCell [child]
 
 applyKSeq ::
     -- | head
@@ -424,7 +438,7 @@ applyKSeq ::
     TermLike VariableName ->
     TermLike VariableName
 applyKSeq kHead kTail =
-    applySymbol_ symbolKSeq [kHead, kTail]
+    TermLike.applySymbol_ symbolKSeq [kHead, kTail]
 
 sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
@@ -485,7 +499,7 @@ mkSymbol ::
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
-            Internal.Symbol
+            Sentence.Symbol
                 { symbolConstructor
                 , symbolParams
                 }
@@ -512,12 +526,12 @@ applySymbol ::
     [Validated.Pattern variable] ->
     Validated.Pattern variable
 applySymbol sentence params children =
-    updateCallStack $ mkApplySymbol internal children
+    Validated.updateCallStack $ Validated.mkApplySymbol internal children
   where
     SentenceSymbol{sentenceSymbolSymbol = external} = sentence
-    Internal.Symbol{symbolConstructor} = external
+    Sentence.Symbol{symbolConstructor} = external
     internal =
-        Symbol
+        Internal.Symbol
             { Internal.symbolConstructor
             , Internal.symbolParams = params
             , Internal.symbolAttributes = def

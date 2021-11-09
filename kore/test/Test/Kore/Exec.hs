@@ -38,16 +38,17 @@ import Kore.Attribute.Simplification
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Equation.Equation as Equation
 import Kore.Equation.Equation (
     Equation (..),
     mkEquation,
-    toTermLikeOld,
  )
 import qualified Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern (Pattern, Conditional (..))
 import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
@@ -90,7 +91,7 @@ import qualified Kore.Syntax.Sentence as Sentence (
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
 import Log (
     Entry (..),
     runLoggerT,
@@ -145,7 +146,7 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
                 , moduleAttributes = Attributes []
                 }
     inputPattern = applyToNoArgs mySort "a"
-    expected = (ExitSuccess, applyToNoArgs mySort "d")
+    expected = (ExitSuccess, fromTermLike (applyToNoArgs mySort "d"))
 
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
@@ -187,7 +188,7 @@ test_matchDisjunction =
             let actual =
                     matchDisjunction verifiedModule initial [final1, final2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
         do
             let actual =
@@ -196,7 +197,7 @@ test_matchDisjunction =
                         unreachable
                         [final1, final2, next1, next2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - bottom 2" $
         do
             let actual =
@@ -205,25 +206,25 @@ test_matchDisjunction =
                         initial
                         [final1, final2, next1, next2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - bottom 3" $
         do
             let actual =
                     matchDisjunction verifiedModule unreachable [final1, final2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - bottom 4" $
         do
             let actual =
                     matchDisjunction verifiedModule initial [next1, next2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - bottom 5" $
         do
             let actual =
                     matchDisjunction verifiedModule unreachable [next1, next2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - bottom 6" $
         do
             let actual =
@@ -232,7 +233,7 @@ test_matchDisjunction =
                         unreachable
                         [final1, final2, initial, next1, next2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkBottom mySort) result
+            assertEqual "" (Validated.mkBottom mySort) result
     , testCase "match disjunction - top" $
         do
             let actual =
@@ -241,7 +242,7 @@ test_matchDisjunction =
                         initial
                         [final1, final2, initial, next1, next2]
             result <- runLoggerT actual mempty
-            assertEqual "" (mkTop mySort) result
+            assertEqual "" (Validated.mkTop mySort) result
     ]
   where
     -- these tests are inspired by the "search" integration test
@@ -266,12 +267,12 @@ test_matchDisjunction =
                     ]
                 , moduleAttributes = Attributes []
                 }
-    initial = fromTermLike $ applyToNoArgs mySort "initial"
-    next1 = fromTermLike $ applyToNoArgs mySort "next1"
-    next2 = fromTermLike $ applyToNoArgs mySort "next2"
-    final1 = fromTermLike $ applyToNoArgs mySort "final1"
-    final2 = fromTermLike $ applyToNoArgs mySort "final2"
-    unreachable = fromTermLike $ applyToNoArgs mySort "unreachable"
+    initial = Pattern.fromTermLike $ applyToNoArgs mySort "initial"
+    next1 = Pattern.fromTermLike $ applyToNoArgs mySort "next1"
+    next2 = Pattern.fromTermLike $ applyToNoArgs mySort "next2"
+    final1 = Pattern.fromTermLike $ applyToNoArgs mySort "final1"
+    final2 = Pattern.fromTermLike $ applyToNoArgs mySort "final2"
+    unreachable = Pattern.fromTermLike $ applyToNoArgs mySort "unreachable"
 
 test_checkFunctions :: TestTree
 test_checkFunctions =
@@ -327,7 +328,7 @@ test_checkFunctions =
             }
     -- Note: symbol attributes should only be
     -- function or functional, it should not be a constructor.
-    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl :: Validated.SentenceSymbol
     mySymbDecl =
         SentenceSymbol
             { sentenceSymbolSymbol = mySymbol
@@ -349,12 +350,12 @@ test_checkFunctions =
                 , symbolAttributes = Mock.functionalAttributes
                 }
             []
-    disfunctionalAxiom :: Verified.Sentence
+    disfunctionalAxiom :: Validated.Sentence
     disfunctionalAxiom =
         SentenceAxiomSentence
-            ( mkAxiom
+            ( Validated.mkAxiom
                 []
-                ( toTermLikeOld
+                ( Equation.toTermLike
                     mySort
                     ( mkEquation
                         myF
@@ -400,7 +401,7 @@ test_checkFunctionsIgnoreSimpl =
             }
     -- Note: symbol attributes should only be
     -- function or functional, it should not be a constructor.
-    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl :: Validated.SentenceSymbol
     mySymbDecl =
         SentenceSymbol
             { sentenceSymbolSymbol = mySymbol
@@ -422,12 +423,12 @@ test_checkFunctionsIgnoreSimpl =
                 , symbolAttributes = Mock.functionalAttributes
                 }
             []
-    disfunctionalAxiom :: Verified.Sentence
+    disfunctionalAxiom :: Validated.Sentence
     disfunctionalAxiom =
         SentenceAxiomSentence
-            ( mkAxiom
+            ( Validated.mkAxiom
                 []
-                ( toTermLikeOld
+                ( Equation.toTermLike
                     mySort
                     ( mkEquation
                         myF
@@ -501,8 +502,8 @@ test_checkBothMatch =
     -- f() = name assuming pr
     mySentence name pr =
         SentenceAxiomSentence $
-            mkAxiom [] $
-                toTermLikeOld mySort $
+            Validated.mkAxiom [] $
+                Equation.toTermLike mySort $
                     Equation
                         { left = myF
                         , requires = pr
@@ -523,7 +524,7 @@ test_checkBothMatch =
             }
     -- Note: symbol attributes should only be
     -- function or functional, it should not be a constructor.
-    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl :: Validated.SentenceSymbol
     mySymbDecl =
         SentenceSymbol
             { sentenceSymbolSymbol = mySymbol
@@ -572,8 +573,8 @@ test_checkBothMatchIgnoreSimpl =
     -- f() = name assuming pr
     mySentence name pr =
         SentenceAxiomSentence $
-            mkAxiom [] $
-                toTermLikeOld mySort $
+            Validated.mkAxiom [] $
+                Equation.toTermLike mySort $
                     Equation
                         { left = myF
                         , requires = pr
@@ -587,8 +588,8 @@ test_checkBothMatchIgnoreSimpl =
     -- mySentence but with the @simplification@ attribute.
     mySentenceSimpl name pr =
         SentenceAxiomSentence
-            ( mkAxiom [] $
-                toTermLikeOld mySort $
+            ( Validated.mkAxiom [] $
+                Equation.toTermLike mySort $
                     Equation
                         { left = myF
                         , requires = pr
@@ -612,7 +613,7 @@ test_checkBothMatchIgnoreSimpl =
             }
     -- Note: symbol attributes should only be
     -- function or functional, it should not be a constructor.
-    mySymbDecl :: Verified.SentenceSymbol
+    mySymbDecl :: Validated.SentenceSymbol
     mySymbDecl =
         SentenceSymbol
             { sentenceSymbolSymbol = mySymbol
@@ -653,7 +654,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
                 , moduleAttributes = Attributes []
                 }
     inputPattern = applyToNoArgs mySort "b"
-    expected = (ExitSuccess, applyToNoArgs mySort "d")
+    expected = (ExitSuccess, fromTermLike (applyToNoArgs mySort "d"))
 
 test_execBottom :: TestTree
 test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns." $
@@ -661,7 +662,7 @@ test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns.
         ((_, actual), _) <- result
         assertEqual "" expected actual
   where
-    expected = mkBottom mySort
+    expected = Validated.mkBottom mySort
     result =
         exec
             Unlimited
@@ -677,7 +678,7 @@ test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns.
                 , moduleSentences = []
                 , moduleAttributes = Attributes []
                 }
-    inputPattern = mkBottom mySort
+    inputPattern = TermLike.mkBottom mySort
 
 test_searchPriority :: [TestTree]
 test_searchPriority =
@@ -732,9 +733,9 @@ test_searchPriority =
                 }
     inputPattern = applyToNoArgs mySort "a"
     expected =
-        let a = applyToNoArgs mySort "a"
-            c = applyToNoArgs mySort "c"
-            d = applyToNoArgs mySort "d"
+        let a = applyToNoArgs mySort "a" & fromTermLike
+            c = applyToNoArgs mySort "c" & fromTermLike
+            d = applyToNoArgs mySort "d" & fromTermLike
          in \case
                 ONE -> Set.fromList [c]
                 STAR -> Set.fromList [a, c, d]
@@ -801,10 +802,10 @@ test_searchExceedingBreadthLimit =
                 }
     inputPattern = applyToNoArgs mySort "a"
     expected =
-        let a = applyToNoArgs mySort "a"
-            b = applyToNoArgs mySort "b"
-            c = applyToNoArgs mySort "c"
-            d = applyToNoArgs mySort "d"
+        let a = applyToNoArgs mySort "a" & fromTermLike
+            b = applyToNoArgs mySort "b" & fromTermLike
+            c = applyToNoArgs mySort "c" & fromTermLike
+            d = applyToNoArgs mySort "d" & fromTermLike
          in \case
                 ONE -> Set.fromList [b, c]
                 STAR -> Set.fromList [a, b, c, d]
@@ -831,15 +832,15 @@ searchPattern =
 {- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is
  not a disjunction of "v = ???", return Nothing.
 -}
-extractSearchResults :: TermLike VariableName -> Maybe (Set (TermLike VariableName))
+extractSearchResults :: Validated.Pattern VariableName -> Maybe (Set (Validated.Pattern VariableName))
 extractSearchResults =
     \case
-        Equals_ operandSort resultSort first second
+        Validated.Equals_ operandSort resultSort first second
             | operandSort == mySort
                 && resultSort == mySort
-                && first == searchVar ->
+                && first == fromTermLike searchVar ->
                 Just $ Set.singleton second
-        Or_ sort first second
+        Validated.Or_ sort first second
             | sort == mySort ->
                 liftA2
                     Set.union
@@ -848,8 +849,8 @@ extractSearchResults =
         _ -> Nothing
 
 verifiedMyModule ::
-    Module Verified.Sentence ->
-    VerifiedModule Attribute.Symbol
+    Module Validated.Sentence ->
+    ValidatedModule Attribute.Symbol
 verifiedMyModule module_ = indexedModule
   where
     indexedModule =
@@ -878,7 +879,7 @@ mySort =
             }
 
 -- | sort MySort{} []
-mySortDecl :: Verified.SentenceSort
+mySortDecl :: Validated.SentenceSort
 mySortDecl =
     SentenceSort
         { sentenceSortName = mySortName
@@ -887,7 +888,7 @@ mySortDecl =
         }
 
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
-constructorDecl :: Text -> Verified.SentenceSymbol
+constructorDecl :: Text -> Validated.SentenceSymbol
 constructorDecl name =
     (mkSymbol_ (testId name) [] mySort)
         { sentenceSymbolAttributes =
@@ -898,9 +899,10 @@ constructorDecl name =
         }
 
 -- | alias name{}() : MySort{} where name{}() := \top{MySort{}} []
-aliasDecl :: Text -> TermLike VariableName -> Verified.SentenceAlias
+aliasDecl :: Text -> TermLike VariableName -> Validated.SentenceAlias
 aliasDecl name term =
     mkAlias (testId name) [] mySort [] term
+    & fromTermLike
 
 {- |
   axiom{R}
@@ -911,10 +913,10 @@ aliasDecl name term =
               a{}()))
   [functional{}()]
 -}
-functionalAxiom :: Text -> Verified.Sentence
+functionalAxiom :: Text -> Validated.Sentence
 functionalAxiom name =
     SentenceAxiomSentence
-        ( mkAxiom
+        ( Validated.mkAxiom
             [r]
             ( mkExists
                 v
@@ -931,11 +933,11 @@ functionalAxiom name =
     v = mkElementVariable (testId "V") mySort
     r = SortVariable (testId "R")
 
-simpleRewriteAxiom :: Text -> Text -> Verified.Sentence
+simpleRewriteAxiom :: Text -> Text -> Validated.Sentence
 simpleRewriteAxiom lhs rhs =
     rewriteAxiomPriority lhs rhs Nothing Nothing
 
-complexRewriteAxiom :: Text -> Text -> Verified.Sentence
+complexRewriteAxiom :: Text -> Text -> Validated.Sentence
 complexRewriteAxiom lhs rhs =
     rewriteAxiomPriority
         lhs
@@ -949,11 +951,11 @@ complexRewriteAxiom lhs rhs =
                 }
         )
 
-simpleRewriteAxiomWithPriority :: Text -> Text -> Integer -> Verified.Sentence
+simpleRewriteAxiomWithPriority :: Text -> Text -> Integer -> Validated.Sentence
 simpleRewriteAxiomWithPriority lhs rhs priority =
     rewriteAxiomPriority lhs rhs (Just priority) Nothing
 
-complexRewriteAxiomWithPriority :: Text -> Text -> Integer -> Verified.Sentence
+complexRewriteAxiomWithPriority :: Text -> Text -> Integer -> Validated.Sentence
 complexRewriteAxiomWithPriority lhs rhs priority =
     rewriteAxiomPriority
         lhs
@@ -972,11 +974,11 @@ rewriteAxiomPriority ::
     Text ->
     Maybe Integer ->
     Maybe (AntiLeft VariableName) ->
-    Verified.Sentence
+    Validated.Sentence
 rewriteAxiomPriority lhsName rhsName priority antiLeft =
     ( Syntax.SentenceAxiomSentence
         . withPriority priority
-        . TermLike.mkAxiom_
+        . Validated.mkAxiom_
     )
         $ rewriteRuleToTerm $
             RewriteRule
@@ -1105,7 +1107,7 @@ test_execGetExitCode =
 
     myIntSort = SortActualSort $ SortActual myIntSortId []
 
-    intSortDecl :: Verified.SentenceHook
+    intSortDecl :: Validated.SentenceHook
     intSortDecl =
         SentenceHookedSort
             SentenceSort
@@ -1116,7 +1118,7 @@ test_execGetExitCode =
 
     getExitCodeId = testId "LblgetExitCode"
 
-    getExitCodeDecl :: Verified.SentenceSymbol
+    getExitCodeDecl :: Validated.SentenceSymbol
     getExitCodeDecl =
         (mkSymbol_ getExitCodeId [myIntSort] myIntSort)
             { sentenceSymbolAttributes =

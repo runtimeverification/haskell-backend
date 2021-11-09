@@ -48,6 +48,7 @@ module Kore.Repl.State (
 ) where
 
 import Control.Concurrent.MVar
+import qualified Kore.Validate as Validated
 import qualified Control.Lens as Lens
 import Control.Monad.Error.Class (
     MonadError,
@@ -748,11 +749,11 @@ conjOfClaims ::
     From claim (AxiomPattern VariableName) =>
     [claim] ->
     Sort ->
-    TermLike VariableName
+    Validated.Pattern VariableName
 conjOfClaims claims sort =
     foldr
-        TermLike.mkAnd
-        (TermLike.mkTop sort)
+        Validated.mkAnd
+        (Validated.mkTop sort)
         $ fmap (getAxiomPattern . from) claims
 
 generateInProgressClaims ::
@@ -835,14 +836,14 @@ createNewDefinition ::
     ModuleName ->
     String ->
     [SomeClaim] ->
-    Definition (Sentence (TermLike VariableName))
+    Definition (Sentence (Validated.Pattern VariableName))
 createNewDefinition mainModuleName name claims =
     Definition
         { definitionAttributes = mempty
         , definitionModules = [newModule]
         }
   where
-    newModule :: Module (Sentence (TermLike VariableName))
+    newModule :: Module (Sentence (Validated.Pattern VariableName))
     newModule =
         Module
             { moduleName = ModuleName . pack $ name
@@ -852,7 +853,7 @@ createNewDefinition mainModuleName name claims =
             , moduleAttributes = Default.def
             }
 
-    importVerification :: Sentence (TermLike VariableName)
+    importVerification :: Sentence (Validated.Pattern VariableName)
     importVerification =
         SentenceImportSentence
             SentenceImport
@@ -860,7 +861,7 @@ createNewDefinition mainModuleName name claims =
                 , sentenceImportAttributes = mempty
                 }
 
-    claimToSentence :: SomeClaim -> Sentence (TermLike VariableName)
+    claimToSentence :: SomeClaim -> Sentence (Validated.Pattern VariableName)
     claimToSentence claim =
         SentenceClaimSentence
             . SentenceClaim

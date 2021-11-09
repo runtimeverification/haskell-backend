@@ -210,6 +210,7 @@ instance InternalVariable variable => Substitute (Equation variable) where
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
 
+-- TODO: rename
 toTermLike ::
     InternalVariable variable =>
     Sort ->

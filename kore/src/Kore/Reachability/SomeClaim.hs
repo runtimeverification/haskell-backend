@@ -133,6 +133,10 @@ instance From SomeClaim (AxiomPattern RewritingVariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
 
+instance From SomeClaim (AxiomPattern VariableName) where
+    from (OnePath rule) = from rule
+    from (AllPath rule) = from rule
+
 instance From SomeClaim Validated.Sentence where
     from claim =
         Syntax.SentenceClaimSentence $
