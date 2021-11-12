@@ -46,7 +46,6 @@ import Kore.Simplify.AndTerms (
     termUnification,
  )
 import Kore.Simplify.NotSimplifier
-
 import qualified Kore.Simplify.Simplify as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
@@ -58,6 +57,7 @@ import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
 import qualified Logic
 import Prelude.Kore
+
 -- import qualified Pretty
 
 {- | A 'SubstitutionSimplifier' to use during unification.
@@ -119,4 +119,5 @@ unificationMakeAnd notSimplifier =
         unified <- termUnification notSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
             & Logic.lowerLogicT
-            -- & trace ("\nSimplifyingCondition:\n" <> (show . Pretty.pretty) unified <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
+
+-- & trace ("\nSimplifyingCondition:\n" <> (show . Pretty.pretty) unified <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
