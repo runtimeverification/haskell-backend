@@ -10,6 +10,8 @@ module Kore.Simplify.Condition (
     simplifyPredicates,
 ) where
 
+-- import qualified Pretty
+
 import Changed
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
@@ -79,8 +81,26 @@ simplify ::
     Conditional RewritingVariableName any ->
     LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
-    normalize >=> worker
+    normalize >=> loop 0
   where
+
+    limit :: Int
+    limit = 4
+
+    loop ::
+        Int ->
+        Conditional RewritingVariableName any ->
+        LogicT simplifier (Conditional RewritingVariableName any)
+    loop count input
+        | count >= limit = do
+            -- TODO: issue warning
+            pure input
+        | otherwise = do
+            output <- worker input
+            if fullySimplified output
+                then return (extract output)
+                else loop (count + 1) (extract output)
+
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
             predicate' = substitute substitution' predicate
@@ -100,9 +120,10 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
                     (field @"predicate")
                     simplifyConjunctions
                     normalized{term}
-        if fullySimplified simplifiedPattern
-            then return (extract simplifiedPattern)
-            else worker (extract simplifiedPattern)
+        return simplifiedPattern
+        -- if fullySimplified simplifiedPattern
+        --     then return (extract simplifiedPattern)
+        --     else worker (extract simplifiedPattern)
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
@@ -135,6 +156,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         predicates' <-
             simplifySubstitution sideCondition substitution
                 & lift
+                -- & trace ("\nSimplifying substitution:\n" <> (show . Pretty.pretty) (from @_ @(Predicate RewritingVariableName) substitution) <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 
@@ -158,7 +180,8 @@ simplifyPredicates sideCondition original = do
             (toList predicates)
     let simplified = foldMap mkCondition simplifiedPredicates
     if original == simplifiedPredicates
-        then return (Condition.markSimplified simplified)
+        then -- trace ("\nExit simplifyPredicates\n" <> (show . Pretty.pretty) (Condition.markSimplified simplified)) $ return (Condition.markSimplified simplified)
+            return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
 
 {- | Simplify a conjunction of predicates by simplifying each one
