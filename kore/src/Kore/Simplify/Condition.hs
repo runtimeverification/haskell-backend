@@ -11,7 +11,6 @@ module Kore.Simplify.Condition (
 ) where
 
 -- import qualified Pretty
-
 import Changed
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
@@ -83,7 +82,6 @@ simplify ::
 simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
     normalize >=> loop 0
   where
-
     limit :: Int
     limit = 4
 
@@ -121,9 +119,9 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
                     simplifyConjunctions
                     normalized{term}
         return simplifiedPattern
-        -- if fullySimplified simplifiedPattern
-        --     then return (extract simplifiedPattern)
-        --     else worker (extract simplifiedPattern)
+    -- if fullySimplified simplifiedPattern
+    --     then return (extract simplifiedPattern)
+    --     else worker (extract simplifiedPattern)
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
@@ -156,7 +154,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         predicates' <-
             simplifySubstitution sideCondition substitution
                 & lift
-                -- & trace ("\nSimplifying substitution:\n" <> (show . Pretty.pretty) (from @_ @(Predicate RewritingVariableName) substitution) <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
+        -- & trace ("\nSimplifying substitution:\n" <> (show . Pretty.pretty) (from @_ @(Predicate RewritingVariableName) substitution) <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 

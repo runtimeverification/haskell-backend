@@ -11,7 +11,6 @@ module Kore.Simplify.Pattern (
 
 -- import qualified Pretty
 -- import Kore.Unparser
-
 import Control.Monad (
     (>=>),
  )
@@ -134,7 +133,7 @@ makeEvaluate sideCondition =
         OrPattern.observeAllT $ do
             withSimplifiedCondition <-
                 -- trace ("\nBefore 1st simplifyCondition\n" <> unparseToString pattern' <> (show . Pretty.pretty) sideCondition) $
-                    simplifyCondition sideCondition pattern'
+                simplifyCondition sideCondition pattern'
             let (term, simplifiedCondition) =
                     Conditional.splitTerm withSimplifiedCondition
                 term' = substitute (toMap $ substitution simplifiedCondition) term
@@ -144,7 +143,7 @@ makeEvaluate sideCondition =
                         sideCondition
             simplifiedTerm <-
                 -- trace ("\nBefore simplifyTerm\n" <> unparseToString term' <> (show . Pretty.pretty) termSideCondition) $
-                    simplifyTerm termSideCondition term'
+                simplifyTerm termSideCondition term'
                     >>= Logic.scatter
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
