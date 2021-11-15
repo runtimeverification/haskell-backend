@@ -140,8 +140,8 @@ import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
  )
 import Kore.Log.WarnUnsimplified (
-    WarnUnsimplifiedPredicate,
     WarnUnsimplifiedCondition,
+    WarnUnsimplifiedPredicate,
  )
 import Log (
     Entry (..),

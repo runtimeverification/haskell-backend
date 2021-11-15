@@ -11,9 +11,6 @@ module Kore.Simplify.Condition (
 ) where
 
 import Changed
-import Kore.Log.WarnUnsimplified (
-    warnUnsimplifiedCondition
-                                 )
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
     StateT,
@@ -44,6 +41,9 @@ import Kore.Internal.Substitution (
     Assignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Log.WarnUnsimplified (
+    warnUnsimplifiedCondition,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

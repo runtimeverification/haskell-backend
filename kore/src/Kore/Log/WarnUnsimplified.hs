@@ -9,6 +9,13 @@ module Kore.Log.WarnUnsimplified (
     warnUnsimplifiedCondition,
 ) where
 
+import Kore.Internal.Condition (
+    Condition,
+ )
+import Kore.Internal.Conditional (
+    Conditional,
+ )
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -18,14 +25,7 @@ import Kore.Internal.MultiOr (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import Kore.Internal.Conditional (
-    Conditional,
-                                 )
-import Kore.Internal.Condition (
-    Condition,
- )
 import Kore.Rewrite.RewritingVariable
-import qualified Kore.Internal.Conditional as Conditional
 import Log
 import Prelude.Kore
 import Pretty (
@@ -111,6 +111,5 @@ warnUnsimplifiedCondition ::
 warnUnsimplifiedCondition
     limit
     (Conditional.withoutTerm -> original)
-    (Conditional.withoutTerm -> output)
-  =
-    logEntry WarnUnsimplifiedCondition{limit, original, output}
+    (Conditional.withoutTerm -> output) =
+        logEntry WarnUnsimplifiedCondition{limit, original, output}
