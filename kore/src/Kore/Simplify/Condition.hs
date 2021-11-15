@@ -10,8 +10,10 @@ module Kore.Simplify.Condition (
     simplifyPredicates,
 ) where
 
--- import qualified Pretty
 import Changed
+import Kore.Log.WarnUnsimplified (
+    warnUnsimplifiedCondition
+                                 )
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
     StateT,
@@ -79,8 +81,8 @@ simplify ::
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
     LogicT simplifier (Conditional RewritingVariableName any)
-simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
-    normalize >=> loop 0
+simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original =
+    normalize original >>= loop 0
   where
     limit :: Int
     limit = 4
@@ -91,7 +93,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         LogicT simplifier (Conditional RewritingVariableName any)
     loop count input
         | count >= limit = do
-            -- TODO: issue warning
+            warnUnsimplifiedCondition limit original input
             pure input
         | otherwise = do
             output <- worker input
@@ -119,9 +121,6 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
                     simplifyConjunctions
                     normalized{term}
         return simplifiedPattern
-    -- if fullySimplified simplifiedPattern
-    --     then return (extract simplifiedPattern)
-    --     else worker (extract simplifiedPattern)
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
@@ -154,7 +153,6 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
         predicates' <-
             simplifySubstitution sideCondition substitution
                 & lift
-        -- & trace ("\nSimplifying substitution:\n" <> (show . Pretty.pretty) (from @_ @(Predicate RewritingVariableName) substitution) <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 

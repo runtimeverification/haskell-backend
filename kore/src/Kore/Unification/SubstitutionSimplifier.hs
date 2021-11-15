@@ -58,7 +58,6 @@ import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
 import qualified Logic
 import Prelude.Kore
--- import qualified Pretty
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -86,7 +85,6 @@ substitutionSimplifier notSimplifier =
             let condition' = Condition.fromPredicate predicate <> condition
                 conditions = OrCondition.fromCondition condition'
             TopBottom.guardAgainstBottom conditions
-            -- trace ("\nSubstitution result:\n" <> unlines (show . Pretty.pretty <$> toList conditions)) debugSubstitutionSimplifierResult
             debugSubstitutionSimplifierResult
             return conditions
       where
@@ -119,4 +117,3 @@ unificationMakeAnd notSimplifier =
         unified <- termUnification notSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
             & Logic.lowerLogicT
-            -- & trace ("\nSimplifyingCondition:\n" <> (show . Pretty.pretty) unified <> "\nWith side condition:\n" <> (show . Pretty.pretty) sideCondition)
