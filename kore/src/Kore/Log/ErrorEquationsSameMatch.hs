@@ -19,8 +19,9 @@ import Kore.Attribute.Axiom (
 import Kore.Equation.Equation (
     Equation (..),
  )
-import Kore.Internal.TermLike (
-    VariableName,
+
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
  )
 import Log (
     Entry (..),
@@ -36,13 +37,14 @@ import Pretty (
     pretty,
     vsep,
  )
-import SQL (
-    Table,
- )
+
+--import SQL (
+--    Table,
+-- )
 
 -- | Error when two equations both match a term.
 data ErrorEquationsSameMatch = ErrorEquationsSameMatch
-    { equation1, equation2 :: Equation VariableName
+    { equation1, equation2 :: Equation RewritingVariableName
     }
     deriving stock (Show, GHC.Generic)
 
@@ -81,10 +83,10 @@ instance Entry ErrorEquationsSameMatch where
                 , pretty sourceLoc2
                 ]
 
-instance SQL.Table ErrorEquationsSameMatch
+--instance SQL.Table ErrorEquationsSameMatch
 
 errorEquationsSameMatch ::
-    Equation VariableName ->
-    Equation VariableName ->
+    Equation RewritingVariableName ->
+    Equation RewritingVariableName ->
     m ()
 errorEquationsSameMatch eq1 = throw . ErrorEquationsSameMatch eq1

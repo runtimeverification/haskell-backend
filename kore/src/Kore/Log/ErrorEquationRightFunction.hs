@@ -19,8 +19,8 @@ import Kore.Attribute.Axiom (
 import Kore.Equation.Equation (
     Equation (..),
  )
-import Kore.Internal.TermLike (
-    VariableName,
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
  )
 import Log (
     Entry (..),
@@ -34,13 +34,14 @@ import Pretty (
     pretty,
     vsep,
  )
-import SQL (
-    Table,
- )
+
+--import SQL (
+--    Table,
+-- )
 
 -- | Error when RHS of equation is not a function pattern.
 newtype ErrorEquationRightFunction = ErrorEquationRightFunction
-    { equation :: Equation VariableName
+    { equation :: Equation RewritingVariableName
     }
     deriving stock (Show, GHC.Generic)
 
@@ -70,8 +71,8 @@ instance Entry ErrorEquationRightFunction where
             pretty sourceLocation
     helpDoc _ = "errors raised when right-hand side of equation is not a function pattern"
 
-instance SQL.Table ErrorEquationRightFunction
+-- instance SQL.Table ErrorEquationRightFunction
 
 -- | Error when RHS of equation is not a function pattern.
-errorEquationRightFunction :: Equation VariableName -> m ()
+errorEquationRightFunction :: Equation RewritingVariableName -> m ()
 errorEquationRightFunction = throw . ErrorEquationRightFunction
