@@ -279,7 +279,7 @@
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"
-          "Kore/Log/WarnUnsimplifiedPredicate"
+          "Kore/Log/WarnUnsimplified"
           "Kore/ModelChecker/Bounded"
           "Kore/ModelChecker/Simplification"
           "Kore/ModelChecker/Step"
