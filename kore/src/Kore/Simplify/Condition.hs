@@ -176,8 +176,7 @@ simplifyPredicates sideCondition original = do
             (toList predicates)
     let simplified = foldMap mkCondition simplifiedPredicates
     if original == simplifiedPredicates
-        then -- trace ("\nExit simplifyPredicates\n" <> (show . Pretty.pretty) (Condition.markSimplified simplified)) $ return (Condition.markSimplified simplified)
-            return (Condition.markSimplified simplified)
+        then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
 
 {- | Simplify a conjunction of predicates by simplifying each one
