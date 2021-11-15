@@ -46,7 +46,6 @@ import Kore.Simplify.AndTerms (
     termUnification,
  )
 import Kore.Simplify.NotSimplifier
-
 import qualified Kore.Simplify.Simplify as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
