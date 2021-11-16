@@ -1,9 +1,3 @@
-    #Not ( {
-      ?_0:Int %Int 2
-    #Equals
-      1
-    } )
-  #And
     <generatedTop>
       <k>
         ?_0:Int ~> .
@@ -12,6 +6,12 @@
         0
       </exitcode>
     </generatedTop>
+  #And
+    #Not ( {
+      ?_0:Int %Int 2
+    #Equals
+      1
+    } )
 #Or
     <generatedTop>
       <k>
