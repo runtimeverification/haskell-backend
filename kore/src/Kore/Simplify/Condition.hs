@@ -83,13 +83,13 @@ simplify ::
     LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = do
     normOriginal <- normalize original
-    (isFullySimplified, result) <- foldM simplifyingCondition (False, normOriginal) [1..limit]
+    (isFullySimplified, result) <- foldM simplifyingCondition (False, normOriginal) [1 .. limit]
     unless isFullySimplified $ warnUnsimplifiedCondition limit original result
     return result
   where
     limit :: Int
     limit = 4
-    
+
     simplifyingCondition ::
         (Bool, Conditional RewritingVariableName any) ->
         Int ->
