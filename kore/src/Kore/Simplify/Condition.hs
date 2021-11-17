@@ -81,25 +81,23 @@ simplify ::
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
     LogicT simplifier (Conditional RewritingVariableName any)
-simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original =
-    normalize original >>= loop 0
+simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = do
+    normOriginal <- normalize original
+    (isFullySimplified, result) <- foldM simplifyingCondition (False, normOriginal) [1..limit]
+    unless isFullySimplified $ warnUnsimplifiedCondition limit original result
+    return result
   where
     limit :: Int
     limit = 4
-
-    loop ::
+    
+    simplifyingCondition ::
+        (Bool, Conditional RewritingVariableName any) ->
         Int ->
-        Conditional RewritingVariableName any ->
-        LogicT simplifier (Conditional RewritingVariableName any)
-    loop count input
-        | count >= limit = do
-            warnUnsimplifiedCondition limit original input
-            pure input
-        | otherwise = do
-            output <- worker input
-            if fullySimplified output
-                then return (extract output)
-                else loop (count + 1) (extract output)
+        LogicT simplifier (Bool, Conditional RewritingVariableName any)
+    simplifyingCondition result@(True, _) _ = return result
+    simplifyingCondition (_, input) _ = do
+        output <- worker input
+        return (fullySimplified output, extract output)
 
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
