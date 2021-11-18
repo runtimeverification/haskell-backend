@@ -107,13 +107,10 @@ partitionEquations equations =
         , simplificationRules
         }
   where
-    equations' =
-        equations
-            & filter (not . ignoreEquation)
     (simplificationRules, functionRules) =
-        partition Equation.isSimplificationRule
-            . sortOn Equation.equationPriority
-            $ equations'
+        filter (not . ignoreEquation) equations
+            & sortOn Equation.equationPriority
+            & partition Equation.isSimplificationRule
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
