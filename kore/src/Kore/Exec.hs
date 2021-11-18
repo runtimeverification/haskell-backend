@@ -74,7 +74,6 @@ import Kore.Equation (
     extractEquations,
     --isSimplificationRule,
     right,
-    simplifyExtractedEquations,
  )
 import qualified Kore.Equation as Equation (
     Equation (antiLeft),
@@ -659,15 +658,6 @@ checkFunctions ::
     VerifiedModule StepperAttributes ->
     m ()
 checkFunctions verifiedModule = evalSimplifier verifiedModule' $ do
-    -- let equationMap = extractEquations verifiedModule'
-    equationMap <-
-        extractEquations verifiedModule'
-            & (Map.map . map . Equation.mapVariables) (pure mkEquationVariable)
-            & simplifyExtractedEquations
-    let equations =
-            Map.elems equationMap
-                & map (functionRules . partitionEquations)
-    -- & map (filter (not . Kore.Equation.isSimplificationRule))
     -- check if RHS is function pattern
     equations >>= filter (not . isFunctionPattern . right)
         & mapM_ errorEquationRightFunction
@@ -676,6 +666,12 @@ checkFunctions verifiedModule = evalSimplifier verifiedModule' $ do
         & filterM (uncurry bothMatch)
         >>= mapM_ (uncurry errorEquationsSameMatch)
   where
+    equations :: [[Equation RewritingVariableName]]
+    equations =
+        extractEquations verifiedModule'
+            & Map.elems
+            & (map . map . Equation.mapVariables) (pure mkEquationVariable)
+            & map (functionRules . partitionEquations)
     earlyMetadataTools = MetadataTools.build verifiedModule
     verifiedModule' =
         IndexedModule.mapPatterns
@@ -696,8 +692,8 @@ https://github.com/kframework/kore/issues/2472#issue-833143685
 -}
 bothMatch ::
     MonadSimplify m =>
-    Equation {-VariableName ->-} RewritingVariableName ->
-    Equation {-VariableName ->-} RewritingVariableName ->
+    Equation RewritingVariableName ->
+    Equation RewritingVariableName ->
     m Bool
 bothMatch eq1 eq2 =
     let pre1 = Equation.requires eq1
@@ -716,6 +712,30 @@ bothMatch eq1 eq2 =
         sort = termLikeSort $ right eq1
         patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
+
+{-
+    let pre1 = Equation.requires eq1
+        pre2 = Equation.requires eq2
+        checkM =
+            makeCheck pre1 pre2
+                <$> Equation.argument eq1
+                <*> Equation.argument eq2
+                <*> Equation.antiLeft eq1
+                <*> Equation.antiLeft eq2
+        sort = termLikeSort $ right eq1
+        pattM = Pattern.fromPredicateSorted sort <$> checkM
+     in case pattM of
+            Nothing -> return False
+            Just patt -> (not . isBottom) <$> Pattern.simplify patt
+  where
+    makeCheck pre1 pre2 arg1 arg2 prio1 prio2 =
+        Predicate.makeAndPredicate pre1 pre2
+            & Predicate.makeAndPredicate arg1
+            & Predicate.makeAndPredicate arg2
+            & Predicate.makeAndPredicate prio1
+            & Predicate.makeAndPredicate prio2
+-}
+-- & Predicate.mapVariables (pure mkConfigVariable)
 
 -- | Rule merging
 mergeAllRules ::
