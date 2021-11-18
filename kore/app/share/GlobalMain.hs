@@ -500,9 +500,7 @@ data LoadedDefinition = LoadedDefinition
     }
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
-loadDefinitions filePaths =
-    do
-        loadedDefinitions & fmap sortClaims
+loadDefinitions filePaths = sortClaims <$> loadedDefinitions
   where
     loadedDefinitions = do
         parsedDefinitions <- traverse parseDefinition filePaths

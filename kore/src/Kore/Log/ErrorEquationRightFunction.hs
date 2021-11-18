@@ -19,9 +19,14 @@ import Kore.Attribute.Axiom (
 import Kore.Equation.Equation (
     Equation (..),
  )
+
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+
+--import Kore.Syntax.Variable (
+--    VariableName,
+-- )
 import Log (
     Entry (..),
     Severity (Error),
@@ -41,7 +46,7 @@ import Pretty (
 
 -- | Error when RHS of equation is not a function pattern.
 newtype ErrorEquationRightFunction = ErrorEquationRightFunction
-    { equation :: Equation RewritingVariableName
+    { equation :: Equation {-VariableName-} RewritingVariableName
     }
     deriving stock (Show, GHC.Generic)
 
@@ -74,5 +79,5 @@ instance Entry ErrorEquationRightFunction where
 -- instance SQL.Table ErrorEquationRightFunction
 
 -- | Error when RHS of equation is not a function pattern.
-errorEquationRightFunction :: Equation RewritingVariableName -> m ()
+errorEquationRightFunction :: Equation {-VariableName-} RewritingVariableName -> m ()
 errorEquationRightFunction = throw . ErrorEquationRightFunction

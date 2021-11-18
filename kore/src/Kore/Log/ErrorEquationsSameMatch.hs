@@ -23,6 +23,10 @@ import Kore.Equation.Equation (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+
+--import Kore.Syntax.Variable (
+--    VariableName,
+-- )
 import Log (
     Entry (..),
     Severity (Error),
@@ -44,7 +48,7 @@ import Pretty (
 
 -- | Error when two equations both match a term.
 data ErrorEquationsSameMatch = ErrorEquationsSameMatch
-    { equation1, equation2 :: Equation RewritingVariableName
+    { equation1, equation2 :: Equation {-VariableName-} RewritingVariableName
     }
     deriving stock (Show, GHC.Generic)
 
@@ -86,7 +90,7 @@ instance Entry ErrorEquationsSameMatch where
 --instance SQL.Table ErrorEquationsSameMatch
 
 errorEquationsSameMatch ::
-    Equation RewritingVariableName ->
-    Equation RewritingVariableName ->
+    Equation {-VariableName ->-} RewritingVariableName ->
+    Equation {-VariableName ->-} RewritingVariableName ->
     m ()
 errorEquationsSameMatch eq1 = throw . ErrorEquationsSameMatch eq1

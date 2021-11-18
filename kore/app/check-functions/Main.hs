@@ -50,7 +50,8 @@ import Kore.Options (
     progDesc,
     str,
  )
-import Kore.Simplify.Data (evalSimplifier)
+
+--import Kore.Simplify.Data (evalSimplifier)
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -138,7 +139,7 @@ koreCheckFunctions opts tmpDir =
         definitions <- loadDefinitions [fileName opts]
         loadedModule <- loadModule (mainModuleName opts) definitions
         checkFunctions loadedModule
-            & evalSimplifier loadedModule
+            -- & evalSimplifier loadedModule
             & SMT.runSMT defaultConfig (pure ())
         return ExitSuccess
         & handle handleSomeException

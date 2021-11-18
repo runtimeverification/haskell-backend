@@ -72,7 +72,7 @@ import qualified Kore.Builtin as Builtin
 import Kore.Equation (
     Equation,
     extractEquations,
-    isSimplificationRule,
+    --isSimplificationRule,
     right,
     simplifyExtractedEquations,
  )
@@ -82,6 +82,7 @@ import qualified Kore.Equation as Equation (
     mapVariables,
     requires,
  )
+
 import Kore.Equation.Registry (
     functionRules,
     partitionEquations,
@@ -108,7 +109,6 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    Predicate,
     fromPredicate,
     makeMultipleOrPredicate,
  )
@@ -652,19 +652,23 @@ See 'checkEquation',
 -}
 checkFunctions ::
     MonadLog m =>
-    MonadSimplify m =>
+    MonadMask m =>
+    MonadProf m =>
+    MonadIO m =>
+    MonadSMT m =>
     -- | The main module
     VerifiedModule StepperAttributes ->
     m ()
-checkFunctions verifiedModule = do
+checkFunctions verifiedModule = evalSimplifier verifiedModule' $ do
+    -- let equationMap = extractEquations verifiedModule'
     equationMap <-
-        extractEquations verifiedModule
+        extractEquations verifiedModule'
             & (Map.map . map . Equation.mapVariables) (pure mkEquationVariable)
             & simplifyExtractedEquations
     let equations =
             Map.elems equationMap
                 & map (functionRules . partitionEquations)
-                & map (filter (not . Kore.Equation.isSimplificationRule))
+    -- & map (filter (not . Kore.Equation.isSimplificationRule))
     -- check if RHS is function pattern
     equations >>= filter (not . isFunctionPattern . right)
         & mapM_ errorEquationRightFunction
@@ -673,6 +677,11 @@ checkFunctions verifiedModule = do
         & filterM (uncurry bothMatch)
         >>= mapM_ (uncurry errorEquationsSameMatch)
   where
+    earlyMetadataTools = MetadataTools.build verifiedModule
+    verifiedModule' =
+        IndexedModule.mapPatterns
+            (Builtin.internalize earlyMetadataTools)
+            verifiedModule
     --equations :: [[Equation RewritingVariableName]]
     --equations =
     --    extractEquations verifiedModule
@@ -688,42 +697,26 @@ https://github.com/kframework/kore/issues/2472#issue-833143685
 -}
 bothMatch ::
     MonadSimplify m =>
-    Equation RewritingVariableName ->
-    Equation RewritingVariableName ->
+    Equation {-VariableName ->-} RewritingVariableName ->
+    Equation {-VariableName ->-} RewritingVariableName ->
     m Bool
 bothMatch eq1 eq2 =
     let pre1 = Equation.requires eq1
         pre2 = Equation.requires eq2
-        --arg1 = fromMaybe Predicate.makeFalsePredicate $ Equation.argument eq1
-        --arg2 = fromMaybe Predicate.makeFalsePredicate $ Equation.argument eq2
-        --prio1 = fromMaybe Predicate.makeFalsePredicate $ Equation.antiLeft eq1
-        --prio2 = fromMaybe Predicate.makeFalsePredicate $ Equation.antiLeft eq2
-        arg1 = Equation.argument eq1
-        arg2 = Equation.argument eq2
-        prio1 = Equation.antiLeft eq1
-        prio2 = Equation.antiLeft eq2
+        arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1
+        arg2 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq2
+        prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
+        prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
         check =
-            Predicate.makeAndPredicate pre1 pre2
-                & makeAndPredicateMaybe arg1
-                & makeAndPredicateMaybe arg2
-                & makeAndPredicateMaybe prio1
-                & makeAndPredicateMaybe prio2
-        --    Predicate.makeAndPredicate prio1 prio2
-        --        & Predicate.makeAndPredicate arg2
-        --        & Predicate.makeAndPredicate arg1
-        --        & Predicate.makeAndPredicate pre2
-        --        & Predicate.makeAndPredicate pre1
+            Predicate.makeAndPredicate prio1 prio2
+                & Predicate.makeAndPredicate arg2
+                & Predicate.makeAndPredicate arg1
+                & Predicate.makeAndPredicate pre2
+                & Predicate.makeAndPredicate pre1
         -- & Predicate.mapVariables (pure mkConfigVariable)
         sort = termLikeSort $ right eq1
         patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
-  where
-    makeAndPredicateMaybe ::
-        InternalVariable variable =>
-        Maybe (Predicate variable) ->
-        Predicate variable ->
-        Predicate variable
-    makeAndPredicateMaybe aM b = maybe b (Predicate.makeAndPredicate b) aM
 
 -- | Rule merging
 mergeAllRules ::
