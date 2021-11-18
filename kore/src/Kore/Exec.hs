@@ -82,7 +82,6 @@ import qualified Kore.Equation as Equation (
     mapVariables,
     requires,
  )
-
 import Kore.Equation.Registry (
     functionRules,
     partitionEquations,

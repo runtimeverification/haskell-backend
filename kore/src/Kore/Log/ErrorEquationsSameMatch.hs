@@ -19,7 +19,6 @@ import Kore.Attribute.Axiom (
 import Kore.Equation.Equation (
     Equation (..),
  )
-
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
