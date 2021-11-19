@@ -53,7 +53,7 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnUnsimplifiedPredicate (
+import Kore.Log.WarnUnsimplified (
     warnUnsimplifiedPredicate,
  )
 import Kore.Rewrite.RewritingVariable (

@@ -129,7 +129,8 @@ makeEvaluate sideCondition =
 
     worker pattern' =
         OrPattern.observeAllT $ do
-            withSimplifiedCondition <- simplifyCondition sideCondition pattern'
+            withSimplifiedCondition <-
+                simplifyCondition sideCondition pattern'
             let (term, simplifiedCondition) =
                     Conditional.splitTerm withSimplifiedCondition
                 term' = substitute (toMap $ substitution simplifiedCondition) term

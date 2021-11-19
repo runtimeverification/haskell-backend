@@ -41,6 +41,9 @@ import Kore.Internal.Substitution (
     Assignment,
  )
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Log.WarnUnsimplified (
+    warnUnsimplifiedCondition,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -78,9 +81,24 @@ simplify ::
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
     LogicT simplifier (Conditional RewritingVariableName any)
-simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
-    normalize >=> worker
+simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = do
+    normOriginal <- normalize original
+    (isFullySimplified, result) <- foldM simplifyingCondition (False, normOriginal) [1 .. limit]
+    unless isFullySimplified $ warnUnsimplifiedCondition limit original result
+    return result
   where
+    limit :: Int
+    limit = 4
+
+    simplifyingCondition ::
+        (Bool, Conditional RewritingVariableName any) ->
+        Int ->
+        LogicT simplifier (Bool, Conditional RewritingVariableName any)
+    simplifyingCondition result@(True, _) _ = return result
+    simplifyingCondition (_, input) _ = do
+        output <- worker input
+        return (fullySimplified output, extract output)
+
     worker Conditional{term, predicate, substitution} = do
         let substitution' = Substitution.toMap substitution
             predicate' = substitute substitution' predicate
@@ -100,9 +118,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition =
                     (field @"predicate")
                     simplifyConjunctions
                     normalized{term}
-        if fullySimplified simplifiedPattern
-            then return (extract simplifiedPattern)
-            else worker (extract simplifiedPattern)
+        return simplifiedPattern
 
     simplifyPredicate predicate =
         Predicate.simplify sideCondition predicate & lift
