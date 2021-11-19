@@ -187,6 +187,7 @@ module Kore.Internal.TermLike (
     containsSymbolWithId,
 ) where
 
+import Pretty (Pretty (..))
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Data.Align (
     alignWith,
@@ -1893,10 +1894,23 @@ containsSymbolWithId symId term
             (Cofree.tailF $ Recursive.project term)
 
 -- TODO:
-data NotTermLike variable
+data NotTermLike variable = NotTermLikeTODO
+    deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
+
+instance
+    InternalVariable variable =>
+    Pretty (NotTermLike variable)
+    where
+--     pretty (NotTermLike patternF) =
+--         Pretty.vsep
+--             [ "Expected a term, but found:"
+--             , Pretty.indent
+--                 4
+--                 (unparse $ fromTermLike <$> patternF)
+--             ]
 
 -- TODO:
 makeTermLike ::

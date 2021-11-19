@@ -18,8 +18,20 @@ module Kore.Validate.Pattern (
     updateCallStack,
     samePatternSort,
 
+    -- * Sentence constructors
+    mkAlias,
+    mkAlias_,
     mkAxiom,
     mkAxiom_,
+    mkSymbol,
+    mkSymbol_,
+
+    -- * Application constructors
+    applyAlias,
+    applyAlias_,
+    applySymbol,
+    applySymbol_,
+    symbolApplication,
 
     -- * Pure Kore pattern constructors
     mkAnd,
@@ -104,6 +116,7 @@ import Control.Comonad.Trans.Cofree (
     tailF,
  )
 import qualified Kore.Syntax.Definition as Syntax
+import qualified Data.Default as Default
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Error (assertRight)
 import Kore.Attribute.Attributes (Attributes (..))
@@ -2116,151 +2129,193 @@ See also: 'mkAxiom'
 mkAxiom_ :: Pattern variable -> SentenceAxiom (Pattern variable)
 mkAxiom_ = mkAxiom []
 
--- TODO: are these needed?
---
--- -- | Construct a symbol declaration with the given parameters and sorts.
--- mkSymbol ::
---     Id ->
---     [SortVariable] ->
---     [Sort] ->
---     Sort ->
---     SentenceSymbol
--- mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
---     SentenceSymbol
---         { sentenceSymbolSymbol =
---             Syntax.Symbol
---                 { symbolConstructor
---                 , symbolParams
---                 }
---         , sentenceSymbolSorts = argumentSorts
---         , sentenceSymbolResultSort = resultSort'
---         , sentenceSymbolAttributes = Attributes []
---         }
---
--- {- | Construct a symbol declaration with no parameters.
---
--- See also: 'mkSymbol'
--- -}
--- mkSymbol_ ::
---     Id ->
---     [Sort] ->
---     Sort ->
---     SentenceSymbol
--- mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
---
--- -- | Construct an alias declaration with the given parameters and sorts.
--- mkAlias ::
---     Id ->
---     [SortVariable] ->
---     Sort ->
---     [SomeVariable VariableName] ->
---     Pattern VariableName ->
---     SentenceAlias (Pattern VariableName)
--- mkAlias aliasConstructor aliasParams resultSort' arguments right =
---     SentenceAlias
---         { sentenceAliasAlias =
---             Syntax.Alias
---                 { aliasConstructor
---                 , aliasParams
---                 }
---         , sentenceAliasSorts = argumentSorts
---         , sentenceAliasResultSort = resultSort'
---         , sentenceAliasLeftPattern =
---             Application
---                 { applicationSymbolOrAlias =
---                     SymbolOrAlias
---                         { symbolOrAliasConstructor = aliasConstructor
---                         , symbolOrAliasParams =
---                             SortVariableSort <$> aliasParams
---                         }
---                 , applicationChildren = arguments
---                 }
---         , sentenceAliasRightPattern = right
---         , sentenceAliasAttributes = Attributes []
---         }
---   where
---     argumentSorts = variableSort <$> arguments
---
--- {- | Construct an alias declaration with no parameters.
---
--- See also: 'mkAlias'
--- -}
--- mkAlias_ ::
---     Id ->
---     Sort ->
---     [SomeVariable VariableName] ->
---     Pattern VariableName ->
---     SentenceAlias (Pattern VariableName)
--- mkAlias_ aliasConstructor = mkAlias aliasConstructor []
---
--- {- | Construct an 'Application' pattern from a 'Alias' declaration.
---
--- The provided sort parameters must match the declaration.
---
--- See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
--- -}
--- applyAlias ::
---     HasCallStack =>
---     InternalVariable variable =>
---     -- | 'Alias' declaration
---     SentenceAlias (Pattern VariableName) ->
---     -- | 'Alias' sort parameters
---     [Sort] ->
---     -- | 'Application' arguments
---     [Pattern variable] ->
---     Pattern variable
--- applyAlias sentence params children =
---     updateCallStack $ mkApplyAlias internal children'
---   where
---     SentenceAlias{sentenceAliasAlias = external} = sentence
---     Syntax.Alias{aliasConstructor} = external
---     Syntax.Alias{aliasParams} = external
---     internal =
---         Alias
---             { aliasConstructor
---             , aliasParams = params
---             , aliasSorts =
---                 symbolOrAliasSorts params sentence
---                     & assertRight
---             , aliasLeft =
---                 applicationChildren
---                     . sentenceAliasLeftPattern
---                     $ sentence
---             , aliasRight = sentenceAliasRightPattern sentence
---             }
---     substitution = sortSubstitution aliasParams params
---     childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
---       where
---         SentenceAlias{sentenceAliasSorts} = sentence
---     children' = alignWith forceChildSort childSorts children
---       where
---         forceChildSort =
---             \case
---                 These sort pattern' -> samePatternSort sort pattern'
---                 This _ ->
---                     (error . show . Pretty.vsep)
---                         ("Too few parameters:" : expected)
---                 That _ ->
---                     (error . show . Pretty.vsep)
---                         ("Too many parameters:" : expected)
---         expected =
---             [ "Expected:"
---             , Pretty.indent 4 (Unparser.arguments childSorts)
---             , "but found:"
---             , Pretty.indent 4 (Unparser.arguments children)
---             ]
---
--- {- | Construct an 'Application' pattern from a 'Alias' declaration.
---
--- The 'Alias' must not be declared with sort parameters.
---
--- See also: 'mkApp', 'applyAlias'
--- -}
--- applyAlias_ ::
---     HasCallStack =>
---     InternalVariable variable =>
---     SentenceAlias (Pattern VariableName) ->
---     [Pattern variable] ->
---     Pattern variable
--- applyAlias_ sentence = updateCallStack . applyAlias sentence []
---
+-- | Construct a symbol declaration with the given parameters and sorts.
+mkSymbol ::
+    Id ->
+    [SortVariable] ->
+    [Sort] ->
+    Sort ->
+    SentenceSymbol
+mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
+    SentenceSymbol
+        { sentenceSymbolSymbol =
+            Syntax.Symbol
+                { symbolConstructor
+                , symbolParams
+                }
+        , sentenceSymbolSorts = argumentSorts
+        , sentenceSymbolResultSort = resultSort'
+        , sentenceSymbolAttributes = Attributes []
+        }
+
+{- | Construct a symbol declaration with no parameters.
+
+See also: 'mkSymbol'
+-}
+mkSymbol_ ::
+    Id ->
+    [Sort] ->
+    Sort ->
+    SentenceSymbol
+mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
+
+-- | Construct an alias declaration with the given parameters and sorts.
+mkAlias ::
+    Id ->
+    [SortVariable] ->
+    Sort ->
+    [SomeVariable VariableName] ->
+    Pattern VariableName ->
+    SentenceAlias (Pattern VariableName)
+mkAlias aliasConstructor aliasParams resultSort' arguments right =
+    SentenceAlias
+        { sentenceAliasAlias =
+            Syntax.Alias
+                { aliasConstructor
+                , aliasParams
+                }
+        , sentenceAliasSorts = argumentSorts
+        , sentenceAliasResultSort = resultSort'
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = aliasConstructor
+                        , symbolOrAliasParams =
+                            SortVariableSort <$> aliasParams
+                        }
+                , applicationChildren = arguments
+                }
+        , sentenceAliasRightPattern = right
+        , sentenceAliasAttributes = Attributes []
+        }
+  where
+    argumentSorts = variableSort <$> arguments
+
+{- | Construct an alias declaration with no parameters.
+
+See also: 'mkAlias'
+-}
+mkAlias_ ::
+    Id ->
+    Sort ->
+    [SomeVariable VariableName] ->
+    Pattern VariableName ->
+    SentenceAlias (Pattern VariableName)
+mkAlias_ aliasConstructor = mkAlias aliasConstructor []
+
+{- | Construct an 'Application' pattern from a 'Alias' declaration.
+
+The provided sort parameters must match the declaration.
+
+See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
+-}
+applyAlias ::
+    HasCallStack =>
+    InternalVariable variable =>
+    -- | 'Alias' declaration
+    SentenceAlias (Pattern VariableName) ->
+    -- | 'Alias' sort parameters
+    [Sort] ->
+    -- | 'Application' arguments
+    [Pattern variable] ->
+    Pattern variable
+applyAlias sentence params children =
+    updateCallStack $ mkApplyAlias internal children'
+  where
+    SentenceAlias{sentenceAliasAlias = external} = sentence
+    Syntax.Alias{aliasConstructor} = external
+    Syntax.Alias{aliasParams} = external
+    internal =
+        Alias
+            { aliasConstructor
+            , aliasParams = params
+            , aliasSorts =
+                symbolOrAliasSorts params sentence
+                    & assertRight
+            , aliasLeft =
+                applicationChildren
+                    . sentenceAliasLeftPattern
+                    $ sentence
+            , aliasRight = sentenceAliasRightPattern sentence
+            }
+    substitution = sortSubstitution aliasParams params
+    childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
+      where
+        SentenceAlias{sentenceAliasSorts} = sentence
+    children' = alignWith forceChildSort childSorts children
+      where
+        forceChildSort =
+            \case
+                These sort pattern' -> samePatternSort sort pattern'
+                This _ ->
+                    (error . show . Pretty.vsep)
+                        ("Too few parameters:" : expected)
+                That _ ->
+                    (error . show . Pretty.vsep)
+                        ("Too many parameters:" : expected)
+        expected =
+            [ "Expected:"
+            , Pretty.indent 4 (Unparser.arguments childSorts)
+            , "but found:"
+            , Pretty.indent 4 (Unparser.arguments children)
+            ]
+
+{- | Construct an 'Application' pattern from a 'Alias' declaration.
+
+The 'Alias' must not be declared with sort parameters.
+
+See also: 'mkApp', 'applyAlias'
+-}
+applyAlias_ ::
+    HasCallStack =>
+    InternalVariable variable =>
+    SentenceAlias (Pattern VariableName) ->
+    [Pattern variable] ->
+    Pattern variable
+applyAlias_ sentence = updateCallStack . applyAlias sentence []
+
+{- | Construct an 'Application' pattern from a 'Symbol' declaration.
+
+The provided sort parameters must match the declaration.
+
+See also: 'mkApp', 'applySymbol_', 'mkSymbol'
+-}
+applySymbol ::
+    HasCallStack =>
+    InternalVariable variable =>
+    -- | 'Symbol' declaration
+    SentenceSymbol ->
+    -- | 'Symbol' sort parameters
+    [Sort] ->
+    -- | 'Application' arguments
+    [Pattern variable] ->
+    Pattern variable
+applySymbol sentence params children =
+    updateCallStack $ mkApplySymbol internal children
+  where
+    SentenceSymbol{sentenceSymbolSymbol = external} = sentence
+    Syntax.Symbol{symbolConstructor} = external
+    internal =
+        Symbol
+            { symbolConstructor
+            , symbolParams = params
+            , symbolAttributes = Default.def
+            , symbolSorts =
+                symbolOrAliasSorts params sentence
+                    & assertRight
+            }
+
+{- | Construct an 'Application' pattern from a 'Symbol' declaration.
+
+The 'Symbol' must not be declared with sort parameters.
+
+See also: 'mkApplySymbol', 'applySymbol'
+-}
+applySymbol_ ::
+    HasCallStack =>
+    InternalVariable variable =>
+    SentenceSymbol ->
+    [Pattern variable] ->
+    Pattern variable
+applySymbol_ sentence = updateCallStack . applySymbol sentence []

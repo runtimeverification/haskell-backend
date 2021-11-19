@@ -133,8 +133,17 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
                     , asSentence $
                         aliasDecl
                             "A"
-                            (mkOr (applyAliasToNoArgs mySort "B") (mkBottom mySort))
-                    , asSentence $ aliasDecl "B" (mkAnd (mkTop mySort) (mkTop mySort))
+                            (Validated.mkOr
+                                (applyAliasToNoArgs mySort "B")
+                                (Validated.mkBottom mySort)
+                            )
+                    , asSentence $
+                        aliasDecl
+                            "B"
+                            (Validated.mkAnd
+                                (Validated.mkTop mySort)
+                                (Validated.mkTop mySort)
+                            )
                     , functionalAxiom "a"
                     , functionalAxiom "b"
                     , functionalAxiom "c"
@@ -342,7 +351,7 @@ test_checkFunctions =
         HasCallStack =>
         TermLike variable
     myF =
-        mkApplySymbol
+        TermLike.mkApplySymbol
             Symbol
                 { symbolConstructor = mySymbolName
                 , symbolParams = []
@@ -359,7 +368,7 @@ test_checkFunctions =
                     mySort
                     ( mkEquation
                         myF
-                        (mkTop mySort) -- Note: \top is not functional
+                        (TermLike.mkTop mySort) -- Note: \top is not functional
                     )
                 )
             )
@@ -415,7 +424,7 @@ test_checkFunctionsIgnoreSimpl =
         HasCallStack =>
         TermLike variable
     myF =
-        mkApplySymbol
+        TermLike.mkApplySymbol
             Symbol
                 { symbolConstructor = mySymbolName
                 , symbolParams = []
@@ -432,7 +441,7 @@ test_checkFunctionsIgnoreSimpl =
                     mySort
                     ( mkEquation
                         myF
-                        (mkTop mySort) -- Note: \top is not functional
+                        (TermLike.mkTop mySort) -- Note: \top is not functional
                     )
                 )
             )
@@ -491,7 +500,7 @@ test_checkBothMatch =
         HasCallStack =>
         TermLike variable
     myF =
-        mkApplySymbol
+        TermLike.mkApplySymbol
             Symbol
                 { symbolConstructor = mySymbolName
                 , symbolParams = []
@@ -562,7 +571,7 @@ test_checkBothMatchIgnoreSimpl =
         HasCallStack =>
         TermLike variable
     myF =
-        mkApplySymbol
+        TermLike.mkApplySymbol
             Symbol
                 { symbolConstructor = mySymbolName
                 , symbolParams = []
@@ -717,8 +726,17 @@ test_searchPriority =
                     , asSentence $
                         aliasDecl
                             "A"
-                            (mkOr (applyAliasToNoArgs mySort "B") (mkBottom mySort))
-                    , asSentence $ aliasDecl "B" (mkAnd (mkTop mySort) (mkTop mySort))
+                            (Validated.mkOr
+                                (applyAliasToNoArgs mySort "B")
+                                (Validated.mkBottom mySort)
+                            )
+                    , asSentence $
+                        aliasDecl
+                            "B"
+                            (Validated.mkAnd
+                                (Validated.mkTop mySort)
+                                (Validated.mkTop mySort)
+                            )
                     , functionalAxiom "a"
                     , functionalAxiom "b"
                     , functionalAxiom "c"
@@ -814,7 +832,7 @@ test_searchExceedingBreadthLimit =
 
 -- | V:MySort{}
 searchVar :: TermLike VariableName
-searchVar = mkElemVar $ mkElementVariable (testId "V") mySort
+searchVar = TermLike.mkElemVar $ mkElementVariable (testId "V") mySort
 
 {- |
   \and{MySort{}}(
@@ -890,7 +908,7 @@ mySortDecl =
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
 constructorDecl :: Text -> Validated.SentenceSymbol
 constructorDecl name =
-    (mkSymbol_ (testId name) [] mySort)
+    (Validated.mkSymbol_ (testId name) [] mySort)
         { sentenceSymbolAttributes =
             Attributes
                 [ functionalAttribute
@@ -899,10 +917,9 @@ constructorDecl name =
         }
 
 -- | alias name{}() : MySort{} where name{}() := \top{MySort{}} []
-aliasDecl :: Text -> TermLike VariableName -> Validated.SentenceAlias
+aliasDecl :: Text -> Validated.Pattern VariableName -> Validated.SentenceAlias
 aliasDecl name term =
-    mkAlias (testId name) [] mySort [] term
-    & fromTermLike
+    Validated.mkAlias (testId name) [] mySort [] term
 
 {- |
   axiom{R}
@@ -918,12 +935,12 @@ functionalAxiom name =
     SentenceAxiomSentence
         ( Validated.mkAxiom
             [r]
-            ( mkExists
+            ( Validated.mkExists
                 v
-                ( mkEquals
+                ( Validated.mkEquals
                     (SortVariableSort r)
-                    (mkElemVar v)
-                    (applyToNoArgs mySort name)
+                    (Validated.mkElemVar v)
+                    (applyToNoArgs mySort name & fromTermLike)
                 )
             )
         )
@@ -1006,9 +1023,9 @@ axiomWithAttribute attribute axiom =
     currentAttributes = sentenceAxiomAttributes axiom
 
 applyAliasToNoArgs ::
-    InternalVariable variable => Sort -> Text -> TermLike variable
+    InternalVariable variable => Sort -> Text -> Validated.Pattern variable
 applyAliasToNoArgs sort name =
-    mkApplyAlias
+    Validated.mkApplyAlias
         Alias
             { aliasConstructor = testId name
             , aliasParams = []
@@ -1020,7 +1037,7 @@ applyAliasToNoArgs sort name =
 
 applyToNoArgs :: InternalVariable variable => Sort -> Text -> TermLike variable
 applyToNoArgs sort name =
-    mkApplySymbol
+    Validated.mkApplySymbol
         Symbol
             { symbolConstructor = testId name
             , symbolParams = []
@@ -1120,15 +1137,15 @@ test_execGetExitCode =
 
     getExitCodeDecl :: Validated.SentenceSymbol
     getExitCodeDecl =
-        (mkSymbol_ getExitCodeId [myIntSort] myIntSort)
+        (Validated.mkSymbol_ getExitCodeId [myIntSort] myIntSort)
             { sentenceSymbolAttributes =
                 Attributes [functionAttribute, functionalAttribute]
             }
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
-            (mkApplySymbol getExitCodeSym [mkElemVar v])
-            (mkElemVar v)
+            (Validated.mkApplySymbol getExitCodeSym [mkElemVar v])
+            (Validated.mkElemVar v)
             Nothing
       where
         v = mkElementVariable (testId "V") myIntSort

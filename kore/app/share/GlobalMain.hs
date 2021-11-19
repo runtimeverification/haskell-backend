@@ -68,12 +68,12 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    ValidatedModule,
  )
 import Kore.Internal.Conditional (Conditional (..))
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (makePredicate)
-import Kore.Internal.TermLike (TermLike, pattern And_)
+import Kore.Internal.TermLike (TermLike, pattern And_, makeTermLike)
 import Kore.Log as Log
 import Kore.Log.ErrorParse (
     errorParse,
@@ -105,7 +105,8 @@ import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinitionWithBase,
  )
 import Kore.Validate.PatternVerifier as PatternVerifier
-import qualified Kore.Verified as Verified
+import qualified Kore.Validate as Validated
+import Kore.Validate (ValidatedPattern)
 import Kore.VersionInfo
 import Options.Applicative (
     InfoMod,
@@ -410,10 +411,10 @@ clockSomethingIO description something = do
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify ::
     -- | Module containing definitions visible in the pattern
-    VerifiedModule Attribute.Symbol ->
+    ValidatedModule Attribute.Symbol ->
     -- | Parsed pattern to check well-formedness
     ParsedPattern ->
-    Main Verified.Pattern
+    Main ValidatedPattern
 mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething
@@ -428,8 +429,8 @@ mainPatternVerify verifiedModule patt = do
 lookupMainModule ::
     Monad monad =>
     ModuleName ->
-    Map.Map ModuleName (VerifiedModule Attribute.Symbol) ->
-    monad (VerifiedModule Attribute.Symbol)
+    Map.Map ModuleName (ValidatedModule Attribute.Symbol) ->
+    monad (ValidatedModule Attribute.Symbol)
 lookupMainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -446,13 +447,13 @@ Also prints timing information; see 'mainParse'.
 -}
 verifyDefinitionWithBase ::
     -- | already verified definition
-    ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
+    ( Map.Map ModuleName (ValidatedModule Attribute.Symbol)
     , Map.Map Text AstLocation
     ) ->
     -- | Parsed definition to check well-formedness
     ParsedDefinition ->
     Main
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
+        ( Map.Map ModuleName (ValidatedModule Attribute.Symbol)
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
@@ -491,7 +492,7 @@ mainParse parser fileName = do
         Left err -> errorParse err
         Right definition -> return definition
 
-type LoadedModule = VerifiedModule Attribute.Symbol
+type LoadedModule = ValidatedModule Attribute.Symbol
 
 data LoadedDefinition = LoadedDefinition
     { indexedModules :: Map ModuleName LoadedModule
@@ -526,21 +527,25 @@ loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
 
 mainParseSearchPattern ::
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     String ->
     Main (Pattern VariableName)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of
-        And_ _ term predicateTerm ->
+        Validated.And_ _ term predicate ->
             return
                 Conditional
-                    { term
+                    { term =
+                        either
+                            (error. show . KorePretty.pretty)
+                            id
+                            (makeTermLike term)
                     , predicate =
                         either
                             (error . show . KorePretty.pretty)
                             id
-                            (makePredicate predicateTerm)
+                            (makePredicate predicate)
                     , substitution = mempty
                     }
         _ -> error "Unexpected non-conjunctive pattern"
@@ -549,9 +554,9 @@ mainParseSearchPattern indexedModule patternFileName = do
  converts it to a pure pattern, and prints timing information.
 -}
 mainPatternParseAndVerify ::
-    VerifiedModule StepperAttributes ->
+    ValidatedModule StepperAttributes ->
     String ->
-    Main (TermLike VariableName)
+    Main ValidatedPattern
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 

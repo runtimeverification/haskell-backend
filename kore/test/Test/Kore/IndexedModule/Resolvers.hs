@@ -24,6 +24,7 @@ import Kore.IndexedModule.Error as Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
+import qualified Kore.Validate as Validated
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
 import Kore.Syntax
@@ -44,7 +45,7 @@ objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol
 objectA =
-    (TermLike.mkSymbol_ (testId "a") [] objectS1)
+    (Validated.mkSymbol_ (testId "a") [] objectS1)
         { sentenceSymbolAttributes =
             Attributes [Attribute.functionAttribute]
         }
@@ -53,31 +54,31 @@ objectA =
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
     fmap externalize $
-        TermLike.mkAxiom_ $ TermLike.applySymbol_ objectA []
+        Validated.mkAxiom_ $ Validated.applySymbol_ objectA []
 axiomA' =
     fmap externalize $
-        TermLike.mkAxiom [sortVariableR] $
-            TermLike.mkForall x $
-                TermLike.mkEquals sortR (TermLike.applySymbol_ objectA []) $
-                    TermLike.mkElemVar x
+        Validated.mkAxiom [sortVariableR] $
+            Validated.mkForall x $
+                Validated.mkEquals sortR (Validated.applySymbol_ objectA []) $
+                    Validated.mkElemVar x
   where
-    x = TermLike.mkElementVariable "x" objectS1
+    x = mkElementVariable "x" objectS1
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
     fmap externalize $
-        TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
+        Validated.mkAlias_ (testId "b") objectS1 [] $ Validated.mkTop objectS1
 
 metaA :: SentenceSymbol
-metaA = TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
+metaA = Validated.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
     fmap externalize $
-        TermLike.mkAlias_ (testId "#b") stringMetaSort [] $
-            TermLike.mkTop stringMetaSort
+        Validated.mkAlias_ (testId "#b") stringMetaSort [] $
+            Validated.mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -159,13 +160,13 @@ testDefinition =
         }
 
 indexedModules ::
-    Map ModuleName (VerifiedModule Attribute.Symbol)
+    Map ModuleName (ValidatedModule Attribute.Symbol)
 indexedModules =
     assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
 testIndexedModule
     , testIndexedObjectModule ::
-        VerifiedModule Attribute.Symbol
+        ValidatedModule Attribute.Symbol
 testIndexedModule =
     fromMaybe (error $ "Missing module: " ++ show testMainModuleName) $
         Map.lookup testMainModuleName indexedModules
@@ -264,7 +265,7 @@ test_resolvers =
                                     }
                             , applicationChildren = []
                             }
-                    , sentenceAliasRightPattern = TermLike.mkTop objectS1
+                    , sentenceAliasRightPattern = Validated.mkTop objectS1
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -297,7 +298,7 @@ test_resolvers =
                                     }
                             , applicationChildren = []
                             }
-                    , sentenceAliasRightPattern = TermLike.mkTop stringMetaSort
+                    , sentenceAliasRightPattern = Validated.mkTop stringMetaSort
                     , sentenceAliasResultSort = stringMetaSort
                     }
                 )
