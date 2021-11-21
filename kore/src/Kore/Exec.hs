@@ -58,6 +58,9 @@ import Data.Limit (
 import Data.List (
     tails,
  )
+import Data.List.NonEmpty (
+    nonEmpty,
+ )
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
@@ -81,6 +84,7 @@ import qualified Kore.Equation as Equation (
     mapVariables,
     requires,
  )
+
 import Kore.Equation.Registry (
     functionRules,
     partitionEquations,
@@ -657,33 +661,26 @@ checkFunctions ::
     -- | The main module
     VerifiedModule StepperAttributes ->
     m ()
-checkFunctions verifiedModule = evalSimplifier verifiedModule' $ do
+checkFunctions verifiedModule = evalSimplifier verifiedModule $ do
     -- check if RHS is function pattern
     equations >>= filter (not . isFunctionPattern . right)
-        & mapM_ errorEquationRightFunction
+        & mapM_ errorEquationRightFunction . nonEmpty
     -- check if two equations both match the same term
     equations >>= inOrderPairs
-        & filterM (uncurry bothMatch)
-        >>= mapM_ (uncurry errorEquationsSameMatch)
+        & filterM bothMatch
+        >>= mapM_ errorEquationsSameMatch . nonEmpty
   where
     equations :: [[Equation RewritingVariableName]]
     equations =
-        extractEquations verifiedModule'
+        extractEquations verifiedModule
             & Map.elems
             & (map . map . Equation.mapVariables) (pure mkEquationVariable)
             & map (functionRules . partitionEquations)
-    earlyMetadataTools = MetadataTools.build verifiedModule
-    verifiedModule' =
-        IndexedModule.mapPatterns
-            (Builtin.internalize earlyMetadataTools)
-            verifiedModule
-    --equations :: [[Equation RewritingVariableName]]
-    --equations =
-    --    extractEquations verifiedModule
-    --        & (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
-    --        & simplifyExtractedEquations
-    --        <&> Map.elems
-    --        <&> map (filter (not . Kore.Equation.isSimplificationRule))
+    --earlyMetadataTools = MetadataTools.build verifiedModule
+    --verifiedModule' =
+    --    IndexedModule.mapPatterns
+    --        (Builtin.internalize earlyMetadataTools)
+    --        verifiedModule
     -- https://stackoverflow.com/q/34044366/4051020
     inOrderPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
 
@@ -692,10 +689,9 @@ https://github.com/kframework/kore/issues/2472#issue-833143685
 -}
 bothMatch ::
     MonadSimplify m =>
-    Equation RewritingVariableName ->
-    Equation RewritingVariableName ->
+    (Equation RewritingVariableName, Equation RewritingVariableName) ->
     m Bool
-bothMatch eq1 eq2 =
+bothMatch (eq1, eq2) =
     let pre1 = Equation.requires eq1
         pre2 = Equation.requires eq2
         arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1

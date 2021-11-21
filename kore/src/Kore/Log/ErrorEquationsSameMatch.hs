@@ -11,6 +11,9 @@ import Control.Exception (
     Exception (..),
     throw,
  )
+import qualified Data.List.NonEmpty as NonEmpty (
+    toList,
+ )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Axiom (
@@ -42,8 +45,12 @@ import Pretty (
 -- )
 
 -- | Error when two equations both match a term.
-data ErrorEquationsSameMatch = ErrorEquationsSameMatch
-    { equation1, equation2 :: Equation RewritingVariableName
+newtype ErrorEquationsSameMatch = ErrorEquationsSameMatch
+    { unErrorEquationsSameMatch ::
+        NonEmpty
+            ( Equation RewritingVariableName
+            , Equation RewritingVariableName
+            )
     }
     deriving stock (Show, GHC.Generic)
 
@@ -52,14 +59,20 @@ instance SOP.Generic ErrorEquationsSameMatch
 instance SOP.HasDatatypeInfo ErrorEquationsSameMatch
 
 instance Pretty ErrorEquationsSameMatch where
-    pretty ErrorEquationsSameMatch{equation1, equation2} =
-        vsep
-            [ "Equations"
-            , indent 4 $ pretty equation1
-            , "and"
-            , indent 4 $ pretty equation2
-            , "match the same term."
-            ]
+    pretty e = vsep ("Matching equation(s):" : prettyMatches)
+      where
+        prettyMatches =
+            unErrorEquationsSameMatch e
+                & NonEmpty.toList
+                & map prettyMatch
+        prettyMatch (eq1, eq2) =
+            vsep
+                [ "Equations"
+                , indent 4 $ pretty eq1
+                , "and"
+                , indent 4 $ pretty eq2
+                , "match the same term."
+                ]
 
 instance Exception ErrorEquationsSameMatch where
     toException = toException . SomeEntry
@@ -71,21 +84,23 @@ instance Entry ErrorEquationsSameMatch where
     helpDoc _ =
         "errors raised when two equations from a\
         \ function definition can match the same term"
-    oneLineDoc
-        ( ErrorEquationsSameMatch
-                Equation{attributes = Axiom{sourceLocation = sourceLoc1}}
-                Equation{attributes = Axiom{sourceLocation = sourceLoc2}}
-            ) =
-            Pretty.hsep
-                [ pretty sourceLoc1
-                , Pretty.comma
-                , pretty sourceLoc2
-                ]
+    oneLineDoc (ErrorEquationsSameMatch matches) =
+        NonEmpty.toList matches
+            & map prettySrcLoc
+            & vsep
+      where
+        prettySrcLoc (eq1, eq2) =
+            let srcLoc1 = sourceLocation $ attributes eq1
+                srcLoc2 = sourceLocation $ attributes eq2
+             in Pretty.hsep
+                    [ pretty srcLoc1
+                    , Pretty.comma
+                    , pretty srcLoc2
+                    ]
 
 -- instance SQL.Table ErrorEquationsSameMatch
 
 errorEquationsSameMatch ::
-    Equation RewritingVariableName ->
-    Equation RewritingVariableName ->
+    NonEmpty (Equation RewritingVariableName, Equation RewritingVariableName) ->
     m ()
-errorEquationsSameMatch eq1 = throw . ErrorEquationsSameMatch eq1
+errorEquationsSameMatch = throw . ErrorEquationsSameMatch

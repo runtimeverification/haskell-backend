@@ -11,6 +11,9 @@ import Control.Exception (
     Exception (..),
     throw,
  )
+import qualified Data.List.NonEmpty as NonEmpty (
+    toList,
+ )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Axiom (
@@ -42,7 +45,7 @@ import Pretty (
 
 -- | Error when RHS of equation is not a function pattern.
 newtype ErrorEquationRightFunction = ErrorEquationRightFunction
-    { equation :: Equation RewritingVariableName
+    { unErrorEquationRightFunction :: NonEmpty (Equation RewritingVariableName)
     }
     deriving stock (Show, GHC.Generic)
 
@@ -51,12 +54,17 @@ instance SOP.Generic ErrorEquationRightFunction
 instance SOP.HasDatatypeInfo ErrorEquationRightFunction
 
 instance Pretty ErrorEquationRightFunction where
-    pretty ErrorEquationRightFunction{equation} =
-        vsep
-            [ "Checking equation"
-            , indent 4 $ pretty equation
-            , "right-hand side is not a function pattern."
-            ]
+    pretty (ErrorEquationRightFunction eqns) =
+        NonEmpty.toList eqns
+            & map prettyEqn
+            & vsep
+      where
+        prettyEqn eqn =
+            vsep
+                [ "Checking equation"
+                , indent 4 $ pretty eqn
+                , "right-hand side is not a function pattern."
+                ]
 
 instance Exception ErrorEquationRightFunction where
     toException = toException . SomeEntry
@@ -65,15 +73,21 @@ instance Exception ErrorEquationRightFunction where
 
 instance Entry ErrorEquationRightFunction where
     entrySeverity _ = Error
-    oneLineDoc
-        ( ErrorEquationRightFunction
-                Equation{attributes = Axiom{sourceLocation}}
-            ) =
-            pretty sourceLocation
+
+    --oneLineDoc
+    --    ( ErrorEquationRightFunction
+    --            Equation{attributes = Axiom{sourceLocation}}
+    --        ) =
+    --pretty
+    --sourceLocation
+    oneLineDoc (ErrorEquationRightFunction eqns) =
+        NonEmpty.toList eqns
+            & map (pretty . sourceLocation . attributes)
+            & vsep
     helpDoc _ = "errors raised when right-hand side of equation is not a function pattern"
 
 -- instance SQL.Table ErrorEquationRightFunction
 
 -- | Error when RHS of equation is not a function pattern.
-errorEquationRightFunction :: Equation RewritingVariableName -> m ()
+errorEquationRightFunction :: NonEmpty (Equation RewritingVariableName) -> m ()
 errorEquationRightFunction = throw . ErrorEquationRightFunction
