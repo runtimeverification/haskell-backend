@@ -61,6 +61,7 @@ instance Pretty ErrorEquationRightFunction where
         prettyEqn eqn =
             vsep
                 [ "Checking equation"
+                , pretty $ sourceLocation $ attributes eqn
                 , indent 4 $ pretty eqn
                 , "right-hand side is not a function pattern."
                 ]
@@ -73,12 +74,6 @@ instance Exception ErrorEquationRightFunction where
 instance Entry ErrorEquationRightFunction where
     entrySeverity _ = Error
 
-    --oneLineDoc
-    --    ( ErrorEquationRightFunction
-    --            Equation{attributes = Axiom{sourceLocation}}
-    --        ) =
-    --pretty
-    --sourceLocation
     oneLineDoc (ErrorEquationRightFunction eqns) =
         NonEmpty.toList eqns
             & map (pretty . sourceLocation . attributes)

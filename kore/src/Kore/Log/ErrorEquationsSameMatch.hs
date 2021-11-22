@@ -66,13 +66,17 @@ instance Pretty ErrorEquationsSameMatch where
                 & NonEmpty.toList
                 & map prettyMatch
         prettyMatch (eq1, eq2) =
-            vsep
-                [ "Equations"
-                , indent 4 $ pretty eq1
-                , "and"
-                , indent 4 $ pretty eq2
-                , "match the same term."
-                ]
+            let srcLoc1 = sourceLocation $ attributes eq1
+                srcLoc2 = sourceLocation $ attributes eq2
+             in vsep
+                    [ "Equations"
+                    , pretty srcLoc1
+                    , indent 4 $ pretty eq1
+                    , "and"
+                    , pretty srcLoc2
+                    , indent 4 $ pretty eq2
+                    , "match the same term."
+                    ]
 
 instance Exception ErrorEquationsSameMatch where
     toException = toException . SomeEntry
