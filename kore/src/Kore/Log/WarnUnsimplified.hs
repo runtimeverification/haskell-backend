@@ -2,11 +2,20 @@
 Copyright   : (c) Runtime Verification, 2021
 License     : BSD-3-Clause
 -}
-module Kore.Log.WarnUnsimplifiedPredicate (
+module Kore.Log.WarnUnsimplified (
     WarnUnsimplifiedPredicate (..),
     warnUnsimplifiedPredicate,
+    WarnUnsimplifiedCondition (..),
+    warnUnsimplifiedCondition,
 ) where
 
+import Kore.Internal.Condition (
+    Condition,
+ )
+import Kore.Internal.Conditional (
+    Conditional,
+ )
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -31,6 +40,13 @@ data WarnUnsimplifiedPredicate = WarnUnsimplifiedPredicate
     }
     deriving stock (Show)
 
+data WarnUnsimplifiedCondition = WarnUnsimplifiedCondition
+    { limit :: !Int
+    , original :: !(Condition RewritingVariableName)
+    , output :: !(Condition RewritingVariableName)
+    }
+    deriving stock (Show)
+
 instance Pretty WarnUnsimplifiedPredicate where
     pretty WarnUnsimplifiedPredicate{original, output, limit} =
         Pretty.vsep
@@ -49,10 +65,33 @@ instance Pretty WarnUnsimplifiedPredicate where
             , (Pretty.indent 4) (Pretty.pretty output)
             ]
 
+instance Pretty WarnUnsimplifiedCondition where
+    pretty WarnUnsimplifiedCondition{original, output, limit} =
+        Pretty.vsep
+            [ Pretty.hsep
+                [ "Condition not simplified after"
+                , Pretty.pretty limit
+                , "rounds."
+                ]
+            , "Original condition:"
+            , (Pretty.indent 4) (Pretty.pretty original)
+            , Pretty.hsep
+                [ "Output after"
+                , Pretty.pretty limit
+                , "rounds:"
+                ]
+            , (Pretty.indent 4) (Pretty.pretty output)
+            ]
+
 instance Entry WarnUnsimplifiedPredicate where
     entrySeverity _ = Warning
     oneLineDoc WarnUnsimplifiedPredicate{limit} = Pretty.pretty limit
     helpDoc _ = "warn when a predicate is not simplified"
+
+instance Entry WarnUnsimplifiedCondition where
+    entrySeverity _ = Warning
+    oneLineDoc WarnUnsimplifiedCondition{limit} = Pretty.pretty limit
+    helpDoc _ = "warn when a condition is not simplified"
 
 warnUnsimplifiedPredicate ::
     MonadLog log =>
@@ -62,3 +101,15 @@ warnUnsimplifiedPredicate ::
     log ()
 warnUnsimplifiedPredicate limit original output =
     logEntry WarnUnsimplifiedPredicate{limit, original, output}
+
+warnUnsimplifiedCondition ::
+    MonadLog log =>
+    Int ->
+    Conditional RewritingVariableName any ->
+    Conditional RewritingVariableName any ->
+    log ()
+warnUnsimplifiedCondition
+    limit
+    (Conditional.withoutTerm -> original)
+    (Conditional.withoutTerm -> output) =
+        logEntry WarnUnsimplifiedCondition{limit, original, output}
