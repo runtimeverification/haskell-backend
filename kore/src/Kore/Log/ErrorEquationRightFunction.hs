@@ -11,6 +11,9 @@ import Control.Exception (
     Exception (..),
     throw,
  )
+import Control.Monad (
+    (>=>),
+ )
 import qualified Data.List.NonEmpty as NonEmpty (
     toList,
  )
@@ -53,10 +56,8 @@ instance SOP.Generic ErrorEquationRightFunction
 instance SOP.HasDatatypeInfo ErrorEquationRightFunction
 
 instance Pretty ErrorEquationRightFunction where
-    pretty (ErrorEquationRightFunction eqns) =
-        NonEmpty.toList eqns
-            & map prettyEqn
-            & vsep
+    pretty =
+        vsep . map prettyEqn . NonEmpty.toList . unErrorEquationRightFunction
       where
         prettyEqn eqn =
             vsep
@@ -68,8 +69,7 @@ instance Pretty ErrorEquationRightFunction where
 
 instance Exception ErrorEquationRightFunction where
     toException = toException . SomeEntry
-    fromException exn =
-        fromException exn >>= fromEntry
+    fromException = fromException >=> fromEntry
 
 instance Entry ErrorEquationRightFunction where
     entrySeverity _ = Error

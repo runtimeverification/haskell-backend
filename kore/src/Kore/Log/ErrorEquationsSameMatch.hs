@@ -11,6 +11,9 @@ import Control.Exception (
     Exception (..),
     throw,
  )
+import Control.Monad (
+    (>=>),
+ )
 import qualified Data.List.NonEmpty as NonEmpty (
     toList,
  )
@@ -80,18 +83,16 @@ instance Pretty ErrorEquationsSameMatch where
 
 instance Exception ErrorEquationsSameMatch where
     toException = toException . SomeEntry
-    fromException exn =
-        fromException exn >>= fromEntry
+    fromException = fromException >=> fromEntry
 
 instance Entry ErrorEquationsSameMatch where
     entrySeverity _ = Error
     helpDoc _ =
         "errors raised when two equations from a\
         \ function definition can match the same term"
-    oneLineDoc (ErrorEquationsSameMatch matches) =
-        NonEmpty.toList matches
-            & map prettySrcLoc
-            & vsep
+
+    oneLineDoc =
+        vsep . map prettySrcLoc . NonEmpty.toList . unErrorEquationsSameMatch
       where
         prettySrcLoc (eq1, eq2) =
             let srcLoc1 = sourceLocation $ attributes eq1

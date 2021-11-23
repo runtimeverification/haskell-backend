@@ -155,7 +155,7 @@ mkEquation left right =
             }
 
 instance InternalVariable variable => Pretty (Equation variable) where
-    pretty equation@(Equation _ _ _ _ _ _ _) =
+    pretty equation =
         Pretty.vsep
             [ "requires:"
             , Pretty.indent 4 (pretty requires)
@@ -277,7 +277,7 @@ instance
     InternalVariable variable =>
     HasFreeVariables (Equation variable) variable
     where
-    freeVariables rule@(Equation _ _ _ _ _ _ _) = case rule of
+    freeVariables rule = case rule of
         Equation{left, argument, antiLeft, requires, right, ensures} ->
             freeVariables left
                 <> freeVariables requires
@@ -294,7 +294,7 @@ mapVariables ::
     AdjSomeVariableName (variable1 -> variable2) ->
     Equation variable1 ->
     Equation variable2
-mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
+mapVariables mapping equation =
     equation
         { requires = mapPredicateVariables requires
         , argument = mapPredicateVariables <$> argument
@@ -325,7 +325,7 @@ refreshVariables ::
     (Renaming variable, Equation variable)
 refreshVariables
     (FreeVariables.toNames -> avoid)
-    equation@(Equation _ _ _ _ _ _ _) =
+    equation =
         let rename' :: Map (SomeVariableName variable) (SomeVariable variable)
             rename' =
                 FreeVariables.toSet originalFreeVariables
