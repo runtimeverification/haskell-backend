@@ -19,6 +19,9 @@ import qualified Data.List.NonEmpty as NonEmpty (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.AST.AstWithLocation (
+    prettyPrintLocationFromAst,
+ )
 import Kore.Attribute.Axiom (
     Axiom (..),
  )
@@ -74,9 +77,11 @@ instance Pretty ErrorEquationsSameMatch where
              in vsep
                     [ "Equations"
                     , pretty srcLoc1
+                    , pretty $ prettyPrintLocationFromAst eq1
                     , indent 4 $ pretty eq1
                     , "and"
                     , pretty srcLoc2
+                    , pretty $ prettyPrintLocationFromAst eq2
                     , indent 4 $ pretty eq2
                     , "match the same term."
                     ]

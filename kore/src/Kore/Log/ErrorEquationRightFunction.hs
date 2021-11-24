@@ -19,6 +19,9 @@ import qualified Data.List.NonEmpty as NonEmpty (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.AST.AstWithLocation (
+    prettyPrintLocationFromAst,
+ )
 import Kore.Attribute.Axiom (
     Axiom (..),
  )
@@ -63,6 +66,7 @@ instance Pretty ErrorEquationRightFunction where
             vsep
                 [ "Checking equation"
                 , pretty $ sourceLocation $ attributes eqn
+                , pretty $ prettyPrintLocationFromAst eqn
                 , indent 4 $ pretty eqn
                 , "right-hand side is not a function pattern."
                 ]
