@@ -11,30 +11,29 @@
     flags = {};
     package = {
       specVersion = "2.2";
-      identifier = { name = "pipes-ghc-events"; version = "0.1.0.0"; };
+      identifier = { name = "pipes-sqlite-simple"; version = "0.2"; };
       license = "BSD-3-Clause";
-      copyright = "(c) 2019 Thomas Tuegel";
-      maintainer = "ttuegel@mailbox.org";
-      author = "Thomas Tuegel";
+      copyright = "";
+      maintainer = "nkpart@gmail.com";
+      author = "Nick Partridge";
       homepage = "";
       url = "";
-      synopsis = "Compositional pipelines for parsing .eventlog files";
-      description = "";
+      synopsis = "Functions that smash Pipes and sqlite-simple together";
+      description = "Functions that smash Pipes and sqlite-simple together";
       buildType = "Simple";
       };
     components = {
       "library" = {
         depends = [
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
-          (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
-          (hsPkgs."ghc-events" or (errorHandler.buildDepError "ghc-events"))
+          (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."pipes" or (errorHandler.buildDepError "pipes"))
-          (hsPkgs."pipes-parse" or (errorHandler.buildDepError "pipes-parse"))
-          (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+          (hsPkgs."pipes-safe" or (errorHandler.buildDepError "pipes-safe"))
+          (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
           ];
         buildable = true;
         };
       };
     } // rec {
-    src = (pkgs.lib).mkDefault /nix/store/h9mmq98fkdkpc2r5h447djqgjbqdylly-pipes-ghc-events-4ab25e7/pipes-ghc-events;
+    src = (pkgs.lib).mkDefault /nix/store/zsaa1acvqilir1k6q1an1k6fndqi39x8-pipes-sqlite-simple-a3920f0;
     }

@@ -9,13 +9,13 @@
         "direct-sqlite" = (((hackage.direct-sqlite)."2.3.26").revisions).default;
         "witherable" = (((hackage.witherable)."0.3.5").revisions).default;
         "witherable-class" = (((hackage.witherable-class)."0").revisions).default;
+        "tasty-test-reporter" = (((hackage.tasty-test-reporter)."0.1.1.4").revisions).default;
         "junit-xml" = (((hackage.junit-xml)."0.1.0.0").revisions).default;
         "ghc-events" = (((hackage.ghc-events)."0.13.0").revisions).default;
         kore = ./kore.nix;
-        tasty-test-reporter = ./.stack-to-nix.cache.0;
-        eventlog2speedscope = ./.stack-to-nix.cache.1;
-        pipes-ghc-events = ./.stack-to-nix.cache.2;
-        pipes-sqlite-simple = ./.stack-to-nix.cache.3;
+        eventlog2speedscope = ./.stack-to-nix.cache.0;
+        pipes-ghc-events = ./.stack-to-nix.cache.1;
+        pipes-sqlite-simple = ./.stack-to-nix.cache.2;
         };
       };
   resolver = "lts-17.7";
