@@ -336,15 +336,13 @@ newSolver ::
     IO SolverHandle
 newSolver exe opts logger = do
     (Just hIn, Just hOut, Just hErr, hProc) <- createProcess solverProcess
+
     let solverHandle = SolverHandle{hIn, hOut, hErr, hProc, queryCounter = 0}
         solver = Solver{solverHandle, logger}
+        redirectErrorsToLogger =
+            Monad.forever $ Text.hGetLine hErr >>= debug solver
 
-    -- redirect error pipe to debug logger
-    Text.hGetLine hErr >>= debug (Solver solverHandle logger)
-        & Monad.forever
-        & X.handle (\X.SomeException{} -> return ())
-        & forkIO
-        & void
+    void $ forkIO (X.handle ignoreExceptions redirectErrorsToLogger)
 
     setOption solver ":print-success" "true"
     Monad.when featureProduceAssertions $
@@ -352,6 +350,7 @@ newSolver exe opts logger = do
 
     return solverHandle
   where
+    ignoreExceptions X.SomeException{} = return ()
     solverProcess =
         (proc exe opts)
             { std_in = CreatePipe
