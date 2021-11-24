@@ -279,6 +279,7 @@ addAssumptions predicates sideCondition =
     sideCondition
         { assumedTrue =
             predicates <> assumedTrue sideCondition
+        , simplifiedFunctions = HashSet.empty
         }
 
 areIncludedIn ::
@@ -323,13 +324,12 @@ addConditionWithReplacements
                     , replacementsTermLike
                     , replacementsPredicate
                     , definedTerms
-                    , simplifiedFunctions
+                    , simplifiedFunctions = HashSet.empty
                     }
       where
         SideCondition
             { assumedTrue = oldCondition
             , definedTerms
-            , simplifiedFunctions
             } = sideCondition
 
 {- | Smart constructor for creating a 'SideCondition' by just constructing
