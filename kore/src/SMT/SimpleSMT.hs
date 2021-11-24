@@ -210,6 +210,7 @@ import Prelude.Kore hiding (
     not,
     or,
  )
+import qualified Prelude.Kore as Prelude
 import qualified Pretty
 import SMT.AST
 import System.Exit (
@@ -234,7 +235,6 @@ import qualified Text.Megaparsec as Parser
 import Text.Read (
     readMaybe,
  )
-import qualified Prelude
 
 -- ---------------------------------------------------------------------
 
@@ -339,12 +339,12 @@ newSolver exe opts logger = do
     let solverHandle = SolverHandle{hIn, hOut, hErr, hProc, queryCounter = 0}
         solver = Solver{solverHandle, logger}
 
-    _ <- forkIO $ do
-        let handler X.SomeException{} = return ()
-        X.handle handler $
-            Monad.forever $ do
-                errs <- Text.hGetLine hErr
-                debug (Solver solverHandle logger) errs
+    -- redirect error pipe to debug logger
+    Text.hGetLine hErr >>= debug (Solver solverHandle logger)
+        & Monad.forever
+        & X.handle (\X.SomeException{} -> return ())
+        & forkIO
+        & void
 
     setOption solver ":print-success" "true"
     Monad.when featureProduceAssertions $
