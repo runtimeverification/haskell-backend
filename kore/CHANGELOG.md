@@ -14,6 +14,25 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.58.0.0] - 2021-11-19
+
+### Added
+
+- Add error log entries to `kore-check-functions` (#2881).
+
+### Changed
+
+- Change severity of log entry regarding retried Z3 queries to `debug` (#2888).
+
+### Removed
+
+- Remove support for old equation encoding (#2889).
+
+### Fixed
+
+- Fix substitution application when simplifying claims (#2828).
+- Add upper bound to `Condition` simplification loop (#2878).
+
 ## [0.55.0.0] - 2021-10-11
 
 ### Added

@@ -139,7 +139,8 @@ import Kore.Log.WarnSymbolSMTRepresentation (
 import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
  )
-import Kore.Log.WarnUnsimplifiedPredicate (
+import Kore.Log.WarnUnsimplified (
+    WarnUnsimplifiedCondition,
     WarnUnsimplifiedPredicate,
  )
 import Log (
@@ -220,6 +221,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugBeginClaim
             , mk $ Proxy @DebugProven
             , mk $ Proxy @WarnUnsimplifiedPredicate
+            , mk $ Proxy @WarnUnsimplifiedCondition
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
