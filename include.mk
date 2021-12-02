@@ -39,32 +39,32 @@ export KORE_PARSER
 export KORE_PARSER_OPTS
 
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
-KORE_EXEC_OPTS = --no-bug-report
+KORE_EXEC_OPTS ?= --no-bug-report
 export KORE_EXEC
 export KORE_EXEC_OPTS
 
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
-KORE_REPL_OPTS = --no-bug-report
+KORE_REPL_OPTS ?= --no-bug-report
 export KORE_REPL
 export KORE_REPL_OPTS
 
 KORE_CHECK_FUNCTIONS = $(BUILD_DIR)/kore/bin/kore-check-functions
-KORE_CHECK_FUNCTIONS_OPTS = --no-bug-report
+KORE_CHECK_FUNCTIONS_OPTS ?= --no-bug-report
 export KORE_CHECK_FUNCTIONS
 export KORE_CHECK_FUNCTIONS_OPTS
 
 KORE_FORMAT = $(BUILD_DIR)/kore/bin/kore-format
-KORE_FORMAT_OPTS = --no-bug-report
+KORE_FORMAT_OPTS ?= --no-bug-report
 export KORE_FORMAT
 export KORE_FORMAT_OPTS
 
 KORE_MATCH_DISJUNCTION = $(BUILD_DIR)/kore/bin/kore-match-disjunction
-KORE_MATCH_DISJUNCTION_OPTS = --no-bug-report
+KORE_MATCH_DISJUNCTION_OPTS ?= --no-bug-report
 export KORE_MATCH_DISJUNCTION
 export KORE_MATCH_DISJUNCTION_OPTS
 
 KORE_PROF = $(BUILD_DIR)/kore/bin/kore-prof
-KORE_PROF_OPTS = --no-bug-report
+KORE_PROF_OPTS ?= --no-bug-report
 export KORE_PROF
 export KORE_PROF_OPTS
 
