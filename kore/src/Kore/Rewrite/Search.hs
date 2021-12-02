@@ -159,8 +159,6 @@ matchWith sideCondition e1 e2 = do
                         & Condition.fromSubstitution
                         & return
     results <- lift $ mergeAndEvaluate matchResults
-    -- let orResults :: OrCondition RewritingVariableName
-    --     orResults = MultiOr.mergeAll results
     guardAgainstBottom results
     return results
   where
