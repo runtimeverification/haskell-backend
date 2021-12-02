@@ -128,7 +128,7 @@ matchWith ::
     Pattern RewritingVariableName ->
     MaybeT m (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
-    unifiers <- MaybeT $ matchIncremental sideCondition t1 t2
+    matchResults <- MaybeT $ matchIncremental sideCondition t1 t2
     let mergeAndEvaluate ::
             MatchResult RewritingVariableName ->
             m (OrCondition RewritingVariableName)
@@ -158,7 +158,7 @@ matchWith sideCondition e1 e2 = do
                     Conditional.substitution merged
                         & Condition.fromSubstitution
                         & return
-    results <- lift $ mergeAndEvaluate unifiers
+    results <- lift $ mergeAndEvaluate matchResults
     -- let orResults :: OrCondition RewritingVariableName
     --     orResults = MultiOr.mergeAll results
     guardAgainstBottom results
