@@ -20,8 +20,6 @@ import Data.Limit (
  )
 import qualified Data.Limit as Limit
 import qualified Data.Map.Strict as Map
-import Kore.Internal.Substitution
-    (Substitution)
 import qualified Kore.Internal.Condition as Condition (
     bottom,
     fromSubstitution,
@@ -39,6 +37,9 @@ import Kore.Internal.Pattern (
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
+ )
+import Kore.Internal.Substitution (
+    Substitution,
  )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
