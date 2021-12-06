@@ -19,6 +19,9 @@ import Data.Limit (
     Limit (..),
  )
 import qualified Data.Limit as Limit
+import qualified Data.Map.Strict as Map
+import Kore.Internal.Substitution
+    (Substitution)
 import qualified Kore.Internal.Condition as Condition (
     bottom,
     fromSubstitution,
@@ -146,7 +149,7 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e1
                     , Conditional.predicate e2
                     ]
-                    [from substitution]
+                    [from @(Map.Map _ _) @(Substitution _) substitution]
             lift (SMT.evalConditional merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
