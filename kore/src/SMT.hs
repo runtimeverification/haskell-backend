@@ -11,6 +11,7 @@ module SMT (
     Solver,
     stopSolver,
     runSMT,
+    runSMTAutoRestart,
     MonadSMT (..),
     Config (..),
     defaultConfig,
@@ -98,6 +99,9 @@ import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
+import Kore.Log.Warning (
+    warnZ3Crash,
+ )
 import Log (
     LogAction,
     LoggerT,
@@ -519,15 +523,19 @@ stopSolver mvar = do
 -- | Run an external SMT solver.
 runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
 runSMT config userInit smt =
-    runBracketSMT `catch` \(_ :: Exception.SomeException) -> do
-        -- debugSMTCrash
-        runBracketSMT
+    Exception.bracket
+        (newSolver config)
+        stopSolver
+        (\mvar -> runSMT' config userInit mvar smt)
+
+-- | Run SMT solver. If any errors occur, run again only once.
+runSMTAutoRestart :: Config -> SMT () -> SMT a -> LoggerT IO a
+runSMTAutoRestart config userInit smt =
+    smtAction `catch` \(_ :: Exception.SomeException) -> do
+        warnZ3Crash
+        smtAction
   where
-    runBracketSMT =
-        Exception.bracket
-            (newSolver config)
-            stopSolver
-            (\mvar -> runSMT' config userInit mvar smt)
+    smtAction = runSMT config userInit smt
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
 runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
