@@ -142,6 +142,9 @@ import Kore.Log.WarnTrivialClaim (
 import Kore.Log.WarnUnsimplifiedPredicate (
     WarnUnsimplifiedPredicate,
  )
+import Kore.Log.Warning (
+    WarnZ3Crash,
+ )
 import Log (
     Entry (..),
     LogMessage,
@@ -205,6 +208,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
+            , mk $ Proxy @WarnZ3Crash
             , mk $ Proxy @DebugRetrySolverQuery
             , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
