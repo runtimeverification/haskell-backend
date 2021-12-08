@@ -82,6 +82,7 @@ import qualified Kore.Equation as Equation (
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
+    indexedModuleAxioms,
  )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools (
@@ -891,7 +892,13 @@ initializeProver ::
     Maybe (VerifiedModule StepperAttributes) ->
     simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
-    initialized <- initializeAndSimplify definitionModule
+    let extraSimplificationRules = indexedModuleAxioms specModule
+        definitionModule' =
+            Lens.over
+                (field @"indexedModuleAxioms")
+                (<> extraSimplificationRules)
+                definitionModule
+    initialized <- initializeAndSimplify definitionModule'
     tools <- Simplifier.askMetadataTools
     let Initialized{rewriteRules} = initialized
         changedSpecClaims :: [MaybeChanged SomeClaim]
