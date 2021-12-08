@@ -269,8 +269,8 @@ the project
 data GlobalOptions = GlobalOptions
     { -- | Version flag [default=false]
       willVersion :: !Bool
-      -- | Experimental simplifier flag [default=false]
-    , simplifierx :: !Bool
+    , -- | Experimental simplifier flag [default=false]
+      simplifierx :: !Bool
     }
 
 -- | Record type to store all state and options for the subMain operations
