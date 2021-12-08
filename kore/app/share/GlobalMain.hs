@@ -113,7 +113,6 @@ import Options.Applicative (
     ParserHelp (..),
     defaultPrefs,
     execParserPure,
-    flag,
     handleParseResult,
     help,
     helper,
@@ -270,6 +269,8 @@ the project
 data GlobalOptions = GlobalOptions
     { -- | Version flag [default=false]
       willVersion :: !Bool
+      -- | Experimental simplifier flag [default=false]
+    , simplifierx :: !Bool
     }
 
 -- | Record type to store all state and options for the subMain operations
@@ -318,11 +319,13 @@ mainVersion =
 globalCommandLineParser :: Parser GlobalOptions
 globalCommandLineParser =
     GlobalOptions
-        <$> flag
-            False
-            True
+        <$> switch
             ( long "version"
                 <> help "Print version information"
+            )
+        <*> switch
+            ( long "simplifierx"
+                <> help "Use experimental simplifier"
             )
 
 getArgs ::
