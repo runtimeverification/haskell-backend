@@ -43,7 +43,7 @@ import Kore.BugReport
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
-    indexedModuleRawSentences
+    indexedModuleRawSentences,
  )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
     build,
