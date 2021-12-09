@@ -28,6 +28,7 @@ import Control.Exception (
     displayException,
     throwIO,
  )
+import qualified Control.Exception as X
 import Control.Lens (
     (%=),
     (.=),
@@ -1243,7 +1244,9 @@ pipe cmd file args = do
     runExternalProcess pipeOut exec str = do
         (maybeInput, maybeOutput, _, _) <- createProcess' exec
         let outputFunc = maybe putStrLn hPutStr maybeInput
-        outputFunc str
+        X.handle
+            (\(X.SomeException e) -> hPutStrLn stderr (displayException e))
+            (outputFunc str)
         case maybeOutput of
             Nothing ->
                 hPutStrLn stderr "Error: couldn't access output handle."
