@@ -566,9 +566,10 @@ mainPatternParseAndVerify indexedModule patternFileName =
 mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
--- | Extract axioms from a module and add them to the main definition module.
--- This should be safe, as long as the axioms only depend on sorts/symbols
--- defined in the main module.
+{- | Extract axioms from a module and add them to the main definition module.
+ This should be safe, as long as the axioms only depend on sorts/symbols
+ defined in the main module.
+-}
 addExtraAxioms ::
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes ->
