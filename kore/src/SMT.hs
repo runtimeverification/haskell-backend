@@ -462,7 +462,7 @@ data Config = Config
       rLimit :: !RLimit
     , -- | reset solver after this number of queries
       resetInterval :: !ResetInterval
-    , -- | Automatically restart Z3 after crash
+    , -- | automatically restart Z3 after crash
       autoRestart :: !AutoRestart
     }
 
@@ -480,7 +480,7 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
-        , autoRestart = Never
+        , autoRestart = Once
         }
 
 initSolver :: Config -> SMT ()

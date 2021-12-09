@@ -26,6 +26,7 @@ import Kore.Parser.ParserUtils (
  )
 import Options.Applicative (
     Parser,
+    auto,
     help,
     long,
     metavar,
@@ -55,6 +56,7 @@ data KoreSolverOptions = KoreSolverOptions
     , rLimit :: !RLimit
     , resetInterval :: !ResetInterval
     , prelude :: !Prelude
+    , autoRestart :: !AutoRestart
     , solver :: !Solver
     }
 
@@ -65,6 +67,7 @@ parseKoreSolverOptions =
         <*> parseRLimit
         <*> parseResetInterval
         <*> parsePrelude
+        <*> parseAutoRestart
         <*> parseSolver
   where
     parseTimeOut =
@@ -93,7 +96,16 @@ parseKoreSolverOptions =
                 <> help "Reset the solver after this number of queries"
                 <> value defaultResetInterval
             )
-
+    parseAutoRestart =
+        option
+            auto
+            ( metavar "SMT_AUTO_RESTART"
+                <> long "smt-auto-restart"
+                <> help
+                    "Automatically restart the solver if it crashes. \
+                    \Values: Never, Once (default)."
+                <> value defaultAutoRestart
+            )
     parsePrelude =
         Prelude
             <$> optional
@@ -108,6 +120,7 @@ parseKoreSolverOptions =
         { timeOut = defaultTimeOut
         , rLimit = defaultRLimit
         , resetInterval = defaultResetInterval
+        , autoRestart = defaultAutoRestart
         } =
             SMT.defaultConfig
 
