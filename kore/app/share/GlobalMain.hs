@@ -24,6 +24,7 @@ module GlobalMain (
     loadModule,
     mainParseSearchPattern,
     mainPatternParseAndVerify,
+    addExtraAxioms,
 ) where
 
 import Control.Exception (
@@ -33,6 +34,9 @@ import Control.Lens (
     (%~),
  )
 import qualified Control.Lens as Lens
+import Data.Generics.Product (
+    field,
+ )
 import qualified Control.Monad as Monad
 import Data.List (
     intercalate,
@@ -68,7 +72,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule,
+    VerifiedModule, IndexedModule (indexedModuleAxioms)
  )
 import Kore.Internal.Conditional (Conditional (..))
 import Kore.Internal.Pattern (Pattern)
@@ -560,3 +564,13 @@ mainPatternParseAndVerify indexedModule patternFileName =
 -}
 mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
+
+addExtraAxioms ::
+    VerifiedModule StepperAttributes ->
+    VerifiedModule StepperAttributes ->
+    VerifiedModule StepperAttributes
+addExtraAxioms definitionModule moduleWithExtraAxioms =
+    Lens.over
+        (field @"indexedModuleAxioms")
+        (<> indexedModuleAxioms moduleWithExtraAxioms)
+        definitionModule

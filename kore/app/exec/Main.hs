@@ -43,7 +43,7 @@ import Kore.BugReport
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
-    indexedModuleRawSentences, IndexedModule (indexedModuleAxioms)
+    indexedModuleRawSentences
  )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
     build,
@@ -688,12 +688,7 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
     specModule <- loadModule specMainModule definition
-    let extraSimplificationRules = indexedModuleAxioms specModule
-        mainModule' =
-            Lens.over
-                (field @"indexedModuleAxioms")
-                (<> extraSimplificationRules)
-                mainModule
+    let mainModule' = addExtraAxioms mainModule specModule
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     let KoreExecOptions{maxCounterexamples} = execOptions

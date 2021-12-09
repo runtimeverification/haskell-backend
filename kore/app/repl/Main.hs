@@ -220,7 +220,9 @@ mainWithOptions
                                 indexedModule <- loadModule mainModuleName definition
                                 specDefIndexedModule <- loadModule specModule definition
 
-                                let smtConfig =
+                                let validatedDefinition =
+                                        addExtraAxioms indexedModule specDefIndexedModule
+                                    smtConfig =
                                         SMT.defaultConfig
                                             { SMT.timeOut = smtTimeOut
                                             , SMT.rLimit = smtRLimit
@@ -253,11 +255,11 @@ mainWithOptions
                                 SMT.runSMT
                                     smtConfig
                                     ( give
-                                        (MetadataTools.build indexedModule)
-                                        (declareSMTLemmas indexedModule)
+                                        (MetadataTools.build validatedDefinition)
+                                        (declareSMTLemmas validatedDefinition)
                                     )
                                     $ proveWithRepl
-                                        indexedModule
+                                        validatedDefinition
                                         specDefIndexedModule
                                         Nothing
                                         mvarLogAction
