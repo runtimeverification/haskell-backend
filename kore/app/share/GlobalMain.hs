@@ -34,10 +34,10 @@ import Control.Lens (
     (%~),
  )
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import Data.Generics.Product (
     field,
  )
-import qualified Control.Monad as Monad
 import Data.List (
     intercalate,
     nub,
@@ -72,7 +72,8 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
-    VerifiedModule, IndexedModule (indexedModuleAxioms)
+    IndexedModule (indexedModuleAxioms),
+    VerifiedModule,
  )
 import Kore.Internal.Conditional (Conditional (..))
 import Kore.Internal.Pattern (Pattern)
