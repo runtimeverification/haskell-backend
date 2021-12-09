@@ -889,7 +889,7 @@ execute options mainModule worker =
             , SMT.rLimit = rLimit solverOpts
             , SMT.resetInterval = resetInterval solverOpts
             , SMT.prelude = prelude solverOpts
-            , SMT.autoRestart = SMT.Once
+            , SMT.autoRestart = autoRestart solverOpts
             }
 
 loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)

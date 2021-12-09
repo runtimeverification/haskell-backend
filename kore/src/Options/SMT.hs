@@ -26,7 +26,7 @@ import Kore.Parser.ParserUtils (
  )
 import Options.Applicative (
     Parser,
-    auto,
+    flag,
     help,
     long,
     metavar,
@@ -97,14 +97,12 @@ parseKoreSolverOptions =
                 <> value defaultResetInterval
             )
     parseAutoRestart =
-        option
-            auto
-            ( metavar "SMT_AUTO_RESTART"
-                <> long "smt-auto-restart"
+        flag
+            defaultAutoRestart -- default value: Once
+            Never -- active value
+            ( long "smt-never-auto-restart"
                 <> help
-                    "Automatically restart the solver if it crashes. \
-                    \Values: Never, Once (default)."
-                <> value defaultAutoRestart
+                    "Never automatically restart the solver if it crashes."
             )
     parsePrelude =
         Prelude
