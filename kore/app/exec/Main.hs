@@ -10,9 +10,6 @@ import Control.Monad.Extra as Monad
 import Data.Default (
     def,
  )
-import Data.Generics.Product (
-    field,
- )
 import Data.Limit (
     Limit (..),
     maybeLimit,
@@ -872,7 +869,7 @@ execute ::
     Main r
 execute options mainModule worker =
     clockSomethingIO "Executing" $
-        case solver of
+        case solver solverOpts of
             Z3 -> withZ3
             None -> withoutSMT
   where
@@ -885,14 +882,14 @@ execute options mainModule worker =
             )
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
-        Lens.view (field @"koreSolverOptions") options
+    solverOpts = koreSolverOptions options
     config =
         SMT.defaultConfig
-            { SMT.timeOut = timeOut
-            , SMT.rLimit = rLimit
-            , SMT.resetInterval = resetInterval
-            , SMT.prelude = prelude
+            { SMT.timeOut = timeOut solverOpts
+            , SMT.rLimit = rLimit solverOpts
+            , SMT.resetInterval = resetInterval solverOpts
+            , SMT.prelude = prelude solverOpts
+            , SMT.autoRestart = SMT.Once
             }
 
 loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)

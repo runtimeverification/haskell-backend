@@ -312,7 +312,7 @@ instance Exception.Exception SolverException where
 throwSolverException :: ProcessHandle -> SomeException -> IO a
 throwSolverException solverHandle someException
     | Just _ <- Exception.fromException someException :: Maybe AsyncException =
-        Exception.throwM someException
+        Exception.throwM $ SolverException Nothing someException
     | Just _ <- Exception.fromException someException :: Maybe SolverException =
         Exception.throwM someException
     | otherwise = do

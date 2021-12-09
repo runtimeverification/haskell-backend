@@ -11,7 +11,6 @@ module SMT (
     Solver,
     stopSolver,
     runSMT,
-    runSMTAutoRestart,
     MonadSMT (..),
     Config (..),
     defaultConfig,
@@ -19,6 +18,7 @@ module SMT (
     RLimit (..),
     ResetInterval (..),
     Prelude (..),
+    AutoRestart (..),
     Result (..),
     Constructor (..),
     ConstructorArgument (..),
@@ -442,6 +442,10 @@ newtype ResetInterval = ResetInterval {getResetInterval :: Integer}
 -- | Optional filepath for the SMT prelude.
 newtype Prelude = Prelude {getPrelude :: Maybe FilePath}
 
+-- | Automatically restart Z3 after crash.
+data AutoRestart = Never | Once
+    deriving stock (Eq, Read, Show)
+
 -- | Solver configuration
 data Config = Config
     { -- | solver executable file name
@@ -458,6 +462,8 @@ data Config = Config
       rLimit :: !RLimit
     , -- | reset solver after this number of queries
       resetInterval :: !ResetInterval
+    , -- | Automatically restart Z3 after crash
+      autoRestart :: !AutoRestart
     }
 
 -- | Default configuration using the Z3 solver.
@@ -474,6 +480,7 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
+        , autoRestart = Never
         }
 
 initSolver :: Config -> SMT ()
@@ -522,20 +529,18 @@ stopSolver mvar = do
 
 -- | Run an external SMT solver.
 runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
-runSMT config userInit smt =
-    Exception.bracket
-        (newSolver config)
-        stopSolver
-        (\mvar -> runSMT' config userInit mvar smt)
-
--- | Run SMT solver. If any errors occur, run again only once.
-runSMTAutoRestart :: Config -> SMT () -> SMT a -> LoggerT IO a
-runSMTAutoRestart config userInit smt =
-    smtAction `catch` \(_ :: Exception.SomeException) -> do
-        warnZ3Crash
-        smtAction
+runSMT config userInit smt = case autoRestart config of
+    Never -> smtBracket
+    Once ->
+        smtBracket `catch` \(e :: SimpleSMT.SolverException) -> do
+            warnZ3Crash e
+            smtBracket
   where
-    smtAction = runSMT config userInit smt
+    smtBracket =
+        Exception.bracket
+            (newSolver config)
+            stopSolver
+            (\mvar -> runSMT' config userInit mvar smt)
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
 runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
