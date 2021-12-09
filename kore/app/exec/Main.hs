@@ -42,8 +42,9 @@ import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (indexedModuleAxioms),
     VerifiedModule,
-    indexedModuleRawSentences, IndexedModule (indexedModuleAxioms)
+    indexedModuleRawSentences,
  )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
     build,
