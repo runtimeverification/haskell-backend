@@ -225,6 +225,7 @@ mainWithOptions
                                             { SMT.timeOut = smtTimeOut
                                             , SMT.rLimit = smtRLimit
                                             , SMT.resetInterval = smtResetInterval
+                                            , SMT.autoRestart = smtAutoRestart
                                             , SMT.prelude = smtPrelude
                                             }
 
@@ -320,6 +321,9 @@ mainWithOptions
 
         smtResetInterval :: SMT.ResetInterval
         smtResetInterval = resetInterval smtOptions
+
+        smtAutoRestart :: SMT.AutoRestart
+        smtAutoRestart = autoRestart smtOptions
 
         smtPrelude :: SMT.Prelude
         smtPrelude = prelude smtOptions
