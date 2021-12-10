@@ -3,6 +3,7 @@
 module GlobalMain (
     MainOptions (..),
     GlobalOptions (..),
+    LocalOptions (..),
     KoreProveOptions (..),
     KoreMergeOptions (..),
     ExeName (..),
@@ -33,6 +34,7 @@ import Control.Lens (
     (%~),
  )
 import qualified Control.Lens as Lens
+import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import qualified Control.Monad as Monad
 import Data.List (
     intercalate,
@@ -275,7 +277,12 @@ data GlobalOptions = GlobalOptions
 -- | Record type to store all state and options for the subMain operations
 data MainOptions a = MainOptions
     { globalOptions :: !GlobalOptions
-    , localOptions :: !(Maybe a)
+    , localOptions :: !(Maybe (LocalOptions a))
+    }
+
+data LocalOptions a = LocalOptions
+    { execOptions :: !a
+    , simplifierx :: !SimplifierXSwitch
     }
 
 {- |
@@ -325,6 +332,15 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
+parseSimplifierX :: Parser SimplifierXSwitch
+parseSimplifierX =
+    flag
+        DisabledSimplifierX
+        EnabledSimplifierX
+        ( long "simplifierx"
+            <> help "Enable the experimental simplifier"
+        )
+
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->
@@ -360,10 +376,14 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
             | otherwise = id
     handleParseResult $ changeHelpOverFailure parseResult
   where
+    parseLocalOptions =
+        LocalOptions
+            <$> parser
+            <*> parseSimplifierX
     parseMainOptions =
         MainOptions
             <$> globalCommandLineParser
-            <*> optional parser
+            <*> optional parseLocalOptions
             <**> helper
 
     changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp

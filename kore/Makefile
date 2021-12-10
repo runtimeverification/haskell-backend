@@ -49,6 +49,9 @@ ghcid-repl:
 ghcid-match:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-match-disjunction --work-dir .stack-work-ghci"
 
+ghcid-check-func:
+	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-check-functions --work-dir .stack-work-ghci"
+
 # TODO(Vladimir): remove 'hyperlink-source' when we upgrade from lts-12.10 (8.4.3)
 hoogle-gen:
 	$(stack) haddock --work-dir .stack-work-hoogle; $(stack) hoogle generate --rebuild --work-dir .stack-work-hoogle -- --local

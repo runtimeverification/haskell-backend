@@ -194,86 +194,86 @@ main = do
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions
 
-mainWithOptions :: KoreReplOptions -> IO ()
-mainWithOptions
-    KoreReplOptions
-        { definitionModule
-        , proveOptions
-        , smtOptions
-        , replScript
-        , replMode
-        , scriptModeOutput
-        , outputFile
-        , koreLogOptions
-        , bugReportOption
-        } =
-        do
-            exitCode <-
-                withBugReport Main.exeName bugReportOption $ \tempDirectory ->
-                    withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
-                        mvarLogAction <- newMVar actualLogAction
-                        let swapLogAction = swappableLogger mvarLogAction
-                        flip runLoggerT swapLogAction $
-                            runExceptionHandlers $ do
-                                definition <-
-                                    loadDefinitions [definitionFileName, specFile]
-                                indexedModule <- loadModule mainModuleName definition
-                                specDefIndexedModule <- loadModule specModule definition
+mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
+mainWithOptions LocalOptions { execOptions, simplifierx } = do
+    exitCode <-
+        withBugReport Main.exeName bugReportOption $ \tempDirectory ->
+            withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
+                mvarLogAction <- newMVar actualLogAction
+                let swapLogAction = swappableLogger mvarLogAction
+                flip runLoggerT swapLogAction $
+                    runExceptionHandlers $ do
+                        definition <-
+                            loadDefinitions [definitionFileName, specFile]
+                        indexedModule <- loadModule mainModuleName definition
+                        specDefIndexedModule <- loadModule specModule definition
 
-                                let smtConfig =
-                                        SMT.defaultConfig
-                                            { SMT.timeOut = smtTimeOut
-                                            , SMT.rLimit = smtRLimit
-                                            , SMT.resetInterval = smtResetInterval
-                                            , SMT.prelude = smtPrelude
-                                            }
+                        let smtConfig =
+                                SMT.defaultConfig
+                                    { SMT.timeOut = smtTimeOut
+                                    , SMT.rLimit = smtRLimit
+                                    , SMT.resetInterval = smtResetInterval
+                                    , SMT.prelude = smtPrelude
+                                    }
 
-                                when
-                                    ( replMode == RunScript
-                                        && isNothing (unReplScript replScript)
-                                    )
-                                    $ lift $ do
-                                        hPutStrLn
-                                            stderr
-                                            "You must supply the path to the repl script\
-                                            \ in order to run the repl in run-script mode."
-                                        exitFailure
+                        when
+                            ( replMode == RunScript
+                                && isNothing (unReplScript replScript)
+                            )
+                            $ lift $ do
+                                hPutStrLn
+                                    stderr
+                                    "You must supply the path to the repl script\
+                                    \ in order to run the repl in run-script mode."
+                                exitFailure
 
-                                when
-                                    ( replMode == Interactive
-                                        && scriptModeOutput == EnableOutput
-                                    )
-                                    $ lift $ do
-                                        hPutStrLn
-                                            stderr
-                                            "The --save-run-output flag is only available\
-                                            \ when running the repl in run-script mode."
-                                        exitFailure
+                        when
+                            ( replMode == Interactive
+                                && scriptModeOutput == EnableOutput
+                            )
+                            $ lift $ do
+                                hPutStrLn
+                                    stderr
+                                    "The --save-run-output flag is only available\
+                                    \ when running the repl in run-script mode."
+                                exitFailure
 
-                                SMT.runSMT
-                                    smtConfig
-                                    ( give
-                                        (MetadataTools.build indexedModule)
-                                        (declareSMTLemmas indexedModule)
-                                    )
-                                    $ proveWithRepl
-                                        indexedModule
-                                        specDefIndexedModule
-                                        Nothing
-                                        mvarLogAction
-                                        replScript
-                                        replMode
-                                        scriptModeOutput
-                                        outputFile
-                                        mainModuleName
-                                        koreLogOptions
-                                        (GlobalMain.kFileLocations definition)
+                        SMT.runSMT
+                            smtConfig
+                            ( give
+                                (MetadataTools.build indexedModule)
+                                (declareSMTLemmas indexedModule)
+                            )
+                            $ proveWithRepl
+                                simplifierx
+                                indexedModule
+                                specDefIndexedModule
+                                Nothing
+                                mvarLogAction
+                                replScript
+                                replMode
+                                scriptModeOutput
+                                outputFile
+                                mainModuleName
+                                koreLogOptions
+                                (GlobalMain.kFileLocations definition)
 
-                                warnIfLowProductivity
-                                    (GlobalMain.kFileLocations definition)
-                                pure ExitSuccess
-            exitWith exitCode
+                        warnIfLowProductivity
+                            (GlobalMain.kFileLocations definition)
+                        pure ExitSuccess
+    exitWith exitCode
       where
+        KoreReplOptions
+            { definitionModule
+            , proveOptions
+            , smtOptions
+            , replScript
+            , replMode
+            , scriptModeOutput
+            , outputFile
+            , koreLogOptions
+            , bugReportOption
+            } = execOptions
         runExceptionHandlers action =
             action
                 & handle exitReplHandler

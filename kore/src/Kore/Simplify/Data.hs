@@ -202,10 +202,11 @@ that may branch.
 evalSimplifier ::
     forall smt a.
     (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
+    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     SimplifierT smt a ->
     smt a
-evalSimplifier verifiedModule simplifier = do
+evalSimplifier _ verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
     runSimplifier env simplifier
   where

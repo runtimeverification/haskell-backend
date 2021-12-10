@@ -188,6 +188,7 @@ import qualified Kore.Simplify.Pattern as Pattern
 import qualified Kore.Simplify.Rule as Rule
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    SimplifierXSwitch,
  )
 import Kore.Syntax.Module (
     ModuleName,
@@ -200,7 +201,6 @@ import Kore.Unparser (
     unparseToText2,
  )
 import Log (
-    LoggerT,
     MonadLog,
  )
 import qualified Log
@@ -214,7 +214,6 @@ import Prof
 import SMT (
     MonadSMT,
     SMT,
-    runNoSMT,
  )
 import System.Exit (
     ExitCode (..),
@@ -238,6 +237,7 @@ exec ::
     , MonadMask smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -247,12 +247,13 @@ exec ::
     TermLike VariableName ->
     smt (ExitCode, TermLike VariableName)
 exec
+    simplifierx
     depthLimit
     breadthLimit
     verifiedModule
     strategy
     (mkRewritingTerm -> initialTerm) =
-        evalSimplifier verifiedModule' $ do
+        evalSimplifier simplifierx verifiedModule' $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
             finals <-
@@ -395,6 +396,7 @@ search ::
     , MonadMask smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -407,13 +409,14 @@ search ::
     Search.Config ->
     smt (TermLike VariableName)
 search
+    simplifierx
     depthLimit
     breadthLimit
     verifiedModule
     (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig =
-        evalSimplifier verifiedModule $ do
+        evalSimplifier simplifierx verifiedModule $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
             simplifiedPatterns <-
@@ -467,6 +470,7 @@ prove ::
     , MonadSMT smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Strategy.GraphSearchOrder ->
     Limit Natural ->
     Limit Natural ->
@@ -479,6 +483,7 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     smt ProveClaimsResult
 prove
+    simplifierx
     searchOrder
     breadthLimit
     depthLimit
@@ -486,7 +491,7 @@ prove
     definitionModule
     specModule
     trustedModule =
-        evalSimplifier definitionModule $ do
+        evalSimplifier simplifierx definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -514,6 +519,7 @@ prove
  the repl until the user exits.
 -}
 proveWithRepl ::
+    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
@@ -534,6 +540,7 @@ proveWithRepl ::
     KFileLocations ->
     SMT ()
 proveWithRepl
+    simplifierx
     definitionModule
     specModule
     trustedModule
@@ -545,7 +552,7 @@ proveWithRepl
     mainModuleName
     logOptions
     kFileLocations =
-        evalSimplifier definitionModule $ do
+        evalSimplifier simplifierx definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -572,6 +579,7 @@ boundedModelCheck ::
     , MonadMask smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -584,8 +592,15 @@ boundedModelCheck ::
             (TermLike VariableName)
             (ImplicationRule VariableName)
         )
-boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
-    evalSimplifier definitionModule $ do
+boundedModelCheck
+    simplifierx
+    breadthLimit
+    depthLimit
+    definitionModule
+    specModule
+    searchOrder
+  =
+    evalSimplifier simplifierx definitionModule $ do
         initialized <- initializeAndSimplify definitionModule
         let Initialized{rewriteRules} = initialized
             specClaims = extractImplicationClaims specModule
@@ -603,24 +618,29 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             (head claims, depthLimit)
 
 matchDisjunction ::
+    ( MonadLog smt
+    , MonadSMT smt
+    , MonadIO smt
+    , MonadMask smt
+    , MonadProf smt
+    ) =>
+    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    LoggerT IO (TermLike VariableName)
-matchDisjunction mainModule matchPattern disjunctionPattern =
-    do
-        SMT.runNoSMT $
-            evalSimplifier mainModule $ do
-                results <-
-                    traverse (runMaybeT . match matchPattern) disjunctionPattern
-                        <&> catMaybes
-                        <&> concatMap toList
-                results
-                    <&> Condition.toPredicate
-                    & Predicate.makeMultipleOrPredicate
-                    & Predicate.fromPredicate sort
-                    & getRewritingTerm
-                    & return
+    smt (TermLike VariableName)
+matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
+    evalSimplifier simplifierx mainModule $ do
+        results <-
+            traverse (runMaybeT . match matchPattern) disjunctionPattern
+                <&> catMaybes
+                <&> concatMap toList
+        results
+            <&> Condition.toPredicate
+            & Predicate.makeMultipleOrPredicate
+            & Predicate.fromPredicate sort
+            & getRewritingTerm
+            & return
   where
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
@@ -643,19 +663,25 @@ See 'checkEquation',
 'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
-    MonadLog m =>
-    MonadSimplify m =>
+    ( MonadLog smt
+    , MonadSMT smt
+    , MonadIO smt
+    , MonadMask smt
+    , MonadProf smt
+    ) =>
+    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
-    m ()
-checkFunctions verifiedModule = do
-    -- check if RHS is function pattern
-    equations >>= filter (not . isFunctionPattern . right)
-        & mapM_ errorEquationRightFunction
-    -- check if two equations both match the same term
-    equations >>= inOrderPairs
-        & filterM (uncurry bothMatch)
-        >>= mapM_ (uncurry errorEquationsSameMatch)
+    smt ()
+checkFunctions simplifierx verifiedModule =
+    evalSimplifier simplifierx verifiedModule $ do
+        -- check if RHS is function pattern
+        equations >>= filter (not . isFunctionPattern . right)
+            & mapM_ errorEquationRightFunction
+        -- check if two equations both match the same term
+        equations >>= inOrderPairs
+            & filterM (uncurry bothMatch)
+            >>= mapM_ (uncurry errorEquationsSameMatch)
   where
     equations :: [[Equation VariableName]]
     equations =
@@ -699,12 +725,13 @@ mergeAllRules ::
     , MonadProf smt
     , MonadMask smt
     ) =>
+    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The list of rules to merge
     [Text] ->
     smt (Either Text [RewriteRule RewritingVariableName])
-mergeAllRules = mergeRules Rules.mergeRules
+mergeAllRules simplifierx = mergeRules simplifierx Rules.mergeRules
 
 -- | Rule merging
 mergeRulesConsecutiveBatches ::
@@ -714,6 +741,7 @@ mergeRulesConsecutiveBatches ::
     , MonadProf smt
     , MonadMask smt
     ) =>
+    SimplifierXSwitch ->
     -- | Batch size
     Int ->
     -- | The main module
@@ -721,8 +749,8 @@ mergeRulesConsecutiveBatches ::
     -- | The list of rules to merge
     [Text] ->
     smt (Either Text [RewriteRule RewritingVariableName])
-mergeRulesConsecutiveBatches batchSize =
-    mergeRules (Rules.mergeRulesConsecutiveBatches batchSize)
+mergeRulesConsecutiveBatches simplifierx batchSize =
+    mergeRules simplifierx (Rules.mergeRulesConsecutiveBatches batchSize)
 
 -- | Rule merging in batches
 mergeRules ::
@@ -732,6 +760,7 @@ mergeRules ::
     , MonadProf smt
     , MonadMask smt
     ) =>
+    SimplifierXSwitch ->
     -- | The rule merger
     ( NonEmpty (RewriteRule RewritingVariableName) ->
       Simplifier.SimplifierT smt [RewriteRule RewritingVariableName]
@@ -741,8 +770,8 @@ mergeRules ::
     -- | The list of rules to merge
     [Text] ->
     smt (Either Text [RewriteRule RewritingVariableName])
-mergeRules ruleMerger verifiedModule ruleNames =
-    evalSimplifier verifiedModule $
+mergeRules simplifierx ruleMerger verifiedModule ruleNames =
+    evalSimplifier simplifierx verifiedModule $
         runExceptT $ do
             initialized <- initializeWithoutSimplification verifiedModule
             let Initialized{rewriteRules} = initialized

@@ -41,6 +41,9 @@ module Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     makeEvaluateCeil,
 
+    -- * Experimental simplifier,
+    SimplifierXSwitch (..),
+
     -- * Re-exports
     MonadSMT,
     MonadLog,
@@ -281,6 +284,12 @@ instance MonadSimplify m => MonadSimplify (ReaderT r m)
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 instance MonadSimplify m => MonadSimplify (RWST r () s m)
+
+-- * Experimental simplifier
+data SimplifierXSwitch
+    = EnabledSimplifierX
+    | DisabledSimplifierX
+    deriving stock (Show, Eq)
 
 -- * Term simplifiers
 

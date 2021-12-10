@@ -11,6 +11,9 @@ module Test.Kore.Exec (
 ) where
 
 import Control.Exception as Exception
+import Control.Monad.Catch (
+    MonadMask,
+ )
 import Data.Default (
     def,
  )
@@ -27,10 +30,12 @@ import Data.Text (
     Text,
  )
 import Kore.Attribute.Constructor
+import Kore.Simplify.Simplify (SimplifierXSwitch (..), MonadSMT)
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Priority as Attribute.Axiom
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Attribute.Simplification
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -64,6 +69,7 @@ import Kore.Log.ErrorEquationsSameMatch (
 import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
+    Natural,
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
@@ -84,7 +90,7 @@ import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
 import Kore.Simplify.Data (
-    evalSimplifier,
+    MonadProf,
  )
 import Kore.Syntax.Definition hiding (
     Alias,
@@ -100,7 +106,7 @@ import Kore.Validate.DefinitionVerifier (
 import qualified Kore.Verified as Verified
 import Log (
     Entry (..),
-    runLoggerT,
+    MonadLog (..),
  )
 import Prelude.Kore
 import System.Exit (
@@ -119,7 +125,7 @@ test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
   where
     actual =
-        exec
+        execTest
             Unlimited
             Unlimited
             verifiedModule
@@ -164,7 +170,7 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
         assertEqual "" [expectedWarning] actualDepthWarnings
   where
     actual =
-        exec
+        execTest
             (Limit 1)
             Unlimited
             verifiedModule
@@ -192,62 +198,79 @@ test_matchDisjunction =
     [ testCase "match disjunction" $
         do
             let actual =
-                    matchDisjunction verifiedModule initial [final1, final2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest verifiedModule initial [final1, final2]
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         unreachable
                         [final1, final2, next1, next2]
-            result <- runLoggerT actual mempty
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 2" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         initial
                         [final1, final2, next1, next2]
-            result <- runLoggerT actual mempty
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 3" $
         do
             let actual =
-                    matchDisjunction verifiedModule unreachable [final1, final2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest
+                        verifiedModule
+                        unreachable
+                        [final1, final2]
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 4" $
         do
             let actual =
-                    matchDisjunction verifiedModule initial [next1, next2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest
+                        verifiedModule
+                        initial
+                        [next1, next2]
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 5" $
         do
             let actual =
-                    matchDisjunction verifiedModule unreachable [next1, next2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest
+                        verifiedModule
+                        unreachable
+                        [next1, next2]
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 6" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         unreachable
                         [final1, final2, initial, next1, next2]
-            result <- runLoggerT actual mempty
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - top" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         initial
                         [final1, final2, initial, next1, next2]
-            result <- runLoggerT actual mempty
+                    & runNoSMT
+            result <- actual
             assertEqual "" (mkTop mySort) result
     ]
   where
@@ -299,8 +322,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -319,8 +341,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isLeft actual
@@ -337,8 +358,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -357,8 +377,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -378,8 +397,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isLeft actual
@@ -399,8 +417,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -485,7 +502,7 @@ test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
   where
     actual =
-        exec
+        execTest
             Unlimited
             Unlimited
             verifiedModule
@@ -523,7 +540,7 @@ test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns.
   where
     expected = mkBottom mySort
     result =
-        exec
+        execTest
             Unlimited
             Unlimited
             verifiedModule
@@ -549,7 +566,7 @@ test_searchPriority =
         actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
         finalPattern <-
-            search
+            searchTest
                 Unlimited
                 Unlimited
                 verifiedModule
@@ -623,7 +640,7 @@ test_searchExceedingBreadthLimit =
 
     actual searchType = do
         finalPattern <-
-            search
+            searchTest
                 Unlimited
                 (Limit 0)
                 verifiedModule
@@ -918,7 +935,7 @@ test_execGetExitCode =
             actual testModule inputInteger >>= assertEqual "" expectedCode
 
     actual testModule exitCode =
-        exec
+        execTest
             Unlimited
             Unlimited
             (verifiedMyModule testModule)
@@ -1001,3 +1018,58 @@ test_execGetExitCode =
                         }
                 , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }
+
+-- TODO(Ana): these functions should run the procedures twice,
+-- once with the experimental simplifier enabled and once with it
+-- disabled; this change should be made when we add the first
+-- experimental feature;
+execTest ::
+    MonadIO smt =>
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    Limit Natural ->
+    Limit Natural ->
+    VerifiedModule Attribute.StepperAttributes ->
+    ExecutionMode ->
+    TermLike VariableName ->
+    smt (ExitCode, TermLike VariableName)
+execTest = exec DisabledSimplifierX
+
+searchTest ::
+    MonadIO smt =>
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    Limit Natural ->
+    Limit Natural ->
+    VerifiedModule Attribute.StepperAttributes ->
+    TermLike VariableName ->
+    Pattern VariableName ->
+    Search.Config ->
+    smt (TermLike VariableName)
+searchTest = search DisabledSimplifierX
+
+matchDisjunctionTest ::
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadIO smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    VerifiedModule Attribute.Symbol ->
+    Pattern RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    smt (TermLike VariableName)
+matchDisjunctionTest = matchDisjunction DisabledSimplifierX
+
+checkFunctionsTest ::
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadIO smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    VerifiedModule Attribute.StepperAttributes ->
+    smt ()
+checkFunctionsTest = checkFunctions DisabledSimplifierX
