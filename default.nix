@@ -96,7 +96,7 @@ let
 
       # Change the compiler when updating our own resolver.
       compiler-nix-name = "ghc8107";
-      index-state = "2021-02-09T00:00:00Z";
+      index-state = "2021-12-03T00:00:00Z";
     };
 
 in default
