@@ -32,6 +32,7 @@ import Control.Exception (
  )
 import Control.Lens (
     (%~),
+    (<>~),
  )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
@@ -575,7 +576,6 @@ addExtraAxioms ::
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes
 addExtraAxioms definitionModule moduleWithExtraAxioms =
-    Lens.over
-        (field @"indexedModuleAxioms")
-        (<> indexedModuleAxioms moduleWithExtraAxioms)
-        definitionModule
+    definitionModule
+        & field @"indexedModuleAxioms"
+        <>~ indexedModuleAxioms moduleWithExtraAxioms
