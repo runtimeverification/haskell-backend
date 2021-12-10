@@ -688,10 +688,11 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
     specModule <- loadModule specMainModule definition
+    let mainModule' = addExtraAxioms mainModule specModule
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     let KoreExecOptions{maxCounterexamples} = execOptions
-    proveResult <- execute execOptions mainModule $ do
+    proveResult <- execute execOptions mainModule' $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
@@ -699,7 +700,7 @@ koreProve execOptions proveOptions = do
             breadthLimit
             depthLimit
             maxCounterexamples
-            mainModule
+            mainModule'
             specModule
             maybeAlreadyProvenModule
 

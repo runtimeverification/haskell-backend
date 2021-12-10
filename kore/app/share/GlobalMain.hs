@@ -24,6 +24,7 @@ module GlobalMain (
     loadModule,
     mainParseSearchPattern,
     mainPatternParseAndVerify,
+    addExtraAxioms,
 ) where
 
 import Control.Exception (
@@ -31,9 +32,13 @@ import Control.Exception (
  )
 import Control.Lens (
     (%~),
+    (<>~),
  )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import Data.Generics.Product (
+    field,
+ )
 import Data.List (
     intercalate,
     nub,
@@ -68,6 +73,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (indexedModuleAxioms),
     VerifiedModule,
  )
 import Kore.Internal.Conditional (Conditional (..))
@@ -560,3 +566,16 @@ mainPatternParseAndVerify indexedModule patternFileName =
 -}
 mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
+
+{- | Extract axioms from a module and add them to the main definition module.
+ This should be safe, as long as the axioms only depend on sorts/symbols
+ defined in the main module.
+-}
+addExtraAxioms ::
+    VerifiedModule StepperAttributes ->
+    VerifiedModule StepperAttributes ->
+    VerifiedModule StepperAttributes
+addExtraAxioms definitionModule moduleWithExtraAxioms =
+    definitionModule
+        & field @"indexedModuleAxioms"
+        <>~ indexedModuleAxioms moduleWithExtraAxioms

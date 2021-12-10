@@ -19,13 +19,13 @@ import Data.Limit (
     Limit (..),
  )
 import qualified Data.Limit as Limit
+import qualified Data.Map.Strict as Map
 import qualified Kore.Internal.Condition as Condition (
     bottom,
     fromSubstitution,
  )
 import qualified Kore.Internal.MultiOr as MultiOr (
     make,
-    mergeAll,
  )
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -38,6 +38,13 @@ import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import Kore.Internal.Substitution (
+    Substitution,
+ )
+import Kore.Rewrite.Axiom.Matcher (
+    MatchResult,
+    matchIncremental,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -48,13 +55,8 @@ import qualified Kore.Rewrite.Strategy as Strategy
 import Kore.Rewrite.Substitution (
     mergePredicatesAndSubstitutions,
  )
-import qualified Kore.Simplify.Not as Not
 import Kore.Simplify.Simplify
 import Kore.TopBottom
-import Kore.Unification.Procedure (
-    unificationProcedure,
- )
-import qualified Kore.Unification.UnifierT as Unifier
 import Logic (
     LogicT,
  )
@@ -130,28 +132,25 @@ matchWith ::
     Pattern RewritingVariableName ->
     MaybeT m (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
-    unifiers <-
-        unificationProcedure sideCondition t1 t2
-            & Unifier.runUnifierT Not.notSimplifier
-            & lift
+    matchResults <- MaybeT $ matchIncremental sideCondition t1 t2
     let mergeAndEvaluate ::
-            Condition RewritingVariableName ->
+            MatchResult RewritingVariableName ->
             m (OrCondition RewritingVariableName)
         mergeAndEvaluate predSubst = do
             results <- Logic.observeAllT $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches ::
-            Condition RewritingVariableName ->
+            MatchResult RewritingVariableName ->
             LogicT m (Condition RewritingVariableName)
-        mergeAndEvaluateBranches predSubst = do
+        mergeAndEvaluateBranches (predicate, substitution) = do
             merged <-
                 mergePredicatesAndSubstitutions
                     sideCondition
-                    [ Conditional.predicate predSubst
+                    [ predicate
                     , Conditional.predicate e1
                     , Conditional.predicate e2
                     ]
-                    [Conditional.substitution predSubst]
+                    [from @(Map.Map _ _) @(Substitution _) substitution]
             lift (SMT.evalConditional merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
@@ -163,11 +162,9 @@ matchWith sideCondition e1 e2 = do
                     Conditional.substitution merged
                         & Condition.fromSubstitution
                         & return
-    results <- lift $ traverse mergeAndEvaluate unifiers
-    let orResults :: OrCondition RewritingVariableName
-        orResults = MultiOr.mergeAll results
-    guardAgainstBottom orResults
-    return orResults
+    results <- lift $ mergeAndEvaluate matchResults
+    guardAgainstBottom results
+    return results
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2
