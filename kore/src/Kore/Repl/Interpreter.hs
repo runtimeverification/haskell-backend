@@ -1244,8 +1244,7 @@ pipe cmd file args = do
     runExternalProcess pipeOut exec str = do
         (Just hIn, Just hOut, _, _) <- createProcess' exec
         hPutStr hIn str
-            `catch`
-                \(X.SomeException e) -> hPutStrLn stderr (displayException e)
+            `catch` \(X.SomeException e) -> hPutStrLn stderr (displayException e)
         output <- liftIO $ hGetContents hOut
         modifyIORef pipeOut (appReplOut . AuxOut $ output)
     justPrint :: IORef ReplOutput -> String -> IO ()
