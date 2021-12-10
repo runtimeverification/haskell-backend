@@ -104,6 +104,7 @@ common global-main
   build-depends: clock >=0.8
   build-depends: containers >=0.5
   build-depends: filepath >=1.4
+  build-depends: generic-lens >=1.1
   build-depends: lens >=4.17
   build-depends: megaparsec >=7.0
   build-depends: optparse-applicative >=0.14
