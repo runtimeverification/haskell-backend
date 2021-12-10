@@ -10,8 +10,8 @@
   {
     flags = { dev = false; };
     package = {
-      specVersion = "1.18";
-      identifier = { name = "fourmolu"; version = "0.3.0.0"; };
+      specVersion = "2.4";
+      identifier = { name = "fourmolu"; version = "0.4.0.0"; };
       license = "BSD-3-Clause";
       copyright = "";
       maintainer = "Matt Parsons <parsonsmatt@gmail.com>\nGeorge Thomas <georgefsthomas@gmail.com>";
@@ -25,52 +25,17 @@
       detailLevel = "FullDetails";
       licenseFiles = [ "LICENSE.md" ];
       dataDir = ".";
-      dataFiles = [
-        "data/examples/declaration/annotation/*.hs"
-        "data/examples/declaration/class/*.hs"
-        "data/examples/declaration/data/*.hs"
-        "data/examples/declaration/data/gadt/*.hs"
-        "data/examples/declaration/default/*.hs"
-        "data/examples/declaration/deriving/*.hs"
-        "data/examples/declaration/foreign/*.hs"
-        "data/examples/declaration/instance/*.hs"
-        "data/examples/declaration/rewrite-rule/*.hs"
-        "data/examples/declaration/role-annotation/*.hs"
-        "data/examples/declaration/signature/complete/*.hs"
-        "data/examples/declaration/signature/fixity/*.hs"
-        "data/examples/declaration/signature/inline/*.hs"
-        "data/examples/declaration/signature/minimal/*.hs"
-        "data/examples/declaration/signature/pattern/*.hs"
-        "data/examples/declaration/signature/set-cost-centre/*.hs"
-        "data/examples/declaration/signature/specialize/*.hs"
-        "data/examples/declaration/signature/type/*.hs"
-        "data/examples/declaration/splice/*.hs"
-        "data/examples/declaration/type-families/closed-type-family/*.hs"
-        "data/examples/declaration/type-families/data-family/*.hs"
-        "data/examples/declaration/type-families/type-family/*.hs"
-        "data/examples/declaration/type-synonyms/*.hs"
-        "data/examples/declaration/type/*.hs"
-        "data/examples/declaration/value/function/*.hs"
-        "data/examples/declaration/value/function/arrow/*.hs"
-        "data/examples/declaration/value/function/comprehension/*.hs"
-        "data/examples/declaration/value/function/do/*.hs"
-        "data/examples/declaration/value/function/infix/*.hs"
-        "data/examples/declaration/value/function/pattern/*.hs"
-        "data/examples/declaration/value/other/*.hs"
-        "data/examples/declaration/value/pattern-synonyms/*.hs"
-        "data/examples/declaration/warning/*.hs"
-        "data/examples/import/*.hs"
-        "data/examples/module-header/*.hs"
-        "data/examples/other/*.hs"
-        ];
-      extraSrcFiles = [];
+      dataFiles = [];
+      extraSrcFiles = [ "data/**/*.hs" "data/**/*.txt" ];
       extraTmpFiles = [];
       extraDocFiles = [ "CHANGELOG.md" "README.md" ];
       };
     components = {
       "library" = {
         depends = [
+          (hsPkgs."Diff" or (errorHandler.buildDepError "Diff"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+          (hsPkgs."ansi-terminal" or (errorHandler.buildDepError "ansi-terminal"))
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
@@ -84,14 +49,17 @@
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
           (hsPkgs."syb" or (errorHandler.buildDepError "syb"))
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
+          (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+          (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+          (hsPkgs."Cabal" or (errorHandler.buildDepError "Cabal"))
           ];
         buildable = true;
         modules = [
-          "GHC"
           "GHC/DynFlags"
           "Ormolu"
           "Ormolu/Config"
-          "Ormolu/Diff"
+          "Ormolu/Diff/ParseResult"
+          "Ormolu/Diff/Text"
           "Ormolu/Exception"
           "Ormolu/Imports"
           "Ormolu/Parser"
@@ -99,7 +67,6 @@
           "Ormolu/Parser/CommentStream"
           "Ormolu/Parser/Pragma"
           "Ormolu/Parser/Result"
-          "Ormolu/Parser/Shebang"
           "Ormolu/Printer"
           "Ormolu/Printer/Combinators"
           "Ormolu/Printer/Comments"
@@ -128,9 +95,11 @@
           "Ormolu/Printer/SpanStream"
           "Ormolu/Processing/Common"
           "Ormolu/Processing/Cpp"
-          "Ormolu/Processing/Postprocess"
           "Ormolu/Processing/Preprocess"
+          "Ormolu/Terminal"
           "Ormolu/Utils"
+          "Ormolu/Utils/Extensions"
+          "Ormolu/Utils/IO"
           ];
         hsSourceDirs = [ "src" ];
         };
@@ -140,6 +109,7 @@
             (hsPkgs."fourmolu" or (errorHandler.buildDepError "fourmolu"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."ghc-lib-parser" or (errorHandler.buildDepError "ghc-lib-parser"))
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -154,20 +124,29 @@
       tests = {
         "tests" = {
           depends = [
+            (hsPkgs."fourmolu" or (errorHandler.buildDepError "fourmolu"))
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."hspec" or (errorHandler.buildDepError "hspec"))
-            (hsPkgs."fourmolu" or (errorHandler.buildDepError "fourmolu"))
             (hsPkgs."path" or (errorHandler.buildDepError "path"))
             (hsPkgs."path-io" or (errorHandler.buildDepError "path-io"))
+            (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             ];
           build-tools = [
             (hsPkgs.buildPackages.hspec-discover.components.exes.hspec-discover or (pkgs.buildPackages.hspec-discover or (errorHandler.buildToolDepError "hspec-discover:hspec-discover")))
             ];
           buildable = true;
-          modules = [ "Ormolu/Parser/PragmaSpec" "Ormolu/PrinterSpec" ];
+          modules = [
+            "Ormolu/CabalExtensionsSpec"
+            "Ormolu/Diff/TextSpec"
+            "Ormolu/Parser/OptionsSpec"
+            "Ormolu/Parser/ParseFailureSpec"
+            "Ormolu/Parser/PragmaSpec"
+            "Ormolu/PrinterSpec"
+            ];
           hsSourceDirs = [ "tests" ];
           mainPath = [ "Spec.hs" ];
           };
