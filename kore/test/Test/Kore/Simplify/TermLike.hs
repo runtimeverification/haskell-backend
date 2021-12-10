@@ -168,7 +168,7 @@ test_simplifyOnly =
         HasCallStack =>
         TestName ->
         TermLike RewritingVariableName ->
-        -- | Expected output, if simplified.
+        -- Expected output, if simplified.
         Maybe (OrPattern RewritingVariableName) ->
         TestTree
     test testName input maybeExpect =

@@ -352,17 +352,17 @@ tmod n d
 ediv n d
     | d == 0 = Nothing
     | n < 0
-      , d < 0
-      , mod n d /= 0 =
-        Just (1 + div (- n) (- d))
+    , d < 0
+    , mod n d /= 0 =
+        Just (1 + div (-n) (-d))
     | d < 0 = Just (quot n d)
     | otherwise = Just (div n d)
 emod n d
     | d == 0 = Nothing
     | n < 0
-      , d < 0
-      , mod n d /= 0 =
-        Just (n - d * (1 + div (- n) (- d)))
+    , d < 0
+    , mod n d /= 0 =
+        Just (n - d * (1 + div (-n) (-d)))
     | d < 0 = Just (rem n d)
     | otherwise = Just (mod n d)
 pow b e
@@ -432,7 +432,7 @@ matchInt ::
     Maybe UnifyInt
 matchInt term1 term2
     | InternalInt_ int1 <- term1
-      , InternalInt_ int2 <- term2 =
+    , InternalInt_ int2 <- term2 =
         Just UnifyInt{int1, int2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchInt #-}

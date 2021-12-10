@@ -194,7 +194,7 @@ toPattern sort multiOr =
     mergeWithOr :: Pattern variable -> Pattern variable -> Pattern variable
     mergeWithOr patt1 patt2
         | isTop term1
-          , isTop term2 =
+        , isTop term2 =
             term1
                 `Conditional.withCondition` mergeConditionsWithOr predicate1 predicate2
         | otherwise =

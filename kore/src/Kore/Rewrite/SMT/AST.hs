@@ -66,15 +66,15 @@ declarations (constructors, noJunk axioms), optimized for dealing with the SMT.
 The SmtSort type below instantiates Sort with the types used by the SMT.
 -}
 data Sort sort symbol name = Sort
-    { -- | Produces the SMT representation of a sort. Given a map with
-      -- Smt representations for sorts and a list of sort arguments, returns
-      -- an S-expression that can be used, say, when declaring symbols of
-      -- that sort.
-      sortSmtFromSortArgs ::
+    { sortSmtFromSortArgs ::
         !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
-    , -- | Information needed for declaring the sort, also listing all
-      -- dependencies on other sorts and symbols.
-      sortDeclaration :: !(KoreSortDeclaration sort symbol name)
+    -- ^ Produces the SMT representation of a sort. Given a map with
+    -- Smt representations for sorts and a list of sort arguments, returns
+    -- an S-expression that can be used, say, when declaring symbols of
+    -- that sort.
+    , sortDeclaration :: !(KoreSortDeclaration sort symbol name)
+    -- ^ Information needed for declaring the sort, also listing all
+    -- dependencies on other sorts and symbols.
     }
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -97,15 +97,15 @@ declaration sentences, optimized for dealing with the SMT.
 The SmtSymbol type below instantiates Symbol with the types used by the SMT.
 -}
 data Symbol sort name = Symbol
-    { -- | Produces the SMT representation of a symbol. Given a map with
-      -- Smt representations for sorts and a list of sort arguments, returns
-      -- an s-expression that can be used, say, when building assertions
-      -- using that symbol.
-      symbolSmtFromSortArgs ::
+    { symbolSmtFromSortArgs ::
         !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
-    , -- | Information needed for declaring the symbol, also listing all
-      -- dependencies on other sorts and symbols.
-      symbolDeclaration :: !(KoreSymbolDeclaration sort name)
+    -- ^ Produces the SMT representation of a symbol. Given a map with
+    -- Smt representations for sorts and a list of sort arguments, returns
+    -- an s-expression that can be used, say, when building assertions
+    -- using that symbol.
+    , symbolDeclaration :: !(KoreSymbolDeclaration sort name)
+    -- ^ Information needed for declaring the symbol, also listing all
+    -- dependencies on other sorts and symbols.
     }
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)

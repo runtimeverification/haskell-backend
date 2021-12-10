@@ -1309,9 +1309,9 @@ test_renormalize =
     becomes ::
         HasCallStack =>
         TestName ->
-        -- | original, (possibly) de-normalized map
+        -- original, (possibly) de-normalized map
         NormalizedMap Key (TermLike RewritingVariableName) ->
-        -- | expected normalized map
+        -- expected normalized map
         NormalizedMap Key (TermLike RewritingVariableName) ->
         TestTree
     becomes name origin expect =
@@ -1333,11 +1333,11 @@ test_renormalize =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
     mkMap' ::
-        -- | abstract elements
+        -- abstract elements
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        -- | concrete elements
+        -- concrete elements
         [(Key, TermLike RewritingVariableName)] ->
-        -- | opaque terms
+        -- opaque terms
         [NormalizedMap Key (TermLike RewritingVariableName)] ->
         NormalizedMap Key (TermLike RewritingVariableName)
     mkMap' abstract concrete opaque =

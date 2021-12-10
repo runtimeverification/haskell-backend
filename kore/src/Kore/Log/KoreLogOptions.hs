@@ -78,16 +78,16 @@ import Type.Reflection (
 
 -- | Command line options for logging.
 data KoreLogOptions = KoreLogOptions
-    { -- | desired output method, see 'KoreLogType'
-      logType :: !KoreLogType
-    , -- | the format to display the error log in
-      logFormat :: !KoreLogFormat
-    , -- | minimal log level, passed via "--log-level"
-      logLevel :: !Severity
-    , -- | enable or disable timestamps
-      timestampsSwitch :: !TimestampsSwitch
-    , -- | extra entries to show, ignoring 'logLevel'
-      logEntries :: !EntryTypes
+    { logType :: !KoreLogType
+    -- ^ desired output method, see 'KoreLogType'
+    , logFormat :: !KoreLogFormat
+    -- ^ the format to display the error log in
+    , logLevel :: !Severity
+    -- ^ minimal log level, passed via "--log-level"
+    , timestampsSwitch :: !TimestampsSwitch
+    -- ^ enable or disable timestamps
+    , logEntries :: !EntryTypes
+    -- ^ extra entries to show, ignoring 'logLevel'
     , debugSolverOptions :: !DebugSolverOptions
     , exeName :: !ExeName
     , startTime :: !TimeSpec

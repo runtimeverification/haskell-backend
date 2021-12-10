@@ -211,10 +211,10 @@ makeEvaluate sideCondition variables original = do
         Ordering
     substVariablesFirst var1 var2
         | var1 `elem` substVariables
-          , notElem var2 substVariables =
+        , notElem var2 substVariables =
             LT
         | notElem var1 substVariables
-          , var2 `elem` substVariables =
+        , var2 `elem` substVariables =
             GT
         | otherwise = EQ
 
@@ -237,8 +237,8 @@ matchesToVariableSubstitution
     variable
     Conditional{term, predicate, substitution = boundSubstitution}
         | Predicate.PredicateEquals first second <- predicate
-          , Substitution.null boundSubstitution
-          , not (TermLike.hasFreeVariable (inject $ variableName variable) term) =
+        , Substitution.null boundSubstitution
+        , not (TermLike.hasFreeVariable (inject $ variableName variable) term) =
             do
                 matchResultFS <- matchIncremental sideCondition first second
                 matchResultSF <- matchIncremental sideCondition second first
@@ -402,7 +402,7 @@ quantifyPattern ::
     Pattern RewritingVariableName
 quantifyPattern variable original@Conditional{term, predicate, substitution}
     | quantifyTerm
-      , quantifyPredicate =
+    , quantifyPredicate =
         (error . unlines)
             [ "Quantifying both the term and the predicate probably means that there's"
             , "an error somewhere else."

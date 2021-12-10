@@ -186,11 +186,11 @@ type ProvenClaims = MultiAnd SomeClaim
 
 -- | The result of proving some claims.
 data ProveClaimsResult = ProveClaimsResult
-    { -- | The conjuction of stuck claims, that is: of claims which must still be
-      -- proven. If all claims were proved, then the remaining claims are @\\top@.
-      stuckClaims :: !StuckClaims
-    , -- | The conjunction of all claims which were proven.
-      provenClaims :: !ProvenClaims
+    { stuckClaims :: !StuckClaims
+    -- ^ The conjuction of stuck claims, that is: of claims which must still be
+    -- proven. If all claims were proved, then the remaining claims are @\\top@.
+    , provenClaims :: !ProvenClaims
+    -- ^ The conjunction of all claims which were proven.
     }
 
 proveClaims ::

@@ -432,7 +432,7 @@ test_simplifyClaimRule =
     test ::
         HasCallStack =>
         TestName ->
-        -- | replacements
+        -- replacements
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         ClaimPattern ->
         [ClaimPattern] ->

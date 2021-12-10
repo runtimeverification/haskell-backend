@@ -191,12 +191,12 @@ TODO: add command line argument tab-completion
 -}
 
 data KoreSearchOptions = KoreSearchOptions
-    { -- | Name of file containing a pattern to match during execution
-      searchFileName :: !FilePath
-    , -- | The maximum bound on the number of search matches
-      bound :: !(Limit Natural)
-    , -- | The type of search to perform
-      searchType :: !SearchType
+    { searchFileName :: !FilePath
+    -- ^ Name of file containing a pattern to match during execution
+    , bound :: !(Limit Natural)
+    -- ^ The maximum bound on the number of search matches
+    , searchType :: !SearchType
+    -- ^ The type of search to perform
     }
     deriving stock (GHC.Generic)
 
@@ -270,14 +270,14 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
-    { -- | Name for a file containing a definition to verify and use for execution
-      definitionFileName :: !FilePath
-    , -- | Name for file containing a pattern to verify and use for execution
-      patternFileName :: !(Maybe FilePath)
-    , -- | Name for file to contain the output pattern
-      outputFileName :: !(Maybe FilePath)
-    , -- | The name of the main module in the definition
-      mainModuleName :: !ModuleName
+    { definitionFileName :: !FilePath
+    -- ^ Name for a file containing a definition to verify and use for execution
+    , patternFileName :: !(Maybe FilePath)
+    -- ^ Name for file containing a pattern to verify and use for execution
+    , outputFileName :: !(Maybe FilePath)
+    -- ^ Name for file to contain the output pattern
+    , mainModuleName :: !ModuleName
+    -- ^ The name of the main module in the definition
     , breadthLimit :: !(Limit Natural)
     , depthLimit :: !(Limit Natural)
     , strategy :: !ExecutionMode

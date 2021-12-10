@@ -252,10 +252,10 @@ data ExecutionGraph config rule = ExecutionGraph
 -}
 data ChildNode config rule = ChildNode
     { config :: config
-    , -- | The predecessor configurations in the execution graph and the sequence
-      -- of rules applied from the parent configuration to the present
-      -- configuration.
-      parents :: [(Seq rule, Graph.Node)]
+    , parents :: [(Seq rule, Graph.Node)]
+    -- ^ The predecessor configurations in the execution graph and the sequence
+    -- of rules applied from the parent configuration to the present
+    -- configuration.
     }
     deriving stock (Eq, Show, Functor)
 
@@ -339,7 +339,7 @@ executionHistoryStep transit prim exe@ExecutionGraph{graph} node
     nodeIsNotLeaf = Graph.outdeg graph node > 0
 
     mkChildNode ::
-        -- | Child node identifier and configuration
+        -- Child node identifier and configuration
         (config, Seq rule) ->
         ChildNode config rule
     mkChildNode (config, rules) =

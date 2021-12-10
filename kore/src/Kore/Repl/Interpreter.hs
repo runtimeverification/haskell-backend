@@ -1192,7 +1192,7 @@ savePartialProof maybeNatural file = do
         [SomeClaim]
     removeIfRoot (ReplNode node) (ClaimIndex index) claims
         | index >= 0 && index < length claims
-          , node == 0 =
+        , node == 0 =
             take index claims
                 <> drop (index + 1) claims
         | otherwise = claims
@@ -1349,7 +1349,7 @@ performStepNoBranching =
         -- Loop branch
         (n, SingleResult _) -> do
             res <- runStepper
-            pure $ Left (n -1, res)
+            pure $ Left (n - 1, res)
         -- Early exit when there is a branch or there is no next.
         (n, res) -> pure $ Right (n, res)
 
@@ -1369,8 +1369,8 @@ recursiveForcedStep n node
         updateExecutionGraph graph
         case result of
             NoResult -> pure ()
-            SingleResult sr -> (recursiveForcedStep $ n -1) sr
-            BranchResult xs -> traverse_ (recursiveForcedStep (n -1)) xs
+            SingleResult sr -> (recursiveForcedStep $ n - 1) sr
+            BranchResult xs -> traverse_ (recursiveForcedStep (n - 1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule ::
