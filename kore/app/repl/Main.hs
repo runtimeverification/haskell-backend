@@ -195,7 +195,7 @@ main = do
         Just koreReplOptions -> mainWithOptions koreReplOptions
 
 mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
-mainWithOptions LocalOptions { execOptions, simplifierx } = do
+mainWithOptions LocalOptions{execOptions, simplifierx} = do
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
@@ -262,64 +262,64 @@ mainWithOptions LocalOptions { execOptions, simplifierx } = do
                             (GlobalMain.kFileLocations definition)
                         pure ExitSuccess
     exitWith exitCode
-      where
-        KoreReplOptions
-            { definitionModule
-            , proveOptions
-            , smtOptions
-            , replScript
-            , replMode
-            , scriptModeOutput
-            , outputFile
-            , koreLogOptions
-            , bugReportOption
-            } = execOptions
-        runExceptionHandlers action =
-            action
-                & handle exitReplHandler
-                & handle withConfigurationHandler
-                & handle someExceptionHandler
+  where
+    KoreReplOptions
+        { definitionModule
+        , proveOptions
+        , smtOptions
+        , replScript
+        , replMode
+        , scriptModeOutput
+        , outputFile
+        , koreLogOptions
+        , bugReportOption
+        } = execOptions
+    runExceptionHandlers action =
+        action
+            & handle exitReplHandler
+            & handle withConfigurationHandler
+            & handle someExceptionHandler
 
-        exitReplHandler :: ExitCode -> Main ExitCode
-        exitReplHandler = pure
+    exitReplHandler :: ExitCode -> Main ExitCode
+    exitReplHandler = pure
 
-        withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
-        withConfigurationHandler
-            (Claim.WithConfiguration lastConfiguration someException) =
-                do
-                    liftIO $
-                        hPutStrLn
-                            stderr
-                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
-                    throwM someException
+    withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
+    withConfigurationHandler
+        (Claim.WithConfiguration lastConfiguration someException) =
+            do
+                liftIO $
+                    hPutStrLn
+                        stderr
+                        ("// Last configuration:\n" <> unparseToString lastConfiguration)
+                throwM someException
 
-        someExceptionHandler :: SomeException -> Main ExitCode
-        someExceptionHandler someException = do
-            case fromException someException of
-                Just (SomeEntry entry) -> logEntry entry
-                Nothing -> errorException someException
-            throwM someException
+    someExceptionHandler :: SomeException -> Main ExitCode
+    someExceptionHandler someException = do
+        case fromException someException of
+            Just (SomeEntry entry) -> logEntry entry
+            Nothing -> errorException someException
+        throwM someException
 
-        mainModuleName :: ModuleName
-        mainModuleName = moduleName definitionModule
+    mainModuleName :: ModuleName
+    mainModuleName = moduleName definitionModule
 
-        definitionFileName :: FilePath
-        definitionFileName = fileName definitionModule
+    definitionFileName :: FilePath
+    definitionFileName = fileName definitionModule
 
-        specModule :: ModuleName
-        specModule = specMainModule proveOptions
+    specModule :: ModuleName
+    specModule = specMainModule proveOptions
 
-        specFile :: FilePath
-        specFile = specFileName proveOptions
+    specFile :: FilePath
+    specFile = specFileName proveOptions
 
-        smtTimeOut :: SMT.TimeOut
-        smtTimeOut = timeOut smtOptions
+    smtTimeOut :: SMT.TimeOut
+    smtTimeOut = timeOut smtOptions
 
-        smtRLimit :: SMT.RLimit
-        smtRLimit = rLimit smtOptions
+    smtRLimit :: SMT.RLimit
+    smtRLimit = rLimit smtOptions
 
-        smtResetInterval :: SMT.ResetInterval
-        smtResetInterval = resetInterval smtOptions
+    smtResetInterval :: SMT.ResetInterval
+    smtResetInterval = resetInterval smtOptions
 
-        smtPrelude :: SMT.Prelude
-        smtPrelude = prelude smtOptions
+    smtPrelude :: SMT.Prelude
+    smtPrelude = prelude smtOptions

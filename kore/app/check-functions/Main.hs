@@ -128,7 +128,7 @@ main = do
     mapM_ mainWithOptions $ localOptions options
 
 mainWithOptions :: LocalOptions KoreCheckerOptions -> IO ()
-mainWithOptions localOptions@LocalOptions {execOptions} =
+mainWithOptions localOptions@LocalOptions{execOptions} =
     withBugReport
         exeName
         (bugReportOption execOptions)
@@ -136,7 +136,7 @@ mainWithOptions localOptions@LocalOptions {execOptions} =
         >>= exitWith
 
 koreCheckFunctions :: LocalOptions KoreCheckerOptions -> FilePath -> IO ExitCode
-koreCheckFunctions LocalOptions {execOptions, simplifierx} tmpDir =
+koreCheckFunctions LocalOptions{execOptions, simplifierx} tmpDir =
     do
         definitions <- loadDefinitions [fileName]
         loadedModule <- loadModule mainModuleName definitions
