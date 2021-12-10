@@ -107,27 +107,27 @@ injective, even if their declaration is not given the @injective@ attribute. To
 view the effective attributes, use the functions defined in this module.
 -}
 data Symbol = Symbol
-    { -- | Whether a symbol represents a function
-      function :: !Function
-    , -- | Whether a symbol is functional
-      functional :: !Functional
-    , -- | Whether a symbol represents a constructor
-      constructor :: !Constructor
-    , -- | Whether a symbol represents an injective function
-      injective :: !Injective
-    , -- | Whether a symbol is a sort injection
-      sortInjection :: !SortInjection
+    { function :: !Function
+    -- ^ Whether a symbol represents a function
+    , functional :: !Functional
+    -- ^ Whether a symbol is functional
+    , constructor :: !Constructor
+    -- ^ Whether a symbol represents a constructor
+    , injective :: !Injective
+    -- ^ Whether a symbol represents an injective function
+    , sortInjection :: !SortInjection
+    -- ^ Whether a symbol is a sort injection
     , anywhere :: !Anywhere
-    , -- | The builtin sort or symbol hooked to a sort or symbol
-      hook :: !Hook
+    , hook :: !Hook
+    -- ^ The builtin sort or symbol hooked to a sort or symbol
     , smtlib :: !Smtlib
     , smthook :: !Smthook
     , memo :: !Memo
     , klabel :: !Klabel
     , symbolKywd :: !SymbolKywd
     , noEvaluators :: !NoEvaluators
-    , -- | Location in the original (source) file.
-      sourceLocation :: !SourceLocation
+    , sourceLocation :: !SourceLocation
+    -- ^ Location in the original (source) file.
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

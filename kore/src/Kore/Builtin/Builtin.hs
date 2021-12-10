@@ -567,12 +567,12 @@ matchUnifyEq ::
     Maybe UnifyEq
 matchUnifyEq eqKey first second
     | Just eqTerm <- matchEqual eqKey first
-      , isFunctionPattern first
-      , InternalBool_ internalBool <- second =
+    , isFunctionPattern first
+    , InternalBool_ internalBool <- second =
         Just UnifyEq{eqTerm, internalBool}
     | Just eqTerm <- matchEqual eqKey second
-      , isFunctionPattern second
-      , InternalBool_ internalBool <- first =
+    , isFunctionPattern second
+    , InternalBool_ internalBool <- first =
         Just UnifyEq{eqTerm, internalBool}
     | otherwise = Nothing
 {-# INLINE matchUnifyEq #-}

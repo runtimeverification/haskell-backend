@@ -419,7 +419,7 @@ evalDifference
                     pat2 <- Ac.returnAc resultSort (NormalizedSet set2')
                     let pat
                             | (not . nullAc) set1'
-                              , (not . nullAc) set2' =
+                            , (not . nullAc) set2' =
                                 differenceSet <$> pat1 <*> pat2
                             | otherwise = pat1
                     return (Pattern.andCondition pat definedArgs)
@@ -509,14 +509,14 @@ internalize tools termLike
     -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
     -- apply it if we know the term head is a constructor-like symbol.
     | App_ symbol _ <- termLike
-      , isConstructorModulo_ symbol =
+    , isConstructorModulo_ symbol =
         case Ac.toNormalized @NormalizedSet termLike of
             Ac.Bottom -> TermLike.mkBottom sort'
             Ac.Normalized termNormalized
                 | let unwrapped = unwrapAc termNormalized
-                  , null (elementsWithVariables unwrapped)
-                  , null (concreteElements unwrapped)
-                  , [singleOpaqueTerm] <- opaque unwrapped ->
+                , null (elementsWithVariables unwrapped)
+                , null (concreteElements unwrapped)
+                , [singleOpaqueTerm] <- opaque unwrapped ->
                     -- When the 'normalized' term consists of a single opaque Map-sorted
                     -- term, we should prefer to return only that term.
                     singleOpaqueTerm
@@ -555,7 +555,7 @@ matchUnifyEquals tools first second
 
     worker a b isFirstMatched
         | InternalSet_ normalized1 <- a
-          , InternalSet_ normalized2 <- b =
+        , InternalSet_ normalized2 <- b =
             NormAc . NormAcData normalized1 normalized2 term1 term2
                 <$> Ac.matchUnifyEqualsNormalizedAc
                     tools

@@ -396,10 +396,10 @@ in both fields. @f '<*>' a@ composes two 'AdjSomeVariableName' by applying the
 function in each field of @f@ to the value in the corresponding field of @a@.
 -}
 data AdjSomeVariableName a = AdjSomeVariableName
-    { -- | compare to: 'SomeVariableNameElement'
-      adjSomeVariableNameElement :: !(ElementVariableName a)
-    , -- | compare to: 'SomeVariableNameSet'
-      adjSomeVariableNameSet :: !(SetVariableName a)
+    { adjSomeVariableNameElement :: !(ElementVariableName a)
+    -- ^ compare to: 'SomeVariableNameElement'
+    , adjSomeVariableNameSet :: !(SetVariableName a)
+    -- ^ compare to: 'SomeVariableNameSet'
     }
     deriving stock (Functor)
     deriving stock (GHC.Generic1)

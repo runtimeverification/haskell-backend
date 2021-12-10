@@ -439,20 +439,20 @@ newtype Prelude = Prelude {getPrelude :: Maybe FilePath}
 
 -- | Solver configuration
 data Config = Config
-    { -- | solver executable file name
-      executable :: !FilePath
-    , -- | default command-line arguments to solver
-      arguments :: ![String]
-    , -- | prelude of definitions to initialize solver
-      prelude :: !Prelude
-    , -- | optional log file name
-      logFile :: !(Maybe FilePath)
-    , -- | query time limit
-      timeOut :: !TimeOut
-    , -- | query resource limit
-      rLimit :: !RLimit
-    , -- | reset solver after this number of queries
-      resetInterval :: !ResetInterval
+    { executable :: !FilePath
+    -- ^ solver executable file name
+    , arguments :: ![String]
+    -- ^ default command-line arguments to solver
+    , prelude :: !Prelude
+    -- ^ prelude of definitions to initialize solver
+    , logFile :: !(Maybe FilePath)
+    -- ^ optional log file name
+    , timeOut :: !TimeOut
+    -- ^ query time limit
+    , rLimit :: !RLimit
+    -- ^ query resource limit
+    , resetInterval :: !ResetInterval
+    -- ^ reset solver after this number of queries
     }
 
 -- | Default configuration using the Z3 solver.

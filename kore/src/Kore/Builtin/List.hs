@@ -444,7 +444,7 @@ matchUnifyEqualsList tools first second
         | otherwise = Nothing
     worker term1 term2 (App_ symbol1 args1) (App_ symbol2 args2)
         | isSymbolConcat symbol1
-          , isSymbolConcat symbol2 =
+        , isSymbolConcat symbol2 =
             Just $ AppApp AppAppData{args1, args2, symbol2, term1, term2}
     worker term1 term2 (InternalList_ builtin1) pat2 =
         case pat2 of

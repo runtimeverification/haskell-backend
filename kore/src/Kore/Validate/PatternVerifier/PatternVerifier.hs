@@ -105,11 +105,11 @@ instance Monoid PatternVerifierHook where
 
 data Context = Context
     { declaredVariables :: !DeclaredVariables
-    , -- | The sort variables in scope.
-      declaredSortVariables :: !(Set SortVariable)
-    , -- | The indexed Kore module containing all definitions in scope.
-      indexedModule ::
+    , declaredSortVariables :: !(Set SortVariable)
+    -- ^ The sort variables in scope.
+    , indexedModule ::
         !(IndexedModule Verified.Pattern Attribute.Symbol Attribute.Null)
+    -- ^ The indexed Kore module containing all definitions in scope.
     , patternVerifierHook :: !PatternVerifierHook
     }
     deriving stock (GHC.Generic)

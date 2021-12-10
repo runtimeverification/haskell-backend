@@ -506,14 +506,14 @@ internalize tools termLike
     -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
     -- apply it if we know the term head is a constructor-like symbol.
     | App_ symbol _ <- termLike
-      , isConstructorModulo_ symbol =
+    , isConstructorModulo_ symbol =
         case Ac.toNormalized @NormalizedMap termLike of
             Ac.Bottom -> TermLike.mkBottom sort'
             Ac.Normalized termNormalized
                 | let unwrapped = unwrapAc termNormalized
-                  , null (elementsWithVariables unwrapped)
-                  , null (concreteElements unwrapped)
-                  , [singleOpaqueTerm] <- opaque unwrapped ->
+                , null (elementsWithVariables unwrapped)
+                , null (concreteElements unwrapped)
+                , [singleOpaqueTerm] <- opaque unwrapped ->
                     -- When the 'normalized' term consists of a single opaque Map-sorted
                     -- term, we should prefer to return only that term.
                     singleOpaqueTerm
@@ -552,7 +552,7 @@ matchUnifyEquals tools first second
 
     worker a b isFirstMatched
         | InternalMap_ normalized1 <- a
-          , InternalMap_ normalized2 <- b =
+        , InternalMap_ normalized2 <- b =
             NormAc . NormAcData normalized1 normalized2 term1 term2
                 <$> Ac.matchUnifyEqualsNormalizedAc
                     tools
@@ -649,8 +649,8 @@ matchUnifyNotInKeys ::
     Maybe UnifyNotInKeysResult
 matchUnifyNotInKeys first second
     | Just False <- Bool.matchBool first
-      , Just inKeys@InKeys{mapTerm} <- matchInKeys second
-      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+    , Just inKeys@InKeys{mapTerm} <- matchInKeys second
+    , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
         let symbolicKeys = getSymbolicKeysOfAc normalizedMap
             concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
@@ -673,8 +673,8 @@ matchUnifyNotInKeys first second
                 -- otherwise
                 _ -> Nothing
     | Just False <- Bool.matchBool second
-      , Just inKeys@InKeys{mapTerm} <- matchInKeys first
-      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+    , Just inKeys@InKeys{mapTerm} <- matchInKeys first
+    , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
         let symbolicKeys = getSymbolicKeysOfAc normalizedMap
             concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys

@@ -55,10 +55,10 @@ matchEqualInjectiveHeadsAndEquals ::
     Maybe UnifyEqualInjectiveHeads
 matchEqualInjectiveHeadsAndEquals first second
     | App_ firstHead firstChildren <- first
-      , App_ secondHead secondChildren <- second
-      , Symbol.isInjective firstHead
-      , -- We do not need to check if secondHead is injective once we test for equality.
-        firstHead == secondHead =
+    , App_ secondHead secondChildren <- second
+    , Symbol.isInjective firstHead
+    , -- We do not need to check if secondHead is injective once we test for equality.
+      firstHead == secondHead =
         Just
             UnifyEqualInjectiveHeads
                 { firstHead
@@ -131,10 +131,10 @@ matchDifferentConstructors
     first
     second
         | App_ firstHead _ <- first
-          , App_ secondHead _ <- second
-          , firstHead /= secondHead
-          , Symbol.isConstructor firstHead || isOverloaded firstHead
-          , Symbol.isConstructor secondHead || isOverloaded secondHead =
+        , App_ secondHead _ <- second
+        , firstHead /= secondHead
+        , Symbol.isConstructor firstHead || isOverloaded firstHead
+        , Symbol.isConstructor secondHead || isOverloaded secondHead =
             Just DifferentConstructors{term1 = first, term2 = second}
         | otherwise = empty
 {-# INLINE matchDifferentConstructors #-}

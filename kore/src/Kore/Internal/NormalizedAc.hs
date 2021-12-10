@@ -162,14 +162,14 @@ For a set, the valueWapper would be something equivalent to @Data.Empty.T@.
 For a map, it would be something equivalent to @Identity@.
 -}
 data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
-    { -- | Non-concrete elements of the structure.
-      -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
-      elementsWithVariables :: [Element collection child]
-    , -- | Concrete elements of the structure.
-      -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
-      concreteElements :: HashMap key (Value collection child)
-    , -- | Unoptimized (i.e. non-element) parts of the structure.
-      opaque :: [child]
+    { elementsWithVariables :: [Element collection child]
+    -- ^ Non-concrete elements of the structure.
+    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    , concreteElements :: HashMap key (Value collection child)
+    -- ^ Concrete elements of the structure.
+    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    , opaque :: [child]
+    -- ^ Unoptimized (i.e. non-element) parts of the structure.
     }
     deriving stock (GHC.Generic)
 
@@ -387,8 +387,8 @@ retractSingleOpaqueElem
         , opaque
         }
         | null elementsWithVariables
-          , null concreteElements
-          , [singleOpaqueElem] <- opaque =
+        , null concreteElements
+        , [singleOpaqueElem] <- opaque =
             Just singleOpaqueElem
         | otherwise = Nothing
 

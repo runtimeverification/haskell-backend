@@ -241,7 +241,7 @@ data IfThenElse term = IfThenElse
 data UnifyIfThenElse = UnifyIfThenElse
     { ifThenElse :: IfThenElse (TermLike RewritingVariableName)
     , -- The term that was not matched by @matchIfThenElse@
-      term :: TermLike RewritingVariableName
+    term :: TermLike RewritingVariableName
     }
 
 {- | Matches

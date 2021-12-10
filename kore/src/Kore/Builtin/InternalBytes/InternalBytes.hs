@@ -86,7 +86,7 @@ internalize =
     \case
         TermLike.App_ symbol args
             | isSymbolString2Bytes symbol
-              , [TermLike.StringLiteral_ str] <- args ->
+            , [TermLike.StringLiteral_ str] <- args ->
                 let Symbol{symbolSorts} = symbol
                     ApplicationSorts{applicationSortsResult} = symbolSorts
                     literal = Encoding.encode8Bit str
