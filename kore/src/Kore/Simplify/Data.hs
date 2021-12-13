@@ -88,6 +88,7 @@ data Env simplifier = Env
     , memo :: !(Memo.Self simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
+    , simplifierXSwitch :: !SimplifierXSwitch
     }
 
 {- | @Simplifier@ represents a simplification action.
@@ -206,7 +207,7 @@ evalSimplifier ::
     VerifiedModule Attribute.Symbol ->
     SimplifierT smt a ->
     smt a
-evalSimplifier _ verifiedModule simplifier = do
+evalSimplifier simplifierXSwitch verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
     runSimplifier env simplifier
   where
@@ -219,6 +220,7 @@ evalSimplifier _ verifiedModule simplifier = do
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
+            , simplifierXSwitch
             }
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}
@@ -283,6 +285,7 @@ evalSimplifier _ verifiedModule simplifier = do
                 , memo
                 , injSimplifier
                 , overloadSimplifier
+                , simplifierXSwitch
                 }
 
 mapSimplifierT ::
