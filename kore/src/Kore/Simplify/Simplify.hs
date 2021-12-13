@@ -265,7 +265,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askSimplifierXSwitch = lift askSimplifierXSwitch
     {-# INLINE askSimplifierXSwitch #-}
 
-
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
