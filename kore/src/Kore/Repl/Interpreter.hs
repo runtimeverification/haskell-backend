@@ -28,6 +28,7 @@ import Control.Exception (
     displayException,
     throwIO,
  )
+import qualified Control.Exception as X
 import Control.Lens (
     (%=),
     (.=),
@@ -1241,15 +1242,11 @@ pipe cmd file args = do
                     }
     runExternalProcess :: IORef ReplOutput -> String -> String -> IO ()
     runExternalProcess pipeOut exec str = do
-        (maybeInput, maybeOutput, _, _) <- createProcess' exec
-        let outputFunc = maybe putStrLn hPutStr maybeInput
-        outputFunc str
-        case maybeOutput of
-            Nothing ->
-                hPutStrLn stderr "Error: couldn't access output handle."
-            Just handle -> do
-                output <- liftIO $ hGetContents handle
-                modifyIORef pipeOut (appReplOut . AuxOut $ output)
+        (Just hIn, Just hOut, _, _) <- createProcess' exec
+        hPutStr hIn str
+            `catch` \(X.SomeException e) -> hPutStrLn stderr (displayException e)
+        output <- liftIO $ hGetContents hOut
+        modifyIORef pipeOut (appReplOut . AuxOut $ output)
     justPrint :: IORef ReplOutput -> String -> IO ()
     justPrint outRef = modifyIORef outRef . appReplOut . AuxOut
 
