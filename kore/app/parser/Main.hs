@@ -19,6 +19,7 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Log (
     runLoggerT,
+    LoggerT,
  )
 import qualified Kore.Log as Log
 import Kore.Log.ErrorVerify (
@@ -77,7 +78,10 @@ main = handleTop $ do
             Nothing -- environment variable name for extra arguments
             parseKoreParserOptions
             parserInfoModifiers
-    for_ (localOptions options) $ \koreParserOptions -> runEmptyLogger $ do
+    for_ (localOptions options) (runEmptyLogger . mainWorker)
+  where
+    mainWorker :: LocalOptions KoreParserOptions -> LoggerT IO ()
+    mainWorker LocalOptions { execOptions = koreParserOptions } = do
         indexedModules <- do
             let KoreParserOptions{fileName} = koreParserOptions
             parsedDefinition <- mainDefinitionParse fileName
