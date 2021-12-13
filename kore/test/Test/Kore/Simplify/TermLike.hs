@@ -120,6 +120,7 @@ instance MonadSimplify TestSimplifier where
     askMemo = TestSimplifier (Memo.liftSelf TestSimplifier <$> askMemo)
     askInjSimplifier = TestSimplifier askInjSimplifier
     askOverloadSimplifier = TestSimplifier askOverloadSimplifier
+    askSimplifierXSwitch = TestSimplifier askSimplifierXSwitch
     getCache = TestSimplifier getCache
     putCache = TestSimplifier . putCache
     simplifyCondition sideCondition condition =

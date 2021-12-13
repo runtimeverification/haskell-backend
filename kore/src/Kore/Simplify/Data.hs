@@ -175,6 +175,9 @@ instance
     putCache = put
     {-# INLINE putCache #-}
 
+    askSimplifierXSwitch = asks simplifierXSwitch
+    {-# INLINE askSimplifierXSwitch #-}
+
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
     Monad smt =>
