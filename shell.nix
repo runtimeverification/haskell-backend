@@ -15,7 +15,7 @@ let
   inherit (default) compiler-nix-name index-state;
 
   hls-project = import sources."haskell-hls-nix" {
-    ghcVersion = compiler-nix-name;
+    inherit (default) ghcVersion;
   };
   inherit (hls-project) hls-renamed;
 
