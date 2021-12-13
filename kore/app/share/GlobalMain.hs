@@ -34,7 +34,6 @@ import Control.Lens (
     (%~),
  )
 import qualified Control.Lens as Lens
-import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import qualified Control.Monad as Monad
 import Data.List (
     intercalate,
@@ -95,6 +94,7 @@ import Kore.Parser.ParserUtils (
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),

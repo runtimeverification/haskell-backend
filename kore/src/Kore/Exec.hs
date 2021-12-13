@@ -598,24 +598,23 @@ boundedModelCheck
     depthLimit
     definitionModule
     specModule
-    searchOrder
-  =
-    evalSimplifier simplifierx definitionModule $ do
-        initialized <- initializeAndSimplify definitionModule
-        let Initialized{rewriteRules} = initialized
-            specClaims = extractImplicationClaims specModule
-        assertSomeClaims specClaims
-        assertSingleClaim specClaims
-        let axioms = fmap Bounded.Axiom rewriteRules
-            claims =
-                mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
-                    <$> specClaims
+    searchOrder =
+        evalSimplifier simplifierx definitionModule $ do
+            initialized <- initializeAndSimplify definitionModule
+            let Initialized{rewriteRules} = initialized
+                specClaims = extractImplicationClaims specModule
+            assertSomeClaims specClaims
+            assertSingleClaim specClaims
+            let axioms = fmap Bounded.Axiom rewriteRules
+                claims =
+                    mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
+                        <$> specClaims
 
-        Bounded.checkClaim
-            breadthLimit
-            (Bounded.bmcStrategy axioms)
-            searchOrder
-            (head claims, depthLimit)
+            Bounded.checkClaim
+                breadthLimit
+                (Bounded.bmcStrategy axioms)
+                searchOrder
+                (head claims, depthLimit)
 
 matchDisjunction ::
     ( MonadLog smt

@@ -30,12 +30,10 @@ import Data.Text (
     Text,
  )
 import Kore.Attribute.Constructor
-import Kore.Simplify.Simplify (SimplifierXSwitch (..), MonadSMT)
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Priority as Attribute.Axiom
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Attribute.Simplification
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -75,6 +73,7 @@ import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
 import qualified Kore.Rewrite.AntiLeft as AntiLeft.DoNotUse
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -92,6 +91,7 @@ import Kore.Rewrite.Strategy (
 import Kore.Simplify.Data (
     MonadProf,
  )
+import Kore.Simplify.Simplify (MonadSMT, SimplifierXSwitch (..))
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
@@ -199,7 +199,7 @@ test_matchDisjunction =
         do
             let actual =
                     matchDisjunctionTest verifiedModule initial [final1, final2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
@@ -209,7 +209,7 @@ test_matchDisjunction =
                         verifiedModule
                         unreachable
                         [final1, final2, next1, next2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 2" $
@@ -219,7 +219,7 @@ test_matchDisjunction =
                         verifiedModule
                         initial
                         [final1, final2, next1, next2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 3" $
@@ -229,7 +229,7 @@ test_matchDisjunction =
                         verifiedModule
                         unreachable
                         [final1, final2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 4" $
@@ -239,7 +239,7 @@ test_matchDisjunction =
                         verifiedModule
                         initial
                         [next1, next2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 5" $
@@ -249,7 +249,7 @@ test_matchDisjunction =
                         verifiedModule
                         unreachable
                         [next1, next2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 6" $
@@ -259,7 +259,7 @@ test_matchDisjunction =
                         verifiedModule
                         unreachable
                         [final1, final2, initial, next1, next2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - top" $
@@ -269,7 +269,7 @@ test_matchDisjunction =
                         verifiedModule
                         initial
                         [final1, final2, initial, next1, next2]
-                    & runNoSMT
+                        & runNoSMT
             result <- actual
             assertEqual "" (mkTop mySort) result
     ]

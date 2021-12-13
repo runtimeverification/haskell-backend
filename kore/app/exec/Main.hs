@@ -575,7 +575,7 @@ main = do
 dispatch the requested command.
 -}
 mainWithOptions :: LocalOptions KoreExecOptions -> IO ()
-mainWithOptions LocalOptions { execOptions, simplifierx } = do
+mainWithOptions LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} =
             execOptions
     ensureSmtPreludeExists koreSolverOptions
@@ -587,7 +587,7 @@ mainWithOptions LocalOptions { execOptions, simplifierx } = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch LocalOptions {execOptions = execOptions', simplifierx}
+                mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog tmpDir koreLogOptions
@@ -624,7 +624,7 @@ mainDispatch = warnProductivity . mainDispatchWorker
     mainDispatchWorker ::
         LocalOptions KoreExecOptions ->
         Main (KFileLocations, ExitCode)
-    mainDispatchWorker localOptions@LocalOptions {execOptions}
+    mainDispatchWorker localOptions@LocalOptions{execOptions}
         | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
             if bmc
                 then koreBmc localOptions proveOptions
@@ -644,7 +644,7 @@ koreSearch ::
     LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch LocalOptions {execOptions, simplifierx} searchOptions = do
+koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -671,7 +671,7 @@ koreSearch LocalOptions {execOptions, simplifierx} searchOptions = do
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
 koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun LocalOptions {execOptions, simplifierx} = do
+koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -690,7 +690,7 @@ koreProve ::
     LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreProve LocalOptions {execOptions, simplifierx} proveOptions = do
+koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -798,7 +798,7 @@ koreBmc ::
     LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreBmc LocalOptions {execOptions, simplifierx} proveOptions = do
+koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -833,7 +833,7 @@ koreMerge ::
     LocalOptions KoreExecOptions ->
     KoreMergeOptions ->
     Main (KFileLocations, ExitCode)
-koreMerge LocalOptions {execOptions, simplifierx} mergeOptions = do
+koreMerge LocalOptions{execOptions, simplifierx} mergeOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions

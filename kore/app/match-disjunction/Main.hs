@@ -11,7 +11,6 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Internal.Pattern (Pattern)
 import qualified Kore.Internal.Pattern as Pattern
-import SMT (runNoSMT)
 import Kore.Internal.TermLike (
     pattern Or_,
  )
@@ -45,6 +44,7 @@ import Options.Applicative (
  )
 import Prelude.Kore
 import Pretty
+import SMT (runNoSMT)
 import System.Clock (
     Clock (..),
     TimeSpec,
@@ -132,7 +132,7 @@ main = do
     for_ (localOptions options) mainWithOptions
 
 mainWithOptions :: LocalOptions KoreMatchDisjunctionOptions -> IO ()
-mainWithOptions localOptions@LocalOptions { execOptions } = do
+mainWithOptions localOptions@LocalOptions{execOptions} = do
     exitCode <-
         withBugReport exeName bugReportOption $ \tmpDir ->
             koreMatchDisjunction localOptions
@@ -143,19 +143,20 @@ mainWithOptions localOptions@LocalOptions { execOptions } = do
     KoreMatchDisjunctionOptions{koreLogOptions} = execOptions
 
 koreMatchDisjunction :: LocalOptions KoreMatchDisjunctionOptions -> Main ExitCode
-koreMatchDisjunction LocalOptions {execOptions, simplifierx} = do
+koreMatchDisjunction LocalOptions{execOptions, simplifierx} = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     matchPattern <- mainParseMatchPattern mainModule matchFileName
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
     final <-
-        clockSomethingIO "Executing" $ runNoSMT $
-            matchDisjunction
-                simplifierx
-                mainModule
-                matchPattern
-                disjunctionPattern
+        clockSomethingIO "Executing" $
+            runNoSMT $
+                matchDisjunction
+                    simplifierx
+                    mainModule
+                    matchPattern
+                    disjunctionPattern
     lift $
         renderResult
             execOptions
