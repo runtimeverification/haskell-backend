@@ -47,7 +47,7 @@
         "type": "tarball",
         "url": "https://github.com/ndmitchell/hlint/archive/f459f616a7c2851af531c7be039279b0d67b2400.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
-        "version": "v3.2.7"
+        "version": "v3.3.5"
     },
     "hpack": {
         "branch": "0.33.0",
