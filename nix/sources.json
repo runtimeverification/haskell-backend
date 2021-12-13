@@ -11,6 +11,18 @@
         "url": "https://github.com/parsonsmatt/fourmolu/archive/5e0677e3370935bc7043278fa818156bf105f425.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "haskell-hls-nix": {
+        "branch": "main",
+        "description": "Nix builds of Haskell Language Server",
+        "homepage": "",
+        "owner": "shajra",
+        "repo": "haskell-hls-nix",
+        "rev": "0056e1096adae22fac8a5dfb272567f216f1d231",
+        "sha256": "1qwiv199sib7f3qnf81xx3dk10nplcgrsqgvb0xp5i9psg1fxrak",
+        "type": "tarball",
+        "url": "https://github.com/shajra/haskell-hls-nix/archive/0056e1096adae22fac8a5dfb272567f216f1d231.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "haskell.nix": {
         "branch": "master",
         "description": "Alternative Haskell Infrastructure for Nixpkgs",
@@ -59,18 +71,6 @@
         "sha256": "1w8n54hapd4x9f1am33icvngkqns7m3hl9yair38yqq08ffwg0kn",
         "type": "tarball",
         "url": "https://github.com/nmattia/niv/archive/98c74a80934123cb4c3bf3314567f67311eb711a.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "nix-haskell-hls": {
-        "branch": "master",
-        "description": "Nix builds of Haskell Language Server",
-        "homepage": null,
-        "owner": "shajra",
-        "repo": "nix-haskell-hls",
-        "rev": "7f5dad7d3569467cd7f41429566e59f0cbf1dc40",
-        "sha256": "02fb8x5g7kc8rklb6d937xglrhkj5y6f0vlvpzalqhhfcyxp1l3q",
-        "type": "tarball",
-        "url": "https://github.com/shajra/nix-haskell-hls/archive/7f5dad7d3569467cd7f41429566e59f0cbf1dc40.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
