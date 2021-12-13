@@ -2,7 +2,7 @@
   pkgs = hackage:
     {
       packages = {
-        "ghc-boot".revision = (((hackage."ghc-boot")."8.10.7").revisions).default;
+        "happy".revision = (((hackage."happy")."1.20.0").revisions).default;
         "filepattern".revision = (((hackage."filepattern")."0.1.2").revisions).default;
         "cpphs".revision = (((hackage."cpphs")."1.20.9.1").revisions).default;
         "cpphs".flags.old-locale = false;
@@ -31,6 +31,7 @@
         "unordered-containers".revision = (((hackage."unordered-containers")."0.2.15.0").revisions).default;
         "unordered-containers".flags.debug = false;
         "array".revision = (((hackage."array")."0.5.4.0").revisions).default;
+        "ghc-lib-parser".revision = (((hackage."ghc-lib-parser")."9.0.1.20210324").revisions).default;
         "utf8-string".revision = (((hackage."utf8-string")."1.0.2").revisions).default;
         "process".revision = (((hackage."process")."1.6.13.2").revisions).default;
         "semigroupoids".revision = (((hackage."semigroupoids")."5.3.6").revisions).default;
@@ -72,7 +73,6 @@
         "contravariant".flags.statevar = true;
         "base-orphans".revision = (((hackage."base-orphans")."0.8.6").revisions).default;
         "extra".revision = (((hackage."extra")."1.7.10").revisions).default;
-        "ghc".revision = (((hackage."ghc")."8.10.7").revisions).default;
         "yaml".revision = (((hackage."yaml")."0.11.7.0").revisions).default;
         "yaml".flags.no-examples = true;
         "yaml".flags.no-exe = true;
@@ -86,9 +86,11 @@
         "directory".revision = (((hackage."directory")."1.3.6.0").revisions).default;
         "clock".revision = (((hackage."clock")."0.8.2").revisions).default;
         "clock".flags.llvm = false;
-        "ghc-lib-parser-ex".revision = (((hackage."ghc-lib-parser-ex")."8.10.0.23").revisions).default;
+        "ghc-lib-parser-ex".revision = (((hackage."ghc-lib-parser-ex")."9.0.0.4").revisions).default;
         "ghc-lib-parser-ex".flags.auto = true;
         "ghc-lib-parser-ex".flags.no-ghc-lib = false;
+        "alex".revision = (((hackage."alex")."3.2.6").revisions).default;
+        "alex".flags.small_base = true;
         "old-locale".revision = (((hackage."old-locale")."1.0.0.7").revisions).default;
         "mtl".revision = (((hackage."mtl")."2.2.2").revisions).default;
         "transformers".revision = (((hackage."transformers")."0.5.6.2").revisions).default;
@@ -103,7 +105,6 @@
         "aeson".flags.bytestring-builder = false;
         "aeson".flags.ordered-keymap = true;
         "mono-traversable".revision = (((hackage."mono-traversable")."1.0.15.3").revisions).default;
-        "ghci".revision = (((hackage."ghci")."8.10.7").revisions).default;
         "witherable".revision = (((hackage."witherable")."0.4.2").revisions).default;
         "syb".revision = (((hackage."syb")."0.7.2.1").revisions).default;
         "strict".revision = (((hackage."strict")."0.4.0.1").revisions).default;
@@ -144,13 +145,11 @@
         "transformers-compat".flags.four = false;
         "transformers-compat".flags.five = false;
         "transformers-compat".flags.generic-deriving = true;
-        "terminfo".revision = (((hackage."terminfo")."0.4.1.4").revisions).default;
         "data-default-instances-old-locale".revision = (((hackage."data-default-instances-old-locale")."0.0.1").revisions).default;
         "indexed-traversable-instances".revision = (((hackage."indexed-traversable-instances")."0.1.1").revisions).default;
         "scientific".revision = (((hackage."scientific")."0.3.7.0").revisions).default;
         "scientific".flags.bytestring-builder = false;
         "scientific".flags.integer-simple = false;
-        "ghc-heap".revision = (((hackage."ghc-heap")."8.10.7").revisions).default;
         "refact".revision = (((hackage."refact")."0.3.0.2").revisions).default;
         "resourcet".revision = (((hackage."resourcet")."1.2.4.3").revisions).default;
         "binary".revision = (((hackage."binary")."0.8.8.0").revisions).default;
@@ -164,7 +163,6 @@
         version = "8.10.7";
         nix-name = "ghc8107";
         packages = {
-          "ghc-boot" = "8.10.7";
           "ghc-boot-th" = "8.10.7";
           "ghc-prim" = "0.6.1";
           "pretty" = "1.1.3.6";
@@ -173,7 +171,6 @@
           "time" = "1.9.3";
           "array" = "0.5.4.0";
           "process" = "1.6.13.2";
-          "ghc" = "8.10.7";
           "exceptions" = "0.10.4";
           "hpc" = "0.6.1.0";
           "directory" = "1.3.6.0";
@@ -182,14 +179,11 @@
           "rts" = "1.0.1";
           "template-haskell" = "2.16.0.0";
           "bytestring" = "0.10.12.0";
-          "ghci" = "8.10.7";
           "deepseq" = "1.4.4.0";
           "unix" = "2.7.2.2";
           "filepath" = "1.4.2.1";
           "stm" = "2.5.0.1";
           "integer-gmp" = "1.0.3.0";
-          "terminfo" = "0.4.1.4";
-          "ghc-heap" = "8.10.7";
           "binary" = "0.8.8.0";
           "containers" = "0.6.5.1";
           };
@@ -221,6 +215,7 @@
           "unliftio-core".components.library.planned = lib.mkOverride 900 true;
           "ansi-terminal".components.library.planned = lib.mkOverride 900 true;
           "indexed-traversable".components.library.planned = lib.mkOverride 900 true;
+          "ghc-lib-parser".components.library.planned = lib.mkOverride 900 true;
           "hlint".components.library.planned = lib.mkOverride 900 true;
           "these".components.library.planned = lib.mkOverride 900 true;
           "filepath".components.library.planned = lib.mkOverride 900 true;
@@ -245,15 +240,14 @@
           "witherable".components.library.planned = lib.mkOverride 900 true;
           "stm".components.library.planned = lib.mkOverride 900 true;
           "strict".components.library.planned = lib.mkOverride 900 true;
-          "ghci".components.library.planned = lib.mkOverride 900 true;
           "comonad".components.library.planned = lib.mkOverride 900 true;
           "data-fix".components.library.planned = lib.mkOverride 900 true;
           "exceptions".components.library.planned = lib.mkOverride 900 true;
+          "alex".components.exes."alex".planned = lib.mkOverride 900 true;
           "hscolour".components.exes."HsColour".planned = lib.mkOverride 900 true;
           "semialign".components.library.planned = lib.mkOverride 900 true;
           "dlist".components.library.planned = lib.mkOverride 900 true;
           "ghc-prim".components.library.planned = lib.mkOverride 900 true;
-          "ghc-boot".components.library.planned = lib.mkOverride 900 true;
           "hpc".components.library.planned = lib.mkOverride 900 true;
           "array".components.library.planned = lib.mkOverride 900 true;
           "scientific".components.library.planned = lib.mkOverride 900 true;
@@ -261,7 +255,6 @@
           "binary".components.library.planned = lib.mkOverride 900 true;
           "filepattern".components.library.planned = lib.mkOverride 900 true;
           "refact".components.library.planned = lib.mkOverride 900 true;
-          "ghc-heap".components.library.planned = lib.mkOverride 900 true;
           "ghc-boot-th".components.library.planned = lib.mkOverride 900 true;
           "uuid-types".components.library.planned = lib.mkOverride 900 true;
           "file-embed".components.library.planned = lib.mkOverride 900 true;
@@ -284,6 +277,7 @@
           "OneTuple".components.library.planned = lib.mkOverride 900 true;
           "directory".components.library.planned = lib.mkOverride 900 true;
           "primitive".components.library.planned = lib.mkOverride 900 true;
+          "happy".components.exes."happy".planned = lib.mkOverride 900 true;
           "cpphs".components.exes."cpphs".planned = lib.mkOverride 900 true;
           "old-locale".components.library.planned = lib.mkOverride 900 true;
           "bifunctors".components.library.planned = lib.mkOverride 900 true;
@@ -305,11 +299,9 @@
           "polyparse".components.library.planned = lib.mkOverride 900 true;
           "containers".components.library.planned = lib.mkOverride 900 true;
           "aeson".components.library.planned = lib.mkOverride 900 true;
-          "ghc".components.library.planned = lib.mkOverride 900 true;
           "base-compat".components.library.planned = lib.mkOverride 900 true;
           "time-compat".components.library.planned = lib.mkOverride 900 true;
           "hashable".components.library.planned = lib.mkOverride 900 true;
-          "terminfo".components.library.planned = lib.mkOverride 900 true;
           };
         })
     ];

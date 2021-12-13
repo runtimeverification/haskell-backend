@@ -37,15 +37,15 @@
         "version": "05f99684cb3b86703e910da6be1e619447788c7b"
     },
     "hlint": {
-        "branch": "v3.2.7",
+        "branch": "v3.3.5",
         "description": "Haskell source code suggestions",
         "homepage": null,
         "owner": "ndmitchell",
         "repo": "hlint",
-        "rev": "c7354e473c7d09213c8adc3dc94bf50a6eb4a42d",
-        "sha256": "0jx699s890134swi71n4majbk9qbvslhmvn7cv3ndcni34chkbzb",
+        "rev": "f459f616a7c2851af531c7be039279b0d67b2400",
+        "sha256": "088rswkyh2vk9gq6bfblscr0v32kzg8b0c0kpzzzv8xm3c588m1g",
         "type": "tarball",
-        "url": "https://github.com/ndmitchell/hlint/archive/c7354e473c7d09213c8adc3dc94bf50a6eb4a42d.tar.gz",
+        "url": "https://github.com/ndmitchell/hlint/archive/f459f616a7c2851af531c7be039279b0d67b2400.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "v3.2.7"
     },
