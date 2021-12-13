@@ -1952,7 +1952,6 @@ mockEvaluator ::
     SideCondition variable ->
     simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ = return evaluation
-
 -- ---------------------------------------------------------------------
 
 -- * Definition

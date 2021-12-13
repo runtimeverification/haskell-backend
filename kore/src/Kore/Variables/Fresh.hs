@@ -113,9 +113,9 @@ instance FreshPartialOrd VariableName where
     {-# INLINE nextName #-}
 
 instance FreshPartialOrd Void where
-    minBoundName = \case {}
-    maxBoundName = \case {}
-    nextName = \case {}
+    minBoundName = \case
+    maxBoundName = \case
+    nextName = \case
 
 instance
     FreshPartialOrd variable =>
@@ -199,7 +199,7 @@ defaultRefreshName avoiding original = do
 {-# INLINE defaultRefreshName #-}
 
 instance FreshName Void where
-    refreshName _ = \case {}
+    refreshName _ = \case
     {-# INLINE refreshName #-}
 
 instance FreshName VariableName

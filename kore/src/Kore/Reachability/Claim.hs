@@ -583,10 +583,10 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         m (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
-        , isBottom condition =
+          , isBottom condition =
             pure Implied
         | not didAnyUnify
-        , not (isBottom right) =
+          , not (isBottom right) =
             pure $ NotImplied claimPattern
         | otherwise = do
             when (isBottom right) $

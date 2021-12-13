@@ -39,16 +39,16 @@ import Prelude.Kore
  access the metadata needed during the unification process.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
-    { sortAttributes :: Sort -> Attribute.Sort
-    -- ^ get the attributes of a sort
-    , applicationSorts :: SymbolOrAlias -> ApplicationSorts
-    -- ^ Sorts for a specific symbol application.
-    , symbolAttributes :: Id -> attributes
-    -- ^ get the attributes of a symbol
-    , smtData :: smt
-    -- ^ The SMT data for the given module.
-    , sortConstructors :: Map Id sortConstructors
-    -- ^ The constructors for each sort.
+    { -- | get the attributes of a sort
+      sortAttributes :: Sort -> Attribute.Sort
+    , -- | Sorts for a specific symbol application.
+      applicationSorts :: SymbolOrAlias -> ApplicationSorts
+    , -- | get the attributes of a symbol
+      symbolAttributes :: Id -> attributes
+    , -- | The SMT data for the given module.
+      smtData :: smt
+    , -- | The constructors for each sort.
+      sortConstructors :: Map Id sortConstructors
     }
     deriving stock (Functor)
 

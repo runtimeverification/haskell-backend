@@ -84,7 +84,7 @@ quodlibet/.  Because 'Void' contains no data, it can likewise be 'retract'ed
 from any type.
 -}
 instance Injection a Void where
-    inject = \case {}
+    inject = \case
     {-# INLINE inject #-}
 
     retract = const Nothing

@@ -51,8 +51,8 @@ import qualified System.Directory as Directory
 
 -- | @LogSQLiteOptions@ are the command-line options for the SQLite logger.
 newtype LogSQLiteOptions = LogSQLiteOptions
-    { sqlog :: Maybe FilePath
-    -- ^ Filename for the structured query log.
+    { -- | Filename for the structured query log.
+      sqlog :: Maybe FilePath
     }
     deriving stock (Eq, Show)
 

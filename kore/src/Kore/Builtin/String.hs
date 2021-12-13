@@ -480,7 +480,7 @@ matchString ::
     Maybe UnifyString
 matchString term1 term2
     | InternalString_ string1 <- term1
-    , InternalString_ string2 <- term2 =
+      , InternalString_ string2 <- term2 =
         Just UnifyString{string1, string2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchString #-}

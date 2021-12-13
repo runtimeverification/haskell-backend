@@ -1193,7 +1193,7 @@ savePartialProof maybeNatural file = do
         [SomeClaim]
     removeIfRoot (ReplNode node) (ClaimIndex index) claims
         | index >= 0 && index < length claims
-        , node == 0 =
+          , node == 0 =
             take index claims
                 <> drop (index + 1) claims
         | otherwise = claims

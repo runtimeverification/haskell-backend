@@ -195,7 +195,7 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
         App_ patternHead children
             | let headAttributes = symbolAttributes patternHead
-            , Attribute.Symbol.isTotal headAttributes -> do
+              , Attribute.Symbol.isTotal headAttributes -> do
                 sideCondition <- Reader.ask
                 let mkChildCeil =
                         makeEvaluateTermCeil

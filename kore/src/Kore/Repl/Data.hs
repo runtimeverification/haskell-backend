@@ -542,53 +542,53 @@ type AppliedRule = Reachability.AppliedRule SomeClaim
 
 -- | State for the repl.
 data ReplState = ReplState
-    { axioms :: [Axiom]
-    -- ^ List of available axioms
-    , claims :: [SomeClaim]
-    -- ^ List of claims to be proven
-    , claim :: SomeClaim
-    -- ^ Currently focused claim in the repl
-    , claimIndex :: ClaimIndex
-    -- ^ Index of the currently focused claim in the repl
-    , graphs :: Map ClaimIndex ExecutionGraph
-    -- ^ Execution graph for the current proof; initialized with root = claim
-    , node :: ReplNode
-    -- ^ Currently selected node in the graph; initialized with node = root
-    , commands :: Seq String
-    -- ^ All commands evaluated by the current repl session
-    , omit :: Set String
-    -- ^ The omit list, initially empty
-    , labels :: Map ClaimIndex (Map String ReplNode)
-    -- ^ Map from labels to nodes
-    , aliases :: Map String AliasDefinition
-    -- ^ Map of command aliases
-    , koreLogOptions :: !Log.KoreLogOptions
-    -- ^ The log level, log scopes and log type decide what gets logged and
-    -- where.
+    { -- | List of available axioms
+      axioms :: [Axiom]
+    , -- | List of claims to be proven
+      claims :: [SomeClaim]
+    , -- | Currently focused claim in the repl
+      claim :: SomeClaim
+    , -- | Index of the currently focused claim in the repl
+      claimIndex :: ClaimIndex
+    , -- | Execution graph for the current proof; initialized with root = claim
+      graphs :: Map ClaimIndex ExecutionGraph
+    , -- | Currently selected node in the graph; initialized with node = root
+      node :: ReplNode
+    , -- | All commands evaluated by the current repl session
+      commands :: Seq String
+    , -- | The omit list, initially empty
+      omit :: Set String
+    , -- | Map from labels to nodes
+      labels :: Map ClaimIndex (Map String ReplNode)
+    , -- | Map of command aliases
+      aliases :: Map String AliasDefinition
+    , -- | The log level, log scopes and log type decide what gets logged and
+      -- where.
+      koreLogOptions :: !Log.KoreLogOptions
     }
     deriving stock (GHC.Generic)
 
 -- | Configuration environment for the repl.
 data Config m = Config
-    { stepper ::
+    { -- | Stepper function
+      stepper ::
         [SomeClaim] ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
         m ExecutionGraph
-    -- ^ Stepper function
-    , unifier ::
+    , -- | Unifier function, it is a partially applied 'unificationProcedure'
+      --   where we discard the result since we are looking for unification
+      --   failures
+      unifier ::
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         UnifierT m (Condition RewritingVariableName)
-    -- ^ Unifier function, it is a partially applied 'unificationProcedure'
-    --   where we discard the result since we are looking for unification
-    --   failures
-    , logger :: MVar (LogAction IO ActualEntry)
-    -- ^ Logger function, see 'logging'.
-    , outputFile :: OutputFile
-    -- ^ Output resulting pattern to this file.
+    , -- | Logger function, see 'logging'.
+      logger :: MVar (LogAction IO ActualEntry)
+    , -- | Output resulting pattern to this file.
+      outputFile :: OutputFile
     , mainModuleName :: ModuleName
     , kFileLocations :: KFileLocations
     }

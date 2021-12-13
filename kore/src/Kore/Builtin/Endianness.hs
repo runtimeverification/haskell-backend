@@ -88,7 +88,7 @@ matchUnifyEqualsEndianness ::
     Maybe UnifyEqualsEndianness
 matchUnifyEqualsEndianness term1 term2
     | Endianness_ end1 <- term1
-    , Endianness_ end2 <- term2 =
+      , Endianness_ end2 <- term2 =
         Just UnifyEqualsEndianness{end1, end2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchUnifyEqualsEndianness #-}

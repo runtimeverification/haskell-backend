@@ -36,10 +36,10 @@ import Prelude.Kore
 
 -- | 'OverloadGraph' maps symbols to symbols overloading them and the reverse
 data OverloadGraph = OverloadGraph
-    { overloadingSymbols :: !(Map Symbol (Set Symbol))
-    -- ^maps a symbol to the symbols overloading it
-    , overloadedSymbols :: !(Map Symbol (Set Symbol))
-    -- ^maps a symbol to the symbols overloaded by it
+    { -- |maps a symbol to the symbols overloading it
+      overloadingSymbols :: !(Map Symbol (Set Symbol))
+    , -- |maps a symbol to the symbols overloaded by it
+      overloadedSymbols :: !(Map Symbol (Set Symbol))
     }
     deriving stock (GHC.Generic, Typeable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)

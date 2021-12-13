@@ -602,7 +602,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     applyAssumptionsWorker assumptions original
         | Just result <- HashMap.lookup original (predicateMap assumptions) = Changed result
         | HashMap.null (termLikeMap assumptions')
-        , HashMap.null (predicateMap assumptions') =
+          , HashMap.null (predicateMap assumptions') =
             Unchanged original
         | otherwise =
             case replaceIn of

@@ -573,7 +573,7 @@ assertSimplifiedConsistency :: HasCallStack => TermAttributes variable -> a -> a
 assertSimplifiedConsistency
     TermAttributes{termConstructorLike, termSimplified}
         | Attribute.isConstructorLike termConstructorLike
-        , not (Attribute.isSimplifiedAnyCondition termSimplified) =
+          , not (Attribute.isSimplifiedAnyCondition termSimplified) =
             error "Inconsistent attributes, constructorLike implies fully simplified."
         | otherwise = id
 
@@ -954,11 +954,11 @@ fromKeyAttributes attrs =
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
 toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
     | Attribute.nullFreeVariables termFreeVariables
-    , Attribute.isFunctional termFunctional
-    , Attribute.isFunction termFunction
-    , Attribute.isDefined termDefined
-    , Attribute.isSimplifiedAnyCondition termSimplified
-    , Attribute.isConstructorLike termConstructorLike =
+      , Attribute.isFunctional termFunctional
+      , Attribute.isFunction termFunction
+      , Attribute.isDefined termDefined
+      , Attribute.isSimplifiedAnyCondition termSimplified
+      , Attribute.isConstructorLike termConstructorLike =
         Just $ KeyAttributes termSort
     | otherwise = Nothing
   where

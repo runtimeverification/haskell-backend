@@ -136,13 +136,13 @@ substitutionSimplifier =
 
 -- | Interface for constructing a simplified 'And' pattern.
 newtype MakeAnd monad = MakeAnd
-    { makeAnd ::
+    { -- | Construct a simplified 'And' pattern of two 'TermLike's under
+      -- the given 'Predicate.Predicate'.
+      makeAnd ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
         monad (Pattern RewritingVariableName)
-    -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
-    -- the given 'Predicate.Predicate'.
     }
 
 simplificationMakeAnd ::
@@ -206,7 +206,7 @@ deduplicateSubstitution sideCondition makeAnd' =
   where
     checkSetVars m
         | problems <- getProblems m
-        , (not . null) problems =
+          , (not . null) problems =
             (error . show . Pretty.vsep)
                 [ "Cannot reconcile multiple assignments of a set variable:"
                 , Pretty.indent 4 (debug problems)
@@ -295,7 +295,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             Nothing -> empty
             Just normalization@Normalization{denormalized}
                 | not fullySimplified
-                , makingProgress -> do
+                  , makingProgress -> do
                     Lens.assign (field @"count") thisCount
                     addSubstitution substitution
                     addSubstitution $ Substitution.wrapNormalization normalization
@@ -398,10 +398,10 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 data Private variable = Private
-    { accum :: !(Condition variable)
-    -- ^ The current condition, accumulated during simplification.
-    , count :: !Int
-    -- ^ The current number of denormalized substitutions.
+    { -- | The current condition, accumulated during simplification.
+      accum :: !(Condition variable)
+    , -- | The current number of denormalized substitutions.
+      count :: !Int
     }
     deriving stock (GHC.Generic)
 

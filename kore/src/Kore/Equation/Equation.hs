@@ -217,14 +217,14 @@ toTermLike ::
 toTermLike sort equation
     -- \ceil axiom
     | isTop requires
-    , isTop ensures
-    , TermLike.Ceil_ _ sort1 _ <- left
-    , TermLike.Top_ sort2 <- right
-    , sort1 == sort2 =
+      , isTop ensures
+      , TermLike.Ceil_ _ sort1 _ <- left
+      , TermLike.Top_ sort2 <- right
+      , sort1 == sort2 =
         left
     -- function rule
     | Just argument' <- argument
-    , Just antiLeft' <- antiLeft =
+      , Just antiLeft' <- antiLeft =
         let antiLeftTerm = fromPredicate sort antiLeft'
             argumentTerm = fromPredicate sort argument'
          in TermLike.mkImplies
@@ -251,7 +251,7 @@ toTermLike sort equation
                 )
     -- unconditional equation
     | isTop requires
-    , isTop ensures =
+      , isTop ensures =
         TermLike.mkEquals sort left right
     -- conditional equation
     | otherwise =

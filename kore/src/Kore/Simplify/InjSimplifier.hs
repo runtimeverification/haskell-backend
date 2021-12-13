@@ -62,19 +62,19 @@ data UnifyInj a
     deriving anyclass (Debug, Diff)
 
 data InjSimplifier = InjSimplifier
-    { isOrderedInj :: forall child. Inj child -> Bool
-    -- ^ Is 'injFrom' a proper subsort of 'injTo'?
-    , evaluateInj ::
+    { -- | Is 'injFrom' a proper subsort of 'injTo'?
+      isOrderedInj :: forall child. Inj child -> Bool
+    , -- | Apply the triangle axiom to combine an 'Inj' with its 'Inj' child:
+      --
+      --        @
+      --            inj{middle, outer}(inj{inner, middle}(_)) = inj{inner, outer}(_)
+      --        @
+      evaluateInj ::
         forall variable.
         HasCallStack =>
         InternalVariable variable =>
         Inj (TermLike variable) ->
         TermLike variable
-    -- ^ Apply the triangle axiom to combine an 'Inj' with its 'Inj' child:
-    --
-    --        @
-    --            inj{middle, outer}(inj{inner, middle}(_)) = inj{inner, outer}(_)
-    --        @
     , matchInjs ::
         forall variable.
         HasCallStack =>
@@ -82,37 +82,39 @@ data InjSimplifier = InjSimplifier
         Inj (TermLike variable) ->
         Inj (TermLike variable) ->
         Maybe (UnifyInj (InjPair variable))
-    , unifyInjs ::
+    , -- | Push down the conjunction of 'Inj':
+      --
+      --        @
+      --            inj{lo, hi}(a) ∧ inj{lower, hi}(b)
+      --            ===
+      --            inj{lo, hi}(a ∧ inj{lower, lo}(b))
+      --                where lower < lo
+      --        @
+      --
+      --        Returns 'Distinct' if the sort injections cannot match, or 'Unknown' if
+      --        further simplification could produce matching injections.
+      unifyInjs ::
         forall variable.
         InternalVariable variable =>
         UnifyInj (InjPair variable) ->
         Maybe (Inj (Pair (TermLike variable)))
-    -- ^ Push down the conjunction of 'Inj':
-    --
-    --        @
-    --            inj{lo, hi}(a) ∧ inj{lower, hi}(b)
-    --            ===
-    --            inj{lo, hi}(a ∧ inj{lower, lo}(b))
-    --                where lower < lo
-    --        @
-    --
-    --        Returns 'Distinct' if the sort injections cannot match, or 'Unknown' if
-    --        further simplification could produce matching injections.
-    , evaluateCeilInj ::
+    , -- | Evaluate the 'Ceil' of 'Inj':
+      --
+      --        @
+      --            \ceil{outer, middle}(inj{inner, middle}(x))
+      --            ===
+      --            \ceil{outer, inner}(x)
+      --                where inner < middle
+      --        @
+      evaluateCeilInj ::
         forall variable.
         HasCallStack =>
         InternalVariable variable =>
         Ceil Sort (Inj (TermLike variable)) ->
         Ceil Sort (TermLike variable)
-    -- ^ Evaluate the 'Ceil' of 'Inj':
-    --
-    --        @
-    --            \ceil{outer, middle}(inj{inner, middle}(x))
-    --            ===
-    --            \ceil{outer, inner}(x)
-    --                where inner < middle
-    --        @
-    , injectTermTo ::
+    , -- | Injects a term to a given sort. Applies 'evaluateInj' to keep
+      --        the injection simplified.
+      injectTermTo ::
         forall variable.
         HasCallStack =>
         InternalVariable variable =>
@@ -120,8 +122,6 @@ data InjSimplifier = InjSimplifier
         TermLike variable ->
         Sort ->
         TermLike variable
-    -- ^ Injects a term to a given sort. Applies 'evaluateInj' to keep
-    --        the injection simplified.
     }
 
 -- | Ignore 'UnorderedInj' errors in 'evaluateInj' and 'evaluateCeilInj' below.
@@ -146,7 +146,7 @@ mkInjSimplifier sortGraph =
     isOrderedInj :: forall child. Inj child -> Bool
     isOrderedInj Inj{injFrom, injTo}
         | SortVariableSort _ <- injFrom
-        , SortVariableSort _ <- injTo =
+          , SortVariableSort _ <- injTo =
             -- Assume variable sorts are properly ordered.
             True
         | otherwise = injFrom `isSubsortOf'` injTo
@@ -164,7 +164,7 @@ mkInjSimplifier sortGraph =
             synthesize . InjF $ case injChild inj of
                 Inj_ inj'
                     | not ignoreUnorderedInj
-                    , not (isOrderedInj inj') ->
+                      , not (isOrderedInj inj') ->
                         unorderedInj inj
                     | otherwise ->
                         assert sameConstructor

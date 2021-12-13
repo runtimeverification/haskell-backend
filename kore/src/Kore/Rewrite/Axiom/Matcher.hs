@@ -437,21 +437,21 @@ type MatchingVariable variable = InternalVariable variable
 
 -- | The internal state of the matching algorithm.
 data MatcherState variable = MatcherState
-    { queued :: !(Set (Constraint variable))
-    -- ^ Solvable matching constraints.
-    , deferred :: !(Seq (Pair (TermLike variable)))
-    -- ^ Unsolvable matching constraints; may become solvable with more
-    -- information.
-    , substitution :: !(Map (SomeVariableName variable) (TermLike variable))
-    -- ^ Matching solution: Substitutions for target variables.
-    , predicate :: !(MultiAnd (Predicate variable))
-    -- ^ Matching solution: Additional constraints.
-    , bound :: !(Set (SomeVariableName variable))
-    -- ^ Bound variable that must not escape in the solution.
-    , targets :: !(Set (SomeVariableName variable))
-    -- ^ Target variables that may be substituted.
-    , avoiding :: !(Set (SomeVariableName variable))
-    -- ^ Variables that must not be shadowed.
+    { -- | Solvable matching constraints.
+      queued :: !(Set (Constraint variable))
+    , -- | Unsolvable matching constraints; may become solvable with more
+      -- information.
+      deferred :: !(Seq (Pair (TermLike variable)))
+    , -- | Matching solution: Substitutions for target variables.
+      substitution :: !(Map (SomeVariableName variable) (TermLike variable))
+    , -- | Matching solution: Additional constraints.
+      predicate :: !(MultiAnd (Predicate variable))
+    , -- | Bound variable that must not escape in the solution.
+      bound :: !(Set (SomeVariableName variable))
+    , -- | Target variables that may be substituted.
+      targets :: !(Set (SomeVariableName variable))
+    , -- | Variables that must not be shadowed.
+      avoiding :: !(Set (SomeVariableName variable))
     }
     deriving stock (GHC.Generic)
 
@@ -777,8 +777,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                 [frame1]
                     -- One opaque each, rest are syntactically equal
                     | null excessAbstract2
-                    , null excessConcrete2
-                    , [frame2] <- opaque2 ->
+                      , null excessConcrete2
+                      , [frame2] <- opaque2 ->
                         push (Pair frame1 frame2)
                     -- Match singular opaque1 with excess part of normalized2
                     | otherwise ->
@@ -795,8 +795,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     -- Case for AC iteration:
     -- Normalized1 looks like K |-> V M:Map
     | [element1] <- abstract1
-    , [frame1] <- opaque1
-    , null concrete1 = do
+      , [frame1] <- opaque1
+      , null concrete1 = do
         let (key1, value1) = unwrapElement element1
         case lookupSymbolicKeyOfAc key1 normalized2 of
             -- If K in_keys(normalized2)
@@ -836,8 +836,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                     _ -> empty
     -- Case for ACs which are structurally equal:
     | length excessAbstract1 == length excessAbstract2
-    , length concrete1 == length concrete2
-    , length opaque1 == length opaque2 = lift $ do
+      , length concrete1 == length concrete2
+      , length opaque1 == length opaque2 = lift $ do
         traverse_ pushValue abstractMerge
         traverse_
             (pushElement . uncurry Pair)

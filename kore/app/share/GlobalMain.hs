@@ -161,17 +161,17 @@ import Text.Read (
 type Main = LoggerT IO
 
 data KoreProveOptions = KoreProveOptions
-    { specFileName :: !FilePath
-    -- ^ Name of file containing the spec to be proven
-    , specMainModule :: !ModuleName
-    -- ^ The main module of the spec to be proven
-    , graphSearch :: GraphSearchOrder
-    -- ^ Search order of the execution graph
-    , bmc :: !Bool
-    -- ^ Whether to use bounded model checker
-    , saveProofs :: !(Maybe FilePath)
-    -- ^ The file in which to save the proven claims in case the prover
-    -- fails.
+    { -- | Name of file containing the spec to be proven
+      specFileName :: !FilePath
+    , -- | The main module of the spec to be proven
+      specMainModule :: !ModuleName
+    , -- | Search order of the execution graph
+      graphSearch :: GraphSearchOrder
+    , -- | Whether to use bounded model checker
+      bmc :: !Bool
+    , -- | The file in which to save the proven claims in case the prover
+      -- fails.
+      saveProofs :: !(Maybe FilePath)
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -246,8 +246,8 @@ parseKoreProveOptions =
                      in readerError (unknown ++ known)
 
 data KoreMergeOptions = KoreMergeOptions
-    { rulesFileName :: !FilePath
-    -- ^ Name for file containing a sequence of rules to merge.
+    { -- | Name for file containing a sequence of rules to merge.
+      rulesFileName :: !FilePath
     , maybeBatchSize :: Maybe Int
     }
 
@@ -274,8 +274,8 @@ parseKoreMergeOptions =
 the project
 -}
 data GlobalOptions = GlobalOptions
-    { willVersion :: !Bool
-    -- ^ Version flag [default=false]
+    { -- | Version flag [default=false]
+      willVersion :: !Bool
     }
 
 -- | Record type to store all state and options for the subMain operations

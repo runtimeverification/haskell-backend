@@ -91,12 +91,12 @@ import Prof
  dispatched through the `log` functions.
 -}
 data LogMessage = LogMessage
-    { message :: Text
-    -- ^ message being logged
-    , severity :: !Severity
-    -- ^ log level / severity of message
-    , callstack :: !GHC.CallStack
-    -- ^ call stack of the message, when available
+    { -- | message being logged
+      message :: Text
+    , -- | log level / severity of message
+      severity :: !Severity
+    , -- | call stack of the message, when available
+      callstack :: !GHC.CallStack
     }
     deriving stock (Show)
 

@@ -146,12 +146,12 @@ the same priority. If present, the nextAntiLeft corrensponds to rules with
 higher priority (i.e. lower priority number)
 -}
 data AntiLeft variable = AntiLeft
-    { aliasTerm :: !(TermLike variable)
-    -- ^ The alias that was expanded.
-    , maybeInner :: !(Maybe (AntiLeft variable))
-    -- ^ The nextAntiLeft, if any.
-    , leftHands :: ![AntiLeftLhs variable]
-    -- ^ patterns corresponding to rules with the same priority number.
+    { -- | The alias that was expanded.
+      aliasTerm :: !(TermLike variable)
+    , -- | The nextAntiLeft, if any.
+      maybeInner :: !(Maybe (AntiLeft variable))
+    , -- | patterns corresponding to rules with the same priority number.
+      leftHands :: ![AntiLeftLhs variable]
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

@@ -88,7 +88,7 @@ matchUnifyEqualsSignedness ::
     Maybe UnifyEqualsSignedness
 matchUnifyEqualsSignedness term1 term2
     | Signedness_ sign1 <- term1
-    , Signedness_ sign2 <- term2 =
+      , Signedness_ sign2 <- term2 =
         Just UnifyEqualsSignedness{sign1, sign2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchUnifyEqualsSignedness #-}

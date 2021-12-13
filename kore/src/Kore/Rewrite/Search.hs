@@ -83,8 +83,8 @@ data SearchType
 
 -- | Search options
 data Config = Config
-    { bound :: !(Limit Natural)
-    -- ^ maximum number of solutions
+    { -- | maximum number of solutions
+      bound :: !(Limit Natural)
     , searchType :: !SearchType
     }
 

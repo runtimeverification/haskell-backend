@@ -27,18 +27,18 @@ import Prelude.Kore hiding (
  )
 
 data Sort = Sort
-    { hook :: !Hook
-    -- ^ The builtin sort hooked to the sort.
-    , smtlib :: !Smtlib
-    -- ^ The user-defined translation of the sort for SMT.
-    , unit :: !Unit
-    -- ^ The unit symbol associated with the sort.
-    , element :: !Element
-    -- ^ The element symbol associated with the sort.
-    , concat :: !Concat
-    -- ^ The concat symbol associated with the sort.
-    , hasDomainValues :: !HasDomainValues
-    -- ^ whether the sort has domain values
+    { -- | The builtin sort hooked to the sort.
+      hook :: !Hook
+    , -- | The user-defined translation of the sort for SMT.
+      smtlib :: !Smtlib
+    , -- | The unit symbol associated with the sort.
+      unit :: !Unit
+    , -- | The element symbol associated with the sort.
+      element :: !Element
+    , -- | The concat symbol associated with the sort.
+      concat :: !Concat
+    , -- | whether the sort has domain values
+      hasDomainValues :: !HasDomainValues
     }
     deriving stock (Eq, Generic, Ord, Show)
 

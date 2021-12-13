@@ -64,16 +64,16 @@ envName :: String
 envName = "KORE_MATCH_DISJUNCTION_OPTS"
 
 data KoreMatchDisjunctionOptions = KoreMatchDisjunctionOptions
-    { definitionFileName :: !FilePath
-    -- ^ Name of file containing a definition to verify and use for execution
-    , disjunctionFileName :: !FilePath
-    -- ^ Name of file containing a disjunction to verify and use for matching
-    , matchFileName :: !FilePath
-    -- ^ Name of file used to match with disjunction
-    , outputFileName :: !(Maybe FilePath)
-    -- ^ Name for file to contain the output pattern
-    , mainModuleName :: !ModuleName
-    -- ^ The name of the main module in the definition
+    { -- | Name of file containing a definition to verify and use for execution
+      definitionFileName :: !FilePath
+    , -- | Name of file containing a disjunction to verify and use for matching
+      disjunctionFileName :: !FilePath
+    , -- | Name of file used to match with disjunction
+      matchFileName :: !FilePath
+    , -- | Name for file to contain the output pattern
+      outputFileName :: !(Maybe FilePath)
+    , -- | The name of the main module in the definition
+      mainModuleName :: !ModuleName
     , bugReportOption :: !BugReportOption
     , koreLogOptions :: !KoreLogOptions
     }

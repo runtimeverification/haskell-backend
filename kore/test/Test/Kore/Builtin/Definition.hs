@@ -871,7 +871,6 @@ ripemd160Krypto ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
-
 -- -------------------------------------------------------------
 
 -- * Sorts

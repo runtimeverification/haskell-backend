@@ -131,17 +131,17 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
            , IndexedModule pat declAtts axiomAtts
            )
          ]
-    , indexedModuleHookedIdentifiers ::
+    , -- | set of hooked identifiers
+      indexedModuleHookedIdentifiers ::
         !(Set.Set Id)
-    -- ^ set of hooked identifiers
     , -- TODO (thomas.tuegel): Having multiple identifiers hooked to the same
-    -- builtin is not actually valid, but the index must admit invalid data
-    -- because verification only happens after.
+      -- builtin is not actually valid, but the index must admit invalid data
+      -- because verification only happens after.
 
-    indexedModuleHooks ::
+      -- | map from builtin domain (symbol and sort) identifiers to the hooked
+      -- identifiers
+      indexedModuleHooks ::
         !(Map.Map Text [Id])
-    -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
-    -- identifiers
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
 

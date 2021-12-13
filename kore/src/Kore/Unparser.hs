@@ -78,8 +78,8 @@ instance Unparse a => Unparse (Const a child) where
     unparse2 (Const a) = unparse2 a
 
 instance Unparse Void where
-    unparse = \case {}
-    unparse2 = \case {}
+    unparse = \case
+    unparse2 = \case
 
 {- | Unparse a 'Generic' type with 'unparse'.
 

@@ -23,10 +23,10 @@ import System.IO (
  )
 
 data KoreFormatOptions = KoreFormatOptions
-    { fileName :: FilePath
-    -- ^ file to unparse
-    , width :: Int
-    -- ^ line width
+    { -- | file to unparse
+      fileName :: FilePath
+    , -- | line width
+      width :: Int
     }
 
 commandLine :: Parser KoreFormatOptions

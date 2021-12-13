@@ -218,8 +218,8 @@ evaluateBuiltin
             case result of
                 AttemptedAxiom.NotApplicable
                     | App_ appHead children <- patt
-                    , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
-                    , all isValue children ->
+                      , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
+                      , all isValue children ->
                         (error . show . Pretty.vsep)
                             [ "Expecting hook "
                                 <> Pretty.squotes (Pretty.pretty hook_)

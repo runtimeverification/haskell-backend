@@ -59,26 +59,26 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 
 -- | Options for parsing and verifying a pattern.
 data PatternOptions = PatternOptions
-    { patternFileNames :: ![FilePath]
-    -- ^ name of file containing a pattern to parse and verify
-    , mainModuleName :: !Text
-    -- ^ the name of the main module in the definition
+    { -- | name of file containing a pattern to parse and verify
+      patternFileNames :: ![FilePath]
+    , -- | the name of the main module in the definition
+      mainModuleName :: !Text
     }
 
 -- | Main options record
 data KoreParserOptions = KoreParserOptions
-    { fileName :: !FilePath
-    -- ^ Name for a file containing a definition to parse and verify
-    , patternOpt :: !(Maybe PatternOptions)
-    -- ^ Optionally, parse and verify a pattern relative to the definition.
-    , willPrintDefinition :: !Bool
-    -- ^ Option to print definition
-    , willPrintPattern :: !Bool
-    -- ^ Option to print pattern
-    , willVerify :: !Bool
-    -- ^ Option to verify definition
-    , appKore :: !Bool
-    -- ^ Option to print in applicative Kore syntax
+    { -- | Name for a file containing a definition to parse and verify
+      fileName :: !FilePath
+    , -- | Optionally, parse and verify a pattern relative to the definition.
+      patternOpt :: !(Maybe PatternOptions)
+    , -- | Option to print definition
+      willPrintDefinition :: !Bool
+    , -- | Option to print pattern
+      willPrintPattern :: !Bool
+    , -- | Option to verify definition
+      willVerify :: !Bool
+    , -- | Option to print in applicative Kore syntax
+      appKore :: !Bool
     }
 
 parsePatternOptions :: Parser PatternOptions

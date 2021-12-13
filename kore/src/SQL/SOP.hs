@@ -481,7 +481,7 @@ productTypeFrom ::
 productTypeFrom a =
     case ns of
         Z np -> np
-        S other -> case other of {}
+        S other -> case other of
   where
     ns :: NS (NP I) '[fields]
     SOP.SOP ns = SOP.from a

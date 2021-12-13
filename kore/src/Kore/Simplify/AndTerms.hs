@@ -541,10 +541,10 @@ matchVariableFunctionEquals ::
     Maybe VariableFunctionEquals
 matchVariableFunctionEquals first second
     | ElemVar_ var <- first
-    , isFunctionPattern second =
+      , isFunctionPattern second =
         Just VariableFunctionEquals{term1 = first, term2 = second, var}
     | ElemVar_ var <- second
-    , isFunctionPattern first =
+      , isFunctionPattern first =
         Just VariableFunctionEquals{term1 = second, term2 = first, var}
     | otherwise = Nothing
 {-# INLINE matchVariableFunctionEquals #-}
@@ -611,7 +611,7 @@ matchInj ::
     Maybe UnifyInjData
 matchInj injSimplifier first second
     | Inj_ inj1 <- first
-    , Inj_ inj2 <- second =
+      , Inj_ inj2 <- second =
         UnifyInjData first second
             <$> matchInjs injSimplifier inj1 inj2
     | otherwise = Nothing
@@ -685,12 +685,12 @@ matchConstructorSortInjectionAndEquals ::
     Maybe ConstructorSortInjectionAndEquals
 matchConstructorSortInjectionAndEquals first second
     | Inj_ _ <- first
-    , App_ symbol _ <- second
-    , Symbol.isConstructor symbol =
+      , App_ symbol _ <- second
+      , Symbol.isConstructor symbol =
         Just ConstructorSortInjectionAndEquals{term1 = first, term2 = second}
     | Inj_ _ <- second
-    , App_ symbol _ <- first
-    , Symbol.isConstructor symbol =
+      , App_ symbol _ <- first
+      , Symbol.isConstructor symbol =
         Just ConstructorSortInjectionAndEquals{term1 = first, term2 = second}
     | otherwise = Nothing
 {-# INLINE matchConstructorSortInjectionAndEquals #-}
@@ -792,12 +792,12 @@ matchDomainValueAndConstructorErrors ::
     Maybe DVConstrError
 matchDomainValueAndConstructorErrors first second
     | DV_ _ _ <- first
-    , App_ secondHead _ <- second
-    , Symbol.isConstructor secondHead =
+      , App_ secondHead _ <- second
+      , Symbol.isConstructor secondHead =
         Just $ DVConstr first second
     | App_ firstHead _ <- first
-    , Symbol.isConstructor firstHead
-    , DV_ _ _ <- second =
+      , Symbol.isConstructor firstHead
+      , DV_ _ _ <- second =
         Just $ ConstrDV first second
     | otherwise = Nothing
 
@@ -850,8 +850,8 @@ matchDomainValue ::
     Maybe UnifyDomainValue
 matchDomainValue term1 term2
     | DV_ sort1 val1 <- term1
-    , DV_ sort2 val2 <- term2
-    , sort1 == sort2 =
+      , DV_ sort2 val2 <- term2
+      , sort1 == sort2 =
         Just UnifyDomainValue{val1, val2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchDomainValue #-}
@@ -902,7 +902,7 @@ matchStringLiteral ::
     Maybe UnifyStringLiteral
 matchStringLiteral term1 term2
     | StringLiteral_ txt1 <- term1
-    , StringLiteral_ txt2 <- term2 =
+      , StringLiteral_ txt2 <- term2 =
         Just UnifyStringLiteral{txt1, txt2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchStringLiteral #-}
@@ -936,7 +936,7 @@ matchFunctionAnd ::
     Maybe FunctionAnd
 matchFunctionAnd term1 term2
     | isFunctionPattern term1
-    , isFunctionPattern term2 =
+      , isFunctionPattern term2 =
         Just FunctionAnd{term1, term2}
     | otherwise = Nothing
 {-# INLINE matchFunctionAnd #-}

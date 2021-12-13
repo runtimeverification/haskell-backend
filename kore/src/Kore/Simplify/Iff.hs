@@ -133,7 +133,7 @@ makeEvaluateNonBoolIff
         , substitution = secondSubstitution
         }
         | isTop firstTerm
-        , isTop secondTerm =
+          , isTop secondTerm =
             OrPattern.fromPatterns
                 [ Conditional
                     { term = firstTerm
