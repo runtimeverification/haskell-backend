@@ -218,12 +218,12 @@ test_SubstitutionSimplifier =
     test ::
         HasCallStack =>
         TestName ->
-        -- | Test input
+        -- Test input
         [ ( SomeVariable RewritingVariableName
           , TermLike RewritingVariableName
           )
         ] ->
-        -- | Expected normalized, denormalized outputs
+        -- Expected normalized, denormalized outputs
         [Normalization RewritingVariableName] ->
         TestTree
     test

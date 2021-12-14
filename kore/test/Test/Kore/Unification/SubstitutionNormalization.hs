@@ -338,9 +338,9 @@ test_normalize =
     test ::
         HasCallStack =>
         TestName ->
-        -- | Test input
+        -- Test input
         Map (SomeVariable VariableName) (TermLike VariableName) ->
-        -- | Expected output
+        -- Expected output
         Normalization VariableName ->
         TestTree
     test testName input normalization =
@@ -352,7 +352,7 @@ test_normalize =
     testBottom ::
         HasCallStack =>
         TestName ->
-        -- | Test input
+        -- Test input
         Map (SomeVariable VariableName) (TermLike VariableName) ->
         TestTree
     testBottom testName input =

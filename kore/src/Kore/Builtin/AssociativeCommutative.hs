@@ -1358,9 +1358,9 @@ unifyEqualsElementLists
             return (result, [])
       where
         unifyWithPermutations ::
-            -- | First structure elements
+            -- First structure elements
             [ConcreteOrWithVariable normalized variable] ->
-            -- | Second structure elements
+            -- Second structure elements
             [ConcreteOrWithVariable normalized variable] ->
             unifier
                 ( Conditional
