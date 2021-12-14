@@ -339,7 +339,7 @@ executionHistoryStep transit prim exe@ExecutionGraph{graph} node
     nodeIsNotLeaf = Graph.outdeg graph node > 0
 
     mkChildNode ::
-        -- | Child node identifier and configuration
+        -- Child node identifier and configuration
         (config, Seq rule) ->
         ChildNode config rule
     mkChildNode (config, rules) =

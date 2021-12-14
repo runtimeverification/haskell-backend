@@ -265,9 +265,9 @@ test_substr =
     testSubstrBytes ::
         HasCallStack =>
         TestName ->
-        -- | arguments of @substrBytes@ symbol
+        -- arguments of @substrBytes@ symbol
         [TermLike RewritingVariableName] ->
-        -- | expected result
+        -- expected result
         OrPattern RewritingVariableName ->
         TestTree
     testSubstrBytes testName = testBytes testName substrBytesSymbol
@@ -589,9 +589,9 @@ int2bytesData =
     , (128, True, "\x80")
     , (-128, True, "\x80")
     , (2, True, "\x02")
-    , (- 2, True, "\xfe")
+    , (-2, True, "\xfe")
     , (16, True, "\x10")
-    , (- 16, True, "\xf0")
+    , (-16, True, "\xf0")
     , (128, True, "\x00\x80")
     , (-128, True, "\xff\x80")
     , (128, False, "\x80\x00")

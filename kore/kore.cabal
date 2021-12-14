@@ -116,7 +116,7 @@ common library
   build-depends: aeson >=1.4
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
-  build-depends: co-log >=0.3
+  build-depends: co-log >=0.4
   build-depends: comonad >=5.0
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
