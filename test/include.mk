@@ -153,6 +153,16 @@ test-%.sh.out: $(TEST_DIR)/test-%.sh
 
 test: test-k
 
+test-simplifierx: test-k-simplifierx
+
+SIMPLIFIERX := false
+KORE_EXEC_OPTS += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
+KORE_REPl_OPTS += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
+KORE_CHECK_FUNCTIONS_OPTS += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
+KORE_MATCH_DISJUNCTION += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
+
+test-k-simplifierx: SIMPLIFIERX = true $(OUTS)
+
 test-k: $(OUTS)
 
 golden: $(GOLDEN)
@@ -160,4 +170,4 @@ golden: $(GOLDEN)
 clean:
 	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
 
-.PHONY: test-k test golden clean
+.PHONY: test-k test-k-simplifierx test-simplifierx test golden clean
