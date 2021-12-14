@@ -207,6 +207,8 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                             loadDefinitions [definitionFileName, specFile]
                         indexedModule <- loadModule mainModuleName definition
                         specDefIndexedModule <- loadModule specModule definition
+                        let validatedDefinition =
+                                addExtraAxioms indexedModule specDefIndexedModule
 
                         let smtConfig =
                                 SMT.defaultConfig
@@ -241,12 +243,12 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                         SMT.runSMT
                             smtConfig
                             ( give
-                                (MetadataTools.build indexedModule)
-                                (declareSMTLemmas indexedModule)
+                                (MetadataTools.build validatedDefinition)
+                                (declareSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
                                 simplifierx
-                                indexedModule
+                                validatedDefinition
                                 specDefIndexedModule
                                 Nothing
                                 mvarLogAction
