@@ -155,13 +155,11 @@ test: test-k
 
 test-simplifierx: test-k-simplifierx
 
-SIMPLIFIERX := false
-KORE_EXEC_OPTS += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
-KORE_REPl_OPTS += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
-KORE_CHECK_FUNCTIONS_OPTS += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
-KORE_MATCH_DISJUNCTION += $(ifeq ($(SIMPLIFIERX), true) --simplifierx)
-
-test-k-simplifierx: SIMPLIFIERX = true $(OUTS)
+test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx
+test-k-simplifierx: KORE_REPl_OPTS += --simplifierx
+test-k-simplifierx: KORE_MATCH_DISJUNCTION_OPTS += --simplifierx
+test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
+test-k-simplifierx: $(OUTS)
 
 test-k: $(OUTS)
 
