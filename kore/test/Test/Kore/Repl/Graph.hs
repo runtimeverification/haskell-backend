@@ -2,6 +2,7 @@ module Test.Kore.Repl.Graph (
     test_graph,
 ) where
 
+import Control.Monad.Counter (Natural)
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -159,7 +160,7 @@ tree2 =
         , (4, 11)
         ]
 
-g1', g2', chain', tree1', tree2' :: Gr () (Maybe ())
+g1', g2', chain', tree1', tree2' :: Gr () (Either Natural ())
 g1' = fromJust $ smoothOutGraph g1
 g2' = fromJust $ smoothOutGraph g2
 chain' = fromJust $ smoothOutGraph chain
@@ -171,16 +172,16 @@ expectedG1'
     , expectedChain'
     , expectedTree1'
     , expectedTree2' ::
-        Gr () (Maybe ())
+        Gr () (Either Natural ())
 expectedG1' = Graph.mkGraph [(1, ())] []
 expectedG2' =
     Graph.mkGraph
         [(1, ()), (2, ())]
-        [(1, 2, Just ())]
+        [(1, 2, Right ())]
 expectedChain' =
     Graph.mkGraph
         [(0, ()), (100, ())]
-        [(0, 100, Nothing)]
+        [(0, 100, Left 99)]
 expectedTree1' =
     Graph.mkGraph
         [ (0, ())
@@ -195,16 +196,16 @@ expectedTree1' =
         , (10, ())
         , (13, ())
         ]
-        [ (0, 1, Just ())
-        , (1, 2, Just ())
-        , (1, 3, Just ())
-        , (2, 5, Nothing)
-        , (5, 6, Just ())
-        , (5, 7, Just ())
-        , (5, 8, Just ())
-        , (6, 9, Just ())
-        , (8, 10, Just ())
-        , (3, 13, Nothing)
+        [ (0, 1, Right ())
+        , (1, 2, Right ())
+        , (1, 3, Right ())
+        , (2, 5, Left 1)
+        , (5, 6, Right ())
+        , (5, 7, Right ())
+        , (5, 8, Right ())
+        , (6, 9, Right ())
+        , (8, 10, Right ())
+        , (3, 13, Left 2)
         ]
 expectedTree2' =
     Graph.mkGraph
@@ -217,11 +218,11 @@ expectedTree2' =
         , (10, ())
         , (9, ())
         ]
-        [ (0, 1, Just ())
-        , (0, 2, Just ())
-        , (0, 3, Just ())
-        , (0, 4, Just ())
-        , (2, 10, Nothing)
-        , (3, 9, Nothing)
-        , (4, 11, Just ())
+        [ (0, 1, Right ())
+        , (0, 2, Right ())
+        , (0, 3, Right ())
+        , (0, 4, Right ())
+        , (2, 10, Left 3)
+        , (3, 9, Left 1)
+        , (4, 11, Right ())
         ]

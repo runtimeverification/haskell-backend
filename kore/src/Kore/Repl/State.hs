@@ -80,6 +80,7 @@ import Data.Graph.Inductive.PatriciaTree (
 import qualified Data.Graph.Inductive.Query.DFS as Graph
 import Data.List.Extra (
     findIndex,
+    genericLength,
     groupSort,
  )
 import Data.Map.Strict (
@@ -340,13 +341,13 @@ updateExecutionGraph gph = do
  with its edges pointed "downwards" (from the root)
  and is partially ordered (parent(node) < node).
 -}
-smoothOutGraph :: Gr node edge -> Maybe (Gr node (Maybe edge))
+smoothOutGraph :: Gr node edge -> Maybe (Gr node (Either Natural edge))
 smoothOutGraph graph = do
     let subGraph = Graph.nfilter inOutDegreeOne graph
     edgesToAdd <-
         traverse (componentToEdge subGraph) (Graph.components subGraph)
     let nodesToRemove = Graph.nodes subGraph
-        liftedSubGraph = Graph.emap Just (Graph.delNodes nodesToRemove graph)
+        liftedSubGraph = Graph.emap Right (Graph.delNodes nodesToRemove graph)
         liftedGraph = Graph.insEdges edgesToAdd liftedSubGraph
     return liftedGraph
   where
@@ -358,23 +359,24 @@ smoothOutGraph graph = do
     componentToEdge ::
         Gr node edge ->
         [Graph.Node] ->
-        Maybe (Graph.LEdge (Maybe edge))
+        Maybe (Graph.LEdge (Either Natural edge))
     componentToEdge subGraph nodes =
         case filter (isTerminalNode subGraph) nodes of
-            [node] -> makeNewEdge node node
+            [node] -> makeNewEdge node 1 node
             [node1, node2] ->
                 if node1 < node2
-                    then makeNewEdge node1 node2
-                    else makeNewEdge node2 node1
+                    then makeNewEdge node1 (genericLength nodes) node2
+                    else makeNewEdge node2 (genericLength nodes) node1
             _ -> Nothing
     makeNewEdge ::
         Graph.Node ->
+        Natural ->
         Graph.Node ->
-        Maybe (Graph.LEdge (Maybe edge))
-    makeNewEdge node1 node2 = do
+        Maybe (Graph.LEdge (Either Natural edge))
+    makeNewEdge node1 nrOfNodes node2 = do
         nodePre <- headMay (Graph.pre graph node1)
         nodeSuc <- headMay (Graph.suc graph node2)
-        return (nodePre, nodeSuc, Nothing)
+        return (nodePre, nodeSuc, Left nrOfNodes)
     isBranchingNode :: Graph.Node -> Bool
     isBranchingNode node =
         Graph.outdeg graph node > 1

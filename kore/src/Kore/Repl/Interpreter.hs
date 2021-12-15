@@ -490,7 +490,7 @@ showGraph view mfile out = do
     processedGraph <-
         case view of
             Just Expanded ->
-                return $ Graph.emap Just graph
+                return $ Graph.emap Right graph
             _ ->
                 maybe (showOriginalGraph graph) return (smoothOutGraph graph)
     installed <- liftIO Graph.isGraphvizInstalled
@@ -507,7 +507,7 @@ showGraph view mfile out = do
         putStrLn'
             "Could not process execution graph for visualization.\
             \ Will default to showing the full graph."
-        return $ Graph.emap Just graph
+        return $ Graph.emap Right graph
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps ::
@@ -1448,7 +1448,7 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (Either Natural (Seq axiom)) ->
     IO ()
 showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
@@ -1459,7 +1459,7 @@ showDotGraph gr =
 showDotGraphCatchException ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (Either Natural (Seq axiom)) ->
     IO ()
 showDotGraphCatchException gr =
     catch (showDotGraph gr) $ \(e :: GraphvizException) ->
@@ -1479,7 +1479,7 @@ showDotGraphCatchException gr =
 saveDotGraph ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (Either Natural (Seq axiom)) ->
     Graph.GraphvizOutput ->
     FilePath ->
     IO ()
@@ -1499,17 +1499,17 @@ saveDotGraph gr format file =
 graphParams ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (Either Natural (Seq axiom)) ->
     Graph.GraphvizParams
         Graph.Node
         CommonClaimState
-        (Maybe (Seq axiom))
+        (Either Natural (Seq axiom))
         ()
         CommonClaimState
 graphParams gr =
     Graph.nonClusteredParams
         { Graph.fmtEdge = \(_, resN, l) ->
-            [ Graph.textLabel (maybe "" (ruleIndex resN) l)
+            [ Graph.textLabel (either nrOfNodes (ruleIndex resN) l)
             , Graph.Attr.Style [dottedOrSolidEdge l]
             ]
         , Graph.fmtNode = \(_, ps) ->
@@ -1521,9 +1521,13 @@ graphParams gr =
             ]
         }
   where
+    nrOfNodes :: Natural -> Text.Lazy.Text
+    nrOfNodes quantity
+        | quantity < 1 = ""
+        | otherwise = "(" <> Text.Lazy.pack (show quantity) <> " nodes omitted)"
     dottedOrSolidEdge lbl =
-        maybe
-            (Graph.Attr.SItem Graph.Attr.Dotted mempty)
+        either
+            (const $ Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
     ruleIndex resultNode lbl =
