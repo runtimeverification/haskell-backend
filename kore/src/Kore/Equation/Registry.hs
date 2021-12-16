@@ -23,8 +23,8 @@ import Kore.Attribute.Axiom (
     Assoc (Assoc),
     Comm (Comm),
     Idem (Idem),
-    Unit (Unit),
     NonExecutable (NonExecutable),
+    Unit (Unit),
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
