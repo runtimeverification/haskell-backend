@@ -106,6 +106,7 @@
           "Kore/Attribute/Axiom"
           "Kore/Attribute/Axiom/Concrete"
           "Kore/Attribute/Axiom/Constructor"
+          "Kore/Attribute/Axiom/NonExecutable"
           "Kore/Attribute/Axiom/Symbolic"
           "Kore/Attribute/Axiom/Unit"
           "Kore/Attribute/Comm"
