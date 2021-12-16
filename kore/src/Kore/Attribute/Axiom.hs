@@ -26,6 +26,7 @@ module Kore.Attribute.Axiom (
     RuleIndex (..),
     RuleIndexCase (..),
     UniqueId (..),
+    NonExecutable (..),
     PriorityAttributes (..),
     axiomSymbolToSymbolOrAlias,
     mapAxiomVariables,

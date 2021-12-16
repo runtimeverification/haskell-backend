@@ -24,6 +24,7 @@ import Kore.Attribute.Axiom (
     Comm (Comm),
     Idem (Idem),
     Unit (Unit),
+    NonExecutable (NonExecutable),
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
@@ -115,11 +116,11 @@ partitionEquations equations =
             . sortOn Equation.equationPriority
             $ equations'
 
-{- | Should we ignore the 'EqualityRule' for evaluation or simplification?
+{- | Should we ignore the 'Equation' for evaluation or simplification?
 
-@ignoreEqualityRule@ returns 'True' if the 'EqualityRule' should not be used in
+@ignoreEquation@ returns 'True' if the 'EqualityRule' should not be used in
 evaluation or simplification, such as if it is an associativity or commutativity
-axiom.
+axiom, or if it was marked non-executable.
 -}
 ignoreEquation :: Equation RewritingVariableName -> Bool
 ignoreEquation Equation{attributes}
@@ -129,6 +130,7 @@ ignoreEquation Equation{attributes}
     -- extraction of their axioms.
     | isUnit = True
     | isIdem = True
+    | isNonExecutable = True
     | Just _ <- getOverload = False
     | otherwise = False
   where
@@ -137,3 +139,4 @@ ignoreEquation Equation{attributes}
     Unit{isUnit} = Attribute.unit attributes
     Idem{isIdem} = Attribute.idem attributes
     Overload{getOverload} = Attribute.overload attributes
+    NonExecutable{isNonExecutable} = Attribute.nonExecutable attributes
