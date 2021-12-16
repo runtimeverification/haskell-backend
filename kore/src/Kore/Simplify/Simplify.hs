@@ -41,6 +41,9 @@ module Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     makeEvaluateCeil,
 
+    -- * Experimental simplifier,
+    SimplifierXSwitch (..),
+
     -- * Re-exports
     MonadSMT,
     MonadLog,
@@ -255,6 +258,13 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     putCache = lift . putCache
     {-# INLINE putCache #-}
 
+    askSimplifierXSwitch :: m SimplifierXSwitch
+    default askSimplifierXSwitch ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        m SimplifierXSwitch
+    askSimplifierXSwitch = lift askSimplifierXSwitch
+    {-# INLINE askSimplifierXSwitch #-}
+
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
@@ -281,6 +291,12 @@ instance MonadSimplify m => MonadSimplify (ReaderT r m)
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 instance MonadSimplify m => MonadSimplify (RWST r () s m)
+
+-- * Experimental simplifier
+data SimplifierXSwitch
+    = EnabledSimplifierX
+    | DisabledSimplifierX
+    deriving stock (Show, Eq)
 
 -- * Term simplifiers
 

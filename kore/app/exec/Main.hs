@@ -574,9 +574,10 @@ main = do
 {- | Use the parsed 'KoreExecOptions' to set up output and logging, then
 dispatch the requested command.
 -}
-mainWithOptions :: KoreExecOptions -> IO ()
-mainWithOptions execOptions = do
-    let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} = execOptions
+mainWithOptions :: LocalOptions KoreExecOptions -> IO ()
+mainWithOptions LocalOptions{execOptions, simplifierx} = do
+    let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} =
+            execOptions
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tmpDir -> do
@@ -586,7 +587,7 @@ mainWithOptions execOptions = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch execOptions'
+                mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog tmpDir koreLogOptions
@@ -612,7 +613,7 @@ mainWithOptions execOptions = do
                 throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
-mainDispatch :: KoreExecOptions -> Main ExitCode
+mainDispatch :: LocalOptions KoreExecOptions -> Main ExitCode
 mainDispatch = warnProductivity . mainDispatchWorker
   where
     warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
@@ -620,28 +621,30 @@ mainDispatch = warnProductivity . mainDispatchWorker
         (kFileLocations, exitCode) <- action
         warnIfLowProductivity kFileLocations
         return exitCode
-    mainDispatchWorker :: KoreExecOptions -> Main (KFileLocations, ExitCode)
-    mainDispatchWorker execOptions
+    mainDispatchWorker ::
+        LocalOptions KoreExecOptions ->
+        Main (KFileLocations, ExitCode)
+    mainDispatchWorker localOptions@LocalOptions{execOptions}
         | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
             if bmc
-                then koreBmc execOptions proveOptions
-                else koreProve execOptions proveOptions
+                then koreBmc localOptions proveOptions
+                else koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
-            koreSearch execOptions searchOptions
+            koreSearch localOptions searchOptions
         | Just mergeOptions <- koreMergeOptions =
-            koreMerge execOptions mergeOptions
+            koreMerge localOptions mergeOptions
         | otherwise =
-            koreRun execOptions
+            koreRun localOptions
       where
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
         KoreExecOptions{koreMergeOptions} = execOptions
 
 koreSearch ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch execOptions searchOptions = do
+koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -652,7 +655,14 @@ koreSearch execOptions searchOptions = do
     initial <- loadPattern mainModule patternFileName
     final <-
         execute execOptions mainModule $
-            search depthLimit breadthLimit mainModule initial target config
+            search
+                simplifierx
+                depthLimit
+                breadthLimit
+                mainModule
+                initial
+                target
+                config
     lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, ExitSuccess)
   where
@@ -660,8 +670,8 @@ koreSearch execOptions searchOptions = do
     config = Search.Config{bound, searchType}
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
-koreRun :: KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun execOptions = do
+koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -670,17 +680,17 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <-
         execute execOptions mainModule $
-            exec depthLimit breadthLimit mainModule strategy initial
+            exec simplifierx depthLimit breadthLimit mainModule strategy initial
     lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
 koreProve ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreProve execOptions proveOptions = do
+koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -696,6 +706,7 @@ koreProve execOptions proveOptions = do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
+            simplifierx
             graphSearch
             breadthLimit
             depthLimit
@@ -785,10 +796,10 @@ koreProve execOptions proveOptions = do
                 }
 
 koreBmc ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreBmc execOptions proveOptions = do
+koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -801,6 +812,7 @@ koreBmc execOptions proveOptions = do
             KoreProveOptions{graphSearch} = proveOptions
         checkResult <-
             boundedModelCheck
+                simplifierx
                 breadthLimit
                 depthLimit
                 mainModule
@@ -819,10 +831,10 @@ koreBmc execOptions proveOptions = do
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
 koreMerge ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreMergeOptions ->
     Main (KFileLocations, ExitCode)
-koreMerge execOptions mergeOptions = do
+koreMerge LocalOptions{execOptions, simplifierx} mergeOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -833,8 +845,12 @@ koreMerge execOptions mergeOptions = do
     eitherMergedRule <- execute execOptions mainModule $
         case maybeBatchSize of
             Just batchSize ->
-                mergeRulesConsecutiveBatches batchSize mainModule ruleIds
-            Nothing -> mergeAllRules mainModule ruleIds
+                mergeRulesConsecutiveBatches
+                    simplifierx
+                    batchSize
+                    mainModule
+                    ruleIds
+            Nothing -> mergeAllRules simplifierx mainModule ruleIds
     case eitherMergedRule of
         (Left err) -> do
             lift $ Text.hPutStrLn stderr err

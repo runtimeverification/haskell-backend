@@ -88,6 +88,7 @@ data Env simplifier = Env
     , memo :: !(Memo.Self simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
+    , simplifierXSwitch :: !SimplifierXSwitch
     }
 
 {- | @Simplifier@ represents a simplification action.
@@ -174,6 +175,9 @@ instance
     putCache = put
     {-# INLINE putCache #-}
 
+    askSimplifierXSwitch = asks simplifierXSwitch
+    {-# INLINE askSimplifierXSwitch #-}
+
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
     Monad smt =>
@@ -202,10 +206,11 @@ that may branch.
 evalSimplifier ::
     forall smt a.
     (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
+    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     SimplifierT smt a ->
     smt a
-evalSimplifier verifiedModule simplifier = do
+evalSimplifier simplifierXSwitch verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
     runSimplifier env simplifier
   where
@@ -218,6 +223,7 @@ evalSimplifier verifiedModule simplifier = do
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
+            , simplifierXSwitch
             }
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}
@@ -282,6 +288,7 @@ evalSimplifier verifiedModule simplifier = do
                 , memo
                 , injSimplifier
                 , overloadSimplifier
+                , simplifierXSwitch
                 }
 
 mapSimplifierT ::
