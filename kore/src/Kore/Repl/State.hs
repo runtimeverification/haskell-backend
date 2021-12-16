@@ -6,6 +6,10 @@ License     : BSD-3-Clause
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 module Kore.Repl.State (
+    EdgeLabel (..),
+    eitherEdgeLabel,
+    ommitedNodes,
+    individualLabel,
     emptyExecutionGraph,
     getClaimByIndex,
     getAxiomByIndex,
@@ -341,13 +345,13 @@ updateExecutionGraph gph = do
  with its edges pointed "downwards" (from the root)
  and is partially ordered (parent(node) < node).
 -}
-smoothOutGraph :: Gr node edge -> Maybe (Gr node (Either Natural edge))
+smoothOutGraph :: Gr node edgeLabel -> Maybe (Gr node (EdgeLabel edgeLabel))
 smoothOutGraph graph = do
     let subGraph = Graph.nfilter inOutDegreeOne graph
     edgesToAdd <-
         traverse (componentToEdge subGraph) (Graph.components subGraph)
     let nodesToRemove = Graph.nodes subGraph
-        liftedSubGraph = Graph.emap Right (Graph.delNodes nodesToRemove graph)
+        liftedSubGraph = Graph.emap IndividualLabel (Graph.delNodes nodesToRemove graph)
         liftedGraph = Graph.insEdges edgesToAdd liftedSubGraph
     return liftedGraph
   where
@@ -357,9 +361,9 @@ smoothOutGraph graph = do
             && Graph.indeg graph node == 1
             && not (all isBranchingNode $ Graph.pre graph node)
     componentToEdge ::
-        Gr node edge ->
+        Gr node edgeLabel ->
         [Graph.Node] ->
-        Maybe (Graph.LEdge (Either Natural edge))
+        Maybe (Graph.LEdge (EdgeLabel edgeLabel))
     componentToEdge subGraph nodes =
         case filter (isTerminalNode subGraph) nodes of
             [node] -> makeNewEdge node 1 node
@@ -372,17 +376,38 @@ smoothOutGraph graph = do
         Graph.Node ->
         Natural ->
         Graph.Node ->
-        Maybe (Graph.LEdge (Either Natural edge))
+        Maybe (Graph.LEdge (EdgeLabel edgeLabel))
     makeNewEdge node1 nrOfNodes node2 = do
         nodePre <- headMay (Graph.pre graph node1)
         nodeSuc <- headMay (Graph.suc graph node2)
-        return (nodePre, nodeSuc, Left nrOfNodes)
+        return (nodePre, nodeSuc, OmmitedNodes nrOfNodes)
     isBranchingNode :: Graph.Node -> Bool
     isBranchingNode node =
         Graph.outdeg graph node > 1
-    isTerminalNode :: Gr node edge -> Graph.Node -> Bool
+    isTerminalNode :: Gr node edgeLabel -> Graph.Node -> Bool
     isTerminalNode graph' node =
         Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
+
+data EdgeLabel individualLabel
+    = OmmitedNodes Natural
+    | IndividualLabel individualLabel
+    deriving stock (Eq, Ord)
+
+eitherEdgeLabel ::
+    (Natural -> a) ->
+    (individualLabel -> a) ->
+    EdgeLabel individualLabel ->
+    a
+eitherEdgeLabel f _ (OmmitedNodes quantity) = f quantity
+eitherEdgeLabel _ g (IndividualLabel label) = g label
+
+ommitedNodes :: EdgeLabel individualLabel -> Natural
+ommitedNodes (OmmitedNodes quantity) = quantity
+ommitedNodes _ = error "EdgeLabel.ommitedNodes: IndividualLabel"
+
+individualLabel :: EdgeLabel individualLabel -> individualLabel
+individualLabel (IndividualLabel label) = label
+individualLabel _ = error "EdgeLabel.individualLabel: OmmitedNodes"
 
 {- | Returns the first interesting branching node encountered by
 exploring the proof graph for 'n' steps over all branches, starting

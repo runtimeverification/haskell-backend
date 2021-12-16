@@ -2,7 +2,6 @@ module Test.Kore.Repl.Graph (
     test_graph,
 ) where
 
-import Control.Monad.Counter (Natural)
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -16,6 +15,7 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import Kore.Repl.State (
+    EdgeLabel (..),
     smoothOutGraph,
  )
 import Prelude.Kore
@@ -160,7 +160,7 @@ tree2 =
         , (4, 11)
         ]
 
-g1', g2', chain', tree1', tree2' :: Gr () (Either Natural ())
+g1', g2', chain', tree1', tree2' :: Gr () (EdgeLabel ())
 g1' = fromJust $ smoothOutGraph g1
 g2' = fromJust $ smoothOutGraph g2
 chain' = fromJust $ smoothOutGraph chain
@@ -172,16 +172,16 @@ expectedG1'
     , expectedChain'
     , expectedTree1'
     , expectedTree2' ::
-        Gr () (Either Natural ())
+        Gr () (EdgeLabel ())
 expectedG1' = Graph.mkGraph [(1, ())] []
 expectedG2' =
     Graph.mkGraph
         [(1, ()), (2, ())]
-        [(1, 2, Right ())]
+        [(1, 2, IndividualLabel ())]
 expectedChain' =
     Graph.mkGraph
         [(0, ()), (100, ())]
-        [(0, 100, Left 99)]
+        [(0, 100, OmmitedNodes 99)]
 expectedTree1' =
     Graph.mkGraph
         [ (0, ())
@@ -196,16 +196,16 @@ expectedTree1' =
         , (10, ())
         , (13, ())
         ]
-        [ (0, 1, Right ())
-        , (1, 2, Right ())
-        , (1, 3, Right ())
-        , (2, 5, Left 1)
-        , (5, 6, Right ())
-        , (5, 7, Right ())
-        , (5, 8, Right ())
-        , (6, 9, Right ())
-        , (8, 10, Right ())
-        , (3, 13, Left 2)
+        [ (0, 1, IndividualLabel ())
+        , (1, 2, IndividualLabel ())
+        , (1, 3, IndividualLabel ())
+        , (2, 5, OmmitedNodes 1)
+        , (5, 6, IndividualLabel ())
+        , (5, 7, IndividualLabel ())
+        , (5, 8, IndividualLabel ())
+        , (6, 9, IndividualLabel ())
+        , (8, 10, IndividualLabel ())
+        , (3, 13, OmmitedNodes 2)
         ]
 expectedTree2' =
     Graph.mkGraph
@@ -218,11 +218,11 @@ expectedTree2' =
         , (10, ())
         , (9, ())
         ]
-        [ (0, 1, Right ())
-        , (0, 2, Right ())
-        , (0, 3, Right ())
-        , (0, 4, Right ())
-        , (2, 10, Left 3)
-        , (3, 9, Left 1)
-        , (4, 11, Right ())
+        [ (0, 1, IndividualLabel ())
+        , (0, 2, IndividualLabel ())
+        , (0, 3, IndividualLabel ())
+        , (0, 4, IndividualLabel ())
+        , (2, 10, OmmitedNodes 3)
+        , (3, 9, OmmitedNodes 1)
+        , (4, 11, IndividualLabel ())
         ]
