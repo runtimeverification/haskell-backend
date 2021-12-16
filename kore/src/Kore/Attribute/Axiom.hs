@@ -47,6 +47,7 @@ import Kore.Attribute.Assoc
 import Kore.Attribute.Attributes
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
+import Kore.Attribute.Axiom.NonExecutable
 import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Axiom.Unit
 import Kore.Attribute.Comm
@@ -124,6 +125,8 @@ data Axiom symbol variable = Axiom
       uniqueId :: !UniqueId
     , -- | This is an owise evaluation rule.
       owise :: !Owise
+    , -- | Won't be used during execution.
+      nonExecutable :: !NonExecutable
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -155,6 +158,7 @@ instance Default (Axiom symbol variable) where
             , identifier = def
             , uniqueId = def
             , owise = def
+            , nonExecutable = def
             }
 
 instance
