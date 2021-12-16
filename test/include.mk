@@ -156,7 +156,7 @@ test: test-k
 test-simplifierx: test-k-simplifierx
 
 test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx
-test-k-simplifierx: KORE_REPl_OPTS += --simplifierx
+test-k-simplifierx: KORE_REPL_OPTS += --simplifierx
 test-k-simplifierx: KORE_MATCH_DISJUNCTION_OPTS += --simplifierx
 test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
 test-k-simplifierx: $(OUTS)
