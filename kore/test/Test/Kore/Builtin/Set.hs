@@ -508,9 +508,9 @@ test_difference_symbolic =
 
     evalDifference ::
         HasCallStack =>
-        -- | expected result
+        -- expected result
         Maybe (Pattern RewritingVariableName) ->
-        -- | arguments of 'differenceSet'
+        -- arguments of 'differenceSet'
         [TermLike RewritingVariableName] ->
         Assertion
     evalDifference expect args = do

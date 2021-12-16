@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-17.7
+resolver: lts-18.18
 
 nix:
   packages:
@@ -58,8 +58,9 @@ extra-deps:
   - witherable-0.3.5
   - witherable-class-0
 
-  - git: https://github.com/ttuegel/tasty-test-reporter.git
-    commit: e411234da88d3f32dfe1319c5edce478abf5115b
+  - co-log-0.4.0.1
+
+  - tasty-test-reporter-0.1.1.4
   - junit-xml-0.1.0.0
 
   - git: https://github.com/ttuegel/pipes-ghc-events.git

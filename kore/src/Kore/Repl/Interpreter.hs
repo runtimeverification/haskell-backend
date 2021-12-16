@@ -1346,7 +1346,7 @@ performStepNoBranching =
         -- Loop branch
         (n, SingleResult _) -> do
             res <- runStepper
-            pure $ Left (n -1, res)
+            pure $ Left (n - 1, res)
         -- Early exit when there is a branch or there is no next.
         (n, res) -> pure $ Right (n, res)
 
@@ -1366,8 +1366,8 @@ recursiveForcedStep n node
         updateExecutionGraph graph
         case result of
             NoResult -> pure ()
-            SingleResult sr -> (recursiveForcedStep $ n -1) sr
-            BranchResult xs -> traverse_ (recursiveForcedStep (n -1)) xs
+            SingleResult sr -> (recursiveForcedStep $ n - 1) sr
+            BranchResult xs -> traverse_ (recursiveForcedStep (n - 1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule ::
