@@ -16,6 +16,7 @@ import Control.Monad.Catch (
  )
 import GlobalMain (
     ExeName (..),
+    LocalOptions (..),
     loadDefinitions,
     loadModule,
     localOptions,
@@ -50,7 +51,6 @@ import Kore.Options (
     progDesc,
     str,
  )
-import Kore.Simplify.Data (evalSimplifier)
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -127,19 +127,27 @@ main = do
             checkerInfoModifiers
     mapM_ mainWithOptions $ localOptions options
 
-mainWithOptions :: KoreCheckerOptions -> IO ()
-mainWithOptions opts =
-    withBugReport exeName (bugReportOption opts) (koreCheckFunctions opts)
+mainWithOptions :: LocalOptions KoreCheckerOptions -> IO ()
+mainWithOptions localOptions@LocalOptions{execOptions} =
+    withBugReport
+        exeName
+        (bugReportOption execOptions)
+        (koreCheckFunctions localOptions)
         >>= exitWith
 
-koreCheckFunctions :: KoreCheckerOptions -> FilePath -> IO ExitCode
-koreCheckFunctions opts tmpDir =
+koreCheckFunctions :: LocalOptions KoreCheckerOptions -> FilePath -> IO ExitCode
+koreCheckFunctions LocalOptions{execOptions, simplifierx} tmpDir =
     do
-        definitions <- loadDefinitions [fileName opts]
-        loadedModule <- loadModule (mainModuleName opts) definitions
-        checkFunctions loadedModule
-            & evalSimplifier loadedModule
+        definitions <- loadDefinitions [fileName]
+        loadedModule <- loadModule mainModuleName definitions
+        checkFunctions simplifierx loadedModule
             & SMT.runSMT defaultConfig (pure ())
         return ExitSuccess
         & handle handleSomeException
-        & runKoreLog tmpDir (koreLogOptions opts)
+        & runKoreLog tmpDir koreLogOptions
+  where
+    KoreCheckerOptions
+        { fileName
+        , mainModuleName
+        , koreLogOptions
+        } = execOptions

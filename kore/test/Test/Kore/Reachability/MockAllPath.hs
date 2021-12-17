@@ -425,6 +425,7 @@ instance MonadSimplify AllPathIdentity where
     askOverloadSimplifier = undefined
     getCache = undefined
     putCache = undefined
+    askSimplifierXSwitch = undefined
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =

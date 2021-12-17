@@ -1,7 +1,7 @@
 include include.mk
 
 .PHONY: all kore clean docs haddock \
-		test test-kore test-k \
+		test test-kore test-k test-k-simplifierx test-simplifierx \
 		kore-exec kore-repl kore-parser kore-check-functions \
 		kore-format kore-match-disjunction kore-prof
 
@@ -55,6 +55,9 @@ coverage_report: test-kore
 
 test-k:
 	$(MAKE) -C test test
+
+test-k-simplifierx:
+	$(MAKE) -C test test-simplifierx
 
 clean:
 	$(STACK) clean --full

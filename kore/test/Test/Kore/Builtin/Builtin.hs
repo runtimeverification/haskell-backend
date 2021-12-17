@@ -241,6 +241,8 @@ testOverloadSimplifier :: OverloadSimplifier
 testOverloadSimplifier =
     mkOverloadSimplifier testOverloadGraph testInjSimplifier
 
+-- TODO(Ana): if needed, create copy with experimental simplifier
+-- enabled
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
@@ -250,6 +252,7 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier
+        , simplifierXSwitch = DisabledSimplifierX
         }
 
 simplify :: TermLike RewritingVariableName -> IO [Pattern RewritingVariableName]
