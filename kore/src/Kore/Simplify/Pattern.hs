@@ -7,6 +7,7 @@ module Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
     simplify,
     makeEvaluate,
+    simplifyPatternId,
 ) where
 
 import Control.Monad (
@@ -15,6 +16,7 @@ import Control.Monad (
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
+    fromPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
@@ -144,3 +146,9 @@ makeEvaluate sideCondition =
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
             simplifyCondition sideCondition simplifiedPattern
+
+simplifyPatternId ::
+    MonadSimplify simplifier =>
+    Pattern RewritingVariableName ->
+    simplifier (OrPattern RewritingVariableName)
+simplifyPatternId = pure . fromPattern
