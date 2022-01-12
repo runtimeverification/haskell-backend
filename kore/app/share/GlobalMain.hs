@@ -3,6 +3,7 @@
 module GlobalMain (
     MainOptions (..),
     GlobalOptions (..),
+    LocalOptions (..),
     KoreProveOptions (..),
     KoreMergeOptions (..),
     ExeName (..),
@@ -24,6 +25,7 @@ module GlobalMain (
     loadModule,
     mainParseSearchPattern,
     mainPatternParseAndVerify,
+    addExtraAxioms,
 ) where
 
 import Control.Exception (
@@ -31,9 +33,13 @@ import Control.Exception (
  )
 import Control.Lens (
     (%~),
+    (<>~),
  )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import Data.Generics.Product (
+    field,
+ )
 import Data.List (
     intercalate,
     nub,
@@ -68,6 +74,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (indexedModuleAxioms),
     VerifiedModule,
  )
 import Kore.Internal.Conditional (Conditional (..))
@@ -93,6 +100,7 @@ import Kore.Parser.ParserUtils (
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -275,7 +283,12 @@ data GlobalOptions = GlobalOptions
 -- | Record type to store all state and options for the subMain operations
 data MainOptions a = MainOptions
     { globalOptions :: !GlobalOptions
-    , localOptions :: !(Maybe a)
+    , localOptions :: !(Maybe (LocalOptions a))
+    }
+
+data LocalOptions a = LocalOptions
+    { execOptions :: !a
+    , simplifierx :: !SimplifierXSwitch
     }
 
 {- |
@@ -325,6 +338,15 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
+parseSimplifierX :: Parser SimplifierXSwitch
+parseSimplifierX =
+    flag
+        DisabledSimplifierX
+        EnabledSimplifierX
+        ( long "simplifierx"
+            <> help "Enable the experimental simplifier"
+        )
+
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->
@@ -360,10 +382,14 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
             | otherwise = id
     handleParseResult $ changeHelpOverFailure parseResult
   where
+    parseLocalOptions =
+        LocalOptions
+            <$> parser
+            <*> parseSimplifierX
     parseMainOptions =
         MainOptions
             <$> globalCommandLineParser
-            <*> optional parser
+            <*> optional parseLocalOptions
             <**> helper
 
     changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp
@@ -560,3 +586,16 @@ mainPatternParseAndVerify indexedModule patternFileName =
 -}
 mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
+
+{- | Extract axioms from a module and add them to the main definition module.
+ This should be safe, as long as the axioms only depend on sorts/symbols
+ defined in the main module.
+-}
+addExtraAxioms ::
+    VerifiedModule StepperAttributes ->
+    VerifiedModule StepperAttributes ->
+    VerifiedModule StepperAttributes
+addExtraAxioms definitionModule moduleWithExtraAxioms =
+    definitionModule
+        & field @"indexedModuleAxioms"
+        <>~ indexedModuleAxioms moduleWithExtraAxioms

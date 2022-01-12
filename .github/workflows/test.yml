@@ -130,7 +130,7 @@ jobs:
     name: 'Cabal'
     runs-on: ubuntu-latest
     env:
-      ghc_version: "8.10.4"
+      ghc_version: "8.10.7"
     steps:
       - name: Install prerequisites
         run: |

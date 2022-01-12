@@ -14,6 +14,38 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.60.0.0] - 2021-12-17
+
+### Added
+
+- Support defining additional axioms in spec module (#2930).
+- Add --simplifierx CL switch for enabling experimental simplifier (#2939).
+- Kore-repl: add no. of nodes on dotted edges in graph visualizer (#2902).
+
+### Fixed
+
+- Use matching instead of unification when doing search (#2879).
+- Kore-repl: if piped commands fail do not crash (#2940).
+
+## [0.58.0.0] - 2021-11-19
+
+### Added
+
+- Add error log entries to `kore-check-functions` (#2881).
+
+### Changed
+
+- Change severity of log entry regarding retried Z3 queries to `debug` (#2888).
+
+### Removed
+
+- Remove support for old equation encoding (#2889).
+
+### Fixed
+
+- Fix substitution application when simplifying claims (#2828).
+- Add upper bound to `Condition` simplification loop (#2878).
+
 ## [0.55.0.0] - 2021-10-11
 
 ### Added

@@ -97,6 +97,9 @@ generate-evm() {
     kollect test-addu48u48 \
         make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
 
+    kollect test-dsvalue-peek-pass-rough \
+        make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
+
     $KORE/scripts/trim-source-paths.sh *.kore
 }
 

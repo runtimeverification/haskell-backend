@@ -54,16 +54,19 @@ packages:
   original:
     hackage: witherable-class-0
 - completed:
-    name: tasty-test-reporter
-    version: 0.1.1.1
-    git: https://github.com/ttuegel/tasty-test-reporter.git
+    hackage: co-log-0.4.0.1@sha256:3d4c17f37693c80d1aa2c41669bc3438fac3e89dc5f479e57d79bc3ddc4dfcc5,5087
     pantry-tree:
-      size: 810
-      sha256: 57f84ef3bff91c81d1b32f84673dd194a2180db82ac2860a1e1646d1a04d7de6
-    commit: e411234da88d3f32dfe1319c5edce478abf5115b
+      size: 1126
+      sha256: e73165ff8f744709428e2e87984c9d60ca1cec43d8455c413181c7c466e7497c
   original:
-    git: https://github.com/ttuegel/tasty-test-reporter.git
-    commit: e411234da88d3f32dfe1319c5edce478abf5115b
+    hackage: co-log-0.4.0.1
+- completed:
+    hackage: tasty-test-reporter-0.1.1.4@sha256:22acd61058a9aa6fafeb742051347f22f1bac8658ad285bc2eb65b86173a1bc2,1765
+    pantry-tree:
+      size: 411
+      sha256: 7d309686e6b362e904a2b49b7513307be54381690ca7472e926f73fd08a8353b
+  original:
+    hackage: tasty-test-reporter-0.1.1.4
 - completed:
     hackage: junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
     pantry-tree:
@@ -117,7 +120,7 @@ packages:
     hackage: ghc-events-0.13.0
 snapshots:
 - completed:
-    size: 565715
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/7.yaml
-    sha256: 1b5e4124989399e60e7a7901f0cefd910beea546131fb07a13a7208c4cc8b7ee
-  original: lts-17.7
+    size: 586296
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
+    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
+  original: lts-18.18

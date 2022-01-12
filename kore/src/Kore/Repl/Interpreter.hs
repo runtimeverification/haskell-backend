@@ -28,6 +28,7 @@ import Control.Exception (
     displayException,
     throwIO,
  )
+import qualified Control.Exception as X
 import Control.Lens (
     (%=),
     (.=),
@@ -489,7 +490,7 @@ showGraph view mfile out = do
     processedGraph <-
         case view of
             Just Expanded ->
-                return $ Graph.emap Just graph
+                return $ Graph.emap IndividualLabel graph
             _ ->
                 maybe (showOriginalGraph graph) return (smoothOutGraph graph)
     installed <- liftIO Graph.isGraphvizInstalled
@@ -506,7 +507,7 @@ showGraph view mfile out = do
         putStrLn'
             "Could not process execution graph for visualization.\
             \ Will default to showing the full graph."
-        return $ Graph.emap Just graph
+        return $ Graph.emap IndividualLabel graph
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps ::
@@ -1241,15 +1242,11 @@ pipe cmd file args = do
                     }
     runExternalProcess :: IORef ReplOutput -> String -> String -> IO ()
     runExternalProcess pipeOut exec str = do
-        (maybeInput, maybeOutput, _, _) <- createProcess' exec
-        let outputFunc = maybe putStrLn hPutStr maybeInput
-        outputFunc str
-        case maybeOutput of
-            Nothing ->
-                hPutStrLn stderr "Error: couldn't access output handle."
-            Just handle -> do
-                output <- liftIO $ hGetContents handle
-                modifyIORef pipeOut (appReplOut . AuxOut $ output)
+        (Just hIn, Just hOut, _, _) <- createProcess' exec
+        hPutStr hIn str
+            `catch` \(X.SomeException e) -> hPutStrLn stderr (displayException e)
+        output <- liftIO $ hGetContents hOut
+        modifyIORef pipeOut (appReplOut . AuxOut $ output)
     justPrint :: IORef ReplOutput -> String -> IO ()
     justPrint outRef = modifyIORef outRef . appReplOut . AuxOut
 
@@ -1349,7 +1346,7 @@ performStepNoBranching =
         -- Loop branch
         (n, SingleResult _) -> do
             res <- runStepper
-            pure $ Left (n -1, res)
+            pure $ Left (n - 1, res)
         -- Early exit when there is a branch or there is no next.
         (n, res) -> pure $ Right (n, res)
 
@@ -1369,8 +1366,8 @@ recursiveForcedStep n node
         updateExecutionGraph graph
         case result of
             NoResult -> pure ()
-            SingleResult sr -> (recursiveForcedStep $ n -1) sr
-            BranchResult xs -> traverse_ (recursiveForcedStep (n -1)) xs
+            SingleResult sr -> (recursiveForcedStep $ n - 1) sr
+            BranchResult xs -> traverse_ (recursiveForcedStep (n - 1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule ::
@@ -1451,7 +1448,7 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (EdgeLabel (Seq axiom)) ->
     IO ()
 showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
@@ -1462,7 +1459,7 @@ showDotGraph gr =
 showDotGraphCatchException ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (EdgeLabel (Seq axiom)) ->
     IO ()
 showDotGraphCatchException gr =
     catch (showDotGraph gr) $ \(e :: GraphvizException) ->
@@ -1482,7 +1479,7 @@ showDotGraphCatchException gr =
 saveDotGraph ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (EdgeLabel (Seq axiom)) ->
     Graph.GraphvizOutput ->
     FilePath ->
     IO ()
@@ -1502,17 +1499,17 @@ saveDotGraph gr format file =
 graphParams ::
     From axiom AttrLabel.Label =>
     From axiom RuleIndex =>
-    Gr CommonClaimState (Maybe (Seq axiom)) ->
+    Gr CommonClaimState (EdgeLabel (Seq axiom)) ->
     Graph.GraphvizParams
         Graph.Node
         CommonClaimState
-        (Maybe (Seq axiom))
+        (EdgeLabel (Seq axiom))
         ()
         CommonClaimState
 graphParams gr =
     Graph.nonClusteredParams
         { Graph.fmtEdge = \(_, resN, l) ->
-            [ Graph.textLabel (maybe "" (ruleIndex resN) l)
+            [ Graph.textLabel (eitherEdgeLabel nrOfNodes (ruleIndex resN) l)
             , Graph.Attr.Style [dottedOrSolidEdge l]
             ]
         , Graph.fmtNode = \(_, ps) ->
@@ -1524,9 +1521,13 @@ graphParams gr =
             ]
         }
   where
+    nrOfNodes :: Natural -> Text.Lazy.Text
+    nrOfNodes quantity
+        | quantity < 1 = ""
+        | otherwise = "(" <> Text.Lazy.pack (show quantity) <> " nodes omitted)"
     dottedOrSolidEdge lbl =
-        maybe
-            (Graph.Attr.SItem Graph.Attr.Dotted mempty)
+        eitherEdgeLabel
+            (const $ Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
     ruleIndex resultNode lbl =

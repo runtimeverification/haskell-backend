@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.55.0.0
+version:        0.60.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -104,6 +104,7 @@ common global-main
   build-depends: clock >=0.8
   build-depends: containers >=0.5
   build-depends: filepath >=1.4
+  build-depends: generic-lens >=1.1
   build-depends: lens >=4.17
   build-depends: megaparsec >=7.0
   build-depends: optparse-applicative >=0.14
@@ -115,7 +116,7 @@ common library
   build-depends: aeson >=1.4
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
-  build-depends: co-log >=0.3
+  build-depends: co-log >=0.4
   build-depends: comonad >=5.0
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
@@ -358,7 +359,7 @@ library
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim
-    Kore.Log.WarnUnsimplifiedPredicate
+    Kore.Log.WarnUnsimplified
     Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step

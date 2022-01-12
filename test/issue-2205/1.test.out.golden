@@ -1,17 +1,17 @@
     #Not ( {
-      'QuesUnds'0
+      ?_0
     #Equals
       1
     } )
   #And
     #Not ( {
-      'QuesUnds'0
+      ?_0
     #Equals
       2
     } )
   #And
     <k>
-      'QuesUnds'0:Int ~> .
+      ?_0:Int ~> .
     </k>
 #Or
     <k>
@@ -19,7 +19,7 @@
     </k>
   #And
     {
-      'QuesUnds'0
+      ?_0
     #Equals
       1
     }
@@ -29,7 +29,7 @@
     </k>
   #And
     {
-      'QuesUnds'0
+      ?_0
     #Equals
       2
     }

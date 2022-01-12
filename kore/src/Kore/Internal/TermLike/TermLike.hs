@@ -847,11 +847,11 @@ instance InternalVariable variable => Substitute (TermLike variable) where
             either extractFreeVariables (Set.singleton . variableName)
 
         renaming ::
-            -- | Original variable
+            -- Original variable
             SomeVariable variable ->
-            -- | Renamed variable
+            -- Renamed variable
             Maybe (SomeVariable variable) ->
-            -- | Substitution
+            -- Substitution
             Map
                 (SomeVariableName variable)
                 (Either (TermLike variable) (SomeVariable variable)) ->

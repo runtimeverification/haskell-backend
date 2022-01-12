@@ -170,9 +170,9 @@ test_transitionRule_ApplyClaims =
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives ::
         HasCallStack =>
-        -- | rules to apply in parallel
+        -- rules to apply in parallel
         [MockRule] ->
-        -- | transitions
+        -- transitions
         [(MockClaimState, Seq MockAppliedRule)] ->
         TestTree
     derives rules = equals_ (run rules $ ClaimState.Claimed (MockClaim (A, C)))
@@ -201,9 +201,9 @@ test_transitionRule_ApplyAxioms =
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives ::
         HasCallStack =>
-        -- | rules to apply in parallel
+        -- rules to apply in parallel
         [MockRule] ->
-        -- | transitions
+        -- transitions
         [(MockClaimState, Seq MockAppliedRule)] ->
         TestTree
     derives rules =
@@ -242,11 +242,11 @@ test_runStrategy =
                 (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves ::
         HasCallStack =>
-        -- | Axioms
+        -- Axioms
         [MockRule] ->
-        -- | Proof goal
+        -- Proof goal
         MockClaim ->
-        -- | Unproven goals
+        -- Unproven goals
         [MockClaim] ->
         TestTree
     disproves axioms (MockClaim goal) unproven =
@@ -256,9 +256,9 @@ test_runStrategy =
             (show axioms ++ " disproves " ++ show goal)
     proves ::
         HasCallStack =>
-        -- | Axioms
+        -- Axioms
         [MockRule] ->
-        -- | Proof goal
+        -- Proof goal
         MockClaim ->
         TestTree
     proves axioms (MockClaim goal) =
@@ -425,6 +425,7 @@ instance MonadSimplify AllPathIdentity where
     askOverloadSimplifier = undefined
     getCache = undefined
     putCache = undefined
+    askSimplifierXSwitch = undefined
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =

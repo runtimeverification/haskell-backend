@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.55.0.0"; };
+      identifier = { name = "kore"; version = "0.60.0.0"; };
       license = "BSD-3-Clause";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "ana.pantilie@runtimeverification.com";
@@ -279,7 +279,7 @@
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"
-          "Kore/Log/WarnUnsimplifiedPredicate"
+          "Kore/Log/WarnUnsimplified"
           "Kore/ModelChecker/Bounded"
           "Kore/ModelChecker/Simplification"
           "Kore/ModelChecker/Step"
@@ -473,6 +473,7 @@
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -481,7 +482,6 @@
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             ];
           buildable = true;
@@ -500,6 +500,7 @@
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -521,6 +522,7 @@
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -557,6 +559,7 @@
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -580,6 +583,7 @@
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -602,6 +606,7 @@
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
