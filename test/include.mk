@@ -35,7 +35,6 @@ GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
 
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
-#KPROVE_OPTS += -d $(DEF_DIR)
 KORE_EXEC_OPTS += \
 	$(if $(STORE_PROOFS),\
 		--save-proofs $(STORE_PROOFS),\
@@ -43,7 +42,6 @@ KORE_EXEC_OPTS += \
 			--save-proofs $(@:.out=.save-proofs.kore)\
 		)\
 	)
-#KPROVE_REPL_OPTS += -d $(DEF_DIR) #-m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
 KPROVE_SPEC_OPTS =
 
