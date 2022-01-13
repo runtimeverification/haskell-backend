@@ -31,7 +31,6 @@ import Control.Error (
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
-    filterM,
     (>=>),
  )
 import Control.Monad.Catch (
@@ -104,6 +103,9 @@ import Kore.IndexedModule.Resolvers (
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
@@ -666,7 +668,8 @@ checkFunctions verifiedModule = evalSimplifier verifiedModule $ do
         & mapM_ errorEquationRightFunction . nonEmpty
     -- check if two equations both match the same term
     equations >>= inOrderPairs
-        & filterM bothMatch
+        & mapM matchEquations
+        <&> filter (\(_, _, patt) -> not $ isBottom patt)
         >>= mapM_ errorEquationsSameMatch . nonEmpty
   where
     equations :: [[Equation RewritingVariableName]]
@@ -686,27 +689,32 @@ checkFunctions verifiedModule = evalSimplifier verifiedModule $ do
 {- | Returns true when both equations match the same term.  See:
 https://github.com/kframework/kore/issues/2472#issue-833143685
 -}
-bothMatch ::
+matchEquations ::
     MonadSimplify m =>
     (Equation RewritingVariableName, Equation RewritingVariableName) ->
-    m Bool
-bothMatch (eq1, eq2) =
-    let pre1 = Equation.requires eq1
-        pre2 = Equation.requires eq2
-        arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1
-        arg2 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq2
-        prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
-        prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
-        check =
-            Predicate.makeAndPredicate prio1 prio2
-                & Predicate.makeAndPredicate arg2
-                & Predicate.makeAndPredicate arg1
-                & Predicate.makeAndPredicate pre2
-                & Predicate.makeAndPredicate pre1
-        -- & Predicate.mapVariables (pure mkConfigVariable)
-        sort = termLikeSort $ right eq1
-        patt = Pattern.fromPredicateSorted sort check
-     in (not . isBottom) <$> Pattern.simplify patt
+    m
+        ( Equation RewritingVariableName
+        , Equation RewritingVariableName
+        , OrPattern RewritingVariableName
+        )
+matchEquations (eq1, eq2) = do
+    patt <- Pattern.simplify $ Pattern.fromPredicateSorted sort check
+    return (eq1, eq2, patt)
+  where
+    pre1 = Equation.requires eq1
+    pre2 = Equation.requires eq2
+    arg1 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq1
+    arg2 = fromMaybe Predicate.makeTruePredicate $ Equation.argument eq2
+    prio1 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq1
+    prio2 = fromMaybe Predicate.makeTruePredicate $ Equation.antiLeft eq2
+    check =
+        Predicate.makeAndPredicate prio1 prio2
+            & Predicate.makeAndPredicate arg2
+            & Predicate.makeAndPredicate arg1
+            & Predicate.makeAndPredicate pre2
+            & Predicate.makeAndPredicate pre1
+    -- & Predicate.mapVariables (pure mkConfigVariable)
+    sort = termLikeSort $ right eq1
 
 {-
     let pre1 = Equation.requires eq1

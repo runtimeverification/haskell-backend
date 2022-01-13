@@ -28,6 +28,9 @@ import Kore.Attribute.Axiom (
 import Kore.Equation.Equation (
     Equation (..),
  )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -56,6 +59,7 @@ newtype ErrorEquationsSameMatch = ErrorEquationsSameMatch
         NonEmpty
             ( Equation RewritingVariableName
             , Equation RewritingVariableName
+            , OrPattern RewritingVariableName
             )
     }
     deriving stock (Show, GHC.Generic)
@@ -71,7 +75,7 @@ instance Pretty ErrorEquationsSameMatch where
             unErrorEquationsSameMatch e
                 & NonEmpty.toList
                 & map prettyMatch
-        prettyMatch (eq1, eq2) =
+        prettyMatch (eq1, eq2, patt) =
             let srcLoc1 = sourceLocation $ attributes eq1
                 srcLoc2 = sourceLocation $ attributes eq2
              in vsep
@@ -84,6 +88,7 @@ instance Pretty ErrorEquationsSameMatch where
                     , pretty $ prettyPrintLocationFromAst eq2
                     , indent 4 $ pretty eq2
                     , "match the same term."
+                    , indent 4 $ pretty patt
                     ]
 
 instance Exception ErrorEquationsSameMatch where
@@ -99,7 +104,7 @@ instance Entry ErrorEquationsSameMatch where
     oneLineDoc =
         vsep . map prettySrcLoc . NonEmpty.toList . unErrorEquationsSameMatch
       where
-        prettySrcLoc (eq1, eq2) =
+        prettySrcLoc (eq1, eq2, _) =
             let srcLoc1 = sourceLocation $ attributes eq1
                 srcLoc2 = sourceLocation $ attributes eq2
              in Pretty.hsep
@@ -111,6 +116,10 @@ instance Entry ErrorEquationsSameMatch where
 -- instance SQL.Table ErrorEquationsSameMatch
 
 errorEquationsSameMatch ::
-    NonEmpty (Equation RewritingVariableName, Equation RewritingVariableName) ->
+    NonEmpty
+        ( Equation RewritingVariableName
+        , Equation RewritingVariableName
+        , OrPattern RewritingVariableName
+        ) ->
     m ()
 errorEquationsSameMatch = throw . ErrorEquationsSameMatch
