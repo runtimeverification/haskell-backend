@@ -18,7 +18,7 @@ if make --version | grep -q 'GNU Make 4' 2>/dev/null
 then
     MAKE="make --output-sync --jobs ${JOBS:?} --directory $TOP"
 else
-    MAKE="make -C $TOP"
+    MAKE="make -j ${JOBS:?} -C $TOP"
 fi
 
 $MAKE kore
