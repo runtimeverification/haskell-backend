@@ -37,7 +37,8 @@ pipeline {
       steps {
         sshagent(['rv-jenkins-github']) {
           sh '''
-            git remote set-url origin git@github.com:kframework/kore
+            git clone git@github.com:kframework/kore.git kore-update-tests
+            cd kore-update-tests
             ./scripts/update-tests.sh
           '''
         }
