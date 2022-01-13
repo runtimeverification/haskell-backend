@@ -21,6 +21,8 @@
 //    => g(s(x)) and x<=0
 //    ~= s(s(x)) and x<=0
 
+requires "simplified.k"
+
 module VERIFICATION
   imports SIMPLIFIED
 endmodule

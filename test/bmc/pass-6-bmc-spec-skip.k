@@ -1,6 +1,8 @@
 /*
 */
 
+requires "bmc.k"
+
 module VERIFICATION
   imports BMC
 

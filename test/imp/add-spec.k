@@ -1,6 +1,8 @@
 /*
 */
 
+requires "imp.k"
+
 module VERIFICATION
   imports IMP
 

@@ -1,3 +1,5 @@
+requires "test.k"
+
 module VERIFICATION
   imports TEST
 

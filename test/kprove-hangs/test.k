@@ -1,6 +1,5 @@
 module TEST
-    imports MAP
-    imports BOOL
+    imports DEFAULT-CONFIGURATION
 
     syntax Foo ::= "a" | "b" | "c"
  // ------------------------------

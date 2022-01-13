@@ -1,3 +1,5 @@
+requires "infinite-gas.k"
+
 module VERIFICATION
     imports INFINITE-GAS
 

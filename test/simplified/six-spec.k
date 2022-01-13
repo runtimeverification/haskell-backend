@@ -11,6 +11,8 @@
 // cc(x) and x>0 => aa(x) and x>0 => g(x) and x>0 ~= s(x) and x>0
 // dd(x) and x<=0 => aa(x) and x>0 => g(x) and x<=0 ~= s(x) and x<=0
 
+requires "simplified.k"
+
 module VERIFICATION
   imports SIMPLIFIED
 endmodule
