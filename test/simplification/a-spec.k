@@ -1,3 +1,5 @@
+requires "simplification.k"
+
 module VERIFICATION
 
     imports SIMPLIFICATION

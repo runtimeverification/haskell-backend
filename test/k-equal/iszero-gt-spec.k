@@ -1,3 +1,5 @@
+requires "test-k-equal.k"
+
 module VERIFICATION
   imports TEST-K-EQUAL
 endmodule

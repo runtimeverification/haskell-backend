@@ -1,5 +1,8 @@
 // Testing that the smt-lemma works by proving that
 // the final configuration is equivalent to 5<Int X
+
+requires "smt-lemma.k"
+
 module VERIFICATION
   imports SMT-LEMMA
 endmodule

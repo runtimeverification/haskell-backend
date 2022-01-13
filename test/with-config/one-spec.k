@@ -1,14 +1,16 @@
+requires "with-config.k"
+
 module VERIFICATION
     imports WITH-CONFIG
 
-    syntax KItem ::= "A" "(" AccountId ")"
-    rule A(AID) => total_balance(AID)
+    syntax KItem ::= "aa" "(" AccountId ")"
+    rule aa(AID) => total_balance(AID)
 endmodule
 
 module ONE-SPEC
     imports VERIFICATION
 
-    claim <k> A(AID) => 30 </k>
+    claim <k> aa(AID) => 30 </k>
         <accounts>
             <account>
                 <accountID> AID </accountID>
