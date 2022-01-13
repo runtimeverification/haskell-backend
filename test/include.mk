@@ -45,6 +45,7 @@ KORE_EXEC_OPTS += \
 	)
 #KPROVE_REPL_OPTS += -d $(DEF_DIR) #-m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
+KPROVE_SPEC_OPTS =
 
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
@@ -108,7 +109,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	$(KOMPILE) $(KOMPILE_OPTS) --main-module $(KPROVE_MODULE) $(KPROVE_SPEC)
 	rm -rf $*-tmpdir; mkdir $*-tmpdir
 	mv $*-spec-kompiled $*-tmpdir
-	$(KPROVE) $(KPROVE_OPTS) -d $*-tmpdir $(KPROVE_SPEC) >$@ || true
+	$(KPROVE) $(KPROVE_OPTS) -d $*-tmpdir $(KPROVE_SPEC_OPTS) $(KPROVE_SPEC) >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
 	rm -rf $*-tmpdir
@@ -135,7 +136,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### BMC
 
 %-bmc-spec.k.out: KPROVE = $(KBMC)
-%-bmc-spec.k.out: KPROVE_SPEC = --raw-spec $<
+%-bmc-spec.k.out: KPROVE_SPEC_OPTS = --raw-spec
 %-bmc-spec.k.out: KPROVE_OPTS += --depth $(KBMC_DEPTH)
 
 ### MERGE

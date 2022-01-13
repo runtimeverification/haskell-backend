@@ -3,14 +3,14 @@ requires "with-config.k"
 module VERIFICATION
     imports WITH-CONFIG
 
-    syntax KItem ::= "A" "(" AccountId ")"
-    rule A(AID) => total_balance(AID)
+    syntax KItem ::= "a" "(" AccountId ")"
+    rule a(AID) => total_balance(AID)
 endmodule
 
 module OWISE-SPEC
     imports VERIFICATION
 
-    claim <k> A(AID) => 0 </k>
+    claim <k> a(AID) => 0 </k>
         <accounts>
             <account>
                 <accountID> BID </accountID>

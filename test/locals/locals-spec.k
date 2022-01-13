@@ -1,3 +1,5 @@
+requires "locals.k"
+
 module VERIFICATION
   imports LOCALS
 endmodule

@@ -1,5 +1,7 @@
 // Copyright (c) 2019 K Team. All Rights Reserved.
 
+requires "functions.k"
+
 
 module VERIFICATION
   imports FUNCTIONS

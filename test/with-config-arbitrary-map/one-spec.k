@@ -1,3 +1,5 @@
+requires "with-config.k"
+
 module VERIFICATION
     imports WITH-CONFIG
 

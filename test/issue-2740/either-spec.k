@@ -1,3 +1,5 @@
+requires "either.k"
+
 module VERIFICATION
   imports EITHER
 
