@@ -1,3 +1,5 @@
+requires "smc.k"
+
 /*
 */
 

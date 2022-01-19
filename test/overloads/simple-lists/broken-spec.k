@@ -1,3 +1,5 @@
+requires "simple-lists.k"
+
 module VERIFICATION
   imports SIMPLE-LISTS
 endmodule

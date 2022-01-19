@@ -1,3 +1,4 @@
+requires "imp.k"
 
 module VERIFICATION
   imports IMP
@@ -11,7 +12,7 @@ module VERIFICATION
   syntax Pgm  ::=  main(Int) [function]
 
 
-  rule loop => 
+  rule loop =>
        while (!(n <= 0)) {
         sum = sum + n + n;
         n = n + -1;
@@ -25,5 +26,5 @@ module VERIFICATION
         sum = sum + n + n;
         n = n + -1;
       }
- 
+
 endmodule

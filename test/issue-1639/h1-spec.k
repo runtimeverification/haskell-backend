@@ -1,3 +1,5 @@
+requires "h.k"
+
 module H1-SPEC
 imports H
 

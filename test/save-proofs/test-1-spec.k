@@ -1,3 +1,5 @@
+requires "save-proofs.k"
+
 module VERIFICATION
   imports SAVE-PROOFS
 

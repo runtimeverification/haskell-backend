@@ -19,6 +19,8 @@
 //    => f(t(x)) and x<=0
 //    == t(t(x)) and x<=0
 
+requires "simplified.k"
+
 module VERIFICATION
   imports SIMPLIFIED
 endmodule

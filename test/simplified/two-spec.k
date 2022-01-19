@@ -13,6 +13,8 @@
 // c(x) and x>0 => a(x) and x>0 => f(x) and x>0 == t(x) and x>0
 // d(x) and x<=0 => a(x) and x>0 => f(x) and x<=0 == t(x) and x<=0
 
+requires "simplified.k"
+
 module VERIFICATION
   imports SIMPLIFIED
 endmodule

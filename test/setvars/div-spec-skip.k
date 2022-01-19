@@ -1,3 +1,4 @@
+requires "setvars.k"
 
 module VERIFICATION
   imports SETVARS

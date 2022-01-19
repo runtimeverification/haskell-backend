@@ -1,3 +1,5 @@
+requires "list-sizer.k"
+
 module VERIFICATION
   imports LIST-SIZER
 
