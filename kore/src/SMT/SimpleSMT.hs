@@ -386,22 +386,20 @@ send Solver{solverHandle = SolverHandle{hIn, hProc}, logger} command' =
 recv :: Solver -> IO SExpr
 recv Solver{solverHandle = SolverHandle{hOut, hProc}, logger} =
     trySolver hProc $ do
-        responseLines <- readResponse 0 []
-        let resp = Text.unlines (reverse responseLines)
+        resp <- Text.unlines <$> readResponse 0
         logDebugSolverRecvWith logger resp
         readSExpr resp
   where
-    readResponse :: Int -> [Text] -> IO [Text]
-    readResponse 0 lines'
-        -- If we closed all parentheses ("0" above) and we have read at least
-        -- one line, then we finished reading the entire z3 response so we return.
-        | Prelude.not (Prelude.null lines') = return lines'
-    readResponse open lines' = do
+    readResponse :: Int -> IO [Text]
+    readResponse open = do
+        -- always read at least one line
         line <- Text.hGetLine hOut
-        readResponse (open + deltaOpen line) (line : lines')
-
-    deltaOpen :: Text -> Int
-    deltaOpen line = Text.count "(" line - Text.count ")" line
+        let deltaOpen = Text.count "(" line - Text.count ")" line
+            totalOpen = open + deltaOpen
+        -- if we closed all parentheses then we finished reading response
+        if totalOpen == 0
+            then return [line]
+            else (line :) <$> readResponse totalOpen
 
 command :: Solver -> SExpr -> IO SExpr
 command solver c =
