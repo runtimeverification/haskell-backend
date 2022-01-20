@@ -187,6 +187,7 @@ instance
                 , from . functional
                 , from . subsorts
                 , from . uniqueId
+                , from . nonExecutable
                 , from . owise
                 ]
 
@@ -242,6 +243,7 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=> typed @Functional (parseAttribute attr)
         Monad.>=> typed @Subsorts (parseAttribute attr)
         Monad.>=> typed @UniqueId (parseAttribute attr)
+        Monad.>=> typed @NonExecutable (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
 parseAxiomAttributes ::
