@@ -717,6 +717,7 @@
             "Test/Kore/Attribute/Idem"
             "Test/Kore/Attribute/Injective"
             "Test/Kore/Attribute/Label"
+            "Test/Kore/Attribute/NonExecutable"
             "Test/Kore/Attribute/Overload"
             "Test/Kore/Attribute/Owise"
             "Test/Kore/Attribute/Parser"
