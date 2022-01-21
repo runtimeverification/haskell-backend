@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.58.0.0"; };
+      identifier = { name = "kore"; version = "0.60.0.0"; };
       license = "BSD-3-Clause";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "ana.pantilie@runtimeverification.com";

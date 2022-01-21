@@ -1,5 +1,7 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
 
+requires "imp.k"
+
 module VERIFICATION
   imports IMP
 

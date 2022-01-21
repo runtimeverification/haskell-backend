@@ -1,3 +1,5 @@
+requires "tiny.k"
+
 module VERIFICATION
   imports TINY
 

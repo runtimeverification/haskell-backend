@@ -1,3 +1,5 @@
+requires "domain-values.k"
+
 module VERIFICATION
   imports DOMAIN-VALUES
 endmodule

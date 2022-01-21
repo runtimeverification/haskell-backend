@@ -1,3 +1,5 @@
+requires "priority.k"
+
 module VERIFICATION
     imports PRIORITY
 

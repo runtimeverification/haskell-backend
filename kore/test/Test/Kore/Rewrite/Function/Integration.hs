@@ -2037,6 +2037,8 @@ testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
 
+-- TODO(Ana): if needed, create copy with experimental simplifier
+-- enabled
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
@@ -2053,6 +2055,7 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier
+        , simplifierXSwitch = DisabledSimplifierX
         }
 
 testEnvUnification :: Env (SimplifierT NoSMT)

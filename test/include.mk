@@ -35,7 +35,6 @@ GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
 
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
-KPROVE_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KORE_EXEC_OPTS += \
 	$(if $(STORE_PROOFS),\
 		--save-proofs $(STORE_PROOFS),\
@@ -43,8 +42,8 @@ KORE_EXEC_OPTS += \
 			--save-proofs $(@:.out=.save-proofs.kore)\
 		)\
 	)
-KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
+KPROVE_SPEC_OPTS =
 
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
@@ -101,13 +100,18 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
-	@echo ">>>" $(CURDIR) "kprove" $<
+	@echo ">>>" $(CURDIR) "kprovex" $<
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
-	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) >$@ || true
+	$(KOMPILE) $(KOMPILE_OPTS) --main-module $(KPROVE_MODULE) $(KPROVE_SPEC)
+	rm -rf $*-tmpdir; mkdir $*-tmpdir
+	mv $*-spec-kompiled $*-tmpdir
+	$(KPROVE) $(KPROVE_OPTS) -d $*-tmpdir $(KPROVE_SPEC_OPTS) $(KPROVE_SPEC) >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
+	rm -rf $*-tmpdir
+
 
 %-save-proofs-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
 
@@ -130,7 +134,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### BMC
 
 %-bmc-spec.k.out: KPROVE = $(KBMC)
-%-bmc-spec.k.out: KPROVE_SPEC = --raw-spec $<
+%-bmc-spec.k.out: KPROVE_SPEC_OPTS = --raw-spec
 %-bmc-spec.k.out: KPROVE_OPTS += --depth $(KBMC_DEPTH)
 
 ### MERGE
@@ -153,6 +157,14 @@ test-%.sh.out: $(TEST_DIR)/test-%.sh
 
 test: test-k
 
+test-simplifierx: test-k-simplifierx
+
+test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx
+test-k-simplifierx: KORE_REPL_OPTS += --simplifierx
+test-k-simplifierx: KORE_MATCH_DISJUNCTION_OPTS += --simplifierx
+test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
+test-k-simplifierx: $(OUTS)
+
 test-k: $(OUTS)
 
 golden: $(GOLDEN)
@@ -160,4 +172,4 @@ golden: $(GOLDEN)
 clean:
 	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
 
-.PHONY: test-k test golden clean
+.PHONY: test-k test-k-simplifierx test-simplifierx test golden clean

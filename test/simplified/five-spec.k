@@ -3,6 +3,8 @@
 // Similar to one-spec.k, tests a basic claim, can be removed without losing
 // anything.
 
+requires "simplified.k"
+
 module VERIFICATION
   imports SIMPLIFIED
 endmodule

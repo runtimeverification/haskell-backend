@@ -107,6 +107,7 @@ import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
+    SimplifierXSwitch (..),
  )
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Sort
@@ -2292,6 +2293,8 @@ overloadGraph = OverloadGraph.fromOverloads overloads
 overloadSimplifier :: OverloadSimplifier
 overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
+-- TODO(Ana): if needed, create copy with experimental simplifier
+-- enabled
 env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
@@ -2301,6 +2304,7 @@ env =
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
+        , simplifierXSwitch = DisabledSimplifierX
         }
 
 generatorSetup :: ConsistentKore.Setup

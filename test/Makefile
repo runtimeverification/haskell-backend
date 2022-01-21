@@ -1,4 +1,4 @@
-TARGETS = clean test golden
+TARGETS = clean test test-simplifierx golden
 
 SUBMAKES = $(shell find . -mindepth 2 -name Makefile)
 
