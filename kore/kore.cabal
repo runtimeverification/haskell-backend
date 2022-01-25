@@ -186,6 +186,7 @@ library
     Kore.Attribute.Axiom
     Kore.Attribute.Axiom.Concrete
     Kore.Attribute.Axiom.Constructor
+    Kore.Attribute.Axiom.NonExecutable
     Kore.Attribute.Axiom.Symbolic
     Kore.Attribute.Axiom.Unit
     Kore.Attribute.Comm
@@ -637,6 +638,7 @@ test-suite kore-test
     Test.Kore.Attribute.Idem
     Test.Kore.Attribute.Injective
     Test.Kore.Attribute.Label
+    Test.Kore.Attribute.NonExecutable
     Test.Kore.Attribute.Overload
     Test.Kore.Attribute.Owise
     Test.Kore.Attribute.Parser
