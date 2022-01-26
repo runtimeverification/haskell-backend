@@ -4,6 +4,11 @@ module Test.Kore.Simplify.Pattern (
     test_Pattern_simplify_equalityterm,
 ) where
 
+import Test.Kore.Builtin.Definition (
+    dotk,
+    kseq,
+ )
+
 import Data.Maybe (fromJust)
 import qualified Data.Set as Set
 import qualified Kore.Internal.Condition as Condition
@@ -194,6 +199,57 @@ test_Pattern_simplify =
                             (makeCeilPredicate gOfX)
                         )
                     )
+        assertEqual "" (OrPattern.fromPattern expect) actual
+    , -- see https://github.com/runtimeverification/k/pull/2220#issuecomment-994494766
+      testCase "inj simplifiction" $ do
+        let expect = termLike $ mkBottom Mock.testSort
+        actual <-
+            simplify $
+                termLike $
+                    mkAnd
+                        ( mkAnd
+                            ( mkAnd
+                                (mkTop Mock.testSort) -- requires
+                                ( mkIn -- argument
+                                    Mock.testSort
+                                    undefined
+                                    ( kseq
+                                        ( Mock.sortInjection
+                                            undefined
+                                            undefined
+                                        )
+                                        dotk
+                                    )
+                                )
+                            )
+                            (mkTop Mock.testSort) -- antiLeft
+                        )
+                        ( mkAnd
+                            ( mkAnd
+                                (mkTop Mock.testSort) -- requires
+                                ( mkIn -- argument
+                                    Mock.testSort
+                                    undefined
+                                    undefined
+                                )
+                            )
+                            ( mkNot -- antiLeft
+                                ( mkExists
+                                    undefined
+                                    ( mkIn
+                                        Mock.testSort
+                                        undefined
+                                        ( kseq
+                                            ( Mock.sortInjection
+                                                undefined
+                                                undefined
+                                            )
+                                            dotk
+                                        )
+                                    )
+                                )
+                            )
+                        )
         assertEqual "" (OrPattern.fromPattern expect) actual
     ]
   where
