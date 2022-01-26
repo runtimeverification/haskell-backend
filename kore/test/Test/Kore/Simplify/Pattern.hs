@@ -4,11 +4,6 @@ module Test.Kore.Simplify.Pattern (
     test_Pattern_simplify_equalityterm,
 ) where
 
-import Test.Kore.Builtin.Definition (
-    dotk,
-    kseq,
- )
-
 import Data.Maybe (fromJust)
 import qualified Data.Set as Set
 import qualified Kore.Internal.Condition as Condition
@@ -39,6 +34,10 @@ import Kore.Rewrite.RewritingVariable (
 import qualified Kore.Simplify.Pattern as Pattern
 import Kore.Variables.Fresh (refreshElementVariable)
 import Prelude.Kore
+import Test.Kore.Builtin.Definition (
+    dotk,
+    kseq,
+ )
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Simplify
