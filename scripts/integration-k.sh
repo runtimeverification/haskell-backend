@@ -22,4 +22,5 @@ else
 fi
 
 $MAKE kore
+$MAKE test-k-simplifierx
 $MAKE test-k
