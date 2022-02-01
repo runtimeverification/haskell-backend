@@ -24,4 +24,5 @@ fi
 $MAKE kore
 $MAKE test-k-simplifierx
 $MAKE clean
+$MAKE kore
 $MAKE test-k
