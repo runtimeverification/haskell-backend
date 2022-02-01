@@ -298,7 +298,33 @@ withSolverHandle action = do
     Exception.bracket
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
-        action
+        (\sh -> try (action sh))
+  where
+    try a =
+        Exception.catch
+            a
+            (\(e :: Exception.SomeException) -> do
+                Trans.liftIO $ putStrLn "\nDebugging exit\n"
+                logAction <- askLogAction
+                let Config { executable = exe, arguments = args } = defaultConfig
+                newSolverHandle <-
+                    Trans.liftIO $ SimpleSMT.newSolver exe args logAction
+                mvar <- SMT (Reader.asks refSolverHandle)
+                Trans.liftIO $ putMVar mvar newSolverHandle
+                initSolver defaultConfig
+                a
+            )
+    -- acquire mvar =
+    --     Exception.onException
+    --         (Trans.liftIO $ takeMVar mvar)
+    --         (Trans.liftIO $ putStrLn "\nDebugging exit: aqcuire\n")
+    -- release mvar x =
+    --     Exception.onException
+    --         (Trans.liftIO $ putMVar mvar x)
+    --         (Trans.liftIO $ putStrLn "\nDebugging exit: release\n")
+    --         -- (\(e :: Exception.SomeException) ->
+    --         --     Trans.liftIO $ putStrLn ("\nDebugging exit\n" <> show e)
+    --         -- )
 
 askLogAction :: SMT (LogAction IO SomeEntry)
 askLogAction = SMT $ Trans.lift Log.askLogAction
