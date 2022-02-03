@@ -130,6 +130,9 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
 import Kore.Log.WarnIfLowProductivity (
     WarnIfLowProductivity,
  )
+import Kore.Log.WarnRestartSolver (
+    WarnRestartSolver,
+ )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
  )
@@ -142,9 +145,6 @@ import Kore.Log.WarnTrivialClaim (
 import Kore.Log.WarnUnsimplified (
     WarnUnsimplifiedCondition,
     WarnUnsimplifiedPredicate,
- )
-import Kore.Log.WarnRestartSolver (
-    WarnRestartSolver,
  )
 import Log (
     Entry (..),

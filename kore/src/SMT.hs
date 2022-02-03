@@ -54,11 +54,10 @@ module SMT (
 ) where
 
 import Control.Concurrent.MVar
-import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Control.Exception (
     Exception,
     IOException,
-    SomeException
+    SomeException,
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
@@ -100,6 +99,7 @@ import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
+import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Log (
     LogAction,
     LoggerT,
@@ -126,8 +126,8 @@ import SMT.SimpleSMT (
     SmtFunctionDeclaration,
     SmtSortDeclaration,
     Solver (..),
-    SolverHandle (..),
     SolverException,
+    SolverHandle (..),
     SortDeclaration (..),
     pop,
     push,

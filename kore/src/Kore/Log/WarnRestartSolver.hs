@@ -9,12 +9,12 @@ module Kore.Log.WarnRestartSolver (
 
 import qualified Control.Monad.Catch as Exception
 import Log
-import SMT.SimpleSMT (SolverException)
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
 import qualified Pretty
+import SMT.SimpleSMT (SolverException)
 
 newtype WarnRestartSolver = WarnRestartSolver
     {solverException :: SolverException}
@@ -26,7 +26,7 @@ instance Pretty WarnRestartSolver where
             [ "The SMT solver crashed with the following exception:"
             , Pretty.indent 4 (pretty $ Exception.displayException solverException)
             , "Will restart and reinitialise the solver\
-            \, attempting to continue execution."
+              \, attempting to continue execution."
             ]
 
 instance Entry WarnRestartSolver where
