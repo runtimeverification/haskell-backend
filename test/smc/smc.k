@@ -100,4 +100,39 @@ module SMC
   rule <k> int (X,Xs => Xs);_ </k> <mem> Rho:Map (.Map => X|->0) </mem>
     requires notBool (X in keys(Rho))
   rule int .Ids; S => S  [structural]
+
+  // for add-spec
+  syntax Id ::= "sum" [token]
+
+  // for add-stack-spec
+  syntax Id ::= "sum" [token]
+
+  // for double-sum-spec
+  syntax Id ::= "n"     [token]
+              | "p"     [token]
+              | "sum"   [token]
+
+  // for double-sum-stack-spec
+  syntax Id ::= "n"     [token]
+              | "p"     [token]
+              | "sum"   [token]
+
+  // for max-spec
+  syntax Id ::= "a" [token]
+  syntax Id ::= "b" [token]
+  syntax Id ::= "max" [token]
+
+  // for max-stack-spec
+  syntax Id ::= "a" [token]
+  syntax Id ::= "b" [token]
+  syntax Id ::= "max" [token]
+
+  // for sum-spec
+  syntax Id ::= "n"     [token]
+              | "sum"   [token]
+
+  // for sum-stack-spec
+  syntax Id ::= "n"     [token]
+              | "sum"   [token]
+
 endmodule

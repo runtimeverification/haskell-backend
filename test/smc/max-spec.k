@@ -2,17 +2,7 @@ requires "smc.k"
 /*
 */
 
-module VERIFICATION
-  imports SMC
-
-  syntax Id ::= "a" [token]
-  syntax Id ::= "b" [token]
-  syntax Id ::= "max" [token]
-endmodule
-
-
 module MAX-SPEC
-  imports VERIFICATION
   imports SMC
 
   claim
