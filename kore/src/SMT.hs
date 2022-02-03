@@ -55,8 +55,8 @@ module SMT (
 
 import Control.Concurrent.MVar
 import Control.Exception (
-    IOException,
     Exception,
+    IOException,
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
@@ -306,11 +306,11 @@ withSolverHandle action = do
         Trans.liftIO $ putStrLn "\nDebugging exit\n"
         Trans.liftIO $ print exception
         logAction <- askLogAction
-        let Config { executable = exe, arguments = args } = defaultConfig
+        let Config{executable = exe, arguments = args} = defaultConfig
         newSolverHandle <-
-            Trans.liftIO
-                $ Exception.handle handleIOException
-                $ SimpleSMT.newSolver exe args logAction
+            Trans.liftIO $
+                Exception.handle handleIOException $
+                    SimpleSMT.newSolver exe args logAction
         _ <- Trans.liftIO $ putMVar mvar newSolverHandle
         initSolver defaultConfig
         (action newSolverHandle)
