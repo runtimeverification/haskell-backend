@@ -57,6 +57,7 @@ import Control.Concurrent.MVar
 import Control.Exception (
     Exception,
     IOException,
+    SomeException
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
@@ -125,6 +126,7 @@ import SMT.SimpleSMT (
     SmtSortDeclaration,
     Solver (..),
     SolverHandle (..),
+    SolverException,
     SortDeclaration (..),
     pop,
     push,
@@ -270,7 +272,7 @@ instance MonadSMT NoSMT where
 
 -- * Implementation
 
-data Private = Private
+data SolverSetup = SolverSetup
     { userInit :: !(SMT ())
     , refSolverHandle :: !(MVar SolverHandle)
     , config :: !Config
@@ -284,7 +286,7 @@ acquire and release the solver as needed, but sequences of commands from
 different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 -}
-newtype SMT a = SMT {getSMT :: ReaderT Private (LoggerT IO) a}
+newtype SMT a = SMT {getSMT :: ReaderT SolverSetup (LoggerT IO) a}
     deriving newtype (Applicative, Functor, Monad)
     deriving newtype (MonadIO, MonadLog)
     deriving newtype (MonadCatch, MonadThrow, MonadMask)
@@ -296,23 +298,32 @@ instance MonadProf SMT where
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
-    generalBracket'
+    bracketWithExceptions
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
-        (retryOnException mvar)
+        (handleExceptions mvar)
         action
   where
-    retryOnException mvar (exception :: SimpleSMT.SolverException) = do
-        Trans.liftIO $ putStrLn "\nDebugging exit\n"
-        Trans.liftIO $ print exception
+    handleExceptions mvar originalHandle exception =
+        case castToSolverException exception of
+            Just solverException -> do
+                Trans.liftIO $ putStrLn "\nDebugging exit\n"
+                Trans.liftIO $ print solverException
+                restartSolverAndRetry mvar
+            Nothing -> do
+                Trans.liftIO $ putMVar mvar originalHandle
+                Exception.throwM exception
+
+    restartSolverAndRetry mvar = do
         logAction <- askLogAction
-        let Config{executable = exe, arguments = args} = defaultConfig
+        config@Config{executable = exe, arguments = args} <-
+            askConfig
         newSolverHandle <-
             Trans.liftIO $
                 Exception.handle handleIOException $
                     SimpleSMT.newSolver exe args logAction
         _ <- Trans.liftIO $ putMVar mvar newSolverHandle
-        initSolver defaultConfig
+        initSolver config
         (action newSolverHandle)
 
     handleIOException :: IOException -> IO SolverHandle
@@ -322,21 +333,24 @@ withSolverHandle action = do
             , "Could not start Z3; is it installed?"
             ]
 
-generalBracket' ::
+    castToSolverException :: SomeException -> Maybe SolverException
+    castToSolverException = Exception.fromException
+
+bracketWithExceptions ::
     Exception e =>
     MonadMask m =>
     m t ->
     (t -> m a) ->
-    (e -> m b) ->
+    (t -> e -> m b) ->
     (t -> m b) ->
     m b
-generalBracket' acquire release handleException use =
+bracketWithExceptions acquire release handleException use =
     Exception.mask $ \unmasked -> do
         resource <- acquire
         result <- Exception.try (unmasked $ use resource)
         case result of
             Left e -> do
-                handleException e
+                handleException resource e
             Right v -> do
                 _ <- release resource
                 return v
@@ -344,6 +358,10 @@ generalBracket' acquire release handleException use =
 askLogAction :: SMT (LogAction IO SomeEntry)
 askLogAction = SMT $ Trans.lift Log.askLogAction
 {-# INLINE askLogAction #-}
+
+askConfig :: SMT Config
+askConfig = SMT $ Reader.asks config
+{-# INLINE askConfig #-}
 
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action =
@@ -568,7 +586,7 @@ runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
 runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
     runReaderT
         (getSMT (initSolver config) >> smt)
-        Private{userInit, refSolverHandle, config}
+        SolverSetup{userInit, refSolverHandle, config}
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
