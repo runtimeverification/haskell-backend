@@ -25,6 +25,8 @@ golden:
 clean:
 	rm -fr $(KOMPILED)
 
+clean-execution:
+
 .PHONY: test-k test golden clean
 
 test-kompiled/definition.kore: test.k $(K)

@@ -72,3 +72,6 @@ clean:
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
 	$(MAKE) -C test clean
+
+clean-execution:
+	$(MAKE) -C test clean-execution

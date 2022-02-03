@@ -171,7 +171,10 @@ build-test: $(TEST_DEPS)
 
 golden: $(GOLDEN)
 
-clean:
-	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
+clean: clean-execution
+	rm -fr $(KOMPILED)
+
+clean-execution:
+	rm -fr $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
 
 .PHONY: test-k test-k-simplifierx test-simplifierx test golden clean

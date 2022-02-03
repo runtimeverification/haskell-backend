@@ -39,7 +39,9 @@ build-test:
 
 golden: $(GOLDEN)
 
-clean:
+clean: clean-execution
+
+clean-execution:
 	rm -fr *.out *.fail
 
 .PHONY: test-k test golden clean
