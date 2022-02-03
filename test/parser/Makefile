@@ -2,6 +2,7 @@ ifeq ($(origin TOP), undefined)
 	TOP = $(shell git rev-parse --show-toplevel)
 endif
 
+DEF_KORE =
 include $(TOP)/include.mk
 
 DIFF = diff -u
@@ -33,6 +34,8 @@ test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
 test-k-simplifierx: $(OUTS)
 
 test-k: $(OUTS)
+
+build-test:
 
 golden: $(GOLDEN)
 

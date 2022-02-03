@@ -8,6 +8,8 @@ KOMPILED = test-kompiled
 
 test: test-k
 
+build-test: $(TEST_DEPS)
+
 test-simplifierx: test-k-simplifierx
 
 test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx

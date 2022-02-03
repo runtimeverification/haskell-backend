@@ -167,6 +167,8 @@ test-k-simplifierx: $(OUTS)
 
 test-k: $(OUTS)
 
+build-test: $(TEST_DEPS)
+
 golden: $(GOLDEN)
 
 clean:
