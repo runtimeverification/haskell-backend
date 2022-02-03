@@ -1,14 +1,9 @@
 requires "test.k"
 
-module VERIFICATION
+module TEST-SPEC
     imports TEST
     imports INT-SYNTAX
 
-endmodule
-
-module TEST-SPEC
-    imports VERIFICATION
-
-    claim <k> foo => 1234 </k> 
+    claim <k> foo => 1234 </k>
 
 endmodule

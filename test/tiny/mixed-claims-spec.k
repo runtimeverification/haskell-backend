@@ -1,12 +1,7 @@
 requires "tiny.k"
 
-module VERIFICATION
-  imports TINY
-
-endmodule
-
 module MIXED-CLAIMS-SPEC
-  imports VERIFICATION
+  imports TINY
   imports TINY
 
   claim b => d [one-path]

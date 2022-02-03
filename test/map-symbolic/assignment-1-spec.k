@@ -3,12 +3,8 @@
 
 requires "map-tests.k"
 
-module VERIFICATION
-    imports MAP-TESTS
-endmodule
-
 module ASSIGNMENT-1-SPEC
-    imports VERIFICATION
+    imports MAP-TESTS
 
     claim <k> assignment ( .Map [ x <- 3 ] ) => . </k>
 

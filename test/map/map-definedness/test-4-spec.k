@@ -1,11 +1,7 @@
 requires "test.k"
 
-module VERIFICATION
-  imports TEST
-endmodule
-
 module TEST-4-SPEC
-  imports VERIFICATION
+  imports TEST
 
   claim
     <k> add(f(X), f(3)) => end </k>
