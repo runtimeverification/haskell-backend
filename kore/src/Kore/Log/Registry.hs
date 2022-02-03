@@ -143,6 +143,9 @@ import Kore.Log.WarnUnsimplified (
     WarnUnsimplifiedCondition,
     WarnUnsimplifiedPredicate,
  )
+import Kore.Log.WarnRestartSolver (
+    WarnRestartSolver,
+ )
 import Log (
     Entry (..),
     LogMessage,
@@ -222,6 +225,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugProven
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
+            , mk $ Proxy @WarnRestartSolver
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction

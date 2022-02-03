@@ -54,6 +54,7 @@ module SMT (
 ) where
 
 import Control.Concurrent.MVar
+import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Control.Exception (
     Exception,
     IOException,
@@ -307,8 +308,7 @@ withSolverHandle action = do
     handleExceptions mvar originalHandle exception =
         case castToSolverException exception of
             Just solverException -> do
-                Trans.liftIO $ putStrLn "\nDebugging exit\n"
-                Trans.liftIO $ print solverException
+                warnRestartSolver solverException
                 restartSolverAndRetry mvar
             Nothing -> do
                 Trans.liftIO $ putMVar mvar originalHandle
