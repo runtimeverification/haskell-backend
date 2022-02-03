@@ -56,6 +56,7 @@ module SMT (
 import Control.Concurrent.MVar
 import Control.Exception (
     IOException,
+    Exception,
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
@@ -295,36 +296,50 @@ instance MonadProf SMT where
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
-    Exception.bracket
+    generalBracket'
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
-        (\sh -> try (action sh))
+        (retryOnException mvar)
+        action
   where
-    try a =
-        Exception.catch
-            a
-            (\(e :: Exception.SomeException) -> do
-                Trans.liftIO $ putStrLn "\nDebugging exit\n"
-                logAction <- askLogAction
-                let Config { executable = exe, arguments = args } = defaultConfig
-                newSolverHandle <-
-                    Trans.liftIO $ SimpleSMT.newSolver exe args logAction
-                mvar <- SMT (Reader.asks refSolverHandle)
-                Trans.liftIO $ putMVar mvar newSolverHandle
-                initSolver defaultConfig
-                a
-            )
-    -- acquire mvar =
-    --     Exception.onException
-    --         (Trans.liftIO $ takeMVar mvar)
-    --         (Trans.liftIO $ putStrLn "\nDebugging exit: aqcuire\n")
-    -- release mvar x =
-    --     Exception.onException
-    --         (Trans.liftIO $ putMVar mvar x)
-    --         (Trans.liftIO $ putStrLn "\nDebugging exit: release\n")
-    --         -- (\(e :: Exception.SomeException) ->
-    --         --     Trans.liftIO $ putStrLn ("\nDebugging exit\n" <> show e)
-    --         -- )
+    retryOnException mvar (exception :: SimpleSMT.SolverException) = do
+        Trans.liftIO $ putStrLn "\nDebugging exit\n"
+        Trans.liftIO $ print exception
+        logAction <- askLogAction
+        let Config { executable = exe, arguments = args } = defaultConfig
+        newSolverHandle <-
+            Trans.liftIO
+                $ Exception.handle handleIOException
+                $ SimpleSMT.newSolver exe args logAction
+        _ <- Trans.liftIO $ putMVar mvar newSolverHandle
+        initSolver defaultConfig
+        (action newSolverHandle)
+
+    handleIOException :: IOException -> IO SolverHandle
+    handleIOException e =
+        (error . unlines)
+            [ Exception.displayException e
+            , "Could not start Z3; is it installed?"
+            ]
+
+generalBracket' ::
+    Exception e =>
+    MonadMask m =>
+    m t ->
+    (t -> m a) ->
+    (e -> m b) ->
+    (t -> m b) ->
+    m b
+generalBracket' acquire release handleException use =
+    Exception.mask $ \unmasked -> do
+        resource <- acquire
+        result <- Exception.try (unmasked $ use resource)
+        case result of
+            Left e -> do
+                handleException e
+            Right v -> do
+                _ <- release resource
+                return v
 
 askLogAction :: SMT (LogAction IO SomeEntry)
 askLogAction = SMT $ Trans.lift Log.askLogAction
