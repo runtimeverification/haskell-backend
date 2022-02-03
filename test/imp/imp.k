@@ -206,4 +206,34 @@ a computational step. */
   rule <k> int (X,Xs => Xs);_ </k> <state> Rho:Map (.Map => X|->0) </state>
     requires notBool (X in keys(Rho))
   rule int .Ids; S => S  [structural]
+
+  // for add-spec
+  syntax Id ::= "sum" [token]
+
+  // for double-sum-spec
+  syntax Id ::= "n"     [token]
+            | "sum"   [token]
+
+  // for max-breath-limit-one-spec
+  syntax Id ::= "a" [token]
+  syntax Id ::= "b" [token]
+  syntax Id ::= "max" [token]
+
+  // for run-stepf-repl-scrip-spec
+  syntax Id ::= "n"     [token]
+            | "sum"   [token]
+
+  // for sum-div-spec
+  syntax Id ::= "n"     [token]
+            | "sum"   [token]
+
+  // for sum-save-proofs-spec
+  syntax Id ::= "n"     [token]
+            | "sum"   [token]
+
+  //for unreachable-spec
+  syntax Id ::= "a"  [token]
+            | "b"  [token]
+            | "r"  [token]
+
 endmodule

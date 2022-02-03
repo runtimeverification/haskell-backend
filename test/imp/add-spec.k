@@ -3,15 +3,7 @@
 
 requires "imp.k"
 
-module VERIFICATION
-  imports IMP
-
-  syntax Id ::= "sum" [token]
-endmodule
-
-
 module ADD-SPEC
-  imports VERIFICATION
   imports IMP
 
   claim
