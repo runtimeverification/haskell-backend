@@ -207,33 +207,17 @@ a computational step. */
     requires notBool (X in keys(Rho))
   rule int .Ids; S => S  [structural]
 
-  // for add-spec
-  syntax Id ::= "sum" [token]
-
-  // for double-sum-spec
+  // for add-spec, double-sum-spec, run-stepf-repl-scrip-spec, sum-div-spec
+  // , sum-save-proofs-spec
   syntax Id ::= "n"     [token]
             | "sum"   [token]
 
-  // for max-breath-limit-one-spec
+  // for max-breath-limit-one-spec, unreachable-spec
   syntax Id ::= "a" [token]
   syntax Id ::= "b" [token]
   syntax Id ::= "max" [token]
 
-  // for run-stepf-repl-scrip-spec
-  syntax Id ::= "n"     [token]
-            | "sum"   [token]
-
-  // for sum-div-spec
-  syntax Id ::= "n"     [token]
-            | "sum"   [token]
-
-  // for sum-save-proofs-spec
-  syntax Id ::= "n"     [token]
-            | "sum"   [token]
-
   //for unreachable-spec
-  syntax Id ::= "a"  [token]
-            | "b"  [token]
-            | "r"  [token]
+  syntax Id ::= "r"  [token]
 
 endmodule
