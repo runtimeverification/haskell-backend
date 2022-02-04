@@ -431,7 +431,7 @@ instance MonadSMT SMT where
             Exception.finally
                 action
                 ( do
-                    withSolver' pop
+                    withSolverWithRestart pop
                     resetInterval' <- extractResetInterval
                     needReset <-
                         modifySolverHandle
