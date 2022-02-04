@@ -299,6 +299,14 @@ instance MonadProf SMT where
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
+    Exception.bracket
+        (Trans.liftIO $ takeMVar mvar)
+        (Trans.liftIO . putMVar mvar)
+        action
+
+withSolverHandleWithRestart :: (SolverHandle -> SMT a) -> SMT a
+withSolverHandleWithRestart action = do
+    mvar <- SMT (Reader.asks refSolverHandle)
     bracketWithExceptions
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
@@ -369,6 +377,13 @@ withSolver' action =
         logAction <- askLogAction
         Trans.liftIO $ action (Solver solverHandle logAction)
 
+withSolverWithRestart :: (Solver -> IO a) -> SMT a
+withSolverWithRestart action =
+    withSolverHandleWithRestart $ \solverHandle -> do
+        logAction <- askLogAction
+        Trans.liftIO $ action (Solver solverHandle logAction)
+
+
 modifySolverHandle :: StateT SolverHandle SMT a -> SMT a
 modifySolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
@@ -412,7 +427,7 @@ incrementQueryCounter (ResetInterval resetInterval) = do
 instance MonadSMT SMT where
     withSolver action =
         unshareSolverHandle $ do
-            withSolver' push
+            withSolverWithRestart push
             Exception.finally
                 action
                 ( do
