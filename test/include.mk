@@ -104,14 +104,9 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
-#	$(KOMPILE) $(KOMPILE_OPTS) --main-module $(KPROVE_MODULE) $(KPROVE_SPEC)
-#	rm -rf $*-tmpdir; mkdir $*-tmpdir
-#	mv $*-spec-kompiled $*-tmpdir
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC_OPTS) $(KPROVE_SPEC) >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
-#	rm -rf $*-tmpdir
-
 
 %-save-proofs-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
 
