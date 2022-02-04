@@ -27,7 +27,7 @@ require "chain.k"
 
 // base case
 module NTH1-SPEC
-    imports V
+    imports CHAIN
 
     claim
     <g> nth(1, B1, B2) => B1 <~* B2 </g>
@@ -45,8 +45,4 @@ module NTH1-SPEC
     <k> apply("lemma") => . ... </k>
     <g> B1 == B2 and B2 <~ B3 => B1 <~ B3 </g>
         [trusted]
-endmodule
-
-module V
-    imports CHAIN
 endmodule
