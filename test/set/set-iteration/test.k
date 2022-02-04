@@ -18,18 +18,11 @@ module TEST
   rule f(.Set) => .Set
   rule f(SetItem(E:Element) S:Set) => SetItem(g(E)) f(S)
 
-  // for test-1-spec
+  // for test-1-spec, test-2-spec
   syntax StepSort ::= Set
   syntax    KItem ::= runTest  ( StepSort )
                     | doneTest ( StepSort )
   // ------------------------------------------
-  rule runTest( T ) => doneTest( T )
-
-  // for test-2-spec
-  syntax StepSort ::= Set
-  syntax    KItem ::= runTest  ( StepSort )
-                    | doneTest ( StepSort )
- // ------------------------------------------
   rule runTest( T ) => doneTest( T )
 
 endmodule

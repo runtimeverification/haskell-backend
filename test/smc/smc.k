@@ -101,38 +101,15 @@ module SMC
     requires notBool (X in keys(Rho))
   rule int .Ids; S => S  [structural]
 
-  // for add-spec
-  syntax Id ::= "sum" [token]
-
-  // for add-stack-spec
-  syntax Id ::= "sum" [token]
-
-  // for double-sum-spec
+  // for add-spec, add-stack-spec, double-sum-spec, double-sum-stack-spec,
+  // sum-spec, sum-stack-spec
   syntax Id ::= "n"     [token]
               | "p"     [token]
               | "sum"   [token]
 
-  // for double-sum-stack-spec
-  syntax Id ::= "n"     [token]
-              | "p"     [token]
-              | "sum"   [token]
-
-  // for max-spec
+  // for max-spec, max-stack-spec
   syntax Id ::= "a" [token]
   syntax Id ::= "b" [token]
   syntax Id ::= "max" [token]
-
-  // for max-stack-spec
-  syntax Id ::= "a" [token]
-  syntax Id ::= "b" [token]
-  syntax Id ::= "max" [token]
-
-  // for sum-spec
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
-
-  // for sum-stack-spec
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
 
 endmodule
