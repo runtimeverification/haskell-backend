@@ -177,4 +177,4 @@ clean: clean-execution
 clean-execution:
 	rm -fr $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
 
-.PHONY: test-k test-k-simplifierx test-simplifierx test golden clean
+.PHONY: test-k test-k-simplifierx test-simplifierx test golden clean clean-execution

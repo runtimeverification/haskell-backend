@@ -1,6 +1,6 @@
 include include.mk
 
-.PHONY: all kore clean docs haddock \
+.PHONY: all kore clean clean-execution docs haddock \
 		test test-kore test-k test-k-simplifierx test-simplifierx \
 		kore-exec kore-repl kore-parser kore-check-functions \
 		kore-format kore-match-disjunction kore-prof

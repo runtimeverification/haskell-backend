@@ -44,4 +44,4 @@ clean: clean-execution
 clean-execution:
 	rm -fr *.out *.fail
 
-.PHONY: test-k test golden clean
+.PHONY: test-k test-k-simplifierx test golden clean clean-execution

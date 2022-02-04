@@ -27,7 +27,7 @@ clean:
 
 clean-execution:
 
-.PHONY: test-k test golden clean
+.PHONY: test-k test-k-simplifierx test golden clean clean-execution
 
 test-kompiled/definition.kore: test.k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
