@@ -383,7 +383,6 @@ withSolverWithRestart action =
         logAction <- askLogAction
         Trans.liftIO $ action (Solver solverHandle logAction)
 
-
 modifySolverHandle :: StateT SolverHandle SMT a -> SMT a
 modifySolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
