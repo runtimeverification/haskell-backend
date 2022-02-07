@@ -1,14 +1,8 @@
 requires "test.k"
 
-module VERIFICATION
-
-  imports TEST
-
-endmodule
-
 module PUSH-SPEC
 
-  imports VERIFICATION
+  imports TEST
 
   claim
     <k> push(X) => . ... </k>

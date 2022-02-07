@@ -3,12 +3,8 @@
 
 requires "map-tests.k"
 
-module VERIFICATION
-    imports MAP-TESTS
-endmodule
-
 module LOOKUP-18-SPEC
-    imports VERIFICATION
+    imports MAP-TESTS
 
     claim <k> lookup ( (X:MyId |-> 1 MAP:Map Y:MyId |-> 2) [ Y:MyId ] ) => . </k> requires X =/=K Y
 

@@ -1,12 +1,6 @@
 requires "path.k"
 
-module VERIFICATION
-  imports PATH
-
-endmodule
-
 module ONE-PATH-B-OR-C-SPEC
-  imports VERIFICATION
   imports PATH
 
   claim <k> select => b #Or c </k>

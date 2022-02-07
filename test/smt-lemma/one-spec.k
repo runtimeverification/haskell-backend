@@ -3,12 +3,8 @@
 
 requires "smt-lemma.k"
 
-module VERIFICATION
-  imports SMT-LEMMA
-endmodule
-
 module ONE-SPEC
-  imports VERIFICATION
+  imports SMT-LEMMA
 
   claim
     <k> delayed(X:Int)

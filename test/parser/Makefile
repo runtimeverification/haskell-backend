@@ -2,6 +2,7 @@ ifeq ($(origin TOP), undefined)
 	TOP = $(shell git rev-parse --show-toplevel)
 endif
 
+DEF_KORE =
 include $(TOP)/include.mk
 
 DIFF = diff -u
@@ -34,9 +35,13 @@ test-k-simplifierx: $(OUTS)
 
 test-k: $(OUTS)
 
+build-test:
+
 golden: $(GOLDEN)
 
-clean:
+clean: clean-execution
+
+clean-execution:
 	rm -fr *.out *.fail
 
-.PHONY: test-k test golden clean
+.PHONY: test-k test-k-simplifierx test golden clean clean-execution

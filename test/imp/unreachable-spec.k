@@ -2,19 +2,8 @@
 
 requires "imp.k"
 
-module VERIFICATION
-  imports IMP
-
-// verification ids
-  syntax Id ::= "a"  [token]
-              | "b"  [token]
-              | "r"  [token]
-endmodule
-
-
 module UNREACHABLE-SPEC
   imports IMP
-  imports VERIFICATION
 
   claim
     <k>

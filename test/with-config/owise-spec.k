@@ -1,14 +1,7 @@
 requires "with-config.k"
 
-module VERIFICATION
-    imports WITH-CONFIG
-
-    syntax KItem ::= "a" "(" AccountId ")"
-    rule a(AID) => total_balance(AID)
-endmodule
-
 module OWISE-SPEC
-    imports VERIFICATION
+    imports WITH-CONFIG
 
     claim <k> a(AID) => 0 </k>
         <accounts>

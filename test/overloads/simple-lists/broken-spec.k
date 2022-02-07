@@ -1,11 +1,7 @@
 requires "simple-lists.k"
 
-module VERIFICATION
-  imports SIMPLE-LISTS
-endmodule
-
 module BROKEN-SPEC
-  imports VERIFICATION
+  imports SIMPLE-LISTS
 
   claim i1 i2 => d1 d2
 endmodule

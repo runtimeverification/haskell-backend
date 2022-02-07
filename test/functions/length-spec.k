@@ -2,14 +2,9 @@
 
 requires "functions.k"
 
-
-module VERIFICATION
-  imports FUNCTIONS
-endmodule
-
 module LENGTH-SPEC
 
-  imports VERIFICATION
+  imports FUNCTIONS
 
   // test claim
   claim

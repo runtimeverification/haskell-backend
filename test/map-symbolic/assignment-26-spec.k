@@ -3,12 +3,8 @@
 
 requires "map-tests.k"
 
-module VERIFICATION
-    imports MAP-TESTS
-endmodule
-
 module ASSIGNMENT-26-SPEC
-    imports VERIFICATION
+    imports MAP-TESTS
 
     claim <k> assignment ( (X:MyId |-> 3 1 |-> 4) [ 0 <- 5 ] ) => . </k> requires X =/=K 1
 

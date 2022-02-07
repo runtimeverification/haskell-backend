@@ -13,13 +13,9 @@
 
 requires "simplified.k"
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
-
 module SIX-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

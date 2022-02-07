@@ -1,18 +1,7 @@
 requires "test.k"
 
-module VERIFICATION
-  imports TEST
-
-  syntax StepSort ::= Set
-  syntax    KItem ::= runTest  ( StepSort )
-                    | doneTest ( StepSort )
- // ------------------------------------------
-  rule runTest( T ) => doneTest( T )
-
-endmodule
-
 module TEST-2-SPEC
-  imports VERIFICATION
+  imports TEST
 
   claim <k> runTest( f( SetItem(X:Element) SetItem(Y:Element) ) ) </k>
     => <k> doneTest( SetItem(g(X)) SetItem(g(Y)) ) </k>

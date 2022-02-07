@@ -27,4 +27,13 @@ module WITH-CONFIG
             <accountID> WHO </accountID>
             <freeBalance> FREE_BALANCE </freeBalance>
         </account>
+
+    // for one-spec
+    syntax KItem ::= "aa" "(" AccountId ")"
+    rule aa(AID) => total_balance(AID)
+
+    // for owise-spec
+    syntax KItem ::= "a" "(" AccountId ")"
+    rule a(AID) => total_balance(AID)
+
 endmodule
