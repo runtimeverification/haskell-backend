@@ -27,7 +27,7 @@ require "chain.k"
 
 // inductive case
 module NTH2-SPEC
-    imports V
+    imports CHAIN
 
     claim
     <g> nth(k(N) +Int 1, B1, B2) => B1 <~* B2 </g>
@@ -61,14 +61,4 @@ module NTH2-SPEC
     <k> apply("lemma") => . ... </k>
     <g> B1 <~* B2 and B2 <~ B3 => B1 <~* B3 </g>
         [trusted]
-endmodule
-
-module V
-    imports CHAIN
-
-    syntax Bool ::= const(Int) [function, smtlib(con)]
-
-    syntax Int ::= k(Int) [function, functional, injective, smtlib(k)]
-
-    rule (k(N) +Int 1) -Int 1 => k(N) [simplification]
 endmodule

@@ -3,12 +3,8 @@
 
 requires "map-tests.k"
 
-module VERIFICATION
-    imports MAP-TESTS
-endmodule
-
 module INKEYS-11-SPEC
-    imports VERIFICATION
+    imports MAP-TESTS
 
     claim <k> inkeys ( Y:MyId in_keys ( M:Map [ X:MyId <- 0 ] ) ) => . </k>
 

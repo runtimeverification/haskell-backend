@@ -1,11 +1,7 @@
 requires "test.k"
 
-module VERIFICATION
-    imports TEST
-endmodule
-
 module TEST-SPEC
-    imports VERIFICATION
+    imports TEST
 
     claim <k> ITYPE:IValType . const X:Int => . ... </k>
 

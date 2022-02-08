@@ -2,18 +2,8 @@
 
 requires "smc.k"
 
-module VERIFICATION
-  imports SMC
-
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "p"     [token]
-              | "sum"   [token]
-endmodule
-
 module DOUBLE-SUM-SPEC
   imports SMC
-  imports VERIFICATION
 
 
 claim

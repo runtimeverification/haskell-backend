@@ -3,12 +3,8 @@
 
 requires "map-tests.k"
 
-module VERIFICATION
-    imports MAP-TESTS
-endmodule
-
 module INKEYS-9-SPEC
-    imports VERIFICATION
+    imports MAP-TESTS
 
     claim <k> inkeys ( Y:MyId in_keys ( Z:MyId |-> 1 M:Map X:MyId |-> 0 ) ) => . </k> requires notBool Y in_keys(M)
 

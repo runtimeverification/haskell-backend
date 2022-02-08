@@ -21,13 +21,9 @@
 
 requires "simplified.k"
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
-
 module THREE-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

@@ -1,11 +1,7 @@
 requires "locals.k"
 
-module VERIFICATION
-  imports LOCALS
-endmodule
-
 module LOCALS-SPEC
-  imports VERIFICATION
+  imports LOCALS
 
   claim
     <k> begin X:Int => end V:Value </k>

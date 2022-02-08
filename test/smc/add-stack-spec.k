@@ -3,15 +3,7 @@ requires "smc.k"
 /*
 */
 
-module VERIFICATION
-  imports SMC
-
-  syntax Id ::= "sum" [token]
-endmodule
-
-
 module ADD-STACK-SPEC
-  imports VERIFICATION
   imports SMC
 
   claim

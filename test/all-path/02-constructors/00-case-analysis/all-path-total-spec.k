@@ -1,12 +1,6 @@
 requires "path.k"
 
-module VERIFICATION
-  imports PATH
-
-endmodule
-
 module ALL-PATH-TOTAL-SPEC
-  imports VERIFICATION
   imports PATH
 
   // This should be provable as both one-path and all-path.
