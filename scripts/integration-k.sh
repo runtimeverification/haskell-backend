@@ -22,7 +22,7 @@ else
 fi
 
 $MAKE kore
-$MAKE test-k-simplifierx
-$MAKE clean
-$MAKE kore
+$MAKE build-test
 $MAKE test-k
+$MAKE clean-execution
+$MAKE test-k-simplifierx
