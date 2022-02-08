@@ -25,7 +25,7 @@ instance Pretty WarnRestartSolver where
         Pretty.vsep
             [ "The SMT solver crashed with the following exception:"
             , Pretty.indent 4 (pretty $ Exception.displayException solverException)
-            , "Will restart and reinitialise the solver\
+            , "Restarting and reinitialising the solver\
               \, attempting to continue execution."
             ]
 
