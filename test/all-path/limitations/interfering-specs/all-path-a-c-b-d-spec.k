@@ -6,14 +6,9 @@
 
 requires "path.k"
 
-module VERIFICATION
+module ALL-PATH-A-C-B-D-SPEC
   imports PATH
 
-endmodule
-
-module ALL-PATH-A-C-B-D-SPEC
-  imports VERIFICATION
-  
   claim <k> a => c </k> [all-path]
   claim <k> b => d </k> [all-path]
 

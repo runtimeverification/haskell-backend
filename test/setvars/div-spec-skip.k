@@ -1,13 +1,6 @@
 requires "setvars.k"
 
-module VERIFICATION
-  imports SETVARS
-
-endmodule
-
-
 module DIV-SPEC
-  imports VERIFICATION
   imports SETVARS
 
   rule

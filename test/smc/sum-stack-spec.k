@@ -1,20 +1,8 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
 requires "smc.k"
 
-
-module VERIFICATION
-  imports SMC
-
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
-endmodule
-
-
 module SUM-STACK-SPEC
   imports SMC
-  imports VERIFICATION
-
 
   claim
     <k>

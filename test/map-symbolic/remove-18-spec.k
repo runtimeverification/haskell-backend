@@ -3,12 +3,8 @@
 
 requires "map-tests.k"
 
-module VERIFICATION
-    imports MAP-TESTS
-endmodule
-
 module REMOVE-18-SPEC
-    imports VERIFICATION
+    imports MAP-TESTS
 
     claim <k> remove ( (X:MyId |-> 1 Y:MyId |-> 2) [ X <- undef ] ) => . </k>
 

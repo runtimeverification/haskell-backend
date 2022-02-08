@@ -23,13 +23,9 @@
 
 requires "simplified.k"
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
-
 module SEVEN-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

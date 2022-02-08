@@ -2,18 +2,8 @@
 
 requires "imp.k"
 
-module VERIFICATION
-  imports IMP
-
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
-endmodule
-
-
 module SUM-DIV-SPEC
   imports IMP
-  imports VERIFICATION
 
 
   claim

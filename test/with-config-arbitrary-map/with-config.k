@@ -44,4 +44,9 @@ module WITH-CONFIG
             <reservedBalance> FREE_BALANCE </reservedBalance>
             ...
         </account>
+
+    // for one-spec
+    syntax EntryAction ::= totalBalance ( AccountId )
+    rule <k> totalBalance(AID) => total_balance(AID) ... </k>
+
 endmodule
