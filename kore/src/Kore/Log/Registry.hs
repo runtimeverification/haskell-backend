@@ -130,6 +130,9 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
 import Kore.Log.WarnIfLowProductivity (
     WarnIfLowProductivity,
  )
+import Kore.Log.WarnRestartSolver (
+    WarnRestartSolver,
+ )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
  )
@@ -222,6 +225,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugProven
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
+            , mk $ Proxy @WarnRestartSolver
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction

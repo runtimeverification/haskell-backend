@@ -55,7 +55,9 @@ module SMT (
 
 import Control.Concurrent.MVar
 import Control.Exception (
+    Exception,
     IOException,
+    SomeException,
  )
 import qualified Control.Lens as Lens
 import Control.Monad (
@@ -97,6 +99,7 @@ import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
+import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Log (
     LogAction,
     LoggerT,
@@ -123,6 +126,7 @@ import SMT.SimpleSMT (
     SmtFunctionDeclaration,
     SmtSortDeclaration,
     Solver (..),
+    SolverException,
     SolverHandle (..),
     SortDeclaration (..),
     pop,
@@ -269,7 +273,7 @@ instance MonadSMT NoSMT where
 
 -- * Implementation
 
-data Private = Private
+data SolverSetup = SolverSetup
     { userInit :: !(SMT ())
     , refSolverHandle :: !(MVar SolverHandle)
     , config :: !Config
@@ -283,7 +287,7 @@ acquire and release the solver as needed, but sequences of commands from
 different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 -}
-newtype SMT a = SMT {getSMT :: ReaderT Private (LoggerT IO) a}
+newtype SMT a = SMT {getSMT :: ReaderT SolverSetup (LoggerT IO) a}
     deriving newtype (Applicative, Functor, Monad)
     deriving newtype (MonadIO, MonadLog)
     deriving newtype (MonadCatch, MonadThrow, MonadMask)
@@ -300,13 +304,82 @@ withSolverHandle action = do
         (Trans.liftIO . putMVar mvar)
         action
 
+withSolverHandleWithRestart :: (SolverHandle -> SMT a) -> SMT a
+withSolverHandleWithRestart action = do
+    mvar <- SMT (Reader.asks refSolverHandle)
+    bracketWithExceptions
+        (Trans.liftIO $ takeMVar mvar)
+        (Trans.liftIO . putMVar mvar)
+        (handleExceptions mvar)
+        action
+  where
+    handleExceptions mvar originalHandle exception =
+        case castToSolverException exception of
+            Just solverException -> do
+                warnRestartSolver solverException
+                restartSolverAndRetry mvar
+            Nothing -> do
+                Trans.liftIO $ putMVar mvar originalHandle
+                Exception.throwM exception
+
+    restartSolverAndRetry mvar = do
+        logAction <- askLogAction
+        config@Config{executable = exe, arguments = args} <-
+            askConfig
+        newSolverHandle <-
+            Trans.liftIO $
+                Exception.handle handleIOException $
+                    SimpleSMT.newSolver exe args logAction
+        _ <- Trans.liftIO $ putMVar mvar newSolverHandle
+        initSolver config
+        (action newSolverHandle)
+
+    handleIOException :: IOException -> IO SolverHandle
+    handleIOException e =
+        (error . unlines)
+            [ Exception.displayException e
+            , "Could not start Z3; is it installed?"
+            ]
+
+    castToSolverException :: SomeException -> Maybe SolverException
+    castToSolverException = Exception.fromException
+
+bracketWithExceptions ::
+    Exception e =>
+    MonadMask m =>
+    m t ->
+    (t -> m a) ->
+    (t -> e -> m b) ->
+    (t -> m b) ->
+    m b
+bracketWithExceptions acquire release handleException use =
+    Exception.mask $ \unmasked -> do
+        resource <- acquire
+        result <- Exception.try (unmasked $ use resource)
+        case result of
+            Left e -> do
+                handleException resource e
+            Right v -> do
+                _ <- release resource
+                return v
+
 askLogAction :: SMT (LogAction IO SomeEntry)
 askLogAction = SMT $ Trans.lift Log.askLogAction
 {-# INLINE askLogAction #-}
 
+askConfig :: SMT Config
+askConfig = SMT $ Reader.asks config
+{-# INLINE askConfig #-}
+
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action =
     withSolverHandle $ \solverHandle -> do
+        logAction <- askLogAction
+        Trans.liftIO $ action (Solver solverHandle logAction)
+
+withSolverWithRestart :: (Solver -> IO a) -> SMT a
+withSolverWithRestart action =
+    withSolverHandleWithRestart $ \solverHandle -> do
         logAction <- askLogAction
         Trans.liftIO $ action (Solver solverHandle logAction)
 
@@ -353,11 +426,11 @@ incrementQueryCounter (ResetInterval resetInterval) = do
 instance MonadSMT SMT where
     withSolver action =
         unshareSolverHandle $ do
-            withSolver' push
+            withSolverWithRestart push
             Exception.finally
                 action
                 ( do
-                    withSolver' pop
+                    withSolverWithRestart pop
                     resetInterval' <- extractResetInterval
                     needReset <-
                         modifySolverHandle
@@ -527,7 +600,7 @@ runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
 runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
     runReaderT
         (getSMT (initSolver config) >> smt)
-        Private{userInit, refSolverHandle, config}
+        SolverSetup{userInit, refSolverHandle, config}
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
