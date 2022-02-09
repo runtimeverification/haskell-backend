@@ -3,12 +3,13 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Kore.Simplify.FunctionEvaluator (
-
+    evaluateFunctions
 ) where
 
 import Prelude.Kore
-import Kore.Attribute.Synthetic (synthesize)
 import qualified Kore.Internal.Pattern as Pattern
+import Control.Monad.Trans.Writer.Strict (WriterT (..))
+import qualified Control.Monad.Trans.Writer.Strict as Writer
 import Kore.Simplify.Simplify
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Kore.Internal.SideCondition (
@@ -30,7 +31,7 @@ import Data.Semigroup (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Pattern (Pattern, Condition)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import qualified Kore.Equation as Equation
@@ -41,6 +42,9 @@ import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
 import Kore.Equation.Equation (Equation)
 import qualified Data.Functor.Foldable as Recursive
 
+type FunctionEvaluator simplifier =
+    WriterT (Condition RewritingVariableName) simplifier
+
 evaluateFunctions ::
     forall simplifier .
     MonadSimplify simplifier =>
@@ -48,69 +52,55 @@ evaluateFunctions ::
     Map AxiomIdentifier [Equation RewritingVariableName] ->
     TermLike RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-evaluateFunctions sideCondition equations termLike =
-    loop . Pattern.fromTermLike $ termLike
+evaluateFunctions sideCondition equations termLike = do
+    (simplifiedTerm, newCondition) <- Writer.runWriterT (loop termLike)
+    return (Pattern.withCondition simplifiedTerm newCondition)
   where
-
     loop ::
-        Pattern RewritingVariableName ->
-        simplifier (Pattern RewritingVariableName)
+        TermLike RewritingVariableName ->
+        FunctionEvaluator simplifier (TermLike RewritingVariableName)
     loop input = do
-        -- Basically I'd like a monad instance here, but it would be inefficient
-        output <- traverse worker input
+        output <- worker input
         if input == output
             then pure output
             else loop output
 
     worker ::
         TermLike RewritingVariableName ->
-        simplifier (Pattern RewritingVariableName)
-    worker = Recursive.cata f
+        FunctionEvaluator simplifier (TermLike RewritingVariableName)
+    worker = Recursive.cata go
 
-    f ::
+    go ::
         Recursive.Base
             (TermLike RewritingVariableName)
-            (simplifier (Pattern RewritingVariableName)) ->
-        simplifier (Pattern RewritingVariableName)
-    f termLikeBase = do
-        let _ :< termLikeF = termLikeBase
+            (FunctionEvaluator simplifier (TermLike RewritingVariableName)) ->
+        FunctionEvaluator simplifier (TermLike RewritingVariableName)
+    go termLikeBase = do
+        let attrs :< termLikeF = termLikeBase
         case termLikeF of
             TermLike.ApplySymbolF applySymbol -> do
                 let TermLike.Application
-                            { applicationSymbolOrAlias
-                            , applicationChildren
+                            { applicationChildren
                             } = applySymbol
                 childrenResults <- sequence applicationChildren
-                let childrenTerms = extract <$> childrenResults
-                    childrenCondition = fold $ Pattern.withoutTerm <$> childrenResults
-                let newApplication =
-                        TermLike.Application applicationSymbolOrAlias childrenTerms
-                        -- should use old attributes here?
-                        & TermLike.ApplySymbolF
-                        & synthesize
+                let appWithSimplifiedChildren =
+                        applySymbol { TermLike.applicationChildren = childrenResults }
+                    newAppTerm =
+                        attrs :< TermLike.ApplySymbolF appWithSimplifiedChildren
+                        & Recursive.embed
                 result <-
-                    evaluateFunction sideCondition equations newApplication
+                    evaluateFunction sideCondition equations newAppTerm
                     & runMaybeT
+                    & lift
                 case result of
-                    Just simplifiedApplication ->
-                        Pattern.andCondition
-                            simplifiedApplication
-                            childrenCondition
-                            & return
-                    Nothing ->
-                        Pattern.withCondition
-                            newApplication
-                            childrenCondition
-                            & return
-            _ -> do
-                x <- sequence termLikeBase
-                let y = Recursive.embed $ extract <$> x
-                    z =
-                        Pattern.withoutTerm <$> x
-                        & fold
-                return (Pattern.withCondition y z)
+                    Just simplifiedApp -> do
+                        Writer.tell (Pattern.withoutTerm simplifiedApp)
+                        return (extract simplifiedApp)
+                    Nothing -> return newAppTerm
+            _ -> Recursive.embed <$> sequence termLikeBase
 
-
+-- TODO: we're already checking if this is an application pattern,
+-- matchAxiomIdentifier is overkill
 evaluateFunction ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
@@ -130,6 +120,8 @@ evaluateFunction sideCondition equations termLike = do
         Left _ ->
             empty
 
+-- TODO: we're not actually doing anything with the errors here,
+-- so I should simplify this
 attemptEquationAndAccumulateErrors ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
@@ -164,11 +156,3 @@ attemptEquations accumulator equations =
         equations
         & runExceptRT
         & runExceptT
-
-
--- n - length of term
--- m - no. of equations to try
---
--- for each subterm in term
---   find equations with id subterm -- map lookup
---   attempt equations --
