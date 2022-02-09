@@ -730,6 +730,7 @@ test-suite kore-test
     Test.Kore.Repl.Graph
     Test.Kore.Repl.Interpreter
     Test.Kore.Repl.Parser
+    Test.Kore.Repl.ParserTest
     Test.Kore.Rewrite
     Test.Kore.Rewrite.AntiLeft
     Test.Kore.Rewrite.Axiom.EvaluationStrategy
