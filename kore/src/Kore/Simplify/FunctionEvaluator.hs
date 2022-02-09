@@ -24,6 +24,9 @@ import Control.Monad.Except (
 import Data.EitherR (
     ExceptRT (..),
  )
+import qualified Data.Functor.Foldable as Recursive
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import Data.Semigroup (
     Min (..),
     Option (..),
@@ -32,21 +35,18 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Internal.Pattern (Pattern, Condition)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
 import qualified Kore.Equation as Equation
 import Kore.Equation.DebugEquation (
     AttemptEquationError,
  )
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
 import Kore.Equation.Equation (Equation)
-import qualified Data.Functor.Foldable as Recursive
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
 
 type FunctionEvaluator simplifier =
     WriterT (Condition RewritingVariableName) simplifier
 
 evaluateFunctions ::
-    forall simplifier .
+    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Map AxiomIdentifier [Equation RewritingVariableName] ->
