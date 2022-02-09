@@ -1,6 +1,6 @@
 module Test.Kore.Simplify.FunctionEvaluator (
-    test_functionEvaluator
- ) where
+    test_functionEvaluator,
+) where
 
 import Prelude.Kore
 import Test.Tasty

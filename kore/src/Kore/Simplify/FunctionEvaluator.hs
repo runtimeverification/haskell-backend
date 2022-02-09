@@ -3,46 +3,45 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Kore.Simplify.FunctionEvaluator (
+    ) where
 
-) where
-
-import Prelude.Kore
-import Kore.Attribute.Synthetic (synthesize)
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Simplify.Simplify
+import Control.Monad.Except (
+    ExceptT (..),
+    runExceptT,
+ )
 import Control.Monad.Trans.Maybe (MaybeT (..))
+import Data.EitherR (
+    ExceptRT (..),
+ )
+import qualified Data.Functor.Foldable as Recursive
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Semigroup (
+    Min (..),
+    Option (..),
+ )
+import Kore.Attribute.Synthetic (synthesize)
+import qualified Kore.Equation as Equation
+import Kore.Equation.DebugEquation (
+    AttemptEquationError,
+ )
+import Kore.Equation.Equation (Equation)
+import Kore.Internal.Pattern (Pattern)
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike (TermLike)
 import qualified Kore.Internal.TermLike as TermLike
-import Control.Monad.Except (
-    ExceptT (..),
-    runExceptT,
- )
-import Data.EitherR (
-    ExceptRT (..),
- )
-import Data.Semigroup (
-    Min (..),
-    Option (..),
- )
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Internal.Pattern (Pattern)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import qualified Kore.Equation as Equation
-import Kore.Equation.DebugEquation (
-    AttemptEquationError,
- )
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
-import Kore.Equation.Equation (Equation)
-import qualified Data.Functor.Foldable as Recursive
+import Kore.Simplify.Simplify
+import Prelude.Kore
 
 evaluateFunctions ::
-    forall simplifier .
+    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Map AxiomIdentifier [Equation RewritingVariableName] ->
@@ -51,7 +50,6 @@ evaluateFunctions ::
 evaluateFunctions sideCondition equations termLike =
     loop . Pattern.fromTermLike $ termLike
   where
-
     loop ::
         Pattern RewritingVariableName ->
         simplifier (Pattern RewritingVariableName)
@@ -77,20 +75,20 @@ evaluateFunctions sideCondition equations termLike =
         case termLikeF of
             TermLike.ApplySymbolF applySymbol -> do
                 let TermLike.Application
-                            { applicationSymbolOrAlias
-                            , applicationChildren
-                            } = applySymbol
+                        { applicationSymbolOrAlias
+                        , applicationChildren
+                        } = applySymbol
                 childrenResults <- sequence applicationChildren
                 let childrenTerms = extract <$> childrenResults
                     childrenCondition = fold $ Pattern.withoutTerm <$> childrenResults
                 let newApplication =
                         TermLike.Application applicationSymbolOrAlias childrenTerms
-                        -- should use old attributes here?
-                        & TermLike.ApplySymbolF
-                        & synthesize
+                            -- should use old attributes here?
+                            & TermLike.ApplySymbolF
+                            & synthesize
                 result <-
                     evaluateFunction sideCondition equations newApplication
-                    & runMaybeT
+                        & runMaybeT
                 case result of
                     Just simplifiedApplication ->
                         Pattern.andCondition
@@ -107,9 +105,8 @@ evaluateFunctions sideCondition equations termLike =
                 let y = Recursive.embed $ extract <$> x
                     z =
                         Pattern.withoutTerm <$> x
-                        & fold
+                            & fold
                 return (Pattern.withCondition y z)
-
 
 evaluateFunction ::
     MonadSimplify simplifier =>
@@ -164,7 +161,6 @@ attemptEquations accumulator equations =
         equations
         & runExceptRT
         & runExceptT
-
 
 -- n - length of term
 -- m - no. of equations to try
