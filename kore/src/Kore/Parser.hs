@@ -21,8 +21,6 @@ main = do
 module Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
-    koreParser,
-    Parser.parsePattern,
     ParsedPattern,
     Parser.embedParsedPattern,
     ParsedDefinition,
@@ -31,20 +29,9 @@ module Kore.Parser (
 import Data.Text (
     Text,
  )
-import qualified Kore.Parser.Lexer as Lexer
 import qualified Kore.Parser.Parser as Parser
-import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition
 import Prelude.Kore
-import Text.Megaparsec (
-    eof,
- )
-
-{- |'koreParser' is a parser for Kore.
-The input must contain a full valid Kore defininition and nothing else.
--}
-koreParser :: Parser ParsedDefinition
-koreParser = Lexer.space *> Parser.parseDefinition <* eof
 
 {- | Parse a string representing a Kore definition.
 
@@ -58,7 +45,7 @@ parseKoreDefinition ::
     -- | The concrete syntax of a valid Kore definition
     Text ->
     Either String ParsedDefinition
-parseKoreDefinition = parseOnly (Lexer.space *> koreParser)
+parseKoreDefinition = Parser.parseDefinition
 
 {- | Parse a string representing a Kore pattern.
 
@@ -71,4 +58,4 @@ parseKorePattern ::
     -- | The concrete syntax of a valid Kore pattern
     Text ->
     Either String ParsedPattern
-parseKorePattern = parseOnly (Lexer.space *> Parser.parsePattern)
+parseKorePattern = Parser.parsePattern

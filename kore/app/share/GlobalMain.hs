@@ -93,10 +93,6 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
-import qualified Kore.Parser.Lexer as Lexer
-import Kore.Parser.ParserUtils (
-    parseOnly,
- )
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
@@ -155,7 +151,6 @@ import System.Clock (
     getTime,
  )
 import qualified System.Environment as Env
-import qualified Text.Megaparsec as Parser
 import Text.Read (
     readMaybe,
  )
@@ -187,10 +182,8 @@ parseModuleName metaName longName helpMsg =
 
 readModuleName :: Options.ReadM ModuleName
 readModuleName = do
-    opt <- str
-    case parseOnly (Lexer.parseModuleName <* Parser.eof) "<command-line>" opt of
-        Left err -> readerError err
-        Right something -> pure something
+    getModuleName <- str
+    pure ModuleName{getModuleName}
 
 parseKoreProveOptions :: Parser KoreProveOptions
 parseKoreProveOptions =
