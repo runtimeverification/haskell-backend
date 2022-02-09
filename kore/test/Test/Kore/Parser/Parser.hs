@@ -14,7 +14,6 @@ import Data.Text (
     pack,
  )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Syntax
 import Kore.Syntax.Definition
@@ -119,7 +118,7 @@ objectSortParserTests =
 test_parseSort :: [TestTree]
 test_parseSort =
     parseTree
-        (parens . list $ parseSort)
+        parseSortsParen
         [ success "()" []
         , success
             "(var)"
@@ -153,7 +152,7 @@ objectSortVariableParserTests =
 test_parseSortVariable :: [TestTree]
 test_parseSortVariable =
     parseTree
-        (braces . list $ parseSortVariable)
+        parseSortVariables
         [ success "{}" []
         , success
             "{var}"
