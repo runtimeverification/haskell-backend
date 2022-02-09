@@ -26,7 +26,7 @@ import Prelude.Kore hiding (
     takeWhile,
  )
 
-data Parser a = Parser (FilePath -> Text -> Either String a)
+newtype Parser a = Parser (FilePath -> Text -> Either String a)
 
 readPositiveIntegral ::
     (Read t, Integral t) =>
