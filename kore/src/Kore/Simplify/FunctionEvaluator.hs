@@ -3,24 +3,16 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Kore.Simplify.FunctionEvaluator (
-    evaluateFunctions
+    evaluateFunctions,
 ) where
 
-import Prelude.Kore
-import qualified Kore.Internal.Pattern as Pattern
-import Control.Monad.Trans.Writer.Strict (WriterT (..))
-import qualified Control.Monad.Trans.Writer.Strict as Writer
-import Kore.Simplify.Simplify
-import Control.Monad.Trans.Maybe (MaybeT (..))
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import Kore.Internal.TermLike (TermLike)
-import qualified Kore.Internal.TermLike as TermLike
 import Control.Monad.Except (
     ExceptT (..),
     runExceptT,
  )
+import Control.Monad.Trans.Maybe (MaybeT (..))
+import Control.Monad.Trans.Writer.Strict (WriterT (..))
+import qualified Control.Monad.Trans.Writer.Strict as Writer
 import Data.EitherR (
     ExceptRT (..),
  )
@@ -31,16 +23,24 @@ import Data.Semigroup (
     Min (..),
     Option (..),
  )
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Internal.Pattern (Pattern, Condition)
 import qualified Kore.Equation as Equation
 import Kore.Equation.DebugEquation (
     AttemptEquationError,
  )
 import Kore.Equation.Equation (Equation)
+import Kore.Internal.Pattern (Condition, Pattern)
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import Kore.Internal.TermLike (TermLike)
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Simplify.Simplify
+import Prelude.Kore
 
 type FunctionEvaluator simplifier =
     WriterT (Condition RewritingVariableName) simplifier
@@ -80,18 +80,18 @@ evaluateFunctions sideCondition equations termLike = do
         case termLikeF of
             TermLike.ApplySymbolF applySymbol -> do
                 let TermLike.Application
-                            { applicationChildren
-                            } = applySymbol
+                        { applicationChildren
+                        } = applySymbol
                 childrenResults <- sequence applicationChildren
                 let appWithSimplifiedChildren =
-                        applySymbol { TermLike.applicationChildren = childrenResults }
+                        applySymbol{TermLike.applicationChildren = childrenResults}
                     newAppTerm =
                         attrs :< TermLike.ApplySymbolF appWithSimplifiedChildren
-                        & Recursive.embed
+                            & Recursive.embed
                 result <-
                     evaluateFunction sideCondition equations newAppTerm
-                    & runMaybeT
-                    & lift
+                        & runMaybeT
+                        & lift
                 case result of
                     Just simplifiedApp -> do
                         Writer.tell (Pattern.withoutTerm simplifiedApp)
