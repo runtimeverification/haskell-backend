@@ -70,9 +70,6 @@ import Kore.Rewrite.RewritingVariable (
 import qualified Kore.Simplify.AndPredicates as And (
     simplifyEvaluatedMultiPredicate,
  )
-import Kore.Simplify.Pattern (
-    simplifyPatternId,
- )
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import qualified Kore.TopBottom as TopBottom
