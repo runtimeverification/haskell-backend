@@ -6,6 +6,7 @@ module Kore.Equation.Application (
     attemptEquation,
     AttemptEquationResult,
     applyEquation,
+    applyEquationTODO,
     applySubstitutionAndSimplify,
 ) where
 
@@ -267,6 +268,17 @@ applyEquation _ equation result = do
     let simplify = return
     debugApplyEquation equation result
     simplify results
+
+applyEquationTODO ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Equation RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    simplifier (Pattern RewritingVariableName)
+applyEquationTODO _ equation result = do
+    debugApplyEquation equation result
+    return result
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 

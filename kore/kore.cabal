@@ -436,6 +436,7 @@ library
     Kore.Simplify.ExpandAlias
     Kore.Simplify.Floor
     Kore.Simplify.Forall
+    Kore.Simplify.FunctionEvaluator
     Kore.Simplify.Iff
     Kore.Simplify.Implies
     Kore.Simplify.In
@@ -772,6 +773,7 @@ test-suite kore-test
     Test.Kore.Simplify.Exists
     Test.Kore.Simplify.Floor
     Test.Kore.Simplify.Forall
+    Test.Kore.Simplify.FunctionEvaluator
     Test.Kore.Simplify.Iff
     Test.Kore.Simplify.Implies
     Test.Kore.Simplify.Inj
