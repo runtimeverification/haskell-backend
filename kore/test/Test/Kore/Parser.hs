@@ -117,10 +117,10 @@ scanTokens fp input = alexScanTokens fp $ B.fromStrict $ Text.encodeUtf8 input
 
 scanTokenClasses :: FilePath -> Text -> Either String [TokenClass]
 scanTokenClasses fp input =
-     let tokens = scanTokens fp input in
-     case tokens of
-       Right r -> Right $ map getTokenClass r
-       Left l -> Left l
+    let tokens = scanTokens fp input
+     in case tokens of
+            Right r -> Right $ map getTokenClass r
+            Left l -> Left l
 
 parse' :: Parser a -> Text -> Either String a
 parse' (Parser f) input =

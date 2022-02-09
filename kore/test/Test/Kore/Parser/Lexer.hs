@@ -26,154 +26,157 @@ import Test.Tasty (
 test_colon :: [TestTree]
 test_colon =
     lexTree
-        (  successes [":", " :", ": ", ":/**/"] [TokenColon] )
+        (successes [":", " :", ": ", ":/**/"] [TokenColon])
 
 test_comma :: [TestTree]
 test_comma =
     lexTree
-        (  successes [",", " ,", ", ", ",/**/"] [TokenComma] )
+        (successes [",", " ,", ", ", ",/**/"] [TokenComma])
 
 test_bracesPair :: [TestTree]
 test_bracesPair =
     lexTree
-        (   successes ["{a,B}", " {a,B}", "{ a , B } ", "{/**/a/**/,/**/B/**/}/**/", "{/*/**/a,/**/B/**/}/**/"] [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "B", TokenRightBrace]
-        ++ [success "{a,b}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightBrace]
-        ,   success "{a}" [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
-        ,   success "{B}" [TokenLeftBrace, TokenIdent "B", TokenRightBrace]
-        ,   success "{a,}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenRightBrace]
-        ,   success "{,B}" [TokenLeftBrace, TokenComma, TokenIdent "B", TokenRightBrace]
-        ,   success "{a{},b}" [TokenLeftBrace, TokenIdent "a", TokenLeftBrace, TokenRightBrace, TokenComma, TokenIdent "b", TokenRightBrace]
-        ,   success "{a,B,c}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "B", TokenComma, TokenIdent "c", TokenRightBrace]
-           ]
+        ( successes ["{a,B}", " {a,B}", "{ a , B } ", "{/**/a/**/,/**/B/**/}/**/", "{/*/**/a,/**/B/**/}/**/"] [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "B", TokenRightBrace]
+            ++ [ success "{a,b}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightBrace]
+               , success "{a}" [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
+               , success "{B}" [TokenLeftBrace, TokenIdent "B", TokenRightBrace]
+               , success "{a,}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenRightBrace]
+               , success "{,B}" [TokenLeftBrace, TokenComma, TokenIdent "B", TokenRightBrace]
+               , success "{a{},b}" [TokenLeftBrace, TokenIdent "a", TokenLeftBrace, TokenRightBrace, TokenComma, TokenIdent "b", TokenRightBrace]
+               , success "{a,B,c}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "B", TokenComma, TokenIdent "c", TokenRightBrace]
+               ]
         )
 
 test_parseSymbolId :: [TestTree]
 test_parseSymbolId =
-    lexTree $ mappend
-        (   successes ["a", "a ", " a", "a/**/ ", "//\na"] [TokenIdent "a"] )
-        [ success "A" [TokenIdent "A"]
-        , success "abc" [TokenIdent "abc"]
-        , success "a'" [TokenIdent "a'"]
-        , success "a-" [TokenIdent "a-"]
-        , success "a'2" [TokenIdent "a'2"]
-        , success "\\something" [TokenIdent "\\something"]
-        , success "[" [TokenLeftBracket]
-        , success "module" [TokenModule]
-        , FailureWithoutMessage
-            [ "'"
-            , "'a"
-            , "2"
-            , "2a"
-            , "`"
-            , "`a"
-            , "#"
-            , "#'"
-            , "#'a"
-            , "#2"
-            , "#2a"
-            , "#`"
-            , "#`'"
-            , "#`'a"
-            , "#`2"
-            , "#`2a"
-            , "a#"
+    lexTree $
+        mappend
+            (successes ["a", "a ", " a", "a/**/ ", "//\na"] [TokenIdent "a"])
+            [ success "A" [TokenIdent "A"]
+            , success "abc" [TokenIdent "abc"]
+            , success "a'" [TokenIdent "a'"]
+            , success "a-" [TokenIdent "a-"]
+            , success "a'2" [TokenIdent "a'2"]
+            , success "\\something" [TokenIdent "\\something"]
+            , success "[" [TokenLeftBracket]
+            , success "module" [TokenModule]
+            , FailureWithoutMessage
+                [ "'"
+                , "'a"
+                , "2"
+                , "2a"
+                , "`"
+                , "`a"
+                , "#"
+                , "#'"
+                , "#'a"
+                , "#2"
+                , "#2a"
+                , "#`"
+                , "#`'"
+                , "#`'a"
+                , "#`2"
+                , "#`2a"
+                , "a#"
+                ]
             ]
-        ]
 
 test_braces :: [TestTree]
 test_braces =
     lexTree
-        (   successes ["{a}", "{ a } ", "{/**/a/**/}/**/", " {a}"] [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
-        ++ [success "{}" [TokenLeftBrace, TokenRightBrace]
-        ,   success "{a{}}" [TokenLeftBrace, TokenIdent "a", TokenLeftBrace, TokenRightBrace, TokenRightBrace]
-        ,   success "a}" [TokenIdent "a", TokenRightBrace]
-        ,   success "{a" [TokenLeftBrace, TokenIdent "a"]
-           ]
+        ( successes ["{a}", "{ a } ", "{/**/a/**/}/**/", " {a}"] [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
+            ++ [ success "{}" [TokenLeftBrace, TokenRightBrace]
+               , success "{a{}}" [TokenLeftBrace, TokenIdent "a", TokenLeftBrace, TokenRightBrace, TokenRightBrace]
+               , success "a}" [TokenIdent "a", TokenRightBrace]
+               , success "{a" [TokenLeftBrace, TokenIdent "a"]
+               ]
         )
 
 test_parens :: [TestTree]
 test_parens =
     lexTree
-        (   successes ["(a)", "( a ) ", "(/**/a/**/)/**/", " (a)"] [TokenLeftParen, TokenIdent "a", TokenRightParen]
-        ++  successes ["(a,B)", "( a , B ) ", "(/**/a/**/,/**/B/**/)/**/", " (a,B)"] [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B", TokenRightParen]
-        ++ [success "()" [TokenLeftParen, TokenRightParen]
-        ,   success "(a())" [TokenLeftParen, TokenIdent "a", TokenLeftParen, TokenRightParen, TokenRightParen]
-        ,   success "a)" [TokenIdent "a", TokenRightParen]
-        ,   success "(a" [TokenLeftParen, TokenIdent "a"]
-        ,   success "(B)" [TokenLeftParen, TokenIdent "B", TokenRightParen]
-        ,   success "(a,b)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightParen]
-           ]
+        ( successes ["(a)", "( a ) ", "(/**/a/**/)/**/", " (a)"] [TokenLeftParen, TokenIdent "a", TokenRightParen]
+            ++ successes ["(a,B)", "( a , B ) ", "(/**/a/**/,/**/B/**/)/**/", " (a,B)"] [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B", TokenRightParen]
+            ++ [ success "()" [TokenLeftParen, TokenRightParen]
+               , success "(a())" [TokenLeftParen, TokenIdent "a", TokenLeftParen, TokenRightParen, TokenRightParen]
+               , success "a)" [TokenIdent "a", TokenRightParen]
+               , success "(a" [TokenLeftParen, TokenIdent "a"]
+               , success "(B)" [TokenLeftParen, TokenIdent "B", TokenRightParen]
+               , success "(a,b)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightParen]
+               ]
         )
 
 test_brackets :: [TestTree]
 test_brackets =
     lexTree
-        (   successes ["[a]", "[ a ] ", "[/**/a/**/]/**/", " [a]"] [TokenLeftBracket, TokenIdent "a", TokenRightBracket]
-        ++ [success "[]" [TokenLeftBracket, TokenRightBracket]
-        ,   success "[a,b]" [TokenLeftBracket, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightBracket]
-        ,   success "[a[]]" [TokenLeftBracket, TokenIdent "a", TokenLeftBracket, TokenRightBracket, TokenRightBracket]
-        ,   success "a]" [TokenIdent "a", TokenRightBracket]
-        ,   success "[a" [TokenLeftBracket, TokenIdent "a"]
-           ]
+        ( successes ["[a]", "[ a ] ", "[/**/a/**/]/**/", " [a]"] [TokenLeftBracket, TokenIdent "a", TokenRightBracket]
+            ++ [ success "[]" [TokenLeftBracket, TokenRightBracket]
+               , success "[a,b]" [TokenLeftBracket, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightBracket]
+               , success "[a[]]" [TokenLeftBracket, TokenIdent "a", TokenLeftBracket, TokenRightBracket, TokenRightBracket]
+               , success "a]" [TokenIdent "a", TokenRightBracket]
+               , success "[a" [TokenLeftBracket, TokenIdent "a"]
+               ]
         )
 
 test_keyword :: [TestTree]
 test_keyword =
     lexTree
-        (   successes ["hello", "hello ", "hello/**/ ", " hello"] [TokenIdent "hello"]
-        ++ [success "Hello" [TokenIdent "Hello"]
-        ,   success "hello-world" [TokenIdent "hello-world"]
-           ]
+        ( successes ["hello", "hello ", "hello/**/ ", " hello"] [TokenIdent "hello"]
+            ++ [ success "Hello" [TokenIdent "Hello"]
+               , success "hello-world" [TokenIdent "hello-world"]
+               ]
         )
 
 test_parseModuleName :: [TestTree]
 test_parseModuleName =
-    lexTree $ mappend
-        ( successes ["A", "A ", "A/**/ ", " A"] [TokenIdent "A"] )
-        [ success "A-" [TokenIdent "A-"]
-        , success "A2" [TokenIdent "A2"]
-        , success "a'-2" [TokenIdent "a'-2"]
-        , FailureWithoutMessage
-            [ "-"
-            , "-A"
-            , "2"
-            , "2A"
-            , "#"
-            , "#A"
+    lexTree $
+        mappend
+            (successes ["A", "A ", "A/**/ ", " A"] [TokenIdent "A"])
+            [ success "A-" [TokenIdent "A-"]
+            , success "A2" [TokenIdent "A2"]
+            , success "a'-2" [TokenIdent "a'-2"]
+            , FailureWithoutMessage
+                [ "-"
+                , "-A"
+                , "2"
+                , "2A"
+                , "#"
+                , "#A"
+                ]
             ]
-        ]
 
 test_parensTuple :: [TestTree]
 test_parensTuple =
     lexTree
-        [success "(a,)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenRightParen]
-        ,success "(,B)" [TokenLeftParen, TokenComma, TokenIdent "B", TokenRightParen]
-        ,success "(a(),b)" [TokenLeftParen, TokenIdent "a", TokenLeftParen, TokenRightParen, TokenComma, TokenIdent "b", TokenRightParen]
-        ,success "(a,B,c)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B", TokenComma, TokenIdent "c", TokenRightParen]
+        [ success "(a,)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenRightParen]
+        , success "(,B)" [TokenLeftParen, TokenComma, TokenIdent "B", TokenRightParen]
+        , success "(a(),b)" [TokenLeftParen, TokenIdent "a", TokenLeftParen, TokenRightParen, TokenComma, TokenIdent "b", TokenRightParen]
+        , success "(a,B,c)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B", TokenComma, TokenIdent "c", TokenRightParen]
         ]
 
 test_space :: [TestTree]
 test_space =
-    lexTree $ mappend
-        ( successes ["", " ", "\n", "\r", "\t", "/**/", "//\n", "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/", "//hello\n", "//hello", "\t//hello\n /* world\n //*/  //!\n"] []
-        )
-        [ Failure
-            FailureTest
-                { failureInput = "/*/"
-                , failureExpected =
-                    "<test-string>:1:4: unexpected end of input\n"
-                }
-        , FailureWithoutMessage
-            [ "/*"
-            , "/**"
-            , "/***"
-            , "/*hello"
-            , "/*//"
-            , "*/"
-            , "/ /"
-            , "/**//"
+    lexTree $
+        mappend
+            ( successes ["", " ", "\n", "\r", "\t", "/**/", "//\n", "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/", "//hello\n", "//hello", "\t//hello\n /* world\n //*/  //!\n"] []
+            )
+            [ Failure
+                FailureTest
+                    { failureInput = "/*/"
+                    , failureExpected =
+                        "<test-string>:1:4: unexpected end of input\n"
+                    }
+            , FailureWithoutMessage
+                [ "/*"
+                , "/**"
+                , "/***"
+                , "/*hello"
+                , "/*//"
+                , "*/"
+                , "/ /"
+                , "/**//"
+                ]
             ]
-        ]
 
 test_parseStringLiteral :: [TestTree]
 test_parseStringLiteral =

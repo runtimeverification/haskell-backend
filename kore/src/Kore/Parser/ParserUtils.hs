@@ -11,7 +11,7 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Kore.Parser.ParserUtils (
     readPositiveIntegral,
-    Parser(..),
+    Parser (..),
 ) where
 
 import Data.Text (
