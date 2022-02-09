@@ -10,18 +10,12 @@ Portability : POSIX
 Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Kore.Parser.ParserUtils (
-    Parser,
-    parseOnly,
-    peekChar,
-    peekChar',
     readPositiveIntegral,
+    Parser(..),
 ) where
 
 import Data.Text (
     Text,
- )
-import Data.Void (
-    Void,
  )
 import Options.Applicative (
     auto,
@@ -31,42 +25,8 @@ import qualified Options.Applicative.Types as Options
 import Prelude.Kore hiding (
     takeWhile,
  )
-import Text.Megaparsec (
-    Parsec,
-    anySingle,
-    lookAhead,
-    parse,
- )
-import Text.Megaparsec.Error (
-    errorBundlePretty,
- )
 
-type Parser = Parsec Void Text
-
-{- |'peekChar' is similar to Attoparsec's 'peekChar'. It returns the next
-available character in the input, without consuming it. Returns 'Nothing'
-if the input does not have any available characters.
--}
-peekChar :: Parser (Maybe Char)
-peekChar =
-    Just <$> peekChar' <|> return Nothing
-
-{- |'peekChar'' is similar to Attoparsec's 'peekChar''. It returns the next
-available character in the input, without consuming it. Fails if the input
-does not have any available characters.
--}
-peekChar' :: Parser Char
-peekChar' = lookAhead anySingle
-
-{- |'parseOnly' is similar to Attoparsec's 'parseOnly'. It takes a parser,
-a FilePath that is used for generating error messages and an input string
-and produces either a parsed object, or an error message.
--}
-parseOnly :: Parser a -> FilePath -> Text -> Either String a
-parseOnly parser filePathForErrors input =
-    case parse parser filePathForErrors input of
-        Left err -> Left (errorBundlePretty err)
-        Right v -> Right v
+data Parser a = Parser (FilePath -> Text -> Either String a)
 
 readPositiveIntegral ::
     (Read t, Integral t) =>
