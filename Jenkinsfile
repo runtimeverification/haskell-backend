@@ -93,7 +93,7 @@ pipeline {
                 JOBS = 2
               }
               options {
-                timeout(time: 48, unit: 'MINUTES')
+                timeout(time: 96, unit: 'MINUTES')
               }
               steps {
                 sh '''
