@@ -91,6 +91,7 @@ import Kore.Internal.OrCondition (
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
+    fromPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
@@ -264,6 +265,12 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
         m SimplifierXSwitch
     askSimplifierXSwitch = lift askSimplifierXSwitch
     {-# INLINE askSimplifierXSwitch #-}
+
+    simplifyPatternId ::
+        Pattern RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    simplifyPatternId = pure . fromPattern
+    {-# INLINE simplifyPatternId #-}
 
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>

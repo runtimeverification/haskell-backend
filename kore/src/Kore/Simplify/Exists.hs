@@ -304,9 +304,11 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
                         substitute boundSubstitution $
                             Conditional.predicate normalized
                     }
-        orPattern <-
-            simplifyPattern sideCondition substituted
-                & lift
+        orPattern <- do
+            simplifierX <- askSimplifierXSwitch
+            case simplifierX of
+                EnabledSimplifierX -> simplifyPatternId substituted
+                DisabledSimplifierX -> simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)
