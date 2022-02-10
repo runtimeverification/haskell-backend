@@ -4,8 +4,13 @@
 {-# LANGUAGE NoStrict #-}
 
 {- |
--Copyright   : (c) Runtime Verification, 2022
--License     : BSD-3-Clause
+Copyright   : (c) Runtime Verification, 2022
+License     : BSD-3-Clause
+
+Lexical analyzer for parser of KORE text. At a high level, converts a string
+into a sequence of whitespace-insensitive tokens to be interpreted by the
+parser.
+
 --}
 
 module Kore.Parser.Lexer (
@@ -110,8 +115,19 @@ tokens :-
 tok' f (p, _, input, _) len = do
   fp <- getFilePath
   return $ Token fp p (f (decodeUtf8 (B.toStrict (B.take (fromIntegral len) input))))
+
+-- | Lexer action to construct a token with a particular constant TokenClass
 tok x = tok' (const x)
+
+{- | Lexer action to construct an identifier token with a particular TokenClass
+using the current text of the token as its Text argument.
+-}
 tok_ident x = tok' (\s -> x s)
+
+{- | Lexer action to construct a string token with the TokenString TokenClass.
+The string is unescaped prior to its Text argument being placed inside the
+token.
+-}
 tok_string (p@(AlexPn _ line column), _, input, _) len = do
   fp <- getFilePath
   let text = decodeUtf8 (B.toStrict (B.take (fromIntegral len) input))
@@ -119,20 +135,29 @@ tok_string (p@(AlexPn _ line column), _, input, _) len = do
                                         Left str -> alexErrorPretty line column str
                                         Right t -> return $ Token fp p (TokenString t)
    
--- Token type
+-- | Data type for Tokens. Contains filename, location info, and TokenClass
 data Token = Token FilePath AlexPosn TokenClass
   deriving stock (Eq)
   deriving stock (Show)
 
+{- | Get the Text argument of a Token whose TokenClass contains such an 
+argument
+-}
 getTokenBody :: Token -> Text
 getTokenBody (Token _ _ (TokenIdent t)) = t
 getTokenBody (Token _ _ (TokenSetIdent t)) = t
 getTokenBody (Token _ _ (TokenString t)) = t
 getTokenBody _ = error "getTokenBody can only be called on tokens which contain a Text field"
 
+
+-- | Get the TokenClass of a Token
 getTokenClass :: Token -> TokenClass
 getTokenClass (Token _ _ cls) = cls
 
+{- | Data type for the raw lexical data of a Token. Essentially an enumeration
+specifying which token a particular Token represents. Additionally contains the
+semantic data associated with identifier and string tokens.
+-}
 data TokenClass
   = TokenModule
   | TokenEndModule
@@ -180,32 +205,46 @@ data TokenClass
   | TokenEOF
   deriving stock (Eq, Show)
 
+-- | Monad that returns an EOF Token
 alexEOF :: Alex Token
 alexEOF = do
   fp <- getFilePath
   (p, _, _, _) <- alexGetInput
   return $ Token fp p TokenEOF
 
+-- | User state of Alex Monad. Contains file path of file being analyzed.
 data AlexUserState = AlexUserState { filePath :: FilePath }
+
+{- | Initial state of Alex Monad. Should be overridden with setFilePath if 
+possible.
+-}
 alexInitUserState = AlexUserState "<unknown>"
 
+-- | Returns the user state of the Alex Monad.
 alexGetUserState :: Alex AlexUserState
 alexGetUserState = Alex $ \s@AlexState{alex_ust=ust} -> Right (s,ust)
 
+-- | Sets the user state of the Alex Monad.
 alexSetUserState :: AlexUserState -> Alex ()
 alexSetUserState ss = Alex $ \s -> Right (s{alex_ust=ss}, ())
 
+-- | Gets the current file path within the Alex Monad.
 getFilePath :: Alex FilePath
 getFilePath = liftM filePath alexGetUserState
 
+-- | Sets the current file path within the Alex Monad.
 setFilePath :: FilePath -> Alex ()
 setFilePath = alexSetUserState . AlexUserState
 
+{- | Returns a lexical error with the specified line, column, and error
+message.
+-}
 alexErrorPretty :: Int -> Int -> String -> Alex a
 alexErrorPretty line column msg = do
     fp <- getFilePath
     alexError (fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n")
 
+-- | Replacement for alexMonadScan which also processes a FilePath.
 alexMonadScanPath = do
   input@(_,_,_,n) <- alexGetInput
   sc <- alexGetStartCode
@@ -219,9 +258,11 @@ alexMonadScanPath = do
         alexSetInput input'
         action (ignorePendingBytes input) len
 
+-- | Replacement for runAlex which also processes a FilePath.
 runAlexPath :: Alex a -> FilePath -> B.ByteString -> Either String a
 runAlexPath a fp input = runAlex input (setFilePath fp >> a)
 
+-- | Monad that repeats an operation until a boolean predicate returns True.
 whileM :: Monad m => (a -> Bool) -> m a -> m [a]
 whileM p f = go
   where go = do
@@ -232,13 +273,21 @@ whileM p f = go
                         return (x : xs)
                 else return []
 
+-- | Returns True if the specified Token is not the EOF token.
 isNotEOF :: Token -> Bool
 isNotEOF (Token _ _ TokenEOF) = False
 isNotEOF _ = True
 
+{- | Helper function to perform lexical analysis without parsing. Useful only
+for testing and debuggging.
+-}
 alexScanTokens :: FilePath -> B.ByteString -> Either String [Token]
 alexScanTokens fp input = runAlexPath (whileM isNotEOF alexMonadScanPath) fp input
 
+{- | Convert the textual representation of a string token into its semantic
+value as a Text. Returns Left with an error message if it fails, otherwise
+Right.
+-}
 unescape :: Text -> Either String Text
 unescape t =
   let drop_quotes str = Text.take (Text.length str - 2) . Text.drop 1 $ str
