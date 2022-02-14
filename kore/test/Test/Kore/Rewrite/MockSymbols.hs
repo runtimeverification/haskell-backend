@@ -107,8 +107,8 @@ import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
-    SimplifierXSwitch (..),
     IndexedEquations,
+    SimplifierXSwitch (..),
  )
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Sort

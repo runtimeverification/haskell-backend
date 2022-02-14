@@ -432,15 +432,13 @@ their corresponding evaluators.
 type BuiltinAndAxiomSimplifierMap =
     Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 
-{- | Equations can be either function definitions or simplification rules.
--}
+-- | Equations can be either function definitions or simplification rules.
 data PartitionedEquations = PartitionedEquations
     { functionRules :: ![Equation RewritingVariableName]
     , simplificationRules :: ![Equation RewritingVariableName]
     }
 
-{- | Equations grouped by their identifiers for facilitating quick lookups.
--}
+-- | Equations grouped by their identifiers for facilitating quick lookups.
 type IndexedEquations =
     Map.Map AxiomIdentifier PartitionedEquations
 
