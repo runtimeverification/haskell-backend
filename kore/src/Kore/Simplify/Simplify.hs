@@ -315,8 +315,12 @@ simplifyPatternScatter ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-simplifyPatternScatter sideCondition patt =
-    simplifyPattern sideCondition patt >>= Logic.scatter
+simplifyPatternScatter sideCondition patt = do
+    simplifierX <- askSimplifierXSwitch
+    Logic.scatter
+        =<< case simplifierX of
+            EnabledSimplifierX -> simplifyPatternId patt
+            DisabledSimplifierX -> simplifyPattern sideCondition patt
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies
