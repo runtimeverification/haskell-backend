@@ -327,6 +327,7 @@ library
     Kore.Log.DebugBeginClaim
     Kore.Log.DebugEvaluateCondition
     Kore.Log.DebugProven
+    Kore.Log.DebugRetrySolverQuery
     Kore.Log.DebugSolver
     Kore.Log.DebugSubstitutionSimplifier
     Kore.Log.DebugTransition
@@ -356,7 +357,7 @@ library
     Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity
     Kore.Log.WarnNotImplemented
-    Kore.Log.DebugRetrySolverQuery
+    Kore.Log.WarnRestartSolver
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim
