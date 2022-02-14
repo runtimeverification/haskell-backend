@@ -45,11 +45,11 @@ import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Simplify
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import qualified Kore.Verified as Verified
-import Kore.Simplify.Simplify
 import Prelude.Kore
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
