@@ -21,6 +21,8 @@ module Kore.Simplify.Simplify (
     lookupCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
+    PartitionedEquations (..),
+    IndexedEquations,
     lookupAxiomSimplifier,
     AttemptedAxiom (..),
     isApplicable,
@@ -206,6 +208,13 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
         m BuiltinAndAxiomSimplifierMap
     askSimplifierAxioms = lift askSimplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
+
+    askIndexedEquations :: m IndexedEquations
+    default askIndexedEquations ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        m IndexedEquations
+    askIndexedEquations = lift askIndexedEquations
+    {-# INLINE askIndexedEquations #-}
 
     localSimplifierAxioms ::
         (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap) ->
@@ -422,6 +431,18 @@ their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap =
     Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
+
+{- | Equations can be either function definitions or simplification rules.
+-}
+data PartitionedEquations = PartitionedEquations
+    { functionRules :: ![Equation RewritingVariableName]
+    , simplificationRules :: ![Equation RewritingVariableName]
+    }
+
+{- | Equations grouped by their identifiers for facilitating quick lookups.
+-}
+type IndexedEquations =
+    Map.Map AxiomIdentifier PartitionedEquations
 
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>

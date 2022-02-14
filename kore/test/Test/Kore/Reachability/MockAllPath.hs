@@ -419,6 +419,7 @@ instance MonadSimplify AllPathIdentity where
     simplifyTerm = undefined
     simplifyCondition = undefined
     askSimplifierAxioms = undefined
+    askIndexedEquations = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
     askInjSimplifier = undefined

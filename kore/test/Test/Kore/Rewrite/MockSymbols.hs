@@ -108,6 +108,7 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
     SimplifierXSwitch (..),
+    IndexedEquations,
  )
 import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Sort
@@ -2274,6 +2275,9 @@ metadataTools =
 axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
+mockIndexedEquations :: IndexedEquations
+mockIndexedEquations = Map.empty
+
 predicateSimplifier ::
     MonadSimplify simplifier => ConditionSimplifier simplifier
 predicateSimplifier =
@@ -2301,6 +2305,7 @@ env =
         { metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         , simplifierCondition = predicateSimplifier
         , simplifierAxioms = axiomSimplifiers
+        , indexedEquations = mockIndexedEquations
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier

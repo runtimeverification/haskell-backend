@@ -26,7 +26,6 @@ import Kore.Simplify.FunctionEvaluator (evaluateFunctions)
 import Test.Kore.Simplify
 import qualified Kore.Internal.TermLike as TermLike
 import Test.Kore.Equation.Common (
-    functionAxiomUnification,
     functionAxiomUnification_,
  )
 

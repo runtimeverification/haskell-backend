@@ -2039,6 +2039,7 @@ testInjSimplifier =
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
+-- This needs to be rewritten: evaluators should come in Equation form
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
@@ -2052,6 +2053,7 @@ testEnv =
                 , mapSimplifiers
                 , fatalSimplifiers
                 ]
+        , indexedEquations = Map.empty
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier

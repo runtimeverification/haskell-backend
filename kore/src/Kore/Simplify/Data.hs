@@ -39,6 +39,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Equation as Equation
+import Kore.Equation.Registry (partitionEquations)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -85,6 +86,7 @@ data Env simplifier = Env
     { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
     , simplifierCondition :: !(ConditionSimplifier simplifier)
     , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
+    , indexedEquations :: !IndexedEquations
     , memo :: !(Memo.Self simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
@@ -155,6 +157,9 @@ instance
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
 
+    askIndexedEquations = asks indexedEquations
+    {-# INLINE askIndexedEquations #-}
+
     localSimplifierAxioms locally =
         local $ \env@Env{simplifierAxioms} ->
             env{simplifierAxioms = locally simplifierAxioms}
@@ -220,6 +225,7 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
             { metadataTools = earlyMetadataTools
             , simplifierCondition
             , simplifierAxioms = earlySimplifierAxioms
+            , indexedEquations = earlyIndexedEquations
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
@@ -243,6 +249,7 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
         Condition.create substitutionSimplifier
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
+    earlyIndexedEquations = Map.empty
 
     verifiedModule' =
         {-# SCC "evalSimplifier/verifiedModule'" #-}
@@ -279,12 +286,15 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
                     Axiom.EvaluationStrategy.simplifierWithFallback
                     builtinEvaluators
                     userEvaluators
+            indexedEquations =
+                partitionEquations <$> equations
         memo <- Memo.new
         return
             Env
                 { metadataTools
                 , simplifierCondition
                 , simplifierAxioms
+                , indexedEquations
                 , memo
                 , injSimplifier
                 , overloadSimplifier

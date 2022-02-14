@@ -249,6 +249,7 @@ testEnv =
         { metadataTools = testMetadataTools
         , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
+        , indexedEquations = Map.empty
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier

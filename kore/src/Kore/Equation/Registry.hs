@@ -49,6 +49,7 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import qualified Kore.Verified as Verified
+import Kore.Simplify.Simplify
 import Prelude.Kore
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
@@ -89,11 +90,6 @@ identifyEquation axiom = do
     equation@Equation{left} <- hush $ Equation.fromSentenceAxiom axiom
     identifier <- AxiomIdentifier.matchAxiomIdentifier left
     pure (identifier, equation)
-
-data PartitionedEquations = PartitionedEquations
-    { functionRules :: ![Equation RewritingVariableName]
-    , simplificationRules :: ![Equation RewritingVariableName]
-    }
 
 {- | Filters and partitions a list of 'EqualityRule's to
  simplification rules and function rules. The function rules

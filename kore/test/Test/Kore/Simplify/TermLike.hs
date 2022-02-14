@@ -115,6 +115,7 @@ newtype TestSimplifier a = TestSimplifier {getTestSimplifier :: SimplifierT NoSM
 instance MonadSimplify TestSimplifier where
     askMetadataTools = TestSimplifier askMetadataTools
     askSimplifierAxioms = TestSimplifier askSimplifierAxioms
+    askIndexedEquations = TestSimplifier askIndexedEquations
     localSimplifierAxioms f =
         TestSimplifier . localSimplifierAxioms f . getTestSimplifier
     askMemo = TestSimplifier (Memo.liftSelf TestSimplifier <$> askMemo)
