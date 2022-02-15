@@ -23,6 +23,8 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Equation (Equation)
+import Kore.Simplify.FunctionEvaluator (evaluateFunctions)
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
@@ -45,8 +47,12 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    PartitionedEquations (..),
+    SimplifierXSwitch (..),
+    askSimplifierXSwitch,
     simplifyCondition,
     simplifyTerm,
+    askIndexedEquations,
  )
 import Kore.Substitute
 import qualified Logic
@@ -74,9 +80,15 @@ simplifyTopConfigurationDefined configuration =
         (worker definedConfiguration)
         sideCondition
   where
-    worker patt condition =
-        makeEvaluate condition patt
-            >>= return . removeTopExists
+    worker patt condition = do
+        simplifierXSwitch <- askSimplifierXSwitch
+        case simplifierXSwitch of
+            EnabledSimplifierX ->
+                simplifyPatternX condition patt
+                    >>= return . removeTopExists
+            DisabledSimplifierX ->
+                makeEvaluate condition patt
+                    >>= return . removeTopExists
 
     term = Conditional.term configuration
     sideCondition = SideCondition.assumeDefined term
@@ -103,7 +115,13 @@ simplify ::
     MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplify = makeEvaluate SideCondition.top
+simplify patt = do
+    simplifierXSwitch <- askSimplifierXSwitch
+    case simplifierXSwitch of
+        EnabledSimplifierX ->
+            simplifyPatternX SideCondition.top patt
+        DisabledSimplifierX ->
+            makeEvaluate SideCondition.top patt
 
 {- | Simplifies a 'Pattern' with a custom 'SideCondition'.
 This should only be used when it's certain that the
@@ -144,3 +162,30 @@ makeEvaluate sideCondition =
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
             simplifyCondition sideCondition simplifiedPattern
+
+simplifyPatternX ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    simplifier (OrPattern RewritingVariableName)
+simplifyPatternX sideCondition patt = do
+    let term = Pattern.term patt
+    indexedEquations <- askIndexedEquations
+    let equations =
+            putDefinitionsFirst <$> indexedEquations
+    newPatt <-
+        evaluateFunctions
+            sideCondition
+            equations
+            term
+    Pattern.andCondition newPatt (Pattern.withoutTerm patt)
+        & return . OrPattern.fromPattern
+  where
+    putDefinitionsFirst ::
+        PartitionedEquations ->
+        [Equation RewritingVariableName]
+    putDefinitionsFirst
+        PartitionedEquations { functionRules, simplificationRules }
+      =
+        functionRules <> simplificationRules
