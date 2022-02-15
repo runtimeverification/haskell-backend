@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE MagicHash #-}
 {-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
