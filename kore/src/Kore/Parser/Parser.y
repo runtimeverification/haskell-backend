@@ -50,6 +50,7 @@ import Kore.Syntax hiding (
 import Kore.Syntax.Definition
 import Kore.Syntax.Sentence
 import Kore.Parser.Lexer
+import Kore.Parser.LexerWrapper
 import Numeric.Natural
 import qualified Prelude as Prelude
 import Prelude.Kore
@@ -74,53 +75,53 @@ import Prelude.Kore
 
 %tokentype { Token }
 %monad { Alex }
-%lexer { lexer } { Token _ _ TokenEOF }
+%lexer { alexMonadScan >>= } { Token _ TokenEOF }
 %error { happyError }
 
 %token
-    module               { Token _ _ TokenModule }
-    endmodule            { Token _ _ TokenEndModule }
-    import               { Token _ _ TokenImport }
-    sort                 { Token _ _ TokenSort }
-    symbol               { Token _ _ TokenSymbol }
-    where                { Token _ _ TokenWhere }
-    alias                { Token _ _ TokenAlias }
-    axiom                { Token _ _ TokenAxiom }
-    claim                { Token _ _ TokenClaim }
-    hookedSort           { Token _ _ TokenHookedSort }
-    hookedSymbol         { Token _ _ TokenHookedSymbol }
-    ':='                 { Token _ _ TokenColonEqual }
-    ':'                  { Token _ _ TokenColon }
-    '{'                  { Token _ _ TokenLeftBrace }
-    '}'                  { Token _ _ TokenRightBrace }
-    '['                  { Token _ _ TokenLeftBracket }
-    ']'                  { Token _ _ TokenRightBracket }
-    '('                  { Token _ _ TokenLeftParen }
-    ')'                  { Token _ _ TokenRightParen }
-    ','                  { Token _ _ TokenComma }
-    top                  { Token _ _ TokenTop }
-    bottom               { Token _ _ TokenBottom }
-    not                  { Token _ _ TokenNot }
-    and                  { Token _ _ TokenAnd }
-    or                   { Token _ _ TokenOr }
-    implies              { Token _ _ TokenImplies }
-    iff                  { Token _ _ TokenIff }
-    exists               { Token _ _ TokenExists }
-    forall               { Token _ _ TokenForall }
-    mu                   { Token _ _ TokenMu }
-    nu                   { Token _ _ TokenNu }
-    ceil                 { Token _ _ TokenCeil }
-    floor                { Token _ _ TokenFloor }
-    equals               { Token _ _ TokenEquals }
-    in                   { Token _ _ TokenIn }
-    next                 { Token _ _ TokenNext }
-    rewrites             { Token _ _ TokenRewrites }
-    dv                   { Token _ _ TokenDomainValue }
-    leftAssoc            { Token _ _ TokenLeftAssoc }
-    rightAssoc           { Token _ _ TokenRightAssoc }
-    ident                { Token _ _ (TokenIdent _) }
-    setIdent             { Token _ _ (TokenSetIdent _) }
-    string               { Token _ _ (TokenString _) }
+    module               { Token _ TokenModule }
+    endmodule            { Token _ TokenEndModule }
+    import               { Token _ TokenImport }
+    sort                 { Token _ TokenSort }
+    symbol               { Token _ TokenSymbol }
+    where                { Token _ TokenWhere }
+    alias                { Token _ TokenAlias }
+    axiom                { Token _ TokenAxiom }
+    claim                { Token _ TokenClaim }
+    hookedSort           { Token _ TokenHookedSort }
+    hookedSymbol         { Token _ TokenHookedSymbol }
+    ':='                 { Token _ TokenColonEqual }
+    ':'                  { Token _ TokenColon }
+    '{'                  { Token _ TokenLeftBrace }
+    '}'                  { Token _ TokenRightBrace }
+    '['                  { Token _ TokenLeftBracket }
+    ']'                  { Token _ TokenRightBracket }
+    '('                  { Token _ TokenLeftParen }
+    ')'                  { Token _ TokenRightParen }
+    ','                  { Token _ TokenComma }
+    top                  { Token _ TokenTop }
+    bottom               { Token _ TokenBottom }
+    not                  { Token _ TokenNot }
+    and                  { Token _ TokenAnd }
+    or                   { Token _ TokenOr }
+    implies              { Token _ TokenImplies }
+    iff                  { Token _ TokenIff }
+    exists               { Token _ TokenExists }
+    forall               { Token _ TokenForall }
+    mu                   { Token _ TokenMu }
+    nu                   { Token _ TokenNu }
+    ceil                 { Token _ TokenCeil }
+    floor                { Token _ TokenFloor }
+    equals               { Token _ TokenEquals }
+    in                   { Token _ TokenIn }
+    next                 { Token _ TokenNext }
+    rewrites             { Token _ TokenRewrites }
+    dv                   { Token _ TokenDomainValue }
+    leftAssoc            { Token _ TokenLeftAssoc }
+    rightAssoc           { Token _ TokenRightAssoc }
+    ident                { Token _ (TokenIdent _) }
+    setIdent             { Token _ (TokenSetIdent _) }
+    string               { Token _ (TokenString _) }
 
 %%
 
@@ -267,15 +268,11 @@ PatternList :: {[ParsedPattern]}
 
 {
 
--- | Lexical analysis function for Happy. Merely calls out to Alex.
-lexer :: (Token -> Alex a) -> Alex a
-lexer = (alexMonadScanPath >>=)
-
 {- | Helper function for parsing a particular NonTerminal in the grammar. The
 function specified by the %name directive for that NonTerminal should be passed
 as the first argument to the function. -}
 parseNonTerminal :: Alex a -> FilePath -> Text -> Either String a
-parseNonTerminal a fp s = runAlexPath a fp (B.fromStrict (Text.encodeUtf8 s))
+parseNonTerminal a fp s = runAlex fp (Text.encodeUtf8 s) a
 
 -- Functions for parsing specific NonTerminals.
 
@@ -328,7 +325,7 @@ parseSymbolHead = parseNonTerminal symbolHeadStart
 Happy.
 -}
 happyError :: Token -> Alex a
-happyError (Token _ (AlexPn _ line column) t) = alexErrorPretty line column ("unexpected token " ++ (show t))
+happyError (Token (AlexPn fp _ line column) t) = alexError fp line column ("unexpected token " ++ (show t))
 
 {-
 Uses 'parseVariableCounter' to get the 'counter' for the 'Id', if any. Creates
@@ -370,7 +367,7 @@ embedParsedPattern patternBase = asPattern (mempty :< patternBase)
 an AstLocation.
 -}
 mkId :: Token -> Id
-mkId tok@(Token fileName (AlexPn _ line column) _) = Id{getId = getTokenBody tok, idLocation = AstLocationFile $ FileLocation{fileName, line, column}}
+mkId tok@(Token (AlexPn fileName _ line column) _) = Id{getId = getTokenBody tok, idLocation = AstLocationFile $ FileLocation{fileName, line, column}}
 
 -- | Create a VariableName from a Token by using mkId and getVariableName.
 mkVariableName :: Token -> VariableName
@@ -390,10 +387,10 @@ the result. Namely, \and, \or, \implies, and \iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
-mkApply tok@(Token _ _ TokenAnd) [andSort] andFirst andSecond = embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
-mkApply tok@(Token _ _ TokenOr) [orSort] orFirst orSecond = embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
-mkApply tok@(Token _ _ TokenImplies) [impliesSort] impliesFirst impliesSecond = embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
-mkApply tok@(Token _ _ TokenIff) [iffSort] iffFirst iffSecond = embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
-mkApply tok@(Token _ _ (TokenIdent _)) sorts first second = embedParsedPattern $ ApplicationF Application{applicationSymbolOrAlias = SymbolOrAlias{symbolOrAliasConstructor = mkId tok, symbolOrAliasParams = sorts}, applicationChildren = [first, second]}
+mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond = embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
+mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond = embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
+mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond = embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
+mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond = embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
+mkApply tok@(Token _ (TokenIdent _)) sorts first second = embedParsedPattern $ ApplicationF Application{applicationSymbolOrAlias = SymbolOrAlias{symbolOrAliasConstructor = mkId tok, symbolOrAliasParams = sorts}, applicationChildren = [first, second]}
 
 }

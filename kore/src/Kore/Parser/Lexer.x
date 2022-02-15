@@ -13,28 +13,30 @@ Lexical analyzer for parser of KORE text. At a high level, converts a string
 into a sequence of whitespace-insensitive tokens to be interpreted by the
 parser.
 
---}
+-}
 
 module Kore.Parser.Lexer (
     Alex(..),
+    AlexInput(..),
     AlexPosn(..),
+    AlexReturn(..),
     AlexState(..),
     Token(..),
     TokenClass(..),
     alexError,
-    alexErrorPretty,
-    alexMonadScanPath,
-    alexScanTokens,
+    alexScan,
     getTokenBody,
     getTokenClass,
-    runAlexPath,
 ) where
 
+import Control.Applicative as App (Applicative (..))
 import Control.Monad (
     liftM,
     when,
  )
-import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString          as ByteString
+import qualified Data.ByteString.Internal as ByteString hiding (ByteString)
+import qualified Data.ByteString.Unsafe   as ByteString
 import Data.Char (
     chr,
     digitToInt,
@@ -50,8 +52,6 @@ import Data.Text.Encoding
 import Prelude
 
 }
-
-%wrapper "monadUserState-bytestring"
 
 @ident = [a-zA-Z][a-zA-Z0-9'\-]*
 @setIdent = [\@][a-zA-Z][a-zA-Z0-9'\-]*
@@ -114,31 +114,32 @@ tokens :-
 {
 
 -- Token helpers
-tok' f (p, _, input, _) len = do
-  fp <- getFilePath
-  return $ Token fp p (f (decodeUtf8 (B.toStrict (B.take (fromIntegral len) input))))
+tok' f AlexInput{alexPosn, alexStr} len = do
+  return $ Token alexPosn (f (decodeUtf8 (ByteString.take len alexStr)))
 
 -- | Lexer action to construct a token with a particular constant TokenClass
+tok :: TokenClass -> AlexInput -> Int -> Alex Token
 tok x = tok' (const x)
 
 {- | Lexer action to construct an identifier token with a particular TokenClass
 using the current text of the token as its Text argument.
 -}
+tok_ident :: (Text -> TokenClass) -> AlexInput -> Int -> Alex Token
 tok_ident x = tok' (\s -> x s)
 
 {- | Lexer action to construct a string token with the TokenString TokenClass.
 The string is unescaped prior to its Text argument being placed inside the
 token.
 -}
-tok_string (p@(AlexPn _ line column), _, input, _) len = do
-  fp <- getFilePath
-  let text = decodeUtf8 (B.toStrict (B.take (fromIntegral len) input))
+tok_string :: AlexInput -> Int -> Alex Token
+tok_string AlexInput{alexPosn=p@(AlexPn fp _ line column), alexStr} len = do
+  let text = decodeUtf8 (ByteString.take len alexStr)
       unescaped = unescape text in case unescaped of
-                                        Left str -> alexErrorPretty line column str
-                                        Right t -> return $ Token fp p (TokenString t)
+                                        Left str -> alexError fp line column str
+                                        Right t -> return $ Token p (TokenString t)
    
 -- | Data type for Tokens. Contains filename, location info, and TokenClass
-data Token = Token FilePath AlexPosn TokenClass
+data Token = Token AlexPosn TokenClass
   deriving stock (Eq)
   deriving stock (Show)
 
@@ -146,15 +147,15 @@ data Token = Token FilePath AlexPosn TokenClass
 argument
 -}
 getTokenBody :: Token -> Text
-getTokenBody (Token _ _ (TokenIdent t)) = t
-getTokenBody (Token _ _ (TokenSetIdent t)) = t
-getTokenBody (Token _ _ (TokenString t)) = t
+getTokenBody (Token _ (TokenIdent t)) = t
+getTokenBody (Token _ (TokenSetIdent t)) = t
+getTokenBody (Token _ (TokenString t)) = t
 getTokenBody _ = error "getTokenBody can only be called on tokens which contain a Text field"
 
 
 -- | Get the TokenClass of a Token
 getTokenClass :: Token -> TokenClass
-getTokenClass (Token _ _ cls) = cls
+getTokenClass (Token _ cls) = cls
 
 {- | Data type for the raw lexical data of a Token. Essentially an enumeration
 specifying which token a particular Token represents. Additionally contains the
@@ -207,84 +208,62 @@ data TokenClass
   | TokenEOF
   deriving stock (Eq, Show)
 
--- | Monad that returns an EOF Token
-alexEOF :: Alex Token
-alexEOF = do
-  fp <- getFilePath
-  (p, _, _, _) <- alexGetInput
-  return $ Token fp p TokenEOF
+data AlexInput = AlexInput { alexPosn :: {-# UNPACK #-} !AlexPosn,
+                             alexChar :: {-# UNPACK #-} !Char,
+                             alexStr :: {-# UNPACK #-} !ByteString.ByteString,
+                             alexBytePos :: {-# UNPACK #-} !Int}
 
--- | User state of Alex Monad. Contains file path of file being analyzed.
-data AlexUserState = AlexUserState { filePath :: FilePath }
+data AlexPosn = AlexPn !FilePath !Int !Int !Int
+        deriving (Eq,Show)
 
-{- | Initial state of Alex Monad. Should be overridden with setFilePath if 
-possible.
--}
-alexInitUserState = AlexUserState "<unknown>"
+data AlexState = AlexState {
+        alex_pos :: !AlexPosn,  -- position at current input location
+        alex_bpos:: !Int,     -- bytes consumed so far
+        alex_inp :: ByteString.ByteString,      -- the current input
+        alex_chr :: !Char,      -- the character before the input
+        alex_scd :: !Int        -- the current startcode
+    }
 
--- | Returns the user state of the Alex Monad.
-alexGetUserState :: Alex AlexUserState
-alexGetUserState = Alex $ \s@AlexState{alex_ust=ust} -> Right (s,ust)
+newtype Alex a = Alex { unAlex :: AlexState -> Either String (AlexState, a) }
 
--- | Sets the user state of the Alex Monad.
-alexSetUserState :: AlexUserState -> Alex ()
-alexSetUserState ss = Alex $ \s -> Right (s{alex_ust=ss}, ())
+instance Functor Alex where
+  fmap f a = Alex $ \s -> case unAlex a s of
+                            Left msg -> Left msg
+                            Right (s', a') -> Right (s', f a')
 
--- | Gets the current file path within the Alex Monad.
-getFilePath :: Alex FilePath
-getFilePath = liftM filePath alexGetUserState
+instance Applicative Alex where
+  pure a   = Alex $ \s -> Right (s, a)
+  fa <*> a = Alex $ \s -> case unAlex fa s of
+                            Left msg -> Left msg
+                            Right (s', f) -> case unAlex a s' of
+                                               Left msg -> Left msg
+                                               Right (s'', b) -> Right (s'', f b)
 
--- | Sets the current file path within the Alex Monad.
-setFilePath :: FilePath -> Alex ()
-setFilePath = alexSetUserState . AlexUserState
+instance Monad Alex where
+  m >>= k  = Alex $ \s -> case unAlex m s of
+                                Left msg -> Left msg
+                                Right (s',a) -> unAlex (k a) s'
+  return = App.pure
 
-{- | Returns a lexical error with the specified line, column, and error
-message.
--}
-alexErrorPretty :: Int -> Int -> String -> Alex a
-alexErrorPretty line column msg = do
-    fp <- getFilePath
-    alexError (fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n")
+alexGetByte (AlexInput {alexPosn=p,alexStr=cs,alexBytePos=n}) =
+    case ByteString.uncons cs of
+        Nothing -> Nothing
+        Just (c, rest) -> 
+          let b = ByteString.w2c c in
+            Just (c, AlexInput {
+                alexPosn = alexMove p b,
+                alexChar = b,
+                alexStr =  rest,
+                alexBytePos = n+1})
 
--- | Replacement for alexMonadScan which also processes a FilePath.
-alexMonadScanPath = do
-  input@(_,_,_,n) <- alexGetInput
-  sc <- alexGetStartCode
-  case alexScan input sc of
-    AlexEOF -> alexEOF
-    AlexError ((AlexPn _ line column),_,s,_) -> let nextChar = B.unpack $ B.take 1 s in alexErrorPretty line column (if nextChar == "" then "unexpected end of input" else "unexpected character '" ++ nextChar ++ "'")
-    AlexSkip  input' _ -> do
-        alexSetInput input'
-        alexMonadScanPath
-    AlexToken input'@(_,_,_,n') _ action -> let len = n'-n in do
-        alexSetInput input'
-        action (ignorePendingBytes input) len
+alexMove :: AlexPosn -> Char -> AlexPosn
+alexMove (AlexPn fp a l c) '\t' = AlexPn fp (a+1)  l     (c+alex_tab_size-((c-1) `mod` alex_tab_size))
+alexMove (AlexPn fp a l _) '\n' = AlexPn fp (a+1) (l+1)   1
+alexMove (AlexPn fp a l c) _    = AlexPn fp (a+1)  l     (c+1)
 
--- | Replacement for runAlex which also processes a FilePath.
-runAlexPath :: Alex a -> FilePath -> B.ByteString -> Either String a
-runAlexPath a fp input = runAlex input (setFilePath fp >> a)
-
--- | Monad that repeats an operation until a boolean predicate returns True.
-whileM :: Monad m => (a -> Bool) -> m a -> m [a]
-whileM p f = go
-  where go = do
-          x <- f
-          if p x
-                then do
-                        xs <- go
-                        return (x : xs)
-                else return []
-
--- | Returns True if the specified Token is not the EOF token.
-isNotEOF :: Token -> Bool
-isNotEOF (Token _ _ TokenEOF) = False
-isNotEOF _ = True
-
-{- | Helper function to perform lexical analysis without parsing. Useful only
-for testing and debuggging.
--}
-alexScanTokens :: FilePath -> B.ByteString -> Either String [Token]
-alexScanTokens fp input = runAlexPath (whileM isNotEOF alexMonadScanPath) fp input
+alexError :: FilePath -> Int -> Int -> String -> Alex a
+alexError fp line column msg = do
+    Alex $ const $ Left (fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n")
 
 {- | Convert the textual representation of a string token into its semantic
 value as a Text. Returns Left with an error message if it fails, otherwise

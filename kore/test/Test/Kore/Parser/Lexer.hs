@@ -208,7 +208,7 @@ test_parseStringLiteral =
                 , failureExpected =
                     "<test-string>:1:5: unexpected character 'r'\n"
                 }
-        , invalidEscape "\"\\'\"" "'"
+        , invalidEscape "\"\\'\"" "\\'"
         , invalidEscape "\"\\b\"" "b"
         , invalidEscape "\"\\?\"" "?"
         , invalidEscape "\"\\a\"" "a"

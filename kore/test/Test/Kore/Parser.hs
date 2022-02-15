@@ -11,13 +11,13 @@ module Test.Kore.Parser (
     parse',
 ) where
 
-import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Text (
     Text,
     unpack,
  )
 import qualified Data.Text.Encoding as Text
 import Kore.Parser.Lexer
+import Kore.Parser.LexerWrapper
 import Kore.Parser.ParserUtils
 import Prelude.Kore
 import Test.Tasty (
@@ -113,7 +113,7 @@ lexTree ::
 lexTree = parseTree scanTokenClasses
 
 scanTokens :: FilePath -> Text -> Either String [Token]
-scanTokens fp input = alexScanTokens fp $ B.fromStrict $ Text.encodeUtf8 input
+scanTokens fp input = alexScanTokens fp $ Text.encodeUtf8 input
 
 scanTokenClasses :: FilePath -> Text -> Either String [TokenClass]
 scanTokenClasses fp input =
