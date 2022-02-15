@@ -294,6 +294,7 @@
           "Kore/Parser"
           "Kore/Parser/CString"
           "Kore/Parser/Lexer"
+          "Kore/Parser/LexerWrapper"
           "Kore/Parser/Parser"
           "Kore/Parser/ParserUtils"
           "Kore/Reachability"
