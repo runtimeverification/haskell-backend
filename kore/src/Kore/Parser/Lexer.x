@@ -1,6 +1,7 @@
 {
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
+{-# OPTIONS -funbox-strict-fields #-}
 {-# LANGUAGE NoStrict #-}
 
 {- |
