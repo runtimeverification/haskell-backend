@@ -3,8 +3,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
 {-# OPTIONS -funbox-strict-fields #-}
-{-# LANGUAGE NoStrict #-}
-{-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -96,7 +94,7 @@ alexEOF = do
 alexMonadScan = do
   inp__@AlexInput{alexBytePos=n} <- alexGetInput
   sc <- alexGetStartCode
-  case alexScan inp__ sc of
+  case alexScanUser () inp__ sc of
     AlexEOF -> alexEOF
     AlexError(AlexInput{alexPosn=(AlexPn fp _ line column),alexStr=s}) -> alexError fp line column (if s == "" then "unexpected end of input" else "unexpected character " ++ show (ByteString.w2c $ ByteString.head s))
     AlexSkip  inp__' _len -> do

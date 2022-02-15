@@ -2,8 +2,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
 {-# OPTIONS -funbox-strict-fields #-}
-{-# LANGUAGE NoStrict #-}
-{-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -24,7 +22,7 @@ module Kore.Parser.Lexer (
     Token(..),
     TokenClass(..),
     alexError,
-    alexScan,
+    alexScanUser,
     getTokenBody,
     getTokenClass,
 ) where
@@ -207,6 +205,9 @@ data TokenClass
   | TokenString Text
   | TokenEOF
   deriving stock (Eq, Show)
+
+
+alexScanUser :: () -> AlexInput -> Int -> AlexReturn (AlexInput -> Int -> Alex Token)
 
 data AlexInput = AlexInput { alexPosn :: {-# UNPACK #-} !AlexPosn,
                              alexChar :: {-# UNPACK #-} !Char,
