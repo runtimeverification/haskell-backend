@@ -3,6 +3,7 @@
 {-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
 {-# OPTIONS -funbox-strict-fields #-}
 {-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
