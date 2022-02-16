@@ -141,22 +141,32 @@ Modules :: {[ParsedModule]}
          | Modules Module { $2 : $1 }
 
 Module :: {ParsedModule}
-        : module ident Sentences endmodule Attributes { Module (ModuleName (getTokenBody $2)) (reverse $3) $5 }
-        | module ident endmodule Attributes { Module (ModuleName (getTokenBody $2)) [] $4 }
+        : module ident Sentences endmodule Attributes
+          { Module (ModuleName (getTokenBody $2)) (reverse $3) $5 }
+        | module ident endmodule Attributes
+          { Module (ModuleName (getTokenBody $2)) [] $4 }
 
 Sentences :: {[ParsedSentence]}
 	   : Sentence { [$1] }
            | Sentences Sentence { $2 : $1 }
 
 Sentence :: {ParsedSentence}
-	  : import ident Attributes { SentenceImportSentence (SentenceImport (ModuleName $ getTokenBody $2) $3) }
-          | sort Id SortVariables Attributes { SentenceSortSentence (SentenceSort $2 $3 $4) }
-          | hookedSort Id SortVariables Attributes { SentenceHookSentence (SentenceHookedSort (SentenceSort $2 $3 $4)) }
-          | symbol SymbolHead SortsParen ':' Sort Attributes { SentenceSymbolSentence (SentenceSymbol $2 $3 $5 $6) }
-          | hookedSymbol SymbolHead SortsParen ':' Sort Attributes { SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol $2 $3 $5 $6)) }
-          | alias AliasHead SortsParen ':' Sort where Application ':=' Pattern Attributes { SentenceAliasSentence (SentenceAlias $2 $3 $5 $7 $9 $10) }
-          | axiom SortVariables Pattern Attributes { SentenceAxiomSentence (SentenceAxiom $2 $3 $4) }
-          | claim SortVariables Pattern Attributes { SentenceClaimSentence (SentenceClaim (SentenceAxiom $2 $3 $4)) }
+	  : import ident Attributes
+            { SentenceImportSentence (SentenceImport (ModuleName $ getTokenBody $2) $3) }
+          | sort Id SortVariables Attributes
+            { SentenceSortSentence (SentenceSort $2 $3 $4) }
+          | hookedSort Id SortVariables Attributes
+            { SentenceHookSentence (SentenceHookedSort (SentenceSort $2 $3 $4)) }
+          | symbol SymbolHead SortsParen ':' Sort Attributes
+            { SentenceSymbolSentence (SentenceSymbol $2 $3 $5 $6) }
+          | hookedSymbol SymbolHead SortsParen ':' Sort Attributes
+            { SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol $2 $3 $5 $6)) }
+          | alias AliasHead SortsParen ':' Sort where Application ':=' Pattern Attributes
+            { SentenceAliasSentence (SentenceAlias $2 $3 $5 $7 $9 $10) }
+          | axiom SortVariables Pattern Attributes
+            { SentenceAxiomSentence (SentenceAxiom $2 $3 $4) }
+          | claim SortVariables Pattern Attributes
+            { SentenceClaimSentence (SentenceClaim (SentenceAxiom $2 $3 $4)) }
 
 Id :: {Id}
     : ident { mkId $1 }
@@ -214,35 +224,64 @@ StringLiteral :: {StringLiteral}
                : string { StringLiteral{getStringLiteral = getTokenBody $1} }
 
 ApplicationPattern :: {ParsedPattern}
-		    : leftAssoc '{' '}' '(' ident SortsBrace NePatterns ')' { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' and SortsBrace NePatterns ')' { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')' { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' implies SortsBrace NePatterns ')' { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' iff SortsBrace NePatterns ')' { mkAssoc True $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' ident SortsBrace NePatterns ')' { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' and SortsBrace NePatterns ')' { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' or SortsBrace NePatterns ')' { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' implies SortsBrace NePatterns ')' { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' iff SortsBrace NePatterns ')' { mkAssoc False $5 $6 $7 }
-                    | top '{' Sort '}' '(' ')' { embedParsedPattern $ TopF Top{topSort = $3} }
-                    | bottom '{' Sort '}' '(' ')' { embedParsedPattern $ BottomF Bottom{bottomSort = $3} }
-                    | not '{' Sort '}' '(' Pattern ')' { embedParsedPattern $ NotF Not{notSort = $3, notChild = $6} }
-                    | and '{' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ AndF And{andSort = $3, andFirst = $6, andSecond = $8} }
-                    | or '{' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ OrF Or{orSort = $3, orFirst = $6, orSecond = $8} }
-                    | implies '{' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ ImpliesF Implies{impliesSort = $3, impliesFirst = $6, impliesSecond = $8} }
-                    | iff '{' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ IffF Iff{iffSort = $3, iffFirst = $6, iffSecond = $8} }
-                    | exists '{' Sort '}' '(' ElementVariable ',' Pattern ')' { embedParsedPattern $ ExistsF Exists{existsSort = $3, existsVariable = $6, existsChild = $8} }
-                    | forall '{' Sort '}' '(' ElementVariable ',' Pattern ')' { embedParsedPattern $ ForallF Forall{forallSort = $3, forallVariable = $6, forallChild = $8} }
-                    | mu '{' '}' '(' SetVariable ',' Pattern ')' { embedParsedPattern $ MuF Mu{muVariable = $5, muChild = $7} }
-                    | nu '{' '}' '(' SetVariable ',' Pattern ')' { embedParsedPattern $ NuF Nu{nuVariable = $5, nuChild = $7} }
-                    | ceil '{' Sort ',' Sort '}' '(' Pattern ')' { embedParsedPattern $ CeilF Ceil{ceilOperandSort = $3, ceilResultSort = $5, ceilChild = $8} }
-                    | floor '{' Sort ',' Sort '}' '(' Pattern ')' { embedParsedPattern $ FloorF Floor{floorOperandSort = $3, floorResultSort = $5, floorChild = $8} }
-                    | equals '{' Sort ',' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ EqualsF Equals{equalsOperandSort = $3, equalsResultSort = $5, equalsFirst = $8, equalsSecond = $10} }
-                    | in '{' Sort ',' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ InF In{inOperandSort = $3, inResultSort = $5, inContainedChild = $8, inContainingChild = $10} }
-                    | next '{' Sort '}' '(' Pattern ')' { embedParsedPattern $ NextF Next{nextSort = $3, nextChild = $6} }
-                    | rewrites '{' Sort '}' '(' Pattern ',' Pattern ')' { embedParsedPattern $ RewritesF Rewrites{rewritesSort = $3, rewritesFirst = $6, rewritesSecond = $8} }
-                    | dv '{' Sort '}' '(' StringLiteralPattern ')' { embedParsedPattern $ DomainValueF DomainValue{domainValueSort = $3, domainValueChild = $6} }
-                    | Id SortsBrace Patterns { embedParsedPattern $ ApplicationF Application{applicationSymbolOrAlias = SymbolOrAlias{symbolOrAliasConstructor = $1, symbolOrAliasParams = $2}, applicationChildren = $3} }
+		    : leftAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
+		    | leftAssoc '{' '}' '(' and SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
+		    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
+		    | leftAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
+		    | leftAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
+                    | rightAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
+                      { mkAssoc False $5 $6 $7 }
+                    | rightAssoc '{' '}' '(' and SortsBrace NePatterns ')'
+                      { mkAssoc False $5 $6 $7 }
+                    | rightAssoc '{' '}' '(' or SortsBrace NePatterns ')'
+                      { mkAssoc False $5 $6 $7 }
+                    | rightAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
+                      { mkAssoc False $5 $6 $7 }
+                    | rightAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
+                      { mkAssoc False $5 $6 $7 }
+                    | top '{' Sort '}' '(' ')'
+                      { embedParsedPattern $ TopF Top{topSort = $3} }
+                    | bottom '{' Sort '}' '(' ')'
+                      { embedParsedPattern $ BottomF Bottom{bottomSort = $3} }
+                    | not '{' Sort '}' '(' Pattern ')'
+                      { embedParsedPattern $ NotF Not{notSort = $3, notChild = $6} }
+                    | and '{' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ AndF And{andSort = $3, andFirst = $6, andSecond = $8} }
+                    | or '{' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ OrF Or{orSort = $3, orFirst = $6, orSecond = $8} }
+                    | implies '{' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ ImpliesF Implies{impliesSort = $3, impliesFirst = $6, impliesSecond = $8} }
+                    | iff '{' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ IffF Iff{iffSort = $3, iffFirst = $6, iffSecond = $8} }
+                    | exists '{' Sort '}' '(' ElementVariable ',' Pattern ')'
+                      { embedParsedPattern $ ExistsF Exists{existsSort = $3, existsVariable = $6, existsChild = $8} }
+                    | forall '{' Sort '}' '(' ElementVariable ',' Pattern ')'
+                      { embedParsedPattern $ ForallF Forall{forallSort = $3, forallVariable = $6, forallChild = $8} }
+                    | mu '{' '}' '(' SetVariable ',' Pattern ')'
+                      { embedParsedPattern $ MuF Mu{muVariable = $5, muChild = $7} }
+                    | nu '{' '}' '(' SetVariable ',' Pattern ')'
+                      { embedParsedPattern $ NuF Nu{nuVariable = $5, nuChild = $7} }
+                    | ceil '{' Sort ',' Sort '}' '(' Pattern ')'
+                      { embedParsedPattern $ CeilF Ceil{ceilOperandSort = $3, ceilResultSort = $5, ceilChild = $8} }
+                    | floor '{' Sort ',' Sort '}' '(' Pattern ')'
+                      { embedParsedPattern $ FloorF Floor{floorOperandSort = $3, floorResultSort = $5, floorChild = $8} }
+                    | equals '{' Sort ',' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ EqualsF Equals{equalsOperandSort = $3, equalsResultSort = $5, equalsFirst = $8, equalsSecond = $10} }
+                    | in '{' Sort ',' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ InF In{inOperandSort = $3, inResultSort = $5, inContainedChild = $8, inContainingChild = $10} }
+                    | next '{' Sort '}' '(' Pattern ')'
+                      { embedParsedPattern $ NextF Next{nextSort = $3, nextChild = $6} }
+                    | rewrites '{' Sort '}' '(' Pattern ',' Pattern ')'
+                      { embedParsedPattern $ RewritesF Rewrites{rewritesSort = $3, rewritesFirst = $6, rewritesSecond = $8} }
+                    | dv '{' Sort '}' '(' StringLiteralPattern ')'
+                      { embedParsedPattern $ DomainValueF DomainValue{domainValueSort = $3, domainValueChild = $6} }
+                    | Id SortsBrace Patterns
+                      { embedParsedPattern $ ApplicationF Application{applicationSymbolOrAlias = SymbolOrAlias{symbolOrAliasConstructor = $1, symbolOrAliasParams = $2}, applicationChildren = $3} }
 
 Application :: {Application SymbolOrAlias (SomeVariable VariableName)}
 	     : Id SortsBrace SomeVariables { Application{applicationSymbolOrAlias = SymbolOrAlias{symbolOrAliasConstructor = $1, symbolOrAliasParams = $2}, applicationChildren = $3} }
@@ -285,7 +324,9 @@ parseAttributes = parseNonTerminal attributesStart
 parseDefinition :: FilePath -> Text -> Either String ParsedDefinition
 parseDefinition = parseNonTerminal definitionStart
 
-parseElementVariable :: FilePath -> Text -> Either String (Variable (ElementVariableName VariableName))
+parseElementVariable :: FilePath
+		     -> Text
+                     -> Either String (Variable (ElementVariableName VariableName))
 parseElementVariable = parseNonTerminal elementVariableStart
 
 parseId :: FilePath -> Text -> Either String Id
@@ -325,7 +366,8 @@ parseSymbolHead = parseNonTerminal symbolHeadStart
 Happy.
 -}
 happyError :: Token -> Alex a
-happyError (Token (AlexPn fp _ line column) t) = alexError fp line column ("unexpected token " ++ (show t))
+happyError (Token (AlexPn fp _ line column) t) =
+    alexError fp line column ("unexpected token " ++ (show t))
 
 {-
 Uses 'parseVariableCounter' to get the 'counter' for the 'Id', if any. Creates
@@ -367,7 +409,10 @@ embedParsedPattern patternBase = asPattern (mempty :< patternBase)
 an AstLocation.
 -}
 mkId :: Token -> Id
-mkId tok@(Token (AlexPn fileName _ line column) _) = Id{getId = getTokenBody tok, idLocation = AstLocationFile $ FileLocation{fileName, line, column}}
+mkId tok@(Token (AlexPn fileName _ line column) _) =
+    Id { getId = getTokenBody tok
+       , idLocation = AstLocationFile $ FileLocation{fileName, line, column}
+       }
 
 -- | Create a VariableName from a Token by using mkId and getVariableName.
 mkVariableName :: Token -> VariableName
@@ -387,10 +432,20 @@ the result. Namely, \and, \or, \implies, and \iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
-mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond = embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
-mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond = embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
-mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond = embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
-mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond = embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
-mkApply tok@(Token _ (TokenIdent _)) sorts first second = embedParsedPattern $ ApplicationF Application{applicationSymbolOrAlias = SymbolOrAlias{symbolOrAliasConstructor = mkId tok, symbolOrAliasParams = sorts}, applicationChildren = [first, second]}
+mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond =
+    embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
+mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
+    embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
+mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond =
+    embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
+mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond =
+    embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
+mkApply tok@(Token _ (TokenIdent _)) sorts first second =
+    embedParsedPattern $ ApplicationF Application
+       { applicationSymbolOrAlias = SymbolOrAlias { symbolOrAliasConstructor = mkId tok
+                                                  , symbolOrAliasParams = sorts
+                                                  }
+       , applicationChildren = [first, second]
+       }
 
 }

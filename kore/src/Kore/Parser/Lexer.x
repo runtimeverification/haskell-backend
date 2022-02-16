@@ -258,9 +258,10 @@ alexGetByte (AlexInput {alexPosn=p,alexStr=cs,alexBytePos=n}) =
                 alexBytePos = n+1})
 
 alexMove :: AlexPosn -> Char -> AlexPosn
-alexMove (AlexPn fp a l c) '\t' = AlexPn fp (a+1)  l     (c+alex_tab_size-((c-1) `mod` alex_tab_size))
-alexMove (AlexPn fp a l _) '\n' = AlexPn fp (a+1) (l+1)   1
-alexMove (AlexPn fp a l c) _    = AlexPn fp (a+1)  l     (c+1)
+alexMove (AlexPn fp a l c) '\t' =
+    AlexPn fp (a+1) l (c+alex_tab_size-((c-1) `mod` alex_tab_size))
+alexMove (AlexPn fp a l _) '\n' = AlexPn fp (a+1) (l+1) 1
+alexMove (AlexPn fp a l c) _    = AlexPn fp (a+1) l (c+1)
 
 alexError :: FilePath -> Int -> Int -> String -> Alex a
 alexError fp line column msg = do
@@ -274,9 +275,11 @@ unescape :: Text -> Either String Text
 unescape t =
   let drop_quotes str = Text.take (Text.length str - 2) . Text.drop 1 $ str
       escape rest c = either Left (\s -> Right (c : s)) $ go rest
-      validate rest c | c >= 0x10ffff = Left ("code point " ++ show c ++ " outside range of Unicode")
-                      | generalCategory (chr c) == Surrogate = Left ("surrogate character " ++ show (chr c) ++ " in string literal")
-                      | otherwise = escape rest $ chr c
+      validate rest c
+          | c >= 0x10ffff = Left ("code point " ++ show c ++ " outside range of Unicode")
+          | generalCategory (chr c) == Surrogate 
+              = Left ("surrogate character " ++ show (chr c) ++ " in string literal")
+          | otherwise = escape rest $ chr c
       go [] = Right []
       go ('\\' : 'n' : rest) = escape rest '\n'
       go ('\\' : 'r' : rest) = escape rest '\r'
@@ -284,11 +287,28 @@ unescape t =
       go ('\\' : 'f' : rest) = escape rest '\f'
       go ('\\' : '\\' : rest) = escape rest '\\'
       go ('\\' : '"' : rest) = escape rest '"'
-      go ('\\' : 'x' : first : second : rest) = escape rest $ chr (digitToInt first * 16 + digitToInt second)
-      go ('\\' : 'u' : first : second : third : fourth : rest) = validate rest $ (((digitToInt first * 16 + digitToInt second) * 16 + digitToInt third) * 16 + digitToInt fourth)
-      go ('\\' : 'U' : first : second : third : fourth : fifth : sixth : seventh : eighth : rest) = validate rest $ (((((((digitToInt first * 16 + digitToInt second) * 16 + digitToInt third) * 16 + digitToInt fourth) * 16 + digitToInt fifth) * 16 + digitToInt sixth) * 16 + digitToInt seventh) * 16 + digitToInt eighth)
+      go ('\\' : 'x' : first : second : rest) =
+          escape rest $ chr (digitToInt first * 16 +
+                             digitToInt second)
+      go ('\\' : 'u' : first : second : third : fourth : rest) = 
+          validate rest $ (((digitToInt first * 16 + 
+                             digitToInt second) * 16 + 
+                             digitToInt third) * 16 + 
+                             digitToInt fourth)
+      go ('\\' : 'U' : first : second : third : fourth
+                     : fifth : sixth : seventh : eighth : rest) =
+          validate rest $ (((((((digitToInt first * 16 + 
+                                 digitToInt second) * 16 + 
+                                 digitToInt third) * 16 + 
+                                 digitToInt fourth) * 16 + 
+                                 digitToInt fifth) * 16 +
+                                 digitToInt sixth) * 16 +
+                                 digitToInt seventh) * 16 + 
+                                 digitToInt eighth)
       go ('\\' : _) = error "should be unreachable"
-      go (c : rest) | isPrint c = escape rest c
-                    | otherwise = Left ("non-printable character " ++ show c ++ " in string literal")
+      go (c : rest)
+          | isPrint c = escape rest c
+          | otherwise 
+              = Left ("non-printable character " ++ show c ++ " in string literal")
   in either Left (Right . Text.pack) $ go $ Text.unpack $ drop_quotes t
 }

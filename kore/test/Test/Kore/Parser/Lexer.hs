@@ -36,14 +36,20 @@ test_comma =
 test_bracesPair :: [TestTree]
 test_bracesPair =
     lexTree
-        ( successes ["{a,B}", " {a,B}", "{ a , B } ", "{/**/a/**/,/**/B/**/}/**/", "{/*/**/a,/**/B/**/}/**/"] [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "B", TokenRightBrace]
-            ++ [ success "{a,b}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightBrace]
+        ( successes [ "{a,B}", " {a,B}", "{ a , B } "
+                    , "{/**/a/**/,/**/B/**/}/**/", "{/*/**/a,/**/B/**/}/**/"]
+                    [ TokenLeftBrace, TokenIdent "a", TokenComma
+                    , TokenIdent "B", TokenRightBrace]
+            ++ [ success "{a,b}" [ TokenLeftBrace, TokenIdent "a", TokenComma
+                                 , TokenIdent "b", TokenRightBrace]
                , success "{a}" [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
                , success "{B}" [TokenLeftBrace, TokenIdent "B", TokenRightBrace]
                , success "{a,}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenRightBrace]
                , success "{,B}" [TokenLeftBrace, TokenComma, TokenIdent "B", TokenRightBrace]
-               , success "{a{},b}" [TokenLeftBrace, TokenIdent "a", TokenLeftBrace, TokenRightBrace, TokenComma, TokenIdent "b", TokenRightBrace]
-               , success "{a,B,c}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenIdent "B", TokenComma, TokenIdent "c", TokenRightBrace]
+               , success "{a{},b}" [ TokenLeftBrace, TokenIdent "a", TokenLeftBrace
+                                   , TokenRightBrace, TokenComma, TokenIdent "b", TokenRightBrace]
+               , success "{a,B,c}" [ TokenLeftBrace, TokenIdent "a", TokenComma
+                                   , TokenIdent "B", TokenComma, TokenIdent "c", TokenRightBrace]
                ]
         )
 
@@ -84,9 +90,11 @@ test_parseSymbolId =
 test_braces :: [TestTree]
 test_braces =
     lexTree
-        ( successes ["{a}", "{ a } ", "{/**/a/**/}/**/", " {a}"] [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
+        ( successes ["{a}", "{ a } ", "{/**/a/**/}/**/", " {a}"] 
+                    [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
             ++ [ success "{}" [TokenLeftBrace, TokenRightBrace]
-               , success "{a{}}" [TokenLeftBrace, TokenIdent "a", TokenLeftBrace, TokenRightBrace, TokenRightBrace]
+               , success "{a{}}" [ TokenLeftBrace, TokenIdent "a", TokenLeftBrace
+                                 , TokenRightBrace, TokenRightBrace]
                , success "a}" [TokenIdent "a", TokenRightBrace]
                , success "{a" [TokenLeftBrace, TokenIdent "a"]
                ]
@@ -95,24 +103,32 @@ test_braces =
 test_parens :: [TestTree]
 test_parens =
     lexTree
-        ( successes ["(a)", "( a ) ", "(/**/a/**/)/**/", " (a)"] [TokenLeftParen, TokenIdent "a", TokenRightParen]
-            ++ successes ["(a,B)", "( a , B ) ", "(/**/a/**/,/**/B/**/)/**/", " (a,B)"] [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B", TokenRightParen]
+        ( successes ["(a)", "( a ) ", "(/**/a/**/)/**/", " (a)"]
+                    [TokenLeftParen, TokenIdent "a", TokenRightParen]
+            ++ successes ["(a,B)", "( a , B ) ", "(/**/a/**/,/**/B/**/)/**/", " (a,B)"]
+                         [ TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B"
+                         , TokenRightParen]
             ++ [ success "()" [TokenLeftParen, TokenRightParen]
-               , success "(a())" [TokenLeftParen, TokenIdent "a", TokenLeftParen, TokenRightParen, TokenRightParen]
+               , success "(a())" [ TokenLeftParen, TokenIdent "a", TokenLeftParen
+                                 , TokenRightParen, TokenRightParen]
                , success "a)" [TokenIdent "a", TokenRightParen]
                , success "(a" [TokenLeftParen, TokenIdent "a"]
                , success "(B)" [TokenLeftParen, TokenIdent "B", TokenRightParen]
-               , success "(a,b)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightParen]
+               , success "(a,b)" [ TokenLeftParen, TokenIdent "a", TokenComma
+                                 , TokenIdent "b", TokenRightParen]
                ]
         )
 
 test_brackets :: [TestTree]
 test_brackets =
     lexTree
-        ( successes ["[a]", "[ a ] ", "[/**/a/**/]/**/", " [a]"] [TokenLeftBracket, TokenIdent "a", TokenRightBracket]
+        ( successes ["[a]", "[ a ] ", "[/**/a/**/]/**/", " [a]"]
+                    [TokenLeftBracket, TokenIdent "a", TokenRightBracket]
             ++ [ success "[]" [TokenLeftBracket, TokenRightBracket]
-               , success "[a,b]" [TokenLeftBracket, TokenIdent "a", TokenComma, TokenIdent "b", TokenRightBracket]
-               , success "[a[]]" [TokenLeftBracket, TokenIdent "a", TokenLeftBracket, TokenRightBracket, TokenRightBracket]
+               , success "[a,b]" [ TokenLeftBracket, TokenIdent "a", TokenComma
+                                 , TokenIdent "b", TokenRightBracket]
+               , success "[a[]]" [ TokenLeftBracket, TokenIdent "a", TokenLeftBracket
+                                 , TokenRightBracket, TokenRightBracket]
                , success "a]" [TokenIdent "a", TokenRightBracket]
                , success "[a" [TokenLeftBracket, TokenIdent "a"]
                ]
@@ -150,15 +166,19 @@ test_parensTuple =
     lexTree
         [ success "(a,)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenRightParen]
         , success "(,B)" [TokenLeftParen, TokenComma, TokenIdent "B", TokenRightParen]
-        , success "(a(),b)" [TokenLeftParen, TokenIdent "a", TokenLeftParen, TokenRightParen, TokenComma, TokenIdent "b", TokenRightParen]
-        , success "(a,B,c)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B", TokenComma, TokenIdent "c", TokenRightParen]
+        , success "(a(),b)" [ TokenLeftParen, TokenIdent "a", TokenLeftParen
+                            , TokenRightParen, TokenComma, TokenIdent "b", TokenRightParen]
+        , success "(a,B,c)" [ TokenLeftParen, TokenIdent "a", TokenComma, TokenIdent "B"
+                            , TokenComma, TokenIdent "c", TokenRightParen]
         ]
 
 test_space :: [TestTree]
 test_space =
     lexTree $
         mappend
-            ( successes ["", " ", "\n", "\r", "\t", "/**/", "//\n", "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/", "//hello\n", "//hello", "\t//hello\n /* world\n //*/  //!\n"] []
+            ( successes [ "", " ", "\n", "\r", "\t", "/**/", "//\n", "/*\n*/", "/*//*/"
+                        , "/****/", "/* * / */", "/*/*/", "//hello\n", "//hello"
+                        , "\t//hello\n /* world\n //*/  //!\n"] []
             )
             [ Failure
                 FailureTest
