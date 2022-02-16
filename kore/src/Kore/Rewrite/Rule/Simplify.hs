@@ -17,12 +17,14 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    makeAndPredicate, pattern PredicateTrue
+    makeAndPredicate,
+    pattern PredicateTrue,
  )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -35,7 +37,7 @@ import Kore.Reachability (
  )
 import qualified Kore.Rewrite.AntiLeft as AntiLeft
 import Kore.Rewrite.ClaimPattern (
-    ClaimPattern(..),
+    ClaimPattern (..),
  )
 import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
@@ -65,7 +67,6 @@ import Logic (
  )
 import qualified Logic
 import Prelude.Kore
-import qualified Kore.Internal.OrPattern as OrPattern
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where

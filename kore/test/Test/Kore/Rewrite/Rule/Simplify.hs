@@ -84,6 +84,10 @@ import Kore.Syntax.Variable (
  )
 import Log
 import Prelude.Kore
+import qualified Test.Kore.Builtin.Bool as Test.Bool
+import qualified Test.Kore.Builtin.Builtin as Builtin
+import qualified Test.Kore.Builtin.Definition as Builtin
+import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Rewrite.MockSymbols as Mock
 import Test.Kore.Rewrite.Rule.Common (
     Pair (..),
@@ -94,10 +98,6 @@ import Test.Kore.Simplify (
     runSimplifier,
     runSimplifierSMT,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
-import qualified Test.Kore.Builtin.Builtin as Builtin
-import qualified Test.Kore.Builtin.Definition as Builtin
-import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -152,7 +152,6 @@ simplifyRulePattern ::
     RulePattern RewritingVariableName ->
     IO (RulePattern RewritingVariableName)
 simplifyRulePattern = runSimplifier Builtin.testEnv . Kore.simplifyRulePattern
-
 
 test_simplifyRule_RewriteRule :: [TestTree]
 test_simplifyRule_RewriteRule =
