@@ -106,7 +106,7 @@ alexMonadScan = do
         AlexError (AlexInput{alexPosn = (AlexPn fp _ line column), alexStr = s}) ->
             alexError fp line column $
                 if s == ""
-                    then "unexpected end of input" a
+                    then "unexpected end of input"
                     else "unexpected character " ++ show (ByteString.w2c $ ByteString.head s)
         AlexSkip inp__' _len -> do
             alexSetInput inp__'
