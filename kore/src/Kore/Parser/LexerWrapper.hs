@@ -103,10 +103,11 @@ alexMonadScan = do
     sc <- alexGetStartCode
     case alexScanUser () inp__ sc of
         AlexEOF -> alexEOF
-        AlexError (AlexInput{alexPosn = (AlexPn fp _ line column), alexStr = s}) -> 
+        AlexError (AlexInput{alexPosn = (AlexPn fp _ line column), alexStr = s}) ->
             alexError fp line column $
-                if s == "" then "unexpected end of input" a
-                else "unexpected character " ++ show (ByteString.w2c $ ByteString.head s)
+                if s == ""
+                    then "unexpected end of input" a
+                    else "unexpected character " ++ show (ByteString.w2c $ ByteString.head s)
         AlexSkip inp__' _len -> do
             alexSetInput inp__'
             alexMonadScan
