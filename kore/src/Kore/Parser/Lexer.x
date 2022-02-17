@@ -287,7 +287,7 @@ Right.
 -}
 unescape :: Text -> Either String Text
 unescape t =
-  let drop_quotes str = Text.take (Text.length str - 2) . Text.drop 1 $ str
+  let dropQuotes str = Text.take (Text.length str - 2) . Text.drop 1 $ str
       escape rest c = either Left (\s -> Right (c : s)) $ go rest
       validate rest c
           | c >= 0x10ffff = Left ("code point " ++ show c ++ " outside range of Unicode")
@@ -324,5 +324,5 @@ unescape t =
           | isPrint c = escape rest c
           | otherwise 
               = Left ("non-printable character " ++ show c ++ " in string literal")
-  in either Left (Right . Text.pack) $ go $ Text.unpack $ drop_quotes t
+  in either Left (Right . Text.pack) $ go $ Text.unpack $ dropQuotes t
 }
