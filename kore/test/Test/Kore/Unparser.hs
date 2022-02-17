@@ -226,7 +226,8 @@ roundtrip generator parser =
         parse' (Parser parser) (unparseToText generated) === Right generated
 
 unparseParseTest ::
-    (HasCallStack, Unparse a, Debug a, Diff a) => (FilePath -> Text -> Either String a) -> a -> TestTree
+    (HasCallStack, Unparse a, Debug a, Diff a) =>
+    (FilePath -> Text -> Either String a) -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
