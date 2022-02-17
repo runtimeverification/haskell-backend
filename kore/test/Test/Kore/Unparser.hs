@@ -218,7 +218,8 @@ test_parse =
         ]
 
 roundtrip ::
-    (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> (FilePath -> Text -> Either String a) -> Property
+    (HasCallStack, Unparse a, Eq a, Show a) =>
+    Gen a -> (FilePath -> Text -> Either String a) -> Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
