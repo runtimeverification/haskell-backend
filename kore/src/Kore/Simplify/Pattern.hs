@@ -12,6 +12,7 @@ module Kore.Simplify.Pattern (
 import Control.Monad (
     (>=>),
  )
+import Kore.Equation (Equation)
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -23,8 +24,6 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Equation (Equation)
-import Kore.Simplify.FunctionEvaluator (evaluateFunctions)
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
@@ -45,14 +44,13 @@ import Kore.Internal.TermLike (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.FunctionEvaluator (evaluateFunctions)
 import Kore.Simplify.Simplify (
     MonadSimplify,
     PartitionedEquations (..),
-    -- SimplifierXSwitch (..),
-    -- askSimplifierXSwitch,
+    askIndexedEquations,
     simplifyCondition,
     simplifyTerm,
-    askIndexedEquations,
  )
 import Kore.Substitute
 import qualified Logic
@@ -176,6 +174,5 @@ simplifyPatternX sideCondition patt = do
         PartitionedEquations ->
         [Equation RewritingVariableName]
     putDefinitionsFirst
-        PartitionedEquations { functionRules, simplificationRules }
-      =
-        functionRules <> simplificationRules
+        PartitionedEquations{functionRules, simplificationRules} =
+            functionRules <> simplificationRules
