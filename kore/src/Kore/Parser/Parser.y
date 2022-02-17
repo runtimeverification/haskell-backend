@@ -425,10 +425,10 @@ mkAssoc :: Bool -> Token -> [Sort] -> [ParsedPattern] -> ParsedPattern
 mkAssoc True id sorts ps = foldl1' (mkApply id sorts) ps
 mkAssoc False id sorts ps = foldr1 (mkApply id sorts) ps
 
-{- | Helper function to expand a \left-assoc or \right-assoc directive for
+{- | Helper function to expand a \\left-assoc or \\right-assoc directive for
 a particular type of pattern. Only implemented for Application patterns and
 built-in patterns with one sort parameter and two children of the same sort as
-the result. Namely, \and, \or, \implies, and \iff. Designed to be passed to
+the result. Namely, \\and, \\or, \\implies, and \\iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
