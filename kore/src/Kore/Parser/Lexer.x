@@ -277,7 +277,7 @@ alexError fp line column msg = do
     Alex
     $ const
     $ Left
-    $ p ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n"
+    $ fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n"
 
 -- End Alex wrapper code.
 
