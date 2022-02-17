@@ -324,9 +324,10 @@ parseAttributes = parseNonTerminal attributesStart
 parseDefinition :: FilePath -> Text -> Either String ParsedDefinition
 parseDefinition = parseNonTerminal definitionStart
 
-parseElementVariable :: FilePath
-		     -> Text
-                     -> Either String (Variable (ElementVariableName VariableName))
+parseElementVariable ::
+    FilePath ->
+    Text ->
+    Either String (Variable (ElementVariableName VariableName))
 parseElementVariable = parseNonTerminal elementVariableStart
 
 parseId :: FilePath -> Text -> Either String Id
