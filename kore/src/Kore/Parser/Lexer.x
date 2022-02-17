@@ -271,7 +271,10 @@ alexMove (AlexPn fp a l c) _    = AlexPn fp (a+1) l (c+1)
 
 alexError :: FilePath -> Int -> Int -> String -> Alex a
 alexError fp line column msg = do
-    Alex $ const $ Left (fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n")
+    Alex
+    $ const
+    $ Left
+    $ p ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n"
 
 -- End Alex wrapper code.
 
