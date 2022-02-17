@@ -47,6 +47,7 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import Data.Text.Encoding
+import Data.Word (Word8)
 import Prelude
 
 }
@@ -112,6 +113,7 @@ tokens :-
 {
 
 -- Token helpers
+tok' :: (Text -> TokenClass) -> AlexInput -> Int -> Alex Token
 tok' f AlexInput{alexPosn, alexStr} len = do
   return $ Token alexPosn (f (decodeUtf8 (ByteString.take len alexStr)))
 
@@ -252,6 +254,7 @@ instance Monad Alex where
                                 Right (s',a) -> unAlex (k a) s'
   return = App.pure
 
+alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
 alexGetByte (AlexInput {alexPosn=p,alexStr=cs,alexBytePos=n}) =
     case ByteString.uncons cs of
         Nothing -> Nothing
