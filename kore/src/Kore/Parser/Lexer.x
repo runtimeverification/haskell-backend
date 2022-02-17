@@ -206,6 +206,12 @@ data TokenClass
   | TokenEOF
   deriving stock (Eq, Show)
 
+-- -----------------------------------------------------------------------------
+-- Alex wrapper code.
+--
+-- Taken and modified from public domain code that is part of Alex:
+-- https://github.com/haskell/alex/blob/3.2.6/templates/wrappers.hs
+
 
 alexScanUser :: () -> AlexInput -> Int -> AlexReturn (AlexInput -> Int -> Alex Token)
 
@@ -266,6 +272,8 @@ alexMove (AlexPn fp a l c) _    = AlexPn fp (a+1) l (c+1)
 alexError :: FilePath -> Int -> Int -> String -> Alex a
 alexError fp line column msg = do
     Alex $ const $ Left (fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n")
+
+-- End Alex wrapper code.
 
 {- | Convert the textual representation of a string token into its semantic
 value as a Text. Returns Left with an error message if it fails, otherwise
