@@ -143,9 +143,9 @@ Modules :: {[ParsedModule]}
 
 Module :: {ParsedModule}
         : module ident Sentences endmodule Attributes
-          { Module (ModuleName $ getTokenBody $2) (reverse $3) $5 }
+          { Module (ModuleName $ getIdentName $2) (reverse $3) $5 }
         | module ident endmodule Attributes
-          { Module (ModuleName $ getTokenBody $2) [] $4 }
+          { Module (ModuleName $ getIdentName $2) [] $4 }
 
 Sentences :: {[ParsedSentence]}
 	   : Sentence { [$1] }
@@ -153,7 +153,7 @@ Sentences :: {[ParsedSentence]}
 
 Sentence :: {ParsedSentence}
 	  : import ident Attributes
-            { SentenceImportSentence (SentenceImport (ModuleName $ getTokenBody $2) $3) }
+            { SentenceImportSentence (SentenceImport (ModuleName $ getIdentName $2) $3) }
           | sort Id SortVariables Attributes
             { SentenceSortSentence (SentenceSort $2 $3 $4) }
           | hookedSort Id SortVariables Attributes
@@ -410,7 +410,7 @@ an AstLocation.
 -}
 mkId :: Token -> Id
 mkId tok@(Token (AlexPn fileName _ line column) _) =
-    Id { getId = getTokenBody tok
+    Id { getId = getIdentName tok
        , idLocation = AstLocationFile $ FileLocation{fileName, line, column}
        }
 

@@ -23,7 +23,7 @@ module Kore.Parser.Lexer (
     TokenClass(..),
     alexError,
     alexScanUser,
-    getTokenBody,
+    getIdentName,
     getTokenClass,
 ) where
 
@@ -148,11 +148,10 @@ data Token = Token AlexPosn TokenClass
 {- | Get the Text argument of a Token whose TokenClass contains such an 
 argument
 -}
-getTokenBody :: Token -> Text
-getTokenBody (Token _ (TokenIdent t)) = t
-getTokenBody (Token _ (TokenSetIdent t)) = t
-getTokenBody (Token _ (TokenString t)) = t
-getTokenBody _ = error "getTokenBody can only be called on tokens which contain a Text field"
+getIdentName :: Token -> Text
+getIdentName (Token _ (TokenIdent t)) = t
+getIdentName (Token _ (TokenSetIdent t)) = t
+getIdentName _ = error "getIdentName can only be called on TokenIdent or TokenSetIdent"
 
 
 -- | Get the TokenClass of a Token
