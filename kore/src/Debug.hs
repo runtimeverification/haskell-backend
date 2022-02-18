@@ -43,6 +43,9 @@ import Data.Hashable (
     unhashed,
  )
 import Data.Int
+import Data.Kind (
+    Type,
+ )
 import Data.Map.Strict (
     Map,
  )
@@ -366,7 +369,7 @@ instance Debug a => Debug (Seq a) where
         (parens (precOut >= 10) . Pretty.sep)
             ["Data.Sequence.fromList", debug (toList as)]
 
-instance Debug a => Debug (Const a b)
+instance Debug a => Debug (Const a (b :: Type))
 
 instance Debug Bool
 
@@ -566,7 +569,7 @@ instance Diff Word64 where
 instance Diff Char where
     diffPrec = diffPrecEq
 
-instance (Debug a, Diff a) => Diff (Const a b)
+instance (Debug a, Diff a) => Diff (Const a (b :: Type))
 
 instance (Debug a, Diff a) => Diff (Maybe a)
 

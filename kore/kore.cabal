@@ -33,6 +33,10 @@ common haskell
   -- Common Haskell dialect
   default-extensions:
     BangPatterns
+    -- GHC2021 prep
+    BinaryLiterals
+    ConstrainedClassMethods
+    -- end
     ConstraintKinds
     DataKinds
     DefaultSignatures
@@ -41,28 +45,54 @@ common haskell
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
+    -- GHC2021 prep
+    DeriveLift
+    -- end
     DeriveTraversable
     DerivingVia
     DuplicateRecordFields
     EmptyCase
+    -- GHC2021 prep
+    EmptyDataDeriving
+    -- end
     ExistentialQuantification
     FlexibleContexts
     FlexibleInstances
     FunctionalDependencies
     GADTs
     GeneralizedNewtypeDeriving
+    -- GHC2021 prep
+    HexFloatLiterals
+    -- end
     InstanceSigs
+    -- GHC2021 prep
+    ImportQualifiedPost
+    -- end
     KindSignatures
     LambdaCase
     MultiParamTypeClasses
     NamedFieldPuns
+    -- GHC2021 prep
+    NamedWildCards
+    NumericUnderscores
+    -- end
     NoImplicitPrelude
     OverloadedStrings
     PatternSynonyms
+    -- GHC2021 prep
+    PolyKinds
+    PostfixOperators
+    -- end
     RankNTypes
     ScopedTypeVariables
     StandaloneDeriving
+    -- GHC2021 prep
+    StandaloneKindSignatures
+    -- end
     Strict
+    -- GHC2021 prep
+    TupleSections
+    -- end
     TypeApplications
     TypeFamilies
     TypeOperators
