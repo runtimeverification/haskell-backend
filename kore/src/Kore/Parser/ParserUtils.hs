@@ -11,12 +11,8 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Kore.Parser.ParserUtils (
     readPositiveIntegral,
-    Parser (..),
 ) where
 
-import Data.Text (
-    Text,
- )
 import Options.Applicative (
     auto,
     readerError,
@@ -25,8 +21,6 @@ import qualified Options.Applicative.Types as Options
 import Prelude.Kore hiding (
     takeWhile,
  )
-
-newtype Parser a = Parser (FilePath -> Text -> Either String a)
 
 readPositiveIntegral ::
     (Read t, Integral t) =>

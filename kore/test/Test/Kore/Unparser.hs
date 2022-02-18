@@ -4,9 +4,6 @@ module Test.Kore.Unparser (
     test_unparseGeneric,
 ) where
 
-import Data.Text (
-    Text,
- )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Hedgehog (
@@ -16,7 +13,6 @@ import Hedgehog (
  )
 import qualified Hedgehog
 import Kore.Parser.Parser
-import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
@@ -220,16 +216,16 @@ test_parse =
 roundtrip ::
     (HasCallStack, Unparse a, Eq a, Show a) =>
     Gen a ->
-    (FilePath -> Text -> Either String a) ->
+    Parser a ->
     Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
-        parse' (Parser parser) (unparseToText generated) === Right generated
+        parse' parser (unparseToText generated) === Right generated
 
 unparseParseTest ::
     (HasCallStack, Unparse a, Debug a, Diff a) =>
-    (FilePath -> Text -> Either String a) ->
+    Parser a ->
     a ->
     TestTree
 unparseParseTest parser astInput =
@@ -238,7 +234,7 @@ unparseParseTest parser astInput =
         ( assertEqual
             ""
             (Right astInput)
-            (parse' (Parser parser) (unparseToText astInput))
+            (parse' parser (unparseToText astInput))
         )
 
 unparseTest :: (HasCallStack, Unparse a, Debug a) => a -> String -> TestTree

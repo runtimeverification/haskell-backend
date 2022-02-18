@@ -20,6 +20,9 @@ module Kore.Parser.LexerWrapper (
 --
 -- Taken and modified from public domain code that is part of Alex:
 -- https://github.com/haskell/alex/blob/3.2.6/templates/wrappers.hs
+--
+-- Alex does not support a monadUserState-strict-bytestring wrapper, so we
+-- built one ourselves. We also add support for FilePath to the AlexPosn type. 
 import Control.Applicative as App (Applicative (..))
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Internal as ByteString hiding (ByteString)
@@ -76,6 +79,7 @@ alexGetInput :: Alex AlexInput
 alexGetInput =
     Alex $ \s@AlexState{alex_pos = pos, alex_bpos = bpos, alex_chr = c, alex_inp = inp__} ->
         Right (s, AlexInput{alexPosn = pos, alexChar = c, alexStr = inp__, alexBytePos = bpos})
+{-# INLINE alexGetInput #-}
 
 alexSetInput :: AlexInput -> Alex ()
 alexSetInput AlexInput{alexPosn = pos, alexChar = c, alexStr = inp__, alexBytePos = bpos} =
@@ -86,17 +90,21 @@ alexSetInput AlexInput{alexPosn = pos, alexChar = c, alexStr = inp__, alexBytePo
         , alex_inp = inp__
         } of
         state__@(AlexState{}) -> Right (state__, ())
+{-# INLINE alexSetInput #-}
 
 alexGetStartCode :: Alex Int
 alexGetStartCode = Alex $ \s@AlexState{alex_scd = sc} -> Right (s, sc)
+{-# INLINE alexGetStartCode #-}
 
 alexSetStartCode :: Int -> Alex ()
 alexSetStartCode sc = Alex $ \s -> Right (s{alex_scd = sc}, ())
+{-# INLINE alexSetStartCode #-}
 
 alexEOF :: Alex Token
 alexEOF = do
     AlexInput{alexPosn = p} <- alexGetInput
     return $ Token p TokenEOF
+{-# INLINE alexEOF #-}
 
 alexMonadScan = do
     inp__@AlexInput{alexBytePos = n} <- alexGetInput
@@ -141,6 +149,9 @@ token t input__ len = return (t input__ len)
 
 -- -----------------------------------------------------------------------------
 -- Basic wrapper, ByteString version
+--
+-- These functions are only used to implement alexScanTokens, which is designed
+-- solely to be used by unit testing.
 
 -- | Monad that repeats an operation until a boolean predicate returns True.
 whileM :: Monad m => (a -> Bool) -> m a -> m [a]

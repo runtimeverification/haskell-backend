@@ -18,7 +18,9 @@ import Data.Text (
 import qualified Data.Text.Encoding as Text
 import Kore.Parser.Lexer
 import Kore.Parser.LexerWrapper
-import Kore.Parser.ParserUtils
+import Kore.Parser.Parser (
+    Parser,
+ )
 import Prelude.Kore
 import Test.Tasty (
     TestTree,
@@ -70,7 +72,7 @@ parseTree ::
     (FilePath -> Text -> Either String a) ->
     [ParserTest a] ->
     [TestTree]
-parseTree parser = map (parseTest $ Parser parser)
+parseTree parser = map (parseTest parser)
 
 parseTest ::
     HasCallStack =>
@@ -123,7 +125,7 @@ scanTokenClasses fp input =
             Left l -> Left l
 
 parse' :: Parser a -> Text -> Either String a
-parse' (Parser f) input =
+parse' f input =
     f "<test-string>" input
 
 parseSuccess ::

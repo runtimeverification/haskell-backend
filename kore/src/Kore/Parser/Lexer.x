@@ -42,12 +42,14 @@ import Data.Char (
     GeneralCategory(..),
     isPrint,
  )
+import qualified Data.List as List
 import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
 import Data.Text.Encoding
 import Data.Word (Word8)
+import Numeric
 import Prelude
 
 }
@@ -213,6 +215,9 @@ data TokenClass
 --
 -- Taken and modified from public domain code that is part of Alex:
 -- https://github.com/haskell/alex/blob/3.2.6/templates/wrappers.hs
+--
+-- Unlike the code in LexerWrapper.hs, this code must live in the same module
+-- as the scanner itself, so it was moved from that file to this one.
 
 
 alexScanUser :: () -> AlexInput -> Int -> AlexReturn (AlexInput -> Int -> Alex Token)
@@ -239,6 +244,7 @@ instance Functor Alex where
   fmap f a = Alex $ \s -> case unAlex a s of
                             Left msg -> Left msg
                             Right (s', a') -> Right (s', f a')
+  {-# INLINE fmap #-}
 
 instance Applicative Alex where
   pure a   = Alex $ \s -> Right (s, a)
@@ -247,12 +253,13 @@ instance Applicative Alex where
                             Right (s', f) -> case unAlex a s' of
                                                Left msg -> Left msg
                                                Right (s'', b) -> Right (s'', f b)
+  {-# INLINE (<*>) #-}
 
 instance Monad Alex where
   m >>= k  = Alex $ \s -> case unAlex m s of
                                 Left msg -> Left msg
                                 Right (s',a) -> unAlex (k a) s'
-  return = App.pure
+  {-# INLINE (>>=) #-}
 
 alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
 alexGetByte (AlexInput {alexPosn=p,alexStr=cs,alexBytePos=n}) =
@@ -273,11 +280,10 @@ alexMove (AlexPn fp a l _) '\n' = AlexPn fp (a+1) (l+1) 1
 alexMove (AlexPn fp a l c) _    = AlexPn fp (a+1) l (c+1)
 
 alexError :: FilePath -> Int -> Int -> String -> Alex a
-alexError fp line column msg = do
-    Alex
-    $ const
-    $ Left
-    $ fp ++ ":" ++ show line ++ ":" ++ show column ++ ": " ++ msg ++ "\n"
+alexError fp line column msg =
+    Alex $ const $ Left $ unwords [header, msg] ++ "\n"
+    where
+        header = List.intercalate ":" [fp, show line, show column] ++ ":"
 
 -- End Alex wrapper code.
 
@@ -301,24 +307,16 @@ unescape t =
       go ('\\' : 'f' : rest) = escape rest '\f'
       go ('\\' : '\\' : rest) = escape rest '\\'
       go ('\\' : '"' : rest) = escape rest '"'
-      go ('\\' : 'x' : first : second : rest) =
-          escape rest $ chr (digitToInt first * 16 +
-                             digitToInt second)
-      go ('\\' : 'u' : first : second : third : fourth : rest) = 
-          validate rest $ (((digitToInt first * 16 + 
-                             digitToInt second) * 16 + 
-                             digitToInt third) * 16 + 
-                             digitToInt fourth)
-      go ('\\' : 'U' : first : second : third : fourth
-                     : fifth : sixth : seventh : eighth : rest) =
-          validate rest $ (((((((digitToInt first * 16 + 
-                                 digitToInt second) * 16 + 
-                                 digitToInt third) * 16 + 
-                                 digitToInt fourth) * 16 + 
-                                 digitToInt fifth) * 16 +
-                                 digitToInt sixth) * 16 +
-                                 digitToInt seventh) * 16 + 
-                                 digitToInt eighth)
+      go ('\\' : pre : rest0)
+          | Just size <- lookup pre $ zip "xuU" [2,4,8]
+          , (body, rest) <- splitAt size rest0
+          , length body == size
+          = runReadS Numeric.readHex body
+              >>= validate rest
+        where
+            runReadS reader str = case reader str of
+                [(num, "")] -> pure num
+                _other -> Left "invalid hex literal"
       go ('\\' : _) = error "should be unreachable"
       go (c : rest)
           | isPrint c = escape rest c
