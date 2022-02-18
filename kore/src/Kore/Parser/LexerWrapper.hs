@@ -22,7 +22,7 @@ module Kore.Parser.LexerWrapper (
 -- https://github.com/haskell/alex/blob/3.2.6/templates/wrappers.hs
 --
 -- Alex does not support a monadUserState-strict-bytestring wrapper, so we
--- built one ourselves. We also add support for FilePath to the AlexPosn type. 
+-- built one ourselves. We also add support for FilePath to the AlexPosn type.
 import Control.Applicative as App (Applicative (..))
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Internal as ByteString hiding (ByteString)
