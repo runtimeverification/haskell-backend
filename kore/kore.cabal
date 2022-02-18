@@ -35,7 +35,6 @@ common haskell
     BangPatterns
     -- GHC2021 prep
     BinaryLiterals
-    ConstrainedClassMethods
     -- end
     ConstraintKinds
     DataKinds
