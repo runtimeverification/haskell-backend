@@ -17,24 +17,24 @@ module Kore.Variables.Fresh (
     module Kore.Syntax.Variable,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
 import Control.Monad.State.Strict (
     runState,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product (
     field,
  )
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.MonoTraversable
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Sup
 import Data.Void
 import Kore.Sort

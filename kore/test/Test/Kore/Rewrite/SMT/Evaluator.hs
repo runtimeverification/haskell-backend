@@ -13,7 +13,7 @@ import Hedgehog hiding (
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr (
+import Kore.Internal.MultiOr qualified as MultiOr (
     make,
  )
 import Kore.Internal.Pattern
@@ -25,30 +25,30 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Simplify.Data as Kore
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
+import Kore.Simplify.Data qualified as Kore
 import Prelude.Kore
 import SMT (
     SMT,
  )
 import Test.Kore
-import qualified Test.Kore.Builtin.Bool as Builtin.Bool
+import Test.Kore.Builtin.Bool qualified as Builtin.Bool
 import Test.Kore.Builtin.Builtin (
     testEnv,
  )
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Builtin.Definition as Builtin
-import qualified Test.Kore.Builtin.Int as Builtin.Int
+import Test.Kore.Builtin.Definition qualified as Builtin
+import Test.Kore.Builtin.Int qualified as Builtin.Int
 import Test.Kore.Internal.Predicate ()
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
-import qualified Test.Kore.Simplify as Test
+import Test.Kore.Simplify qualified as Test
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

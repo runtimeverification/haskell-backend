@@ -16,7 +16,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 data WarnTrivialClaim
     = -- | Warning when a claim is proved without rewriting.

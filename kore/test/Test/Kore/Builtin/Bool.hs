@@ -20,14 +20,14 @@ module Test.Kore.Builtin.Bool (
 ) where
 
 import Control.Monad.Trans.Maybe
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Hedgehog hiding (
     test,
  )
-import qualified Hedgehog.Gen as Gen
-import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiOr as MultiOr
+import Hedgehog.Gen qualified as Gen
+import Kore.Builtin.Bool qualified as Bool
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
@@ -43,13 +43,13 @@ import Kore.Simplify.Data (
     SimplifierT,
     runSimplifier,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Unification.UnifierT (
     UnifierT,
     runUnifierT,
  )
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT

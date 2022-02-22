@@ -45,28 +45,28 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
  )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified,
  )
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     InternalVariable,
     Sort,
@@ -76,7 +76,7 @@ import Kore.Internal.TermLike (
     mkTop,
     termLikeSort,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),

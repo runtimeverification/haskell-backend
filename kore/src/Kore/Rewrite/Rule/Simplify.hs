@@ -9,37 +9,37 @@ module Kore.Rewrite.Rule.Simplify (
     simplifyRulePattern,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     pattern PredicateTrue,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Reachability (
     AllPathClaim (..),
     OnePathClaim (..),
     SomeClaim (..),
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft
+import Kore.Rewrite.AntiLeft qualified as AntiLeft
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -47,25 +47,25 @@ import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (RulePattern),
  )
-import qualified Kore.Rewrite.RulePattern as OLD
-import qualified Kore.Rewrite.RulePattern as RulePattern (
+import Kore.Rewrite.RulePattern qualified as OLD
+import Kore.Rewrite.RulePattern qualified as RulePattern (
     RulePattern (..),
     applySubstitution,
     rhsForgetSimplified,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute (
     Substitute (..),
  )
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)

@@ -37,7 +37,7 @@ import Colog (
     cmap,
     (<&),
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
@@ -52,7 +52,7 @@ import Control.Monad.Except (
 import Control.Monad.Morph (
     MFunctor,
  )
-import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (
     RWST,
  )
@@ -67,7 +67,7 @@ import Control.Monad.Trans.Maybe (
     MaybeT,
  )
 import Control.Monad.Trans.Reader
-import qualified Control.Monad.Trans.State.Strict as Strict (
+import Control.Monad.Trans.State.Strict qualified as Strict (
     StateT,
  )
 import Data.Generics.Product (
@@ -76,15 +76,15 @@ import Data.Generics.Product (
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
+import GHC.Generics qualified as GHC
+import GHC.Stack qualified as GHC
 import Log.Entry
 import Logic
 import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 import Prof
 
 {- | This type should not be used directly, but rather should be created and

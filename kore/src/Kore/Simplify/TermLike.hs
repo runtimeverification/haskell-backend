@@ -6,107 +6,107 @@ module Kore.Simplify.TermLike (
     simplify,
 ) where
 
-import qualified Control.Lens.Combinators as Lens
+import Control.Lens.Combinators qualified as Lens
 import Control.Monad.Catch (
     MonadThrow,
  )
 import Data.Functor.Const
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     freeVariables,
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.From
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
     TermLikeF (..),
     termLikeSort,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.And as And (
+import Kore.Simplify.And qualified as And (
     simplify,
  )
-import qualified Kore.Simplify.Application as Application (
+import Kore.Simplify.Application qualified as Application (
     simplify,
  )
-import qualified Kore.Simplify.DomainValue as DomainValue (
+import Kore.Simplify.DomainValue qualified as DomainValue (
     simplify,
  )
-import qualified Kore.Simplify.Exists as Exists (
+import Kore.Simplify.Exists qualified as Exists (
     simplify,
  )
-import qualified Kore.Simplify.Forall as Forall (
+import Kore.Simplify.Forall qualified as Forall (
     simplify,
  )
-import qualified Kore.Simplify.Iff as Iff (
+import Kore.Simplify.Iff qualified as Iff (
     simplify,
  )
-import qualified Kore.Simplify.Implies as Implies (
+import Kore.Simplify.Implies qualified as Implies (
     simplify,
  )
-import qualified Kore.Simplify.Inhabitant as Inhabitant (
+import Kore.Simplify.Inhabitant qualified as Inhabitant (
     simplify,
  )
-import qualified Kore.Simplify.Inj as Inj (
+import Kore.Simplify.Inj qualified as Inj (
     simplify,
  )
-import qualified Kore.Simplify.InternalBool as InternalBool (
+import Kore.Simplify.InternalBool qualified as InternalBool (
     simplify,
  )
-import qualified Kore.Simplify.InternalBytes as InternalBytes (
+import Kore.Simplify.InternalBytes qualified as InternalBytes (
     simplify,
  )
-import qualified Kore.Simplify.InternalInt as InternalInt (
+import Kore.Simplify.InternalInt qualified as InternalInt (
     simplify,
  )
-import qualified Kore.Simplify.InternalList as InternalList (
+import Kore.Simplify.InternalList qualified as InternalList (
     simplify,
  )
-import qualified Kore.Simplify.InternalMap as InternalMap (
+import Kore.Simplify.InternalMap qualified as InternalMap (
     simplify,
  )
-import qualified Kore.Simplify.InternalSet as InternalSet (
+import Kore.Simplify.InternalSet qualified as InternalSet (
     simplify,
  )
-import qualified Kore.Simplify.InternalString as InternalString (
+import Kore.Simplify.InternalString qualified as InternalString (
     simplify,
  )
-import qualified Kore.Simplify.Mu as Mu (
+import Kore.Simplify.Mu qualified as Mu (
     simplify,
  )
-import qualified Kore.Simplify.Next as Next (
+import Kore.Simplify.Next qualified as Next (
     simplify,
  )
-import qualified Kore.Simplify.Not as Not (
+import Kore.Simplify.Not qualified as Not (
     notSimplifier,
     simplify,
  )
-import qualified Kore.Simplify.Nu as Nu (
+import Kore.Simplify.Nu qualified as Nu (
     simplify,
  )
-import qualified Kore.Simplify.Or as Or (
+import Kore.Simplify.Or qualified as Or (
     simplify,
  )
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.StringLiteral as StringLiteral (
+import Kore.Simplify.StringLiteral qualified as StringLiteral (
     simplify,
  )
-import qualified Kore.Simplify.Variable as Variable (
+import Kore.Simplify.Variable qualified as Variable (
     simplify,
  )
 import Kore.Syntax (
@@ -117,7 +117,7 @@ import Kore.Syntax (
     refreshExists,
     refreshForall,
  )
-import qualified Kore.Variables.Binding as Binding
+import Kore.Variables.Binding qualified as Binding
 import Prelude.Kore
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types

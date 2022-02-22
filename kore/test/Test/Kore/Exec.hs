@@ -17,15 +17,15 @@ import Control.Monad.Catch (
 import Data.Default (
     def,
  )
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Limit (
     Limit (..),
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
@@ -33,17 +33,17 @@ import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
-import qualified Kore.Attribute.Priority as Attribute.Axiom
+import Kore.Attribute.Priority qualified as Attribute.Axiom
 import Kore.Attribute.Simplification
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Int
 import Kore.Equation.Equation (
     Equation (..),
     mkEquation,
     toTermLike,
  )
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
@@ -51,13 +51,13 @@ import Kore.Internal.Pattern (
     Conditional (Conditional),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
  )
@@ -72,7 +72,7 @@ import Kore.Rewrite (
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft.DoNotUse
+import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
 import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
@@ -84,7 +84,7 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
@@ -96,14 +96,14 @@ import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
  )
-import qualified Kore.Syntax.Definition as Syntax
-import qualified Kore.Syntax.Sentence as Sentence (
+import Kore.Syntax.Definition qualified as Syntax
+import Kore.Syntax.Sentence qualified as Sentence (
     Symbol (..),
  )
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Log (
     Entry (..),
     MonadLog (..),
@@ -114,7 +114,7 @@ import System.Exit (
  )
 import Test.Kore
 import Test.Kore.Builtin.External
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.SMT (
     runNoSMT,
  )

@@ -10,7 +10,7 @@ module Test.Kore.Builtin.AssocComm.CeilSimplifier (
 import Hedgehog hiding (
     test,
  )
-import qualified Hedgehog.Gen as Gen
+import Hedgehog.Gen qualified as Gen
 import Kore.Builtin.AssocComm.CeilSimplifier (
     generalizeMapElement,
  )
@@ -19,8 +19,8 @@ import Kore.Internal.InternalMap
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -29,18 +29,18 @@ import Kore.Internal.Predicate (
     makeForallPredicate,
     makeNotPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Ceil as Ceil (
+import Kore.Simplify.Ceil qualified as Ceil (
     makeEvaluate,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

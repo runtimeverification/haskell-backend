@@ -4,7 +4,7 @@ module Test.Kore.Rewrite.RewritingVariable (
 ) where
 
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
+import Hedgehog.Gen qualified as Gen
 import Kore.Rewrite.RewritingVariable
 import Kore.Syntax.Variable
 import Pair

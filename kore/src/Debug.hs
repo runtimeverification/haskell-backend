@@ -23,7 +23,7 @@ import Control.Comonad.Trans.Cofree
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Functor.Const (
     Const,
  )
@@ -33,11 +33,11 @@ import Data.Functor.Identity (
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.Hashable (
     Hashed,
     unhashed,
@@ -49,7 +49,7 @@ import Data.Kind (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Proxy
 import Data.Sequence (
     Seq,
@@ -57,12 +57,12 @@ import Data.Sequence (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Sup
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text (
+import Data.Text qualified as Text (
     unpack,
  )
 import Data.Typeable (
@@ -76,7 +76,7 @@ import GHC.Stack (
     callStack,
     prettyCallStack,
  )
-import qualified GHC.Stack as GHC
+import GHC.Stack qualified as GHC
 import Generics.SOP (
     All,
     All2,
@@ -91,7 +91,7 @@ import Generics.SOP (
     NS (..),
     SOP (..),
  )
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Numeric.Natural (
     Natural,
  )
@@ -100,7 +100,7 @@ import Pretty (
     Doc,
     (<+>),
  )
-import qualified Pretty
+import Pretty qualified
 import System.Exit (
     ExitCode (..),
  )

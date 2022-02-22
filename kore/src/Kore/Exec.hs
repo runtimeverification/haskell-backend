@@ -29,7 +29,7 @@ import Control.DeepSeq (
 import Control.Error (
     hoistMaybe,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     filterM,
     (>=>),
@@ -58,24 +58,24 @@ import Data.Limit (
 import Data.List (
     tails,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
 import Kore.Equation (
     Equation,
     extractEquations,
     isSimplificationRule,
     right,
  )
-import qualified Kore.Equation as Equation (
+import Kore.Equation qualified as Equation (
     Equation (antiLeft),
     argument,
     requires,
@@ -83,30 +83,30 @@ import qualified Kore.Equation as Equation (
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.IndexedModule.Resolvers (
     resolveInternalSymbol,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalInt
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     fromPredicate,
     makeMultipleOrPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
@@ -129,7 +129,7 @@ import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
-import qualified Kore.ModelChecker.Bounded as Bounded
+import Kore.ModelChecker.Bounded qualified as Bounded
 import Kore.Reachability (
     AllClaims (AllClaims),
     AlreadyProven (AlreadyProven),
@@ -143,15 +143,15 @@ import Kore.Reachability (
     lensClaimPattern,
     proveClaims,
  )
-import qualified Kore.Repl as Repl
-import qualified Kore.Repl.Data as Repl.Data
+import Kore.Repl qualified as Repl
+import Kore.Repl.Data qualified as Repl.Data
 import Kore.Rewrite
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
     extractImplicationClaims,
     extractRewriteAxioms,
  )
-import qualified Kore.Rewrite.Rule.Combine as Rules (
+import Kore.Rewrite.Rule.Combine qualified as Rules (
     mergeRules,
     mergeRulesConsecutiveBatches,
  )
@@ -161,7 +161,7 @@ import Kore.Rewrite.Rule.Expand (
 import Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
  )
-import qualified Kore.Rewrite.Rule.Simplify as Rule
+import Kore.Rewrite.Rule.Simplify qualified as Rule
 import Kore.Rewrite.RulePattern (
     ImplicationRule (..),
     RewriteRule (..),
@@ -175,8 +175,8 @@ import Kore.Rewrite.RulePattern as RulePattern (
 import Kore.Rewrite.Search (
     searchGraph,
  )
-import qualified Kore.Rewrite.Search as Search
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Search qualified as Search
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
@@ -184,8 +184,8 @@ import Kore.Rewrite.Transition (
 import Kore.Simplify.Data (
     evalSimplifier,
  )
-import qualified Kore.Simplify.Data as Simplifier
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Data qualified as Simplifier
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
     SimplifierXSwitch,
@@ -203,12 +203,12 @@ import Kore.Unparser (
 import Log (
     MonadLog,
  )
-import qualified Log
+import Log qualified
 import Logic (
     LogicT,
     observeAllT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 import Prof
 import SMT (

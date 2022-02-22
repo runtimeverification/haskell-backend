@@ -4,27 +4,27 @@ module Test.Kore.IndexedModule.Resolvers (
 ) where
 
 import Data.Default
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Ord
+import Data.Map.Strict qualified as Map
+import Data.Ord qualified
 import Kore.Attribute.Function (
     Function (..),
  )
-import qualified Kore.Attribute.Sort as Attribute
+import Kore.Attribute.Sort qualified as Attribute
 import Kore.Attribute.Symbol (
     Symbol (..),
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error as Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Sort
 import Kore.Syntax
 import Kore.Syntax.Definition

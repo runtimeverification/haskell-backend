@@ -26,7 +26,7 @@ module Kore.AST.Error (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.AST.AstWithLocation
 import Kore.Error
 import Kore.Syntax

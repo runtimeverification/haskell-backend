@@ -36,7 +36,7 @@ import Control.Monad.Trans.Accum (
     mapAccumT,
     runAccumT,
  )
-import qualified Control.Monad.Trans.Accum as Accum
+import Control.Monad.Trans.Accum qualified as Accum
 import Data.Functor.Identity (
     Identity,
     runIdentity,
@@ -44,7 +44,7 @@ import Data.Functor.Identity (
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Kore.Simplify.Simplify (
     MonadSimplify (..),
  )
@@ -54,7 +54,7 @@ import Log (
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 import SMT (
     MonadSMT (..),

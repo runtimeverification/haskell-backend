@@ -30,31 +30,31 @@ import Data.Semigroup (
     Min (..),
     Option (..),
  )
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Equation as Equation
+import Data.Text qualified as Text
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Equation qualified as Equation
 import Kore.Equation.DebugEquation (
     AttemptEquationError,
  )
-import qualified Kore.Equation.DebugEquation as Equation
+import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.Simplify as AttemptedAxiom (
+import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
  )
 import Kore.Unparser (
@@ -63,12 +63,12 @@ import Kore.Unparser (
 import Kore.Variables.Target (
     Target,
  )
-import qualified Kore.Variables.Target as Target
+import Kore.Variables.Target qualified as Target
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 -- |Describes whether simplifiers are allowed to return multiple results or not.
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult

@@ -2,30 +2,30 @@ module Test.Kore.Rewrite.SMT.Representation.All (
     test_symbolParsing,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     KoreSortDeclaration (SortDeclarationSort),
     Sort (Sort),
     encodable,
     encode,
  )
-import qualified Kore.Rewrite.SMT.AST as AST.DoNotUse
-import qualified Kore.Rewrite.SMT.Representation.All as All
+import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
+import Kore.Rewrite.SMT.Representation.All qualified as All
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import Test.Kore.Rewrite.SMT.Builders (
     constructor,
     emptyModule,
@@ -37,7 +37,7 @@ import Test.Kore.Rewrite.SMT.Builders (
 import Test.Kore.Rewrite.SMT.Representation.Helpers (
     declarationsAre,
  )
-import qualified Test.Kore.Rewrite.SMT.Representation.Helpers as Helpers (
+import Test.Kore.Rewrite.SMT.Representation.Helpers qualified as Helpers (
     testsForModule,
  )
 import Test.Kore.With (

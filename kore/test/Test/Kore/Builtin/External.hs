@@ -10,17 +10,17 @@ import Control.Monad.Free (Free (..))
 import Data.Functor.Const (
     Const (..),
  )
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Null as Attribute
+import Data.Functor.Foldable qualified as Recursive
+import Data.HashMap.Strict qualified as HashMap
+import Data.Sequence qualified as Seq
+import Data.Text qualified as Text
+import Kore.Attribute.Null qualified as Attribute
 import Kore.Builtin.AssocComm.AssocComm
-import qualified Kore.Builtin.Encoding as Encoding
-import qualified Kore.Builtin.Endianness.Endianness as Endianness
-import qualified Kore.Builtin.Signedness.Signedness as Signedness
-import qualified Kore.Internal.Alias as Alias
-import qualified Kore.Internal.Inj as Inj
+import Kore.Builtin.Encoding qualified as Encoding
+import Kore.Builtin.Endianness.Endianness qualified as Endianness
+import Kore.Builtin.Signedness.Signedness qualified as Signedness
+import Kore.Internal.Alias qualified as Alias
+import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
@@ -30,9 +30,9 @@ import Kore.Internal.InternalString
 import Kore.Internal.Symbol (
     toSymbolOrAlias,
  )
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Syntax.Pattern as Syntax
+import Kore.Syntax.Pattern qualified as Syntax
 import Prelude.Kore
 
 type FutuPattern variable t =

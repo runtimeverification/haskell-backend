@@ -35,8 +35,8 @@ import Control.Lens (
     (%~),
     (<>~),
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
 import Data.Generics.Product (
     field,
  )
@@ -47,12 +47,12 @@ import Data.List (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
     pack,
  )
-import qualified Data.Text.IO as Text
+import Data.Text.IO qualified as Text
 import Data.Version (
     showVersion,
  )
@@ -69,10 +69,10 @@ import Kore.Attribute.SourceLocation (
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleAxioms),
     VerifiedModule,
@@ -93,7 +93,7 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
-import qualified Kore.Parser.Lexer as Lexer
+import Kore.Parser.Lexer qualified as Lexer
 import Kore.Parser.ParserUtils (
     parseOnly,
  )
@@ -113,7 +113,7 @@ import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinitionWithBase,
  )
 import Kore.Validate.PatternVerifier as PatternVerifier
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Kore.VersionInfo
 import Options.Applicative (
     InfoMod,
@@ -138,24 +138,24 @@ import Options.Applicative (
     value,
     (<**>),
  )
-import qualified Options.Applicative as Options
+import Options.Applicative qualified as Options
 import Options.Applicative.Help.Chunk (
     Chunk (..),
     vsepChunks,
  )
-import qualified Options.Applicative.Help.Pretty as Pretty
-import qualified Paths_kore as MetaData (
+import Options.Applicative.Help.Pretty qualified as Pretty
+import Paths_kore qualified as MetaData (
     version,
  )
 import Prelude.Kore
-import qualified Pretty as KorePretty
+import Pretty qualified as KorePretty
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
     getTime,
  )
-import qualified System.Environment as Env
-import qualified Text.Megaparsec as Parser
+import System.Environment qualified as Env
+import Text.Megaparsec qualified as Parser
 import Text.Read (
     readMaybe,
  )

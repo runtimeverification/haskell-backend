@@ -4,14 +4,14 @@ module Test.Kore.Unparser (
     test_unparseGeneric,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Hedgehog (
     Gen,
     Property,
     (===),
  )
-import qualified Hedgehog
+import Hedgehog qualified
 import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
@@ -28,7 +28,7 @@ import Test.Kore.Parser (
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Tasty.Hedgehog
-import qualified Test.Terse as Terse
+import Test.Terse qualified as Terse
 
 test_unparse :: TestTree
 test_unparse =

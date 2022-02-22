@@ -5,8 +5,8 @@ module Test.Kore.Simplify.Top (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

@@ -6,8 +6,8 @@ module Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
@@ -16,8 +16,8 @@ import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
@@ -27,14 +27,14 @@ import Kore.Internal.TermLike (
     pattern Forall_,
     pattern Implies_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
-import qualified Kore.Simplify.Pattern as Pattern (
+import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Simplify.Simplify
@@ -45,7 +45,7 @@ import Kore.TopBottom (
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 checkImplicationIsTop ::
     MonadSimplify m =>

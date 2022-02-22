@@ -17,7 +17,7 @@ import Pretty (
     Pretty,
     pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype WarnDepthLimitExceeded = WarnDepthLimitExceeded {limitExceeded :: Natural}
     deriving stock (Show, Eq)

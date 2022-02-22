@@ -7,15 +7,15 @@ module Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
     VariableName,
     toVariableName,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Unparser (
     unparse,
  )
@@ -24,7 +24,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike VariableName}
     deriving stock (Show)

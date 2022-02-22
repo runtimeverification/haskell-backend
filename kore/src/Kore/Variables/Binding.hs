@@ -19,14 +19,14 @@ import Control.Comonad.Trans.Env
 import Control.Lens (
     (%~),
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
 import Data.Monoid (
     Any (..),
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.Variable

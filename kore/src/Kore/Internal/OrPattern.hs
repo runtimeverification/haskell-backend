@@ -37,24 +37,24 @@ module Kore.Internal.OrPattern (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition (
+import Kore.Internal.Condition qualified as Condition (
     fromPredicate,
     toPredicate,
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike (
@@ -76,7 +76,7 @@ import Kore.Variables.Target (
     mkElementTarget,
     targetIfEqual,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.

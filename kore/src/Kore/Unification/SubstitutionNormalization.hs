@@ -13,31 +13,31 @@ module Kore.Unification.SubstitutionNormalization (
     normalize,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Control.Monad.State.Strict as State
+import Control.Comonad.Trans.Cofree qualified as Cofree
+import Control.Monad.State.Strict qualified as State
 import Data.Functor.Const
 import Data.Functor.Foldable (
     Base,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Graph.TopologicalSort
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Data.Set qualified as Set
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.Substitution (
     Assignment,
     Normalization (..),
     UnwrappedSubstitution,
     pattern Assignment,
  )
-import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Substitute
 import Kore.TopBottom

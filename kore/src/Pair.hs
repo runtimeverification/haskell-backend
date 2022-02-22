@@ -7,8 +7,8 @@ module Pair (
 ) where
 
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Prelude.Kore
 
 -- | A tuple @(a, a)@ where both elements are the same type.

@@ -7,38 +7,38 @@ module Test.Kore.Simplify.Integration (
     test_simplifySideCondition,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Data.Default as Default
+import Control.Lens qualified as Lens
+import Data.Default qualified as Default
 import Data.Generics.Product
-import qualified Data.Map.Strict as Map
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
-import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.Set as Set
+import Data.Map.Strict qualified as Map
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Int
+import Kore.Builtin.List qualified as List
+import Kore.Builtin.Map qualified as Map
+import Kore.Builtin.Set qualified as Set
 import Kore.Equation (
     Equation (..),
     mkEquation,
  )
-import qualified Kore.Equation as Equation
-import qualified Kore.Internal.Condition as Condition
+import Kore.Equation qualified as Equation
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     fromConditionWithReplacements,
     toRepresentation,
     top,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
     simplifierWithFallback,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import Kore.Rewrite.Axiom.Registry (
@@ -49,7 +49,7 @@ import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
     mkRuleVariable,
  )
-import qualified Kore.Simplify.Pattern as Pattern (
+import Kore.Simplify.Pattern qualified as Pattern (
     makeEvaluate,
  )
 import Kore.Simplify.Simplify
@@ -60,16 +60,16 @@ import Test.Kore.Equation.Common (
     functionAxiomUnification,
     functionAxiomUnification_,
  )
-import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.Kore.Internal.Pattern (
     Conditional (..),
  )
-import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Pattern qualified as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution hiding (
     test_substitute,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

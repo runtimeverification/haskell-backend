@@ -11,15 +11,15 @@ module Kore.Simplify.In (
     simplify,
 ) where
 
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -28,14 +28,14 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.And as And
-import qualified Kore.Simplify.Ceil as Ceil (
+import Kore.Simplify.And qualified as And
+import Kore.Simplify.Ceil qualified as Ceil (
     makeEvaluate,
     simplifyEvaluated,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {- |'simplify' simplifies an 'In' pattern with 'OrPattern'

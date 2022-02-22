@@ -14,30 +14,30 @@ import Control.Error (
 import Control.Monad.Reader (
     MonadReader,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet as HashSet
+import Control.Monad.Reader qualified as Reader
+import Data.Bifunctor qualified as Bifunctor
+import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet qualified as HashSet
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
     makeForallPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -52,14 +52,14 @@ import Kore.Internal.TermLike (
     retractKey,
     termLikeSort,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.AndPredicates as And
+import Kore.Simplify.AndPredicates qualified as And
 import Kore.Simplify.CeilSimplifier
-import qualified Kore.Simplify.Equals as Equals
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Equals qualified as Equals
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
     makeEvaluateTermCeil,

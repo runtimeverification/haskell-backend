@@ -36,47 +36,47 @@ import Control.Error (
     MaybeT,
     hoistMaybe,
  )
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet as HashSet
+import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet qualified as HashSet
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
+import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.AssociativeCommutative as Ac
+import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Builtin.Attributes (
     isConstructorModulo_,
  )
-import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin (
     acceptAnySort,
  )
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
-import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.Set.Set as Set
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Int
+import Kore.Builtin.List qualified as List
+import Kore.Builtin.Set.Set qualified as Set
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (..),
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.InternalSet
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeMultipleAndPredicate,
@@ -84,7 +84,7 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     Key,
     TermLike,
@@ -94,7 +94,7 @@ import Kore.Internal.TermLike (
     pattern App_,
     pattern InternalSet_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
@@ -108,7 +108,7 @@ import Kore.Sort (
 import Kore.Syntax.Sentence (
     SentenceSort (SentenceSort),
  )
-import qualified Kore.Syntax.Sentence as Sentence.DoNotUse (
+import Kore.Syntax.Sentence qualified as Sentence.DoNotUse (
     SentenceSort (..),
  )
 import Kore.Unification.Unify (
