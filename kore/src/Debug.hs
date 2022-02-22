@@ -23,7 +23,7 @@ import Control.Comonad.Trans.Cofree
 import Data.ByteString (
     ByteString,
  )
-import Data.Char qualified as Char
+import qualified Data.Char as Char
 import Data.Functor.Const (
     Const,
  )
