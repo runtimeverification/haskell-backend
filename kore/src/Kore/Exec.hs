@@ -161,6 +161,7 @@ import Kore.Rewrite.Rule.Expand (
 import Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
  )
+import qualified Kore.Rewrite.Rule.Simplify as Rule
 import Kore.Rewrite.RulePattern (
     ImplicationRule (..),
     RewriteRule (..),
@@ -185,7 +186,6 @@ import Kore.Simplify.Data (
  )
 import qualified Kore.Simplify.Data as Simplifier
 import qualified Kore.Simplify.Pattern as Pattern
-import qualified Kore.Simplify.Rule as Rule
 import Kore.Simplify.Simplify (
     MonadSimplify,
     SimplifierXSwitch,

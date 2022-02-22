@@ -491,7 +491,6 @@ library
     Kore.Simplify.OverloadSimplifier
     Kore.Simplify.Pattern
     Kore.Simplify.Predicate
-    Kore.Simplify.Rule
     Kore.Simplify.SetVariable
     Kore.Simplify.SimplificationType
     Kore.Simplify.Simplify
@@ -818,7 +817,6 @@ test-suite kore-test
     Test.Kore.Simplify.Overloading
     Test.Kore.Simplify.Predicate
     Test.Kore.Simplify.Pattern
-    Test.Kore.Simplify.Rule
     Test.Kore.Simplify.StringLiteral
     Test.Kore.Simplify.SubstitutionSimplifier
     Test.Kore.Simplify.TermLike
