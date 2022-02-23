@@ -123,8 +123,8 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition =
-    simplifyPatternX sideCondition >=>
-        loop . OrPattern.fromPattern
+    simplifyPatternX sideCondition
+        >=> loop . OrPattern.fromPattern
   where
     loop input = do
         output <-
