@@ -7,6 +7,7 @@ module Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
     simplify,
     makeEvaluate,
+    simplifyPatternX,
 ) where
 
 import Control.Monad (
@@ -122,7 +123,8 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition =
-    loop . OrPattern.fromPattern
+    simplifyPatternX sideCondition >=>
+        loop . OrPattern.fromPattern
   where
     loop input = do
         output <-
@@ -132,9 +134,8 @@ makeEvaluate sideCondition =
             then pure output
             else loop output
 
-    worker patt =
+    worker pattern' =
         OrPattern.observeAllT $ do
-            pattern' <- simplifyPatternX sideCondition patt
             withSimplifiedCondition <-
                 simplifyCondition sideCondition pattern'
             let (term, simplifiedCondition) =
