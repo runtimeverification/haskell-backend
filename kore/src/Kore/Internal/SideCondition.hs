@@ -31,32 +31,32 @@ module Kore.Internal.SideCondition (
 ) where
 
 import Changed
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.State.Strict (
     StateT,
     runStateT,
  )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Functor.Foldable as Recursive
+import Control.Monad.State.Strict qualified as State
+import Data.Bifunctor qualified as Bifunctor
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product (
     field,
  )
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.List (
     sortOn,
  )
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern.Defined as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Pattern.Defined qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
@@ -66,14 +66,14 @@ import Kore.Attribute.Synthetic (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalList (
     InternalList (..),
  )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.NormalizedAc (
     AcWrapper (..),
     InternalAc (..),
@@ -97,7 +97,7 @@ import Kore.Internal.Predicate (
     pattern PredicateForall,
     pattern PredicateNot,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol (
     Symbol,
@@ -124,7 +124,7 @@ import Kore.Internal.TermLike (
     pattern Mu_,
     pattern Nu_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
@@ -141,8 +141,8 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 {- | Side condition used in the evaluation context.
 

@@ -28,12 +28,12 @@ module Kore.Internal.Conditional (
 import Data.Map.Strict (
     Map,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified,
  )
 import Kore.Debug
@@ -45,15 +45,15 @@ import Kore.Internal.Predicate (
     unparse2WithSort,
     unparseWithSort,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.Substitution (
     Assignment,
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     AdjSomeVariableName,
     InternalVariable,
@@ -74,8 +74,8 @@ import Pretty (
     Doc,
     Pretty (..),
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 

@@ -10,7 +10,7 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import Kore.Internal.Pattern (Pattern)
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     pattern Or_,
  )

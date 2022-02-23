@@ -49,19 +49,19 @@ module Kore.Builtin.Builtin (
 import Control.Error (
     MaybeT (..),
  )
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
-import qualified Kore.Attribute.Sort.Element as Attribute.Sort
-import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.Concat qualified as Attribute.Sort
+import Kore.Attribute.Sort.Element qualified as Attribute.Sort
+import Kore.Attribute.Sort.Unit qualified as Attribute.Sort
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol (..),
  )
 import Kore.Builtin.EqTerm (
@@ -73,7 +73,7 @@ import Kore.Builtin.Verifiers
 import Kore.Error (
     Error,
  )
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -81,8 +81,8 @@ import Kore.IndexedModule.MetadataTools (
     MetadataTools (MetadataTools),
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import Kore.IndexedModule.MetadataTools qualified as MetadataTools
+import Kore.IndexedModule.Resolvers qualified as IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -90,8 +90,8 @@ import Kore.Internal.Conditional (
 import Kore.Internal.InternalBool (
     InternalBool (..),
  )
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -101,7 +101,7 @@ import Kore.Internal.Pattern as Pattern (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol (symbolHook)
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -121,7 +121,7 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Unify
+import Kore.Unification.Unify qualified as Unify
 import Kore.Unparser
 import Prelude.Kore
 

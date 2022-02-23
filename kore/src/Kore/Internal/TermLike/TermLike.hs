@@ -32,9 +32,9 @@ import Control.Comonad.Trans.Cofree (
 import Control.Lens (
     Lens',
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
-import qualified Control.Monad.Reader as Reader
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
+import Control.Monad.Reader qualified as Reader
 import Data.Functor.Const (
     Const (..),
  )
@@ -43,37 +43,37 @@ import Data.Functor.Foldable (
     Corecursive,
     Recursive,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Functor.Identity (
     Identity (..),
  )
 import Data.Generics.Product
-import qualified Data.Generics.Product as Lens.Product
+import Data.Generics.Product qualified as Lens.Product
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
-import qualified Generics.SOP as SOP
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
+import GHC.Stack qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation
-import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
-import qualified Kore.Attribute.Pattern.Created as Attribute
-import qualified Kore.Attribute.Pattern.Defined as Attribute
+import Kore.Attribute.Pattern.ConstructorLike qualified as Attribute
+import Kore.Attribute.Pattern.Created qualified as Attribute
+import Kore.Attribute.Pattern.Defined qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Function as Attribute
-import qualified Kore.Attribute.Pattern.Functional as Attribute
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Pattern.Function qualified as Attribute
+import Kore.Attribute.Pattern.Functional qualified as Attribute
+import Kore.Attribute.Pattern.Simplified qualified as Attribute
+import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -96,9 +96,9 @@ import Kore.Internal.Key (
     KeyAttributes (KeyAttributes),
     KeyF,
  )
-import qualified Kore.Internal.Key as Attribute
-import qualified Kore.Internal.Key as Key
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.Key qualified as Attribute
+import Kore.Internal.Key qualified as Key
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.Symbol (
@@ -133,15 +133,15 @@ import Kore.TopBottom
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Unparser as Unparser
+import Kore.Unparser qualified as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (refreshVariable)
 import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 -- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 data TermLikeF variable child

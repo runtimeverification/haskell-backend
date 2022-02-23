@@ -6,7 +6,7 @@ module Test.Kore.Attribute.Pattern.FreeVariables (
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike (
     Symbol,
@@ -16,7 +16,7 @@ import Kore.Syntax hiding (
     PatternF (..),
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

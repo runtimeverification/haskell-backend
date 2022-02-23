@@ -8,21 +8,21 @@ module Test.Kore.Rewrite.RewriteStep (
     test_narrowing,
 ) where
 
-import qualified Control.Exception as Exception
+import Control.Exception qualified as Exception
 import Data.Default as Default (
     def,
  )
 import Data.Maybe (
     fromJust,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Internal.Conditional qualified as Conditional
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate as Predicate (
     makeAndPredicate,
     makeCeilPredicate,
@@ -31,9 +31,9 @@ import Kore.Internal.Predicate as Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Reachability (
     AllPathClaim (..),
@@ -43,7 +43,7 @@ import Kore.Rewrite.ClaimPattern (
     mkClaimPattern,
     refreshExistentials,
  )
-import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RHS (..),
@@ -53,14 +53,14 @@ import Kore.Rewrite.RulePattern (
     mkRewritingRule,
     rulePattern,
  )
-import qualified Kore.Rewrite.RulePattern as RulePattern
-import qualified Kore.Rewrite.Step as Step
+import Kore.Rewrite.RulePattern qualified as RulePattern
+import Kore.Rewrite.Step qualified as Step
 import Kore.Variables.Fresh (
     nextName,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore.Internal.Condition as Condition
 import Test.Kore.Internal.OrCondition (
     OrTestCondition,
@@ -68,9 +68,9 @@ import Test.Kore.Internal.OrCondition (
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

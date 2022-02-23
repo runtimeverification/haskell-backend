@@ -23,28 +23,28 @@ module Test.Kore.Builtin.InternalBytes (
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString qualified as ByteString
+import Data.ByteString.Char8 qualified as BS
 import Data.Char (
     ord,
  )
 import Data.Text (
     Text,
  )
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Hedgehog hiding (
     Concrete,
     test,
  )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Kore.Builtin.Encoding as E
-import qualified Kore.Builtin.InternalBytes as InternalBytes
-import qualified Kore.Internal.MultiOr as MultiOr
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Kore.Builtin.Encoding qualified as E
+import Kore.Builtin.InternalBytes qualified as InternalBytes
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -52,11 +52,11 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Builtin.String as Test.String
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Builtin.String qualified as Test.String
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

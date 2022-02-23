@@ -20,12 +20,12 @@ module Kore.Validate.Error (
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute.HasDomainValues
 import Kore.Error
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | 'VerifyError' is a tag for verification errors.
 newtype VerifyError = VerifyError ()

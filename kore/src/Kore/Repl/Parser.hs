@@ -14,24 +14,24 @@ module Kore.Repl.Parser (
 import Data.GraphViz (
     GraphvizOutput,
  )
-import qualified Data.GraphViz as Graph
-import qualified Data.HashSet as HashSet
+import Data.GraphViz qualified as Graph
+import Data.HashSet qualified as HashSet
 import Data.List (
     nub,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.String (
     IsString (..),
  )
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Log (
     EntryTypes,
  )
-import qualified Kore.Log as Log
-import qualified Kore.Log.Registry as Log
+import Kore.Log qualified as Log
+import Kore.Log.Registry qualified as Log
 import Kore.Repl.Data
 import Prelude.Kore hiding (
     many,
@@ -48,8 +48,8 @@ import Text.Megaparsec (
     option,
     try,
  )
-import qualified Text.Megaparsec.Char as Char
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char qualified as Char
+import Text.Megaparsec.Char.Lexer qualified as L
 import Type.Reflection (
     SomeTypeRep,
  )

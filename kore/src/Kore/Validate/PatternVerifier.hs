@@ -12,13 +12,13 @@ module Kore.Validate.PatternVerifier (
     module Kore.Validate.PatternVerifier.PatternVerifier,
 ) where
 
-import qualified Control.Monad as Monad
-import qualified Control.Monad.Reader as Reader
-import qualified Control.Monad.Trans.Class as Trans
+import Control.Monad qualified as Monad
+import Control.Monad.Reader qualified as Reader
+import Control.Monad.Trans.Class qualified as Trans
 import Control.Monad.Trans.Maybe
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Functor.Foldable qualified as Recursive
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
@@ -28,33 +28,33 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     nullFreeVariables,
  )
-import qualified Kore.Attribute.Sort as Attribute.Sort
-import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
+import Kore.Attribute.Sort qualified as Attribute.Sort
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute.HasDomainValues
 import Kore.Attribute.Synthetic
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.Error
 import Kore.IndexedModule.Error
 import Kore.IndexedModule.Resolvers
-import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Alias qualified as Internal
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Internal.Symbol as Internal
+import Kore.Internal.Symbol qualified as Internal
 import Kore.Internal.TermLike (
     TermLikeF,
  )
-import qualified Kore.Internal.TermLike as Internal
+import Kore.Internal.TermLike qualified as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 import Kore.Validate.Error
 import Kore.Validate.PatternVerifier.PatternVerifier
 import Kore.Validate.SortVerifier
-import qualified Kore.Variables.Free as Variables
-import qualified Kore.Verified as Verified
+import Kore.Variables.Free qualified as Variables
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Pretty (
     (<+>),
  )
-import qualified Pretty
+import Pretty qualified
 
 withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
 withBuiltinVerifiers verifiers context =

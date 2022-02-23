@@ -14,22 +14,22 @@ module Kore.Rewrite.AntiLeft (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Debug (
     Debug,
     Diff,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (freeVariables),
     bindVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables (
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables (
     toNames,
  )
 import Kore.Internal.Predicate (
@@ -40,7 +40,7 @@ import Kore.Internal.Predicate (
     makeMultipleOrPredicate,
     makeOrPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     mkAnd,
@@ -52,7 +52,7 @@ import Kore.Internal.TermLike (
     pattern Exists_,
     pattern Or_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )

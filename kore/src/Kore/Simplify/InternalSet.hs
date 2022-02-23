@@ -6,21 +6,21 @@ module Kore.Simplify.InternalSet (
     simplify,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Functor.Compose
 import Data.Generics.Product
-import qualified Kore.Builtin.AssociativeCommutative as Builtin
+import Kore.Builtin.AssociativeCommutative qualified as Builtin
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 -- | Simplify an 'InternalMap' pattern.

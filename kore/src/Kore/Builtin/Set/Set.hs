@@ -30,11 +30,11 @@ module Kore.Builtin.Set.Set (
 import Data.String (
     IsString,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.Symbols as Builtin
-import qualified Kore.Error as Kore (
+import Kore.Builtin.Symbols qualified as Builtin
+import Kore.Error qualified as Kore (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (

@@ -11,7 +11,7 @@ module Kore.Rewrite.UnifyingRule (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -25,7 +25,7 @@ import Kore.Internal.TermLike (
 import Kore.Syntax.Variable
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 type Renaming variable =
     Map (SomeVariableName variable) (SomeVariable variable)

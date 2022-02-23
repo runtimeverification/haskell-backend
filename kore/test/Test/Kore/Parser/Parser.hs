@@ -4,7 +4,7 @@ module Test.Kore.Parser.Parser (
     test_parseSort,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
@@ -13,7 +13,7 @@ import Data.Text (
     Text,
     pack,
  )
-import qualified Kore.Internal.TermLike as Internal
+import Kore.Internal.TermLike qualified as Internal
 import Kore.Parser.Parser
 import Kore.Syntax
 import Kore.Syntax.Definition

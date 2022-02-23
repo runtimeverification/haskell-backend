@@ -17,55 +17,55 @@ import Control.Error (
 import Control.Monad.Reader (
     MonadReader,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Data.Functor.Foldable as Recursive
-import qualified Kore.Attribute.Symbol as Attribute.Symbol (
+import Control.Monad.Reader qualified as Reader
+import Data.Functor.Foldable qualified as Recursive
+import Kore.Attribute.Symbol qualified as Attribute.Symbol (
     isTotal,
  )
 import Kore.Attribute.Synthetic (
     synthesize,
  )
-import qualified Kore.Builtin.AssocComm.CeilSimplifier as AssocComm
-import qualified Kore.Internal.Condition as Condition
+import Kore.Builtin.AssocComm.CeilSimplifier qualified as AssocComm
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
  )
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.Function.Evaluator as Axiom (
+import Kore.Rewrite.Function.Evaluator qualified as Axiom (
     evaluatePattern,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.AndPredicates as And
+import Kore.Simplify.AndPredicates qualified as And
 import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Simplify as Simplifier

@@ -2,13 +2,13 @@ module Test.Kore.Simplify.And (
     test_andSimplification,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -17,21 +17,21 @@ import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.And
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols (
     testSort,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

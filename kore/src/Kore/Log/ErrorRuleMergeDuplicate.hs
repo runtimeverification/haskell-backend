@@ -13,7 +13,7 @@ import Control.Exception (
     Exception (..),
     throw,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
@@ -23,12 +23,12 @@ import Data.Generics.Wrapped (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
  )
@@ -43,7 +43,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype ErrorRuleMergeDuplicateIds = ErrorRuleMergeDuplicateIds
     { unErrorRuleMergeDuplicateIds :: Map Text [SourceLocation]

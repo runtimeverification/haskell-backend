@@ -9,7 +9,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Log.DebugEvaluateCondition
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.SQL
 import Test.Tasty
 

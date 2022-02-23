@@ -14,16 +14,16 @@ import Control.Exception (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import GHC.Exception (
     prettyCallStackLines,
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import GHC.Stack (
     CallStack,
     callStack,
  )
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
@@ -57,7 +57,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 data ErrorRewritesInstantiation = ErrorRewritesInstantiation
     { problem :: !SubstitutionCoverageError

@@ -9,16 +9,16 @@ module Kore.Attribute.Pattern.Defined (
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Alias qualified as Internal
 import Kore.Internal.Inj (
     Inj,
  )
-import qualified Kore.Internal.Inj as Inj
-import qualified Kore.Internal.Symbol as Internal
+import Kore.Internal.Inj qualified as Inj
+import Kore.Internal.Symbol qualified as Internal
 import Kore.Syntax
 import Prelude.Kore
 

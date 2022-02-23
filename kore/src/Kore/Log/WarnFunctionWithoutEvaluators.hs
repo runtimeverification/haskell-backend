@@ -7,10 +7,10 @@ module Kore.Log.WarnFunctionWithoutEvaluators (
     warnFunctionWithoutEvaluators,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol (sourceLocation)
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol (..),
  )
 import Kore.Internal.Symbol (
@@ -30,8 +30,8 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 newtype WarnFunctionWithoutEvaluators = WarnFunctionWithoutEvaluators {symbol :: Symbol}
     deriving stock (Show, Eq, Typeable)

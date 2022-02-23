@@ -6,21 +6,21 @@ module Kore.Attribute.Sort.ConstructorsBuilder (
     indexBySort,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
-import qualified Kore.Attribute.Axiom as Attribute (
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Kore.Attribute.Axiom qualified as Attribute (
     Axiom,
  )
-import qualified Kore.Attribute.Axiom as Attribute.Axiom (
+import Kore.Attribute.Axiom qualified as Attribute.Axiom (
     constructor,
  )
-import qualified Kore.Attribute.Axiom.Constructor as Axiom.Constructor
+import Kore.Attribute.Axiom.Constructor qualified as Axiom.Constructor
 import Kore.Attribute.Sort.Constructors (
     Constructor (Constructor),
     ConstructorLike (..),
     Constructors (Constructors),
  )
-import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
+import Kore.Attribute.Sort.Constructors qualified as Constructors.DoNotUse
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     recursiveIndexedModuleAxioms,
@@ -28,7 +28,7 @@ import Kore.IndexedModule.IndexedModule (
 import Kore.Internal.Symbol (
     Symbol (Symbol),
  )
-import qualified Kore.Internal.Symbol as Symbol.DoNotUse
+import Kore.Internal.Symbol qualified as Symbol.DoNotUse
 import Kore.Internal.TermLike (
     TermLike,
     pattern App_,
@@ -41,16 +41,16 @@ import Kore.Sort (
     Sort (SortActualSort),
     SortActual (SortActual),
  )
-import qualified Kore.Sort as Sort.DoNotUse
+import Kore.Sort qualified as Sort.DoNotUse
 import Kore.Syntax.Id (
     Id,
  )
 import Kore.Syntax.Sentence (
     SentenceAxiom (SentenceAxiom),
  )
-import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
+import Kore.Syntax.Sentence qualified as Sentence.DoNotUse
 import Kore.Syntax.Variable
-import qualified Kore.Verified as Verified (
+import Kore.Verified qualified as Verified (
     SentenceAxiom,
  )
 import Prelude.Kore

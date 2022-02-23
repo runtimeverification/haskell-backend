@@ -5,7 +5,7 @@ module Test.Kore.Simplify.Forall (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -14,17 +14,17 @@ import Kore.Internal.Predicate (
     makeForallPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Forall as Forall (
+import Kore.Simplify.Forall qualified as Forall (
     makeEvaluate,
     simplify,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

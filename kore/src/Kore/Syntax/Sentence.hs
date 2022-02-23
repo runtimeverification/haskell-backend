@@ -52,17 +52,17 @@ module Kore.Syntax.Sentence (
     module Kore.Syntax.Module,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.Generics.Sum.Typed (
     projectTyped,
  )
 import Data.Kind (
     Type,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Null as Attribute (
+import Kore.Attribute.Null qualified as Attribute (
     Null (..),
  )
 import Kore.Attribute.Pattern.FreeVariables (
@@ -82,7 +82,7 @@ import Kore.Variables.Free (
     freePureVariables,
  )
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- | 'Symbol' is the @sort-variables@ part of the
 @symbol@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>

@@ -8,16 +8,16 @@ import Control.Lens (
     (%~),
     (.~),
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Kore
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Kore
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
@@ -36,12 +36,12 @@ import Kore.Validate.DefinitionVerifier (
 import Prelude.Kore hiding (
     concatMap,
  )
-import qualified Test.Kore.Builtin.Builtin as Builtin
-import qualified Test.Kore.Builtin.Definition as Builtin
-import qualified Test.Kore.Builtin.Int as Int
-import qualified Test.Kore.Builtin.List as List
-import qualified Test.Kore.Builtin.Map as Map
-import qualified Test.Kore.Builtin.Set as Set
+import Test.Kore.Builtin.Builtin qualified as Builtin
+import Test.Kore.Builtin.Definition qualified as Builtin
+import Test.Kore.Builtin.Int qualified as Int
+import Test.Kore.Builtin.List qualified as List
+import Test.Kore.Builtin.Map qualified as Map
+import Test.Kore.Builtin.Set qualified as Set
 import Test.Kore.Rewrite.SMT.Builders (
     indexModule,
  )

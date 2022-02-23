@@ -16,13 +16,13 @@ module SQL.ColumnDef (
     columnNotNull,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product.Fields
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
 import Prelude.Kore
 
 newtype TypeName = TypeName {getTypeName :: String}

@@ -13,35 +13,35 @@ module Kore.Equation.Equation (
     identifiers,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Data.Default as Default
-import qualified Data.Functor.Foldable as Recursive
+import Control.Lens qualified as Lens
+import Data.Default qualified as Default
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Wrapped (
     _Wrapped,
  )
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation
-import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
 import Kore.Internal.Predicate (
     Predicate,
     fromPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Symbol (
     Symbol (..),
  )
@@ -50,7 +50,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkVar,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.UnifyingRule (
     Renaming,
  )
@@ -64,13 +64,13 @@ import Kore.TopBottom
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Variables.Fresh as Fresh
+import Kore.Variables.Fresh qualified as Fresh
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 {- | A type for representing equational rules, which in K can appear as
 _function definition_ rules or as _simplification_ rules.

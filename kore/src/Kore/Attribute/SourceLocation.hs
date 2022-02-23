@@ -17,8 +17,8 @@ import Control.Monad (
  )
 import Data.Default
 import Data.Generics.Product
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Location (
     LineColumn (..),
     Location (..),
@@ -38,7 +38,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 data SourceLocation = SourceLocation
     { location :: !Location

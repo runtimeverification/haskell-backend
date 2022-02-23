@@ -12,8 +12,8 @@ module Data.Sup (
 import Data.Data (
     Data,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Prelude.Kore
 import Pretty (
     Pretty (..),

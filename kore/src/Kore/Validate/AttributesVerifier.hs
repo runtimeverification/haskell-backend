@@ -18,14 +18,14 @@ module Kore.Validate.AttributesVerifier (
     parseAttributes,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Control.Lens as Lens
-import qualified Data.Functor.Foldable as Recursive
+import Control.Comonad.Trans.Cofree qualified as Cofree
+import Control.Lens qualified as Lens
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product
 import Kore.AST.AstWithLocation (
     locationFromAst,
  )
-import qualified Kore.Attribute.Axiom as Attribute (
+import Kore.Attribute.Axiom qualified as Attribute (
     Axiom,
     sourceLocation,
  )
@@ -33,18 +33,18 @@ import Kore.Attribute.Hook
 import Kore.Attribute.Overload (
     Overload (..),
  )
-import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Parser qualified as Attribute.Parser
 import Kore.Attribute.Sort
 import Kore.Attribute.Sort.HasDomainValues
 import Kore.Attribute.Subsort as Subsort
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts (
     symbolOrAliasSorts,
  )
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol qualified as Internal.Symbol
 import Kore.Syntax.Application (
     SymbolOrAlias (..),
  )
@@ -60,7 +60,7 @@ import Kore.Unparser (
     unparse,
  )
 import Kore.Validate.Error
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Pretty
 

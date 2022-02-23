@@ -12,8 +12,8 @@ module Kore.BugReport (
     ExitCode (..),
 ) where
 
-import qualified Codec.Archive.Tar as Tar
-import qualified Codec.Compression.GZip as GZip
+import Codec.Archive.Tar qualified as Tar
+import Codec.Compression.GZip qualified as GZip
 import Control.Exception (
     AsyncException (UserInterrupt),
     fromException,
@@ -24,15 +24,15 @@ import Control.Monad.Catch (
     generalBracket,
     handleAll,
  )
-import qualified Control.Monad.Extra as Monad
-import qualified Data.ByteString.Lazy as ByteString.Lazy
+import Control.Monad.Extra qualified as Monad
+import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Debug
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import GHC.IO.Exception (
     IOErrorType (..),
     IOException (ioe_type),
  )
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Kore.Log.KoreLogOptions (
     ExeName (..),
  )

@@ -7,7 +7,7 @@ import Kore.Equation.Simplification
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -16,7 +16,7 @@ import Prelude.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification_,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
     runSimplifier,
  )

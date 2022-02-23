@@ -5,19 +5,19 @@ module Test.Kore.Simplify.Pattern (
 ) where
 
 import Data.Maybe (fromJust)
-import qualified Data.Set as Set
-import qualified Kore.Internal.Condition as Condition
+import Data.Set qualified as Set
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.From
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeCeilPredicate,
@@ -26,16 +26,16 @@ import Kore.Internal.Predicate (
     makeImpliesPredicate,
     makeNotPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Variables.Fresh (refreshElementVariable)
 import Prelude.Kore
-import qualified Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Internal.Pattern qualified as Pattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

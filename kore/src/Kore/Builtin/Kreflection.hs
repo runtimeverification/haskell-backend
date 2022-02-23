@@ -6,9 +6,9 @@ module Kore.Builtin.Kreflection (
     verifiers,
 ) where
 
-import qualified Data.HashMap.Strict as HashMap
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Error
+import Data.HashMap.Strict qualified as HashMap
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Error qualified
 import Prelude.Kore
 
 verifiers :: Builtin.Verifiers

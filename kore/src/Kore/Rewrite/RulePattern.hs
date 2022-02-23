@@ -34,51 +34,51 @@ module Kore.Rewrite.RulePattern (
 import Control.Lens (
     Lens',
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.State.Strict (
     evalState,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Coerce (
     Coercible,
     coerce,
  )
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Debug
 import Kore.Internal.Alias (
     Alias (..),
  )
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution (
+import Kore.Internal.Substitution qualified as Substitution (
     toMap,
     variables,
  )
@@ -90,14 +90,14 @@ import Kore.Internal.TermLike (
     mkVar,
     termLikeSort,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft,
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft
+import Kore.Rewrite.AntiLeft qualified as AntiLeft
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingVariable,
@@ -129,7 +129,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 -- | Defines the right-hand-side of a rewrite rule / claim
 data RHS variable = RHS

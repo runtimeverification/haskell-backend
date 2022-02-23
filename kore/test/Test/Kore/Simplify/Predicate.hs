@@ -8,13 +8,13 @@ import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     ElementVariable,
     TermLike,
@@ -33,9 +33,9 @@ import Kore.Simplify.Predicate (extractFirstAssignment, simplify)
 import Kore.TopBottom
 import Kore.Unparser (unparse)
 import Prelude.Kore
-import qualified Pretty
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.Kore.Simplify as Test
+import Pretty qualified
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit
 

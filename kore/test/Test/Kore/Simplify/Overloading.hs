@@ -6,10 +6,10 @@ module Test.Kore.Simplify.Overloading (
 import Control.Monad.Trans.Except (
     runExceptT,
  )
-import qualified Kore.Builtin.Bool.Bool as Bool
-import qualified Kore.Builtin.Int.Int as Int
-import qualified Kore.Builtin.String.String as String
-import qualified Kore.Internal.Condition as Condition
+import Kore.Builtin.Bool.Bool qualified as Bool
+import Kore.Builtin.Int.Int qualified as Int
+import Kore.Builtin.String.String qualified as String
+import Kore.Internal.Condition qualified as Condition
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
@@ -18,7 +18,7 @@ import Kore.Simplify.Overloading
 import Pair
 import Prelude.Kore
 import Test.Kore.Internal.TermLike
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Kore.Syntax.Id
 import Test.Tasty

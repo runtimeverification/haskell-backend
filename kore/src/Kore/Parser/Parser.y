@@ -31,9 +31,9 @@ module Kore.Parser.Parser (
     parseVariableCounter,
 ) where
 
-import qualified Data.ByteString.Lazy.Char8 as B
-import qualified Data.Char as Char
-import qualified Data.Functor.Foldable as Recursive
+import Data.ByteString.Lazy.Char8 qualified as B
+import Data.Char qualified as Char
+import Data.Functor.Foldable qualified as Recursive
 import Data.List (
     foldl1',
  )
@@ -41,10 +41,10 @@ import Data.Sup
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
+import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Null as Attribute
+import Kore.Attribute.Null qualified as Attribute
 import Kore.Syntax hiding (
     mkVariableName,
  )
@@ -53,7 +53,7 @@ import Kore.Syntax.Sentence
 import Kore.Parser.Lexer
 import Kore.Parser.LexerWrapper
 import Numeric.Natural
-import qualified Prelude as Prelude
+import Prelude qualified as Prelude
 import Prelude.Kore
 
 }

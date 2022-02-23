@@ -11,7 +11,7 @@ module Test.Kore.Attribute.Axiom.Concrete (
     test_arguments,
 ) where
 
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariable,
@@ -21,7 +21,7 @@ import Kore.Syntax.Variable hiding (
  )
 import Prelude.Kore
 import Test.Kore.Attribute.Parser
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -11,13 +11,13 @@ module Test.Tasty.HUnit.Ext (
 import Control.Exception (
     SomeException,
  )
-import qualified Control.Exception as Exception
+import Control.Exception qualified as Exception
 import Data.List (
     isInfixOf,
  )
 import Kore.Debug
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Tasty.HUnit hiding (
     assertEqual,
     (@=?),

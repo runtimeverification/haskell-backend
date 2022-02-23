@@ -24,10 +24,10 @@ module Kore.Parser.LexerWrapper (
 -- Alex does not support a monadUserState-strict-bytestring wrapper, so we
 -- built one ourselves. We also add support for FilePath to the AlexPosn type.
 import Control.Applicative as App (Applicative (..))
-import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Internal as ByteString hiding (ByteString)
-import qualified Data.ByteString.Unsafe as ByteString
-import qualified Data.Char
+import Data.ByteString qualified as ByteString
+import Data.ByteString.Internal qualified as ByteString hiding (ByteString)
+import Data.ByteString.Unsafe qualified as ByteString
+import Data.Char qualified
 import Data.Int
 import Data.Word (Word8)
 import Kore.Parser.Lexer

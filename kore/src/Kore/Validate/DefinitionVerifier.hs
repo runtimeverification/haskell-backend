@@ -29,17 +29,17 @@ import Data.List (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
+import Kore.Builtin qualified as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
-import qualified Kore.Internal.Symbol as Internal.Symbol (
+import Kore.Internal.Symbol qualified as Internal.Symbol (
     Symbol (..),
  )
 import Kore.Syntax.Definition
@@ -50,7 +50,7 @@ import Kore.Validate.AttributesVerifier hiding (
 import Kore.Validate.Error
 import Kore.Validate.ModuleVerifier
 import Kore.Validate.Verifier
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 {- |'verifyDefinition' verifies the welformedness of a Kore 'Definition'.

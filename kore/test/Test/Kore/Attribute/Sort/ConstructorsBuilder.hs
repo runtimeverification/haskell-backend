@@ -5,31 +5,31 @@ module Test.Kore.Attribute.Sort.ConstructorsBuilder (
 import Data.Default (
     def,
  )
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructor (Constructor),
     ConstructorLike (..),
     Constructors (Constructors),
  )
-import qualified Kore.Attribute.Sort.Constructors as Attribute.DoNotUse
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+import Kore.Attribute.Sort.Constructors qualified as Attribute.DoNotUse
+import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Int qualified as Int
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (ApplicationSorts),
  )
-import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
+import Kore.Internal.ApplicationSorts qualified as ApplicationSorts.DoNotUse
 import Kore.Internal.Symbol (
     Symbol (Symbol),
  )
-import qualified Kore.Internal.Symbol as Symbol.DoNotUse
+import Kore.Internal.Symbol qualified as Symbol.DoNotUse
 import Kore.Sort (
     Sort (..),
  )
@@ -45,7 +45,7 @@ import Test.Kore.Rewrite.SMT.Builders (
     sortDeclaration,
     symbolDeclaration,
  )
-import qualified Test.Kore.Rewrite.SMT.Builders as Attribute (
+import Test.Kore.Rewrite.SMT.Builders qualified as Attribute (
     constructor,
     functional,
     hook,

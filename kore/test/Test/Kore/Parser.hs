@@ -15,7 +15,7 @@ import Data.Text (
     Text,
     unpack,
  )
-import qualified Data.Text.Encoding as Text
+import Data.Text.Encoding qualified as Text
 import Kore.Parser.Lexer
 import Kore.Parser.LexerWrapper
 import Kore.Parser.Parser (

@@ -11,11 +11,11 @@ module Test.Kore.Rewrite.SMT.Representation.Builders (
     unresolvedSortMap,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Encodable (AlreadyEncoded),
     IndirectSymbolDeclaration (IndirectSymbolDeclaration),
@@ -32,15 +32,15 @@ import qualified Kore.Rewrite.SMT.AST as AST (
     encodable,
     encode,
  )
-import qualified Kore.Rewrite.SMT.AST as AST.DoNotUse
-import qualified Kore.Sort as Kore (
+import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
+import Kore.Sort qualified as Kore (
     Sort,
  )
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Syntax.Id qualified as Kore (
     Id,
  )
 import Prelude.Kore
-import qualified SMT.AST as AST (
+import SMT.AST qualified as AST (
     Constructor (Constructor),
     ConstructorArgument (ConstructorArgument),
     DataTypeDeclaration (DataTypeDeclaration),
@@ -48,7 +48,7 @@ import qualified SMT.AST as AST (
     SExpr (Atom),
     SortDeclaration (SortDeclaration),
  )
-import qualified SMT.AST as AST.DoNotUse
+import SMT.AST qualified as AST.DoNotUse
 import Test.Kore (
     testId,
  )

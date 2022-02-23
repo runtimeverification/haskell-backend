@@ -51,27 +51,27 @@ import Data.Char (
     ord,
  )
 import Data.Functor.Const
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.List (
     findIndex,
  )
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified Data.Text.Read as Text
-import qualified Kore.Builtin.Bool as Bool
+import Data.Text qualified as Text
+import Data.Text.Read qualified as Text
+import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin (
     UnifyEq (..),
  )
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.String.String
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
@@ -79,7 +79,7 @@ import Kore.Internal.InternalString
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -98,7 +98,7 @@ import Numeric (
     showSigned,
  )
 import Prelude.Kore
-import qualified Text.Megaparsec as Parsec
+import Text.Megaparsec qualified as Parsec
 
 {- | Verify that the sort is hooked to the builtin @String@ sort.
 

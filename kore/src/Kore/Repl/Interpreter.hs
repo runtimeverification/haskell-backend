@@ -28,12 +28,12 @@ import Control.Exception (
     displayException,
     throwIO,
  )
-import qualified Control.Exception as X
+import Control.Exception qualified as X
 import Control.Lens (
     (%=),
     (.=),
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     (<=<),
  )
@@ -53,7 +53,7 @@ import Control.Monad.Reader (
     MonadReader,
     ReaderT (..),
  )
-import qualified Control.Monad.Reader as Reader (
+import Control.Monad.Reader qualified as Reader (
     ask,
  )
 import Control.Monad.State.Class (
@@ -65,22 +65,22 @@ import Control.Monad.State.Strict (
     StateT (..),
     execStateT,
  )
-import qualified Control.Monad.Trans.Class as Monad.Trans
+import Control.Monad.Trans.Class qualified as Monad.Trans
 import Control.Monad.Trans.Except (
     runExceptT,
  )
 import Data.Coerce (
     coerce,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
-import qualified Data.Graph.Inductive.Query.BFS as Graph
-import qualified Data.GraphViz as Graph
-import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
+import Data.Graph.Inductive.Query.BFS qualified as Graph
+import Data.GraphViz qualified as Graph
+import Data.GraphViz.Attributes.Complete qualified as Graph.Attr
 import Data.GraphViz.Exception (
     GraphvizException (..),
  )
@@ -90,11 +90,11 @@ import Data.IORef (
     newIORef,
     readIORef,
  )
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.List.Extra (
     upper,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Maybe (
     fromJust,
  )
@@ -104,10 +104,10 @@ import Data.Sequence (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as Text.Lazy
-import qualified Data.Typeable as Typeable
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Text.Lazy qualified as Text.Lazy
+import Data.Typeable qualified as Typeable
 import GHC.Exts (
     fromString,
     toList,
@@ -122,8 +122,8 @@ import GHC.Natural (
 import Kore.Attribute.Axiom (
     SourceLocation (..),
  )
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Label as AttrLabel
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.Label qualified as AttrLabel
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
  )
@@ -133,19 +133,19 @@ import Kore.Attribute.RuleIndex (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     fromConditionWithReplacements,
  )
 import Kore.Internal.TermLike (
@@ -153,8 +153,8 @@ import Kore.Internal.TermLike (
     SortVariable (..),
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Log as Log
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log qualified as Log
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
@@ -171,7 +171,7 @@ import Kore.Reachability (
     isTrusted,
     makeTrusted,
  )
-import qualified Kore.Reachability.ClaimState as ClaimState
+import Kore.Reachability.ClaimState qualified as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -179,13 +179,13 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
  )
-import qualified Kore.Rewrite.RulePattern as RulePattern
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.RulePattern qualified as RulePattern
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Data (
     MonadSimplify,
  )
 import Kore.Syntax.Application
-import qualified Kore.Syntax.Id as Id (
+import Kore.Syntax.Id qualified as Id (
     Id (..),
  )
 import Kore.Syntax.Variable
@@ -201,7 +201,7 @@ import Prelude.Kore hiding (
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 import System.Directory (
     doesDirectoryExist,
     doesFileExist,

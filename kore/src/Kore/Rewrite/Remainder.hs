@@ -12,23 +12,23 @@ module Kore.Rewrite.Remainder (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -36,11 +36,11 @@ import Kore.Internal.Substitution (
     Substitution,
     pattern Assignment,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable
-import qualified Kore.Simplify.AndPredicates as AndPredicates
-import qualified Kore.Simplify.Ceil as Ceil
+import Kore.Simplify.AndPredicates qualified as AndPredicates
+import Kore.Simplify.Ceil qualified as Ceil
 import Kore.Simplify.Simplify (
     MonadSimplify (..),
  )

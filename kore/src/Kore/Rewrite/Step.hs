@@ -29,51 +29,51 @@ module Kore.Rewrite.Step (
     Step.results,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Data.Set qualified as Set
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Conditional qualified as Conditional
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     InternalVariable,
     SomeVariableName,
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Rewrite.Result as Result
-import qualified Kore.Rewrite.Result as Results
-import qualified Kore.Rewrite.Result as Step
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Rewrite.Result qualified as Result
+import Kore.Rewrite.Result qualified as Results
+import Kore.Rewrite.Result qualified as Step
 import Kore.Rewrite.RewritingVariable
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.UnifyingRule
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Simplify.Simplify as Simplifier
-import qualified Kore.TopBottom as TopBottom
+import Kore.Simplify.Simplify qualified as Simplifier
+import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Procedure
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
@@ -82,13 +82,13 @@ import Kore.Unparser
 import Kore.Variables.Target (
     Target,
  )
-import qualified Kore.Variables.Target as Target
+import Kore.Variables.Target qualified as Target
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 type UnifiedRule rule = Conditional (UnifyingRuleVariable rule) rule
 

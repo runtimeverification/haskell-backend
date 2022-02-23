@@ -24,20 +24,20 @@ module Test.Kore.Builtin.String (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Hedgehog hiding (
     Concrete,
  )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.String as String
-import qualified Kore.Builtin.String.String as String
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiOr as MultiOr
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.String qualified as String
+import Kore.Builtin.String.String qualified as String
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.Pattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -48,11 +48,11 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
+import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

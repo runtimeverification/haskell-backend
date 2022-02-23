@@ -5,7 +5,7 @@ module Test.Kore.Simplify.StringLiteral (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Conditional (..),
  )

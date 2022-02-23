@@ -5,26 +5,26 @@ module Test.ConsistentKore (
     patternGen,
 ) where
 
-import qualified Control.Arrow as Arrow
-import qualified Control.Monad as Monad
+import Control.Arrow qualified as Arrow
+import Control.Monad qualified as Monad
 import Control.Monad.Reader (
     ReaderT,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.List as List (
+import Control.Monad.Reader qualified as Reader
+import Data.Functor.Foldable qualified as Recursive
+import Data.HashMap.Strict qualified as HashMap
+import Data.List qualified as List (
     foldl',
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Kore.Attribute.Constructor as Attribute.Constructor (
+import Hedgehog qualified
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Kore.Attribute.Constructor qualified as Attribute.Constructor (
     Constructor (..),
  )
 import Kore.Attribute.Pattern.FreeVariables (
@@ -32,23 +32,23 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     nullFreeVariables,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol (
+import Kore.Attribute.Symbol qualified as Attribute.Symbol (
     Symbol (..),
  )
 import Kore.Builtin.AssociativeCommutative as AssociativeCommutative (
     TermWrapper,
     asInternal,
  )
-import qualified Kore.Builtin.Bool.Bool as BuiltinBool (
+import Kore.Builtin.Bool.Bool qualified as BuiltinBool (
     asBuiltin,
  )
-import qualified Kore.Builtin.Int.Int as BuiltinInt (
+import Kore.Builtin.Int.Int qualified as BuiltinInt (
     asBuiltin,
  )
-import qualified Kore.Builtin.List.List as BuiltinList (
+import Kore.Builtin.List.List qualified as BuiltinList (
     asBuiltin,
  )
 import Kore.Builtin.Map.Map as BuiltinMap (
@@ -60,8 +60,8 @@ import Kore.Builtin.Set.Set as BuiltinSet (
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.Internal.Alias as Alias.DoNotUse
-import qualified Kore.Internal.Alias as Internal (
+import Kore.Internal.Alias qualified as Alias.DoNotUse
+import Kore.Internal.Alias qualified as Internal (
     Alias (Alias),
  )
 import Kore.Internal.ApplicationSorts (
@@ -72,12 +72,12 @@ import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
 import Kore.Internal.Pattern (Pattern)
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (Predicate)
-import qualified Kore.Internal.Symbol as Internal (
+import Kore.Internal.Symbol qualified as Internal (
     Symbol (Symbol),
  )
-import qualified Kore.Internal.Symbol as Symbol.DoNotUse
+import Kore.Internal.Symbol qualified as Symbol.DoNotUse
 import Kore.Internal.TermLike (
     Key,
     TermLike,
@@ -104,7 +104,7 @@ import Kore.Internal.TermLike (
     mkTop,
     retractKey,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     asConcrete,
  )
 import Kore.Sort (

@@ -39,34 +39,34 @@ import Control.Monad.Reader (
     ReaderT,
     runReaderT,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Control.Monad.Trans.Class as Trans
+import Control.Monad.Reader qualified as Reader
+import Control.Monad.Trans.Class qualified as Trans
 import Control.Monad.Trans.Maybe
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import Kore.AST.Error
-import qualified Kore.Attribute.Null as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Null qualified as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
-import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Alias qualified as Internal
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Internal.Symbol as Internal
+import Kore.Internal.Symbol qualified as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 import Kore.Validate.Error
 import Kore.Validate.SortVerifier
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Pretty (
     (<+>),
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype DeclaredVariables = DeclaredVariables
     { getDeclaredVariables ::

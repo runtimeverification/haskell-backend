@@ -32,9 +32,9 @@ import Control.Monad (
     liftM,
     when,
  )
-import qualified Data.ByteString          as ByteString
-import qualified Data.ByteString.Internal as ByteString hiding (ByteString)
-import qualified Data.ByteString.Unsafe   as ByteString
+import Data.ByteString qualified as ByteString
+import Data.ByteString.Internal qualified as ByteString hiding (ByteString)
+import Data.ByteString.Unsafe qualified as ByteString
 import Data.Char (
     chr,
     digitToInt,
@@ -42,11 +42,11 @@ import Data.Char (
     GeneralCategory(..),
     isPrint,
  )
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Text.Encoding
 import Data.Word (Word8)
 import Numeric

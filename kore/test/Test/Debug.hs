@@ -6,15 +6,15 @@ module Test.Debug (
 ) where
 
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Sort
 import Kore.Syntax.Variable
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore
 import Test.Tasty
-import qualified Test.Terse as Terse
+import Test.Terse qualified as Terse
 
 -- A simple type with one constructor
 data A = A

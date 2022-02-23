@@ -2,10 +2,10 @@ module Test.Kore.Validate.DefinitionVerifier.SortUsage (
     test_sortUsage,
 ) where
 
-import qualified Data.List as List
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Constructor as Attribute.Constructor
-import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
+import Data.List qualified as List
+import Data.Text qualified as Text
+import Kore.Attribute.Constructor qualified as Attribute.Constructor
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute.HasDomainValues
 import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,

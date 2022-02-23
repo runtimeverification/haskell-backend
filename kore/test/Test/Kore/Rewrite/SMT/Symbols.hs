@@ -6,17 +6,17 @@ module Test.Kore.Rewrite.SMT.Symbols (
 import Control.Monad.Trans.Maybe (
     MaybeT (..),
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Maybe (
     fromJust,
  )
 import Data.Reflection (
     give,
  )
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
@@ -30,11 +30,11 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeNotPredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol (
     Symbol (..),
  )
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike (
     Id,
     Sort,
@@ -46,7 +46,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (
     InternalVariable,
  )
-import qualified Kore.Rewrite.SMT.AST as AST hiding (
+import Kore.Rewrite.SMT.AST qualified as AST hiding (
     Sort (..),
  )
 import Kore.Rewrite.SMT.Declaration (
@@ -58,7 +58,7 @@ import Kore.Rewrite.SMT.Encoder (
 import Kore.Rewrite.SMT.Evaluator (
     translateTerm,
  )
-import qualified Kore.Rewrite.SMT.Representation.All as Representation (
+import Kore.Rewrite.SMT.Representation.All qualified as Representation (
     build,
  )
 import Kore.Rewrite.SMT.Translate (
@@ -77,11 +77,11 @@ import SMT (
     MonadSMT,
     SExpr (..),
  )
-import qualified SMT
+import SMT qualified
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Rewrite.SMT.Builders (
     constructor,
     emptyModule,
@@ -105,7 +105,7 @@ import Test.Kore.Rewrite.SMT.Helpers (
     lt,
     ofType,
  )
-import qualified Test.Kore.Rewrite.SMT.Helpers as Helpers (
+import Test.Kore.Rewrite.SMT.Helpers qualified as Helpers (
     testsForModule,
  )
 import Test.Kore.With (

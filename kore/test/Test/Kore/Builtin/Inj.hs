@@ -2,7 +2,7 @@ module Test.Kore.Builtin.Inj (
     test_patternVerifierHook,
 ) where
 
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Inj
 import Kore.Builtin.Verifiers
 import Kore.Error (
@@ -18,11 +18,11 @@ import Kore.Validate.PatternVerifier (
  )
 import Kore.Validate.PatternVerifier.PatternVerifier
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Builtin.Int as Int
+import Test.Kore.Builtin.Int qualified as Int
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

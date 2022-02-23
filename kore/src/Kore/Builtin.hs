@@ -31,11 +31,11 @@ module Kore.Builtin (
     internalize,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -45,26 +45,26 @@ import Kore.Attribute.Hook (
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Endianness as Endianness
-import qualified Kore.Builtin.Inj as Inj
-import qualified Kore.Builtin.Int as Int
-import qualified Kore.Builtin.InternalBytes as InternalBytes
-import qualified Kore.Builtin.KEqual as KEqual
-import qualified Kore.Builtin.Kreflection as Kreflection
-import qualified Kore.Builtin.Krypto as Krypto
-import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.Set as Set
-import qualified Kore.Builtin.Signedness as Signedness
-import qualified Kore.Builtin.String as String
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin.Bool qualified as Bool
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Endianness qualified as Endianness
+import Kore.Builtin.Inj qualified as Inj
+import Kore.Builtin.Int qualified as Int
+import Kore.Builtin.InternalBytes qualified as InternalBytes
+import Kore.Builtin.KEqual qualified as KEqual
+import Kore.Builtin.Kreflection qualified as Kreflection
+import Kore.Builtin.Krypto qualified as Krypto
+import Kore.Builtin.List qualified as List
+import Kore.Builtin.Map qualified as Map
+import Kore.Builtin.Set qualified as Set
+import Kore.Builtin.Signedness qualified as Signedness
+import Kore.Builtin.String qualified as String
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
  )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -72,7 +72,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import Kore.Simplify.Simplify (

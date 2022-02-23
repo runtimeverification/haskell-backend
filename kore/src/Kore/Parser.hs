@@ -29,7 +29,7 @@ module Kore.Parser (
 import Data.Text (
     Text,
  )
-import qualified Kore.Parser.Parser as Parser
+import Kore.Parser.Parser qualified as Parser
 import Kore.Syntax.Definition
 import Prelude.Kore
 

@@ -6,25 +6,25 @@ import Kore.Internal.Condition (
     Condition,
     andCondition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Implies as Implies
+import Kore.Simplify.Implies qualified as Implies
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
-import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Internal.Pattern as Pattern
+import Pretty qualified
+import Test.Kore.Internal.OrPattern qualified as OrPattern
+import Test.Kore.Internal.Pattern qualified as Pattern
 import Test.Kore.Internal.Predicate as Predicate
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit

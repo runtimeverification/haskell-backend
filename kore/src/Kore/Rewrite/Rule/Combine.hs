@@ -13,7 +13,7 @@ import Control.Monad.State.Strict (
     State,
     evalState,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Default (
     Default (..),
  )
@@ -21,13 +21,13 @@ import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariables,
  )
-import qualified Kore.Internal.Condition as Condition (
+import Kore.Internal.Condition qualified as Condition (
     fromPredicate,
  )
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
+import Kore.Internal.Conditional qualified as Conditional.DoNotUse
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -36,7 +36,7 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     topTODO,
  )
 import Kore.Internal.TermLike (
@@ -45,7 +45,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (
     InternalVariable,
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft (
+import Kore.Rewrite.AntiLeft qualified as AntiLeft (
     antiLeftPredicate,
  )
 import Kore.Rewrite.RewritingVariable (
@@ -56,11 +56,11 @@ import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     RulePattern (RulePattern),
  )
-import qualified Kore.Rewrite.RulePattern as Rule.DoNotUse
-import qualified Kore.Rewrite.RulePattern as RulePattern (
+import Kore.Rewrite.RulePattern qualified as Rule.DoNotUse
+import Kore.Rewrite.RulePattern qualified as RulePattern (
     applySubstitution,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT (
+import Kore.Rewrite.SMT.Evaluator qualified as SMT (
     evalPredicate,
  )
 import Kore.Rewrite.Step (
@@ -70,7 +70,7 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
     simplifyCondition,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {-

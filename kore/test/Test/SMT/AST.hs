@@ -9,7 +9,7 @@ import Prelude.Kore
 import SMT.AST
 import Test.Tasty
 import Test.Tasty.HUnit
-import qualified Text.Megaparsec as Parser
+import Text.Megaparsec qualified as Parser
 
 test_parseSExpr :: [TestTree]
 test_parseSExpr =

@@ -9,8 +9,8 @@ module Kore.Attribute.Owise (
     owiseAttribute,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
