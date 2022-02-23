@@ -10,7 +10,7 @@ module From (
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.Void
 
 {- | Convert type @from@ into @to@.

@@ -8,23 +8,23 @@ module Kore.Log.DebugEvaluateCondition (
     debugEvaluateConditionResult,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 import SMT.SimpleSMT (
     Result (..),
  )
-import qualified SQL
+import SQL qualified
 
 data DebugEvaluateCondition
     = DebugEvaluateCondition (NonEmpty (Predicate VariableName))

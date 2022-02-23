@@ -27,21 +27,21 @@ module Kore.IndexedModule.Resolvers (
 import Control.Error (
     hush,
  )
-import qualified Data.List as List
-import qualified Data.Map.Strict as Map
+import Data.List qualified as List
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.AST.Error (
     koreFailWithLocations,
  )
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Error
@@ -59,16 +59,16 @@ import Kore.IndexedModule.IndexedModule (
     indexedModulesInScope,
  )
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Internal.Symbol as Internal (
+import Kore.Internal.Symbol qualified as Internal (
     Symbol (Symbol),
  )
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol qualified as Internal.Symbol
 import Kore.Syntax
 import Kore.Syntax.Definition hiding (
     Alias (..),
     Symbol (..),
  )
-import qualified Kore.Syntax.Definition as Syntax (
+import Kore.Syntax.Definition qualified as Syntax (
     Symbol (..),
  )
 import Prelude.Kore

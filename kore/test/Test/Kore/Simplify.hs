@@ -18,9 +18,9 @@ module Test.Kore.Simplify (
     Kore.MonadSimplify,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
-import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern (
+import Data.Functor.Foldable qualified as Recursive
+import Kore.Attribute.Pattern.Simplified qualified as Attribute
+import Kore.Attribute.PredicatePattern qualified as Attribute.PPattern (
     setSimplified,
  )
 import Kore.Internal.Condition (
@@ -29,18 +29,18 @@ import Kore.Internal.Condition (
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
+import Kore.Internal.Conditional qualified as Conditional.DoNotUse
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     splitTerm,
     withCondition,
  )
@@ -51,11 +51,11 @@ import Kore.Internal.Predicate (
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
  )
@@ -67,7 +67,7 @@ import Kore.Simplify.Data (
     Simplifier,
     SimplifierT,
  )
-import qualified Kore.Simplify.Data as Kore
+import Kore.Simplify.Data qualified as Kore
 import Logic (
     LogicT,
  )
@@ -75,8 +75,8 @@ import Prelude.Kore
 import SMT (
     NoSMT,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.SMT as Test
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.SMT qualified as Test
 
 runSimplifierSMT :: Env Simplifier -> Simplifier a -> IO a
 runSimplifierSMT env = Test.runSMT userInit . Kore.runSimplifier env

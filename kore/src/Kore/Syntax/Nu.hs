@@ -6,8 +6,8 @@ module Kore.Syntax.Nu (
     Nu (..),
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -15,7 +15,7 @@ import Kore.Sort
 import Kore.Syntax.Variable
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- |'Nu' corresponds to the @ν@ syntactic category from the
  Syntax of the MμL

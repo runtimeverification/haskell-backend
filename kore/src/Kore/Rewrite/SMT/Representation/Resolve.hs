@@ -12,7 +12,7 @@ module Kore.Rewrite.SMT.Representation.Resolve (
 import Control.Error.Safe (
     assertMay,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -41,19 +41,19 @@ import Kore.Rewrite.SMT.AST (
     UnresolvedSymbol,
     encode,
  )
-import qualified Kore.Rewrite.SMT.AST as DoNotUse
-import qualified Kore.Sort as Kore (
+import Kore.Rewrite.SMT.AST qualified as DoNotUse
+import Kore.Sort qualified as Kore (
     Sort (SortActualSort),
     SortActual (SortActual),
  )
-import qualified Kore.Sort as SortActual (
+import Kore.Sort qualified as SortActual (
     SortActual (..),
  )
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Syntax.Id qualified as Kore (
     Id,
  )
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 
 data Resolvers sort symbol name = Resolvers
     { sortResolver :: SortReference -> Maybe sort

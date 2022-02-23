@@ -16,13 +16,13 @@ module Kore.Rewrite.SMT.Translate (
     translatePattern,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Comonad.Trans.Cofree qualified as Cofree
 import Control.Error (
     MaybeT,
     hoistMaybe,
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
 import Control.Monad.Counter (
     CounterT,
     MonadCounter,
@@ -40,37 +40,37 @@ import Control.Monad.RWS.Strict (
 import Control.Monad.State.Strict (
     MonadState,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Default
 import Data.Functor.Const
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Reflection
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Hook
 import Kore.Attribute.Smtlib
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.Bool as Builtin.Bool
-import qualified Kore.Builtin.Int as Builtin.Int
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin.Bool qualified as Builtin.Bool
+import Kore.Builtin.Int qualified as Builtin.Int
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.Predicate
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
  )
@@ -88,8 +88,8 @@ import Prelude.Kore
 import SMT (
     SExpr (..),
  )
-import qualified SMT
-import qualified SMT.SimpleSMT as SimpleSMT
+import SMT qualified
+import SMT.SimpleSMT qualified as SimpleSMT
 
 data TranslateItem variable
     = QuantifiedVariable !(ElementVariable variable)

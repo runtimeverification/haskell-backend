@@ -7,7 +7,7 @@ import Data.Maybe (
  )
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Synthetic
-import qualified Kore.Builtin.AssociativeCommutative as Ac
+import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Internal.InternalSet
 import Kore.Internal.TermLike (
     Key,
@@ -21,7 +21,7 @@ import Prelude.Kore
 import Test.Kore.Builtin.Builtin (
     emptyNormalizedSet,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.With
 import Test.Tasty
 import Test.Tasty.HUnit

@@ -14,24 +14,24 @@ import Hedgehog (
     Property,
     (===),
  )
-import qualified Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog qualified
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Internal.MultiAnd (
     MultiAnd,
     distributeAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr (
     distributeApplication,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike (
     Application (..),
     Symbol,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Syntax.Variable
 import Kore.TopBottom
 import Prelude.Kore
@@ -41,7 +41,7 @@ import Test.Kore.Internal.Pattern (
     TestPattern,
     internalPatternGen,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

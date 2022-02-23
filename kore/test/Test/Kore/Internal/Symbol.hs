@@ -2,10 +2,10 @@ module Test.Kore.Internal.Symbol (
     symbolGen,
 ) where
 
-import qualified Data.Default as Default
-import qualified Hedgehog.Gen as Gen
+import Data.Default qualified as Default
+import Hedgehog.Gen qualified as Gen
 import Kore.Attribute.SourceLocation
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
 import Kore.Sort

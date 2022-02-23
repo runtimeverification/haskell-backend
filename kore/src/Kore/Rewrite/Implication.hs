@@ -24,37 +24,37 @@ import Control.Error.Util (
 import Control.Monad.State.Strict (
     evalState,
  )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
+import Control.Monad.State.Strict qualified as State
+import Data.Default qualified as Default
+import Data.Foldable qualified as Foldable
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Debug
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol (
     Symbol,
  )
@@ -70,7 +70,7 @@ import Kore.Internal.TermLike (
     VariableName,
     mkVar,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingTerm,
@@ -94,7 +94,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 -- | Representation of reachability claim types as well as rules
 data Implication modality = Implication

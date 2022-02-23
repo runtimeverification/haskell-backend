@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified Data.Text.IO as Text
+import Data.Text.IO qualified as Text
 import GlobalMain
 import Kore.Parser (
     parseKoreDefinition,

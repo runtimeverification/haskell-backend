@@ -54,44 +54,44 @@ module Kore.IndexedModule.IndexedModule (
     implicitModules,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Extra (
     unlessM,
  )
 import Control.Monad.State.Strict (
     execState,
  )
-import qualified Control.Monad.State.Strict as Monad.State
+import Control.Monad.State.Strict qualified as Monad.State
 import Data.Default as Default
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
 import GHC.Generics (
     Generic,
  )
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Null as Attribute
-import qualified Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Sort as Attribute (
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.Null qualified as Attribute
+import Kore.Attribute.Parser qualified as Attribute.Parser
+import Kore.Attribute.Sort qualified as Attribute (
     Sort,
  )
 import Kore.Attribute.Subsort
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Error
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol qualified as Internal.Symbol
 import Kore.Syntax
 import Kore.Syntax.Definition
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 type SortDescription = SentenceSort

@@ -3,18 +3,18 @@ module Test.Kore.Validate.DefinitionVerifier.PatternVerifier (
     test_verifyBinder,
 ) where
 
-import qualified Data.List as List
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Hook as Attribute.Hook
+import Data.List qualified as List
+import Data.Text qualified as Text
+import Kore.Attribute.Hook qualified as Attribute.Hook
 import Kore.Attribute.Simplification (
     simplificationAttribute,
  )
-import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute.HasDomainValues
 import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,
  )
-import qualified Kore.Internal.TermLike as Internal
+import Kore.Internal.TermLike qualified as Internal
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Validate.Error (
@@ -23,8 +23,8 @@ import Kore.Validate.Error (
 import Kore.Validate.PatternVerifier as PatternVerifier
 import Prelude.Kore
 import Test.Kore
-import qualified Test.Kore.Builtin.Builtin as Builtin
-import qualified Test.Kore.Builtin.Definition as Builtin
+import Test.Kore.Builtin.Builtin qualified as Builtin
+import Test.Kore.Builtin.Definition qualified as Builtin
 import Test.Kore.Builtin.External
 import Test.Kore.Validate.DefinitionVerifier as Helpers
 import Test.Tasty (

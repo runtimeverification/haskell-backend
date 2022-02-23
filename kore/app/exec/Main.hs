@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadMask,
     handle,
@@ -25,15 +25,15 @@ import Data.Text (
     Text,
     unpack,
  )
-import qualified Data.Text as Text (
+import Data.Text qualified as Text (
     null,
     split,
  )
-import qualified Data.Text.IO as Text (
+import Data.Text.IO qualified as Text (
     hPutStrLn,
     readFile,
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import GlobalMain
 import Kore.Attribute.Definition (
     KFileLocations (..),
@@ -45,14 +45,14 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     indexedModuleRawSentences,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
@@ -76,7 +76,7 @@ import Kore.Log.WarnBoundedModelChecker (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import qualified Kore.ModelChecker.Bounded as Bounded (
+import Kore.ModelChecker.Bounded qualified as Bounded (
     CheckResult (..),
  )
 import Kore.Parser.ParserUtils (
@@ -89,7 +89,7 @@ import Kore.Reachability (
     getConfiguration,
     lensClaimPattern,
  )
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
@@ -102,7 +102,7 @@ import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
@@ -112,7 +112,7 @@ import Kore.Syntax.Definition (
     ModuleName (..),
     Sentence (..),
  )
-import qualified Kore.Syntax.Definition as Definition.DoNotUse
+import Kore.Syntax.Definition qualified as Definition.DoNotUse
 import Kore.Unparser (
     unparse,
  )
@@ -133,8 +133,8 @@ import Options.Applicative (
     strOption,
     value,
  )
-import qualified Options.Applicative as Options
-import qualified Options.Applicative.Help.Pretty as OptPretty
+import Options.Applicative qualified as Options
+import Options.Applicative.Help.Pretty qualified as OptPretty
 import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
@@ -156,7 +156,7 @@ import Prof (
 import SMT (
     MonadSMT,
  )
-import qualified SMT
+import SMT qualified
 import Stats
 import System.Clock (
     Clock (Monotonic),

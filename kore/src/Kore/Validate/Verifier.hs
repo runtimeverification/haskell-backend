@@ -16,34 +16,34 @@ module Kore.Validate.Verifier (
     whileImporting,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.RWS.Strict (
     MonadReader,
     MonadState,
     RWST,
     runRWST,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.Reader qualified as Reader
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
+import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
 import Kore.AST.Error
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
-import qualified Kore.Internal.Symbol as Internal.Symbol (
+import Kore.Internal.Symbol qualified as Internal.Symbol (
     Symbol (..),
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import Kore.Validate.Error
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 type ImplicitModule =

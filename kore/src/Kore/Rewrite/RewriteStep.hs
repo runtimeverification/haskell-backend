@@ -12,29 +12,29 @@ module Kore.Rewrite.RewriteStep (
     applyClaimsSequence,
 ) where
 
-import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans.Class as Monad.Trans
-import qualified Data.Sequence as Seq
+import Control.Monad.State.Strict qualified as State
+import Control.Monad.Trans.Class qualified as Monad.Trans
+import Data.Sequence qualified as Seq
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Conditional qualified as Conditional
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (SideCondition)
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
@@ -48,16 +48,16 @@ import Kore.Rewrite.AxiomPattern (
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import qualified Kore.Rewrite.ClaimPattern as Claim
-import qualified Kore.Rewrite.Remainder as Remainder
-import qualified Kore.Rewrite.Result as Result
-import qualified Kore.Rewrite.Result as Step
+import Kore.Rewrite.ClaimPattern qualified as Claim
+import Kore.Rewrite.Remainder qualified as Remainder
+import Kore.Rewrite.Result qualified as Result
+import Kore.Rewrite.Result qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
-import qualified Kore.Rewrite.RulePattern as Rule
+import Kore.Rewrite.RulePattern qualified as Rule
 import Kore.Rewrite.Step (
     Result,
     Results,
@@ -75,7 +75,7 @@ import Kore.Substitute
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 withoutUnification :: UnifiedRule rule -> rule

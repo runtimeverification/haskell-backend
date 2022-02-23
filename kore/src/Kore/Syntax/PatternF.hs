@@ -15,7 +15,7 @@ module Kore.Syntax.PatternF (
     Const (..),
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Functor.Const
 import Data.Functor.Identity (
     Identity (..),
@@ -26,8 +26,8 @@ import Data.Generics.Wrapped (
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.And

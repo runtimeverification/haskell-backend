@@ -2,7 +2,7 @@ module Test.Kore.Internal.From (
     test_Predicate,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Kore.Internal.From
 import Kore.Internal.Predicate (
     Predicate,
@@ -22,7 +22,7 @@ import Kore.Syntax.Not
 import Kore.Syntax.Or
 import Kore.Syntax.Variable
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

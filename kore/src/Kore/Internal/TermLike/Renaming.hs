@@ -22,12 +22,12 @@ module Kore.Internal.TermLike.Renaming (
 import Control.Comonad.Trans.Env (
     Env,
  )
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Control.Monad.Reader (
     MonadReader,
     ReaderT,
  )
-import qualified Control.Monad.Reader as Reader
+import Control.Monad.Reader qualified as Reader
 import Data.Functor.Adjunction (
     splitL,
  )
@@ -37,12 +37,12 @@ import Data.Functor.Rep (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
+import Data.Map.Strict qualified as Map
+import Data.Maybe qualified as Maybe
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.Variable
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (

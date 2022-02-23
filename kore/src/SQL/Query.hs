@@ -20,7 +20,7 @@ import Control.Monad.Trans.Accum (
     AccumT,
     execAccumT,
  )
-import qualified Control.Monad.Trans.Accum as Accum
+import Control.Monad.Trans.Accum qualified as Accum
 import Data.String (
     fromString,
  )

@@ -20,7 +20,7 @@ import Data.Int (
 import Hedgehog hiding (
     test,
  )
-import qualified Hedgehog.Gen as Gen
+import Hedgehog.Gen qualified as Gen
 import Injection
 import Prelude
 

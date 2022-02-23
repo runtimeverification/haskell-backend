@@ -5,11 +5,11 @@ module Test.Kore.Simplify.OrPattern (
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
+import Kore.Internal.Conditional qualified as Conditional.DoNotUse
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern (
+import Kore.Internal.OrPattern qualified as OrPattern (
     bottom,
     fromPatterns,
     topOf,
@@ -20,7 +20,7 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
     mkElemVar,
@@ -30,8 +30,8 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.OrPattern
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.Kore.Simplify as Test
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

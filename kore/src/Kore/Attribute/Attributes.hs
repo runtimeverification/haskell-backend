@@ -20,18 +20,18 @@ import Data.Default (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Null as Attribute (
+import Data.Text qualified as Text
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Null qualified as Attribute (
     Null,
  )
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 -- | A pure pattern which has only been parsed.
 type ParsedPattern = Pattern VariableName Attribute.Null

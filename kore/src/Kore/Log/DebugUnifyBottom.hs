@@ -17,7 +17,7 @@ import Kore.Internal.TermLike (
     TermLike (..),
     VariableName,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -34,7 +34,7 @@ import Pretty (
     pretty,
     unAnnotate,
  )
-import qualified Pretty
+import Pretty qualified
 
 data DebugUnifyBottom = DebugUnifyBottom
     { info :: Text

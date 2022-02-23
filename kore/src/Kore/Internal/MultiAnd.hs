@@ -24,22 +24,22 @@ module Kore.Internal.MultiAnd (
     size,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.List (genericLength)
-import qualified Data.Set as Set
-import qualified Data.Traversable as Traversable
+import Data.Set qualified as Set
+import Data.Traversable qualified as Traversable
 import Debug
-import qualified GHC.Exts as GHC
-import qualified GHC.Generics as GHC
+import GHC.Exts qualified as GHC
+import GHC.Generics qualified as GHC
 import GHC.Natural (Natural)
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.TermLike (
     TermLike,
     TermLikeF (..),
@@ -51,7 +51,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     unparseAssoc',
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore hiding (
     map,
     traverse,

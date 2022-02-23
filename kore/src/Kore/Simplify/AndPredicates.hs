@@ -11,12 +11,12 @@ module Kore.Simplify.AndPredicates (
     simplifyEvaluatedMultiPredicate,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -26,11 +26,11 @@ import Kore.Internal.SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.Substitution as Substitution
+import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Logic as LogicT
+import Logic qualified as LogicT
 import Prelude.Kore
 
 simplifyEvaluatedMultiPredicate ::

@@ -5,24 +5,24 @@ module Test.Kore.Rewrite.SMT.Representation.Helpers (
     testsForModule,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Symbol as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Sort (Sort),
     Symbol (Symbol),
  )
-import qualified Kore.Rewrite.SMT.AST as AST.DoNotUse
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
+import Kore.Syntax.Id qualified as Kore (
     Id,
  )
 import Prelude.Kore
-import qualified SMT.AST as AST (
+import SMT.AST qualified as AST (
     showSExpr,
  )
 import Test.Tasty

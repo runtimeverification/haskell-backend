@@ -8,13 +8,13 @@ module Kore.Log.WarnSymbolSMTRepresentation (
 ) where
 
 import GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol (
     getSmthook,
     getSmtlib,
     sourceLocation,
  )
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Internal.TermLike
 import Kore.Unparser (
     unparse,
@@ -24,8 +24,8 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 newtype WarnSymbolSMTRepresentation = WarnSymbolSMTRepresentation {symbol :: Symbol}
     deriving stock (Eq, Ord, Show)

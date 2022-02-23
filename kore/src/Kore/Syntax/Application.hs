@@ -19,14 +19,14 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Sort
 import Kore.TopBottom
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- |'SymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from
 <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>

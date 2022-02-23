@@ -22,14 +22,14 @@ module Kore.Rewrite.Rule (
     complexRewriteTermToRule,
 ) where
 
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Functor.Foldable as Recursive
+import Data.Bifunctor qualified as Bifunctor
+import Data.Functor.Foldable qualified as Recursive
 import Data.List.Extra (
     groupSortOn,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Axiom.Constructor (
     isConstructor,
  )
@@ -45,10 +45,10 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Alias (
     Alias (..),
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Symbol as Internal.Symbol
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.Symbol qualified as Internal.Symbol
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable (
     InternalVariable,
     VariableName,
@@ -56,14 +56,14 @@ import Kore.Internal.Variable (
 import Kore.Reachability (
     onePathRuleToTerm,
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft (
+import Kore.Rewrite.AntiLeft qualified as AntiLeft (
     parse,
  )
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (ClaimPattern),
     parseRightHandSide,
  )
-import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
     mkRuleVariable,
  )
@@ -84,16 +84,16 @@ import Kore.Sort (
     Sort (..),
     SortVariable (SortVariable),
  )
-import qualified Kore.Syntax.Definition as Syntax
+import Kore.Syntax.Definition qualified as Syntax
 import Kore.Syntax.Id (
     Id (..),
  )
 import Kore.Unparser (
     unparse,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | Error encountered when parsing patterns
 newtype AxiomPatternError = AxiomPatternError ()

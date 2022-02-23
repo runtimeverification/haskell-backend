@@ -73,7 +73,7 @@ module Kore.Builtin.Int (
 import Control.Error (
     MaybeT,
  )
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.Bits (
     complement,
     shift,
@@ -82,11 +82,11 @@ import Data.Bits (
     (.|.),
  )
 import Data.Functor.Const
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -100,23 +100,23 @@ import GHC.Integer.GMP.Internals (
 import GHC.Integer.Logarithms (
     integerLog2#,
  )
-import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin (
     UnifyEq (..),
  )
-import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int.Int
-import qualified Kore.Error
-import qualified Kore.Internal.Condition as Condition
+import Kore.Error qualified
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalInt
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Rewrite.RewritingVariable (
@@ -127,7 +127,7 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
-import qualified Text.Megaparsec.Char.Lexer as Parsec
+import Text.Megaparsec.Char.Lexer qualified as Parsec
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 

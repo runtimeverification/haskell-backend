@@ -8,17 +8,17 @@ import Control.Exception (
     catch,
     evaluate,
  )
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Map.Strict as Map
+import Data.Bifunctor qualified as Bifunctor
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
     topTODO,
  )
@@ -29,25 +29,25 @@ import Kore.Simplify.Data (
     Env (..),
     runSimplifier,
  )
-import qualified Kore.Simplify.Not as Not
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     MonadSimplify,
  )
-import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
+import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Unification.Procedure
-import qualified Kore.Unification.SubstitutionSimplifier as Unification
-import qualified Kore.Unification.UnifierT as Monad.Unify
+import Kore.Unification.SubstitutionSimplifier qualified as Unification
+import Kore.Unification.UnifierT qualified as Monad.Unify
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore
 import Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Internal.Predicate as Predicate
-import qualified Test.Kore.Internal.Substitution as Substitution
-import qualified Test.Kore.Internal.TermLike as TermLike
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Internal.Predicate qualified as Predicate
+import Test.Kore.Internal.Substitution qualified as Substitution
+import Test.Kore.Internal.TermLike qualified as TermLike
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.SMT (

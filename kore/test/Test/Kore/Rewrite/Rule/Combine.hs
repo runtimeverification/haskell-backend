@@ -32,12 +32,12 @@ import Kore.Internal.TermLike (
     mkEquals,
     mkOr,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Internal.TermLike qualified as TermLike.DoNotUse
 import Kore.Rewrite.AntiLeft (
     AntiLeft,
     mapVariables,
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft (
+import Kore.Rewrite.AntiLeft qualified as AntiLeft (
     parse,
  )
 import Kore.Rewrite.RewritingVariable (
@@ -50,7 +50,7 @@ import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     RulePattern (RulePattern),
  )
-import qualified Kore.Rewrite.RulePattern as RulePattern (
+import Kore.Rewrite.RulePattern qualified as RulePattern (
     RulePattern (..),
  )
 import Kore.Syntax.Variable
@@ -61,7 +61,7 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
     runSimplifier,
     runSimplifierSMT,

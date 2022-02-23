@@ -3,11 +3,11 @@ module Test.Kore.BugReport (
     test_parse,
 ) where
 
-import qualified Data.List as List
+import Data.List qualified as List
 import Debug
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.BugReport (
     BugReport (..),
     BugReportOption (..),
@@ -26,7 +26,7 @@ import Kore.Log.Registry (
  )
 import Options.Applicative
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import System.Clock (
     fromNanoSecs,
  )

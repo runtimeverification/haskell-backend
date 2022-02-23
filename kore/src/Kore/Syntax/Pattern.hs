@@ -25,8 +25,8 @@ import Control.Comonad
 import Control.Comonad.Trans.Cofree (
     ComonadCofree (..),
  )
-import qualified Control.Comonad.Trans.Env as Env
-import qualified Data.Bifunctor as Bifunctor
+import Control.Comonad.Trans.Env qualified as Env
+import Data.Bifunctor qualified as Bifunctor
 import Data.Functor.Compose (
     Compose (..),
  )
@@ -35,7 +35,7 @@ import Data.Functor.Foldable (
     Corecursive,
     Recursive,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Functor.Identity (
     Identity (..),
  )
@@ -45,9 +45,9 @@ import Data.Kind (
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Null as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Null qualified as Attribute
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.And
@@ -72,7 +72,7 @@ import Kore.Syntax.PatternF (
     Const (..),
     PatternF (..),
  )
-import qualified Kore.Syntax.PatternF as PatternF
+import Kore.Syntax.PatternF qualified as PatternF
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
@@ -82,8 +82,8 @@ import Kore.TopBottom (
  )
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 {- | The abstract syntax of Kore.
 

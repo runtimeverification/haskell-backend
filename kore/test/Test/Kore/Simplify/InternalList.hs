@@ -2,17 +2,17 @@ module Test.Kore.Simplify.InternalList (
     test_simplify,
 ) where
 
-import qualified Data.Sequence as Seq
-import qualified Kore.Internal.Condition as Condition
+import Data.Sequence qualified as Seq
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalList
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
@@ -24,7 +24,7 @@ import Kore.Simplify.InternalList (
     simplify,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

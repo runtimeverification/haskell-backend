@@ -10,7 +10,7 @@ module Kore.Log.DebugRetrySolverQuery (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Variable (
     InternalVariable,
     VariableName,
@@ -21,7 +21,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype DebugRetrySolverQuery = DebugRetrySolverQuery
     {predicates :: NonEmpty (Predicate VariableName)}

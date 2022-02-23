@@ -18,7 +18,7 @@ import Control.Exception (
     ErrorCall,
     catch,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
@@ -34,7 +34,7 @@ import Data.Text (
     Text,
  )
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
@@ -43,7 +43,7 @@ import Kore.IndexedModule.IndexedModule (
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Internal.Symbol
@@ -53,7 +53,7 @@ import Kore.Syntax.Sentence (
     Sentence (..),
     SentenceAxiom (SentenceAxiom),
  )
-import qualified Kore.Syntax.Sentence as SentenceAxiom (
+import Kore.Syntax.Sentence qualified as SentenceAxiom (
     SentenceAxiom (..),
  )
 import Numeric.Natural (
@@ -66,7 +66,7 @@ import SMT (
     TimeOut (..),
     defaultConfig,
  )
-import qualified SMT
+import SMT qualified
 import Test.Kore (
     testId,
  )
@@ -74,7 +74,7 @@ import Test.Kore.Builtin.Builtin (
     runSMTWithConfig,
  )
 import Test.Kore.Builtin.External
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Kore.Rewrite.SMT.Builders (
     noJunk,
  )

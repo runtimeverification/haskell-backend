@@ -15,9 +15,9 @@ module Kore.Builtin.Attributes (
     isConstructorModulo_,
 ) where
 
-import qualified Kore.Builtin.List.List as List
-import qualified Kore.Builtin.Map.Map as Map
-import qualified Kore.Builtin.Set.Set as Set
+import Kore.Builtin.List.List qualified as List
+import Kore.Builtin.Map.Map qualified as Map
+import Kore.Builtin.Set.Set qualified as Set
 import Kore.Internal.Symbol
 import Prelude.Kore
 

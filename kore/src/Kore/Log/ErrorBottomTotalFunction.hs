@@ -12,8 +12,8 @@ import Control.Monad.Catch (
     MonadThrow,
     throwM,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Internal.TermLike
 import Kore.Unparser (
     unparse,
@@ -23,8 +23,8 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 newtype ErrorBottomTotalFunction = ErrorBottomTotalFunction
     { term :: TermLike VariableName

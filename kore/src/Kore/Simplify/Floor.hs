@@ -12,16 +12,16 @@ module Kore.Simplify.Floor (
     makeEvaluateFloor,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeFloorPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate (
+import Kore.Internal.Predicate qualified as Predicate (
     markSimplified,
  )
 import Kore.Internal.TermLike

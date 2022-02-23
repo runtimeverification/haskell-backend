@@ -15,9 +15,9 @@ module Kore.Internal.InternalSet (
     module Kore.Internal.NormalizedAc,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Control.Lens qualified as Lens
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables hiding (
@@ -32,7 +32,7 @@ import Kore.Internal.NormalizedAc
 import Kore.Syntax
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- * Builtin Set
 

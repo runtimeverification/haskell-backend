@@ -2,7 +2,7 @@ module Test.Kore.Repl.Graph (
     test_graph,
 ) where
 
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
@@ -13,7 +13,7 @@ import Data.Set (
     Set,
     isSubsetOf,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.Repl.State (
     EdgeLabel (..),
     smoothOutGraph,

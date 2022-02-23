@@ -51,7 +51,7 @@ import Data.Functor.Product
 import Data.Proxy (
     Proxy (..),
  )
-import qualified Database.SQLite.Simple as SQLite
+import Database.SQLite.Simple qualified as SQLite
 import Generics.SOP (
     ConstructorInfo,
     I (..),
@@ -60,14 +60,14 @@ import Generics.SOP (
     NS (..),
     Shape (..),
  )
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Prelude.Kore
 import SQL.ColumnDef as Column
 import SQL.Key as Key
 import SQL.Query (
     AccumT,
  )
-import qualified SQL.Query as Query
+import SQL.Query qualified as Query
 import SQL.SQL as SQL
 import Type.Reflection (
     someTypeRep,
