@@ -4,18 +4,18 @@ module Test.Kore.Rewrite.ClaimPattern (
 ) where
 
 import Data.Default
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike
 import Kore.Rewrite.ClaimPattern
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.UnifyingRule
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

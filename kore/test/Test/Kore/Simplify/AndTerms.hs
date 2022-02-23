@@ -9,24 +9,24 @@ module Test.Kore.Simplify.AndTerms (
 import Control.Error (
     MaybeT (..),
  )
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Map.Strict as Map
+import Data.HashMap.Strict qualified as HashMap
+import Data.Map.Strict qualified as Map
 import Data.Maybe (
     fromJust,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified Kore.Builtin.AssociativeCommutative as Ac
+import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Internal.Condition as Condition
 import Kore.Internal.From
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -38,14 +38,14 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     toRepresentation,
     top,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -64,15 +64,15 @@ import Kore.Simplify.AndTerms (
 import Kore.Simplify.Equals (
     termEquals,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
 import Kore.Syntax.Sentence (
     SentenceAlias,
  )
-import qualified Kore.Unification.UnifierT as Monad.Unify
+import Kore.Unification.UnifierT qualified as Monad.Unify
 import Prelude.Kore
 import Test.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

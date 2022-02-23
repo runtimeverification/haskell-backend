@@ -6,7 +6,7 @@ module Test.Kore.Simplify.Iff (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -15,24 +15,24 @@ import Kore.Internal.Predicate (
     makeIffPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Iff as Iff (
+import Kore.Simplify.Iff qualified as Iff (
     makeEvaluate,
     simplify,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Test.Terse as Terse
+import Test.Terse qualified as Terse
 
 test_simplify :: [TestTree]
 test_simplify =

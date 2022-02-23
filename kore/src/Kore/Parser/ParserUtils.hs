@@ -27,7 +27,7 @@ import Options.Applicative (
     auto,
     readerError,
  )
-import qualified Options.Applicative.Types as Options
+import Options.Applicative.Types qualified as Options
 import Prelude.Kore hiding (
     takeWhile,
  )

@@ -8,7 +8,7 @@ module Kore.Log.InfoExecDepth (
     infoExecDepth,
 ) where
 
-import qualified Data.Semigroup as Semigroup
+import Data.Semigroup qualified as Semigroup
 import Log
 import Numeric.Natural (
     Natural,
@@ -17,7 +17,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype ExecDepth = ExecDepth {getExecDepth :: Natural}
     deriving stock (Eq, Ord, Show)

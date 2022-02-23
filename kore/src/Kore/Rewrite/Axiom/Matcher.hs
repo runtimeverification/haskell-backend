@@ -8,14 +8,14 @@ module Kore.Rewrite.Axiom.Matcher (
     matchIncremental,
 ) where
 
-import qualified Control.Error as Error
+import Control.Error qualified as Error
 import Control.Lens (
     (%=),
     (.=),
     (<>=),
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
 import Control.Monad.RWS.Strict (
     MonadReader,
     MonadState,
@@ -23,37 +23,37 @@ import Control.Monad.RWS.Strict (
     ask,
     evalRWST,
  )
-import qualified Control.Monad.State.Strict as Monad.State
+import Control.Monad.State.Strict qualified as Monad.State
 import Control.Monad.Trans.Maybe (
     MaybeT (..),
  )
-import qualified Data.Align as Align (
+import Data.Align qualified as Align (
     align,
  )
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Functor.Foldable as Recursive
+import Data.Bifunctor qualified as Bifunctor
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Sequence (
     Seq,
     pattern (:|>),
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.These (
     These (..),
  )
-import qualified GHC.Generics as GHC
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.List as List
+import GHC.Generics qualified as GHC
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Builtin.AssociativeCommutative qualified as Ac
+import Kore.Builtin.List qualified as List
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap hiding (
     Element,
@@ -68,8 +68,8 @@ import Kore.Internal.InternalSet hiding (
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.NormalizedAc as Builtin (
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.NormalizedAc qualified as Builtin (
     Element,
     NormalizedAc,
     Value,
@@ -78,10 +78,10 @@ import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.MatcherData
 import Kore.Rewrite.RewritingVariable (
@@ -94,10 +94,10 @@ import Kore.Simplify.Overloading (
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Simplify.Simplify as Simplifier
-import qualified Kore.Substitute as Substitute
+import Kore.Simplify.Simplify qualified as Simplifier
+import Kore.Substitute qualified as Substitute
 import Kore.Variables.Binding
-import qualified Kore.Variables.Fresh as Variables
+import Kore.Variables.Fresh qualified as Variables
 import Pair
 import Prelude.Kore
 

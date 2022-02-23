@@ -26,7 +26,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 data DebugTransition
     = DebugAfterTransition AfterTransition

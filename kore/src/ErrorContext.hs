@@ -21,7 +21,7 @@ import Data.Typeable (
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 import Prelude
 
 data ErrorContext where

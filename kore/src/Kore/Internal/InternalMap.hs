@@ -15,10 +15,10 @@ module Kore.Internal.InternalMap (
     module Kore.Internal.NormalizedAc,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Data.Bifunctor as Bifunctor
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Control.Lens qualified as Lens
+import Data.Bifunctor qualified as Bifunctor
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -31,7 +31,7 @@ import Kore.Internal.NormalizedAc
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- * Builtin Map
 

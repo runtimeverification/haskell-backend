@@ -31,8 +31,8 @@ module Kore.Parser (
 import Data.Text (
     Text,
  )
-import qualified Kore.Parser.Lexer as Lexer
-import qualified Kore.Parser.Parser as Parser
+import Kore.Parser.Lexer qualified as Lexer
+import Kore.Parser.Parser qualified as Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition
 import Prelude.Kore

@@ -13,7 +13,7 @@ module Options.SMT (
 ) where
 
 import Control.Monad.Extra as Monad
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Limit (
     Limit (..),
     maybeLimit,
@@ -35,7 +35,7 @@ import Options.Applicative (
     strOption,
     value,
  )
-import qualified Options.Applicative as Options
+import Options.Applicative qualified as Options
 import Prelude.Kore
 import SMT hiding (
     Solver,

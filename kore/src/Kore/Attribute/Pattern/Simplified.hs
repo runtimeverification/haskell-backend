@@ -22,18 +22,18 @@ module Kore.Attribute.Pattern.Simplified (
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Inj (
     Inj,
  )
-import qualified Kore.Internal.Inj as Inj
+import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalBytes (
     InternalBytes,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Syntax (

@@ -7,14 +7,14 @@ module Kore.Simplify.Nu (
     makeEvaluate,
 ) where
 
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     fromTermLike,
     simplifiedAttribute,
     toTermLike,
@@ -24,10 +24,10 @@ import Kore.Internal.TermLike (
     SetVariable,
     mkNu,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     setSimplified,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Internal.TermLike qualified as TermLike.DoNotUse
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

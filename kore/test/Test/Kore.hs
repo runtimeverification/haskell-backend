@@ -47,42 +47,42 @@ import Control.Monad.Morph (MFunctor (..))
 import Control.Monad.Reader (
     ReaderT,
  )
-import qualified Control.Monad.Reader as Reader
+import Control.Monad.Reader qualified as Reader
 import Control.Monad.State.Strict (
     StateT (..),
  )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.State.Strict qualified as State
+import Data.Bifunctor qualified as Bifunctor
 import Data.Functor.Const
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Hedgehog (
     MonadGen,
  )
-import qualified Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog qualified
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (ApplicationSorts),
  )
-import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
+import Kore.Internal.ApplicationSorts qualified as ApplicationSorts.DoNotUse
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalString
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Symbol as Internal (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.Symbol qualified as Internal (
     Symbol (Symbol),
  )
 import Kore.Internal.TermLike as TermLike hiding (
     Alias,
     Symbol,
  )
-import qualified Kore.Log as Log (
+import Kore.Log qualified as Log (
     Entry (toEntry),
     MonadLog (..),
     emptyLogger,
@@ -98,9 +98,9 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkElementConfigVariable,
  )
-import qualified Kore.Simplify.Simplify as SMT
+import Kore.Simplify.Simplify qualified as SMT
 import Kore.Syntax.Definition
-import qualified Kore.Syntax.PatternF as Syntax
+import Kore.Syntax.PatternF qualified as Syntax
 import Kore.Variables.Target (
     Target,
     mkElementNonTarget,

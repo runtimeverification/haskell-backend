@@ -10,14 +10,14 @@ import Data.Maybe (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.Internal.MultiExists
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

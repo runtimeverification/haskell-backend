@@ -18,24 +18,24 @@ module Test.Kore.Rewrite.Strategy (
     prop_pickPlus,
 ) where
 
-import qualified Control.Exception as Exception
+import Control.Exception qualified as Exception
 import Control.Monad.Catch.Pure (
     Catch,
     runCatch,
  )
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Limit (
     Limit (..),
  )
-import qualified Data.Limit as Limit
-import qualified Data.Sequence as Seq
+import Data.Limit qualified as Limit
+import Data.Sequence qualified as Seq
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     Strategy,
     TransitionT,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
-import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Transition qualified as Transition
 import Numeric.Natural
 import Prelude.Kore hiding (
     and,

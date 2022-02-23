@@ -12,23 +12,23 @@ module Kore.Simplify.Forall (
     makeEvaluate,
 ) where
 
-import qualified Kore.Internal.Condition as Condition (
+import Kore.Internal.Condition qualified as Condition (
     fromPredicate,
     hasFreeVariable,
     markPredicateSimplified,
     toPredicate,
  )
-import qualified Kore.Internal.Conditional as Conditional (
+import Kore.Internal.Conditional qualified as Conditional (
     withCondition,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     bottomOf,
     fromTermLike,
     isBottom,
@@ -49,11 +49,11 @@ import Kore.Internal.TermLike (
     mkForall,
     mkSomeVariable,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     hasFreeVariable,
     markSimplified,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Internal.TermLike qualified as TermLike.DoNotUse
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

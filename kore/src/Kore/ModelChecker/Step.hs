@@ -17,7 +17,7 @@ module Kore.ModelChecker.Step (
 import Control.Monad.State.Strict (
     StateT,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Text (
     Text,
  )
@@ -25,29 +25,29 @@ import GHC.Generics
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
  )
-import qualified Kore.Rewrite.Result as StepResult
-import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.Result qualified as StepResult
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     allPathGlobally,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Rewrite.Strategy (
     Strategy,
     TransitionT,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
-import qualified Kore.Simplify.Pattern as Pattern (
+import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Simplify.Simplify (
@@ -55,7 +55,7 @@ import Kore.Simplify.Simplify (
  )
 import Kore.TopBottom
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 data Prim patt rewrite
     = -- | Check the proof state and decide whether to terminate the computation

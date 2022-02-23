@@ -12,23 +12,23 @@ module Kore.Simplify.Implies (
     simplifyEvaluated,
 ) where
 
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.And as And
-import qualified Kore.Simplify.Not as Not (
+import Kore.Simplify.And qualified as And
+import Kore.Simplify.Not qualified as Not (
     makeEvaluate,
     notSimplifier,
     simplify,
@@ -37,7 +37,7 @@ import Kore.Simplify.Simplify
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {- |'simplify' simplifies an 'Implies' pattern with 'OrPattern'

@@ -38,7 +38,7 @@ module Kore.Reachability.Claim (
 import Control.Lens (
     Lens',
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     Exception (..),
     SomeException (..),
@@ -48,51 +48,51 @@ import Control.Monad.State.Strict (
     StateT,
     runStateT,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Functor.Compose
 import Data.Generics.Product (
     field,
  )
-import qualified Data.Monoid as Monoid
+import Data.Monoid qualified as Monoid
 import Data.Stream.Infinite (
     Stream (..),
  )
-import qualified Data.Stream.Infinite as Stream
+import Data.Stream.Infinite qualified as Stream
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Label as Attribute (
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute.Axiom
+import Kore.Attribute.Label qualified as Attribute (
     Label,
  )
-import qualified Kore.Attribute.RuleIndex as Attribute (
+import Kore.Attribute.RuleIndex qualified as Attribute (
     RuleIndex,
  )
-import qualified Kore.Attribute.SourceLocation as Attribute (
+import Kore.Attribute.SourceLocation qualified as Attribute (
     SourceLocation,
  )
-import qualified Kore.Attribute.Trusted as Attribute.Trusted
+import Kore.Attribute.Trusted qualified as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
     VerifiedModule,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol (
     Symbol,
  )
@@ -115,33 +115,33 @@ import Kore.Rewrite.AxiomPattern (
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
-import qualified Kore.Rewrite.ClaimPattern as ClaimPattern
+import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.Result (
     Result (..),
     Results (..),
  )
-import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (..),
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Rewrite.Step as Step
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
+import Kore.Rewrite.Step qualified as Step
 import Kore.Rewrite.Strategy (
     Strategy,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
-import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.Data (
     MonadSimplify,
  )
-import qualified Kore.Simplify.Exists as Exists
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Exists qualified as Exists
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
  )
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
@@ -149,17 +149,17 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Logic (
     LogicT,
     MonadLogic,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 class Claim claim where
     -- | @Rule claim@ is the type of rule to take a single step toward @claim@.

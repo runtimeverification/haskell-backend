@@ -28,13 +28,13 @@ module Kore.Parser.Parser (
     parseVariableCounter,
 ) where
 
-import qualified Control.Monad as Monad
-import qualified Data.Char as Char
+import Control.Monad qualified as Monad
+import Data.Char qualified as Char
 import Data.Sup
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Parser.Lexer
 import Kore.Parser.ParserUtils (
     Parser,
@@ -54,7 +54,7 @@ import Text.Megaparsec (
     some,
     (<?>),
  )
-import qualified Text.Megaparsec as Parse
+import Text.Megaparsec qualified as Parse
 
 embedParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
 embedParsedPattern patternBase = asPattern (mempty :< patternBase)

@@ -17,8 +17,8 @@ import Data.Default
 import Data.Text (
     Text,
  )
-import qualified Data.Text.Lazy as Text.Lazy
-import qualified Data.Text.Lazy.Builder as Text.Lazy.Builder
+import Data.Text.Lazy qualified as Text.Lazy
+import Data.Text.Lazy.Builder qualified as Text.Lazy.Builder
 import Log (
     ActualEntry (..),
     Entry (..),
@@ -40,7 +40,7 @@ import Pretty (
 import SMT.AST (
     SExpr (..),
  )
-import qualified SMT.AST as SMT
+import SMT.AST qualified as SMT
 
 newtype DebugSolverSend = DebugSolverSend
     { getSendSExpr :: SExpr

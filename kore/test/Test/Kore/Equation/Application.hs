@@ -10,19 +10,19 @@ import Control.Monad (
 import Control.Monad.Trans.Except (
     runExceptT,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Equation as Equation
+import Kore.Equation qualified as Equation
 import Kore.Equation.Application hiding (
     attemptEquation,
  )
 import Kore.Equation.DebugEquation
 import Kore.Equation.Equation
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
 import Kore.Rewrite.Axiom.Registry (
     mkEvaluatorRegistry,
  )
@@ -33,13 +33,13 @@ import Kore.Unparser (
     unparse,
  )
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Expect
 import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

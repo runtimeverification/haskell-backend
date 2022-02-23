@@ -5,7 +5,7 @@ module Test.Kore.Rewrite.Rule.Simplify (
     test_simplifyClaimRule,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Morph (
     MFunctor (..),
  )
@@ -14,17 +14,17 @@ import Control.Monad.Reader (
     ReaderT,
     runReaderT,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.Reader qualified as Reader
+import Data.Bifunctor qualified as Bifunctor
 import Data.Generics.Product (
     field,
  )
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -33,8 +33,8 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     AdjSomeVariableName,
     InternalVariable,
@@ -44,7 +44,7 @@ import Kore.Internal.TermLike (
     mkEquals,
     mkOr,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Reachability (
     OnePathClaim (..),
     simplify,
@@ -60,7 +60,7 @@ import Kore.Rewrite.RewritingVariable (
     mkRuleVariable,
  )
 import Kore.Rewrite.Rule.Simplify hiding (simplifyRulePattern)
-import qualified Kore.Rewrite.Rule.Simplify as Kore
+import Kore.Rewrite.Rule.Simplify qualified as Kore
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
@@ -84,16 +84,16 @@ import Kore.Syntax.Variable (
  )
 import Log
 import Prelude.Kore
-import qualified Test.Kore.Builtin.Bool as Test.Bool
-import qualified Test.Kore.Builtin.Builtin as Builtin
-import qualified Test.Kore.Builtin.Definition as Builtin
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Builtin.Bool qualified as Test.Bool
+import Test.Kore.Builtin.Builtin qualified as Builtin
+import Test.Kore.Builtin.Definition qualified as Builtin
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Rewrite.Rule.Common (
     Pair (..),
     RuleBase,
  )
-import qualified Test.Kore.Rewrite.Rule.Common as Common
+import Test.Kore.Rewrite.Rule.Common qualified as Common
 import Test.Kore.Simplify (
     runSimplifier,
     runSimplifierSMT,

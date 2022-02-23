@@ -6,21 +6,21 @@ module Test.Kore.TopBottom (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
-import qualified Kore.Internal.TermLike as AST
-import qualified Kore.TopBottom as TopBottom
+import Kore.Internal.TermLike qualified as AST
+import Kore.TopBottom qualified as TopBottom
 import Prelude.Kore hiding (
     and,
     floor,
     or,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.Tasty as Tasty
-import qualified Test.Terse as Terse
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.Tasty qualified as Tasty
+import Test.Terse qualified as Terse
 
 -- TODO (thomas.tuegel): Add tests for other instances.
 -- The other instances are not very interesting because they delegate all the

@@ -10,7 +10,7 @@ module Test.Kore.Parser (
     parse',
 ) where
 
-import qualified Data.Bifunctor as Bifunctor
+import Data.Bifunctor qualified as Bifunctor
 import Data.Text (
     Text,
     unpack,

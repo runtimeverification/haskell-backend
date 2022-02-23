@@ -24,16 +24,16 @@ module Test.Kore.Rewrite.Axiom.Matcher (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Builtin.String as String
+import Data.Map.Strict qualified as Map
+import Kore.Builtin.AssociativeCommutative qualified as Ac
+import Kore.Builtin.Bool qualified as Bool
+import Kore.Builtin.String qualified as String
 import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.Matcher (
     matchIncremental,
@@ -47,13 +47,13 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Builtin.Builtin as Test
-import qualified Test.Kore.Builtin.Definition as Test
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Builtin.List as Test.List
-import qualified Test.Kore.Builtin.Map as Test.Map
-import qualified Test.Kore.Builtin.Set as Test.Set
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Builtin.Builtin qualified as Test
+import Test.Kore.Builtin.Definition qualified as Test
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Builtin.List qualified as Test.List
+import Test.Kore.Builtin.Map qualified as Test.Map
+import Test.Kore.Builtin.Set qualified as Test.Set
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

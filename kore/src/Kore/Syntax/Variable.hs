@@ -76,17 +76,17 @@ import Data.Generics.Sum (
     _Ctor,
  )
 import Data.Sup
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Void
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import Numeric.Natural
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | Error thrown when 'variableCounter' takes an illegal value.
 illegalVariableCounter :: a

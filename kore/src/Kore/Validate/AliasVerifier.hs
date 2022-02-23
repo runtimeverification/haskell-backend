@@ -4,30 +4,30 @@ License     : BSD-3-Clause
 -}
 module Kore.Validate.AliasVerifier (verifyAliases) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Reader (
     ReaderT,
     runReaderT,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Control.Monad.State.Class as State
-import qualified Data.Functor.Foldable as Recursive
+import Control.Monad.Reader qualified as Reader
+import Control.Monad.State.Class qualified as State
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
 import Kore.AST.Error
 import Kore.Attribute.Parser (
     liftParser,
     parseAttributes,
  )
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
@@ -35,8 +35,8 @@ import Kore.Syntax.Definition
 import Kore.Validate.SentenceVerifier (
     SentenceVerifier,
  )
-import qualified Kore.Validate.SentenceVerifier as SentenceVerifier
-import qualified Kore.Verified as Verified
+import Kore.Validate.SentenceVerifier qualified as SentenceVerifier
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 {- | Project the 'SentenceAlias'es from the list and verify them.

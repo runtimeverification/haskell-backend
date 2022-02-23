@@ -17,15 +17,15 @@ module Test.Kore.Internal.Pattern (
 import Data.Align (
     align,
  )
-import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.Simplified (
     Condition (..),
     Type (..),
     pattern Simplified_,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -39,19 +39,19 @@ import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.TermLike qualified as TermLike
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Expect
 import Test.Kore (
     Gen,
@@ -64,7 +64,7 @@ import Test.Kore.Internal.TermLike hiding (
     markSimplified,
     simplifiedAttribute,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty

@@ -3,19 +3,19 @@ module Test.Kore.Rewrite.Rule.Common (
     RuleBase (..),
 ) where
 
-import qualified Data.Default as Default
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Data.Default qualified as Default
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Reachability (
     OnePathClaim (..),
     mkOnePathClaim,
@@ -28,7 +28,7 @@ import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
     RulePattern (RulePattern),
  )
-import qualified Kore.Rewrite.RulePattern as OLD
+import Kore.Rewrite.RulePattern qualified as OLD
 import Prelude.Kore
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)

@@ -3,8 +3,8 @@ module Test.Kore.Rewrite (
     test_executionStrategy,
 ) where
 
-import qualified Control.Exception as Exception
-import qualified Control.Lens as Lens
+import Control.Exception qualified as Exception
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadThrow,
  )
@@ -18,15 +18,15 @@ import Data.Limit (
 import Hedgehog (
     Gen,
  )
-import qualified Hedgehog
-import qualified Hedgehog.Gen
-import qualified Hedgehog.Range
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Internal.Condition as Condition
+import Hedgehog qualified
+import Hedgehog.Gen qualified
+import Hedgehog.Range qualified
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeCeilPredicate,
@@ -40,7 +40,7 @@ import Kore.Internal.TermLike (
 import Kore.Rewrite hiding (
     Start,
  )
-import qualified Kore.Rewrite as Step
+import Kore.Rewrite qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
@@ -49,11 +49,11 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.RulePattern as RulePattern (
     rulePattern,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Syntax.Variable
 import Prelude.Kore
-import qualified Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Internal.Pattern qualified as Pattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

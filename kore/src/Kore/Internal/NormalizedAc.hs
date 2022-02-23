@@ -34,23 +34,23 @@ module Kore.Internal.NormalizedAc (
     generatePairWiseElements,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Lens.Iso (
     Iso',
  )
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.Kind (
     Type,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
@@ -64,7 +64,7 @@ import Prelude.Kore
 import Pretty (
     (<+>),
  )
-import qualified Pretty
+import Pretty qualified
 
 {- | Establishes a bijection between value wrappers and entire-structure
 wrappers, with a few utility functions for the two.

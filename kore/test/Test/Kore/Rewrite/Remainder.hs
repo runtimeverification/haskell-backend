@@ -5,12 +5,12 @@ module Test.Kore.Rewrite.Remainder (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.Remainder as Remainder
+import Kore.Rewrite.Remainder qualified as Remainder
 import Kore.Rewrite.RewritingVariable
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Terse
 

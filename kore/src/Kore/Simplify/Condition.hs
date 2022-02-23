@@ -11,20 +11,20 @@ module Kore.Simplify.Condition (
 ) where
 
 import Changed
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.State.Strict (
     StateT,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product (
     field,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.Pattern (
     Condition,
     Conditional (..),
@@ -32,28 +32,28 @@ import Kore.Internal.Pattern (
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution (
     Assignment,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Log.WarnUnsimplified (
     warnUnsimplifiedCondition,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import {-# SOURCE #-} qualified Kore.Simplify.Predicate as Predicate
+import {-# SOURCE #-} Kore.Simplify.Predicate qualified as Predicate
 import Kore.Simplify.Simplify
 import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
 import Kore.Substitute
-import qualified Kore.TopBottom as TopBottom
+import Kore.TopBottom qualified as TopBottom
 import Logic
 import Prelude.Kore
 

@@ -17,7 +17,7 @@ module SQL.SQL (
     SQLData (..),
 ) where
 
-import qualified Control.Monad.Catch as Exceptions
+import Control.Monad.Catch qualified as Exceptions
 import Control.Monad.Reader (
     ReaderT (ReaderT),
     runReaderT,
@@ -31,7 +31,7 @@ import Database.SQLite.Simple (
     Query,
     SQLData (..),
  )
-import qualified Database.SQLite.Simple as SQLite
+import Database.SQLite.Simple qualified as SQLite
 import Prelude.Kore
 
 -- | @SQL@ is a 'Monad' for executing SQL statements.

@@ -18,7 +18,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype DebugBeginClaim = DebugBeginClaim {claim :: SomeClaim}
     deriving stock (Show)

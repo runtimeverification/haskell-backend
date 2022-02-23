@@ -7,7 +7,7 @@ module Kore.Simplify.Or (
     simplify,
 ) where
 
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )

@@ -16,9 +16,9 @@ import Data.Functor.Foldable (
     Corecursive,
     Recursive,
  )
-import qualified Data.Functor.Foldable as Recursive
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Functor.Foldable qualified as Recursive
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic

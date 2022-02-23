@@ -7,8 +7,8 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map.Strict as Map
+import Data.Functor.Foldable qualified as Recursive
+import Data.Map.Strict qualified as Map
 import Data.Monoid (
     First (..),
  )
@@ -20,11 +20,11 @@ import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -34,35 +34,35 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.Pattern (
     Condition,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     PredicateF (..),
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution (
     pattern UnorderedAssignment,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     TermLike,
     termLikeSort,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.WarnUnsimplified (
     warnUnsimplifiedPredicate,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Ceil as Ceil
-import qualified Kore.Simplify.Equals as Equals
-import qualified Kore.Simplify.In as In
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Ceil qualified as Ceil
+import Kore.Simplify.Equals qualified as Equals
+import Kore.Simplify.In qualified as In
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
@@ -83,8 +83,8 @@ import Kore.Syntax (
     Top (..),
     variableName,
  )
-import qualified Kore.Syntax.Exists as Exists
-import qualified Kore.Syntax.Forall as Forall
+import Kore.Syntax.Exists qualified as Exists
+import Kore.Syntax.Forall qualified as Forall
 import Logic
 import Prelude.Kore
 

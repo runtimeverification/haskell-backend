@@ -4,7 +4,7 @@ module Test.Kore.Attribute.Pattern.ConstructorLike (
 
 import Kore.Internal.TermLike
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -15,7 +15,7 @@ import Kore.Internal.Condition (
 import Kore.Internal.Conditional (
     Conditional,
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -31,7 +31,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 data WarnUnsimplifiedPredicate = WarnUnsimplifiedPredicate
     { limit :: !Int

@@ -8,12 +8,12 @@ module Kore.Syntax.Exists (
     existsBinder,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Set (
     Set,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -26,7 +26,7 @@ import Kore.Variables.Binding (
  )
 import Kore.Variables.Fresh (FreshPartialOrd)
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- |'Exists' corresponds to the @\\exists@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 

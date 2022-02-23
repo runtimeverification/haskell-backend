@@ -4,11 +4,11 @@ module Test.Kore.Builtin.Endianness (
     test_unify,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Substitution (
     Assignment,
  )
@@ -22,7 +22,7 @@ import Kore.Simplify.AndTerms (
 import Kore.Simplify.Data (
     runSimplifier,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Unification.UnifierT (
     runUnifierT,
  )

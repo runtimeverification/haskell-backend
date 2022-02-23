@@ -2,17 +2,17 @@ module Test.Kore.Rewrite.SMT.Representation.Sorts (
     test_sortParsing,
 ) where
 
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Int qualified as Int
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations,
     Encodable (AlreadyEncoded),
     Sort,
@@ -20,7 +20,7 @@ import qualified Kore.Rewrite.SMT.AST as AST (
     SymbolReference,
  )
 import Kore.Rewrite.SMT.Representation.Sorts
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Syntax.Id qualified as Kore (
     Id,
  )
 import Prelude.Kore
@@ -54,7 +54,7 @@ import Test.Kore.Rewrite.SMT.Representation.Helpers (
     declarationsAre,
     smtForSortIs,
  )
-import qualified Test.Kore.Rewrite.SMT.Representation.Helpers as Helpers (
+import Test.Kore.Rewrite.SMT.Representation.Helpers qualified as Helpers (
     testsForModule,
  )
 import Test.Kore.With (
