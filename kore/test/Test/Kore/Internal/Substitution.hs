@@ -11,8 +11,8 @@ module Test.Kore.Internal.Substitution (
     module Test.Kore.Internal.TermLike,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Kore.Internal.From
 import Kore.Internal.Substitution as Substitution
 import Kore.Substitute
@@ -44,7 +44,7 @@ import Test.Kore.Internal.TermLike hiding (
     simplifiedAttribute,
     test_substitute,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Terse (

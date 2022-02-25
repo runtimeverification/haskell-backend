@@ -15,7 +15,7 @@ module Test.Kore.Variables.Fresh (
     module Kore.Variables.Fresh,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
@@ -25,11 +25,11 @@ import Data.Maybe (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Sup
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Sort
 import Kore.Variables.Fresh
 import Numeric.Natural

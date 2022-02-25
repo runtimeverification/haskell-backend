@@ -9,14 +9,14 @@ module Kore.Internal.InternalBytes (
 import Data.ByteString (
     ByteString,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
-import qualified Kore.Builtin.Encoding as Encoding
+import Kore.Builtin.Encoding qualified as Encoding
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser

@@ -4,7 +4,7 @@ module Test.Kore.Log.ErrorBottomTotalFunction (
 
 import Kore.Log.ErrorBottomTotalFunction
 import Prelude.Kore ()
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.SQL
 import Test.Tasty
 

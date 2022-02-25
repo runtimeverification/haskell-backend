@@ -11,7 +11,7 @@ module Kore.IndexedModule.MetadataToolsBuilder (
     build,
 ) where
 
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
 import Kore.Attribute.Symbol (
@@ -24,7 +24,7 @@ import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
     extractMetadataTools,
  )
-import qualified Kore.Rewrite.SMT.Representation.All as SMT.Representation (
+import Kore.Rewrite.SMT.Representation.All qualified as SMT.Representation (
     build,
  )
 import Prelude.Kore ()

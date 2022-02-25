@@ -13,31 +13,31 @@ module Kore.Simplify.Iff (
     simplifyEvaluated,
 ) where
 
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     markSimplified,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.And as And (
+import Kore.Simplify.And qualified as And (
     simplify,
  )
-import qualified Kore.Simplify.Implies as Implies (
+import Kore.Simplify.Implies qualified as Implies (
     simplifyEvaluated,
  )
-import qualified Kore.Simplify.Not as Not (
+import Kore.Simplify.Not qualified as Not (
     makeEvaluate,
     notSimplifier,
     simplify,

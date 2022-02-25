@@ -51,11 +51,11 @@ module Kore.Repl.Data (
 ) where
 
 import Control.Concurrent.MVar
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
-import qualified Data.GraphViz as Graph
+import Data.GraphViz qualified as Graph
 import Data.List (
     sort,
  )
@@ -68,8 +68,8 @@ import Data.Sequence (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Definition
 import Kore.Internal.Condition (
     Condition,
@@ -84,27 +84,27 @@ import Kore.Log (
     ActualEntry (..),
     LogAction (..),
  )
-import qualified Kore.Log as Log
-import qualified Kore.Log.Registry as Log
+import Kore.Log qualified as Log
+import Kore.Log.Registry qualified as Log
 import Kore.Reachability hiding (
     AppliedRule,
  )
-import qualified Kore.Reachability as Reachability
+import Kore.Reachability qualified as Reachability
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Data (
     MonadSimplify (..),
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Syntax.Module (
     ModuleName (..),
  )
 import Kore.Unification.UnifierT (
     UnifierT (..),
  )
-import qualified Kore.Unification.UnifierT as Monad.Unify
+import Kore.Unification.UnifierT qualified as Monad.Unify
 import Logic
 import Numeric.Natural
 import Prelude.Kore

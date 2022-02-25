@@ -46,13 +46,13 @@ import Data.Bits
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.ByteString as ByteString
+import Data.ByteString qualified as ByteString
 import Data.Char as Char
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.String (
     IsString,
     fromString,
@@ -60,16 +60,16 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Word (
     Word8,
  )
-import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Encoding (
     encode8Bit,
  )
-import qualified Kore.Builtin.Int as Int
-import qualified Kore.Builtin.String as String
+import Kore.Builtin.Int qualified as Int
+import Kore.Builtin.String qualified as String
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )

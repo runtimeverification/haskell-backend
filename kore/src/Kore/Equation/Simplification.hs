@@ -7,7 +7,7 @@ module Kore.Equation.Simplification (
     simplifyExtractedEquations,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Control.Monad.Trans.Except (
     runExceptT,
     throwE,
@@ -23,21 +23,21 @@ import Kore.Internal.Conditional (
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Kore.TopBottom
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.

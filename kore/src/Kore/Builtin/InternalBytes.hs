@@ -40,41 +40,41 @@ import Control.Exception (
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.ByteString as ByteString
+import Data.ByteString qualified as ByteString
 import Data.Functor.Const
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.HashMap.Strict as HashMap
+import Data.Functor.Foldable qualified as Recursive
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.String (
     IsString,
  )
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Encoding.Error as Text
+import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
+import Data.Text.Encoding.Error qualified as Text
 import Data.Word (
     Word8,
  )
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Encoding as Encoding
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Encoding qualified as Encoding
 import Kore.Builtin.Endianness.Endianness
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.InternalBytes.InternalBytes
 import Kore.Builtin.Signedness.Signedness
-import qualified Kore.Builtin.String as String
-import qualified Kore.Error
+import Kore.Builtin.String qualified as String
+import Kore.Error qualified
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike
 import Kore.Log.WarnNotImplemented
 import Kore.Rewrite.RewritingVariable (
@@ -86,7 +86,7 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Log (MonadLog)
 import Prelude.Kore
 import System.IO.Unsafe (

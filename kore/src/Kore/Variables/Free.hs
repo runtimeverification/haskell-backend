@@ -13,14 +13,14 @@ module Kore.Variables.Free (
     pureAllVariables,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Control.Monad.Extra as Monad
-import qualified Control.Monad.RWS.Strict as Monad.RWS
-import qualified Data.Functor.Foldable as Recursive
+import Control.Comonad.Trans.Cofree qualified as Cofree
+import Control.Monad.Extra qualified as Monad
+import Control.Monad.RWS.Strict qualified as Monad.RWS
+import Data.Functor.Foldable qualified as Recursive
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.Syntax
 import Prelude.Kore
 

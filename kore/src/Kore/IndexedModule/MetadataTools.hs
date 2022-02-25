@@ -18,15 +18,15 @@ module Kore.IndexedModule.MetadataTools (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Rewrite.SMT.AST as SMT.AST (
+import Kore.Rewrite.SMT.AST qualified as SMT.AST (
     SmtDeclarations,
  )
 import Kore.Sort

@@ -19,16 +19,16 @@ module Kore.Reachability.SomeClaim (
     OnePathClaim (..),
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Coerce (
     coerce,
  )
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -53,20 +53,20 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.Transition (
     TransitionT,
  )
-import qualified Kore.Rewrite.Transition as Transition
-import qualified Kore.Syntax.Definition as Syntax
+import Kore.Rewrite.Transition qualified as Transition
+import Kore.Syntax.Definition qualified as Syntax
 import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 {- | Some claim in reachability logic.
 

@@ -12,12 +12,12 @@ module Kore.Simplify.SubstitutionSimplifier (
     simplificationMakeAnd,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Comonad.Trans.Cofree qualified as Cofree
 import Control.Error (
     MaybeT,
     maybeT,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     foldM,
     (>=>),
@@ -26,40 +26,40 @@ import Control.Monad.State.Strict (
     StateT,
     runStateT,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product
-import qualified Data.List.NonEmpty as NonEmpty
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Debug
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrCondition qualified as OrCondition
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     toRepresentation,
  )
 import Kore.Internal.Substitution (
@@ -68,7 +68,7 @@ import Kore.Internal.Substitution (
     Substitution,
     pattern Assignment,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     And (..),
     SomeVariable,
@@ -79,7 +79,7 @@ import Kore.Internal.TermLike (
     isSetVariable,
     mkAnd,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -91,7 +91,7 @@ import Kore.Simplify.Simplify (
     simplifyPatternId,
     simplifyPatternScatter,
  )
-import qualified Kore.TopBottom as TopBottom
+import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.SubstitutionNormalization (
     normalize,
  )
@@ -99,7 +99,7 @@ import Logic (
     LogicT,
  )
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 newtype SubstitutionSimplifier simplifier = SubstitutionSimplifier
     { simplifySubstitution ::

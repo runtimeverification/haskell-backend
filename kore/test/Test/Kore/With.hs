@@ -5,26 +5,26 @@ module Test.Kore.With (
     VariableElement (..),
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet as HashSet
-import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty (
+import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet qualified as HashSet
+import Data.List qualified as List
+import Data.List.NonEmpty qualified as NonEmpty (
     cons,
     reverse,
  )
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors (Constructors),
  )
-import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors (
+import Kore.Attribute.Sort.Constructors qualified as Attribute.Constructors (
     Constructor (Constructor),
     ConstructorLike (..),
  )
-import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Constructor (
+import Kore.Attribute.Sort.Constructors qualified as Attribute.Constructors.Constructor (
     Constructor (..),
  )
 import Kore.Internal.InternalMap
@@ -32,7 +32,7 @@ import Kore.Internal.InternalSet
 import Kore.Internal.TermLike (
     Key,
  )
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     IndirectSymbolDeclaration (IndirectSymbolDeclaration),
     KoreSortDeclaration (..),
@@ -44,59 +44,59 @@ import qualified Kore.Rewrite.SMT.AST as AST (
     UnresolvedKoreSymbolDeclaration,
     UnresolvedSymbol,
  )
-import qualified Kore.Rewrite.SMT.AST as AST.Declarations (
+import Kore.Rewrite.SMT.AST qualified as AST.Declarations (
     Declarations (..),
  )
-import qualified Kore.Rewrite.SMT.AST as AST.IndirectSymbolDeclaration (
+import Kore.Rewrite.SMT.AST qualified as AST.IndirectSymbolDeclaration (
     IndirectSymbolDeclaration (..),
  )
-import qualified Kore.Rewrite.SMT.AST as AST.Sort (
+import Kore.Rewrite.SMT.AST qualified as AST.Sort (
     Sort (..),
  )
-import qualified Kore.Rewrite.SMT.AST as AST.Symbol (
+import Kore.Rewrite.SMT.AST qualified as AST.Symbol (
     Symbol (..),
  )
-import qualified Kore.Sort as Kore (
+import Kore.Sort qualified as Kore (
     Sort,
  )
 import Kore.Syntax.Definition (
     Definition (Definition),
  )
-import qualified Kore.Syntax.Definition as Definition (
+import Kore.Syntax.Definition qualified as Definition (
     Definition (..),
  )
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Syntax.Id qualified as Kore (
     Id,
  )
-import qualified Kore.Syntax.Module as Module (
+import Kore.Syntax.Module qualified as Module (
     Module (..),
  )
 import Kore.Syntax.Sentence
-import qualified Kore.Syntax.Sentence as SentenceAlias (
+import Kore.Syntax.Sentence qualified as SentenceAlias (
     SentenceAlias (..),
  )
-import qualified Kore.Syntax.Sentence as SentenceAxiom (
+import Kore.Syntax.Sentence qualified as SentenceAxiom (
     SentenceAxiom (..),
  )
-import qualified Kore.Syntax.Sentence as SentenceImport (
+import Kore.Syntax.Sentence qualified as SentenceImport (
     SentenceImport (..),
  )
-import qualified Kore.Syntax.Sentence as SentenceSort (
+import Kore.Syntax.Sentence qualified as SentenceSort (
     SentenceSort (..),
  )
-import qualified Kore.Syntax.Sentence as SentenceSymbol (
+import Kore.Syntax.Sentence qualified as SentenceSymbol (
     SentenceSymbol (..),
  )
 import Prelude.Kore
-import qualified SMT.AST as AST (
+import SMT.AST qualified as AST (
     Constructor (Constructor),
     ConstructorArgument,
     DataTypeDeclaration (DataTypeDeclaration),
  )
-import qualified SMT.AST as AST.Constructor (
+import SMT.AST qualified as AST.Constructor (
     Constructor (..),
  )
-import qualified SMT.AST as AST.DataTypeDeclaration (
+import SMT.AST qualified as AST.DataTypeDeclaration (
     DataTypeDeclaration (..),
  )
 

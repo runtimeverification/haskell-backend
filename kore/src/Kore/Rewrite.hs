@@ -29,36 +29,36 @@ import Control.Monad (
 import Data.Limit (
     Limit (..),
  )
-import qualified Data.Limit as Limit
+import Data.Limit qualified as Limit
 import Data.List.Extra (
     groupSortOn,
  )
 import Data.Stream.Infinite (
     Stream,
  )
-import qualified Data.Stream.Infinite as Stream
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import Data.Stream.Infinite qualified as Stream
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Rewrite.Result as Result
-import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.Result qualified as Result
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Rewrite.Strategy hiding (
     transitionRule,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
-import qualified Kore.Simplify.Pattern as Pattern (
+import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Simplify.Simplify as Simplifier
@@ -75,7 +75,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 -- | The program's state during symbolic execution.
 data ProgramState a

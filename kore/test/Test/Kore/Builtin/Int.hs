@@ -64,12 +64,12 @@ import Data.Bits (
     (.&.),
     (.|.),
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Hedgehog hiding (
     Concrete,
  )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Builtin.Int (
     ediv,
     emod,
@@ -79,16 +79,16 @@ import Kore.Builtin.Int (
     tdiv,
     tmod,
  )
-import qualified Kore.Builtin.Int as Int
-import qualified Kore.Internal.Condition as Condition
+import Kore.Builtin.Int qualified as Int
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.From
 import Kore.Internal.InternalInt
 import Kore.Internal.Key as Key
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -101,7 +101,7 @@ import Test.Kore (
     standaloneGen,
     testId,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
+import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT

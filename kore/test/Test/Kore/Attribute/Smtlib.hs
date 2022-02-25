@@ -7,7 +7,7 @@ module Test.Kore.Attribute.Smtlib (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib

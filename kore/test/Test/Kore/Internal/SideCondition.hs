@@ -7,7 +7,7 @@ module Test.Kore.Internal.SideCondition (
     test_cacheSimplifiedFunctions,
 ) where
 
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.Maybe (
     fromJust,
  )
@@ -29,7 +29,7 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

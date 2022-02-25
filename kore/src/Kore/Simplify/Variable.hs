@@ -14,7 +14,7 @@ module Kore.Simplify.Variable (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,

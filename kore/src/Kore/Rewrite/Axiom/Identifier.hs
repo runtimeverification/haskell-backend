@@ -24,27 +24,27 @@ module Kore.Rewrite.Axiom.Identifier (
 import Data.Functor.Const (
     Const (..),
  )
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Sequence as Seq
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Builtin.Endianness.Endianness as Endianness
-import qualified Kore.Builtin.Signedness.Signedness as Signedness
+import Data.Functor.Foldable qualified as Recursive
+import Data.HashMap.Strict qualified as HashMap
+import Data.Sequence qualified as Seq
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Builtin.Endianness.Endianness qualified as Endianness
+import Kore.Builtin.Signedness.Signedness qualified as Signedness
 import Kore.Debug
-import qualified Kore.Internal.Alias as Alias
-import qualified Kore.Internal.Inj as Inj
+import Kore.Internal.Alias qualified as Alias
+import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalList
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike (
     TermLike,
     TermLikeF (..),
  )
-import qualified Kore.Syntax.Application as Syntax
-import qualified Kore.Syntax.Ceil as Syntax
-import qualified Kore.Syntax.Equals as Syntax
-import qualified Kore.Syntax.Exists as Syntax
+import Kore.Syntax.Application qualified as Syntax
+import Kore.Syntax.Ceil qualified as Syntax
+import Kore.Syntax.Equals qualified as Syntax
+import Kore.Syntax.Exists qualified as Syntax
 import Kore.Syntax.Id (
     Id (..),
  )
@@ -55,7 +55,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 {- | Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.

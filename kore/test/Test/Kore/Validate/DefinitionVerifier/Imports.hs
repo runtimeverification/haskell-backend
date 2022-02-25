@@ -2,14 +2,14 @@ module Test.Kore.Validate.DefinitionVerifier.Imports (
     test_imports,
 ) where
 
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,
  )
-import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Alias qualified as Internal
 import Kore.Internal.ApplicationSorts
-import qualified Kore.Internal.Symbol as Internal
+import Kore.Internal.Symbol qualified as Internal
 import Kore.Internal.TermLike hiding (
     Alias,
     Symbol,

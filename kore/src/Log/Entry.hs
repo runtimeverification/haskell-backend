@@ -24,7 +24,7 @@ import Colog (
 import Control.Exception (
     Exception (..),
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Lens.Prism (
     Prism,
  )
@@ -34,16 +34,16 @@ import Data.Proxy (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified Data.Typeable (
+import Data.Text qualified as Text
+import Data.Typeable qualified (
     cast,
  )
 import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
-import qualified Type.Reflection as Reflection
+import Pretty qualified
+import Type.Reflection qualified as Reflection
 
 class (Show entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry

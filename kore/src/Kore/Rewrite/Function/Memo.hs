@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 This module should be imported qualified:
 @
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Function.Memo qualified as Memo
 @
 -}
 module Kore.Rewrite.Function.Memo (
@@ -19,7 +19,7 @@ module Kore.Rewrite.Function.Memo (
 import Control.Monad.State.Class (
     MonadState,
  )
-import qualified Control.Monad.State.Class as State
+import Control.Monad.State.Class qualified as State
 import Control.Monad.State.Strict (
     State,
     runState,
@@ -27,9 +27,9 @@ import Control.Monad.State.Strict (
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.IORef
-import qualified Data.Tuple as Tuple
+import Data.Tuple qualified as Tuple
 import Kore.Internal.TermLike
 import Prelude.Kore
 

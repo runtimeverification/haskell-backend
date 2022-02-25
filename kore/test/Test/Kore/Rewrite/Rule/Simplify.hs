@@ -1,10 +1,11 @@
 module Test.Kore.Rewrite.Rule.Simplify (
     test_simplifyRule_RewriteRule,
     test_simplifyRule_OnePathClaim,
+    test_simplifyRulePattern,
     test_simplifyClaimRule,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Morph (
     MFunctor (..),
  )
@@ -13,17 +14,17 @@ import Control.Monad.Reader (
     ReaderT,
     runReaderT,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.Reader qualified as Reader
+import Data.Bifunctor qualified as Bifunctor
 import Data.Generics.Product (
     field,
  )
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -32,8 +33,8 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     AdjSomeVariableName,
     InternalVariable,
@@ -43,7 +44,7 @@ import Kore.Internal.TermLike (
     mkEquals,
     mkOr,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Reachability (
     OnePathClaim (..),
     simplify,
@@ -55,12 +56,16 @@ import Kore.Rewrite.ClaimPattern (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingVariable,
+    mkRewritingTerm,
     mkRuleVariable,
  )
-import Kore.Rewrite.Rule.Simplify
+import Kore.Rewrite.Rule.Simplify hiding (simplifyRulePattern)
+import Kore.Rewrite.Rule.Simplify qualified as Kore
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
+    RulePattern,
     mapRuleVariables,
+    rulePattern,
  )
 import Kore.Rewrite.Transition (
     runTransitionT,
@@ -79,18 +84,74 @@ import Kore.Syntax.Variable (
  )
 import Log
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Builtin.Bool qualified as Test.Bool
+import Test.Kore.Builtin.Builtin qualified as Builtin
+import Test.Kore.Builtin.Definition qualified as Builtin
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Rewrite.Rule.Common (
     Pair (..),
     RuleBase,
  )
-import qualified Test.Kore.Rewrite.Rule.Common as Common
+import Test.Kore.Rewrite.Rule.Common qualified as Common
 import Test.Kore.Simplify (
     runSimplifier,
     runSimplifierSMT,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+
+test_simplifyRulePattern :: [TestTree]
+test_simplifyRulePattern =
+    [ simplifies
+        "simplifies \\and (#as) patterns"
+        (rulePattern (andBool (mkAnd false x) y) x)
+        (rulePattern (andBool false y) false)
+    , notSimplifies
+        "does not simplify disjunctions"
+        (rulePattern (andBool (mkOr true x) y) (mkOr y (andBool x y)))
+    , notSimplifies
+        "does not simplify builtins"
+        (rulePattern (sizeList unitList) (mkInt 0))
+    ]
+  where
+    andBool = Builtin.andBool
+    unitList = Builtin.unitList
+    sizeList = Builtin.sizeList
+    x = mkElemVar (TermLike.mkElementVariable "x" Builtin.boolSort) & mkRewritingTerm
+    y = mkElemVar (TermLike.mkElementVariable "y" Builtin.boolSort) & mkRewritingTerm
+    mkBool = Test.Bool.asInternal
+    true = mkBool True
+    false = mkBool False
+    mkInt = Test.Int.asInternal
+
+withSimplified ::
+    TestName ->
+    (RulePattern RewritingVariableName -> Assertion) ->
+    RulePattern RewritingVariableName ->
+    TestTree
+withSimplified testName check origin =
+    testCase testName (check =<< simplifyRulePattern origin)
+
+simplifies ::
+    TestName ->
+    RulePattern RewritingVariableName ->
+    RulePattern RewritingVariableName ->
+    TestTree
+simplifies testName origin expect =
+    withSimplified testName (assertEqual "" expect) origin
+
+notSimplifies ::
+    TestName ->
+    RulePattern RewritingVariableName ->
+    TestTree
+notSimplifies testName origin =
+    withSimplified testName (assertEqual "" origin) origin
+
+simplifyRulePattern ::
+    RulePattern RewritingVariableName ->
+    IO (RulePattern RewritingVariableName)
+simplifyRulePattern = runSimplifier Builtin.testEnv . Kore.simplifyRulePattern
 
 test_simplifyRule_RewriteRule :: [TestTree]
 test_simplifyRule_RewriteRule =

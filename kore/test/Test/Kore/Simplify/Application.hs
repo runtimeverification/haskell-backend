@@ -2,34 +2,34 @@ module Test.Kore.Simplify.Application (
     test_applicationSimplification,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Data.List as List
-import qualified Data.Map.Strict as Map
+import Data.List qualified as List
+import Data.Map.Strict qualified as Map
 import Data.Sup
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeEqualsPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     firstFullEvaluation,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import Kore.Rewrite.RewritingVariable (
@@ -38,13 +38,13 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Application
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.Simplify as AttemptedAxiom (
+import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
  )
-import qualified Kore.Syntax.Variable as Variable
+import Kore.Syntax.Variable qualified as Variable
 import Prelude.Kore
-import qualified Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Internal.Pattern qualified as Pattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

@@ -11,22 +11,22 @@ module Kore.Rewrite.SMT.Lemma (
     declareSMTLemmas,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Comonad.Trans.Cofree qualified as Cofree
 import Control.Error (
     hoistMaybe,
     hush,
     runMaybeT,
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad.Counter as Counter
+import Control.Lens qualified as Lens
+import Control.Monad.Counter qualified as Counter
 import Control.Monad.Except
-import qualified Control.Monad.State as State
-import qualified Data.Functor.Foldable as Recursive
+import Control.Monad.State qualified as State
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Reflection
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Axiom as Attribute
+import Data.Text qualified as Text
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.SmtLemma
 import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
@@ -35,7 +35,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.SideCondition (
     top,
  )
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol qualified as Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,

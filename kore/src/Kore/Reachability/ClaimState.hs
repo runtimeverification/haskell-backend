@@ -14,8 +14,8 @@ module Kore.Reachability.ClaimState (
     ClaimStateTransformer (..),
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Unparser (
     Unparse (..),
@@ -24,7 +24,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 -- | The state of the reachability proof strategy for @claim@.
 data ClaimState claim

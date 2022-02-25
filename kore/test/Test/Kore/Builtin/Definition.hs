@@ -3,17 +3,17 @@
 
 module Test.Kore.Builtin.Definition where
 
-import qualified Data.Bifunctor as Bifunctor
+import Data.Bifunctor qualified as Bifunctor
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.ByteString as ByteString
-import qualified Data.Default as Default
-import qualified Data.HashMap.Strict as HashMap
+import Data.ByteString qualified as ByteString
+import Data.Default qualified as Default
+import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (
     fromJust,
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
  )
@@ -25,12 +25,12 @@ import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
-import qualified Kore.Attribute.Sort.Concat as Sort
-import qualified Kore.Attribute.Sort.Element as Sort
+import Kore.Attribute.Sort.Concat qualified as Sort
+import Kore.Attribute.Sort.Element qualified as Sort
 import Kore.Attribute.Sort.HasDomainValues (
     hasDomainValuesAttribute,
  )
-import qualified Kore.Attribute.Sort.Unit as Sort
+import Kore.Attribute.Sort.Unit qualified as Sort
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Subsort (
     subsortAttribute,
@@ -38,8 +38,8 @@ import Kore.Attribute.Subsort (
 import Kore.Attribute.Synthetic (
     synthesize,
  )
-import qualified Kore.Builtin.Endianness as Endianness
-import qualified Kore.Builtin.Signedness as Signedness
+import Kore.Builtin.Endianness qualified as Endianness
+import Kore.Builtin.Signedness qualified as Signedness
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
@@ -59,7 +59,7 @@ import Kore.Internal.Symbol (
     sortInjection,
     symbolKywd,
  )
-import qualified Kore.Internal.Symbol as Internal
+import Kore.Internal.Symbol qualified as Internal
 import Kore.Internal.TermLike hiding (
     Symbol,
  )
@@ -70,11 +70,11 @@ import Kore.Syntax (
     Const (..),
  )
 import Kore.Syntax.Definition as Syntax
-import qualified Kore.Syntax.PatternF as PatternF
+import Kore.Syntax.PatternF qualified as PatternF
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 
 -- -------------------------------------------------------------
 

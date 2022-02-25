@@ -33,13 +33,13 @@ module Kore.Builtin.Bool (
     orElseKey,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.Functor.Const
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -47,13 +47,13 @@ import Kore.Attribute.Hook (
     Hook (..),
  )
 import Kore.Builtin.Bool.Bool
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Error
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Error qualified
 import Kore.Internal.InternalBool
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
@@ -68,8 +68,8 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import Prelude.Kore
-import qualified Text.Megaparsec as Parsec
-import qualified Text.Megaparsec.Char as Parsec
+import Text.Megaparsec qualified as Parsec
+import Text.Megaparsec.Char qualified as Parsec
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 

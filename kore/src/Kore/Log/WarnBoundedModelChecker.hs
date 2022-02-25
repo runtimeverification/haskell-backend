@@ -17,7 +17,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype WarnBoundedModelChecker
     = WarnBoundedModelChecker (ImplicationRule VariableName)

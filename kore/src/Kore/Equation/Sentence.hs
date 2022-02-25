@@ -8,11 +8,11 @@ module Kore.Equation.Sentence (
     MatchEquationError (..),
 ) where
 
-import qualified Data.Bifunctor as Bifunctor
+import Data.Bifunctor qualified as Bifunctor
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Axiom.Constructor (
     Constructor (..),
  )
@@ -27,21 +27,21 @@ import Kore.Internal.Predicate (
     NotPredicate,
     makePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     InternalVariable,
     Symbol,
     TermLike,
     VariableName,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import Kore.Unparser (
     unparse,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Pretty
 

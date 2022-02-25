@@ -2,7 +2,7 @@ module Test.Pretty (
     test_layoutOneLine,
 ) where
 
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Prelude.Kore
 import Pretty
 import Test.Tasty

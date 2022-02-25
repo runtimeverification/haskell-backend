@@ -183,22 +183,22 @@ module Kore.Internal.TermLike (
     containsSymbolWithId,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Comonad.Trans.Cofree qualified as Cofree
 import Data.Align (
     alignWith,
  )
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Data.Functor.Const (
     Const (..),
  )
 import Data.Functor.Foldable (
     Base,
  )
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map.Strict as Map
+import Data.Functor.Foldable qualified as Recursive
+import Data.Map.Strict qualified as Map
 import Data.Monoid (
     Endo (..),
  )
@@ -208,17 +208,17 @@ import Data.Set (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.These
-import qualified Kore.Attribute.Pattern.ConstructorLike as Attribute
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables (
+import Kore.Attribute.Pattern.ConstructorLike qualified as Attribute
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute.FreeVariables (
     toNames,
     toSet,
  )
-import qualified Kore.Attribute.Pattern.Function as Attribute
-import qualified Kore.Attribute.Pattern.Functional as Attribute
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
+import Kore.Attribute.Pattern.Function qualified as Attribute
+import Kore.Attribute.Pattern.Functional qualified as Attribute
+import Kore.Attribute.Pattern.Simplified qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -239,13 +239,13 @@ import Kore.Internal.InternalString
 import Kore.Internal.Key (
     Key,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.Symbol (
     Symbol (..),
  )
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
@@ -259,7 +259,7 @@ import Kore.Syntax.Definition hiding (
     Symbol,
     symbolConstructor,
  )
-import qualified Kore.Syntax.Definition as Syntax
+import Kore.Syntax.Definition qualified as Syntax
 import Kore.Syntax.DomainValue
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
@@ -282,14 +282,14 @@ import Kore.Syntax.Variable as Variable
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Unparser as Unparser
+import Kore.Unparser qualified as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh (
     refreshSetVariable,
  )
-import qualified Kore.Variables.Fresh as Fresh
+import Kore.Variables.Fresh qualified as Fresh
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 hasFreeVariable ::
     Ord variable =>

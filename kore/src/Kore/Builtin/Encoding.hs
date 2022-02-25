@@ -10,21 +10,21 @@ module Kore.Builtin.Encoding (
     toBase16,
 ) where
 
-import qualified Data.Bits as Bits
+import Data.Bits qualified as Bits
 import Data.ByteString (
     ByteString,
  )
-import qualified Data.ByteString as ByteString
+import Data.ByteString qualified as ByteString
 import Data.Char as Char
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Vector.Unboxed (
     Vector,
  )
-import qualified Data.Vector.Unboxed as Vector
+import Data.Vector.Unboxed qualified as Vector
 import Data.Void
 import Data.Word (
     Word8,
@@ -34,7 +34,7 @@ import Text.Megaparsec (
     Parsec,
     (<?>),
  )
-import qualified Text.Megaparsec as Parsec
+import Text.Megaparsec qualified as Parsec
 
 {- | Encode text using an 8-bit encoding.
 

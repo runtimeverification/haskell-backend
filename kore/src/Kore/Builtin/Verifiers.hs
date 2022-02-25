@@ -43,37 +43,37 @@ import Control.Error (
 import Control.Monad (
     zipWithM_,
  )
-import qualified Control.Monad as Monad
-import qualified Data.Functor.Foldable as Recursive
+import Control.Monad qualified as Monad
+import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Void (
     Void,
  )
-import qualified GHC.Generics as GHC
-import qualified Kore.AST.Error as Kore.Error
+import GHC.Generics qualified as GHC
+import Kore.AST.Error qualified as Kore.Error
 import Kore.Attribute.Attributes (
     Attributes (..),
  )
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
-import qualified Kore.Attribute.Sort.Element as Attribute.Sort
-import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
-import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Parser qualified as Attribute.Parser
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.Concat qualified as Attribute.Sort
+import Kore.Attribute.Sort.Element qualified as Attribute.Sort
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
+import Kore.Attribute.Sort.Unit qualified as Attribute.Sort
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol (..),
  )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
 import Kore.Attribute.Synthetic (
     synthesize,
  )
@@ -81,12 +81,12 @@ import Kore.Builtin.Error
 import Kore.Error (
     Error,
  )
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule (
     IndexedModule,
     VerifiedModule,
  )
-import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import Kore.IndexedModule.Resolvers qualified as IndexedModule
 import Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition (
     ParsedSentenceSort,
@@ -95,7 +95,7 @@ import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
 import Kore.Unparser
-import qualified Kore.Validate.AttributesVerifier as Verifier.Attributes
+import Kore.Validate.AttributesVerifier qualified as Verifier.Attributes
 import Kore.Validate.Error (
     VerifyError,
  )
@@ -103,13 +103,13 @@ import Kore.Validate.PatternVerifier.PatternVerifier (
     PatternVerifier,
     PatternVerifierHook (..),
  )
-import qualified Kore.Validate.PatternVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Verified as Verified
+import Kore.Validate.PatternVerifier.PatternVerifier qualified as PatternVerifier
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Text.Megaparsec (
     Parsec,
  )
-import qualified Text.Megaparsec as Parsec
+import Text.Megaparsec qualified as Parsec
 
 type Parser = Parsec Void Text
 

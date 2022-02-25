@@ -9,8 +9,8 @@ module Kore.Attribute.Pattern.ConstructorLike (
     assertConstructorLike,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Alias (
@@ -25,7 +25,7 @@ import Kore.Internal.InternalBytes (
 import Kore.Internal.Symbol (
     Symbol,
  )
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Syntax
 import Prelude.Kore
 

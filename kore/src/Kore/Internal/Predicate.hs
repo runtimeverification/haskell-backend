@@ -64,10 +64,10 @@ module Kore.Internal.Predicate (
     pattern PredicateForall,
 ) where
 
-import qualified Control.Comonad.Trans.Env as Env
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Either as Either
-import qualified Data.Foldable as Foldable
+import Control.Comonad.Trans.Env qualified as Env
+import Data.Bifunctor qualified as Bifunctor
+import Data.Either qualified as Either
+import Data.Foldable qualified as Foldable
 import Data.Functor.Compose (
     Compose (..),
  )
@@ -76,38 +76,38 @@ import Data.Functor.Foldable (
     Corecursive,
     Recursive,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Functor.Identity (
     Identity (..),
  )
 import Data.List.Extra (
     nubOrd,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Semigroup
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables (
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute.FreeVariables (
     toNames,
     toSet,
  )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
+import Kore.Attribute.Pattern.Simplified qualified as Attribute
 import Kore.Attribute.PredicatePattern (
     PredicatePattern,
  )
-import qualified Kore.Attribute.PredicatePattern as PredicatePattern
+import Kore.Attribute.PredicatePattern qualified as PredicatePattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike hiding (
@@ -137,7 +137,7 @@ import Kore.Internal.TermLike hiding (
     setSimplified,
     simplifiedAttribute,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Substitute
 import Kore.TopBottom (
     TopBottom (..),
@@ -150,8 +150,8 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 data PredicateF variable child
     = AndF !(And () child)

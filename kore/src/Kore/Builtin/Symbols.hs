@@ -16,11 +16,11 @@ import Data.Text (
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
-import qualified Kore.Attribute.Sort.Element as Attribute.Sort
-import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.Concat qualified as Attribute.Sort
+import Kore.Attribute.Sort.Element qualified as Attribute.Sort
+import Kore.Attribute.Sort.Unit qualified as Attribute.Sort
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin.Error
 import Kore.Error (
     Error,
@@ -31,8 +31,8 @@ import Kore.IndexedModule.IndexedModule (
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import Kore.IndexedModule.MetadataTools qualified as MetadataTools
+import Kore.IndexedModule.Resolvers qualified as IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike as TermLike
 import Kore.Unparser

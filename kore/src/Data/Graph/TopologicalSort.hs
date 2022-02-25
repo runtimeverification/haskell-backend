@@ -16,9 +16,9 @@ import Data.Graph (
     SCC (..),
     stronglyConnComp,
  )
-import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Prelude.Kore
 

@@ -19,8 +19,8 @@ module Test.Data.Sup (
 
 import Data.Sup
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Prelude.Kore
 
 genSup :: Gen a -> Gen (Sup a)

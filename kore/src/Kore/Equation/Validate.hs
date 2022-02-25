@@ -9,7 +9,7 @@ module Kore.Equation.Validate (
 import Control.Monad.State.Strict (
     StateT,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Text (
     pack,
  )
@@ -22,12 +22,12 @@ import Kore.Attribute.Axiom (
     Overload (..),
     Unit (..),
  )
-import qualified Kore.Attribute.Axiom as Attribute (
+import Kore.Attribute.Axiom qualified as Attribute (
     Axiom (..),
  )
-import qualified Kore.Builtin.List.List as List
-import qualified Kore.Builtin.Map.Map as Map
-import qualified Kore.Builtin.Set.Set as Set
+import Kore.Builtin.List.List qualified as List
+import Kore.Builtin.Map.Map qualified as Map
+import Kore.Builtin.Set.Set qualified as Set
 import Kore.Equation.Equation (
     Equation (..),
     isSimplificationRule,
@@ -41,25 +41,25 @@ import Kore.Internal.Predicate (
     pattern PredicateCeil,
     pattern PredicateIn,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike (
     AstLocation,
     InternalVariable,
     TermLike,
     mkSortVariable,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import Kore.Unparser (
     unparse,
  )
 import Kore.Validate.Verifier
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 import Pretty (Doc)
-import qualified Pretty
+import Pretty qualified
 
 validateAxiom ::
     Attribute.Axiom TermLike.Symbol VariableName ->

@@ -5,12 +5,12 @@ module Test.Kore.IndexedModule.OverloadGraph (
     test_fromIndexedModule,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Kore.Attribute.Overload (
     overloadAttribute,
  )
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.Error (
     assertRight,
  )
@@ -33,9 +33,9 @@ import Kore.Validate.DefinitionVerifier (
  )
 import Prelude.Kore
 import Test.Kore
-import qualified Test.Kore.Builtin.Definition as Definition
+import Test.Kore.Builtin.Definition qualified as Definition
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

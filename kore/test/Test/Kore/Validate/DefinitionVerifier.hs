@@ -59,21 +59,21 @@ module Test.Kore.Validate.DefinitionVerifier (
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
 import Kore.Debug
 import Kore.Error
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike (
     TermLike,
  )
-import qualified Kore.Internal.TermLike as Internal
+import Kore.Internal.TermLike qualified as Internal
 import Kore.Sort
 import Kore.Syntax hiding (
     PatternF (..),
  )
 import Kore.Syntax.Definition
-import qualified Kore.Syntax.PatternF as Syntax
+import Kore.Syntax.PatternF qualified as Syntax
 import Kore.Unparser (
     unparseToString,
  )

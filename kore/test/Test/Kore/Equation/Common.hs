@@ -9,7 +9,7 @@ module Test.Kore.Equation.Common (
     sortR,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )

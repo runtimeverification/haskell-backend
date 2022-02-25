@@ -14,7 +14,7 @@ import Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )

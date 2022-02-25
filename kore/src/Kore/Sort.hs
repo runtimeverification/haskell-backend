@@ -42,15 +42,15 @@ import Control.Exception (
     throw,
  )
 import Data.Align
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.These
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Syntax.Id
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- | 'SortVariable' is a Kore sort variable.
 

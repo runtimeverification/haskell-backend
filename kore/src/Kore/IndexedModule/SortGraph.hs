@@ -12,23 +12,23 @@ module Kore.IndexedModule.SortGraph (
     Subsort (..),
 ) where
 
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
-import qualified Data.Graph.Inductive.Query.DFS as Graph.Query.DFS
+import Data.Graph.Inductive.Query.DFS qualified as Graph.Query.DFS
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Data.Vector as Vector
+import Data.Set qualified as Set
+import Data.Vector qualified as Vector
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Subsort (
     Subsort (..),
  )

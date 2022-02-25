@@ -5,20 +5,20 @@ module Test.Kore.Simplify.InternalMap (
 import Data.Bifunctor (
     bimap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (
     fromJust,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalMap
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
@@ -30,7 +30,7 @@ import Kore.Simplify.InternalMap (
     simplify,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

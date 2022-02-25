@@ -12,7 +12,7 @@ module Kore.TopBottom (
     guardAgainstBottom,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Prelude.Kore
 
 {- | Class for types whose values work as top, bottom, or something between.

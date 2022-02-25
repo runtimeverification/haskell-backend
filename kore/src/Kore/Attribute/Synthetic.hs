@@ -14,14 +14,14 @@ module Kore.Attribute.Synthetic (
     synthesizeAux,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Comonad.Trans.Cofree qualified as Cofree
 import Data.Functor.Const
 import Data.Functor.Foldable (
     Base,
     Corecursive,
     Recursive,
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Prelude.Kore
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.

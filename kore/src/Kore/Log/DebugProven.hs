@@ -15,7 +15,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype DebugProven = DebugProven {claim :: SomeClaim}
     deriving stock (Show)

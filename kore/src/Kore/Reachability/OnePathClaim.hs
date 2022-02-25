@@ -12,9 +12,9 @@ module Kore.Reachability.OnePathClaim (
 import Data.Generics.Wrapped (
     _Unwrapped,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.Alias (
     Alias (aliasConstructor),
@@ -25,8 +25,8 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     ElementVariable,
     Id (getId),
@@ -34,7 +34,7 @@ import Kore.Internal.TermLike (
     VariableName,
     weakExistsFinally,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Reachability.Claim
 import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern as ClaimPattern
@@ -51,7 +51,7 @@ import Kore.Rewrite.UnifyingRule (
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Syntax.Sentence as Syntax
+import Kore.Syntax.Sentence qualified as Syntax
 import Kore.TopBottom (
     TopBottom (..),
  )

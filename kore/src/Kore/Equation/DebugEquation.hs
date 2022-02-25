@@ -28,11 +28,11 @@ import Control.Error (
     withExceptT,
  )
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Source as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.Source qualified as Attribute
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
  )
@@ -58,7 +58,7 @@ import Log (
  )
 import Prelude.Kore
 import Pretty (Pretty (..))
-import qualified Pretty
+import Pretty qualified
 
 {- | The outcome of an attempt to apply an 'Equation'.
 
