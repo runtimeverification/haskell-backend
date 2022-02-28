@@ -7,7 +7,7 @@ module Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
     simplify,
     makeEvaluate,
-    simplifyPatternX,
+    functionEvaluatorX,
 ) where
 
 import Control.Monad (
@@ -123,8 +123,7 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition =
-    simplifyPatternX sideCondition
-        >=> loop . OrPattern.fromPattern
+    loop . OrPattern.fromPattern
   where
     loop input = do
         output <-
@@ -145,20 +144,24 @@ makeEvaluate sideCondition =
                     SideCondition.addConditionWithReplacements
                         simplifiedCondition
                         sideCondition
+            afterEvaluatingFunctions <-
+                functionEvaluatorX termSideCondition (Pattern.fromTermLike term')
             simplifiedTerm <-
-                simplifyTerm termSideCondition term'
+                simplifyTerm termSideCondition (Pattern.term afterEvaluatingFunctions)
                     >>= Logic.scatter
             let simplifiedPattern =
-                    Conditional.andCondition simplifiedTerm simplifiedCondition
+                    Conditional.andCondition
+                        simplifiedTerm
+                        (simplifiedCondition <> Conditional.withoutTerm afterEvaluatingFunctions)
             simplifyCondition sideCondition simplifiedPattern
 
-simplifyPatternX ::
+functionEvaluatorX ::
     forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-simplifyPatternX sideCondition patt = do
+functionEvaluatorX sideCondition patt = do
     let term = Pattern.term patt
     indexedEquations <- askIndexedEquations
     let equations =
