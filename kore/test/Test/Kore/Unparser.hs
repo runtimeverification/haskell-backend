@@ -12,9 +12,7 @@ import Hedgehog (
     (===),
  )
 import Hedgehog qualified
-import Kore.Parser.Lexer
 import Kore.Parser.Parser
-import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
@@ -216,14 +214,20 @@ test_parse =
         ]
 
 roundtrip ::
-    (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
+    (HasCallStack, Unparse a, Eq a, Show a) =>
+    Gen a ->
+    Parser a ->
+    Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
         parse' parser (unparseToText generated) === Right generated
 
 unparseParseTest ::
-    (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
+    (HasCallStack, Unparse a, Debug a, Diff a) =>
+    Parser a ->
+    a ->
+    TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."

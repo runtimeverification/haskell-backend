@@ -1,25 +1,22 @@
-module Test.Kore.Parser (
+module Test.Kore.Repl.ParserTest (
     FailureTest (..),
     ParserTest (..),
     parseTree,
-    lexTree,
+    parseSkipTree,
     success,
-    successes,
     SuccessfulTest (..),
     parsesTo_,
     fails,
     parse',
 ) where
 
+import Data.Bifunctor qualified as Bifunctor
 import Data.Text (
     Text,
     unpack,
  )
-import Data.Text.Encoding qualified as Text
-import Kore.Parser.Lexer
-import Kore.Parser.LexerWrapper
-import Kore.Parser.Parser (
-    Parser,
+import Data.Void (
+    Void,
  )
 import Prelude.Kore
 import Test.Tasty (
@@ -32,6 +29,15 @@ import Test.Tasty.HUnit (
     assertEqual,
     testCase,
  )
+import Text.Megaparsec (
+    Parsec,
+    ShowErrorComponent,
+    eof,
+    errorBundlePretty,
+    parse,
+ )
+
+type Parser = Parsec Void Text
 
 data SuccessfulTest a = SuccessfulTest
     { successInput :: Text
@@ -57,9 +63,6 @@ success input expected =
             , successExpected = expected
             }
 
-successes :: [Text] -> a -> [ParserTest a]
-successes inputs expected = map (\input -> success input expected) inputs
-
 parsesTo_ :: Text -> a -> ParserTest a
 parsesTo_ = success
 
@@ -69,7 +72,8 @@ fails input _ = FailureWithoutMessage [input]
 parseTree ::
     HasCallStack =>
     (Show a, Eq a) =>
-    (FilePath -> Text -> Either String a) ->
+    ShowErrorComponent e =>
+    Parsec e Text a ->
     [ParserTest a] ->
     [TestTree]
 parseTree parser = map (parseTest parser)
@@ -77,7 +81,8 @@ parseTree parser = map (parseTest parser)
 parseTest ::
     HasCallStack =>
     (Show a, Eq a) =>
-    Parser a ->
+    ShowErrorComponent e =>
+    Parsec e Text a ->
     ParserTest a ->
     TestTree
 parseTest parser (Success test) =
@@ -108,46 +113,66 @@ parseTest _ (Skip tests) =
         ("Parsing skip tests '" ++ show tests ++ "'")
         (assertBool "Not Expecting Skip Tests here" False)
 
-lexTree ::
+parseSkipTree ::
     HasCallStack =>
-    [ParserTest [TokenClass]] ->
+    Parser () ->
+    [ParserTest ()] ->
     [TestTree]
-lexTree = parseTree scanTokenClasses
+parseSkipTree parser = map (parseSkipTest parser)
 
-scanTokens :: FilePath -> Text -> Either String [Token]
-scanTokens fp input = alexScanTokens fp $ Text.encodeUtf8 input
+parseSkipTest ::
+    HasCallStack =>
+    Parser () ->
+    ParserTest () ->
+    TestTree
+parseSkipTest parser (Skip tests) =
+    testGroup
+        "Tests for Parsers not creating ASTs"
+        ( map
+            ( \input ->
+                testCase
+                    ("Skipping '" ++ unpack input ++ "'")
+                    (parseSkip parser input)
+            )
+            tests
+        )
+parseSkipTest _ (Success test) =
+    testCase
+        ("Parsing success test '" ++ unpack (successInput test) ++ "'")
+        (assertBool "Not Expecting Success Tests here" False)
+parseSkipTest parser test = parseTest parser test
 
-scanTokenClasses :: FilePath -> Text -> Either String [TokenClass]
-scanTokenClasses fp input =
-    let tokens = scanTokens fp input
-     in case tokens of
-            Right r -> Right $ map getTokenClass r
-            Left l -> Left l
-
-parse' :: Parser a -> Text -> Either String a
-parse' f input =
-    f "<test-string>" input
+parse' :: ShowErrorComponent e => Parsec e Text a -> Text -> Either String a
+parse' parser input =
+    parse (parser <* eof) "<test-string>" input
+        & Bifunctor.first errorBundlePretty
 
 parseSuccess ::
     HasCallStack =>
     (Show a, Eq a) =>
+    ShowErrorComponent e =>
     a ->
-    Parser a ->
+    Parsec e Text a ->
     Text ->
     Assertion
 parseSuccess expected parser input =
     assertEqual "" (Right expected) (parse' parser input)
 
+parseSkip :: ShowErrorComponent e => Parsec e Text () -> Text -> Assertion
+parseSkip parser input =
+    assertEqual "" (Right ()) (parse' parser input)
+
 parseFailureWithoutMessage ::
-    Parser a -> Text -> Assertion
+    ShowErrorComponent e => Parsec e Text a -> Text -> Assertion
 parseFailureWithoutMessage parser input =
     assertBool "" (isLeft (parse' parser input))
 
 parseFailureWithMessage ::
     HasCallStack =>
     (Show a, Eq a) =>
+    ShowErrorComponent e =>
     String ->
-    Parser a ->
+    Parsec e Text a ->
     Text ->
     Assertion
 parseFailureWithMessage expected parser input =

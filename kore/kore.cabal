@@ -143,6 +143,7 @@ common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
+  build-depends: array
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
@@ -192,6 +193,8 @@ common library
   build-depends: vector >=0.12
   build-depends: witherable ==0.3.*
   build-depends: zlib >=0.6
+  build-tool-depends: happy:happy
+  build-tool-depends: alex:alex
 
 library
   import: haskell
@@ -398,6 +401,7 @@ library
     Kore.Parser
     Kore.Parser.CString
     Kore.Parser.Lexer
+    Kore.Parser.LexerWrapper
     Kore.Parser.Parser
     Kore.Parser.ParserUtils
     Kore.Reachability
@@ -755,6 +759,7 @@ test-suite kore-test
     Test.Kore.Repl.Graph
     Test.Kore.Repl.Interpreter
     Test.Kore.Repl.Parser
+    Test.Kore.Repl.ParserTest
     Test.Kore.Rewrite
     Test.Kore.Rewrite.AntiLeft
     Test.Kore.Rewrite.Axiom.EvaluationStrategy
