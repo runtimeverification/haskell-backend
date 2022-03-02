@@ -262,14 +262,15 @@ complexRewriteTermToRule attributes pat =
                     (TermLike.And_ _ requires lhs)
                 )
             -- Don't store anti-left pattern for now to improve performance
-            rhs -> RewriteRule
-                        RulePattern
-                            { left = lhs
-                            , antiLeft = Nothing
-                            , requires = makePredicate "requires" requires
-                            , rhs = termToRHS rhs
-                            , attributes
-                            }
+            rhs ->
+                RewriteRule
+                    RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , requires = makePredicate "requires" requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
         _ ->
             (error . show . Pretty.vsep)
                 [ "Expected complex rewrite rule form, but got"
