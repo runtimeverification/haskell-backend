@@ -56,9 +56,6 @@ import Kore.Internal.Variable (
 import Kore.Reachability (
     onePathRuleToTerm,
  )
-import Kore.Rewrite.AntiLeft qualified as AntiLeft (
-    parse,
- )
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (ClaimPattern),
     parseRightHandSide,
@@ -261,22 +258,14 @@ complexRewriteTermToRule attributes pat =
             _
             ( TermLike.And_
                     _
-                    (TermLike.Not_ _ antiLeft)
+                    (TermLike.Not_ _ _)
                     (TermLike.And_ _ requires lhs)
                 )
-            rhs -> case AntiLeft.parse antiLeft of
-                Nothing ->
-                    (error . show . Pretty.vsep)
-                        [ "Could not parse antileft term"
-                        , Pretty.indent 4 $ unparse antiLeft
-                        , "from pattern"
-                        , Pretty.indent 4 $ unparse pat
-                        ]
-                Just parsedAntiLeft ->
-                    RewriteRule
+            -- Don't store anti-left pattern for now to improve performance
+            rhs -> RewriteRule
                         RulePattern
                             { left = lhs
-                            , antiLeft = Just parsedAntiLeft
+                            , antiLeft = Nothing
                             , requires = makePredicate "requires" requires
                             , rhs = termToRHS rhs
                             , attributes
