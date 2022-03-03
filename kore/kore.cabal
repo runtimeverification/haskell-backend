@@ -373,7 +373,6 @@ library
     Kore.Log.ErrorParse
     Kore.Log.ErrorRewriteLoop
     Kore.Log.ErrorRewritesInstantiation
-    Kore.Log.ErrorRuleMergeDuplicate
     Kore.Log.ErrorVerify
     Kore.Log.InfoAttemptUnification
     Kore.Log.InfoExecBreadth
@@ -433,7 +432,6 @@ library
     Kore.Rewrite.Result
     Kore.Rewrite.RewriteStep
     Kore.Rewrite.Rule
-    Kore.Rewrite.Rule.Combine
     Kore.Rewrite.Rule.Expand
     Kore.Rewrite.Rule.Simplify
     Kore.Rewrite.RulePattern
@@ -775,7 +773,6 @@ test-suite kore-test
     Test.Kore.Rewrite.Remainder
     Test.Kore.Rewrite.RewriteStep
     Test.Kore.Rewrite.Rule
-    Test.Kore.Rewrite.Rule.Combine
     Test.Kore.Rewrite.Rule.Common
     Test.Kore.Rewrite.Rule.Expand
     Test.Kore.Rewrite.Rule.Simplify
