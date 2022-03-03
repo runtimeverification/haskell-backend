@@ -22,7 +22,7 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Numeric.Natural
 import Prelude.Kore
-import Test.Kore.Parser
+import Test.Kore.Repl.ParserTest
 import Test.Tasty (
     TestTree,
     testGroup,
