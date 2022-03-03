@@ -153,7 +153,8 @@ generate-evm
 replace-tests "test/regression-evm" "evm-semantics"
 rm -rf $KORE/evm-semantics
 
-build-wasm
-generate-wasm
-replace-tests "test/regression-wasm" "wasm-semantics"
-rm -rf $KORE/wasm-semantics
+# Temporarily disabled while it is blocked on wasm-semantics/#447.
+#build-wasm
+#generate-wasm
+#replace-tests "test/regression-wasm" "wasm-semantics"
+#rm -rf $KORE/wasm-semantics
