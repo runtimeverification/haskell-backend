@@ -10,8 +10,6 @@ Expose concrete execution as a library
 -}
 module Kore.Exec (
     exec,
-    mergeAllRules,
-    mergeRulesConsecutiveBatches,
     search,
     prove,
     proveWithRepl,
@@ -37,20 +35,9 @@ import Control.Monad (
 import Control.Monad.Catch (
     MonadMask,
  )
-import Control.Monad.Trans.Except (
-    ExceptT,
-    runExceptT,
-    throwE,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
- )
-import Data.Generics.Product (
-    field,
- )
-import Data.Generics.Wrapped (
-    _Unwrapped,
  )
 import Data.Limit (
     Limit (..),
@@ -59,9 +46,6 @@ import Data.List (
     tails,
  )
 import Data.Map.Strict qualified as Map
-import Data.Text (
-    Text,
- )
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
@@ -117,10 +101,6 @@ import Kore.Log.ErrorEquationsSameMatch (
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
-import Kore.Log.ErrorRuleMergeDuplicate (
-    errorRuleMergeDuplicateIds,
-    errorRuleMergeDuplicateLabels,
- )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
@@ -150,10 +130,6 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
     extractImplicationClaims,
     extractRewriteAxioms,
- )
-import Kore.Rewrite.Rule.Combine qualified as Rules (
-    mergeRules,
-    mergeRulesConsecutiveBatches,
  )
 import Kore.Rewrite.Rule.Expand (
     ExpandSingleConstructors (..),
@@ -716,123 +692,6 @@ bothMatch eq1 eq2 =
         patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
 
--- | Rule merging
-mergeAllRules ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadProf smt
-    , MonadMask smt
-    ) =>
-    SimplifierXSwitch ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The list of rules to merge
-    [Text] ->
-    smt (Either Text [RewriteRule RewritingVariableName])
-mergeAllRules simplifierx = mergeRules simplifierx Rules.mergeRules
-
--- | Rule merging
-mergeRulesConsecutiveBatches ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadProf smt
-    , MonadMask smt
-    ) =>
-    SimplifierXSwitch ->
-    -- | Batch size
-    Int ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The list of rules to merge
-    [Text] ->
-    smt (Either Text [RewriteRule RewritingVariableName])
-mergeRulesConsecutiveBatches simplifierx batchSize =
-    mergeRules simplifierx (Rules.mergeRulesConsecutiveBatches batchSize)
-
--- | Rule merging in batches
-mergeRules ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadProf smt
-    , MonadMask smt
-    ) =>
-    SimplifierXSwitch ->
-    -- | The rule merger
-    ( NonEmpty (RewriteRule RewritingVariableName) ->
-      Simplifier.SimplifierT smt [RewriteRule RewritingVariableName]
-    ) ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The list of rules to merge
-    [Text] ->
-    smt (Either Text [RewriteRule RewritingVariableName])
-mergeRules simplifierx ruleMerger verifiedModule ruleNames =
-    evalSimplifier simplifierx verifiedModule $
-        runExceptT $ do
-            initialized <- initializeWithoutSimplification verifiedModule
-            let Initialized{rewriteRules} = initialized
-                rewriteRules' = rewriteRules
-            rules <- extractAndSimplifyRules rewriteRules' ruleNames
-            lift $ ruleMerger rules
-
-extractAndSimplifyRules ::
-    forall m.
-    MonadSimplify m =>
-    [RewriteRule RewritingVariableName] ->
-    [Text] ->
-    ExceptT Text m (NonEmpty (RewriteRule RewritingVariableName))
-extractAndSimplifyRules rules names = do
-    let rulesById = mapMaybe ruleById rules
-        rulesByLabel = mapMaybe ruleByLabel rules
-    whenDuplicate errorRuleMergeDuplicateIds rulesById
-    whenDuplicate errorRuleMergeDuplicateLabels rulesByLabel
-    let ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
-    extractedRules <-
-        traverse (extractRule ruleRegistry >=> simplifyRuleLhs) names
-            & fmap (>>= toList)
-    case extractedRules of
-        [] -> throwE "Empty rule list."
-        (r : rs) -> return (r :| rs)
-  where
-    ruleById = ruleByName (field @"uniqueId")
-
-    ruleByLabel = ruleByName (field @"label")
-
-    ruleByName lens rule = do
-        name <-
-            Lens.view
-                (_Unwrapped . field @"attributes" . lens . _Unwrapped)
-                rule
-        return (name, rule)
-
-    extractRule registry ruleName =
-        maybe
-            (throwE $ "Rule not found: '" <> ruleName <> "'.")
-            return
-            (Map.lookup ruleName registry)
-
-    whenDuplicate logErr withNames = do
-        let duplicateNames =
-                findCollisions . mkMapWithCollisions $ withNames
-        unless (null duplicateNames) (logErr duplicateNames)
-
-mkMapWithCollisions ::
-    Ord key =>
-    [(key, val)] ->
-    Map.Map key [val]
-mkMapWithCollisions pairs =
-    Map.fromListWith (<>) $
-        (fmap . fmap) pure pairs
-
-findCollisions :: Map.Map key [val] -> Map.Map key [val]
-findCollisions = filter (not . isSingleton)
-  where
-    isSingleton [_] = True
-    isSingleton _ = False
-
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
     when (length claims > 1) . error $
@@ -866,13 +725,6 @@ initializeAndSimplify ::
     simplifier Initialized
 initializeAndSimplify verifiedModule =
     initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
-
-initializeWithoutSimplification ::
-    MonadSimplify simplifier =>
-    VerifiedModule StepperAttributes ->
-    simplifier Initialized
-initializeWithoutSimplification verifiedModule =
-    initialize return verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::

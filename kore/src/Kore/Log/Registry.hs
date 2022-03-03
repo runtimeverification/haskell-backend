@@ -93,10 +93,6 @@ import Kore.Log.ErrorRewriteLoop (
 import Kore.Log.ErrorRewritesInstantiation (
     ErrorRewritesInstantiation,
  )
-import Kore.Log.ErrorRuleMergeDuplicate (
-    ErrorRuleMergeDuplicateIds,
-    ErrorRuleMergeDuplicateLabels,
- )
 import Kore.Log.ErrorVerify (
     ErrorVerify,
  )
@@ -234,8 +230,6 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorParse
             , mk $ Proxy @ErrorVerify
-            , mk $ Proxy @ErrorRuleMergeDuplicateIds
-            , mk $ Proxy @ErrorRuleMergeDuplicateLabels
             , mk $ Proxy @ErrorException
             , mk $ Proxy @ErrorRewriteLoop
             , mk $ Proxy @ErrorRewritesInstantiation
