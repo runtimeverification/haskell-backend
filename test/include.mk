@@ -27,7 +27,6 @@ TESTS = \
 	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
-	$(wildcard $(TEST_DIR)/*.merge) \
 	$(wildcard $(TEST_DIR)/test-*.sh)
 
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
@@ -131,14 +130,6 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %-bmc-spec.k.out: KPROVE = $(KBMC)
 %-bmc-spec.k.out: KPROVE_SPEC_OPTS = --raw-spec
 %-bmc-spec.k.out: KPROVE_OPTS += --depth $(KBMC_DEPTH)
-
-### MERGE
-
-%.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE)
-	@echo ">>>" $(CURDIR) "kore-exec --merge-rules" $<
-	rm -f $@
-	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
-	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SCRIPTS
 

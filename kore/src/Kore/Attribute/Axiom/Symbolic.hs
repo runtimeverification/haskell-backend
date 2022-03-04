@@ -18,8 +18,8 @@ module Kore.Attribute.Axiom.Symbolic (
 import Data.Set (
     Set,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom.Concrete (
     parseFreeVariables,
  )
@@ -29,7 +29,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     isFreeVariable,
     mapFreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Debug
 import Kore.Syntax.Variable
 import Prelude.Kore

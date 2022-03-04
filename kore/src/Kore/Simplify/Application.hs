@@ -16,21 +16,21 @@ import Control.Monad.Catch (
     MonadThrow,
  )
 import Kore.Attribute.Synthetic (synthesize)
-import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Conditional qualified as Conditional
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.Function.Evaluator (
     evaluateApplication,
@@ -45,7 +45,7 @@ import Kore.Simplify.Simplify as Simplifier
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 type ExpandedApplication variable =

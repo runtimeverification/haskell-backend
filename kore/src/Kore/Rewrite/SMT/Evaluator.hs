@@ -18,45 +18,45 @@ import Control.Error (
     MaybeT,
     runMaybeT,
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad.Counter as Counter
-import qualified Control.Monad.State.Strict as State
+import Control.Lens qualified as Lens
+import Control.Monad.Counter qualified as Counter
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product.Fields
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Reflection
-import qualified Data.Set as Set
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Symbol as Attribute (
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional,
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     ElementVariable,
     ElementVariableName,
     SomeVariableName,
     Variable (..),
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DebugEvaluateCondition (
     debugEvaluateConditionResult,
     whileDebugEvaluateCondition,
@@ -77,13 +77,13 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 import SMT (
     Result (..),
     SExpr (..),
  )
-import qualified SMT
-import qualified SMT.SimpleSMT as SimpleSMT
+import SMT qualified
+import SMT.SimpleSMT qualified as SimpleSMT
 
 {- | Attempt to evaluate the 'Predicate' argument with an optional side
  condition using an external SMT solver.

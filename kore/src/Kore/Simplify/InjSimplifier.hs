@@ -10,10 +10,10 @@ module Kore.Simplify.InjSimplifier (
     normalize,
 ) where
 
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Functor.Foldable qualified as Recursive
+import Data.Set qualified as Set
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic (
     synthesize,
  )

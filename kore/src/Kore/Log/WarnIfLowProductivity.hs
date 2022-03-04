@@ -14,7 +14,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 import Stats
 
 {- | @WarnIfLowProductivity@ is emitted when productuvity drops below a certain

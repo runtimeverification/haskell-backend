@@ -11,11 +11,11 @@ import Data.IORef (
     newIORef,
     readIORef,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     Conditional (..),
  )
 import Kore.Internal.Predicate (
@@ -24,14 +24,14 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.Simplify as AttemptedAxiom (
+import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
  )
 import Prelude.Kore
@@ -40,7 +40,7 @@ import Test.Kore.Equation.Common (
     axiom_,
     concrete,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

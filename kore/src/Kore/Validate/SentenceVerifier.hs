@@ -22,52 +22,52 @@ module Kore.Validate.SentenceVerifier (
     parseAndVerifyAxiomAttributes,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     foldM,
  )
-import qualified Control.Monad.Reader as Reader
+import Control.Monad.Reader qualified as Reader
 import Control.Monad.State.Strict (
     StateT,
     runStateT,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product.Fields
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
 import Kore.AST.Error
-import qualified Kore.Attribute.Axiom as Attribute (
+import Kore.Attribute.Axiom qualified as Attribute (
     Axiom,
     parseAxiomAttributes,
  )
-import qualified Kore.Attribute.Hook as Attribute
+import Kore.Attribute.Hook qualified as Attribute
 import Kore.Attribute.Parser (
     ParseAttributes,
  )
-import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Parser qualified as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Sort as Attribute (
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Sort qualified as Attribute (
     Sort,
  )
-import qualified Kore.Attribute.Sort as Attribute.Sort
-import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Sort qualified as Attribute.Sort
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute.HasDomainValues
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
+import Kore.Builtin qualified as Builtin
 import Kore.Equation.Validate
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike.TermLike (
     freeVariables,
  )
@@ -89,7 +89,7 @@ import Kore.Validate.Error
 import Kore.Validate.PatternVerifier as PatternVerifier
 import Kore.Validate.SortVerifier
 import Kore.Validate.Verifier
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 {- |'verifyUniqueNames' verifies that names defined in a list of sentences are

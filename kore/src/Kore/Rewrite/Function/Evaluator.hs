@@ -26,38 +26,38 @@ import Data.Semigroup (
     Min (..),
     Option (..),
  )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
-import qualified Kore.Equation.DebugEquation as DebugEquation
+import Kore.Equation.DebugEquation qualified as DebugEquation
 import Kore.Simplify.FunctionEvaluator (evaluateFunctionX)
+import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Synthetic
-import qualified Kore.Internal.MultiOr as MultiOr (
+import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Condition,
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -67,9 +67,9 @@ import Kore.Simplify.Simplify as AttemptedAxiom (
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | Evaluates functions on an application pattern.
 

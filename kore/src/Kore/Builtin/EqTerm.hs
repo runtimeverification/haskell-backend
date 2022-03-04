@@ -8,14 +8,14 @@ module Kore.Builtin.EqTerm (
     unifyEqTerm,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Kore.Internal.ApplicationSorts (applicationSortsResult)
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,

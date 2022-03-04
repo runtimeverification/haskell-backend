@@ -4,7 +4,7 @@ Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 This module is intended to be imported qualified:
 @
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 @
 -}
 module Kore.Attribute.Symbol (
@@ -70,14 +70,14 @@ module Kore.Attribute.Symbol (
     isInjective,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     (>=>),
  )
 import Data.Default
 import Data.Generics.Product
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional

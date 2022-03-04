@@ -21,19 +21,19 @@ module Kore.Log.Registry (
 import Control.Lens (
     (%~),
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Functor.Classes (
     eq2,
  )
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Proxy
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Equation.DebugEquation (
     DebugApplyEquation,
     DebugAttemptEquation,
@@ -93,10 +93,6 @@ import Kore.Log.ErrorRewriteLoop (
 import Kore.Log.ErrorRewritesInstantiation (
     ErrorRewritesInstantiation,
  )
-import Kore.Log.ErrorRuleMergeDuplicate (
-    ErrorRuleMergeDuplicateIds,
-    ErrorRuleMergeDuplicateLabels,
- )
 import Kore.Log.ErrorVerify (
     ErrorVerify,
  )
@@ -152,8 +148,8 @@ import Log (
     SomeEntry (..),
  )
 import Prelude.Kore
-import qualified Pretty
-import qualified Text.Megaparsec as Parser
+import Pretty qualified
+import Text.Megaparsec qualified as Parser
 import Type.Reflection (
     SomeTypeRep (..),
     someTypeRep,
@@ -234,8 +230,6 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorParse
             , mk $ Proxy @ErrorVerify
-            , mk $ Proxy @ErrorRuleMergeDuplicateIds
-            , mk $ Proxy @ErrorRuleMergeDuplicateLabels
             , mk $ Proxy @ErrorException
             , mk $ Proxy @ErrorRewriteLoop
             , mk $ Proxy @ErrorRewritesInstantiation

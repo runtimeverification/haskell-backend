@@ -7,19 +7,19 @@ module Kore.Attribute.Pattern.Created (
     hasKnownCreator,
 ) where
 
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import GHC.Stack (
     SrcLoc (..),
  )
-import qualified GHC.Stack as GHC
-import qualified Generics.SOP as SOP
+import GHC.Stack qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 {- | 'Created' is used for debugging patterns, specifically for finding out
  where a pattern was created. This is a field in the attributes of a pattern,

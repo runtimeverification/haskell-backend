@@ -14,7 +14,7 @@ module Kore.Unification.Procedure (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Pattern as Conditional
+import Kore.Internal.Pattern qualified as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -29,16 +29,16 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.AndTerms (
     termUnification,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )
-import qualified Kore.TopBottom as TopBottom
+import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Unification.Unify as Monad.Unify
+import Kore.Unification.Unify qualified as Monad.Unify
 import Logic (
     lowerLogicT,
  )

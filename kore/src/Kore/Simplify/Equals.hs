@@ -17,54 +17,54 @@ module Kore.Simplify.Equals (
 import Control.Error (
     MaybeT (..),
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeEqualsPredicate,
     pattern PredicateTrue,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.And as And (
+import Kore.Simplify.And qualified as And (
     simplify,
  )
-import qualified Kore.Simplify.AndPredicates as And (
+import Kore.Simplify.AndPredicates qualified as And (
     simplifyEvaluatedMultiPredicate,
  )
 import Kore.Simplify.AndTerms (
     compareForEquals,
     maybeTermEquals,
  )
-import qualified Kore.Simplify.Iff as Iff (
+import Kore.Simplify.Iff qualified as Iff (
     makeEvaluate,
     simplifyEvaluated,
  )
-import qualified Kore.Simplify.Implies as Implies (
+import Kore.Simplify.Implies qualified as Implies (
     simplifyEvaluated,
  )
-import qualified Kore.Simplify.Not as Not (
+import Kore.Simplify.Not qualified as Not (
     notSimplifier,
     simplify,
     simplifyEvaluatedPredicate,
  )
-import qualified Kore.Simplify.Or as Or (
+import Kore.Simplify.Or qualified as Or (
     simplifyEvaluated,
  )
 import Kore.Simplify.Simplify
@@ -78,7 +78,7 @@ import Kore.Unification.Unify (
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {- ORMOLU_DISABLE -}

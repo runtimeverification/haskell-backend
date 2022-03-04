@@ -22,16 +22,16 @@ module Kore.Internal.OrCondition (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike hiding (

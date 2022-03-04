@@ -9,15 +9,15 @@ module Kore.Simplify.OverloadSimplifier (
     mkOverloadSimplifier,
 ) where
 
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.IndexedModule.OverloadGraph (
     OverloadGraph,
  )
-import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
+import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
 import Kore.Internal.ApplicationSorts (
     applicationSortsResult,
  )
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,

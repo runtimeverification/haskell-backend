@@ -18,13 +18,13 @@ import Control.Error (
 import Data.Limit (
     Limit (..),
  )
-import qualified Data.Limit as Limit
-import qualified Data.Map.Strict as Map
-import qualified Kore.Internal.Condition as Condition (
+import Data.Limit qualified as Limit
+import Data.Map.Strict qualified as Map
+import Kore.Internal.Condition qualified as Condition (
     bottom,
     fromSubstitution,
  )
-import qualified Kore.Internal.MultiOr as MultiOr (
+import Kore.Internal.MultiOr qualified as MultiOr (
     make,
  )
 import Kore.Internal.OrCondition (
@@ -34,7 +34,7 @@ import Kore.Internal.Pattern (
     Condition,
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Conditional
+import Kore.Internal.Pattern qualified as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -48,10 +48,10 @@ import Kore.Rewrite.Axiom.Matcher (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT (
+import Kore.Rewrite.SMT.Evaluator qualified as SMT (
     evalConditional,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Substitution (
     mergePredicatesAndSubstitutions,
  )
@@ -60,7 +60,7 @@ import Kore.TopBottom
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Numeric.Natural (
     Natural,
  )

@@ -11,29 +11,29 @@ module Kore.ModelChecker.Bounded (
     checkClaim,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadThrow,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Sum (
     _Ctor,
  )
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Limit (
     Limit (..),
  )
-import qualified Data.Limit as Limit
-import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
+import Data.Limit qualified as Limit
+import Data.Text qualified as Text
+import GHC.Generics qualified as GHC
 import Kore.Internal.Pattern as Conditional (
     Conditional (..),
     mapVariables,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.ModelChecker.Step (
     CommonModalPattern,
     CommonProofState,
@@ -41,11 +41,11 @@ import Kore.ModelChecker.Step (
     Prim (..),
     defaultOneStepStrategy,
  )
-import qualified Kore.ModelChecker.Step as ModelChecker (
+import Kore.ModelChecker.Step qualified as ModelChecker (
     Transition,
     transitionRule,
  )
-import qualified Kore.ModelChecker.Step as ProofState (
+import Kore.ModelChecker.Step qualified as ProofState (
     ProofState (..),
  )
 import Kore.Rewrite.RewritingVariable (
@@ -70,7 +70,7 @@ import Kore.Rewrite.Strategy (
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Log
+import Log qualified
 import Numeric.Natural (
     Natural,
  )

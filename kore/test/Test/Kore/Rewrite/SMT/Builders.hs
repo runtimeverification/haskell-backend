@@ -16,19 +16,19 @@ module Test.Kore.Rewrite.SMT.Builders (
     koreSort,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Constructor as Constructor
-import qualified Kore.Attribute.Functional as Functional
-import qualified Kore.Attribute.Hook as Hook
-import qualified Kore.Attribute.Smthook as Smthook
-import qualified Kore.Attribute.Smtlib as Smtlib
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Constructor qualified as Constructor
+import Kore.Attribute.Functional qualified as Functional
+import Kore.Attribute.Hook qualified as Hook
+import Kore.Attribute.Smthook qualified as Smthook
+import Kore.Attribute.Smtlib qualified as Smtlib
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.Error (
     Error,
  )
@@ -39,7 +39,7 @@ import Kore.Sort (
     Sort (SortActualSort),
     SortActual (SortActual),
  )
-import qualified Kore.Sort as SortActual (
+import Kore.Sort qualified as SortActual (
     SortActual (..),
  )
 import Kore.Syntax.Definition

@@ -2,27 +2,27 @@ module Test.Kore.Repl.Parser (
     test_replParser,
 ) where
 
-import qualified Data.GraphViz as Graph
+import Data.GraphViz qualified as Graph
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.Proxy
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Equation.DebugEquation (
     DebugApplyEquation,
     DebugAttemptEquation,
  )
-import qualified Kore.Log as Log
+import Kore.Log qualified as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Numeric.Natural
 import Prelude.Kore
-import Test.Kore.Parser
+import Test.Kore.Repl.ParserTest
 import Test.Tasty (
     TestTree,
     testGroup,

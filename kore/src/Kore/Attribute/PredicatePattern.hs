@@ -20,14 +20,14 @@ module Kore.Attribute.PredicatePattern (
     module Kore.Attribute.Pattern.FreeVariables,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables hiding (
     freeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables (
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables (
     freeVariables,
  )
 import Kore.Attribute.Pattern.Simplified hiding (
@@ -35,14 +35,14 @@ import Kore.Attribute.Pattern.Simplified hiding (
     isSimplifiedAnyCondition,
     isSimplifiedSomeCondition,
  )
-import qualified Kore.Attribute.Pattern.Simplified as Simplified (
+import Kore.Attribute.Pattern.Simplified qualified as Simplified (
     isSimplified,
     isSimplifiedAnyCondition,
     isSimplifiedSomeCondition,
  )
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Syntax.Variable

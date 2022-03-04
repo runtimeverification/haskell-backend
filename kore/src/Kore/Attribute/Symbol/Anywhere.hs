@@ -9,9 +9,9 @@ module Kore.Attribute.Symbol.Anywhere (
     anywhereAttribute,
 ) where
 
-import qualified Data.Monoid as Monoid
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Monoid qualified as Monoid
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore

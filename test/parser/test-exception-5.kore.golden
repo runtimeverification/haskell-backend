@@ -1,7 +1,2 @@
-test-exception-5.kore:6:5:
-  |
-6 |     -X:S []
-  |     ^
-unexpected '-'
-expecting identifier or string literal
+test-exception-5.kore:6:5: unexpected character '-'
 

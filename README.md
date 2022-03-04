@@ -50,7 +50,14 @@ Using [make]:
 make all # builds all binaries
 ```
 
-### Apple Silicon
+### macOS
+
+Currently, LLVM 13 from Homebrew installs an incompatible version of
+`install_name_tool`, which breaks the Haskell backend build on macOS. To resolve
+this, uninstall `llvm` and install `llvm@12` from Homebrew, then build from
+scratch.
+
+#### Apple Silicon
 
 If you are building the project on an Apple Silicon machine, a temporary
 workaround is necessary to install a new enough version of GHC with support for

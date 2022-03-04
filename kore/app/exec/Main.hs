@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadMask,
     handle,
@@ -22,18 +22,9 @@ import Data.List (
  )
 import Data.Reflection
 import Data.Text (
-    Text,
     unpack,
  )
-import qualified Data.Text as Text (
-    null,
-    split,
- )
-import qualified Data.Text.IO as Text (
-    hPutStrLn,
-    readFile,
- )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import GlobalMain
 import Kore.Attribute.Definition (
     KFileLocations (..),
@@ -45,14 +36,14 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     indexedModuleRawSentences,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
@@ -76,7 +67,7 @@ import Kore.Log.WarnBoundedModelChecker (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import qualified Kore.ModelChecker.Bounded as Bounded (
+import Kore.ModelChecker.Bounded qualified as Bounded (
     CheckResult (..),
  )
 import Kore.Parser.ParserUtils (
@@ -89,20 +80,17 @@ import Kore.Reachability (
     getConfiguration,
     lensClaimPattern,
  )
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
  )
 import Kore.Rewrite.RewritingVariable
-import Kore.Rewrite.RulePattern (
-    mapRuleVariables,
- )
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
@@ -112,7 +100,7 @@ import Kore.Syntax.Definition (
     ModuleName (..),
     Sentence (..),
  )
-import qualified Kore.Syntax.Definition as Definition.DoNotUse
+import Kore.Syntax.Definition qualified as Definition.DoNotUse
 import Kore.Unparser (
     unparse,
  )
@@ -133,8 +121,8 @@ import Options.Applicative (
     strOption,
     value,
  )
-import qualified Options.Applicative as Options
-import qualified Options.Applicative.Help.Pretty as OptPretty
+import Options.Applicative qualified as Options
+import Options.Applicative.Help.Pretty qualified as OptPretty
 import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
@@ -148,7 +136,6 @@ import Pretty (
     Doc,
     hPutDoc,
     putDoc,
-    vsep,
  )
 import Prof (
     MonadProf,
@@ -156,7 +143,7 @@ import Prof (
 import SMT (
     MonadSMT,
  )
-import qualified SMT
+import SMT qualified
 import Stats
 import System.Clock (
     Clock (Monotonic),
@@ -181,7 +168,6 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (WriteMode),
-    stderr,
     withFile,
  )
 
@@ -285,7 +271,6 @@ data KoreExecOptions = KoreExecOptions
     , koreLogOptions :: !KoreLogOptions
     , koreSearchOptions :: !(Maybe KoreSearchOptions)
     , koreProveOptions :: !(Maybe KoreProveOptions)
-    , koreMergeOptions :: !(Maybe KoreMergeOptions)
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
@@ -330,7 +315,6 @@ parseKoreExecOptions startTime =
             <*> parseKoreLogOptions (ExeName "kore-exec") startTime
             <*> pure Nothing
             <*> optional parseKoreProveOptions
-            <*> optional parseKoreMergeOptions
             <*> optional parseRtsStatistics
             <*> parseBugReportOption
             <*> parseMaxCounterexamples
@@ -413,11 +397,6 @@ unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
     , unwords ["--searchType", show searchType]
     ]
 
-unparseKoreMergeOptions :: KoreMergeOptions -> [String]
-unparseKoreMergeOptions (KoreMergeOptions _ maybeBatchSize) =
-    ["--merge-rules mergeRules.kore"]
-        <> maybe mempty ((: []) . ("--merge-batch-size " <>) . show) maybeBatchSize
-
 unparseKoreProveOptions :: KoreProveOptions -> [String]
 unparseKoreProveOptions
     ( KoreProveOptions
@@ -451,7 +430,6 @@ koreExecSh
                             koreLogOptions
                             koreSearchOptions
                             koreProveOptions
-                            koreMergeOptions
                             rtsStatistics
                             _
                             maxCounterexamples
@@ -483,7 +461,6 @@ koreExecSh
                 , unparseKoreLogOptions koreLogOptions
                 , maybe mempty unparseKoreSearchOptions koreSearchOptions
                 , maybe mempty unparseKoreProveOptions koreProveOptions
-                , maybe mempty unparseKoreMergeOptions koreMergeOptions
                 ]
         unparseExecutionMode All = "all"
         unparseExecutionMode Any = "any"
@@ -499,10 +476,6 @@ defaultRtsStatisticsFilePath = "rts-statistics.json"
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions{searchFileName} =
     copyFile searchFileName $ reportFile <> "/searchFile.kore"
-
-writeKoreMergeFiles :: FilePath -> KoreMergeOptions -> IO ()
-writeKoreMergeFiles reportFile KoreMergeOptions{rulesFileName} =
-    copyFile rulesFileName $ reportFile <> "/mergeRules.kore"
 
 writeKoreProveFiles :: FilePath -> KoreProveOptions -> IO ()
 writeKoreProveFiles reportFile koreProveOptions = do
@@ -523,7 +496,6 @@ writeOptionsAndKoreFiles
         , koreSolverOptions
         , koreSearchOptions
         , koreProveOptions
-        , koreMergeOptions
         } =
         do
             let shellScript = reportDirectory </> "kore-exec.sh"
@@ -543,9 +515,6 @@ writeOptionsAndKoreFiles
             for_
                 koreSearchOptions
                 (writeKoreSearchFiles reportDirectory)
-            for_
-                koreMergeOptions
-                (writeKoreMergeFiles reportDirectory)
             for_
                 koreProveOptions
                 (writeKoreProveFiles reportDirectory)
@@ -631,14 +600,11 @@ mainDispatch = warnProductivity . mainDispatchWorker
                 else koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
             koreSearch localOptions searchOptions
-        | Just mergeOptions <- koreMergeOptions =
-            koreMerge localOptions mergeOptions
         | otherwise =
             koreRun localOptions
       where
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
-        KoreExecOptions{koreMergeOptions} = execOptions
 
 koreSearch ::
     LocalOptions KoreExecOptions ->
@@ -829,46 +795,6 @@ koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
   where
     failure pat = (ExitFailure 1, pat)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
-
-koreMerge ::
-    LocalOptions KoreExecOptions ->
-    KoreMergeOptions ->
-    Main (KFileLocations, ExitCode)
-koreMerge LocalOptions{execOptions, simplifierx} mergeOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
-    let KoreMergeOptions{rulesFileName} = mergeOptions
-    ruleIds <- lift $ loadRuleIds rulesFileName
-    let KoreMergeOptions{maybeBatchSize} = mergeOptions
-    eitherMergedRule <- execute execOptions mainModule $
-        case maybeBatchSize of
-            Just batchSize ->
-                mergeRulesConsecutiveBatches
-                    simplifierx
-                    batchSize
-                    mainModule
-                    ruleIds
-            Nothing -> mergeAllRules simplifierx mainModule ruleIds
-    case eitherMergedRule of
-        (Left err) -> do
-            lift $ Text.hPutStrLn stderr err
-            return (kFileLocations definition, ExitFailure 1)
-        (Right mergedRule) -> do
-            let mergedRule' =
-                    mergedRule <&> mapRuleVariables getRewritingVariable
-            lift $ renderResult execOptions (vsep (map unparse mergedRule'))
-            return (kFileLocations definition, ExitSuccess)
-
-loadRuleIds :: FilePath -> IO [Text]
-loadRuleIds fileName = do
-    fileContents <- Text.readFile fileName
-    return
-        ( filter
-            (not . Text.null)
-            (Text.split (`elem` (" \t\n\r" :: String)) fileContents)
-        )
 
 type MonadExecute exe =
     ( MonadMask exe

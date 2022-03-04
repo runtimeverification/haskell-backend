@@ -12,31 +12,31 @@ import Control.Monad.Catch (
     MonadThrow (throwM),
  )
 import Data.Functor.Identity
-import qualified Data.Graph.Inductive as Gr
+import Data.Graph.Inductive qualified as Gr
 import Data.Limit (
     Limit (..),
  )
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Sequence qualified as Seq
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Reachability.Claim (
     AppliedRule (..),
     ApplyResult (..),
     Claim (..),
  )
-import qualified Kore.Reachability.Claim as Claim
-import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Reachability.Prim as Prim
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Reachability.Claim qualified as Claim
+import Kore.Reachability.ClaimState qualified as ClaimState
+import Kore.Reachability.Prim qualified as Prim
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.Data (
     MonadSimplify (..),
  )

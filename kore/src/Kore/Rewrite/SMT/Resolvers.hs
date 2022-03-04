@@ -12,32 +12,32 @@ module Kore.Rewrite.SMT.Resolvers (
     translateSymbol,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Reflection (
     Given,
     given,
  )
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.IndexedModule.MetadataTools (
     MetadataTools (MetadataTools),
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools (
+import Kore.IndexedModule.MetadataTools qualified as MetadataTools (
     MetadataTools (smtData),
  )
 import Kore.Internal.Symbol
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Sort (Sort),
     Symbol (Symbol),
  )
-import qualified Kore.Rewrite.SMT.AST as AST.DoNotUse
+import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
 import Kore.Sort (
     Sort (SortActualSort, SortVariableSort),
     SortActual (SortActual, sortActualName, sortActualSorts),
  )
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 
 {- | Creates the SMT representation of a symbol assuming the smt declarations in
 the given SmtMetadataTools.

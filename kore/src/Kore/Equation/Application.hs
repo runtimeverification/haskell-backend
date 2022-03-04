@@ -27,35 +27,35 @@ import Control.Monad.Except (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Kore.Attribute.Axiom as Attribute
+import Data.Set qualified as Set
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Equation.DebugEquation
 import Kore.Equation.Equation (
     Equation (..),
  )
-import qualified Kore.Equation.Equation as Equation
+import Kore.Equation.Equation qualified as Equation
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -64,15 +64,15 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
     matchIncremental,
@@ -80,16 +80,16 @@ import Kore.Rewrite.Axiom.Matcher (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT
-import qualified Kore.Rewrite.Substitution as Substitution
+import Kore.Rewrite.SMT.Evaluator qualified as SMT
+import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     MonadSimplify,
  )
-import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Kore.Syntax.Variable
 import Kore.TopBottom
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {- | Attempt to apply an 'Equation' to the 'TermLike'.

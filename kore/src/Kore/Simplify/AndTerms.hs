@@ -18,48 +18,48 @@ module Kore.Simplify.AndTerms (
 import Control.Error (
     MaybeT (..),
  )
-import qualified Control.Error as Error
+import Control.Error qualified as Error
 import Data.String (
     fromString,
  )
 import Data.Text (
     Text,
  )
-import qualified Kore.Builtin.Bool as Builtin.Bool
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Endianness as Builtin.Endianness
-import qualified Kore.Builtin.Int as Builtin.Int
+import Kore.Builtin.Bool qualified as Builtin.Bool
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Endianness qualified as Builtin.Endianness
+import Kore.Builtin.Int qualified as Builtin.Int
 import Kore.Builtin.InternalBytes (
     matchBytes,
     unifyBytes,
  )
-import qualified Kore.Builtin.KEqual as Builtin.KEqual
-import qualified Kore.Builtin.List as Builtin.List
-import qualified Kore.Builtin.Map as Builtin.Map
-import qualified Kore.Builtin.Set as Builtin.Set
-import qualified Kore.Builtin.Signedness as Builtin.Signedness
-import qualified Kore.Builtin.String as Builtin.String
+import Kore.Builtin.KEqual qualified as Builtin.KEqual
+import Kore.Builtin.List qualified as Builtin.List
+import Kore.Builtin.Map qualified as Builtin.Map
+import Kore.Builtin.Set qualified as Builtin.Set
+import Kore.Builtin.Signedness qualified as Builtin.Signedness
+import Kore.Builtin.String qualified as Builtin.String
 import Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrCondition as OrCondition
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrCondition qualified as OrCondition
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeNotPredicate,
     pattern PredicateTrue,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     topTODO,
  )
-import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnification (
     debugUnificationSolved,
@@ -73,7 +73,7 @@ import Kore.Log.DebugUnifyBottom (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Exists as Exists
+import Kore.Simplify.Exists qualified as Exists
 import Kore.Simplify.ExpandAlias
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.NoConfusion
@@ -87,7 +87,7 @@ import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- | Unify two terms without discarding the terms.
 

@@ -9,7 +9,7 @@ parser, but we do not actually care to parse any attributes. This parser simply
 ignores all attributes.
 This module is intended to be imported qualified:
 @
-import qualified Kore.Attribute.Null as Attribute
+import Kore.Attribute.Null qualified as Attribute
 @
 -}
 module Kore.Attribute.Null (
@@ -17,8 +17,8 @@ module Kore.Attribute.Null (
 ) where
 
 import Data.Default
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Prelude.Kore
 

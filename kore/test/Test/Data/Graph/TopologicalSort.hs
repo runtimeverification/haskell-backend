@@ -1,7 +1,7 @@
 module Test.Data.Graph.TopologicalSort (test_topologicalSort) where
 
 import Data.Graph.TopologicalSort
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

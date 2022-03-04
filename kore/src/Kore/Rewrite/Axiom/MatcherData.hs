@@ -6,7 +6,7 @@ module Kore.Rewrite.Axiom.MatcherData (
     MatchResult,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.TermLike (SomeVariableName, TermLike)
 

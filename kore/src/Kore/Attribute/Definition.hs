@@ -8,7 +8,7 @@ module Kore.Attribute.Definition (
 ) where
 
 import Control.Monad.Catch (MonadThrow)
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Data.Generics.Product (typed)
 import Kore.Attribute.Attributes (Attributes (..))
 import Kore.Attribute.Parser (ParseAttributes (..))

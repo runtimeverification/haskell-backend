@@ -2,27 +2,27 @@ module Test.Kore.Rewrite.Rule.Expand (
     test_expandRule,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Sup (
     Sup (Element),
  )
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructor (Constructor),
     ConstructorLike (..),
     Constructors (Constructors),
  )
-import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Sort.Constructors qualified as Constructors.DoNotUse
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools (
+import Kore.IndexedModule.MetadataTools qualified as MetadataTools (
     MetadataTools (..),
  )
 import Kore.Internal.Predicate (
@@ -32,7 +32,7 @@ import Kore.Internal.Predicate (
 import Kore.Internal.Symbol (
     Symbol,
  )
-import qualified Kore.Internal.Symbol as Symbol (
+import Kore.Internal.Symbol qualified as Symbol (
     constructor,
     functional,
  )
@@ -53,12 +53,12 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Rewrite.Rule.Common (
     Pair (..),
     RuleBase,
  )
-import qualified Test.Kore.Rewrite.Rule.Common as Common
+import Test.Kore.Rewrite.Rule.Common qualified as Common
 import Test.Kore.With (
     with,
  )

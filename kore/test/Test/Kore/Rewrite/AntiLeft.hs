@@ -8,7 +8,7 @@ import Data.Text (
 import Kore.Internal.Alias (
     Alias (Alias),
  )
-import qualified Kore.Internal.Alias as Alias.DoNotUse
+import Kore.Internal.Alias qualified as Alias.DoNotUse
 import Kore.Internal.ApplicationSorts (
     applicationSorts,
  )
@@ -40,11 +40,11 @@ import Kore.Unparser (
     unparse,
  )
 import Prelude.Kore
-import qualified Pretty (
+import Pretty qualified (
     vsep,
  )
 import Test.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -15,14 +15,14 @@ module Kore.Verified (
     SentenceSymbol,
 ) where
 
-import qualified Kore.Internal.Alias as Internal (
+import Kore.Internal.Alias qualified as Internal (
     Alias,
  )
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
-import qualified Kore.Syntax.Sentence as Syntax
+import Kore.Syntax.Sentence qualified as Syntax
 import Prelude.Kore ()
 
 type Pattern = TermLike VariableName

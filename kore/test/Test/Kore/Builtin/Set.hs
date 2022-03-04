@@ -63,39 +63,39 @@ module Test.Kore.Builtin.Set (
 import Control.Error (
     runMaybeT,
  )
-import qualified Data.Default as Default
-import qualified Data.HashMap.Strict as HashMap
+import Data.Default qualified as Default
+import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
-import qualified Data.List as List
-import qualified Data.Maybe as Maybe (
+import Data.HashSet qualified as HashSet
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe (
     fromJust,
  )
-import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
+import Data.Sequence qualified as Seq
+import Data.Text qualified as Text
 import Hedgehog hiding (
     Concrete,
     opaque,
     property,
  )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Set as Set
-import qualified Kore.Builtin.Set.Set as Set
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Kore.Builtin.AssociativeCommutative qualified as Ac
+import Kore.Builtin.Set qualified as Set
+import Kore.Builtin.Set.Set qualified as Set
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.From
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
@@ -113,7 +113,7 @@ import Kore.Rewrite.RulePattern as RulePattern (
 import Kore.Simplify.AndTerms (
     termUnification,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
@@ -124,7 +124,7 @@ import Test.Kore (
     standaloneGen,
     testId,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
+import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.Int (
@@ -133,12 +133,12 @@ import Test.Kore.Builtin.Int (
     genIntegerKey,
     genIntegerPattern,
  )
-import qualified Test.Kore.Builtin.Int as Int
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Builtin.List as Test.List
-import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Builtin.Int qualified as Int
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Builtin.List qualified as Test.List
+import Test.Kore.Internal.OrPattern qualified as OrPattern
+import Test.Kore.Internal.Pattern qualified as Pattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Kore.With
 import Test.SMT hiding (

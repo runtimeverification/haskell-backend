@@ -9,7 +9,7 @@ import Control.Monad.Catch (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeEqualsPredicate,
@@ -17,13 +17,13 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
     mkRepresentation,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
@@ -32,11 +32,11 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingTerm,
  )
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.TermLike as TermLike
-import qualified Logic
+import Kore.Simplify.TermLike qualified as TermLike
+import Logic qualified
 import Prelude.Kore
-import qualified Pretty
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Pretty qualified
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit

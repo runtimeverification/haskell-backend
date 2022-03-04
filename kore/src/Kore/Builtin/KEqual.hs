@@ -30,12 +30,12 @@ module Kore.Builtin.KEqual (
 import Control.Error (
     MaybeT,
  )
-import qualified Control.Monad as Monad
-import qualified Data.HashMap.Strict as HashMap
+import Control.Monad qualified as Monad
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.String (
     IsString,
  )
@@ -45,25 +45,25 @@ import Data.Text (
 import Kore.Attribute.Hook (
     Hook (..),
  )
-import qualified Kore.Builtin.Bool as Bool
+import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin (
     UnifyEq (..),
     acceptAnySort,
  )
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Error
-import qualified Kore.Internal.Condition as Condition
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Error qualified
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -74,7 +74,7 @@ import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
 import Kore.Unification.Unify as Unify
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 verifiers :: Builtin.Verifiers

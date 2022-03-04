@@ -71,37 +71,37 @@ import Control.Lens (
     Getter,
     Iso',
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Except (
     MonadError,
  )
-import qualified Control.Monad.Except as Monad.Except
+import Control.Monad.Except qualified as Monad.Except
 import Data.Coerce
 import Data.Default (
     Default (..),
  )
-import qualified Data.Default as Default
-import qualified Data.Functor.Foldable as Recursive
-import qualified Data.List as List
+import Data.Default qualified as Default
+import Data.Functor.Foldable qualified as Recursive
+import Data.List qualified as List
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import GHC.Generics (
     Generic,
  )
 import Kore.AST.Common
-import qualified Kore.AST.Error as Kore.Error
+import Kore.AST.Error qualified as Kore.Error
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Null as Attribute (
+import Kore.Attribute.Null qualified as Attribute (
     Null,
  )
-import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
+import Kore.Attribute.Smtlib.Smtlib qualified as Attribute
 import Kore.Error (
     Error,
     castError,
  )
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Pattern

@@ -2,15 +2,15 @@ module Test.Kore.Validate.DefinitionVerifier.SentenceVerifier (
     test_FreeVarInRHS,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Data.Default as Default
+import Control.Lens qualified as Lens
+import Data.Default qualified as Default
 import Data.Generics.Product
 import Kore.Attribute.Null (
     Null (..),
  )
 import Kore.Error
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike (
     mkElemVar,
@@ -39,7 +39,7 @@ import Test.Kore (
 import Test.Kore.Builtin.External (
     externalize,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (
     TestTree,

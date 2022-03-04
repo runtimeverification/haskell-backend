@@ -40,19 +40,19 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
+import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 import Data.Text.Internal.Builder (
     Builder,
  )
-import qualified Data.Text.Internal.Builder as Text.Builder
-import qualified Data.Text.Lazy as Text.Lazy
+import Data.Text.Internal.Builder qualified as Text.Builder
+import Data.Text.Lazy qualified as Text.Lazy
 import Data.Void (
     Void,
  )
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Prelude.Kore
 import System.IO (
     Handle,
@@ -61,9 +61,9 @@ import System.IO (
 import Text.Megaparsec (
     Parsec,
  )
-import qualified Text.Megaparsec as Parser
-import qualified Text.Megaparsec.Char as Parser
-import qualified Text.Megaparsec.Char.Lexer as Lexer
+import Text.Megaparsec qualified as Parser
+import Text.Megaparsec.Char qualified as Parser
+import Text.Megaparsec.Char.Lexer qualified as Lexer
 
 -- | S-expressions, the basic format for SMT-LIB 2.
 data SExpr

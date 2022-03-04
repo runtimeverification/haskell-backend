@@ -7,28 +7,28 @@ module Test.Kore.Internal.Predicate (
     module Predicate,
 ) where
 
-import qualified Data.Set as Set
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Data.Set qualified as Set
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     toRepresentation,
     top,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.TopBottom (
     TopBottom (..),
  )
 import Prelude.Kore
 import Test.Expect
 import Test.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

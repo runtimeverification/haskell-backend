@@ -18,8 +18,8 @@ module Kore.Attribute.UniqueId (
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
 import Prelude.Kore

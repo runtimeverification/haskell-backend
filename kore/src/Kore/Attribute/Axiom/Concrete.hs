@@ -16,14 +16,14 @@ module Kore.Attribute.Axiom.Concrete (
     FreeVariables,
 ) where
 
-import qualified Control.Error as Safe
-import qualified Control.Monad as Monad
-import qualified Data.List as List
+import Control.Error qualified as Safe
+import Control.Monad qualified as Monad
+import Data.List qualified as List
 import Data.Set (
     Set,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -31,9 +31,9 @@ import Kore.Attribute.Pattern.FreeVariables (
     isFreeVariable,
     mapFreeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Debug
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.Syntax.Variable hiding (
     Concrete,
  )

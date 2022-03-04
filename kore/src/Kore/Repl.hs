@@ -10,14 +10,14 @@ module Kore.Repl (
 ) where
 
 import Control.Concurrent.MVar
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     forever,
  )
 import Control.Monad.Catch (
     MonadMask,
  )
-import qualified Control.Monad.Catch as Exception
+import Control.Monad.Catch qualified as Exception
 import Control.Monad.RWS.Strict (
     RWST,
     execRWST,
@@ -32,24 +32,24 @@ import Control.Monad.State.Strict (
  )
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.List (
     findIndex,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
+import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
+import Data.Text qualified as Text
 import Kore.Attribute.Definition
 import Kore.Attribute.RuleIndex (
     RuleIndex (..),
  )
-import qualified Kore.Attribute.RuleIndex as Attribute
+import Kore.Attribute.RuleIndex qualified as Attribute
 import Kore.Internal.TermLike (
     TermLike,
     mkSortVariable,
     mkTop,
  )
-import qualified Kore.Log as Log
+import Kore.Log qualified as Log
 import Kore.Log.ErrorException (
     errorException,
  )
@@ -58,13 +58,13 @@ import Kore.Reachability (
     lensClaimPattern,
  )
 import Kore.Reachability.Claim
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Data (
     MonadSimplify,
  )
