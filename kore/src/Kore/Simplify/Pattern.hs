@@ -7,13 +7,11 @@ module Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
     simplify,
     makeEvaluate,
-    functionEvaluatorX,
 ) where
 
 import Control.Monad (
     (>=>),
  )
-import Kore.Equation (Equation)
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -45,11 +43,8 @@ import Kore.Internal.TermLike (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.FunctionEvaluator (evaluateFunctions)
 import Kore.Simplify.Simplify (
     MonadSimplify,
-    PartitionedEquations (..),
-    askIndexedEquations,
     simplifyCondition,
     simplifyTerm,
  )
@@ -144,39 +139,37 @@ makeEvaluate sideCondition =
                     SideCondition.addConditionWithReplacements
                         simplifiedCondition
                         sideCondition
-            afterEvaluatingFunctions <-
-                functionEvaluatorX termSideCondition (Pattern.fromTermLike term')
             simplifiedTerm <-
-                simplifyTerm termSideCondition (Pattern.term afterEvaluatingFunctions)
+                simplifyTerm termSideCondition term'
                     >>= Logic.scatter
             let simplifiedPattern =
                     Conditional.andCondition
                         simplifiedTerm
-                        (simplifiedCondition <> Conditional.withoutTerm afterEvaluatingFunctions)
+                        simplifiedCondition
             simplifyCondition sideCondition simplifiedPattern
 
-functionEvaluatorX ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    Pattern RewritingVariableName ->
-    simplifier (Pattern RewritingVariableName)
-functionEvaluatorX sideCondition patt = do
-    let term = Pattern.term patt
-    indexedEquations <- askIndexedEquations
-    let equations =
-            putDefinitionsFirst <$> indexedEquations
-    newPatt <-
-        evaluateFunctions
-            sideCondition
-            equations
-            term
-    Pattern.andCondition newPatt (Pattern.withoutTerm patt)
-        & return
-  where
-    putDefinitionsFirst ::
-        PartitionedEquations ->
-        [Equation RewritingVariableName]
-    putDefinitionsFirst
-        PartitionedEquations{functionRules, simplificationRules} =
-            functionRules <> simplificationRules
+-- functionEvaluatorX ::
+--     forall simplifier.
+--     MonadSimplify simplifier =>
+--     SideCondition RewritingVariableName ->
+--     Pattern RewritingVariableName ->
+--     simplifier (Pattern RewritingVariableName)
+-- functionEvaluatorX sideCondition patt = do
+--     let term = Pattern.term patt
+--     indexedEquations <- askIndexedEquations
+--     let equations =
+--             putDefinitionsFirst <$> indexedEquations
+--     newPatt <-
+--         evaluateFunctions
+--             sideCondition
+--             equations
+--             term
+--     Pattern.andCondition newPatt (Pattern.withoutTerm patt)
+--         & return
+--   where
+--     putDefinitionsFirst ::
+--         PartitionedEquations ->
+--         [Equation RewritingVariableName]
+--     putDefinitionsFirst
+--         PartitionedEquations{functionRules, simplificationRules} =
+--             functionRules <> simplificationRules

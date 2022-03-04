@@ -39,6 +39,7 @@ import qualified Kore.Attribute.Symbol as Attribute (
  )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Equation as Equation
+import Kore.Equation (Equation)
 import Kore.Equation.Registry (partitionEquations)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -287,7 +288,9 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
                     builtinEvaluators
                     userEvaluators
             indexedEquations =
-                partitionEquations <$> equations
+                putDefinitionsFirst
+                . partitionEquations
+                <$> equations
         memo <- Memo.new
         return
             Env
@@ -300,6 +303,13 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
                 , overloadSimplifier
                 , simplifierXSwitch
                 }
+
+    putDefinitionsFirst ::
+        PartitionedEquations ->
+        [Equation RewritingVariableName]
+    putDefinitionsFirst
+        PartitionedEquations{functionRules, simplificationRules} =
+            functionRules <> simplificationRules
 
 mapSimplifierT ::
     forall m b.

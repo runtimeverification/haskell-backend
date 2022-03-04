@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Simplify.FunctionEvaluator (
     evaluateFunctions,
+    evaluateFunctionX,
 ) where
 
 import Control.Monad.Except (
@@ -11,6 +12,7 @@ import Control.Monad.Except (
     runExceptT,
  )
 import Control.Monad.Trans.Maybe (MaybeT (..))
+import qualified Kore.Syntax.Application as Syntax
 import Control.Monad.Trans.Writer.Strict (WriterT (..))
 import qualified Control.Monad.Trans.Writer.Strict as Writer
 import Data.EitherR (
@@ -99,8 +101,6 @@ evaluateFunctions sideCondition equations termLike = do
                     Nothing -> return newAppTerm
             _ -> Recursive.embed <$> sequence termLikeBase
 
--- TODO: we're already checking if this is an application pattern,
--- matchAxiomIdentifier is overkill
 evaluateFunction ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
@@ -120,8 +120,24 @@ evaluateFunction sideCondition equations termLike = do
         Left _ ->
             empty
 
--- TODO: we're not actually doing anything with the errors here,
--- so I should simplify this
+evaluateFunctionX ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Map AxiomIdentifier [Equation RewritingVariableName] ->
+    TermLike RewritingVariableName ->
+    MaybeT
+        simplifier
+        (Either
+            (Option (Min (AttemptEquationError RewritingVariableName)))
+            (Pattern RewritingVariableName)
+        )
+evaluateFunctionX sideCondition equations termLike = do
+    identifier <- MaybeT . return $ matchAxiomIdentifier termLike
+    possibleMatches <- MaybeT . return $ Map.lookup identifier equations
+    attemptEquations
+        (attemptEquationAndAccumulateErrors sideCondition termLike)
+        possibleMatches
+
 attemptEquationAndAccumulateErrors ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->

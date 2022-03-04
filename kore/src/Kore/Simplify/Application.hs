@@ -102,6 +102,8 @@ makeAndEvaluateSymbolApplications ::
     [Pattern RewritingVariableName] ->
     simplifier (OrPattern RewritingVariableName)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
+    -- TODO: this calls the condition simplifier, should remove this call
+    -- also, no reason to observe branches now, but after evaluation
     expandedApplications <-
         makeExpandedApplication sideCondition symbol children
             & Logic.observeAllT
@@ -125,7 +127,7 @@ evaluateApplicationFunction ::
     simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
-    expandedApp@Conditional{term, predicate, substitution}
+    expandedApp@Conditional{term}
         | SideCondition.isSimplifiedFunction term sideCondition =
             let applicationPattern =
                     synthesize . ApplySymbolF <$> expandedApp
@@ -136,7 +138,7 @@ evaluateApplicationFunction
         | otherwise =
             evaluateApplication
                 sideCondition
-                Conditional{term = (), predicate, substitution}
+                (Conditional.withoutTerm expandedApp)
                 term
 
 makeExpandedApplication ::

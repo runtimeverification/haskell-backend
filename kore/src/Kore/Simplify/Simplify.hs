@@ -447,7 +447,7 @@ data PartitionedEquations = PartitionedEquations
 
 -- | Equations grouped by their identifiers for facilitating quick lookups.
 type IndexedEquations =
-    Map.Map AxiomIdentifier PartitionedEquations
+    Map.Map AxiomIdentifier [Equation RewritingVariableName]
 
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>

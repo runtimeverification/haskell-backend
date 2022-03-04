@@ -22,7 +22,13 @@ import Control.Error (
 import Control.Monad.Catch (
     MonadThrow,
  )
+import Data.Semigroup (
+    Min (..),
+    Option (..),
+ )
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
+import qualified Kore.Equation.DebugEquation as DebugEquation
+import Kore.Simplify.FunctionEvaluator (evaluateFunctionX)
 import Kore.Attribute.Synthetic
 import qualified Kore.Internal.MultiOr as MultiOr (
     flatten,
@@ -38,6 +44,7 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -88,14 +95,25 @@ evaluateApplication
     (evaluateSortInjection -> application) =
         finishT $ do
             for_ canMemoize recallOrPattern
+            simplifierX <- askSimplifierXSwitch
             results <-
-                maybeEvaluatePattern
-                    childrenCondition
-                    termLike
-                    unevaluated
-                    sideCondition
-                    & maybeT (unevaluated Nothing) return
-                    & lift
+                case simplifierX of
+                    EnabledSimplifierX ->
+                        maybeEvaluatePatternX
+                            childrenCondition
+                            termLike
+                            unevaluated
+                            sideCondition
+                            & maybeT (unevaluated Nothing) return
+                            & lift
+                    DisabledSimplifierX ->
+                        maybeEvaluatePattern
+                            childrenCondition
+                            termLike
+                            unevaluated
+                            sideCondition
+                            & maybeT (unevaluated Nothing) return
+                            & lift
             for_ canMemoize (recordOrPattern results)
             let unexpectedBottomResult = Symbol.isFunctional symbol && isBottom results
             when unexpectedBottomResult $
@@ -272,6 +290,46 @@ maybeEvaluatePattern
                 return (OrPattern.fromPattern unchangedPatt)
             | otherwise =
                 simplifyPattern sideCondition toSimplify
+
+maybeEvaluatePatternX ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    -- | Aggregated children predicate and substitution.
+    Condition RewritingVariableName ->
+    -- | The pattern to be evaluated
+    TermLike RewritingVariableName ->
+    -- | The default value
+    ( Maybe SideCondition.Representation ->
+      simplifier (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT simplifier (OrPattern RewritingVariableName)
+maybeEvaluatePatternX
+    childrenCondition
+    termLike
+    defaultValue
+    sideCondition
+  = do
+    indexedEquations <- askIndexedEquations
+    result <-
+        evaluateFunctionX
+            sideCondition
+            indexedEquations
+            termLike
+    case result of
+        Left minError ->
+            case getMin <$> getOption minError of
+                Just (DebugEquation.WhileCheckRequires _) ->
+                    defaultValue
+                        (Just . SideCondition.toRepresentation $ sideCondition)
+                        & lift
+                _ ->
+                    defaultValue Nothing
+                        & lift
+        Right newPattern ->
+            Condition.andCondition newPattern childrenCondition
+            & OrPattern.fromPattern
+            & return
 
 evaluateSortInjection ::
     InternalVariable variable =>
