@@ -38,8 +38,8 @@ import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Builtin qualified as Builtin
-import Kore.Equation qualified as Equation
 import Kore.Equation (Equation)
+import Kore.Equation qualified as Equation
 import Kore.Equation.Registry (partitionEquations)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -289,8 +289,8 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
                     userEvaluators
             indexedEquations =
                 putDefinitionsFirst
-                . partitionEquations
-                <$> equations
+                    . partitionEquations
+                    <$> equations
         memo <- Memo.new
         return
             Env

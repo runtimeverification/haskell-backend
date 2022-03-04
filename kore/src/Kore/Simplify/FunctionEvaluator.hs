@@ -12,36 +12,36 @@ import Control.Monad.Except (
     runExceptT,
  )
 import Control.Monad.Trans.Maybe (MaybeT (..))
-import qualified Kore.Syntax.Application as Syntax
 import Control.Monad.Trans.Writer.Strict (WriterT (..))
-import qualified Control.Monad.Trans.Writer.Strict as Writer
+import Control.Monad.Trans.Writer.Strict qualified as Writer
 import Data.EitherR (
     ExceptRT (..),
  )
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Semigroup (
     Min (..),
     Option (..),
  )
-import qualified Kore.Equation as Equation
+import Kore.Equation qualified as Equation
 import Kore.Equation.DebugEquation (
     AttemptEquationError,
  )
 import Kore.Equation.Equation (Equation)
 import Kore.Internal.Pattern (Condition, Pattern)
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike (TermLike)
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier, matchAxiomIdentifier)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify
+import Kore.Syntax.Application qualified as Syntax
 import Prelude.Kore
 
 type FunctionEvaluator simplifier =
@@ -127,7 +127,7 @@ evaluateFunctionX ::
     TermLike RewritingVariableName ->
     MaybeT
         simplifier
-        (Either
+        ( Either
             (Option (Min (AttemptEquationError RewritingVariableName)))
             (Pattern RewritingVariableName)
         )

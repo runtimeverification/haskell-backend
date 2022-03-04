@@ -2,19 +2,19 @@ module Test.Kore.Simplify.FunctionEvaluator (
     test_functionEvaluator,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Equation
 import Kore.Internal.From
 import Kore.Internal.Predicate (Predicate)
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol (Symbol)
 import Kore.Internal.TermLike (TermLike)
-import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -23,8 +23,8 @@ import Prelude.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification_,
  )
-import qualified Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Internal.Pattern qualified as Pattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

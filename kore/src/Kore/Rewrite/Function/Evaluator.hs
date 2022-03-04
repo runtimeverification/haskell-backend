@@ -26,10 +26,10 @@ import Data.Semigroup (
     Min (..),
     Option (..),
  )
-import Kore.Equation.DebugEquation qualified as DebugEquation
-import Kore.Simplify.FunctionEvaluator (evaluateFunctionX)
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Synthetic
+import Kore.Equation.DebugEquation qualified as DebugEquation
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
@@ -44,7 +44,6 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -61,6 +60,7 @@ import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.FunctionEvaluator (evaluateFunctionX)
 import Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
@@ -308,28 +308,28 @@ maybeEvaluatePatternX
     childrenCondition
     termLike
     defaultValue
-    sideCondition
-  = do
-    indexedEquations <- askIndexedEquations
-    result <-
-        evaluateFunctionX
-            sideCondition
-            indexedEquations
-            termLike
-    case result of
-        Left minError ->
-            case getMin <$> getOption minError of
-                Just (DebugEquation.WhileCheckRequires _) ->
-                    defaultValue
-                        (Just . SideCondition.toRepresentation $ sideCondition)
-                        & lift
-                _ ->
-                    defaultValue Nothing
-                        & lift
-        Right newPattern ->
-            Condition.andCondition newPattern childrenCondition
-            & OrPattern.fromPattern
-            & return
+    sideCondition =
+        do
+            indexedEquations <- askIndexedEquations
+            result <-
+                evaluateFunctionX
+                    sideCondition
+                    indexedEquations
+                    termLike
+            case result of
+                Left minError ->
+                    case getMin <$> getOption minError of
+                        Just (DebugEquation.WhileCheckRequires _) ->
+                            defaultValue
+                                (Just . SideCondition.toRepresentation $ sideCondition)
+                                & lift
+                        _ ->
+                            defaultValue Nothing
+                                & lift
+                Right newPattern ->
+                    Condition.andCondition newPattern childrenCondition
+                        & OrPattern.fromPattern
+                        & return
 
 evaluateSortInjection ::
     InternalVariable variable =>
