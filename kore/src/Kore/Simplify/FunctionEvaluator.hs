@@ -41,7 +41,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify
-import Kore.Syntax.Application qualified as Syntax
 import Prelude.Kore
 
 type FunctionEvaluator simplifier =
