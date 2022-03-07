@@ -203,6 +203,10 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                         /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
+                    Lbl'-LT-'baseFee'-GT-'{}(
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    ),
+                    /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'ommerBlockHeaders'-GT-'{}(
                         /* Fl Fn D Sfa Cl */
                         LblJSONList{}(
