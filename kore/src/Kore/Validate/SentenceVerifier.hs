@@ -243,7 +243,7 @@ addIndexedModuleHook ::
     VerifiedModule' ->
     VerifiedModule'
 addIndexedModuleHook name hook =
-    Lens.over (field @"indexedModuleHookedIdentifiers") (Set.insert name)
+    Lens.over (field @"indexedModuleSyntax" . field @"indexedModuleHookedIdentifiers") (Set.insert name)
         . Lens.over (field @"indexedModuleHooks") addHook
   where
     addHook
