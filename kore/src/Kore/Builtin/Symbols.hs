@@ -26,6 +26,7 @@ import Kore.Error (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule(..),
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (
@@ -50,7 +51,7 @@ lookupSymbol builtinName builtinSort indexedModule = do
     symbolConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
     (symbolAttributes, sentenceSymbol) <-
-        IndexedModule.resolveSymbol indexedModule symbolConstructor
+        IndexedModule.resolveSymbol (indexedModuleSyntax indexedModule) symbolConstructor
     symbolSorts <- symbolOrAliasSorts [] sentenceSymbol
     return
         Symbol
