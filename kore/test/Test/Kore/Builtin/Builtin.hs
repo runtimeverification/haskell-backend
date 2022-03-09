@@ -212,7 +212,7 @@ verifyPattern expectedSort termLike =
         verifyStandalonePattern expectedSort parsedPattern
   where
     context =
-        PatternVerifier.verifiedModuleContext verifiedModule
+        PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
     parsedPattern = externalize termLike
 

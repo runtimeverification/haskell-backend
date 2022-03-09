@@ -68,9 +68,9 @@ extractMetadataTools ::
     MetadataTools sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
-        { sortAttributes = getSortAttributes m
-        , applicationSorts = getHeadApplicationSorts m
-        , symbolAttributes = getSymbolAttributes m
+        { sortAttributes = getSortAttributes (indexedModuleSyntax m)
+        , applicationSorts = getHeadApplicationSorts (indexedModuleSyntax m)
+        , symbolAttributes = getSymbolAttributes (indexedModuleSyntax m)
         , smtData = smtExtractor m constructors
         , sortConstructors = constructors
         }

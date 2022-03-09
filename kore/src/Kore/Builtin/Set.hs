@@ -65,6 +65,9 @@ import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.List qualified as List
 import Kore.Builtin.Set.Set qualified as Set
+import Kore.IndexedModule.IndexedModule (
+    IndexedModule(..),
+ )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -154,18 +157,19 @@ sortDeclVerifiers =
     verifySortDecl indexedModule sentenceSort attrs = do
         Builtin.verifySortDecl indexedModule sentenceSort attrs
         unitId <- Builtin.getUnitId attrs
-        Builtin.assertSymbolHook indexedModule unitId Set.unitKey
-        Builtin.assertSymbolResultSort indexedModule unitId expectedSort
+        Builtin.assertSymbolHook syntax unitId Set.unitKey
+        Builtin.assertSymbolResultSort syntax unitId expectedSort
         elementId <- Builtin.getElementId attrs
-        Builtin.assertSymbolHook indexedModule elementId Set.elementKey
-        Builtin.assertSymbolResultSort indexedModule elementId expectedSort
+        Builtin.assertSymbolHook syntax elementId Set.elementKey
+        Builtin.assertSymbolResultSort syntax elementId expectedSort
         concatId <- Builtin.getConcatId attrs
-        Builtin.assertSymbolHook indexedModule concatId Set.concatKey
-        Builtin.assertSymbolResultSort indexedModule concatId expectedSort
+        Builtin.assertSymbolHook syntax concatId Set.concatKey
+        Builtin.assertSymbolResultSort syntax concatId expectedSort
         return ()
       where
         SentenceSort{sentenceSortName} = sentenceSort
         expectedSort = mkSort sentenceSortName
+        syntax = indexedModuleSyntax indexedModule
 
 {- | Verify that hooked symbol declarations are well-formed.
 

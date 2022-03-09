@@ -149,7 +149,7 @@ verifyNoHookedSupersort ::
 verifyNoHookedSupersort indexedModule axiom subsorts = do
     let isHooked =
             getHasDomainValues . hasDomainValues
-                . getSortAttributes indexedModule
+                . getSortAttributes (indexedModuleSyntax indexedModule)
                 . Subsort.supersort
         hookedSubsort = find isHooked subsorts
     for_ hookedSubsort $ \sort ->
@@ -189,7 +189,7 @@ verifyAxiomAttributes indexedModule axiom = do
     toSymbol :: SymbolOrAlias -> error Internal.Symbol.Symbol
     toSymbol symbolOrAlias = do
         (symbolAttributes, decl) <-
-            resolveSymbol indexedModule symbolConstructor
+            resolveSymbol (indexedModuleSyntax indexedModule) symbolConstructor
         symbolSorts <-
             symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) decl
         let symbol =

@@ -12,20 +12,25 @@ module Kore.IndexedModule.IndexedModule (
     IndexedModule (
         -- the IndexedModule data constructor not included in the list on
         -- purpose.
-        indexedModuleName,
-        indexedModuleAliasSentences,
-        indexedModuleSymbolSentences,
-        indexedModuleSortDescriptions,
+        indexedModuleSyntax,
         indexedModuleAxioms,
         indexedModuleClaims,
         indexedModuleAttributes,
         indexedModuleImports,
         indexedModuleHooks
     ),
+    IndexedModuleSyntax (
+        indexedModuleName,
+        indexedModuleAliasSentences,
+        indexedModuleSymbolSentences,
+        indexedModuleSortDescriptions,
+        indexedModuleImportsSyntax
+    ),
     IndexModuleError,
     KoreImplicitIndexedModule,
     KoreIndexedModule,
     VerifiedModule,
+    VerifiedModuleSyntax,
     indexedModuleWithDefaultImports,
     eraseAttributes,
     eraseAxiomAttributes,
@@ -112,9 +117,7 @@ All 'IndexedModule' instances should be returned by
 'indexedModuleWithDefaultImports'.
 -}
 
--- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,
--- symbol, and axiom indices.
-data IndexedModule pat declAtts axiomAtts = IndexedModule
+data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
     { indexedModuleName :: !ModuleName
     , indexedModuleAliasSentences ::
         !(Map.Map Id (declAtts, SentenceAlias pat))
@@ -122,6 +125,19 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
         !(Map.Map Id (declAtts, SentenceSymbol))
     , indexedModuleSortDescriptions ::
         !(Map.Map Id (Attribute.Sort, SentenceSort))
+    , indexedModuleImportsSyntax ::
+        ![ ( declAtts
+           , Attributes
+           , IndexedModuleSyntax pat declAtts
+           )
+         ]
+    }
+    deriving stock (Generic, Show, Functor, Foldable, Traversable)
+
+-- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,
+-- symbol, and axiom indices.
+data IndexedModule pat declAtts axiomAtts = IndexedModule
+    { indexedModuleSyntax :: !(IndexedModuleSyntax pat declAtts)
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom pat)]
     , indexedModuleClaims :: ![(axiomAtts, SentenceClaim pat)]
     , indexedModuleAttributes :: !(declAtts, Attributes)
@@ -150,14 +166,14 @@ recursiveIndexedModuleSortDescriptions ::
     IndexedModule pat declAtts axiomAtts ->
     Map.Map Id (Attribute.Sort, SentenceSort)
 recursiveIndexedModuleSortDescriptions =
-    recursiveIndexedModuleStuff indexedModuleSortDescriptions
+    recursiveIndexedModuleStuff (indexedModuleSortDescriptions . indexedModuleSyntax)
 
 recursiveIndexedModuleSymbolSentences ::
     forall pat axiomAtts.
     IndexedModule pat Attribute.Symbol axiomAtts ->
     Map.Map Id (Attribute.Symbol, SentenceSymbol)
 recursiveIndexedModuleSymbolSentences =
-    recursiveIndexedModuleStuff indexedModuleSymbolSentences
+    recursiveIndexedModuleStuff (indexedModuleSymbolSentences . indexedModuleSyntax)
 
 recursiveIndexedModuleAxioms ::
     forall pat declAtts axiomAtts.
@@ -208,26 +224,43 @@ eraseAxiomAttributes
                     & Lens.over (Lens.mapped . Lens._3) eraseAxiomAttributes
             }
 
--- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
-eraseAttributes ::
-    IndexedModule patternType1 declAttributes axiomAttributes ->
-    IndexedModule patternType1 Attribute.Null Attribute.Null
-eraseAttributes
-    indexedModule@IndexedModule
+eraseSyntaxAttributes ::
+    IndexedModuleSyntax patternType1 declAttributes ->
+    IndexedModuleSyntax patternType1 Attribute.Null
+eraseSyntaxAttributes
+    indexedModuleSyntax@IndexedModuleSyntax
         { indexedModuleAliasSentences
         , indexedModuleSymbolSentences
-        , indexedModuleAxioms
-        , indexedModuleClaims
-        , indexedModuleAttributes
-        , indexedModuleImports
+        , indexedModuleImportsSyntax
         } =
-        indexedModule
+        indexedModuleSyntax
             { indexedModuleAliasSentences =
                 indexedModuleAliasSentences
                     & Lens.set (Lens.mapped . Lens._1) Attribute.Null
             , indexedModuleSymbolSentences =
                 indexedModuleSymbolSentences
                     & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+            , indexedModuleImportsSyntax =
+                indexedModuleImportsSyntax
+                    & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+                    & Lens.over (Lens.mapped . Lens._3) eraseSyntaxAttributes
+            }
+
+-- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
+eraseAttributes ::
+    IndexedModule patternType1 declAttributes axiomAttributes ->
+    IndexedModule patternType1 Attribute.Null Attribute.Null
+eraseAttributes
+    indexedModule@IndexedModule
+        { indexedModuleSyntax
+        , indexedModuleAxioms
+        , indexedModuleClaims
+        , indexedModuleAttributes
+        , indexedModuleImports
+        } =
+        indexedModule
+            { indexedModuleSyntax =
+                eraseSyntaxAttributes indexedModuleSyntax
             , indexedModuleAxioms =
                 indexedModuleAxioms
                     & Lens.set (Lens.mapped . Lens._1) Attribute.Null
@@ -246,6 +279,9 @@ eraseAttributes
 instance
     (NFData patternType, NFData declAttributes, NFData axiomAttributes) =>
     NFData (IndexedModule patternType declAttributes axiomAttributes)
+instance
+    (NFData patternType, NFData declAttributes) =>
+    NFData (IndexedModuleSyntax patternType declAttributes)
 
 {- |Convenient notation for retrieving a sentence from a
  @(attributes,sentence)@ pair format.
@@ -261,14 +297,27 @@ erased. The axiom and claim declarations are erased entirely.
 This is useful because pattern verification needs to know about declared sorts,
 symbols, and aliases, but it does not need to know anything about patterns.
 -}
+
+eraseAliasPatterns ::
+    IndexedModuleSyntax patternType1 declAttributes ->
+    IndexedModuleSyntax () declAttributes
+eraseAliasPatterns indexedModuleSyntax =
+    indexedModuleSyntax
+        { indexedModuleAliasSentences =
+            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) () $
+                indexedModuleAliasSentences indexedModuleSyntax
+        , indexedModuleImportsSyntax =
+            Lens.over (Lens.mapped . Lens._3) eraseAliasPatterns $
+                indexedModuleImportsSyntax indexedModuleSyntax
+        }
+    
 erasePatterns ::
     IndexedModule patternType1 declAttributes axiomAttributes ->
     IndexedModule () declAttributes axiomAttributes
 erasePatterns indexedModule =
     indexedModule
-        { indexedModuleAliasSentences =
-            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) () $
-                indexedModuleAliasSentences indexedModule
+        { indexedModuleSyntax =
+            eraseAliasPatterns $ indexedModuleSyntax indexedModule
         , indexedModuleAxioms = []
         , indexedModuleClaims = []
         , indexedModuleImports =
@@ -276,15 +325,31 @@ erasePatterns indexedModule =
                 indexedModuleImports indexedModule
         }
 
+mapAliasPatterns ::
+    (patternType1 -> patternType2) ->
+    IndexedModuleSyntax patternType1 declAttributes ->
+    IndexedModuleSyntax patternType2 declAttributes
+mapAliasPatterns mapping indexedModuleSyntax =
+    indexedModuleSyntax
+        { indexedModuleAliasSentences =
+            (fmap . fmap . fmap) mapping indexedModuleAliasSentences
+        , indexedModuleImportsSyntax =
+            indexedModuleImportsSyntax
+                & Lens.over (Lens.mapped . Lens._3) (mapAliasPatterns mapping)
+        }
+  where
+     IndexedModuleSyntax{indexedModuleAliasSentences} = indexedModuleSyntax
+     IndexedModuleSyntax{indexedModuleImportsSyntax} = indexedModuleSyntax
+ 
 mapPatterns ::
     (patternType1 -> patternType2) ->
     IndexedModule patternType1 declAttributes axiomAttributes ->
     IndexedModule patternType2 declAttributes axiomAttributes
 mapPatterns mapping indexedModule =
     indexedModule
-        { indexedModuleAliasSentences =
-            (fmap . fmap . fmap) mapping indexedModuleAliasSentences
-        , indexedModuleAxioms =
+        { indexedModuleSyntax = 
+            mapAliasPatterns mapping indexedModuleSyntax
+       , indexedModuleAxioms =
             (fmap . fmap . fmap) mapping indexedModuleAxioms
         , indexedModuleClaims =
             (fmap . fmap . fmap) mapping indexedModuleClaims
@@ -293,7 +358,7 @@ mapPatterns mapping indexedModule =
                 & Lens.over (Lens.mapped . Lens._3) (mapPatterns mapping)
         }
   where
-    IndexedModule{indexedModuleAliasSentences} = indexedModule
+    IndexedModule{indexedModuleSyntax} = indexedModule
     IndexedModule{indexedModuleAxioms} = indexedModule
     IndexedModule{indexedModuleClaims} = indexedModule
     IndexedModule{indexedModuleImports} = indexedModule
@@ -306,6 +371,11 @@ type VerifiedModule declAtts =
         declAtts
         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 
+type VerifiedModuleSyntax declAtts =
+    IndexedModuleSyntax
+        Verified.Pattern
+        declAtts
+
 {- | Convert a 'IndexedModule' back into a 'Module'.
 
 The original module attributes /are/ preserved.
@@ -315,7 +385,7 @@ toModule ::
     Module (Sentence patternType)
 toModule module' =
     Module
-        { moduleName = indexedModuleName module'
+        { moduleName = indexedModuleName $ indexedModuleSyntax module'
         , moduleSentences = indexedModuleRawSentences module'
         , moduleAttributes = snd (indexedModuleAttributes module')
         }
@@ -352,20 +422,20 @@ toVerifiedDefinition idx =
         }
   where
     notImplicitKoreModule verifiedModule =
-        indexedModuleName verifiedModule /= "kore"
+        indexedModuleName (indexedModuleSyntax verifiedModule) /= "kore"
 
 indexedModuleRawSentences ::
     IndexedModule pat atts atts' -> [Sentence pat]
 indexedModuleRawSentences im =
     map
         (SentenceAliasSentence . getIndexedSentence)
-        (Map.elems (indexedModuleAliasSentences im))
+        (Map.elems (indexedModuleAliasSentences $ indexedModuleSyntax im))
         ++ map
             hookSymbolIfNeeded
-            (Map.toList (indexedModuleSymbolSentences im))
+            (Map.toList (indexedModuleSymbolSentences $ indexedModuleSyntax im))
         ++ map
             hookSortIfNeeded
-            (Map.toList (indexedModuleSortDescriptions im))
+            (Map.toList (indexedModuleSortDescriptions $ indexedModuleSyntax im))
         ++ map
             (SentenceAxiomSentence . getIndexedSentence)
             (indexedModuleAxioms im)
@@ -373,7 +443,7 @@ indexedModuleRawSentences im =
             (SentenceClaimSentence . getIndexedSentence)
             (indexedModuleClaims im)
         ++ [ SentenceImportSentence
-            (SentenceImport (indexedModuleName m) attributes)
+            (SentenceImport (indexedModuleName $ indexedModuleSyntax m) attributes)
            | (_, attributes, m) <- indexedModuleImports im
            ]
   where
@@ -405,10 +475,14 @@ emptyIndexedModule ::
     IndexedModule pat parsedDeclAttributes parsedAxiomAttributes
 emptyIndexedModule name =
     IndexedModule
-        { indexedModuleName = name
-        , indexedModuleAliasSentences = Map.empty
-        , indexedModuleSymbolSentences = Map.empty
-        , indexedModuleSortDescriptions = Map.empty
+        { indexedModuleSyntax =
+            IndexedModuleSyntax
+                { indexedModuleName = name
+                , indexedModuleAliasSentences = Map.empty
+                , indexedModuleSymbolSentences = Map.empty
+                , indexedModuleSortDescriptions = Map.empty
+                , indexedModuleImportsSyntax = []
+                }
         , indexedModuleAxioms = []
         , indexedModuleClaims = []
         , indexedModuleAttributes = (def, Attributes [])
@@ -426,14 +500,25 @@ indexedModuleWithDefaultImports ::
     Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs) ->
     IndexedModule patternType declAttrs axiomAttrs
 indexedModuleWithDefaultImports name defaultImport =
-    (emptyIndexedModule name)
-        { indexedModuleImports =
+    indexedModule
+        { indexedModuleSyntax =
+            (indexedModuleSyntax indexedModule)
+                { indexedModuleImportsSyntax =
+                    case defaultImport of
+                    Just (ImplicitIndexedModule implicitModule) ->
+                        [(def, Attributes [], indexedModuleSyntax implicitModule)]
+                    Nothing ->
+                        []
+                }
+        , indexedModuleImports =
             case defaultImport of
                 Just (ImplicitIndexedModule implicitModule) ->
                     [(def, Attributes [], implicitModule)]
                 Nothing ->
                     []
         }
+    where
+        indexedModule = emptyIndexedModule name
 
 -- | Retrieve those object-level symbol sentences that are hooked.
 hookedObjectSymbolSentences ::
@@ -441,7 +526,7 @@ hookedObjectSymbolSentences ::
     Map.Map Id (declAtts, SentenceSymbol)
 hookedObjectSymbolSentences
     IndexedModule
-        { indexedModuleSymbolSentences
+        { indexedModuleSyntax = IndexedModuleSyntax{indexedModuleSymbolSentences}
         , indexedModuleHookedIdentifiers
         } =
         Map.restrictKeys
@@ -494,7 +579,7 @@ indexedModulesInScope =
             -- resolve this modules imports
             mapM_ resolveImport (indexedModuleImports imod)
       where
-        name = indexedModuleName imod
+        name = indexedModuleName $ indexedModuleSyntax imod
 
     resolveImport (_, _, imod) = resolveModule imod
 
@@ -512,11 +597,15 @@ implicitIndexedModule ::
     Default declAttrs =>
     IndexedModule patternType declAttrs axiomAttrs
 implicitIndexedModule =
-    (emptyIndexedModule implicitModuleName)
-        { indexedModuleSortDescriptions =
-            Map.fromSet makeSortIndex implicitSortNames
+    indexedModule
+        { indexedModuleSyntax =
+            (indexedModuleSyntax indexedModule)
+                { indexedModuleSortDescriptions =
+                    Map.fromSet makeSortIndex implicitSortNames
+                }
         }
   where
+    indexedModule = emptyIndexedModule implicitModuleName
     makeSortIndex sortId = (Default.def, declareSort sortId)
     declareSort sortId =
         SentenceSort

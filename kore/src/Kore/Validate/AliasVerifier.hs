@@ -76,7 +76,7 @@ type VerifiedAlias = (Attribute.Symbol, SentenceAlias Verified.Pattern)
 -- | Look up a 'VerifiedAlias' in the cache, if present.
 lookupVerifiedAlias :: Id -> AliasVerifier (Maybe VerifiedAlias)
 lookupVerifiedAlias name = do
-    verifiedAliases <- State.gets indexedModuleAliasSentences
+    verifiedAliases <- State.gets (indexedModuleAliasSentences . indexedModuleSyntax)
     return $ Map.lookup name verifiedAliases
 
 {- | Lookup a 'ParsedSentencAlias' in the current module.
@@ -119,7 +119,7 @@ verifyUncachedAlias name = do
   where
     addAlias verified attrs =
         Lens.over
-            (field @"indexedModuleAliasSentences")
+            (field @"indexedModuleSyntax" . field @"indexedModuleAliasSentences")
             (Map.insert (aliasName verified) (attrs, verified))
 
 -- | Determine the names of all aliases the 'ParsedSentenceAlias' depends on.

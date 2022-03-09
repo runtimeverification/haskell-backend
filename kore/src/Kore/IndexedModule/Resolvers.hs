@@ -55,6 +55,7 @@ import Kore.IndexedModule.Error (
  )
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
+    IndexedModuleSyntax (..),
     getIndexedSentence,
     indexedModulesInScope,
  )
@@ -74,15 +75,15 @@ import Kore.Syntax.Definition qualified as Syntax (
 import Prelude.Kore
 
 symbolSentencesMap ::
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Map.Map Id (declAtts, SentenceSymbol)
 symbolSentencesMap = indexedModuleSymbolSentences
 aliasSentencesMap ::
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Map.Map Id (declAtts, SentenceAlias patternType)
 aliasSentencesMap = indexedModuleAliasSentences
 sortSentencesMap ::
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts->
     Map.Map Id (Attribute.Sort, SentenceSort)
 sortSentencesMap = indexedModuleSortDescriptions
 
@@ -92,7 +93,7 @@ sortSentencesMap = indexedModuleSortDescriptions
 -}
 getHeadApplicationSorts ::
     -- | Module representing an indexed definition
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     -- |the head we want to find sorts for
     SymbolOrAlias ->
     ApplicationSorts
@@ -109,7 +110,7 @@ getHeadApplicationSorts m patternHead =
 
 getSortAttributes ::
     HasCallStack =>
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Sort ->
     Attribute.Sort
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
@@ -119,7 +120,7 @@ getSortAttributes m (SortActualSort (SortActual sortId _)) =
 getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 getSymbolAttributes ::
     HasCallStack =>
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Id ->
     declAtts
 getSymbolAttributes m symbolId =
@@ -132,10 +133,10 @@ imported modules.
 -}
 resolveThing ::
     -- | extracts the map into which to look up the id
-    ( IndexedModule patternType declAtts axiomAtts ->
+    ( IndexedModuleSyntax patternType declAtts ->
       Map.Map Id result
     ) ->
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Id ->
     Maybe result
 resolveThing
@@ -152,10 +153,10 @@ resolveThing
 
 resolveThingInternal ::
     (Maybe result, Set.Set ModuleName) ->
-    ( IndexedModule patternType declAtts axiomAtts ->
+    ( IndexedModuleSyntax patternType declAtts ->
       Map.Map Id result
     ) ->
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Id ->
     (Maybe result, Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
@@ -180,7 +181,7 @@ resolveThingInternal
                     ( Nothing
                     , Set.insert (indexedModuleName indexedModule) searchedModules
                     )
-                    (indexedModuleImports indexedModule)
+                    (indexedModuleImportsSyntax indexedModule)
       where
         things = mapExtractor indexedModule
 
@@ -189,7 +190,7 @@ also searching in the imported modules.
 -}
 resolveSymbol ::
     MonadError (Error e) m =>
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Id ->
     m (declAtts, SentenceSymbol)
 resolveSymbol m headId =
@@ -204,7 +205,7 @@ resolveSymbol m headId =
 @resolveInternalSymbol@ recurses through all modules in scope.
 -}
 resolveInternalSymbol ::
-    IndexedModule patternType Attribute.Symbol axiomAtts ->
+    IndexedModuleSyntax patternType Attribute.Symbol ->
     Id ->
     Maybe ([Sort] -> Internal.Symbol)
 resolveInternalSymbol indexedModule symbolId = do
@@ -225,7 +226,7 @@ also searching in the imported modules.
 -}
 resolveAlias ::
     MonadError (Error e) m =>
-    IndexedModule pat declAtts axiomAtts ->
+    IndexedModuleSyntax pat declAtts ->
     Id ->
     m (declAtts, SentenceAlias pat)
 resolveAlias m headId =
@@ -240,7 +241,7 @@ also searching in the imported modules.
 -}
 resolveSort ::
     MonadError (Error e) m =>
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Id ->
     m (Attribute.Sort, SentenceSort)
 resolveSort m sortId =
@@ -261,10 +262,10 @@ resolveHook indexedModule builtinName builtinSort =
             resolveHooks indexedModule builtinName
   where
     relevant name =
-        involvesSort indexedModule builtinSort (SymbolOrAlias name [])
+        involvesSort (indexedModuleSyntax indexedModule) builtinSort (SymbolOrAlias name [])
 
 involvesSort ::
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     Sort ->
     SymbolOrAlias ->
     Bool
@@ -310,7 +311,7 @@ resolveHooks indexedModule builtinName =
 findIndexedSort ::
     MonadError (Error e) error =>
     -- | indexed module
-    IndexedModule patternType declAtts axiomAtts ->
+    IndexedModuleSyntax patternType declAtts ->
     -- | sort identifier
     Id ->
     error SentenceSort
@@ -329,7 +330,7 @@ applyToHeadSentence ::
       sentence ->
       result
     ) ->
-    IndexedModule pat declAtts axiomAtts ->
+    IndexedModuleSyntax pat declAtts ->
     SymbolOrAlias ->
     result
 applyToHeadSentence f =
@@ -343,7 +344,7 @@ applyToResolution ::
       (declAtts, sentence) ->
       result
     ) ->
-    IndexedModule pat declAtts axiomAtts ->
+    IndexedModuleSyntax pat declAtts ->
     SymbolOrAlias ->
     result
 applyToResolution f m patternHead =
