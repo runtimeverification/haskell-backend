@@ -36,6 +36,7 @@
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+          (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
@@ -85,6 +86,10 @@
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
           (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
+          ];
+        build-tools = [
+          (hsPkgs.buildPackages.happy.components.exes.happy or (pkgs.buildPackages.happy or (errorHandler.buildToolDepError "happy:happy")))
+          (hsPkgs.buildPackages.alex.components.exes.alex or (pkgs.buildPackages.alex or (errorHandler.buildToolDepError "alex:alex")))
           ];
         buildable = true;
         modules = [
@@ -261,7 +266,6 @@
           "Kore/Log/ErrorParse"
           "Kore/Log/ErrorRewriteLoop"
           "Kore/Log/ErrorRewritesInstantiation"
-          "Kore/Log/ErrorRuleMergeDuplicate"
           "Kore/Log/ErrorVerify"
           "Kore/Log/InfoAttemptUnification"
           "Kore/Log/InfoExecBreadth"
@@ -289,6 +293,7 @@
           "Kore/Parser"
           "Kore/Parser/CString"
           "Kore/Parser/Lexer"
+          "Kore/Parser/LexerWrapper"
           "Kore/Parser/Parser"
           "Kore/Parser/ParserUtils"
           "Kore/Reachability"
@@ -320,7 +325,6 @@
           "Kore/Rewrite/Result"
           "Kore/Rewrite/RewriteStep"
           "Kore/Rewrite/Rule"
-          "Kore/Rewrite/Rule/Combine"
           "Kore/Rewrite/Rule/Expand"
           "Kore/Rewrite/Rule/Simplify"
           "Kore/Rewrite/RulePattern"
@@ -630,6 +634,7 @@
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+            (hsPkgs."array" or (errorHandler.buildDepError "array"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
@@ -691,6 +696,8 @@
             (hsPkgs."tasty-test-reporter" or (errorHandler.buildDepError "tasty-test-reporter"))
             ];
           build-tools = [
+            (hsPkgs.buildPackages.happy.components.exes.happy or (pkgs.buildPackages.happy or (errorHandler.buildToolDepError "happy:happy")))
+            (hsPkgs.buildPackages.alex.components.exes.alex or (pkgs.buildPackages.alex or (errorHandler.buildToolDepError "alex:alex")))
             (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
@@ -805,6 +812,7 @@
             "Test/Kore/Repl/Graph"
             "Test/Kore/Repl/Interpreter"
             "Test/Kore/Repl/Parser"
+            "Test/Kore/Repl/ParserTest"
             "Test/Kore/Rewrite"
             "Test/Kore/Rewrite/AntiLeft"
             "Test/Kore/Rewrite/Axiom/EvaluationStrategy"
@@ -820,7 +828,6 @@
             "Test/Kore/Rewrite/Remainder"
             "Test/Kore/Rewrite/RewriteStep"
             "Test/Kore/Rewrite/Rule"
-            "Test/Kore/Rewrite/Rule/Combine"
             "Test/Kore/Rewrite/Rule/Common"
             "Test/Kore/Rewrite/Rule/Expand"
             "Test/Kore/Rewrite/Rule/Simplify"

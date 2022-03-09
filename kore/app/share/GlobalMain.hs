@@ -5,11 +5,9 @@ module GlobalMain (
     GlobalOptions (..),
     LocalOptions (..),
     KoreProveOptions (..),
-    KoreMergeOptions (..),
     ExeName (..),
     Main,
     parseKoreProveOptions,
-    parseKoreMergeOptions,
     mainGlobal,
     clockSomething,
     clockSomethingIO,
@@ -93,10 +91,6 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
-import Kore.Parser.Lexer qualified as Lexer
-import Kore.Parser.ParserUtils (
-    parseOnly,
- )
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
@@ -127,7 +121,6 @@ import Options.Applicative (
     helper,
     info,
     long,
-    maybeReader,
     metavar,
     option,
     overFailure,
@@ -155,10 +148,6 @@ import System.Clock (
     getTime,
  )
 import System.Environment qualified as Env
-import Text.Megaparsec qualified as Parser
-import Text.Read (
-    readMaybe,
- )
 
 type Main = LoggerT IO
 
@@ -187,10 +176,8 @@ parseModuleName metaName longName helpMsg =
 
 readModuleName :: Options.ReadM ModuleName
 readModuleName = do
-    opt <- str
-    case parseOnly (Lexer.parseModuleName <* Parser.eof) "<command-line>" opt of
-        Left err -> readerError err
-        Right something -> pure something
+    getModuleName <- str
+    pure ModuleName{getModuleName}
 
 parseKoreProveOptions :: Parser KoreProveOptions
 parseKoreProveOptions =
@@ -246,31 +233,6 @@ parseKoreProveOptions =
                         names = intercalate ", " (fst <$> searchOrders)
                         known = "Known search order are: " ++ names
                      in readerError (unknown ++ known)
-
-data KoreMergeOptions = KoreMergeOptions
-    { -- | Name for file containing a sequence of rules to merge.
-      rulesFileName :: !FilePath
-    , maybeBatchSize :: Maybe Int
-    }
-
-parseKoreMergeOptions :: Parser KoreMergeOptions
-parseKoreMergeOptions =
-    KoreMergeOptions
-        <$> strOption
-            ( metavar "MERGE_RULES_FILE"
-                <> long "merge-rules"
-                <> help
-                    "List of rules to merge."
-            )
-        <*> optional
-            ( option
-                (maybeReader readMaybe)
-                ( metavar "MERGE_BATCH_SIZE"
-                    <> long "merge-batch-size"
-                    <> help
-                        "The size of a merge batch."
-                )
-            )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project
