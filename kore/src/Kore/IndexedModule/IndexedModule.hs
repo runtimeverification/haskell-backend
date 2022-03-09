@@ -132,6 +132,9 @@ data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
            , IndexedModuleSyntax pat declAtts
            )
          ]
+    , -- | set of hooked identifiers
+      indexedModuleHookedIdentifiers ::
+        !(Set.Set Id)
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
 
@@ -148,9 +151,6 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
            , IndexedModule pat declAtts axiomAtts
            )
          ]
-    , -- | set of hooked identifiers
-      indexedModuleHookedIdentifiers ::
-        !(Set.Set Id)
     , -- TODO (thomas.tuegel): Having multiple identifiers hooked to the same
       -- builtin is not actually valid, but the index must admit invalid data
       -- because verification only happens after.
@@ -449,7 +449,7 @@ indexedModuleRawSentences im =
            ]
   where
     hookedIds :: Set.Set Id
-    hookedIds = indexedModuleHookedIdentifiers im
+    hookedIds = indexedModuleHookedIdentifiers $ indexedModuleSyntax im
     hookSortIfNeeded (x, (_, sortDescription))
         | x `Set.member` hookedIds =
             SentenceHookSentence (SentenceHookedSort sortDescription)
@@ -483,12 +483,12 @@ emptyIndexedModule name =
                 , indexedModuleSymbolSentences = Map.empty
                 , indexedModuleSortDescriptions = Map.empty
                 , indexedModuleImportsSyntax = []
+                , indexedModuleHookedIdentifiers = Set.empty
                 }
         , indexedModuleAxioms = []
         , indexedModuleClaims = []
         , indexedModuleAttributes = (def, Attributes [])
         , indexedModuleImports = []
-        , indexedModuleHookedIdentifiers = Set.empty
         , indexedModuleHooks = Map.empty
         }
 
@@ -523,11 +523,11 @@ indexedModuleWithDefaultImports name defaultImport =
 
 -- | Retrieve those object-level symbol sentences that are hooked.
 hookedObjectSymbolSentences ::
-    IndexedModule pat declAtts axiomAtts ->
+    IndexedModuleSyntax pat declAtts ->
     Map.Map Id (declAtts, SentenceSymbol)
 hookedObjectSymbolSentences
-    IndexedModule
-        { indexedModuleSyntax = IndexedModuleSyntax{indexedModuleSymbolSentences}
+    IndexedModuleSyntax
+        { indexedModuleSymbolSentences
         , indexedModuleHookedIdentifiers
         } =
         Map.restrictKeys
