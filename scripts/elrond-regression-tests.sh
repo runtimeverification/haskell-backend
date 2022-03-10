@@ -6,6 +6,7 @@ prep-elrond() {
     cd elrond-multisig
     cd kompile-tool
     ./prepare-k.sh
+    cd ..
     bazel clean
 }
 
