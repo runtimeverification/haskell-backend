@@ -104,11 +104,11 @@ evaluateApplication
                             termLike
                             unevaluated
                             sideCondition
-                        -- <|> maybeEvaluatePatternX
-                        --     childrenCondition
-                        --     termLike
-                        --     unevaluated
-                        --     sideCondition
+                            -- <|> maybeEvaluatePatternX
+                            --     childrenCondition
+                            --     termLike
+                            --     unevaluated
+                            --     sideCondition
                             & maybeT (unevaluated Nothing) return
                             & lift
                     DisabledSimplifierX ->
