@@ -277,7 +277,7 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
                 , userEvaluators
                 , simplifierAxioms ::
                     BuiltinAndAxiomSimplifierMap
-            userEvaluators = mkEvaluatorRegistry equations
+            userEvaluators = Map.empty -- mkEvaluatorRegistry equations
             builtinEvaluators =
                 Axiom.EvaluationStrategy.builtinEvaluation
                     <$> Builtin.koreEvaluators verifiedModule'

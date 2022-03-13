@@ -99,11 +99,16 @@ evaluateApplication
             results <-
                 case simplifierX of
                     EnabledSimplifierX ->
-                        maybeEvaluatePatternX
+                        maybeEvaluatePattern
                             childrenCondition
                             termLike
                             unevaluated
                             sideCondition
+                        -- <|> maybeEvaluatePatternX
+                        --     childrenCondition
+                        --     termLike
+                        --     unevaluated
+                        --     sideCondition
                             & maybeT (unevaluated Nothing) return
                             & lift
                     DisabledSimplifierX ->
