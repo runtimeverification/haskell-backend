@@ -28,7 +28,7 @@ genString = Gen.text (Range.linear 0 256) Gen.latin1
 
 test_decodeEncode :: TestTree
 test_decodeEncode =
-    testProperty "∀ t. decode (encode t) = t)" . property $ do
+    testPropertyNamed "∀ t. decode (encode t) = t)" "" . property $ do
         str <- forAll genString
         (===) str (decode8Bit (encode8Bit str))
 

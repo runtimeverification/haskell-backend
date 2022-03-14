@@ -61,6 +61,7 @@ extra-deps:
   - co-log-0.4.0.1
 
   - tasty-test-reporter-0.1.1.4
+  - tasty-hedgehog-1.2.0.0
   - junit-xml-0.1.0.0
 
   - git: https://github.com/ttuegel/pipes-ghc-events.git

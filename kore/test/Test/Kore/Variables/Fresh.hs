@@ -136,7 +136,7 @@ testFreshPartialOrd ::
     Gen (Pair variable) ->
     [TestTree]
 testFreshPartialOrd gen =
-    [ testProperty "exclusive bounds" $
+    [ testPropertyNamed "exclusive bounds" "" $
         property $ do
             xy <- forAll gen
             let Pair infX infY = minBoundName <$> xy
@@ -148,7 +148,7 @@ testFreshPartialOrd gen =
             (infX == infY) === (supX == supY)
             infX /== supY
             infY /== supX
-    , testProperty "lower and upper bound" $
+    , testPropertyNamed "lower and upper bound" "" $
         property $ do
             Pair x _ <- forAll gen
             let inf = minBoundName x
@@ -158,7 +158,7 @@ testFreshPartialOrd gen =
             Hedgehog.assert (inf <= x)
             Hedgehog.assert (x <= sup)
             Hedgehog.assert (inf < sup)
-    , testProperty "idempotence" $
+    , testPropertyNamed "idempotence" "" $
         property $ do
             Pair x _ <- forAll gen
             let inf1 = minBoundName x
@@ -167,7 +167,7 @@ testFreshPartialOrd gen =
                 sup2 = maxBoundName sup1
             inf1 === inf2
             sup1 === sup2
-    , testProperty "nextName" $
+    , testPropertyNamed "nextName" "" $
         property $ do
             Pair x _ <- forAll gen
             let inf = minBoundName x

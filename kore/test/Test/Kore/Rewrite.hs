@@ -297,13 +297,13 @@ test_stepStrategy =
 
 test_executionStrategy :: [TestTree]
 test_executionStrategy =
-    [ testProperty "every step contains Rewrite" $
+    [ testPropertyNamed "every step contains Rewrite" "" $
         Hedgehog.property $ do
             strategies <- Hedgehog.forAll genStrategies
             for_ strategies $ \strategy -> do
                 Hedgehog.annotateShow strategy
                 Hedgehog.assert (hasRewrite strategy)
-    , testProperty "Simplify is the last sub-step" $
+    , testPropertyNamed "Simplify is the last sub-step" "" $
         Hedgehog.property $ do
             strategies <- Hedgehog.forAll genStrategies
             let strategy = last strategies

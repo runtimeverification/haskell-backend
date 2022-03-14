@@ -38,7 +38,7 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse KoreLogOptions"
-        [ testProperty "Parse KoreLogOptions" myProperty
+        [ testPropertyNamed "Parse KoreLogOptions" "" myProperty
         ]
   where
     myProperty = property $ do

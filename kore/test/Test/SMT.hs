@@ -29,7 +29,7 @@ testPropertyWithSolver ::
     PropertyT SMT () ->
     TestTree
 testPropertyWithSolver str =
-    testProperty str . Hedgehog.property . Morph.hoist (runSMT (pure ()))
+    testPropertyNamed str "" . Hedgehog.property . Morph.hoist (runSMT (pure ()))
 
 testPropertyWithoutSolver ::
     HasCallStack =>
@@ -37,7 +37,7 @@ testPropertyWithoutSolver ::
     PropertyT NoSMT () ->
     TestTree
 testPropertyWithoutSolver str =
-    testProperty str . Hedgehog.property . Morph.hoist runNoSMT
+    testPropertyNamed str "" . Hedgehog.property . Morph.hoist runNoSMT
 
 testCaseWithoutSMT :: String -> NoSMT () -> TestTree
 testCaseWithoutSMT str = testCase str . runNoSMT

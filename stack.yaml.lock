@@ -68,6 +68,13 @@ packages:
   original:
     hackage: tasty-test-reporter-0.1.1.4
 - completed:
+    hackage: tasty-hedgehog-1.2.0.0@sha256:3deb98e9a9de9e27c25d02b7fe92ad5cf68d5163fdaaf35bca3923b3e671d46d,1803
+    pantry-tree:
+      size: 330
+      sha256: 31987ee70107c5c204137d6f75b401cf8ed5e57df1047ee17d9eb0d4a6f7bc24
+  original:
+    hackage: tasty-hedgehog-1.2.0.0
+- completed:
     hackage: junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
     pantry-tree:
       size: 384

@@ -181,33 +181,34 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Generic testId" $ roundtrip idGen parseId
-        , testProperty "StringLiteral" $
+        [ testPropertyNamed "Generic testId" "" $ roundtrip idGen parseId
+        , testPropertyNamed "StringLiteral" "" $
             roundtrip stringLiteralGen parseStringLiteral
-        , testProperty "ElementVariable" $ do
+        , testPropertyNamed "ElementVariable" "" $ do
             let gen = standaloneGen (elementVariableGen =<< sortGen)
             roundtrip gen parseElementVariable
-        , testProperty "SetVariable" $ do
+        , testPropertyNamed "SetVariable" "" $ do
             let gen = standaloneGen (setVariableGen =<< sortGen)
             roundtrip gen parseSetVariable
-        , testProperty "Symbol" $
+        , testPropertyNamed "Symbol" "" $
             roundtrip symbolGen parseSymbolHead
-        , testProperty "Alias" $
+        , testPropertyNamed "Alias" "" $
             roundtrip aliasGen parseAliasHead
-        , testProperty "SortVariable" $
+        , testPropertyNamed "SortVariable" "" $
             roundtrip sortVariableGen parseSortVariable
-        , testProperty "Sort" $
+        , testPropertyNamed "Sort" "" $
             roundtrip (standaloneGen sortGen) parseSort
-        , testProperty "ParsedPattern" $ roundtrip korePatternGen parsePattern
-        , testProperty "Attributes" $
+        , testPropertyNamed "ParsedPattern" "" $
+            roundtrip korePatternGen parsePattern
+        , testPropertyNamed "Attributes" "" $
             roundtrip (standaloneGen attributesGen) parseAttributes
-        , testProperty "Sentence" $
+        , testPropertyNamed "Sentence" "" $
             roundtrip (standaloneGen koreSentenceGen) parseSentence
-        , testProperty "Module" $
+        , testPropertyNamed "Module" "" $
             roundtrip
                 (standaloneGen $ moduleGen koreSentenceGen)
                 parseModule
-        , testProperty "Definition" $
+        , testPropertyNamed "Definition" "" $
             roundtrip
                 (standaloneGen $ definitionGen koreSentenceGen)
                 parseDefinition

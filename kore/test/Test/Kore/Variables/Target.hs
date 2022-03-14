@@ -26,7 +26,7 @@ import Test.Tasty.Hedgehog
 
 test_Eq :: [TestTree]
 test_Eq =
-    [ testProperty "(==) ignores constructor" $
+    [ testPropertyNamed "(==) ignores constructor" "" $
         Hedgehog.property $ do
             x <- forAll genElementVariable
             mkElementTarget x === mkElementNonTarget x
@@ -34,7 +34,7 @@ test_Eq =
 
 test_Ord :: [TestTree]
 test_Ord =
-    [ testProperty "(compare) ignores constructor" $
+    [ testPropertyNamed "(compare) ignores constructor" "" $
         Hedgehog.property $ do
             x <- forAll genElementVariable
             y <- forAll genElementVariable
@@ -46,7 +46,7 @@ test_Ord =
 
 test_Hashable :: [TestTree]
 test_Hashable =
-    [ testProperty "(hash) ignores constructor" $
+    [ testPropertyNamed "(hash) ignores constructor" "" $
         Hedgehog.property $ do
             x <- forAll genElementVariable
             hash (mkElementTarget x) === hash (mkElementNonTarget x)
@@ -62,32 +62,40 @@ test_FreshName :: [TestTree]
 test_FreshName =
     [ testGroup
         "instance FreshName (Target VariableName)"
-        [ testProperty
+        [ testPropertyNamed
             "Target avoids Target"
+            ""
             (prop genTargetTarget isTarget)
-        , testProperty
+        , testPropertyNamed
             "Target avoids NonTarget"
+            ""
             (prop genTargetNonTarget isTarget)
-        , testProperty
+        , testPropertyNamed
             "NonTarget avoids Target"
+            ""
             (prop genNonTargetTarget isNonTarget)
-        , testProperty
+        , testPropertyNamed
             "NonTarget avoids NonTarget"
+            ""
             (prop genNonTargetNonTarget isNonTarget)
         ]
     , testGroup
         "instance FreshName (SomeVariableName (Target VariableName))"
-        [ testProperty
+        [ testPropertyNamed
             "Target avoids Target"
+            ""
             (prop (genSomeElement genTargetTarget) isSomeTargetName)
-        , testProperty
+        , testPropertyNamed
             "Target avoids NonTarget"
+            ""
             (prop (genSomeElement genTargetNonTarget) isSomeTargetName)
-        , testProperty
+        , testPropertyNamed
             "NonTarget avoids Target"
+            ""
             (prop (genSomeElement genNonTargetTarget) isSomeNonTargetName)
-        , testProperty
+        , testPropertyNamed
             "NonTarget avoids NonTarget"
+            ""
             (prop (genSomeElement genNonTargetNonTarget) isSomeNonTargetName)
         ]
     ]
