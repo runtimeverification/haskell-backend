@@ -857,7 +857,7 @@ test-suite kore-test
   build-depends: quickcheck-instances >=0.3
   build-depends: tasty >=1.2
   build-depends: tasty-golden >=2.3
-  build-depends: tasty-hedgehog >=1.0
+  build-depends: tasty-hedgehog >=1.0 && <1.2
   build-depends: tasty-hunit >=0.10
   build-depends: tasty-quickcheck >=0.10
   build-depends: tasty-test-reporter >=0.1
