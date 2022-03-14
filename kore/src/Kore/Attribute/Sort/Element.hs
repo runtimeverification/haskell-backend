@@ -10,12 +10,14 @@ module Kore.Attribute.Sort.Element (
 ) where
 
 import Data.Default
+import Data.Serialize
 import Kore.Attribute.Parser
 import Prelude.Kore
 
 -- | @Element@ represents the @element@ attribute for sorts.
 newtype Element = Element {getElement :: Maybe SymbolOrAlias}
     deriving stock (Generic, Eq, Ord, Show)
+    deriving anyclass (Serialize)
 
 instance Semigroup Element where
     (<>) a@(Element (Just _)) _ = a

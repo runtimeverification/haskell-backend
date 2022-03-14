@@ -13,12 +13,14 @@ module Kore.Attribute.Sort.Unit (
 ) where
 
 import Data.Default
+import Data.Serialize
 import Kore.Attribute.Parser
 import Prelude.Kore
 
 -- | @Unit@ represents the @unit@ attribute for sorts.
 newtype Unit = Unit {getUnit :: Maybe SymbolOrAlias}
     deriving stock (Generic, Eq, Ord, Show)
+    deriving anyclass (Serialize)
 
 instance Semigroup Unit where
     (<>) a@(Unit (Just _)) _ = a

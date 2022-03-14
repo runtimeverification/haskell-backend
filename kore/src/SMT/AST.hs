@@ -34,6 +34,8 @@ module SMT.AST (
 import Data.Char (
     isSpace,
  )
+import Data.Serialize
+import Data.Serialize.Orphans()
 import Data.String (
     IsString (..),
  )
@@ -71,7 +73,7 @@ data SExpr
     | List ![SExpr]
     deriving stock (GHC.Generic, Eq, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 instance NFData SExpr
 

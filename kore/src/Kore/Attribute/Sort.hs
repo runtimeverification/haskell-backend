@@ -11,6 +11,7 @@ module Kore.Attribute.Sort (
 
 import Control.Monad qualified as Monad
 import Data.Generics.Product
+import Data.Serialize
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser hiding (
     Sort,
@@ -41,8 +42,7 @@ data Sort = Sort
       hasDomainValues :: !HasDomainValues
     }
     deriving stock (Eq, Generic, Ord, Show)
-
-instance NFData Sort
+    deriving anyclass (NFData, Serialize)
 
 defaultSortAttributes :: Sort
 defaultSortAttributes =

@@ -18,6 +18,8 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
+import Data.Serialize
+import Data.Serialize.Orphans()
 import Data.String (
     IsString (..),
  )
@@ -42,7 +44,7 @@ data Id = Id
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
@@ -118,7 +120,7 @@ data AstLocation
       AstLocationUnknown
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -153,6 +155,6 @@ data FileLocation = FileLocation
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)

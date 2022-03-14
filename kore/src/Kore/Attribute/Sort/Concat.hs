@@ -13,12 +13,14 @@ module Kore.Attribute.Sort.Concat (
 ) where
 
 import Data.Default
+import Data.Serialize
 import Kore.Attribute.Parser
 import Prelude.Kore
 
 -- | @Concat@ represents the @concat@ attribute for sorts.
 newtype Concat = Concat {getConcat :: Maybe SymbolOrAlias}
     deriving stock (Generic, Eq, Ord, Show)
+    deriving anyclass (Serialize)
 
 instance Semigroup Concat where
     (<>) a@(Concat (Just _)) _ = a

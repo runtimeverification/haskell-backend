@@ -49,6 +49,8 @@ import Data.HashSet qualified as HashSet
 import Data.Kind (
     Type,
  )
+import Data.Serialize
+import Data.Serialize.Orphans()
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
@@ -172,6 +174,15 @@ data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
       opaque :: [child]
     }
     deriving stock (GHC.Generic)
+
+instance 
+  ( Eq key
+  , Hashable key
+  , Serialize key
+  , Serialize child
+  , Serialize (Element collection child)
+  , Serialize (Value collection child)
+  ) => Serialize (NormalizedAc collection key child)
 
 nullAc :: NormalizedAc normalized key child -> Bool
 nullAc normalizedAc =
@@ -412,6 +423,7 @@ data InternalAc key (normalized :: Type -> Type -> Type) child = InternalAc
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Serialize)
 
 instance
     Hashable (normalized key child) =>

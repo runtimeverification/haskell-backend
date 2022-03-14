@@ -43,6 +43,7 @@ import Control.Exception (
  )
 import Data.Align
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.These
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -60,7 +61,7 @@ newtype SortVariable = SortVariable
     {getSortVariable :: Id}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -77,7 +78,7 @@ data SortActual = SortActual
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -102,7 +103,7 @@ data Sort
     | SortActualSort !SortActual
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

@@ -145,6 +145,7 @@ common library
   build-depends: aeson >=1.4
   build-depends: array
   build-depends: bytestring >=0.10
+  build-depends: cereal
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
@@ -205,6 +206,7 @@ library
     Data.Graph.TopologicalSort
     Data.Limit
     Data.Sup
+    Data.Serialize.Orphans
     Debug
     ErrorContext
     From
@@ -584,6 +586,8 @@ executable kore-exec
   import: global-main
   main-is: Main.hs
   hs-source-dirs: app/exec
+  build-depends: bytestring >=0.10
+  build-depends: cereal
   build-depends: data-default >=0.7
   build-depends: directory >=1.3
   build-depends: exceptions >=0.10

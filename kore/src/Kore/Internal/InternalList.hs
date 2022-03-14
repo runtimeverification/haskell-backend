@@ -9,6 +9,7 @@ module Kore.Internal.InternalList (
 import Data.Sequence (
     Seq,
  )
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
@@ -41,7 +42,7 @@ data InternalList child = InternalList
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 instance Hashable child => Hashable (InternalList child) where
     hashWithSalt salt internal =

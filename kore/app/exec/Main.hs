@@ -7,6 +7,7 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
+import Data.ByteString qualified as ByteString
 import Data.Default (
     def,
  )
@@ -20,7 +21,12 @@ import Data.Limit (
 import Data.List (
     intercalate,
  )
+import Data.Map.Strict (
+    Map,
+ )
 import Data.Reflection
+import Data.Serialize
+import Data.Serialize qualified as Serialize
 import Data.Text (
     unpack,
  )
@@ -31,14 +37,23 @@ import Kore.Attribute.Definition (
  )
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
+import Kore.Equation (
+    Equation,
+ )
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
+    VerifiedModuleSyntax,
     indexedModuleRawSentences,
+ )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
  )
 import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
+import Kore.IndexedModule.OverloadGraph
+import Kore.IndexedModule.SortGraph
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -57,6 +72,9 @@ import Kore.Log (
     parseKoreLogOptions,
     runKoreLog,
     unparseKoreLogOptions,
+ )
+import Kore.Log.ErrorParse (
+    errorParse,
  )
 import Kore.Log.ErrorException (
     handleSomeException,
@@ -82,6 +100,9 @@ import Kore.Reachability (
  )
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
+import Kore.Rewrite.Axiom.Identifier (
+    AxiomIdentifier,
+ )
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
  )
@@ -142,6 +163,7 @@ import Prof (
  )
 import SMT (
     MonadSMT,
+    SMT,
  )
 import SMT qualified
 import Stats
@@ -606,31 +628,55 @@ mainDispatch = warnProductivity . mainDispatchWorker
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
 
+
+data SerializedDefinition = SerializedDefinition
+        (SMT ())
+        SortGraph
+        OverloadGraph
+        (SmtMetadataTools StepperAttributes)
+        (VerifiedModuleSyntax StepperAttributes)
+        KFileLocations
+        Initialized
+        (Map AxiomIdentifier [Equation VariableName])
+   deriving stock (GHC.Generic)
+   deriving anyclass Serialize
+
+deserializeDefinition ::
+    FilePath ->
+    Main SerializedDefinition
+deserializeDefinition definitionFilePath = do
+    bytes <- ByteString.readFile definitionFilePath & liftIO
+    let result = Serialize.decode bytes
+    either errorParse return result
+
 koreSearch ::
     LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
 koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
+    SerializedDefinition lemmas sorts overloads metadataTools syntax locations rewrites equations <- deserializeDefinition definitionFileName
     let KoreSearchOptions{searchFileName} = searchOptions
-    target <- mainParseSearchPattern mainModule searchFileName
+    target <- mainParseSearchPattern syntax searchFileName
     let KoreExecOptions{patternFileName} = execOptions
-    initial <- loadPattern mainModule patternFileName
+    initial <- loadPattern syntax patternFileName
     final <-
-        execute execOptions mainModule $
+        execute execOptions lemmas $
             search
                 simplifierx
                 depthLimit
                 breadthLimit
-                mainModule
+                syntax
+                sorts
+                overloads
+                metadataTools
+                equations
+                rewrites
                 initial
                 target
                 config
     lift $ renderResult execOptions (unparse final)
-    return (kFileLocations definition, ExitSuccess)
+    return (locations, ExitSuccess)
   where
     KoreSearchOptions{bound, searchType} = searchOptions
     config = Search.Config{bound, searchType}
@@ -639,16 +685,25 @@ koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
 koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
 koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
+    SerializedDefinition lemmas sorts overloads metadataTools syntax locations rewrites equations <- deserializeDefinition definitionFileName
     let KoreExecOptions{patternFileName} = execOptions
-    initial <- loadPattern mainModule patternFileName
+    initial <- loadPattern syntax patternFileName
     (exitCode, final) <-
-        execute execOptions mainModule $
-            exec simplifierx depthLimit breadthLimit mainModule strategy initial
+        execute execOptions lemmas $
+            exec
+                simplifierx
+                depthLimit
+                breadthLimit
+                syntax
+                sorts
+                overloads
+                metadataTools
+                equations
+                rewrites
+                strategy
+                initial
     lift $ renderResult execOptions (unparse final)
-    return (kFileLocations definition, exitCode)
+    return (locations, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
@@ -668,7 +723,8 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     let KoreExecOptions{maxCounterexamples} = execOptions
-    proveResult <- execute execOptions mainModule' $ do
+    let lemmas = give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
+    proveResult <- execute execOptions lemmas $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
@@ -773,7 +829,8 @@ koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
     specModule <- loadModule specMainModule definition
-    (exitCode, final) <- execute execOptions mainModule $ do
+    let lemmas = give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
+    (exitCode, final) <- execute execOptions lemmas $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         checkResult <-
@@ -808,12 +865,12 @@ type MonadExecute exe =
 execute ::
     forall r.
     KoreExecOptions ->
-    -- | Main module
-    LoadedModule ->
+    -- | SMT Lemmas
+    SMT () ->
     -- | Worker
     (forall exe. MonadExecute exe => exe r) ->
     Main r
-execute options mainModule worker =
+execute options lemmas worker =
     clockSomethingIO "Executing" $
         case solver of
             Z3 -> withZ3
@@ -822,10 +879,7 @@ execute options mainModule worker =
     withZ3 =
         SMT.runSMT
             config
-            ( give
-                (MetadataTools.build mainModule)
-                (declareSMTLemmas mainModule)
-            )
+            lemmas
             worker
     withoutSMT = SMT.runNoSMT worker
     KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
@@ -838,7 +892,7 @@ execute options mainModule worker =
             , SMT.prelude = prelude
             }
 
-loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)
+loadPattern :: LoadedModuleSyntax -> Maybe FilePath -> Main (TermLike VariableName)
 loadPattern mainModule (Just fileName) =
     mainPatternParseAndVerify mainModule fileName
 loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"

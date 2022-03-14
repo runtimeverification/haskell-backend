@@ -8,6 +8,7 @@ module Kore.Builtin.Endianness.Endianness (
 ) where
 
 import Data.Functor.Const
+import Data.Serialize
 import Data.Void (
     Void,
  )
@@ -35,18 +36,9 @@ data Endianness
     | LittleEndian !Symbol
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-
-instance Hashable Endianness
-
-instance NFData Endianness
-
-instance SOP.Generic Endianness
-
-instance SOP.HasDatatypeInfo Endianness
-
-instance Debug Endianness
-
-instance Diff Endianness
+    deriving anyclass (Hashable, NFData, Serialize)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse Endianness where
     unparse = unparse . toApplication @Void

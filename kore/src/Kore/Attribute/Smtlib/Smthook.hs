@@ -13,6 +13,7 @@ module Kore.Attribute.Smtlib.Smthook (
     smthookAttribute,
 ) where
 
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -40,7 +41,7 @@ See 'Kore.Attribute.Smtlib.Smtlib'
 newtype Smthook = Smthook {getSmthook :: Maybe SExpr}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

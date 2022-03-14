@@ -16,6 +16,7 @@ import Control.Exception (
     Exception (..),
     throw,
  )
+import Data.Serialize
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -49,7 +50,7 @@ data Inj a = Inj
     deriving stock (Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

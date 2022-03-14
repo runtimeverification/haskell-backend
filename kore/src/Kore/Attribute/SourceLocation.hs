@@ -17,6 +17,7 @@ import Control.Monad (
  )
 import Data.Default
 import Data.Generics.Product
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Location (
@@ -46,10 +47,9 @@ data SourceLocation = SourceLocation
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving anyclass (Hashable)
 
 instance Default SourceLocation where
     def = SourceLocation def def

@@ -17,6 +17,7 @@ module Kore.Attribute.Attributes (
 import Data.Default (
     Default (..),
  )
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -78,7 +79,7 @@ It is parameterized by the types of Patterns, @pat@.
 newtype Attributes = Attributes {getAttributes :: [AttributePattern]}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving newtype (Semigroup, Monoid)

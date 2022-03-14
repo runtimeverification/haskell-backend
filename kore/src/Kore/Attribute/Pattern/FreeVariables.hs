@@ -26,6 +26,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -45,7 +46,7 @@ newtype FreeVariables variable = FreeVariables
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving newtype (Semigroup, Monoid)

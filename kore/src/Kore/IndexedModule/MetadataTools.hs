@@ -19,6 +19,8 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Sort qualified as Attribute
 import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
@@ -39,18 +41,16 @@ import Prelude.Kore
  access the metadata needed during the unification process.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
-    { -- | get the attributes of a sort
-      sortAttributes :: Sort -> Attribute.Sort
-    , -- | Sorts for a specific symbol application.
-      applicationSorts :: SymbolOrAlias -> ApplicationSorts
-    , -- | get the attributes of a symbol
-      symbolAttributes :: Id -> attributes
+    { -- | syntax of module
+      syntax :: VerifiedModuleSyntax attributes
     , -- | The SMT data for the given module.
       smtData :: smt
     , -- | The constructors for each sort.
       sortConstructors :: Map Id sortConstructors
     }
     deriving stock (Functor)
+    deriving stock (GHC.Generic)
+    deriving anyclass (Serialize)
 
 type SmtMetadataTools attributes =
     MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
@@ -68,9 +68,7 @@ extractMetadataTools ::
     MetadataTools sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
-        { sortAttributes = getSortAttributes (indexedModuleSyntax m)
-        , applicationSorts = getHeadApplicationSorts (indexedModuleSyntax m)
-        , symbolAttributes = getSymbolAttributes (indexedModuleSyntax m)
+        { syntax = indexedModuleSyntax m
         , smtData = smtExtractor m constructors
         , sortConstructors = constructors
         }

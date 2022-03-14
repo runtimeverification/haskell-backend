@@ -11,6 +11,7 @@ module Kore.Syntax.Module (
 import Data.Kind (
     Type,
  )
+import Data.Serialize
 import Data.String (
     IsString,
  )
@@ -31,7 +32,7 @@ newtype ModuleName = ModuleName {getModuleName :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving newtype (IsString)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

@@ -15,6 +15,7 @@ module Kore.Attribute.Smtlib.Smtlib (
 import Data.Default (
     Default (..),
  )
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -53,7 +54,7 @@ valid SMT-LIB S-expressions.
 newtype Smtlib = Smtlib {getSmtlib :: Maybe SExpr}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize) 
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

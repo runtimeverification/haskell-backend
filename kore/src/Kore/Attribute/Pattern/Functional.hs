@@ -9,6 +9,7 @@ module Kore.Attribute.Pattern.Functional (
 
 import Data.Functor.Const
 import Data.Monoid
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
@@ -25,7 +26,7 @@ import Prelude.Kore
 -- | A pattern is 'Functional' if it matches exactly one element.
 newtype Functional = Functional {isFunctional :: Bool}
     deriving stock (Eq, GHC.Generic, Ord, Show)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All

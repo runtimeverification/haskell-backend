@@ -37,6 +37,7 @@ import Control.DeepSeq (
  )
 import Control.Lens qualified as Lens
 import Data.Generics.Product
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -66,7 +67,7 @@ data Symbol = Symbol
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

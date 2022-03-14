@@ -17,6 +17,7 @@ module Kore.Attribute.Null (
 ) where
 
 import Data.Default
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
@@ -25,7 +26,7 @@ import Prelude.Kore
 data Null = Null
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

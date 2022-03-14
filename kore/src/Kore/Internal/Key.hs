@@ -17,6 +17,8 @@ import Data.Functor.Foldable (
     Recursive,
  )
 import Data.Functor.Foldable qualified as Recursive
+import Data.Serialize
+import Data.Serialize.Orphans()
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
@@ -59,7 +61,7 @@ newtype KeyAttributes = KeyAttributes
     }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -79,7 +81,7 @@ newtype Key = Key {getKey :: CofreeF KeyF KeyAttributes Key}
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug)
+    deriving anyclass (Debug, Serialize)
 
 type instance Base Key = CofreeF KeyF KeyAttributes
 
@@ -167,7 +169,7 @@ data KeyF child
     deriving stock (Eq, Ord, Show)
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

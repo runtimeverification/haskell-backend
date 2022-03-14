@@ -23,6 +23,7 @@ module Kore.Syntax.Pattern (
 
 import Control.Comonad
 import Control.Comonad.Trans.Cofree (
+    CofreeT(..),
     ComonadCofree (..),
  )
 import Control.Comonad.Trans.Env qualified as Env
@@ -42,6 +43,7 @@ import Data.Functor.Identity (
 import Data.Kind (
     Type,
  )
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -103,7 +105,7 @@ newtype
     deriving stock (Traversable)
     deriving newtype (Functor, Foldable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 instance Eq variable => Eq (Pattern variable annotation) where
     (==) = eqWorker

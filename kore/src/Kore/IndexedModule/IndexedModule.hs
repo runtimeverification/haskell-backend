@@ -37,6 +37,7 @@ module Kore.IndexedModule.IndexedModule (
     erasePatterns,
     emptyIndexedModule,
     mapPatterns,
+    mapAliasPatterns,
     indexedModuleRawSentences,
     SortDescription,
     getIndexedSentence,
@@ -72,6 +73,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -136,6 +138,7 @@ data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
         !(Set.Set Id)
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
+    deriving anyclass (Serialize)
 
 -- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,
 -- symbol, and axiom indices.

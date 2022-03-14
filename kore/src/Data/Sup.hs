@@ -12,6 +12,7 @@ module Data.Sup (
 import Data.Data (
     Data,
  )
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Prelude.Kore
@@ -31,7 +32,7 @@ data Sup a
     deriving stock (Data, Typeable)
     deriving stock (Functor)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Eq a => Eq (Sup a) where

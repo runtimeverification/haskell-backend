@@ -19,6 +19,7 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
@@ -37,7 +38,7 @@ data SymbolOrAlias = SymbolOrAlias
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -71,6 +72,8 @@ data Application head child = Application
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug head, Debug child) => Debug (Application head child)
+
+instance (Serialize a, Serialize b) => Serialize (Application a b)
 
 instance
     ( Debug head

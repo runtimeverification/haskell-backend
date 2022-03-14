@@ -10,6 +10,7 @@ module Kore.Attribute.Source (
 ) where
 
 import Data.Default
+import Data.Serialize
 import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -27,7 +28,7 @@ import Text.Megaparsec.Char
 newtype Source = Source {unSource :: Maybe String}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

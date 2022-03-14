@@ -76,6 +76,7 @@ import Control.Monad (
  )
 import Data.Default
 import Data.Generics.Product
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Constructor
@@ -131,7 +132,7 @@ data Symbol = Symbol
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Debug Symbol where

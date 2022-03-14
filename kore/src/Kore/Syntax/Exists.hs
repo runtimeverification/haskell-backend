@@ -9,6 +9,7 @@ module Kore.Syntax.Exists (
 ) where
 
 import Control.Lens qualified as Lens
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -40,7 +41,7 @@ data Exists sort variable child = Exists
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

@@ -53,6 +53,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -182,7 +183,7 @@ data TermLikeF variable child
     deriving stock (Eq, Ord, Show)
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -479,7 +480,7 @@ data TermAttributes variable = TermAttributes
     }
     deriving stock (Eq, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Debug variable => Debug (TermAttributes variable) where
@@ -650,7 +651,7 @@ newtype TermLike variable = TermLike
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug)
+    deriving anyclass (Debug, Serialize)
 
 instance (Debug variable, Diff variable) => Diff (TermLike variable) where
     diffPrec

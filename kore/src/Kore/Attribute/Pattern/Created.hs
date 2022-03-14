@@ -7,6 +7,7 @@ module Kore.Attribute.Pattern.Created (
     hasKnownCreator,
 ) where
 
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import GHC.Stack (
     SrcLoc (..),
@@ -32,6 +33,10 @@ newtype Created = Created {getCreated :: Maybe GHC.CallStack}
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
+
+instance Serialize Created where
+  put _ = return ()
+  get   = return Created {getCreated=Nothing}
 
 hasKnownCreator :: Created -> Bool
 hasKnownCreator = isJust . getCallStackHead

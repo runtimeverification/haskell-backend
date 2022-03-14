@@ -18,6 +18,7 @@ module Kore.Exec (
     checkFunctions,
     Rewrite,
     Equality,
+    Initialized,
 ) where
 
 import Control.Concurrent.MVar
@@ -45,6 +46,9 @@ import Data.Limit (
 import Data.List (
     tails,
  )
+import Data.Map.Strict (
+    Map,
+ )
 import Data.Map.Strict qualified as Map
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
@@ -66,18 +70,17 @@ import Kore.Equation qualified as Equation (
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
-    IndexedModule(..),
+    VerifiedModuleSyntax,
  )
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
-    build,
- )
+import Kore.IndexedModule.OverloadGraph
 import Kore.IndexedModule.Resolvers (
     resolveInternalSymbol,
  )
+import Kore.IndexedModule.SortGraph
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalInt
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -127,6 +130,9 @@ import Kore.Reachability (
 import Kore.Repl qualified as Repl
 import Kore.Repl.Data qualified as Repl.Data
 import Kore.Rewrite
+import Kore.Rewrite.Axiom.Identifier (
+    AxiomIdentifier,
+ )
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
     extractImplicationClaims,
@@ -160,6 +166,7 @@ import Kore.Rewrite.Transition (
  )
 import Kore.Simplify.Data (
     evalSimplifier,
+    evalSimplifierProofs,
  )
 import Kore.Simplify.Data qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
@@ -218,7 +225,12 @@ exec ::
     Limit Natural ->
     Limit Natural ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools StepperAttributes ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    Initialized ->
     ExecutionMode ->
     -- | The input pattern
     TermLike VariableName ->
@@ -228,11 +240,15 @@ exec
     depthLimit
     breadthLimit
     verifiedModule
+    sortGraph
+    overloadGraph
+    metadataTools
+    equations
+    rewrites
     strategy
     (mkRewritingTerm -> initialTerm) =
-        evalSimplifier simplifierx verifiedModule' $ do
-            initialized <- initializeAndSimplify verifiedModule
-            let Initialized{rewriteRules} = initialized
+        evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
+            let Initialized{rewriteRules} = rewrites
             finals <-
                 getFinalConfigsOf $ do
                     initialConfig <-
@@ -280,14 +296,10 @@ exec
         dropStrategy = snd
         getFinalConfigsOf act = observeAllT $ fmap snd act
         verifiedModule' =
-            IndexedModule.mapPatterns
+            IndexedModule.mapAliasPatterns
                 -- TODO (thomas.tuegel): Move this into Kore.Builtin
                 (Builtin.internalize metadataTools)
                 verifiedModule
-        -- It's safe to build the MetadataTools using the external IndexedModule
-        -- because MetadataTools doesn't retain any knowledge of the patterns which
-        -- are internalized.
-        metadataTools = MetadataTools.build verifiedModule
         initialSort = termLikeSort initialTerm
         unfoldTransition transit (instrs, config) = do
             when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
@@ -329,7 +341,7 @@ getExitCode ::
     forall simplifier.
     (MonadIO simplifier, MonadSimplify simplifier) =>
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     -- | The final configuration(s) of execution
     OrPattern.OrPattern RewritingVariableName ->
     simplifier ExitCode
@@ -356,7 +368,7 @@ getExitCode
                 | otherwise -> ExitFailure (fromInteger exit)
             _ -> ExitFailure 111
 
-        resolve = resolveInternalSymbol (indexedModuleSyntax indexedModule) . noLocationId
+        resolve = resolveInternalSymbol indexedModule . noLocationId
 
         takeExitCode ::
             (([Sort] -> Symbol) -> simplifier ExitCode) ->
@@ -377,7 +389,12 @@ search ::
     Limit Natural ->
     Limit Natural ->
     -- | The main module
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools StepperAttributes ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    Initialized ->
     -- | The input pattern
     TermLike VariableName ->
     -- | The pattern to match during execution
@@ -390,12 +407,16 @@ search
     depthLimit
     breadthLimit
     verifiedModule
+    sortGraph
+    overloadGraph
+    metadataTools
+    equations
+    rewrites
     (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig =
-        evalSimplifier simplifierx verifiedModule $ do
-            initialized <- initializeAndSimplify verifiedModule
-            let Initialized{rewriteRules} = initialized
+        evalSimplifier simplifierx verifiedModule sortGraph overloadGraph metadataTools equations $ do
+            let Initialized{rewriteRules} = rewrites
             simplifiedPatterns <-
                 Pattern.simplify $
                     Pattern.fromTermLike termLike
@@ -468,7 +489,7 @@ prove
     definitionModule
     specModule
     trustedModule =
-        evalSimplifier simplifierx definitionModule $ do
+        evalSimplifierProofs simplifierx definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -529,7 +550,7 @@ proveWithRepl
     mainModuleName
     logOptions
     kFileLocations =
-        evalSimplifier simplifierx definitionModule $ do
+        evalSimplifierProofs simplifierx definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -576,7 +597,7 @@ boundedModelCheck
     definitionModule
     specModule
     searchOrder =
-        evalSimplifier simplifierx definitionModule $ do
+        evalSimplifierProofs simplifierx definitionModule $ do
             initialized <- initializeAndSimplify definitionModule
             let Initialized{rewriteRules} = initialized
                 specClaims = extractImplicationClaims specModule
@@ -606,7 +627,7 @@ matchDisjunction ::
     [Pattern RewritingVariableName] ->
     smt (TermLike VariableName)
 matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
-    evalSimplifier simplifierx mainModule $ do
+    evalSimplifierProofs simplifierx mainModule $ do
         results <-
             traverse (runMaybeT . match matchPattern) disjunctionPattern
                 <&> catMaybes
@@ -650,7 +671,7 @@ checkFunctions ::
     VerifiedModule StepperAttributes ->
     smt ()
 checkFunctions simplifierx verifiedModule =
-    evalSimplifier simplifierx verifiedModule $ do
+    evalSimplifierProofs simplifierx verifiedModule $ do
         -- check if RHS is function pattern
         equations >>= filter (not . isFunctionPattern . right)
             & mapM_ errorEquationRightFunction

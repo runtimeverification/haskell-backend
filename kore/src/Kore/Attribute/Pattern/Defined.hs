@@ -9,6 +9,7 @@ module Kore.Attribute.Pattern.Defined (
 
 import Data.Functor.Const
 import Data.Monoid
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
@@ -26,7 +27,7 @@ import Prelude.Kore
 newtype Defined = Defined {isDefined :: Bool}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All

@@ -12,6 +12,7 @@ module Kore.Attribute.Symbol.Memo (
 import Data.Monoid (
     Any (..),
  )
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
@@ -22,7 +23,7 @@ import Prelude.Kore
 newtype Memo = Memo {isMemo :: Bool}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via Any

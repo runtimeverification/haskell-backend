@@ -17,6 +17,7 @@ module Kore.Internal.InternalMap (
 
 import Control.Lens qualified as Lens
 import Data.Bifunctor qualified as Bifunctor
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
@@ -47,7 +48,7 @@ newtype NormalizedMap key child = NormalizedMap {getNormalizedMap :: NormalizedA
     deriving stock (GHC.Generic)
     deriving newtype (Foldable, Functor)
     deriving stock (Traversable)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -56,7 +57,7 @@ instance AcWrapper NormalizedMap where
         deriving stock (Eq, Ord, Show)
         deriving stock (Foldable, Functor, Traversable)
         deriving stock (GHC.Generic)
-        deriving anyclass (Hashable, NFData)
+        deriving anyclass (Hashable, NFData, Serialize)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 
@@ -64,7 +65,7 @@ instance AcWrapper NormalizedMap where
         deriving stock (Eq, Ord, Show)
         deriving stock (Foldable, Functor, Traversable)
         deriving stock (GHC.Generic)
-        deriving anyclass (Hashable, NFData)
+        deriving anyclass (Hashable, NFData, Serialize)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 
