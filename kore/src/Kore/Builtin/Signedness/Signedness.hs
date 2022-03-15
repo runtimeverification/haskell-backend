@@ -8,6 +8,7 @@ module Kore.Builtin.Signedness.Signedness (
 ) where
 
 import Data.Functor.Const
+import Data.Serialize
 import Data.Void (
     Void,
  )
@@ -35,7 +36,7 @@ data Signedness
     | Unsigned !Symbol
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
