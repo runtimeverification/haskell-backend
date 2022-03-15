@@ -9,7 +9,8 @@ RUN    apt update              \
     && apt upgrade --yes       \
     && apt install --yes       \
            libtinfo-dev        \
-           curl git make unzip
+           curl git make unzip \
+           bazel
 
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN    apt-get update               \
