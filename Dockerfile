@@ -17,6 +17,14 @@ RUN    apt-get update               \
     && apt-get upgrade --yes        \
     && apt-get install --yes nodejs
 
+# This _might_ be temporary, until we have better support from elrond-mutlisig for regression test generation.
+# Or it might need to stay.
+RUN sudo apt install curl gnupg
+RUN curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg
+RUN sudo mv bazel.gpg /etc/apt/trusted.gpg.d/
+RUN echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+RUN sudo apt update && sudo apt install bazel
+
 ARG STACK=2.5.1
 RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/etc/scripts/get-stack.sh | sh
 
