@@ -9,8 +9,7 @@ RUN    apt update              \
     && apt upgrade --yes       \
     && apt install --yes       \
            libtinfo-dev        \
-           curl git make unzip \
-           bazel
+           curl git make unzip
 
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN    apt-get update               \
@@ -19,11 +18,12 @@ RUN    apt-get update               \
 
 # This _might_ be temporary, until we have better support from elrond-mutlisig for regression test generation.
 # Or it might need to stay.
-RUN sudo apt install curl gnupg
+RUN apt install gnupg
 RUN curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg
-RUN sudo mv bazel.gpg /etc/apt/trusted.gpg.d/
-RUN echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
-RUN sudo apt update && sudo apt install bazel
+RUN mv bazel.gpg /etc/apt/trusted.gpg.d/
+RUN echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list
+RUN    apt update        \
+    && apt install bazel
 
 ARG STACK=2.5.1
 RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/etc/scripts/get-stack.sh | sh
