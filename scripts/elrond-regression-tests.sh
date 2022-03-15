@@ -1,4 +1,4 @@
-set -euo pipefail
+set -eu
 
 prep-elrond() {
     cd $KORE
