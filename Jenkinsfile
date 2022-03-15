@@ -101,6 +101,16 @@ pipeline {
                 '''
               }
             }
+            stage('Elrond Regression Tests') {
+              options {
+                timeout(time: 20, unit: 'MINUTES')
+              }
+              steps {
+                sh '''
+                  ./scripts/elrond-regression-tests.sh
+                '''
+              }
+            }
           }
         }
         stage('Update K Submodules') {
