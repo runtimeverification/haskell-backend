@@ -1,6 +1,6 @@
 set -eu
 
-prep-elrond() {
+prep_elrond() {
     cd $KORE
     git clone git@github.com:runtimeverification/elrond-multisig.git
     cd elrond-multisig
@@ -10,7 +10,7 @@ prep-elrond() {
     bazel clean
 }
 
-run-elrond() {
+run_elrond() {
     cd $KORE/elrond-multisig
     bazel run //protocol-correctness/proof/lemmas/0/signers:lemma-at-most-this-signer-0-count-can-sign-function
     bazel run //protocol-correctness/proof/lemmas/1/list/contains:lemma-list-contains-last-to-start
@@ -20,6 +20,6 @@ run-elrond() {
 }
 
 export KORE=$(pwd)
-prep-elrond
-run-elrond
+prep_elrond
+run_elrond
 rm -rf elrond-multisig
