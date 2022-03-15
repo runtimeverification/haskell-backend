@@ -106,9 +106,11 @@ pipeline {
                 timeout(time: 20, unit: 'MINUTES')
               }
               steps {
-                sh '''
-                  ./scripts/elrond-regression-tests.sh
-                '''
+                sshagent(['rv-jenkins-github']) {
+                  sh '''
+                    ./scripts/elrond-regression-tests.sh
+                  '''
+                }
               }
             }
           }
