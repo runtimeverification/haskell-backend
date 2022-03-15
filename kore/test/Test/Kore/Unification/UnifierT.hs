@@ -37,6 +37,7 @@ import Kore.Simplify.Data (
     Env (..),
  )
 import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Unification.UnifierT qualified as Monad.Unify
 import Logic qualified
@@ -80,7 +81,7 @@ test_simplifyCondition =
                     [(x, Mock.f (mkVar x))]
             input =
                 (Condition.fromSubstitution . Substitution.wrap) denormalized
-        actual <- normalizeExcept input
+        actual <- normalizeExceptSimplifierXEnabledAndDisabled input
         assertEqual "Expected SubstitutionError" expect actual
     , testCase "x = id(x)" $ do
         let x = inject Mock.xConfig
@@ -295,7 +296,7 @@ test_mergeAndNormalizeSubstitutions =
                 denormCondition <> substCondition
                     & pure
         actual <-
-            merge
+            mergeSimplifierXEnabledAndDisbled
                 [
                     ( inject Mock.xConfig
                     , mkElemVar Mock.yConfig
@@ -391,12 +392,24 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     ]
+merge
+    , mergeSimplifierXEnabledAndDisbled ::
+        [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
+        [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
+        IO [Condition RewritingVariableName]
+merge = mergeSimplifierX DisabledSimplifierX
+mergeSimplifierXEnabledAndDisbled subst1 subst2 = do
+    result1 <- mergeSimplifierX EnabledSimplifierX subst1 subst2
+    result2 <- mergeSimplifierX DisabledSimplifierX subst1 subst2
+    pure $ result1 ++ result2
 
-merge ::
+mergeSimplifierX ::
+    SimplifierXSwitch ->
     [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
     [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
     IO [Condition RewritingVariableName]
-merge
+mergeSimplifierX
+    simplifierXSwitch
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2) =
         Test.runSimplifier mockEnv $
@@ -417,7 +430,7 @@ merge
                 . Simplifier.simplifyCondition SideCondition.top
                 . Condition.fromSubstitution
                 . mconcat
-        mockEnv = Mock.env
+        mockEnv = Mock.env{simplifierXSwitch}
 
 normalize ::
     Conditional RewritingVariableName term ->
@@ -428,17 +441,25 @@ normalize =
   where
     mockEnv = Mock.env
 
-normalizeExcept ::
+normalizeExcept
+    , normalizeExceptSimplifierXEnabledAndDisabled ::
+        Conditional RewritingVariableName () ->
+        IO (MultiOr (Conditional RewritingVariableName ()))
+normalizeExcept = normalizeExceptSimplifierX DisabledSimplifierX
+normalizeExceptSimplifierXEnabledAndDisabled =
+    normalizeExceptSimplifierX EnabledSimplifierX
+normalizeExceptSimplifierX ::
+    SimplifierXSwitch ->
     Conditional RewritingVariableName () ->
     IO (MultiOr (Conditional RewritingVariableName ()))
-normalizeExcept predicated =
+normalizeExceptSimplifierX simplifierXSwitch predicated =
     fmap MultiOr.make $
         Test.runSimplifier mockEnv $
             Monad.Unify.runUnifierT Not.notSimplifier $
                 Logic.lowerLogicT $
                     Simplifier.simplifyCondition SideCondition.top predicated
   where
-    mockEnv = Mock.env{simplifierAxioms}
+    mockEnv = Mock.env{simplifierAxioms, simplifierXSwitch}
     simplifierAxioms =
         -- Use Mock.functional10 as the identity function.
         Map.fromList

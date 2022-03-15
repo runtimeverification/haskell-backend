@@ -17,7 +17,11 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Data (
+    Env (..),
+ )
 import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
@@ -55,7 +59,7 @@ test_SubstitutionSimplifier =
         "unnormalized substitution, variable under symbol"
         [(y, sigma (mkVar x) b), (x, a)]
         [mkNormalization [(x, a), (y, sigma a b)] []]
-    , test
+    , testSimplifierXEnabledAndDisabled
         "simplification generates substitution"
         [(x, sigma (mkAnd a (mkVar y)) b)]
         [mkNormalization [(x, sigma a b), (y, a)] []]
@@ -190,7 +194,7 @@ test_SubstitutionSimplifier =
             "beside simplifiable cycle"
             [(x, sigma (f (mkVar x)) (mkVar x))]
             []
-        , test
+        , testSimplifierXEnabledAndDisabled
             "length 2, with And"
             [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
             []
@@ -215,8 +219,16 @@ test_SubstitutionSimplifier =
         ]
     ]
   where
-    test ::
+    test = testSimplifierX DisabledSimplifierX
+    testSimplifierXEnabledAndDisabled name subst results =
+        testGroup
+            ""
+            [ testSimplifierX EnabledSimplifierX name subst results
+            , testSimplifierX DisabledSimplifierX name subst results
+            ]
+    testSimplifierX ::
         HasCallStack =>
+        SimplifierXSwitch ->
         TestName ->
         -- Test input
         [ ( SomeVariable RewritingVariableName
@@ -226,17 +238,18 @@ test_SubstitutionSimplifier =
         -- Expected normalized, denormalized outputs
         [Normalization RewritingVariableName] ->
         TestTree
-    test
+    testSimplifierX
+        simplifierXSwitch
         testName
         (Substitution.wrap . Substitution.mkUnwrappedSubstitution -> input)
         results =
             testGroup
                 testName
-                [ testCase "simplification" $ do
+                [ testCase ("simplification: " ++ show simplifierXSwitch) $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Simplification.substitutionSimplifier
                     actual <-
-                        runSimplifier Mock.env $
+                        runSimplifier Mock.env{simplifierXSwitch} $
                             simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions actual
@@ -249,11 +262,11 @@ test_SubstitutionSimplifier =
                     assertBool
                         "Expected normalized substitutions"
                         (all Substitution.isNormalized actualSubstitutions)
-                , testCase "unification" $ do
+                , testCase ("unification: " ++ show simplifierXSwitch) $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Unification.substitutionSimplifier Not.notSimplifier
                     actual <-
-                        runSimplifier Mock.env . runUnifierT Not.notSimplifier $
+                        runSimplifier Mock.env{simplifierXSwitch} . runUnifierT Not.notSimplifier $
                             simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions <$> actual
