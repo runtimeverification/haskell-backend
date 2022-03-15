@@ -1,5 +1,7 @@
 set -eu
 
+export PATH="$(stack path --local-bin)${PATH:+:$PATH}"
+
 prep_elrond() {
     cd $KORE
     git clone git@github.com:runtimeverification/elrond-multisig.git
