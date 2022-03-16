@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Simplify.TermLike (
     simplify,
+    simplifyMinimal,
 ) where
 
 import Control.Lens.Combinators qualified as Lens
@@ -27,6 +28,7 @@ import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
+    top,
  )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
@@ -276,3 +278,20 @@ simplify sideCondition =
             Pattern.fromPredicateSorted sort
                 >>> OrPattern.fromPattern
                 >>> return
+
+simplifyMinimal ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    MonadThrow simplifier =>
+    TermLike RewritingVariableName ->
+    simplifier (OrPattern RewritingVariableName)
+simplifyMinimal termLike =
+    case termLikeF of
+        -- Symbols:
+        ApplySymbolF applySymbolF -> do
+            r <- traverse (simplifyMinimal @simplifier) applySymbolF
+            Application.simplify top r
+        _ -> doNotSimplify
+  where
+    _ :< termLikeF = Recursive.project termLike
+    ~doNotSimplify = return (OrPattern.fromTermLike termLike)

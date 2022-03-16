@@ -82,8 +82,9 @@ import Kore.IndexedModule.MetadataTools (
  )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
-    Conditional,
+    Conditional (..),
  )
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -91,7 +92,6 @@ import Kore.Internal.OrCondition (
 import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
-    fromPattern,
  )
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
@@ -266,10 +266,27 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askSimplifierXSwitch = lift askSimplifierXSwitch
     {-# INLINE askSimplifierXSwitch #-}
 
+    simplifyTermMinimal ::
+        TermLike RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    default simplifyTermMinimal ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        TermLike RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    simplifyTermMinimal =
+        lift . simplifyTermMinimal
+
     simplifyPatternId ::
         Pattern RewritingVariableName ->
         m (OrPattern RewritingVariableName)
-    simplifyPatternId = pure . fromPattern
+    simplifyPatternId patt = do
+        let (term, simplifiedCondition) =
+                Conditional.splitTerm patt
+        simplifiedTerm <- simplifyTermMinimal term
+        pure $
+            MultiOr.map
+                (`Conditional.andCondition` simplifiedCondition)
+                simplifiedTerm
     {-# INLINE simplifyPatternId #-}
 
 instance

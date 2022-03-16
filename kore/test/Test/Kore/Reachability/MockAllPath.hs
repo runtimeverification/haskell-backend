@@ -417,6 +417,7 @@ instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
     simplifyPattern = undefined
     simplifyTerm = undefined
+    simplifyTermMinimal = undefined
     simplifyCondition = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined

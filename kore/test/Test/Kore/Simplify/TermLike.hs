@@ -131,6 +131,7 @@ instance MonadSimplify TestSimplifier where
     -- Throw an error if any pattern/term would be simplified.
     simplifyPattern = undefined
     simplifyTerm = undefined
+    simplifyTermMinimal = undefined
 
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =

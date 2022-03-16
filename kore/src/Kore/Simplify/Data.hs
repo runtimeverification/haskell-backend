@@ -147,6 +147,9 @@ instance
     simplifyTerm = TermLike.simplify
     {-# INLINE simplifyTerm #-}
 
+    simplifyTermMinimal = TermLike.simplifyMinimal
+    {-# INLINE simplifyTermMinimal #-}
+
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
         simplify topCondition conditional

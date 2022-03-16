@@ -81,8 +81,10 @@ test_simplifyCondition =
                     [(x, Mock.f (mkVar x))]
             input =
                 (Condition.fromSubstitution . Substitution.wrap) denormalized
-        actual <- normalizeExceptSimplifierXEnabledAndDisabled input
+        actual <- normalizeExcept input
+        actualSimplifierXEnabled <- normalizeExceptSimplifierXEnabled input
         assertEqual "Expected SubstitutionError" expect actual
+        assertEqual "Expected SubstitutionError" expect actualSimplifierXEnabled
     , testCase "x = id(x)" $ do
         let x = inject Mock.xConfig
             expect = OrCondition.fromCondition Condition.top
@@ -442,11 +444,11 @@ normalize =
     mockEnv = Mock.env
 
 normalizeExcept
-    , normalizeExceptSimplifierXEnabledAndDisabled ::
+    , normalizeExceptSimplifierXEnabled ::
         Conditional RewritingVariableName () ->
         IO (MultiOr (Conditional RewritingVariableName ()))
 normalizeExcept = normalizeExceptSimplifierX DisabledSimplifierX
-normalizeExceptSimplifierXEnabledAndDisabled =
+normalizeExceptSimplifierXEnabled =
     normalizeExceptSimplifierX EnabledSimplifierX
 normalizeExceptSimplifierX ::
     SimplifierXSwitch ->
