@@ -53,6 +53,7 @@ import Data.HashSet qualified as HashSet
 import Data.List (
     sortOn,
  )
+import Data.Serialize
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -172,7 +173,7 @@ data SideCondition variable = SideCondition
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

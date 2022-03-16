@@ -42,6 +42,9 @@ import Data.Default (
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Proxy
+import Data.Serialize (
+    Serialize,
+ )
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Assoc
@@ -131,10 +134,9 @@ data Axiom symbol variable = Axiom
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving anyclass (Hashable)
 
 instance Default (Axiom symbol variable) where
     def =

@@ -10,6 +10,7 @@ module Kore.Internal.Variable (
     module Kore.Syntax.Variable,
 ) where
 
+import Data.Serialize
 import Data.Void
 import Kore.Debug (
     Debug,
@@ -98,4 +99,5 @@ type InternalVariable variable =
     , FreshPartialOrd variable
     , FreshName variable
     , Typeable variable
+    , Serialize variable
     )

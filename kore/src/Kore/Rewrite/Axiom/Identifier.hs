@@ -27,6 +27,7 @@ import Data.Functor.Const (
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict qualified as HashMap
 import Data.Sequence qualified as Seq
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Builtin.Endianness.Endianness qualified as Endianness
@@ -76,7 +77,7 @@ data AxiomIdentifier
       Variable
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable)
+    deriving anyclass (Hashable, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

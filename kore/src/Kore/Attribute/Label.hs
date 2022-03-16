@@ -10,6 +10,9 @@ module Kore.Attribute.Label (
 ) where
 
 import Data.Monoid qualified as Monoid
+import Data.Serialize (
+    Serialize,
+ )
 import Data.Text (
     Text,
  )
@@ -23,7 +26,7 @@ import Prelude.Kore
 newtype Label = Label {unLabel :: Maybe Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via (Monoid.First Text)

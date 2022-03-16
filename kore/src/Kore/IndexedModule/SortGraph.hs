@@ -21,6 +21,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -43,7 +44,7 @@ import Prelude.Kore
 newtype SortGraph = SortGraph {unSortGraph :: Map Sort (Set Sort)}
     deriving stock (GHC.Generic, Typeable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 -- | Build a 'SortGraph' from a list of 'Subsort' relations.
 fromSubsorts ::

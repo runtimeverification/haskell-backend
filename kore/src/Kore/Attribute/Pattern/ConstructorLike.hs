@@ -9,6 +9,7 @@ module Kore.Attribute.Pattern.ConstructorLike (
     assertConstructorLike,
 ) where
 
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Synthetic
@@ -54,7 +55,7 @@ newtype ConstructorLike = ConstructorLike
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
@@ -198,7 +199,7 @@ data ConstructorLikeHead
     | SortInjectionHead
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 

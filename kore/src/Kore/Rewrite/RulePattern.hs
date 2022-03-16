@@ -48,6 +48,9 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize (
+    Serialize,
+ )
 import Data.Set qualified as Set
 import Data.Text (
     Text,
@@ -139,7 +142,7 @@ data RHS variable = RHS
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -200,7 +203,7 @@ data RulePattern variable = RulePattern
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -451,7 +454,7 @@ instance HasAttributes RulePattern where
 newtype RewriteRule variable = RewriteRule {getRewriteRule :: RulePattern variable}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

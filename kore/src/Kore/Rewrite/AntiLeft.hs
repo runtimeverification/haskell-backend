@@ -15,6 +15,9 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize (
+    Serialize,
+ )
 import Data.Set (
     Set,
  )
@@ -105,7 +108,7 @@ data AntiLeftLhs variable = AntiLeftLhs
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -155,7 +158,7 @@ data AntiLeft variable = AntiLeft
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

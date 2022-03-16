@@ -34,6 +34,7 @@ import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalBytes (
     InternalBytes,
  )
+import {-# SOURCE #-} Kore.Internal.SideCondition.Orphans()
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )

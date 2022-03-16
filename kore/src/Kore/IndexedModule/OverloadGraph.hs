@@ -18,6 +18,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -43,7 +44,7 @@ data OverloadGraph = OverloadGraph
     }
     deriving stock (GHC.Generic, Typeable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 -- | Whether the symbol is an overloading symbol
 isOverloaded :: OverloadGraph -> Symbol -> Bool

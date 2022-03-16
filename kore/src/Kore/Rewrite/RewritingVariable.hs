@@ -41,6 +41,7 @@ module Kore.Rewrite.RewritingVariable (
 ) where
 
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Set qualified as Set
 import Debug
 import GHC.Generics qualified as GHC
@@ -74,7 +75,7 @@ data RewritingVariableName
     | RuleVariableName !VariableName
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

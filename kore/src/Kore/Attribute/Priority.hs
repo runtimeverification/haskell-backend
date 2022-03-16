@@ -11,6 +11,7 @@ module Kore.Attribute.Priority (
     priorityAttribute,
 ) where
 
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
@@ -27,7 +28,7 @@ import Prelude.Kore
 newtype Priority = Priority {getPriority :: Maybe Integer}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

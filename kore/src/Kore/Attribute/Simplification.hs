@@ -23,6 +23,7 @@ module Kore.Attribute.Simplification (
 import Data.Maybe (
     maybeToList,
  )
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
@@ -40,7 +41,7 @@ data Simplification
     | NotSimplification
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

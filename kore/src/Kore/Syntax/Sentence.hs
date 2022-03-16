@@ -354,7 +354,7 @@ data SentenceAxiom (patternType :: Type) = SentenceAxiom
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

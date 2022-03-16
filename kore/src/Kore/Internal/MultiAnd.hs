@@ -26,6 +26,7 @@ module Kore.Internal.MultiAnd (
 
 import Data.Functor.Foldable qualified as Recursive
 import Data.List (genericLength)
+import Data.Serialize
 import Data.Set qualified as Set
 import Data.Traversable qualified as Traversable
 import Debug
@@ -74,7 +75,7 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 newtype MultiAnd child = MultiAnd {getMultiAnd :: [child]}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving newtype (GHC.IsList)
     deriving newtype (Foldable)

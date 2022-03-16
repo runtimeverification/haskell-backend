@@ -13,6 +13,9 @@ module Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
     extractMetadataTools,
     findSortConstructors,
+    sortAttributes,
+    applicationSorts,
+    symbolAttributes,
 ) where
 
 import Data.Map.Strict (
@@ -27,7 +30,9 @@ import Kore.Attribute.Sort.Constructors qualified as Attribute (
  )
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
-import Kore.Internal.ApplicationSorts
+import Kore.Internal.ApplicationSorts hiding (
+    applicationSorts,
+ )
 import Kore.Rewrite.SMT.AST qualified as SMT.AST (
     SmtDeclarations,
  )
@@ -88,3 +93,12 @@ findSortConstructors
     MetadataTools{sortConstructors}
     sortId =
         Map.lookup sortId sortConstructors
+
+sortAttributes :: MetadataTools sortConstructors smt attributes -> Sort -> Attribute.Sort
+sortAttributes tools s = getSortAttributes (syntax tools) s
+
+applicationSorts :: MetadataTools sortConstructors smt attributes -> SymbolOrAlias -> ApplicationSorts
+applicationSorts tools s = getHeadApplicationSorts (syntax tools) s
+
+symbolAttributes :: MetadataTools sortConstructors smt attributes -> Id -> attributes
+symbolAttributes tools s = getSymbolAttributes (syntax tools) s

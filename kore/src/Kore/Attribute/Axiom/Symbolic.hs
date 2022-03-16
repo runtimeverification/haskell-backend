@@ -15,6 +15,7 @@ module Kore.Attribute.Axiom.Symbolic (
     FreeVariables,
 ) where
 
+import Data.Serialize
 import Data.Set (
     Set,
  )
@@ -38,7 +39,7 @@ import Prelude.Kore
 newtype Symbolic variable = Symbolic {unSymbolic :: FreeVariables variable}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving newtype (Semigroup, Monoid)

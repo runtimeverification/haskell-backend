@@ -12,6 +12,7 @@ module Kore.Attribute.ProductionID (
     productionIDAttribute,
 ) where
 
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -25,7 +26,7 @@ import Prelude.Kore
 newtype ProductionID = ProductionID {getProductionID :: Maybe Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

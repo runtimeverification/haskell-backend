@@ -94,7 +94,7 @@ data ConstructorArgument sort name = ConstructorArgument
     }
     deriving stock (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 {- | A data type constructor.
 -
@@ -105,7 +105,7 @@ data Constructor sort symbol name = Constructor
     }
     deriving stock (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 {- | A constructor-based data type declaration.
 
@@ -119,6 +119,7 @@ data DataTypeDeclaration sort symbol name = DataTypeDeclaration
     }
     deriving stock (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Serialize)
 
 instance
     (Debug sort, Debug symbol, Debug name) =>
@@ -135,7 +136,7 @@ data SortDeclaration name = SortDeclaration
     }
     deriving stock (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 -- | A function declaration.
 data FunctionDeclaration sort name = FunctionDeclaration
@@ -145,6 +146,7 @@ data FunctionDeclaration sort name = FunctionDeclaration
     }
     deriving stock (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Serialize)
 
 instance (Debug sort, Debug name) => Debug (FunctionDeclaration sort name)
 

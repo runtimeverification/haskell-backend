@@ -23,6 +23,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
 import Data.Text (
     Text,
  )
@@ -129,10 +130,9 @@ data Equation variable = Equation
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving anyclass (Hashable)
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation ::

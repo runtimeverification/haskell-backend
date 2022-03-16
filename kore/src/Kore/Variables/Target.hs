@@ -22,6 +22,7 @@ module Kore.Variables.Target (
     isSomeNonTargetName,
 ) where
 
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
@@ -47,7 +48,7 @@ data Target variable
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+    deriving anyclass (Debug, Diff, Serialize)
 
 instance Eq variable => Eq (Target variable) where
     (==) a b = unTarget a == unTarget b

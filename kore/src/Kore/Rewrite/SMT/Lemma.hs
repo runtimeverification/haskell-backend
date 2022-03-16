@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Rewrite.SMT.Lemma (
     declareSMTLemmas,
+    getSMTLemmas,
 ) where
 
 import Control.Comonad.Trans.Cofree qualified as Cofree
@@ -26,16 +27,15 @@ import Data.Generics.Product.Fields
 import Data.Map.Strict qualified as Map
 import Data.Reflection
 import Data.Text qualified as Text
+import Kore.Attribute.Symbol
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.SmtLemma
-import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
 import Kore.Internal.SideCondition (
     top,
  )
-import Kore.Internal.Symbol qualified as Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
@@ -54,6 +54,11 @@ import SMT (
     SExpr (..),
  )
 
+getSMTLemmas ::
+  VerifiedModule StepperAttributes ->
+  [SentenceAxiom (TermLike VariableName)]
+getSMTLemmas m = map snd $ filter (isSmtLemma . Attribute.smtLemma . fst) $ indexedModuleAxioms m
+
 {- | Given an indexed module, `declareSMTLemmas` translates all
  rewrite rules marked with the smt-lemma attribute into the
  smt2 standard, and sends them to the current SMT solver.
@@ -69,11 +74,11 @@ declareSMTLemmas ::
     , MonadSMT m
     , MonadLog m
     ) =>
-    VerifiedModule StepperAttributes ->
+    [SentenceAxiom (TermLike VariableName)] ->
     m ()
-declareSMTLemmas m = do
+declareSMTLemmas lemmas = do
     declareSortsSymbols $ smtData tools
-    mapM_ declareRule $ indexedModuleAxioms m
+    mapM_ declareRule $ lemmas
     isUnsatisfiable <- (Unsat ==) <$> SMT.check
     when isUnsatisfiable errorInconsistentDefinitions
   where
@@ -81,12 +86,9 @@ declareSMTLemmas m = do
     tools = given
 
     declareRule ::
-        ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-        , SentenceAxiom (TermLike VariableName)
-        ) ->
+        SentenceAxiom (TermLike VariableName) ->
         m (Maybe ())
-    declareRule (atts, axiomDeclaration) = runMaybeT $ do
-        guard $ isSmtLemma $ Attribute.smtLemma atts
+    declareRule axiomDeclaration = runMaybeT $ do
         oldAxiomEncoding <-
             sentenceAxiomPattern axiomDeclaration
                 & convert

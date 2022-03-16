@@ -22,6 +22,7 @@ module Kore.Attribute.PredicatePattern (
 
 import Control.Lens qualified as Lens
 import Data.Generics.Product
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables hiding (
@@ -54,19 +55,12 @@ data PredicatePattern variable = PredicatePattern
     , simplified :: !Simplified
     }
     deriving stock (Eq, GHC.Generic, Show)
-
-instance NFData variable => NFData (PredicatePattern variable)
-
-instance Hashable variable => Hashable (PredicatePattern variable)
-
-instance SOP.Generic (PredicatePattern variable)
-
-instance SOP.HasDatatypeInfo (PredicatePattern variable)
+    deriving anyclass (NFData, Hashable, Serialize)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Diff)
 
 instance Debug variable => Debug (PredicatePattern variable) where
     debugPrecBrief _ _ = "_"
-
-instance (Debug variable, Diff variable) => Diff (PredicatePattern variable)
 
 instance
     ( Functor base

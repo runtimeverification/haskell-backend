@@ -50,6 +50,8 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Serialize
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
@@ -211,6 +213,8 @@ type Equality = Equation VariableName
 
 -- | A collection of rules and simplifiers used during execution.
 newtype Initialized = Initialized {rewriteRules :: [Rewrite]}
+  deriving stock (GHC.Generic)
+  deriving anyclass (Serialize)
 
 -- | Symbolic execution
 exec ::

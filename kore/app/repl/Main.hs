@@ -244,7 +244,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                             smtConfig
                             ( give
                                 (MetadataTools.build validatedDefinition)
-                                (declareSMTLemmas validatedDefinition)
+                                (declareSMTLemmas $ getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
                                 simplifierx

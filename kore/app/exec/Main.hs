@@ -120,6 +120,7 @@ import Kore.Syntax.Definition (
     Module (Module),
     ModuleName (..),
     Sentence (..),
+    SentenceAxiom (..),
  )
 import Kore.Syntax.Definition qualified as Definition.DoNotUse
 import Kore.Unparser (
@@ -163,7 +164,6 @@ import Prof (
  )
 import SMT (
     MonadSMT,
-    SMT,
  )
 import SMT qualified
 import Stats
@@ -630,7 +630,7 @@ mainDispatch = warnProductivity . mainDispatchWorker
 
 
 data SerializedDefinition = SerializedDefinition
-        (SMT ())
+        [SentenceAxiom (TermLike VariableName)]
         SortGraph
         OverloadGraph
         (SmtMetadataTools StepperAttributes)
@@ -661,7 +661,7 @@ koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern syntax patternFileName
     final <-
-        execute execOptions lemmas $
+        execute execOptions metadataTools lemmas $
             search
                 simplifierx
                 depthLimit
@@ -689,7 +689,7 @@ koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern syntax patternFileName
     (exitCode, final) <-
-        execute execOptions lemmas $
+        execute execOptions metadataTools lemmas $
             exec
                 simplifierx
                 depthLimit
@@ -723,8 +723,7 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     let KoreExecOptions{maxCounterexamples} = execOptions
-    let lemmas = give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
-    proveResult <- execute execOptions lemmas $ do
+    proveResult <- execute execOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
@@ -829,8 +828,7 @@ koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
     specModule <- loadModule specMainModule definition
-    let lemmas = give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
-    (exitCode, final) <- execute execOptions lemmas $ do
+    (exitCode, final) <- execute execOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         checkResult <-
@@ -866,11 +864,12 @@ execute ::
     forall r.
     KoreExecOptions ->
     -- | SMT Lemmas
-    SMT () ->
+    SmtMetadataTools StepperAttributes ->
+    [SentenceAxiom (TermLike VariableName)] ->
     -- | Worker
     (forall exe. MonadExecute exe => exe r) ->
     Main r
-execute options lemmas worker =
+execute options metadataTools lemmas worker =
     clockSomethingIO "Executing" $
         case solver of
             Z3 -> withZ3
@@ -879,7 +878,7 @@ execute options lemmas worker =
     withZ3 =
         SMT.runSMT
             config
-            lemmas
+            (give metadataTools (declareSMTLemmas lemmas))
             worker
     withoutSMT = SMT.runNoSMT worker
     KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =

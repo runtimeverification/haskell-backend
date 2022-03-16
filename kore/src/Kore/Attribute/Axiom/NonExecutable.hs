@@ -9,6 +9,7 @@ module Kore.Attribute.Axiom.NonExecutable (
     nonExecutableAttribute,
 ) where
 
+import Data.Serialize
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
@@ -18,10 +19,9 @@ import Prelude.Kore
 -- | @NonExecutable@ represents the @non-executable@ attribute for axioms.
 newtype NonExecutable = NonExecutable {isNonExecutable :: Bool}
     deriving stock (Eq, GHC.Generic, Ord, Show)
+    deriving anyclass (Hashable, NFData, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving anyclass (NFData)
-    deriving anyclass (Hashable)
 
 instance Default NonExecutable where
     def = NonExecutable False
