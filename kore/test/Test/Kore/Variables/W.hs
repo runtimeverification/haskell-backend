@@ -10,6 +10,7 @@ import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
+import Data.Serialize
 import Data.Sup
 import Debug
 import GHC.Generics qualified as GHC
@@ -25,7 +26,7 @@ import Test.Kore.Variables.V
 data W = W {value :: String, counter :: Maybe (Sup Natural)}
     deriving stock (Show, Eq, Ord)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable)
+    deriving anyclass (Hashable, Serialize)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

@@ -99,6 +99,7 @@ instance
 data SortSExprFactory
   = EmptySortArgsToSmt AST.SExpr
   | ApplyToArgs AST.SExpr
+  | ConstSExpr AST.SExpr
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff, Serialize)
