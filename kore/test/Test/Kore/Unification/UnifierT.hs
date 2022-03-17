@@ -298,7 +298,7 @@ test_mergeAndNormalizeSubstitutions =
                 denormCondition <> substCondition
                     & pure
         actual <-
-            mergeSimplifierXEnabledAndDisbled
+            merge
                 [
                     ( inject Mock.xConfig
                     , mkElemVar Mock.yConfig
@@ -309,7 +309,21 @@ test_mergeAndNormalizeSubstitutions =
                     , Mock.f (mkElemVar Mock.xConfig)
                     )
                 ]
+        actualSimplifierXEnabled <-
+            mergeSimplifierXEnabled
+                [
+                    ( inject Mock.xConfig
+                    , mkElemVar Mock.yConfig
+                    )
+                ]
+                [
+                    ( inject Mock.yConfig
+                    , Mock.f (mkElemVar Mock.xConfig)
+                    )
+                ]
+
         assertEqual "" expect actual
+        assertEqual "" expect actualSimplifierXEnabled
         assertNormalizedPredicatesMulti actual
     , testCase "Normalizes substitution" $
         do
@@ -395,15 +409,12 @@ test_mergeAndNormalizeSubstitutions =
             assertNormalizedPredicatesMulti actual
     ]
 merge
-    , mergeSimplifierXEnabledAndDisbled ::
+    , mergeSimplifierXEnabled ::
         [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
         [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)] ->
         IO [Condition RewritingVariableName]
 merge = mergeSimplifierX DisabledSimplifierX
-mergeSimplifierXEnabledAndDisbled subst1 subst2 = do
-    result1 <- mergeSimplifierX EnabledSimplifierX subst1 subst2
-    result2 <- mergeSimplifierX DisabledSimplifierX subst1 subst2
-    pure $ result1 ++ result2
+mergeSimplifierXEnabled = mergeSimplifierX EnabledSimplifierX
 
 mergeSimplifierX ::
     SimplifierXSwitch ->
