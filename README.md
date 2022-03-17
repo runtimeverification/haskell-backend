@@ -157,7 +157,7 @@ nix-shell test.nix  # enter a shell where we can run tests manually
 [git]: https://git-scm.com/
 [stack]: https://www.haskellstack.org/
 [cabal]: https://haskell.org/cabal
-[K Framework]: https://github.com/kframework/k
+[K Framework]: https://github.com/runtimeverification/k
 [curl]: https://curl.haxx.se/
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
