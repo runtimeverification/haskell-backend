@@ -84,11 +84,10 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    MonadSimplify (..),
     SimplifierXSwitch (..),
     askSimplifierXSwitch,
     simplifyPattern,
-    simplifyPatternId,
     simplifyPatternScatter,
  )
 import Kore.TopBottom qualified as TopBottom
@@ -375,7 +374,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         simplifierX <- askSimplifierXSwitch
         orPattern <- case simplifierX of
             EnabledSimplifierX ->
-                simplifyPatternId (Pattern.fromTermLike termLike)
+                simplifyPatternMinimalForSubstitutionSimplifier
+                    (Pattern.fromTermLike termLike)
             DisabledSimplifierX ->
                 simplifyPattern sideCondition (Pattern.fromTermLike termLike)
         case OrPattern.toPatterns orPattern of

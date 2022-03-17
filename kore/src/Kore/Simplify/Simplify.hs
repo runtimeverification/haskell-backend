@@ -92,6 +92,7 @@ import Kore.Internal.OrCondition (
 import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
+    fromPattern,
  )
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
@@ -279,7 +280,12 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyPatternId ::
         Pattern RewritingVariableName ->
         m (OrPattern RewritingVariableName)
-    simplifyPatternId patt = do
+    simplifyPatternId = pure . fromPattern
+
+    simplifyPatternMinimalForSubstitutionSimplifier ::
+        Pattern RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    simplifyPatternMinimalForSubstitutionSimplifier patt = do
         let (term, simplifiedCondition) =
                 Conditional.splitTerm patt
         simplifiedTerm <- simplifyTermMinimal term
