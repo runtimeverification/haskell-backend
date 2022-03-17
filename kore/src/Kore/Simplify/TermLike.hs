@@ -291,7 +291,13 @@ simplifyMinimal termLike =
         ApplySymbolF applySymbolF -> do
             r <- traverse (simplifyMinimal @simplifier) applySymbolF
             Application.simplify top r
+        AndF andF -> trace "\nAND\n" $ do
+            let conjuncts = foldMap MultiAnd.fromTermLike andF
+            -- MultiAnd doesn't preserve the sort so we need to send it as an external argument
+            r <- MultiAnd.traverse simplifyMinimal conjuncts
+            And.simplify sort Not.notSimplifier top r
         _ -> doNotSimplify
   where
     _ :< termLikeF = Recursive.project termLike
     ~doNotSimplify = return (OrPattern.fromTermLike termLike)
+    ~sort = termLikeSort termLike
