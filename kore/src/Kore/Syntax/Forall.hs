@@ -26,7 +26,7 @@ import Kore.Variables.Fresh (FreshPartialOrd)
 import Prelude.Kore
 import Pretty qualified
 
-{- |'Forall' corresponds to the @\\forall@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+{- |'Forall' corresponds to the @\\forall@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'forallSort' is both the sort of the operands and the sort of the result.
 -}

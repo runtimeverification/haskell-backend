@@ -514,7 +514,7 @@ checkStuckConfiguration rule prim proofState = do
                 [ "Found '\\not(\\ceil(_))' in stuck configuration:"
                 , Pretty.pretty rule'
                 , "Please file a bug report:\
-                  \ https://github.com/kframework/kore/issues"
+                  \ https://github.com/runtimeverification/haskell-backend/issues"
                 ]
     return proofState'
   where

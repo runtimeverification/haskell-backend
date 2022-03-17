@@ -84,7 +84,7 @@ The 'left' field will vary in contents (as described below), but its structure
 should be the same: it should be a term with a function symbol at the top.
 
 For function definition rules, the Kore encoding is specified here:
-https://github.com/kframework/kore/blob/master/design-decisions/2020-05-02-function-rules.md#solution
+https://github.com/runtimeverification/haskell-backend/blob/master/design-decisions/2020-05-02-function-rules.md#solution
 The _Args_ and _Prio_ predicates correspond to the 'argument' and 'antiLeft' field, respectively.
 See the linked design document for the reasons why the 'argument' is encoded like that.
 The 'antiLeft' is used to encode the priority of the function definition. This corresponds

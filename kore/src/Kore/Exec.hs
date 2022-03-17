@@ -667,7 +667,7 @@ checkFunctions simplifierx verifiedModule =
     inOrderPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
 
 {- | Returns true when both equations match the same term.  See:
-https://github.com/kframework/kore/issues/2472#issue-833143685
+https://github.com/runtimeverification/haskell-backend/issues/2472#issue-833143685
 -}
 bothMatch ::
     MonadSimplify m =>

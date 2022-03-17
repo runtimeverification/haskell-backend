@@ -12,7 +12,7 @@
 # > };
 #
 # Use `cleanGitSubtree` whenever possible to preserve the same source code
-# layout as the kframework/kore repository (to enable cache re-use).
+# layout as the runtimeverification/haskell-backend repository (to enable cache re-use).
 #
 , src ? null
 }:

@@ -45,7 +45,7 @@ instance Pretty WarnIfLowProductivity where
                 , kFiles
                 ,
                     [ "Poor productivity may indicate a performance bug."
-                    , "Please file a bug report: https://github.com/kframework/kore/issues"
+                    , "Please file a bug report: https://github.com/runtimeverification/haskell-backend/issues"
                     ]
                 ]
           where

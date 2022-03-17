@@ -11,7 +11,7 @@ an AST term in a single data type (e.g. 'SymbolOrAlias' that can be either
 'Kore.Syntax.Sentence.Symbol' or 'Kore.Syntax.Sentence.Alias')
 
 Please refer to
-<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
+<http://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Syntax.Application (
     SymbolOrAlias (..),
@@ -29,7 +29,7 @@ import Prelude.Kore
 import Pretty qualified
 
 {- |'SymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from
-<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
+<https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
 -}
 data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
@@ -56,7 +56,7 @@ instance From SymbolOrAlias SymbolOrAlias where
 
 {- |'Application' corresponds to the @application-pattern@ branch of the
 @pattern@ syntactic category from
-<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+<https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
