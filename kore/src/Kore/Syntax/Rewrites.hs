@@ -16,7 +16,7 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
-{- |'Rewrites' corresponds to the @\\rewrites@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+{- |'Rewrites' corresponds to the @\\rewrites@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'rewritesSort' is both the sort of the operands and the sort of the result.
 -}

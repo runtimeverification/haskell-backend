@@ -473,7 +473,7 @@ criticalMissingHook symbol hookName =
         , Pretty.indent 4 (unparse attribute)
         , "We don't recognize that hook and it was not given any rules."
         , "Please open a feature request at"
-        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
+        , Pretty.indent 4 "https://github.com/runtimeverification/haskell-backend/issues"
         , "and include the text of this message."
         , "Workaround: Give rules for" <+> unparse symbol
         ]

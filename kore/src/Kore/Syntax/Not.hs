@@ -17,7 +17,7 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
-{- |'Not' corresponds to the @\\not@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+{- |'Not' corresponds to the @\\not@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'notSort' is both the sort of the operand and the sort of the result.
 -}

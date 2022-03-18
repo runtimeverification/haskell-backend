@@ -84,7 +84,7 @@ The 'left' field will vary in contents (as described below), but its structure
 should be the same: it should be a term with a function symbol at the top.
 
 For function definition rules, the Kore encoding is specified here:
-https://github.com/kframework/kore/blob/master/design-decisions/2020-05-02-function-rules.md#solution
+https://github.com/runtimeverification/haskell-backend/blob/master/design-decisions/2020-05-02-function-rules.md#solution
 The _Args_ and _Prio_ predicates correspond to the 'argument' and 'antiLeft' field, respectively.
 See the linked design document for the reasons why the 'argument' is encoded like that.
 The 'antiLeft' is used to encode the priority of the function definition. This corresponds
@@ -113,9 +113,9 @@ These are regarded as hints for the backend, they don't carry semantic meaning a
 case of function rules and their priority attributes.
 
 For more information see:
-* https://github.com/kframework/k/blob/master/USER_MANUAL.md#function-and-functional-attributes
-* https://github.com/kframework/k/blob/master/USER_MANUAL.md#simplification-attribute-haskell-backend
-* https://github.com/kframework/k/blob/master/USER_MANUAL.md#owise-and-priority-attributes
+* https://github.com/runtimeverification/k/blob/master/USER_MANUAL.md#function-and-functional-attributes
+* https://github.com/runtimeverification/k/blob/master/USER_MANUAL.md#simplification-attribute-haskell-backend
+* https://github.com/runtimeverification/k/blob/master/USER_MANUAL.md#owise-and-priority-attributes
 * 'Kore.Equation.Sentence.matchEquation', for the structure of all equation types
 -}
 data Equation variable = Equation

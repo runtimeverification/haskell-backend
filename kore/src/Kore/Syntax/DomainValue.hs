@@ -17,7 +17,7 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
-{- |'DomainValue' corresponds to the @\\dv@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+{- |'DomainValue' corresponds to the @\\dv@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'domainValueSort' is the sort of the result.
 
