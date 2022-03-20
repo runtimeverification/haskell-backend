@@ -1,2 +1,2 @@
 #!/bin/sh
-${KORE_EXEC:?} test-mul0-definition.kore --module ETHEREUM-SIMULATION --pattern test-mul0-tmp.in.Y98gdq70OF "$@"
+${KORE_EXEC:?} test-mul0-definition.kore --module ETHEREUM-SIMULATION --pattern test-mul0-tmp.in.nQSpV2SYBE "$@"
