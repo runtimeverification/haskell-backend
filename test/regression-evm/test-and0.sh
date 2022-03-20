@@ -1,2 +1,2 @@
 #!/bin/sh
-${KORE_EXEC:?} test-and0-definition.kore --module ETHEREUM-SIMULATION --pattern test-and0-tmp.in.Oi7Umvqx6s "$@"
+${KORE_EXEC:?} test-and0-definition.kore --module ETHEREUM-SIMULATION --pattern test-and0-tmp.in.XfUPeWKV4i "$@"
