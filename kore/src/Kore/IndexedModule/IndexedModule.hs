@@ -372,10 +372,9 @@ type VerifiedModule declAtts =
         declAtts
         (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 
-type VerifiedModuleSyntax declAtts =
+type VerifiedModuleSyntax =
     IndexedModuleSyntax
         Verified.Pattern
-        declAtts
 
 {- | Convert a 'IndexedModule' back into a 'Module'.
 

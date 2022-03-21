@@ -79,7 +79,6 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (
-    MetadataTools (MetadataTools),
     SmtMetadataTools,
  )
 import Kore.IndexedModule.MetadataTools qualified as MetadataTools
@@ -478,7 +477,7 @@ isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
     | SortVariableSort _ <- sort = Nothing
     | otherwise =
-        let MetadataTools{sortAttributes} = tools
+        let sortAttributes = MetadataTools.sortAttributes tools
             Attribute.Sort{hook} = sortAttributes sort
          in Just (getHook hook == Just builtinName)
 
