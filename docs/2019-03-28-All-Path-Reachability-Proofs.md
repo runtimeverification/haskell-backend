@@ -54,18 +54,18 @@ Definitions
 
 ### Weak always finally
 
-Given a formula `φ`, let `[w]φ` denote the formula “weak always finally” `φ`,
+Given a formula `φ`, let `<w>φ` denote the formula “weak always finally” `φ`,
 defined by:
 
 ```
-[w]φ := νX.φ ∨ (○X ∧ •⊤)
+<w>φ := νX.φ ∨ (○X ∧ •⊤)
 ```
 
-one consequence of the above is that `[w]φ = φ ∨ (○[w]φ ∧ •⊤)`.
+one consequence of the above is that `<w>φ = φ ∨ (○<w>φ ∧ •⊤)`.
 
 Given this definition of weak always, an all-path reachability claim
 ```
-∀x.φ(x) → [w]∃z.ψ(x,z)
+∀x.φ(x) → <w>∃z.ψ(x,z)
 ```
 basically states that if `φ(x)` holds for a configuration `γ`, for some `x`,
 then `P(γ)` holds, where `P(G)` is recursively defined on configurations as:
@@ -79,7 +79,7 @@ then `P(γ)` holds, where `P(G)` is recursively defined on configurations as:
 Problem Description
 -------------------
 
-Given a set of all-path reachability claims, of the form `∀x.φ(x) → [w]∃z.ψ(x,z)`,
+Given a set of all-path reachability claims, of the form `∀x.φ(x) → <w>∃z.ψ(x,z)`,
 we are trying to prove all of them together.
 
 
@@ -90,15 +90,15 @@ Algorithms
 
 ### Algorithm `proveAllPath`
 
-__Input:__ claims `∀x₁.φ₁ → [w]∃z₁.ψ₁`, `∀x₂.φ₂ → [w]∃z₂.ψ₂`, …, `∀xₙ.φₙ → [w]∃zₙ.ψₙ`
+__Input:__ claims `∀x₁.φ₁ → <w>∃z₁.ψ₁`, `∀x₂.φ₂ → <w>∃z₂.ψ₂`, …, `∀xₙ.φₙ → <w>∃zₙ.ψₙ`
 
 __Output:__ Proved or Unproved
 
-* For each claim `∀x.φ → [w]∃z.ψ`
-    * Let `Goals := { ∀x.φ → [w]∃z.ψ }`
+* For each claim `∀x.φ → <w>∃z.ψ`
+    * Let `Goals := { ∀x.φ → <w>∃z.ψ }`
     * While `Goals` is not empty:
-        * Extract and remove `goal` of the form `∀x.φ → [w]∃z.ψ` from `Goals`
-        * Let `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → [w]∃z.ψ`
+        * Extract and remove `goal` of the form `∀x.φ → <w>∃z.ψ` from `Goals`
+        * Let `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → <w>∃z.ψ`
         * If `goalᵣₑₘ` is trivialy valid (i.e., if `φ ∧ ¬∃z.⌈φ ∧ ψ⌉ ≡ ⊥`)
             * continue to the next goal
         * If not the first while iteration for this claim:
@@ -117,41 +117,41 @@ returning `Unprovable`.
 
 __Note__: If the unfication condition `⌈φ ∧ ψ⌉ = (z=t)∧ p`
 with `t` functional, `p` predicate, and `t` free of `z`.
-Then `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → [w]∃z.ψ`
-is equivalent to `∀x.φ ∧ ¬pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
+Then `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → <w>∃z.ψ`
+is equivalent to `∀x.φ ∧ ¬pᵢ[tᵢ/xᵢ] → <w>∃z.ψ`.
 
 ### Algorithm `derivePar`
 
-__Input:__: goal `∀x.φ → [w]∃z.ψ` and set of tuples `{ (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }` representing either
+__Input:__: goal `∀x.φ → <w>∃z.ψ` and set of tuples `{ (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }` representing either
 
-* claims `{ ∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`, or
+* claims `{ ∀xᵢ.φᵢ → <w>∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`, or
 * axioms `{ ∀xᵢ.φᵢ → •∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`
 
 __Output:__ `(Goals, goalᵣₑₘ)`
 
-* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
-* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φ∧φₙ⌉) → [w]∃z.ψ }`
+* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → <w>∃z.ψ`
+* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ∧φ₁⌉) → <w>∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φ∧φₙ⌉) → <w>∃z.ψ }`
 
-__Note__: `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → [w]∃z.ψ` is obtained from
-`∀x.(∃xᵢ.(∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉) → [w]∃z.ψ`
+__Note__: `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → <w>∃z.ψ` is obtained from
+`∀x.(∃xᵢ.(∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉) → <w>∃z.ψ`
 
 __Note__: If the unfication condition `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
 with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
-Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → [w]∃z.ψ`
-is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
+Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → <w>∃z.ψ`
+is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → <w>∃z.ψ`.
 
 
 ### Algorithm `deriveSeq`
 
 __Input:__: goal and set of claims
 
-* goal: `∀x.φ → [w]∃z.ψ`
-* claims `∀x₁.φ₁ → [w]∃z₁.ψ₁`, `∀x₂.φ₂ → [w]∃z₂.ψ₂`, …, `∀xₙ.φₙ → [w]∃zₙ.ψₙ`
+* goal: `∀x.φ → <w>∃z.ψ`
+* claims `∀x₁.φ₁ → <w>∃z₁.ψ₁`, `∀x₂.φ₂ → <w>∃z₂.ψ₂`, …, `∀xₙ.φₙ → <w>∃zₙ.ψₙ`
 
 __Output:__ `(Goals, goalᵣₑₘ)`
 
-* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
-* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ₁ʳᵉᵐ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φₙʳᵉᵐ∧φₙ⌉) → [w]∃z.ψ }`
+* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → <w>∃z.ψ`
+* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ₁ʳᵉᵐ∧φ₁⌉) → <w>∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φₙʳᵉᵐ∧φₙ⌉) → <w>∃z.ψ }`
 
 where `φ₁ʳᵉᵐ := φ` and
 ```
@@ -160,30 +160,30 @@ where `φ₁ʳᵉᵐ := φ` and
 
 __Note__: If the unification condition `⌈φᵢʳᵉᵐ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
 with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
-Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → [w]∃z.ψ`
-is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
+Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → <w>∃z.ψ`
+is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → <w>∃z.ψ`.
 
-Similarly `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
-is equivalent to ∀x.(φ ∧ ⋀ⱼ ¬pⱼ[tⱼ/xⱼ]) → [w]∃z.ψ`
+Similarly `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → <w>∃z.ψ`
+is equivalent to ∀x.(φ ∧ ⋀ⱼ ¬pⱼ[tⱼ/xⱼ]) → <w>∃z.ψ`
 where `j` ranges over the set `{ i : 1 ≤ i ≤ n, φ unifies with φᵢ }`.
 
 __Note__: If `φ` does not unify with `φᵢ`, then `⌈φ∧φᵢ⌉ = ⊥`, hence
-the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → [w]∃z.ψ` is equivalent to
-`∀x.⊥ → [w]∃z.ψ` which can be discharged immediately. Also, in the
+the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → <w>∃z.ψ` is equivalent to
+`∀x.⊥ → <w>∃z.ψ` which can be discharged immediately. Also, in the
 remainder `¬∃x₁.⌈φ∧φ₁⌉ = ⊤` so the conjunct can be removed.
 
 
 Explanation
 -----------
 
-Say we want to prove `∀x.φ → [w]∃z.ψ`.
+Say we want to prove `∀x.φ → <w>∃z.ψ`.
 
-Unrolling `[w]ψ` we obtain `∀x.φ → (∃z.ψ) ∨ (○[w]∃z.ψ ∧ •⊤)`.
+Unrolling `<w>ψ` we obtain `∀x.φ → (∃z.ψ) ∨ (○<w>∃z.ψ ∧ •⊤)`.
 
 Moving `∃z.ψ` to the left of the implication, we get the equivalent
 
 ```
-∀x. (φ ∧ ¬∃z.ψ) →  ○[w](∃z.ψ) ∧ •⊤
+∀x. (φ ∧ ¬∃z.ψ) →  ○<w>(∃z.ψ) ∧ •⊤
 ```
 
 Let `φᵣₑₘ` be `φ ∧ ¬∃z.ψ`. This step eliminates the cases in which `∃z.ψ` holds now.
@@ -206,7 +206,7 @@ and the remainder part, i.e., the part on which none of the claims
 could be applied:
 
 ```
-φ'ᵣₑₘ := φᵣₑₘ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ … ∧ ¬∃xₙ.⌈φ∧φₙ⌉ 
+φ'ᵣₑₘ := φᵣₑₘ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ … ∧ ¬∃xₙ.⌈φ∧φₙ⌉
 ```
 
 We have a chioce whether to apply circularities sequentially or in parallel.
@@ -214,14 +214,14 @@ We have a chioce whether to apply circularities sequentially or in parallel.
 #### Applying claims sequentially
 
 ```
-∀x.φ → [w]∃z.ψ                                              is equivalent to
-∀x.φ ∧ (∃xᵢ.φᵢ ∨ ¬∃xᵢ.φᵢ) → [w]∃z.ψ                         which is equivalent to
-∀x.(φ ∧ ∃xᵢ.φᵢ) ∨ (φ ∧ ¬∃xᵢ.φᵢ) → [w]∃z.ψ                   which is equivalent to
-∀x.((φ ∧ ∃xᵢ.φᵢ) → [w]∃z.ψ) ∧ ∀x. ((φ ∧ ¬∃xᵢ.φᵢ) → [w]∃z.ψ) (1)
+∀x.φ → <w>∃z.ψ                                              is equivalent to
+∀x.φ ∧ (∃xᵢ.φᵢ ∨ ¬∃xᵢ.φᵢ) → <w>∃z.ψ                         which is equivalent to
+∀x.(φ ∧ ∃xᵢ.φᵢ) ∨ (φ ∧ ¬∃xᵢ.φᵢ) → <w>∃z.ψ                   which is equivalent to
+∀x.((φ ∧ ∃xᵢ.φᵢ) → <w>∃z.ψ) ∧ ∀x. ((φ ∧ ¬∃xᵢ.φᵢ) → <w>∃z.ψ) (1)
 ```
 
-Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → [w]∃z.ψ` can be rewritten as
-`∀x.φ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ → [w]∃z.ψ`, as detailed above.
+Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → <w>∃z.ψ` can be rewritten as
+`∀x.φ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ → <w>∃z.ψ`, as detailed above.
 
 __Note:__ If there are multiple claims which could apply on the same concrete
 instance of a configuration, then applying them sequentially would reduce
@@ -237,19 +237,19 @@ is computed at every claim application; it is equally possible
 to do it only once for all claims:
 
 ```
-∀x.φ → [w]∃z.ψ
-∀x.φ ∧ (∃x₁.φ₁ ∨ … ∨ ∃x₁.φₙ ∨ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → [w]∃z.ψ  
-∀x.(φ ∧ ∃x₁.φ₁) ∨ … ∨ (φ' ∧ ∃xₙ.φₙ) ∨ (φ' ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → [w]∃z.ψ
-(∀x.φ ∧ ∃x₁.φ₁ → [w]∃z.ψ)  ∧ … (∀x.φ ∧ ∃xₙ.φₙ → [w]∃z.ψ) ∧ (∀x.(φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → [w]∃z.ψ)
+∀x.φ → <w>∃z.ψ
+∀x.φ ∧ (∃x₁.φ₁ ∨ … ∨ ∃x₁.φₙ ∨ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → <w>∃z.ψ
+∀x.(φ ∧ ∃x₁.φ₁) ∨ … ∨ (φ' ∧ ∃xₙ.φₙ) ∨ (φ' ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → <w>∃z.ψ
+(∀x.φ ∧ ∃x₁.φ₁ → <w>∃z.ψ)  ∧ … (∀x.φ ∧ ∃xₙ.φₙ → <w>∃z.ψ) ∧ (∀x.(φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → <w>∃z.ψ)
 ```
 
 Note that the remainder can be rewritten as:
 
 ```
-φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → [w]ψ
-(φ ∧ ¬∃x₁.φ₁) ∧ … ∧ (φ ∧ ¬∃xₙ.φₙ) → [w]ψ
-(φ ∧ ¬∃x₁.⌈φ ∧ φ₁⌉) ∧ … ∧ (φ ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]ψ
-φ ∧ (¬∃x₁.⌈φ ∧ φ₁⌉ ∧ … ∧  ¬∃xₙ.⌈φ∧φₙ⌉) → [w]ψ
+φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → <w>ψ
+(φ ∧ ¬∃x₁.φ₁) ∧ … ∧ (φ ∧ ¬∃xₙ.φₙ) → <w>ψ
+(φ ∧ ¬∃x₁.⌈φ ∧ φ₁⌉) ∧ … ∧ (φ ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → <w>ψ
+φ ∧ (¬∃x₁.⌈φ ∧ φ₁⌉ ∧ … ∧  ¬∃xₙ.⌈φ∧φₙ⌉) → <w>ψ
 ```
 
 The advantage of this approach is that it's simpler, not altering the starting goal
@@ -259,46 +259,46 @@ from one derivation to the next.
 
 We want to prove that from
 ```
-∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ
-∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ
+∀xᵢ.φᵢ → <w>∃zᵢ.ψᵢ
+∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → <w>ψ
 ```
-we can deduce that `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`.
+we can deduce that `∀x.φ ∧ ∃xᵢ.φᵢ → <w>∃z.ψ`.
 
-This would allow us to replace goal `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`
-with goal '∀x∪zᵢ.∃xᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉ → [w]ψ'.
+This would allow us to replace goal `∀x.φ ∧ ∃xᵢ.φᵢ → <w>∃z.ψ`
+with goal '∀x∪zᵢ.∃xᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉ → <w>ψ'.
 
 _Proof:_
 
 The main step of our proof is to prove
-`φ ∧ ∃xᵢ.φᵢ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ ∧ φᵢ⌉)`
-from `∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ`.
+`φ ∧ ∃xᵢ.φᵢ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ ∧ φᵢ⌉)`
+from `∀xᵢ.φᵢ → <w>∃zᵢ.ψᵢ`.
 
 Assume `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ` with `tᵢ` functional, `pᵢ` predicate, and
 `tᵢ` free of `xi`.
 
 Then,
 ```
-φᵢ[tᵢ/xᵢ] → [w]∃zᵢ.ψᵢ[tᵢ/xᵢ]                              // by axiom ∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ instanțiated to xᵢ = tᵢ
-φᵢ[tᵢ/xᵢ] ∧ p[tᵢ/xᵢ] → ([w]∃zᵢ.ψᵢ[tᵢ/xᵢ]) ∧ p[tᵢ/xᵢ]      // framing
-φᵢ[tᵢ/xᵢ] ∧ p[tᵢ/xᵢ] → [w]((∃zᵢ.ψᵢ[tᵢ/xᵢ]) ∧ p[tᵢ/xᵢ])    // predicate properties
-∃xᵢ.φᵢ ∧ xᵢ=tᵢ ∧ p → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ xᵢ=tᵢ ∧ p)        // substitution properties
-∃xᵢ.φᵢ ∧ ⌈φ∧φᵢ⌉ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)              // definition of ⌈φ∧φᵢ⌉
-φ ∧ ∃xᵢ.(φᵢ ∧ ⌈φ∧φᵢ⌉) → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)        // Strengthening
-φ ∧ ∃xᵢ.⌈φ ∧ φᵢ ∧ ⌈φ∧φᵢ⌉⌉) → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)   // φ is functional
-φ ∧ ∃xᵢ.(⌈φ∧φᵢ⌉ ∧ ⌈φ∧φᵢ⌉) → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)    // predicate properties
-φ ∧ ∃xᵢ.⌈φ∧φᵢ⌉ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)               // idempotency
-φ ∧ ∃xᵢ.φᵢ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)                   // φ is functional
+φᵢ[tᵢ/xᵢ] → <w>∃zᵢ.ψᵢ[tᵢ/xᵢ]                              // by axiom ∀xᵢ.φᵢ → <w>∃zᵢ.ψᵢ instanțiated to xᵢ = tᵢ
+φᵢ[tᵢ/xᵢ] ∧ p[tᵢ/xᵢ] → (<w>∃zᵢ.ψᵢ[tᵢ/xᵢ]) ∧ p[tᵢ/xᵢ]      // framing
+φᵢ[tᵢ/xᵢ] ∧ p[tᵢ/xᵢ] → <w>((∃zᵢ.ψᵢ[tᵢ/xᵢ]) ∧ p[tᵢ/xᵢ])    // predicate properties
+∃xᵢ.φᵢ ∧ xᵢ=tᵢ ∧ p → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ xᵢ=tᵢ ∧ p)        // substitution properties
+∃xᵢ.φᵢ ∧ ⌈φ∧φᵢ⌉ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)              // definition of ⌈φ∧φᵢ⌉
+φ ∧ ∃xᵢ.(φᵢ ∧ ⌈φ∧φᵢ⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)        // Strengthening
+φ ∧ ∃xᵢ.⌈φ ∧ φᵢ ∧ ⌈φ∧φᵢ⌉⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)   // φ is functional
+φ ∧ ∃xᵢ.(⌈φ∧φᵢ⌉ ∧ ⌈φ∧φᵢ⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)    // predicate properties
+φ ∧ ∃xᵢ.⌈φ∧φᵢ⌉ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)               // idempotency
+φ ∧ ∃xᵢ.φᵢ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)                   // φ is functional
 ```
 
 ### Applying axioms
 
-We're back now to `∀x.φ →  (○[w]∃z.ψ) ∧ •⊤`, which is equivalent to
-`(∀x.φ →  ○[w]∃z.ψ) ∧ (∀x.φ →  •⊤)`
+We're back now to `∀x.φ →  (○<w>∃z.ψ) ∧ •⊤`, which is equivalent to
+`(∀x.φ →  ○<w>∃z.ψ) ∧ (∀x.φ →  •⊤)`
 
 Therefore we need to check two things:
 
 1. That `φ` is not stuck
-1. That `∀x.φ →  ○[w]∃z.ψ`
+1. That `∀x.φ →  ○<w>∃z.ψ`
 
 Assume `∀xᵢ.φᵢ →  •∃zᵢ.ψᵢ, 1 ≤ i ≤ n`  are all the one-step axioms
 in the definition.
@@ -316,19 +316,19 @@ to apply all axioms (i.e., the lhs of the last conjunct) is not equivalent to `�
 
 We want to prove that from
 ```
-(∀x∪z₁.∃x₁.ψ₁ ∧ ⌈φ ∧ φ₁⌉ → [w]∃z.ψ) ∧ … ∧ (∀x∪zₙ.∃xₙ.ψₙ ∧ ⌈φ ∧ φₙ⌉ → [w]∃z.ψ)
+(∀x∪z₁.∃x₁.ψ₁ ∧ ⌈φ ∧ φ₁⌉ → <w>∃z.ψ) ∧ … ∧ (∀x∪zₙ.∃xₙ.ψₙ ∧ ⌈φ ∧ φₙ⌉ → <w>∃z.ψ)
 P -> o ((∃x₁.⌈P ∧ φ₁⌉ ∧ ∃z₁.ψ₁) ∨ … ∨ (∃xₙ.⌈P ∧ φₙ⌉ ∧ ∃zₙ.ψₙ))      (STEP)
 ∀xᵢ.φᵢ →  •∃zᵢ.ψᵢ, 1 ≤ i ≤ n
 ```
 
 we can derive
 ```
-∀x.φ →  ○[w]∃z.ψ
+∀x.φ →  ○<w>∃z.ψ
 ```
 
-This would allow us to replace the goal `∀x.φ →  ○[w]∃z.ψ` with the set of goals
+This would allow us to replace the goal `∀x.φ →  ○<w>∃z.ψ` with the set of goals
 ```
-{ ∀x∪zᵢ.∃xᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉ → [w]∃z.ψ : 1 ≤ i ≤ n }
+{ ∀x∪zᵢ.∃xᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉ → <w>∃z.ψ : 1 ≤ i ≤ n }
 ```
 
 _Proof:_
@@ -339,8 +339,8 @@ Apply `(STEP)` on `φ`, and we obtain that
 ```
 And our proof goal becomes:
 ```
-o ∨_i ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → ○[w]∃z.ψ
-∨_i ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → [w]∃z.ψ  // framing on ○
-∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → [w]∃z.ψ  for all i
+o ∨_i ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → ○<w>∃z.ψ
+∨_i ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → <w>∃z.ψ  // framing on ○
+∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → <w>∃z.ψ  for all i
 ```
 
