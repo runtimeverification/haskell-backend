@@ -38,6 +38,7 @@
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
           (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+          (hsPkgs."cereal" or (errorHandler.buildDepError "cereal"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
           (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
@@ -98,6 +99,7 @@
           "Data/Graph/TopologicalSort"
           "Data/Limit"
           "Data/Sup"
+          "Data/Serialize/Orphans"
           "Debug"
           "ErrorContext"
           "From"
@@ -241,6 +243,7 @@
           "Kore/Internal/Predicate"
           "Kore/Internal/SideCondition"
           "Kore/Internal/SideCondition/SideCondition"
+          "Kore/Internal/SideCondition/Orphans"
           "Kore/Internal/Substitution"
           "Kore/Internal/Symbol"
           "Kore/Internal/TermLike"
@@ -483,6 +486,8 @@
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+            (hsPkgs."cereal" or (errorHandler.buildDepError "cereal"))
             (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
@@ -636,6 +641,7 @@
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
             (hsPkgs."array" or (errorHandler.buildDepError "array"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+            (hsPkgs."cereal" or (errorHandler.buildDepError "cereal"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
             (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
