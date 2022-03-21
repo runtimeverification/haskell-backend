@@ -11,7 +11,7 @@ an AST term in a single data type (e.g. 'SymbolOrAlias' that can be either
 'Symbol' or 'Alias')
 
 Please refer to
-<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
+<http://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.AST.Common (
     MLPatternType (..),

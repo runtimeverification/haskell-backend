@@ -5,7 +5,7 @@ Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 
 Please refer to
-<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
+<http://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Syntax.Variable (
     illegalVariableCounter,

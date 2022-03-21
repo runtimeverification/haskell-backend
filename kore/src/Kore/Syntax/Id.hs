@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 
-Please refer to <http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
+Please refer to <http://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Syntax.Id (
     -- * Identifiers
@@ -34,7 +34,7 @@ import Pretty qualified
 
 {- | 'Id' is a Kore identifier.
 
-'Id' corresponds to the @identifier@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
+'Id' corresponds to the @identifier@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
 data Id = Id
     { getId :: !Text

@@ -101,7 +101,7 @@ declareSMTLemmas m = do
 
     -- Translate an "unparsed" equation for Z3.
     -- Convert new encoding back to old.
-    -- See https://github.com/kframework/k/pull/2061#issuecomment-927922217
+    -- See https://github.com/runtimeverification/k/pull/2061#issuecomment-927922217
     convert :: TermLike VariableName -> Maybe (TermLike VariableName)
     convert
         ( Implies_

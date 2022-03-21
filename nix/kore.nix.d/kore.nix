@@ -16,7 +16,7 @@
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "ana.pantilie@runtimeverification.com";
       author = "Runtime Verification Inc";
-      homepage = "https://github.com/kframework/kore#readme";
+      homepage = "https://github.com/runtimeverification/haskell-backend#readme";
       url = "";
       synopsis = "";
       description = "Please see the [README](README.md) file.";

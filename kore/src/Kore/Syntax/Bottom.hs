@@ -15,7 +15,7 @@ import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
 
-{- | 'Bottom' corresponds to the @\\bottom@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+{- | 'Bottom' corresponds to the @\\bottom@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'bottomSort' is the sort of the result.
 -}
