@@ -10,9 +10,6 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (
     fromJust,
  )
-import Data.Reflection (
-    give,
- )
 import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
@@ -233,8 +230,7 @@ test_sortDeclaration =
         expr <-
             runMaybeT $
                 evalTranslator $
-                    give tools $
-                        translatePredicateWith SideCondition.top translateTerm predicate
+                    translatePredicateWith tools SideCondition.top translateTerm predicate
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id
@@ -262,9 +258,10 @@ test_sortDeclaration =
 
     declareSymbolsAndSorts ::
         SMT.MonadSMT m =>
+        SmtMetadataTools Attribute.Symbol ->
         VerifiedModule Attribute.Symbol ->
         m ()
-    declareSymbolsAndSorts m =
+    declareSymbolsAndSorts _tools m =
         declareSortsSymbols
             (Representation.build m (Attribute.Constructors.indexBySort m))
 

@@ -6,9 +6,6 @@ import Control.Error (
     runMaybeT,
  )
 import Data.HashSet qualified as HashSet
-import Data.Reflection (
-    give,
- )
 import Data.Text qualified as Text
 import Kore.Internal.Predicate (
     Predicate,
@@ -231,11 +228,11 @@ translatePattern ::
     TermLike VariableName ->
     Translator VariableName NoSMT SExpr
 translatePattern sideCondition =
-    give Mock.metadataTools $
-        SMT.translatePattern
-            sideCondition
-            Evaluator.translateTerm
-            Mock.testSort
+    SMT.translatePattern
+        Mock.metadataTools
+        sideCondition
+        Evaluator.translateTerm
+        Mock.testSort
 
 translatingPred :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translatingPred =

@@ -23,10 +23,6 @@ import Data.Generics.Product (
     field,
  )
 import Data.Limit
-import Data.Reflection (
-    Given,
-    give,
- )
 import Data.Sup (
     Sup (Element),
  )
@@ -210,9 +206,8 @@ assertSmtTestCase name expected actions prelude =
 testsForModule ::
     String ->
     ( forall m.
-      ( Given (SmtMetadataTools Attribute.Symbol)
-      , SMT.MonadSMT m
-      ) =>
+      SMT.MonadSMT m =>
+      SmtMetadataTools Attribute.Symbol ->
       VerifiedModule Attribute.Symbol ->
       m ()
     ) ->
@@ -224,7 +219,7 @@ testsForModule name functionToTest indexedModule tests =
   where
     prelude =
         SmtPrelude
-            (give tools $ functionToTest indexedModule)
+            (functionToTest tools indexedModule)
     tools = MetadataTools.build indexedModule
 
 constructorAxiom :: Text -> [(Text, [Text])] -> ParsedSentence

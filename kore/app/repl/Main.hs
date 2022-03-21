@@ -11,7 +11,6 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
-import Data.Reflection
 import GlobalMain
 import Kore.BugReport
 import Kore.Exec (
@@ -242,10 +241,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
                         SMT.runSMT
                             smtConfig
-                            ( give
-                                (MetadataTools.build validatedDefinition)
-                                (declareSMTLemmas validatedDefinition)
-                            )
+                            (declareSMTLemmas (MetadataTools.build validatedDefinition) validatedDefinition)
                             $ proveWithRepl
                                 simplifierx
                                 validatedDefinition
