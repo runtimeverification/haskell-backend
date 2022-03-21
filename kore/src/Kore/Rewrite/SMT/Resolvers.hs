@@ -52,7 +52,8 @@ translateSort ::
     SmtMetadataTools Attribute.Symbol ->
     Sort ->
     Maybe SMT.SExpr
-translateSort tools
+translateSort
+    tools
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
             AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
