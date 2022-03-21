@@ -78,6 +78,7 @@ import Kore.IndexedModule.IndexedModule (
     IndexedModule(..),
  )
 import Kore.IndexedModule.MetadataTools (
+    MetadataTools,
     SmtMetadataTools,
  )
 import Kore.Internal.InternalList
@@ -133,7 +134,7 @@ assertSort = Builtin.verifySort sort
 Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
 Returns Just False if the sort is a variable.
 -}
-isListSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
+isListSort :: MetadataTools metadata => SmtMetadataTools metadata attrs -> Sort -> Maybe Bool
 isListSort = Builtin.isSort sort
 
 verifiers :: Builtin.Verifiers
@@ -429,7 +430,8 @@ data UnifyEqualsList
 or similarly with \\and. Symmetric in the two arguments.
 -}
 matchUnifyEqualsList ::
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Maybe UnifyEqualsList
@@ -479,11 +481,12 @@ matchUnifyEqualsList tools first second
 unifyEquals ::
     forall unifier.
     MonadUnify unifier =>
+    MetadataTools metadata =>
     ( TermLike RewritingVariableName ->
       TermLike RewritingVariableName ->
       unifier (Pattern RewritingVariableName)
     ) ->
-    SmtMetadataTools Attribute.Symbol ->
+    SmtMetadataTools metadata Attribute.Symbol ->
     UnifyEqualsList ->
     unifier (Pattern RewritingVariableName)
 unifyEquals

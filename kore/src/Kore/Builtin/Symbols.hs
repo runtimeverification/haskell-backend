@@ -30,6 +30,7 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (
+    MetadataTools,
     SmtMetadataTools,
  )
 import Kore.IndexedModule.MetadataTools qualified as MetadataTools
@@ -72,7 +73,8 @@ declared attributes, because it is intended only for unparsing.
 
 -- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
 lookupSymbolUnit ::
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     Sort ->
     Symbol
 lookupSymbolUnit tools builtinSort =
@@ -108,7 +110,8 @@ declared attributes, because it is intended only for unparsing.
 
 -- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
 lookupSymbolElement ::
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     Sort ->
     Symbol
 lookupSymbolElement tools builtinSort =
@@ -144,7 +147,8 @@ declared attributes, because it is intended only for unparsing.
 
 -- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
 lookupSymbolConcat ::
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     Sort ->
     Symbol
 lookupSymbolConcat tools builtinSort =

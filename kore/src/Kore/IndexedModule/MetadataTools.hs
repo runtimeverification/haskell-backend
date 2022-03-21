@@ -9,13 +9,11 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools (
-    MetadataTools (..),
+    MetadataTools(..),
+    MetadataToolsData,
     SmtMetadataTools,
     extractMetadataTools,
     findSortConstructors,
-    sortAttributes,
-    applicationSorts,
-    symbolAttributes,
 ) where
 
 import Data.Map.Strict (
@@ -42,23 +40,30 @@ import Kore.Syntax.Application (
  )
 import Prelude.Kore
 
+class MetadataTools metadata where
+    sortAttributes :: metadata sortConstructors smt attributes -> Sort -> Attribute.Sort
+    applicationSorts :: metadata sortConstructors smt attributes -> SymbolOrAlias -> ApplicationSorts
+    symbolAttributes :: metadata sortConstructors smt attributes -> Id -> attributes
+    smtData :: metadata sortConstructors smt attributes -> smt
+    sortConstructors :: metadata sortConstructors smt attributes -> Map Id sortConstructors
+
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
 -}
-data MetadataTools sortConstructors smt attributes = MetadataTools
+data MetadataToolsData sortConstructors smt attributes = MetadataToolsData
     { -- | syntax of module
       syntax :: VerifiedModuleSyntax attributes
     , -- | The SMT data for the given module.
-      smtData :: smt
+      smtDataInternal :: smt
     , -- | The constructors for each sort.
-      sortConstructors :: Map Id sortConstructors
+      sortConstructorsInternal :: Map Id sortConstructors
     }
     deriving stock (Functor)
     deriving stock (GHC.Generic)
     deriving anyclass (Serialize)
 
-type SmtMetadataTools attributes =
-    MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
+type SmtMetadataTools metadata attributes =
+    metadata Attribute.Constructors SMT.AST.SmtDeclarations attributes
 
 {- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
  'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -70,12 +75,12 @@ extractMetadataTools ::
     VerifiedModule declAtts ->
     (VerifiedModule declAtts -> Map Id sortConstructors) ->
     (VerifiedModule declAtts -> Map Id sortConstructors -> smt) ->
-    MetadataTools sortConstructors smt declAtts
+    MetadataToolsData sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
-    MetadataTools
+    MetadataToolsData
         { syntax = indexedModuleSyntax m
-        , smtData = smtExtractor m constructors
-        , sortConstructors = constructors
+        , smtDataInternal = smtExtractor m constructors
+        , sortConstructorsInternal = constructors
         }
   where
     constructors = constructorsExtractor m
@@ -88,17 +93,16 @@ if the constructor axioms actually include `inj` when needed, which is not true
 right now.
 -}
 findSortConstructors ::
-    SmtMetadataTools attributes -> Id -> Maybe Attribute.Constructors
-findSortConstructors
-    MetadataTools{sortConstructors}
-    sortId =
-        Map.lookup sortId sortConstructors
+    MetadataTools metadata =>
+    SmtMetadataTools metadata attributes ->
+    Id ->
+    Maybe Attribute.Constructors
+findSortConstructors metadataTools sortId =
+    Map.lookup sortId $ sortConstructors metadataTools
 
-sortAttributes :: MetadataTools sortConstructors smt attributes -> Sort -> Attribute.Sort
-sortAttributes tools s = getSortAttributes (syntax tools) s
-
-applicationSorts :: MetadataTools sortConstructors smt attributes -> SymbolOrAlias -> ApplicationSorts
-applicationSorts tools s = getHeadApplicationSorts (syntax tools) s
-
-symbolAttributes :: MetadataTools sortConstructors smt attributes -> Id -> attributes
-symbolAttributes tools s = getSymbolAttributes (syntax tools) s
+instance MetadataTools MetadataToolsData where
+    sortAttributes tools s = getSortAttributes (syntax tools) s
+    applicationSorts tools s = getHeadApplicationSorts (syntax tools) s
+    symbolAttributes tools s = getSymbolAttributes (syntax tools) s
+    smtData = smtDataInternal
+    sortConstructors = sortConstructorsInternal

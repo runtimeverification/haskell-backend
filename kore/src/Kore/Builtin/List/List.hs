@@ -48,6 +48,7 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (
+    MetadataTools,
     SmtMetadataTools,
  )
 import Kore.Internal.InternalList
@@ -65,7 +66,8 @@ sort = "LIST.List"
 -- | Render a 'Seq' as an expanded internal list pattern.
 asInternal ::
     InternalVariable variable =>
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     Sort ->
     Seq (TermLike variable) ->
     TermLike variable
@@ -74,7 +76,8 @@ asInternal tools builtinListSort builtinListChild =
 
 -- | Render a 'Seq' as a Builtin list pattern.
 asBuiltin ::
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     Sort ->
     Seq (TermLike variable) ->
     InternalList (TermLike variable)
@@ -95,8 +98,10 @@ asBuiltin tools internalListSort internalListChild =
 See also: 'asPattern'
 -}
 asPattern ::
+    forall metadata variable.
     ( InternalVariable variable
-    , Given (SmtMetadataTools Attribute.Symbol)
+    , MetadataTools metadata
+    , Given (SmtMetadataTools metadata Attribute.Symbol)
     ) =>
     Sort ->
     Seq (TermLike variable) ->
@@ -104,12 +109,13 @@ asPattern ::
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
-    tools :: SmtMetadataTools Attribute.Symbol
+    tools :: SmtMetadataTools metadata Attribute.Symbol
     tools = Reflection.given
 
 internalize ::
     InternalVariable variable =>
-    SmtMetadataTools Attribute.Symbol ->
+    MetadataTools metadata =>
+    SmtMetadataTools metadata Attribute.Symbol ->
     TermLike variable ->
     TermLike variable
 internalize tools termLike@(App_ symbol args)

@@ -19,11 +19,8 @@ import Data.Reflection (
  )
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.IndexedModule.MetadataTools (
-    MetadataTools (MetadataTools),
+    MetadataTools,
     SmtMetadataTools,
- )
-import Kore.IndexedModule.MetadataTools qualified as MetadataTools (
-    MetadataTools (smtData),
  )
 import Kore.Internal.Symbol
 import Kore.Rewrite.SMT.AST qualified as AST (
@@ -47,14 +44,15 @@ import SMT qualified
 the given SmtMetadataTools.
 -}
 translateSymbol ::
-    Given (SmtMetadataTools Attribute.Symbol) =>
+    MetadataTools metadata
+    Given (SmtMetadataTools metadata Attribute.Symbol) =>
     Symbol ->
     Maybe SMT.SExpr
 translateSymbol Symbol{symbolConstructor, symbolParams} = do
     AST.Symbol{symbolData} <- Map.lookup symbolConstructor symbols
     AST.symbolSmtFromSortArgs symbolData sorts symbolParams
   where
-    MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
+    AST.Declarations{sorts, symbols} = smtData tools
 
     tools :: SmtMetadataTools Attribute.Symbol
     tools = given

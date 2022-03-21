@@ -149,12 +149,12 @@ import SMT (
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
-class (MonadLog m, MonadSMT m) => MonadSimplify m where
+class (MonadLog m, MonadSMT m, MetadataTools metadata) => MonadSimplify m where
     -- | Retrieve the 'MetadataTools' for the Kore context.
-    askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
+    askMetadataTools :: m (SmtMetadataTools metadata Attribute.Symbol)
     default askMetadataTools ::
         (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m (SmtMetadataTools Attribute.Symbol)
+        m (SmtMetadataTools metadata Attribute.Symbol)
     askMetadataTools = lift askMetadataTools
     {-# INLINE askMetadataTools #-}
 
