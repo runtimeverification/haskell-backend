@@ -17,6 +17,7 @@ module Kore.Rewrite.SMT.AST (
     SmtSymbol,
     Sort (..),
     SortReference (..),
+    SortSExprFactory (..),
     Symbol (..),
     SymbolReference (..),
     UnresolvedConstructor,
@@ -33,6 +34,7 @@ module Kore.Rewrite.SMT.AST (
     encodable,
     encode,
     mergePreferFirst,
+    symbolSmtFromSortArgs,
 ) where
 
 import Data.Map.Strict (
@@ -70,8 +72,8 @@ data Sort sort symbol name = Sort
       -- Smt representations for sorts and a list of sort arguments, returns
       -- an S-expression that can be used, say, when declaring symbols of
       -- that sort.
-      sortSmtFromSortArgs ::
-        !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
+      sortData ::
+        SortSExprFactory
     , -- | Information needed for declaring the sort, also listing all
       -- dependencies on other sorts and symbols.
       sortDeclaration :: !(KoreSortDeclaration sort symbol name)
@@ -86,10 +88,21 @@ instance
     where
     show s@(Sort _ _) =
         case s of
-            Sort{sortSmtFromSortArgs = _, sortDeclaration} ->
+            Sort{sortDeclaration} ->
                 "Sort { sortSmtFromSortArgs, sortDeclaration = "
                     ++ show sortDeclaration
                     ++ "}"
+
+data SortSExprFactory
+  = EmptySortArgsToSmt AST.SExpr
+  | ApplyToArgs AST.SExpr
+  | ConstSExpr AST.SExpr
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
+
+instance Diff SortSExprFactory where
+    diffPrec = diffPrecIgnore
 
 {- | A representation of the Kore SymbolOrAlias type together with symbol
 declaration sentences, optimized for dealing with the SMT.
@@ -101,8 +114,7 @@ data Symbol sort name = Symbol
       -- Smt representations for sorts and a list of sort arguments, returns
       -- an s-expression that can be used, say, when building assertions
       -- using that symbol.
-      symbolSmtFromSortArgs ::
-        !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
+      symbolData :: AST.SExpr
     , -- | Information needed for declaring the symbol, also listing all
       -- dependencies on other sorts and symbols.
       symbolDeclaration :: !(KoreSymbolDeclaration sort name)
@@ -111,10 +123,13 @@ data Symbol sort name = Symbol
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+symbolSmtFromSortArgs :: AST.SExpr -> Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr
+symbolSmtFromSortArgs astName = const . const $ Just astName
+
 instance (Show sort, Show name) => Show (Symbol sort name) where
     show s@(Symbol _ _) =
         case s of
-            Symbol{symbolSmtFromSortArgs = _, symbolDeclaration} ->
+            Symbol{symbolDeclaration} ->
                 "Symbol { symbolSmtFromSortArgs, symbolDeclaration = "
                     ++ show symbolDeclaration
                     ++ "}"

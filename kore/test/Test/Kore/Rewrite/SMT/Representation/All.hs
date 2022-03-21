@@ -19,6 +19,7 @@ import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     KoreSortDeclaration (SortDeclarationSort),
     Sort (Sort),
+    SortSExprFactory (..),
     encodable,
     encode,
  )
@@ -73,11 +74,7 @@ test_symbolParsing =
   where
     astSortDeclaration name =
         AST.Sort
-            { sortSmtFromSortArgs =
-                const $
-                    const $
-                        Just $
-                            AST.encode (AST.encodable name)
+            { sortData = AST.ConstSExpr $ AST.encode (AST.encodable name)
             , sortDeclaration =
                 AST.SortDeclarationSort
                     SMT.SortDeclaration

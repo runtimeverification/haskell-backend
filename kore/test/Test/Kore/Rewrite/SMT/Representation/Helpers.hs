@@ -16,8 +16,12 @@ import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Sort (Sort),
     Symbol (Symbol),
+    symbolSmtFromSortArgs,
  )
 import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
+import Kore.Rewrite.SMT.Representation.Sorts qualified as AST (
+    sortSmtFromSortArgs,
+ )
 import Kore.Syntax.Id qualified as Kore (
     Id,
  )
@@ -73,11 +77,11 @@ smtForSortIs
                             ++ show (Map.keysSet sorts)
                             ++ ")"
                         )
-                Just AST.Sort{sortSmtFromSortArgs} ->
+                Just AST.Sort{sortData} ->
                     assertEqual
                         ""
                         (Just expectedSExpr)
-                        (AST.showSExpr <$> sortSmtFromSortArgs Map.empty [])
+                        (AST.showSExpr <$> AST.sortSmtFromSortArgs sortData Map.empty [])
 
 smtForSymbolIs ::
     HasCallStack =>
@@ -98,8 +102,8 @@ smtForSymbolIs
                             ++ show (Map.keysSet symbols)
                             ++ ")"
                         )
-                Just AST.Symbol{symbolSmtFromSortArgs} ->
+                Just AST.Symbol{symbolData} ->
                     assertEqual
                         ""
                         (Just expectedSExpr)
-                        (AST.showSExpr <$> symbolSmtFromSortArgs Map.empty [])
+                        (AST.showSExpr <$> AST.symbolSmtFromSortArgs symbolData Map.empty [])

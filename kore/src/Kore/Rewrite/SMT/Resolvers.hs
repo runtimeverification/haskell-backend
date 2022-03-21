@@ -26,6 +26,10 @@ import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Sort (Sort),
     Symbol (Symbol),
+    symbolSmtFromSortArgs,
+ )
+import Kore.Rewrite.SMT.Representation.Sorts qualified as AST (
+    sortSmtFromSortArgs,
  )
 import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
 import Kore.Sort (
@@ -43,8 +47,8 @@ translateSymbol ::
     Symbol ->
     Maybe SMT.SExpr
 translateSymbol tools Symbol{symbolConstructor, symbolParams} = do
-    AST.Symbol{symbolSmtFromSortArgs} <- Map.lookup symbolConstructor symbols
-    symbolSmtFromSortArgs sorts symbolParams
+    AST.Symbol{symbolData} <- Map.lookup symbolConstructor symbols
+    AST.symbolSmtFromSortArgs symbolData sorts symbolParams
   where
     MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
 
@@ -56,8 +60,8 @@ translateSort
     tools
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
-            sortSmtFromSortArgs sorts sortActualSorts
+            AST.Sort{sortData} <- Map.lookup sortActualName sorts
+            AST.sortSmtFromSortArgs sortData sorts sortActualSorts
       where
         MetadataTools{smtData = AST.Declarations{sorts}} = tools
 translateSort _ (SortVariableSort _) = Nothing
