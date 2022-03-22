@@ -488,7 +488,7 @@ helpText =
            \(***) The clear command doesn't allow the removal of nodes which are direct\n\
            \ descendants of branchings. The steps which create branchings cannot be\n\
            \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n"
-        <> "\nFor more details see https://github.com/kframework/kore/wiki/Kore-REPL#available-commands-in-the-kore-repl\n"
+        <> "\nFor more details see https://github.com/runtimeverification/haskell-backend/wiki/Kore-REPL#available-commands-in-the-kore-repl\n"
 
 entriesForHelp :: String
 entriesForHelp =

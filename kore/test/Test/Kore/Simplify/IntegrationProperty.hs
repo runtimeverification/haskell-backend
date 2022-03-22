@@ -128,7 +128,7 @@ test_regressionGeneratedTerms =
                 (Pattern.fromTermLike term)
                 & runSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
-    , -- See https://github.com/kframework/kore/pull/2819#issuecomment-929492780
+    , -- See https://github.com/runtimeverification/haskell-backend/pull/2819#issuecomment-929492780
       testCase "Don't forget simplified of sub-term predicates" $ do
         let iffTerm =
                 mkIff

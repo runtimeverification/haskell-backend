@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2018-2021
 
 Please refer to
-<http://github.com/kframework/kore/blob/master/docs/kore-syntax.md kore-syntax.md>.
+<http://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Sort (
     SortVariable (..),
@@ -54,7 +54,7 @@ import Pretty qualified
 
 {- | 'SortVariable' is a Kore sort variable.
 
-'SortVariable' corresponds to the @sort-variable@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
+'SortVariable' corresponds to the @sort-variable@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 newtype SortVariable = SortVariable
     {getSortVariable :: Id}
@@ -69,7 +69,7 @@ instance Unparse SortVariable where
     unparse2 SortVariable{getSortVariable} = unparse2 getSortVariable
 
 {- |'SortActual' corresponds to the @sort-identifier{sorts}@ branch of the
-@sort@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
+@sort@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 data SortActual = SortActual
     { sortActualName :: !Id
@@ -95,7 +95,7 @@ instance Unparse SortActual where
                     <> ")"
 
 {- |'Sort' corresponds to the @sort@ syntactic category from
-<https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
+<https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 data Sort
     = SortVariableSort !SortVariable
