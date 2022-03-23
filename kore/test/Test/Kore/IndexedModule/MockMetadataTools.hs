@@ -51,7 +51,6 @@ data MockSyntaxData attributes = MockSyntaxData
     , applicationSorts :: [(SymbolOrAlias, ApplicationSorts)]
     , symbolAttributes :: [(SymbolOrAlias, attributes)]
     }
-    deriving stock (Functor)
 
 instance ExtractSyntax MockSyntaxData where
     extractSortAttributes sdata = caseBasedFunction $ sortAttributes sdata

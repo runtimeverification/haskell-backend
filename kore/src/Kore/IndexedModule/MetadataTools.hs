@@ -55,15 +55,19 @@ instance ExtractSyntax VerifiedModuleSyntax where
 data MetadataSyntaxData attributes
     = forall syntaxData.
         ( ExtractSyntax syntaxData
-        , Functor syntaxData
         ) =>
       MetadataSyntaxData (syntaxData attributes)
 
-instance Functor MetadataSyntaxData where
-    fmap f (MetadataSyntaxData sdata) = MetadataSyntaxData (fmap f sdata)
 
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
+
+We do not derive Functor on this type because it is not currently possible
+to guarantee that the type the Functor is mapping to will implement
+Serialize. If you need to implement Functor here, your best bet is to replace
+the Serialize constraint in MetadataSyntaxData with a Typeable constraint and
+modify the Serialize instance so that it uses Typeable to check that the type
+it contains is serializable.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
     { -- | syntax of module
@@ -73,7 +77,6 @@ data MetadataTools sortConstructors smt attributes = MetadataTools
     , -- | The constructors for each sort.
       sortConstructors :: Map Id sortConstructors
     }
-    deriving stock (Functor)
 
 type SmtMetadataTools attributes =
     MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
