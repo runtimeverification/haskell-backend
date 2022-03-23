@@ -52,12 +52,12 @@ instance ExtractSyntax VerifiedModuleSyntax where
     extractApplicationSorts = getHeadApplicationSorts
     extractSymbolAttributes = getSymbolAttributes
 
-data MetadataSyntaxData attributes =
-    forall syntaxData.
-    ( ExtractSyntax syntaxData
-    , Functor syntaxData
-    ) =>
-    MetadataSyntaxData (syntaxData attributes)
+data MetadataSyntaxData attributes
+    = forall syntaxData.
+        ( ExtractSyntax syntaxData
+        , Functor syntaxData
+        ) =>
+      MetadataSyntaxData (syntaxData attributes)
 
 instance Functor MetadataSyntaxData where
     fmap f (MetadataSyntaxData sdata) = MetadataSyntaxData (fmap f sdata)
@@ -113,10 +113,10 @@ findSortConstructors
         Map.lookup sortId sortConstructors
 
 sortAttributes :: MetadataTools sortConstructors smt attributes -> Sort -> Attribute.Sort
-sortAttributes MetadataTools{syntax=MetadataSyntaxData sdata} s = extractSortAttributes sdata s
+sortAttributes MetadataTools{syntax = MetadataSyntaxData sdata} s = extractSortAttributes sdata s
 
 applicationSorts :: MetadataTools sortConstructors smt attributes -> SymbolOrAlias -> ApplicationSorts
-applicationSorts MetadataTools{syntax=MetadataSyntaxData sdata} s = extractApplicationSorts sdata s
+applicationSorts MetadataTools{syntax = MetadataSyntaxData sdata} s = extractApplicationSorts sdata s
 
 symbolAttributes :: MetadataTools sortConstructors smt attributes -> Id -> attributes
-symbolAttributes MetadataTools{syntax=MetadataSyntaxData sdata} s = extractSymbolAttributes sdata s
+symbolAttributes MetadataTools{syntax = MetadataSyntaxData sdata} s = extractSymbolAttributes sdata s

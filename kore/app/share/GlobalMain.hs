@@ -72,7 +72,7 @@ import Kore.Attribute.Symbol qualified as Attribute (
  )
 import Kore.Builtin qualified as Builtin
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule (indexedModuleSyntax, indexedModuleAxioms),
+    IndexedModule (indexedModuleAxioms, indexedModuleSyntax),
     VerifiedModule,
  )
 import Kore.Internal.Conditional (Conditional (..))

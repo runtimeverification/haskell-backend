@@ -15,7 +15,7 @@ import Kore.IndexedModule.Error (
     noSort,
  )
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
  )
 import Kore.Internal.TermLike qualified as Internal
 import Kore.Syntax

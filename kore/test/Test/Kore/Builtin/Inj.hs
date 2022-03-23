@@ -9,7 +9,7 @@ import Kore.Error (
     assertRight,
  )
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
  )
 import Kore.Internal.TermLike
 import Kore.Unparser (

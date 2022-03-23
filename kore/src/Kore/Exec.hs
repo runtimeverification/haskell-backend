@@ -65,8 +65,8 @@ import Kore.Equation qualified as Equation (
     requires,
  )
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
     VerifiedModule,
-    IndexedModule(..),
  )
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (

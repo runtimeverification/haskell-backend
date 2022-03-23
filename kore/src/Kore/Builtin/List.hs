@@ -74,7 +74,7 @@ import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.List.List
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,

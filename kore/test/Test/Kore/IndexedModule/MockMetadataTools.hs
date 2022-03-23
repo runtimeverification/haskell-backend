@@ -46,12 +46,11 @@ import Kore.Syntax.Id (
  )
 import Prelude.Kore
 
-data MockSyntaxData attributes =
-    MockSyntaxData
-        { sortAttributes :: [(Sort, Attribute.Sort)]
-        , applicationSorts :: [(SymbolOrAlias, ApplicationSorts)]
-        , symbolAttributes :: [(SymbolOrAlias, attributes)]
-        }
+data MockSyntaxData attributes = MockSyntaxData
+    { sortAttributes :: [(Sort, Attribute.Sort)]
+    , applicationSorts :: [(SymbolOrAlias, ApplicationSorts)]
+    , symbolAttributes :: [(SymbolOrAlias, attributes)]
+    }
     deriving stock (Functor)
 
 instance ExtractSyntax MockSyntaxData where
@@ -76,15 +75,16 @@ makeMetadataTools ::
     SmtMetadataTools StepperAttributes
 makeMetadataTools attr sortTypes sorts declarations sortConstructors =
     MetadataTools
-        { syntax = MetadataSyntaxData $
-            MockSyntaxData
-                { sortAttributes = sortTypes
-                -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
-                -- 'isSubsortOf' only work with direct (non-transitive) relationships.
-                -- For now, we can manually add the relationships for tests.
-                , applicationSorts = sorts
-                , symbolAttributes = attr
-                }
+        { syntax =
+            MetadataSyntaxData $
+                MockSyntaxData
+                    { sortAttributes = sortTypes
+                    , -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
+                      -- 'isSubsortOf' only work with direct (non-transitive) relationships.
+                      -- For now, we can manually add the relationships for tests.
+                      applicationSorts = sorts
+                    , symbolAttributes = attr
+                    }
         , smtData = declarations
         , sortConstructors
         }

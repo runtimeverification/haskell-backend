@@ -14,7 +14,7 @@ import Kore.Attribute.Symbol qualified as Attribute (
 import Kore.Builtin qualified as Builtin
 import Kore.Debug
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
     VerifiedModule,
     toVerifiedDefinition,
  )

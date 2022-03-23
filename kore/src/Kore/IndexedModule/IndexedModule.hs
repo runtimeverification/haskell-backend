@@ -117,7 +117,6 @@ module data in raw-ish form.
 All 'IndexedModule' instances should be returned by
 'indexedModuleWithDefaultImports'.
 -}
-
 data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
     { indexedModuleName :: !ModuleName
     , indexedModuleAliasSentences ::
@@ -298,7 +297,6 @@ erased. The axiom and claim declarations are erased entirely.
 This is useful because pattern verification needs to know about declared sorts,
 symbols, and aliases, but it does not need to know anything about patterns.
 -}
-
 eraseAliasPatterns ::
     IndexedModuleSyntax patternType1 declAttributes ->
     IndexedModuleSyntax () declAttributes
@@ -311,7 +309,7 @@ eraseAliasPatterns indexedModuleSyntax =
             Lens.over (Lens.mapped . Lens._3) eraseAliasPatterns $
                 indexedModuleImportsSyntax indexedModuleSyntax
         }
-    
+
 erasePatterns ::
     IndexedModule patternType1 declAttributes axiomAttributes ->
     IndexedModule () declAttributes axiomAttributes
@@ -339,18 +337,18 @@ mapAliasPatterns mapping indexedModuleSyntax =
                 & Lens.over (Lens.mapped . Lens._3) (mapAliasPatterns mapping)
         }
   where
-     IndexedModuleSyntax{indexedModuleAliasSentences} = indexedModuleSyntax
-     IndexedModuleSyntax{indexedModuleImportsSyntax} = indexedModuleSyntax
- 
+    IndexedModuleSyntax{indexedModuleAliasSentences} = indexedModuleSyntax
+    IndexedModuleSyntax{indexedModuleImportsSyntax} = indexedModuleSyntax
+
 mapPatterns ::
     (patternType1 -> patternType2) ->
     IndexedModule patternType1 declAttributes axiomAttributes ->
     IndexedModule patternType2 declAttributes axiomAttributes
 mapPatterns mapping indexedModule =
     indexedModule
-        { indexedModuleSyntax = 
+        { indexedModuleSyntax =
             mapAliasPatterns mapping indexedModuleSyntax
-       , indexedModuleAxioms =
+        , indexedModuleAxioms =
             (fmap . fmap . fmap) mapping indexedModuleAxioms
         , indexedModuleClaims =
             (fmap . fmap . fmap) mapping indexedModuleClaims
@@ -505,10 +503,10 @@ indexedModuleWithDefaultImports name defaultImport =
             (indexedModuleSyntax indexedModule)
                 { indexedModuleImportsSyntax =
                     case defaultImport of
-                    Just (ImplicitIndexedModule implicitModule) ->
-                        [(def, Attributes [], indexedModuleSyntax implicitModule)]
-                    Nothing ->
-                        []
+                        Just (ImplicitIndexedModule implicitModule) ->
+                            [(def, Attributes [], indexedModuleSyntax implicitModule)]
+                        Nothing ->
+                            []
                 }
         , indexedModuleImports =
             case defaultImport of
@@ -517,8 +515,8 @@ indexedModuleWithDefaultImports name defaultImport =
                 Nothing ->
                     []
         }
-    where
-        indexedModule = emptyIndexedModule name
+  where
+    indexedModule = emptyIndexedModule name
 
 -- | Retrieve those object-level symbol sentences that are hooked.
 hookedObjectSymbolSentences ::

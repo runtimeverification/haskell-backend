@@ -66,7 +66,7 @@ import Kore.Builtin.List qualified as Builtin.List
 import Kore.Builtin.Map.Map qualified as Map
 import Kore.Builtin.Set qualified as Builtin.Set
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
  )
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,

@@ -26,7 +26,7 @@ import Kore.Error (
     Error,
  )
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (

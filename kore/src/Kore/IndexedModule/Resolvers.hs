@@ -83,7 +83,7 @@ aliasSentencesMap ::
     Map.Map Id (declAtts, SentenceAlias patternType)
 aliasSentencesMap = indexedModuleAliasSentences
 sortSentencesMap ::
-    IndexedModuleSyntax patternType declAtts->
+    IndexedModuleSyntax patternType declAtts ->
     Map.Map Id (Attribute.Sort, SentenceSort)
 sortSentencesMap = indexedModuleSortDescriptions
 

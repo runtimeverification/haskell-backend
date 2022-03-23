@@ -75,7 +75,7 @@ import Kore.Error (
  )
 import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule(..),
+    IndexedModule (..),
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (
