@@ -66,7 +66,6 @@ instance ExtractSyntax MockSyntaxData where
             )
 
 makeMetadataTools ::
-    HasCallStack =>
     [(SymbolOrAlias, StepperAttributes)] ->
     [(Sort, Attribute.Sort)] ->
     [(SymbolOrAlias, ApplicationSorts)] ->
