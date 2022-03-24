@@ -1,2 +1,2 @@
 #!/bin/sh
-${KORE_EXEC:?} test-branching-invalid-definition.kore --module ETHEREUM-SIMULATION --pattern test-branching-invalid-tmp.in.T5mFYpoWef --searchType FINAL --search test-branching-invalid-tmp.pattern.7XWdGTz9aV "$@"
+${KORE_EXEC:?} test-branching-invalid-definition.kore --module ETHEREUM-SIMULATION --pattern test-branching-invalid-tmp.in.kRRBKOze6q --searchType FINAL --search test-branching-invalid-tmp.pattern.CneSV1gatw "$@"
