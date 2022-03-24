@@ -53,10 +53,6 @@ import Data.Kind (
  )
 import Data.List qualified
 import Data.List qualified as List
-import Data.Reflection (
-    Given,
- )
-import Data.Reflection qualified as Reflection
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -613,17 +609,14 @@ elementListAsNormalized terms = do
 -- | Render a 'NormalizedAc' as an extended domain value pattern.
 asPattern ::
     ( InternalVariable variable
-    , Given (SmtMetadataTools Attribute.Symbol)
     , TermWrapper normalized
     ) =>
+    SmtMetadataTools Attribute.Symbol ->
     Sort ->
     TermNormalizedAc normalized variable ->
     Pattern variable
-asPattern resultSort =
+asPattern tools resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
-  where
-    tools :: SmtMetadataTools Attribute.Symbol
-    tools = Reflection.given
 
 {- | Evaluates a concatenation of two AC structures represented as
 NormalizedOrBottom, providind the result in the form of a function result.

@@ -58,7 +58,6 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Reflection qualified as Reflection
 import Data.Sequence (
     Seq,
  )
@@ -250,7 +249,7 @@ returnList ::
     m (Pattern variable)
 returnList builtinListSort builtinListChild = do
     tools <- Simplifier.askMetadataTools
-    return (Reflection.give tools $ asPattern builtinListSort builtinListChild)
+    return $ asPattern tools builtinListSort builtinListChild
 
 evalElement :: Builtin.Function
 evalElement _ resultSort =
@@ -538,14 +537,13 @@ unifyEquals
         unifyEqualsConcrete builtin1 builtin2 term1 term2
             | Seq.length list1 /= Seq.length list2 = bottomWithExplanation term1 term2
             | otherwise = do
-                Reflection.give tools $ do
-                    unified <- sequence $ Seq.zipWith simplifyChild list1 list2
-                    let propagatedUnified = propagateConditions unified
-                        result =
-                            TermLike.markSimplified
-                                . asInternal tools internalListSort
-                                <$> propagatedUnified
-                    return result
+                unified <- sequence $ Seq.zipWith simplifyChild list1 list2
+                let propagatedUnified = propagateConditions unified
+                    result =
+                        TermLike.markSimplified
+                            . asInternal tools internalListSort
+                            <$> propagatedUnified
+                return result
           where
             InternalList{internalListSort} = builtin1
             InternalList{internalListChild = list1} = builtin1

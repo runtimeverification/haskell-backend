@@ -27,7 +27,6 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Reflection qualified as Reflection
 import Data.Sequence (
     Seq,
  )
@@ -507,7 +506,7 @@ asPattern ::
     f (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asPattern =
-    Reflection.give testMetadataTools List.asPattern listSort
+    List.asPattern testMetadataTools listSort
         . Seq.fromList
         . toList
 
