@@ -26,7 +26,7 @@ And Kore is such a language.
 The [docs] directory contains a collection of documents
 that describe the mathematical foundation of Kore and a BNF grammar
 that defines the syntax of Kore language. See
-[/docs/introduction.md](https://github.com/kframework/kore/blob/master/docs/introduction.md)
+[/docs/introduction.md](https://github.com/runtimeverification/haskell-backend/blob/master/docs/introduction.md)
 for an overview of the components of Kore.
 
 The `kore` project is an implementation in Haskell of a Kore parser and symbolic execution engine,
@@ -153,11 +153,11 @@ nix-build test.nix --argstr test imp  # run the integration tests in test/imp
 nix-shell test.nix  # enter a shell where we can run tests manually
 ```
 
-[docs]: https://github.com/kframework/kore/tree/master/docs
+[docs]: https://github.com/runtimeverification/haskell-backend/tree/master/docs
 [git]: https://git-scm.com/
 [stack]: https://www.haskellstack.org/
 [cabal]: https://haskell.org/cabal
-[K Framework]: https://github.com/kframework/k
+[K Framework]: https://github.com/runtimeverification/k
 [curl]: https://curl.haxx.se/
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv

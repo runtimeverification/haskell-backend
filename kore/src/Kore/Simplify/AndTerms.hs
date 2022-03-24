@@ -724,7 +724,7 @@ noConfusionInjectionConstructor term1 term2 =
  If the two constructors form an overload pair, apply the overloading axioms
  on the terms to make the constructors equal, then retry unification on them.
 
-See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
+See <https://github.com/runtimeverification/haskell-backend/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
 -}
 overloadedConstructorSortInjectionAndEquals ::
     MonadUnify unifier =>

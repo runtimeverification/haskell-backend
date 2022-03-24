@@ -74,25 +74,25 @@ instance InternalVariable variable => Pretty (MatchEquationError variable) where
         Pretty.vsep
             [ "The equation's requires clause is not a predicate:"
             , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
+            , "This is a frontend bug. Please report this error at https://github.com/runtimeverification/k/issues."
             ]
     pretty (ArgumentError notPred) =
         Pretty.vsep
             [ "The equation's argument clause is not a predicate:"
             , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
+            , "This is a frontend bug. Please report this error at https://github.com/runtimeverification/k/issues."
             ]
     pretty (AntiLeftError notPred) =
         Pretty.vsep
             [ "The equation's anti-left clause is not a predicate:"
             , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
+            , "This is a frontend bug. Please report this error at https://github.com/runtimeverification/k/issues."
             ]
     pretty (EnsuresError notPred) =
         Pretty.vsep
             [ "The equation's ensures clause is not a predicate:"
             , pretty notPred
-            , "This is a frontend bug. Please report this error at https://github.com/kframework/k/issues."
+            , "This is a frontend bug. Please report this error at https://github.com/runtimeverification/k/issues."
             ]
     pretty FunctionalAxiom = "The term is a functional axiom."
     pretty ConstructorAxiom = "The term is a constructor axiom."

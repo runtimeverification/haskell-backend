@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/kframework/kore.git"
+    "url": "git+ssh://git@github.com/runtimeverification/haskell-backend.git"
   },
   "author": "Kore | Runtime Verification Inc",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/kframework/kore/issues"
+    "url": "https://github.com/runtimeverification/haskell-backend/issues"
   },
-  "homepage": "https://github.com/kframework/kore#readme",
+  "homepage": "https://github.com/runtimeverification/haskell-backend#readme",
   "dependencies": {
     "k-web-theme": "file:k-web-theme"
   },

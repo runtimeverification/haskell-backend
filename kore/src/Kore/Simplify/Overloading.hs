@@ -148,7 +148,7 @@ data OverloadingData = OverloadingData
  Tests whether the pair of terms can be coerced to have the same constructors
  at the top, and, if so, returns the thus obtained new pair.
 
- See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
+ See <https://github.com/runtimeverification/haskell-backend/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
 
  If the overloading rules are not applicable, it would return @Nothing@.
  However, if it detects an unification failure, it would return a reason
