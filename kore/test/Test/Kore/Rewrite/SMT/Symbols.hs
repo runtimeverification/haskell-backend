@@ -230,7 +230,11 @@ test_sortDeclaration =
         expr <-
             runMaybeT $
                 evalTranslator $
-                    translatePredicateWith tools SideCondition.top translateTerm predicate
+                    translatePredicateWith
+                        tools
+                        SideCondition.top
+                        translateTerm
+                        predicate
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id
