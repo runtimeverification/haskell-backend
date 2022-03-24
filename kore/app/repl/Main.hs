@@ -241,7 +241,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
                         SMT.runSMT
                             smtConfig
-                            (declareSMTLemmas
+                            ( declareSMTLemmas
                                 (MetadataTools.build validatedDefinition)
                                 validatedDefinition
                             )
