@@ -20,7 +20,6 @@ import Data.Limit (
 import Data.List (
     intercalate,
  )
-import Data.Reflection
 import Data.Text (
     unpack,
  )
@@ -822,10 +821,7 @@ execute options mainModule worker =
     withZ3 =
         SMT.runSMT
             config
-            ( give
-                (MetadataTools.build mainModule)
-                (declareSMTLemmas mainModule)
-            )
+            (declareSMTLemmas (MetadataTools.build mainModule) mainModule)
             worker
     withoutSMT = SMT.runNoSMT worker
     KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =

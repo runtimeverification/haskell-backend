@@ -49,7 +49,6 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Reflection
 import Data.Text (
     Text,
  )
@@ -112,16 +111,16 @@ the predicate from being sent to SMT.
 -}
 translatePredicateWith ::
     forall p variable m.
-    ( Given (SmtMetadataTools Attribute.Symbol)
-    , p ~ Predicate variable
+    ( p ~ Predicate variable
     , MonadLog m
     , InternalVariable variable
     ) =>
+    SmtMetadataTools Attribute.Symbol ->
     SideCondition variable ->
     TranslateTerm variable m ->
     Predicate variable ->
     Translator variable m SExpr
-translatePredicateWith sideCondition translateTerm predicate =
+translatePredicateWith tools sideCondition translateTerm predicate =
     translatePredicatePattern predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
@@ -171,6 +170,7 @@ translatePredicateWith sideCondition translateTerm predicate =
                 -- as predicates.
                 (<|>)
                     ( translatePattern
+                        tools
                         sideCondition
                         translateTerm
                         (termLikeSort child)
@@ -233,9 +233,7 @@ translatePredicateWith sideCondition translateTerm predicate =
                 Just builtinSort
                     | builtinSort == Builtin.Bool.sort -> pure SMT.tBool
                     | builtinSort == Builtin.Int.sort -> pure SMT.tInt
-                _ -> translateSort variableSort & maybeToTranslator
-        tools :: SmtMetadataTools Attribute.Symbol
-        tools = given
+                _ -> translateSort tools variableSort & maybeToTranslator
         Attribute.Sort{hook = Hook{getHook}} =
             sortAttributes tools variableSort
 
@@ -245,29 +243,27 @@ translatePredicateWith sideCondition translateTerm predicate =
 -}
 translatePattern ::
     forall variable monad.
-    Given (SmtMetadataTools Attribute.Symbol) =>
     MonadLog monad =>
     InternalVariable variable =>
+    SmtMetadataTools Attribute.Symbol ->
     SideCondition variable ->
     TranslateTerm variable monad ->
     Sort ->
     TermLike variable ->
     Translator variable monad SExpr
-translatePattern sideCondition translateTerm sort pat =
+translatePattern tools sideCondition translateTerm sort pat =
     case getHook of
         Just builtinSort
             | builtinSort == Builtin.Bool.sort -> translateBool pat
             | builtinSort == Builtin.Int.sort -> translateInt pat
         _ -> case Cofree.tailF $ Recursive.project pat of
             VariableF _ -> do
-                smtSort <- maybeToTranslator $ translateSort sort
+                smtSort <- maybeToTranslator $ translateSort tools sort
                 translateUninterpreted translateTerm smtSort pat
             ApplySymbolF app ->
-                translateApplication (translateSort sort) pat app
+                translateApplication (translateSort tools sort) pat app
             _ -> empty
   where
-    tools :: SmtMetadataTools Attribute.Symbol
-    tools = given
     Attribute.Sort{hook = Hook{getHook}} =
         sortAttributes tools sort
 
@@ -335,11 +331,11 @@ translatePattern sideCondition translateTerm sort pat =
                     TranslatorEnv{assumeDefined} <- ask
                     Monad.guard (assumeDefined && isFunctionPattern original)
             translateInterpretedApplication = do
-                let translated = translateSymbol applicationSymbolOrAlias
+                let translated = translateSymbol tools applicationSymbolOrAlias
                 sexpr <- maybe warnAndDiscard return translated
                 children <-
                     zipWithM
-                        (translatePattern sideCondition translateTerm)
+                        (translatePattern tools sideCondition translateTerm)
                         applicationChildrenSorts
                         applicationChildren
                 return $ shortenSExpr (applySExpr sexpr children)

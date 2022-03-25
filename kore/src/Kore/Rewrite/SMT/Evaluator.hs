@@ -23,7 +23,6 @@ import Control.Monad.Counter qualified as Counter
 import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product.Fields
 import Data.Map.Strict qualified as Map
-import Data.Reflection
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
@@ -200,8 +199,7 @@ translatePredicate ::
     Predicate variable ->
     Translator variable m SExpr
 translatePredicate sideCondition tools predicate =
-    give tools $
-        translatePredicateWith sideCondition translateTerm predicate
+    translatePredicateWith tools sideCondition translateTerm predicate
 
 translateTerm ::
     forall m variable.
