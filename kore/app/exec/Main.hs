@@ -7,6 +7,12 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
+import Data.Compact (
+    compactWithSharing,
+ )
+import Data.Compact.Serialize (
+    writeCompact,
+ )
 import Data.Default (
     def,
  )
@@ -74,6 +80,9 @@ import Kore.Log.WarnIfLowProductivity (
  )
 import Kore.ModelChecker.Bounded qualified as Bounded (
     CheckResult (..),
+ )
+import Kore.Options (
+    enableDisableFlag,
  )
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
@@ -284,6 +293,7 @@ data KoreExecOptions = KoreExecOptions
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
+    , serialize :: !Bool
     }
     deriving stock (GHC.Generic)
 
@@ -328,6 +338,12 @@ parseKoreExecOptions startTime =
             <*> optional parseRtsStatistics
             <*> parseBugReportOption
             <*> parseMaxCounterexamples
+            <*> enableDisableFlag
+                "serialize"
+                True
+                False
+                False
+                "serialization of initialized definition to disk. [default: disabled]"
     parseMaxCounterexamples = counterexamples <|> pure 1
       where
         counterexamples =
@@ -445,6 +461,7 @@ koreExecSh
                             rtsStatistics
                             _
                             maxCounterexamples
+                            _
                         ) =
         unlines $
             [ "#!/bin/sh"
@@ -625,11 +642,14 @@ mainDispatch = warnProductivity . mainDispatchWorker
                 else koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
             koreSearch localOptions searchOptions
+        | True <- serialize =
+            koreSerialize localOptions
         | otherwise =
             koreRun localOptions
       where
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
+        KoreExecOptions{serialize} = execOptions
 
 koreSearch ::
     LocalOptions KoreExecOptions ->
@@ -680,6 +700,32 @@ koreRun LocalOptions{execOptions, simplifierx} = do
     return (locations, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
+
+koreSerialize :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreSerialize LocalOptions{execOptions, simplifierx} = do
+    let KoreExecOptions{definitionFileName} = execOptions
+    definition <- loadDefinitions [definitionFileName]
+    let KoreExecOptions{mainModuleName} = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let metadataTools = MetadataTools.build mainModule
+    let lemmas = getSMTLemmas mainModule
+    serializedModule <-
+        execute execOptions metadataTools lemmas $
+            makeSerializedModule simplifierx mainModule
+    let locations = kFileLocations definition
+    let serializedDefinition =
+            SerializedDefinition
+                { serializedModule
+                , lemmas
+                , locations
+                }
+    let KoreExecOptions{outputFileName} = execOptions
+    case outputFileName of
+        Nothing -> return (locations, ExitFailure 1)
+        Just outputFile -> do
+            compact <- compactWithSharing serializedDefinition & liftIO
+            writeCompact outputFile compact & liftIO
+            return (locations, ExitSuccess)
 
 koreProve ::
     LocalOptions KoreExecOptions ->
