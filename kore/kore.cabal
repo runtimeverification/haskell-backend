@@ -148,7 +148,7 @@ common library
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
-  build-depends: compact
+  build-depends: compact >= 0.2.0.0
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
   build-depends: data-default >=0.7
@@ -584,6 +584,7 @@ executable kore-exec
   import: global-main
   main-is: Main.hs
   hs-source-dirs: app/exec
+  build-depends: compact >=0.2.0.0
   build-depends: data-default >=0.7
   build-depends: deepseq >=1.4
   build-depends: directory >=1.3
