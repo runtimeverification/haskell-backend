@@ -152,6 +152,7 @@ import Kore.Rewrite.Search (
     searchGraph,
  )
 import Kore.Rewrite.Search qualified as Search
+import Kore.Rewrite.Strategy (FinalNodeType (Leaf))
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
@@ -257,6 +258,7 @@ exec
                                 & fmap (map fst)
                                 & lift
                     Strategy.leavesM
+                        Leaf
                         updateQueue
                         (unfoldTransition transit)
                         ( limitedExecutionStrategy depthLimit
@@ -451,6 +453,7 @@ prove ::
     Limit Natural ->
     Limit Natural ->
     Natural ->
+    FinalNodeType ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
@@ -464,6 +467,7 @@ prove
     breadthLimit
     depthLimit
     maxCounterexamples
+    finalNodeType
     definitionModule
     specModule
     trustedModule =
@@ -478,6 +482,7 @@ prove
                 breadthLimit
                 searchOrder
                 maxCounterexamples
+                finalNodeType
                 (AllClaims claims)
                 (Axioms axioms)
                 (AlreadyProven (map unparseToText2 alreadyProven))
