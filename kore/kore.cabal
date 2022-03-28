@@ -148,6 +148,7 @@ common library
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
+  build-depends: compact
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
   build-depends: data-default >=0.7

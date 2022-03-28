@@ -19,6 +19,7 @@ module GlobalMain (
     lookupMainModule,
     LoadedDefinition (..),
     LoadedModule,
+    LoadedModuleSyntax,
     loadDefinitions,
     loadModule,
     mainParseSearchPattern,
@@ -72,8 +73,9 @@ import Kore.Attribute.Symbol qualified as Attribute (
  )
 import Kore.Builtin qualified as Builtin
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule (indexedModuleAxioms, indexedModuleSyntax),
+    IndexedModule (indexedModuleAxioms),
     VerifiedModule,
+    VerifiedModuleSyntax,
  )
 import Kore.Internal.Conditional (Conditional (..))
 import Kore.Internal.Pattern (Pattern)
@@ -406,7 +408,7 @@ clockSomethingIO description something = do
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify ::
     -- | Module containing definitions visible in the pattern
-    VerifiedModule Attribute.Symbol ->
+    VerifiedModuleSyntax Attribute.Symbol ->
     -- | Parsed pattern to check well-formedness
     ParsedPattern ->
     Main Verified.Pattern
@@ -418,7 +420,7 @@ mainPatternVerify verifiedModule patt = do
     either errorVerify return verifyResult
   where
     context =
-        PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
+        PatternVerifier.verifiedModuleContext verifiedModule
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
 lookupMainModule ::
@@ -488,6 +490,7 @@ mainParse parser fileName = do
         Right definition -> return definition
 
 type LoadedModule = VerifiedModule Attribute.Symbol
+type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol
 
 data LoadedDefinition = LoadedDefinition
     { indexedModules :: Map ModuleName LoadedModule
@@ -522,7 +525,7 @@ loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
 
 mainParseSearchPattern ::
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     String ->
     Main (Pattern VariableName)
 mainParseSearchPattern indexedModule patternFileName = do
@@ -545,7 +548,7 @@ mainParseSearchPattern indexedModule patternFileName = do
  converts it to a pure pattern, and prints timing information.
 -}
 mainPatternParseAndVerify ::
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     String ->
     Main (TermLike VariableName)
 mainPatternParseAndVerify indexedModule patternFileName =

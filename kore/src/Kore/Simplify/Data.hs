@@ -18,6 +18,7 @@ module Kore.Simplify.Data (
     runSimplifier,
     runSimplifierBranch,
     evalSimplifier,
+    evalSimplifierProofs,
 
     -- * Re-exports
     MonadSimplify (..),
@@ -33,15 +34,22 @@ import Control.Monad.Catch (
 import Control.Monad.Morph qualified as Morph
 import Control.Monad.Reader
 import Control.Monad.State.Strict
+import Data.Map.Strict (
+    Map,
+ )
 import Data.Map.Strict qualified as Map
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Builtin qualified as Builtin
+import Kore.Equation.Equation (
+    Equation (..),
+ )
 import Kore.Equation qualified as Equation
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
+    VerifiedModuleSyntax,
  )
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
@@ -50,10 +58,13 @@ import Kore.IndexedModule.MetadataTools (
 import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
 import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
 import Kore.IndexedModule.SortGraph qualified as SortGraph
+import Kore.IndexedModule.OverloadGraph
+import Kore.IndexedModule.SortGraph
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.Axiom.EvaluationStrategy qualified as Axiom.EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier (
+    AxiomIdentifier,
     matchAxiomIdentifier,
  )
 import Kore.Rewrite.Axiom.Registry (
@@ -71,6 +82,9 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
+import Kore.Syntax.Variable (
+    VariableName,
+ )
 import Log
 import Logic
 import Prelude.Kore
@@ -208,17 +222,21 @@ evalSimplifier ::
     forall smt a.
     (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
     SimplifierXSwitch ->
-    VerifiedModule Attribute.Symbol ->
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    Map AxiomIdentifier [Equation VariableName] ->
     SimplifierT smt a ->
     smt a
-evalSimplifier simplifierXSwitch verifiedModule simplifier = do
+evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
     !env <- runSimplifier earlyEnv initialize
     runSimplifier env simplifier
   where
     !earlyEnv =
         {-# SCC "evalSimplifier/earlyEnv" #-}
         Env
-            { metadataTools = earlyMetadataTools
+            { metadataTools = metadataTools
             , simplifierCondition
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
@@ -226,16 +244,9 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
             , overloadSimplifier
             , simplifierXSwitch
             }
-    sortGraph =
-        {-# SCC "evalSimplifier/sortGraph" #-}
-        SortGraph.fromIndexedModule verifiedModule
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
         mkInjSimplifier sortGraph
-    -- It's safe to build the MetadataTools using the external
-    -- IndexedModule because MetadataTools doesn't retain any
-    -- knowledge of the patterns which are internalized.
-    earlyMetadataTools = MetadataTools.build verifiedModule
     substitutionSimplifier =
         {-# SCC "evalSimplifier/substitutionSimplifier" #-}
         SubstitutionSimplifier.substitutionSimplifier
@@ -247,15 +258,9 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
 
     verifiedModule' =
         {-# SCC "evalSimplifier/verifiedModule'" #-}
-        IndexedModule.mapPatterns
-            (Builtin.internalize earlyMetadataTools)
+        IndexedModule.mapAliasPatterns
+            (Builtin.internalize metadataTools)
             verifiedModule
-    metadataTools =
-        {-# SCC "evalSimplifier/metadataTools" #-}
-        MetadataTools.build verifiedModule'
-    overloadGraph =
-        {-# SCC "evalSimplifier/overloadGraph" #-}
-        OverloadGraph.fromIndexedModule verifiedModule
     overloadSimplifier =
         {-# SCC "evalSimplifier/overloadSimplifier" #-}
         mkOverloadSimplifier overloadGraph injSimplifier
@@ -265,7 +270,7 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
         equations <-
             Equation.simplifyExtractedEquations $
                 (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable) $
-                    Equation.extractEquations verifiedModule'
+                    rawEquations
         let builtinEvaluators
                 , userEvaluators
                 , simplifierAxioms ::
@@ -273,7 +278,7 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
             userEvaluators = mkEvaluatorRegistry equations
             builtinEvaluators =
                 Axiom.EvaluationStrategy.builtinEvaluation
-                    <$> Builtin.koreEvaluators (indexedModuleSyntax verifiedModule')
+                    <$> Builtin.koreEvaluators verifiedModule'
             simplifierAxioms =
                 {-# SCC "evalSimplifier/simplifierAxioms" #-}
                 Map.unionWith
@@ -291,6 +296,34 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
                 , overloadSimplifier
                 , simplifierXSwitch
                 }
+
+evalSimplifierProofs ::
+    forall smt a.
+    (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
+    SimplifierXSwitch ->
+    VerifiedModule Attribute.Symbol ->
+    SimplifierT smt a ->
+    smt a
+evalSimplifierProofs simplifierXSwitch verifiedModule simplifier =
+    evalSimplifier simplifierXSwitch (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
+  where
+    sortGraph =
+        {-# SCC "evalSimplifier/sortGraph" #-}
+        SortGraph.fromIndexedModule verifiedModule
+    -- It's safe to build the MetadataTools using the external
+    -- IndexedModule because MetadataTools doesn't retain any
+    -- knowledge of the patterns which are internalized.
+    earlyMetadataTools = MetadataTools.build verifiedModule
+    verifiedModule' =
+        {-# SCC "evalSimplifier/verifiedModule'" #-}
+        IndexedModule.mapPatterns
+            (Builtin.internalize earlyMetadataTools)
+            verifiedModule
+    overloadGraph =
+        {-# SCC "evalSimplifier/overloadGraph" #-}
+        OverloadGraph.fromIndexedModule verifiedModule
+    metadataTools = MetadataTools.build verifiedModule'
+    rawEquations = Equation.extractEquations verifiedModule'
 
 mapSimplifierT ::
     forall m b.

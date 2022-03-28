@@ -37,6 +37,9 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     indexedModuleRawSentences,
  )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
@@ -102,6 +105,7 @@ import Kore.Syntax.Definition (
     Module (Module),
     ModuleName (..),
     Sentence (..),
+    SentenceAxiom (..),
  )
 import Kore.Syntax.Definition qualified as Definition.DoNotUse
 import Kore.Unparser (
@@ -633,25 +637,24 @@ koreSearch ::
     Main (KFileLocations, ExitCode)
 koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
+    SerializedDefinition{serializedModule, lemmas, locations} <- deserializeDefinition definitionFileName
+    let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions{searchFileName} = searchOptions
-    target <- mainParseSearchPattern mainModule searchFileName
+    target <- mainParseSearchPattern verifiedModule searchFileName
     let KoreExecOptions{patternFileName} = execOptions
-    initial <- loadPattern mainModule patternFileName
+    initial <- loadPattern verifiedModule patternFileName
     final <-
-        execute execOptions mainModule $
+        execute execOptions metadataTools lemmas $
             search
                 simplifierx
                 depthLimit
                 breadthLimit
-                mainModule
+                serializedModule
                 initial
                 target
                 config
     lift $ renderResult execOptions (unparse final)
-    return (kFileLocations definition, ExitSuccess)
+    return (locations, ExitSuccess)
   where
     KoreSearchOptions{bound, searchType} = searchOptions
     config = Search.Config{bound, searchType}
@@ -660,16 +663,21 @@ koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
 koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
 koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
+    SerializedDefinition{serializedModule, lemmas, locations} <- deserializeDefinition definitionFileName
+    let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreExecOptions{patternFileName} = execOptions
-    initial <- loadPattern mainModule patternFileName
+    initial <- loadPattern verifiedModule patternFileName
     (exitCode, final) <-
-        execute execOptions mainModule $
-            exec simplifierx depthLimit breadthLimit mainModule strategy initial
+        execute execOptions metadataTools lemmas $
+            exec
+                simplifierx
+                depthLimit
+                breadthLimit
+                serializedModule
+                strategy
+                initial
     lift $ renderResult execOptions (unparse final)
-    return (kFileLocations definition, exitCode)
+    return (locations, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
@@ -689,7 +697,7 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     let KoreExecOptions{maxCounterexamples} = execOptions
-    proveResult <- execute execOptions mainModule' $ do
+    proveResult <- execute execOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch, finalNodeType} = proveOptions
         prove
@@ -795,7 +803,7 @@ koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions{specMainModule} = proveOptions
     specModule <- loadModule specMainModule definition
-    (exitCode, final) <- execute execOptions mainModule $ do
+    (exitCode, final) <- execute execOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         checkResult <-
@@ -830,12 +838,13 @@ type MonadExecute exe =
 execute ::
     forall r.
     KoreExecOptions ->
-    -- | Main module
-    LoadedModule ->
+    -- | SMT Lemmas
+    SmtMetadataTools StepperAttributes ->
+    [SentenceAxiom (TermLike VariableName)] ->
     -- | Worker
     (forall exe. MonadExecute exe => exe r) ->
     Main r
-execute options mainModule worker =
+execute options metadataTools lemmas worker =
     clockSomethingIO "Executing" $
         case solver of
             Z3 -> withZ3
@@ -844,7 +853,7 @@ execute options mainModule worker =
     withZ3 =
         SMT.runSMT
             config
-            (declareSMTLemmas (MetadataTools.build mainModule) mainModule)
+            (declareSMTLemmas metadataTools lemmas)
             worker
     withoutSMT = SMT.runNoSMT worker
     KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
@@ -857,7 +866,7 @@ execute options mainModule worker =
             , SMT.prelude = prelude
             }
 
-loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)
+loadPattern :: LoadedModuleSyntax -> Maybe FilePath -> Main (TermLike VariableName)
 loadPattern mainModule (Just fileName) =
     mainPatternParseAndVerify mainModule fileName
 loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"

@@ -1035,7 +1035,15 @@ execTest ::
     ExecutionMode ->
     TermLike VariableName ->
     smt (ExitCode, TermLike VariableName)
-execTest = exec DisabledSimplifierX
+execTest depthLimit breadthLimit verifiedModule strategy initial = do
+    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    exec
+        DisabledSimplifierX
+        depthLimit
+        breadthLimit
+        serializedModule
+        strategy
+        initial
 
 searchTest ::
     MonadIO smt =>
@@ -1050,7 +1058,16 @@ searchTest ::
     Pattern VariableName ->
     Search.Config ->
     smt (TermLike VariableName)
-searchTest = search DisabledSimplifierX
+searchTest depthLimit breadthLimit verifiedModule initial currentSearchPattern config = do
+    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    search
+        DisabledSimplifierX
+        depthLimit
+        breadthLimit
+        serializedModule
+        initial
+        currentSearchPattern
+        config
 
 matchDisjunctionTest ::
     MonadLog smt =>
