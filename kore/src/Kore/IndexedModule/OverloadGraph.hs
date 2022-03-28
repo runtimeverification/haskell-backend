@@ -42,6 +42,7 @@ data OverloadGraph = OverloadGraph
       overloadedSymbols :: !(Map Symbol (Set Symbol))
     }
     deriving stock (GHC.Generic, Typeable)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

@@ -61,6 +61,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
@@ -235,6 +236,8 @@ type Equality = Equation VariableName
 
 -- | A collection of rules and simplifiers used during execution.
 newtype Initialized = Initialized {rewriteRules :: [Rewrite]}
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 data SerializedModule = SerializedModule
     { sortGraph :: SortGraph
@@ -244,12 +247,16 @@ data SerializedModule = SerializedModule
     , rewrites :: Initialized
     , equations :: Map AxiomIdentifier [Equation VariableName]
     }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
     , lemmas :: [SentenceAxiom (TermLike VariableName)]
     , locations :: KFileLocations
     }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 deserializeDefinition ::
     forall m.

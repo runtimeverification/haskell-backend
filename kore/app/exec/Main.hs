@@ -1,5 +1,8 @@
 module Main (main) where
 
+import Control.DeepSeq (
+    deepseq,
+ )
 import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadMask,
@@ -719,6 +722,7 @@ koreSerialize LocalOptions{execOptions, simplifierx} = do
                 , lemmas
                 , locations
                 }
+    serializedDefinition `deepseq` pure ()
     let KoreExecOptions{outputFileName} = execOptions
     case outputFileName of
         Nothing -> return (locations, ExitFailure 1)
