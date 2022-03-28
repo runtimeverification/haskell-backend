@@ -10,6 +10,7 @@ module Test.Kore.IndexedModule.MockMetadataTools (
 ) where
 
 import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -51,6 +52,8 @@ data MockSyntaxData attributes = MockSyntaxData
     , applicationSorts :: [(SymbolOrAlias, ApplicationSorts)]
     , symbolAttributes :: [(SymbolOrAlias, attributes)]
     }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 instance ExtractSyntax MockSyntaxData where
     extractSortAttributes sdata = caseBasedFunction $ sortAttributes sdata
@@ -74,7 +77,7 @@ makeMetadataTools ::
 makeMetadataTools attr sortTypes sorts declarations sortConstructors =
     MetadataTools
         { syntax =
-            MetadataSyntaxData $
+            MetadataSyntaxDataExtension $
                 MockSyntaxData
                     { sortAttributes = sortTypes
                     , -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and

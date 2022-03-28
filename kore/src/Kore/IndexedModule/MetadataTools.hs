@@ -53,11 +53,11 @@ instance ExtractSyntax VerifiedModuleSyntax where
     extractSymbolAttributes = getSymbolAttributes
 
 data MetadataSyntaxData attributes
-    = forall syntaxData.
+  = MetadataSyntaxData (VerifiedModuleSyntax attributes)
+  | forall syntaxData.
         ( ExtractSyntax syntaxData
         ) =>
-      MetadataSyntaxData (syntaxData attributes)
-
+    MetadataSyntaxDataExtension (syntaxData attributes)
 
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
@@ -117,9 +117,12 @@ findSortConstructors
 
 sortAttributes :: MetadataTools sortConstructors smt attributes -> Sort -> Attribute.Sort
 sortAttributes MetadataTools{syntax = MetadataSyntaxData sdata} s = extractSortAttributes sdata s
+sortAttributes MetadataTools{syntax = MetadataSyntaxDataExtension sdata} s = extractSortAttributes sdata s
 
 applicationSorts :: MetadataTools sortConstructors smt attributes -> SymbolOrAlias -> ApplicationSorts
 applicationSorts MetadataTools{syntax = MetadataSyntaxData sdata} s = extractApplicationSorts sdata s
+applicationSorts MetadataTools{syntax = MetadataSyntaxDataExtension sdata} s = extractApplicationSorts sdata s
 
 symbolAttributes :: MetadataTools sortConstructors smt attributes -> Id -> attributes
 symbolAttributes MetadataTools{syntax = MetadataSyntaxData sdata} s = extractSymbolAttributes sdata s
+symbolAttributes MetadataTools{syntax = MetadataSyntaxDataExtension sdata} s = extractSymbolAttributes sdata s
