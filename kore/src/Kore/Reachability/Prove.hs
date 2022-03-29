@@ -109,6 +109,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
+    FinalNodeType,
     GraphSearchOrder,
     Strategy,
     executionHistoryStep,
@@ -201,6 +202,7 @@ proveClaims ::
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
+    FinalNodeType ->
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     AlreadyProven ->
@@ -212,6 +214,7 @@ proveClaims
     breadthLimit
     searchOrder
     maxCounterexamples
+    finalNodeType
     claims
     axioms
     (AlreadyProven alreadyProven)
@@ -222,6 +225,7 @@ proveClaims
                     breadthLimit
                     searchOrder
                     maxCounterexamples
+                    finalNodeType
                     claims
                     axioms
                     unproven
@@ -256,6 +260,7 @@ proveClaimsWorker ::
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
+    FinalNodeType ->
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     -- | List of claims, together with a maximum number of verification steps
@@ -266,6 +271,7 @@ proveClaimsWorker
     breadthLimit
     searchOrder
     maxCounterexamples
+    finalNodeType
     claims
     axioms
     (ToProve toProve) =
@@ -280,6 +286,7 @@ proveClaimsWorker
                 breadthLimit
                 searchOrder
                 maxCounterexamples
+                finalNodeType
                 claims
                 axioms
                 unprovenClaim
@@ -296,6 +303,7 @@ proveClaim ::
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
+    FinalNodeType ->
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
@@ -304,6 +312,7 @@ proveClaim
     breadthLimit
     searchOrder
     maxCounterexamples
+    finalNodeType
     (AllClaims claims)
     (Axioms axioms)
     (goal, depthLimit) =
@@ -315,6 +324,7 @@ proveClaim
                         & Limit.takeWithin depthLimit
             proofDepths <-
                 Strategy.leavesM
+                    finalNodeType
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     (limitedStrategy, (ProofDepth 0, startGoal))
