@@ -13,10 +13,6 @@ module Kore.Rewrite.SMT.Resolvers (
 ) where
 
 import Data.Map.Strict qualified as Map
-import Data.Reflection (
-    Given,
-    given,
- )
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.IndexedModule.MetadataTools (
     MetadataTools (MetadataTools),
@@ -43,30 +39,25 @@ import SMT qualified
 the given SmtMetadataTools.
 -}
 translateSymbol ::
-    Given (SmtMetadataTools Attribute.Symbol) =>
+    SmtMetadataTools Attribute.Symbol ->
     Symbol ->
     Maybe SMT.SExpr
-translateSymbol Symbol{symbolConstructor, symbolParams} = do
+translateSymbol tools Symbol{symbolConstructor, symbolParams} = do
     AST.Symbol{symbolSmtFromSortArgs} <- Map.lookup symbolConstructor symbols
     symbolSmtFromSortArgs sorts symbolParams
   where
     MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
 
-    tools :: SmtMetadataTools Attribute.Symbol
-    tools = given
-
 translateSort ::
-    Given (SmtMetadataTools Attribute.Symbol) =>
+    SmtMetadataTools Attribute.Symbol ->
     Sort ->
     Maybe SMT.SExpr
 translateSort
+    tools
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
             AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
             sortSmtFromSortArgs sorts sortActualSorts
       where
         MetadataTools{smtData = AST.Declarations{sorts}} = tools
-
-        tools :: SmtMetadataTools Attribute.Symbol
-        tools = given
-translateSort (SortVariableSort _) = Nothing
+translateSort _ (SortVariableSort _) = Nothing

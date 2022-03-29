@@ -72,7 +72,6 @@
           (hsPkgs."process" or (errorHandler.buildDepError "process"))
           (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
           (hsPkgs."recursion-schemes" or (errorHandler.buildDepError "recursion-schemes"))
-          (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
           (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
           (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
           (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
@@ -487,7 +486,6 @@
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
-            (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -570,7 +568,6 @@
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -670,7 +667,6 @@
             (hsPkgs."process" or (errorHandler.buildDepError "process"))
             (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
             (hsPkgs."recursion-schemes" or (errorHandler.buildDepError "recursion-schemes"))
-            (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))

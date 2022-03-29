@@ -15,6 +15,9 @@ import Kore.Builtin.Int qualified as Int
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
  )
@@ -365,8 +368,9 @@ test_sortDeclaration =
 
     declareSymbolsAndSorts ::
         SMT.MonadSMT m =>
+        SmtMetadataTools Attribute.Symbol ->
         VerifiedModule Attribute.Symbol ->
         m ()
-    declareSymbolsAndSorts m =
+    declareSymbolsAndSorts _tools m =
         declareSortsSymbols
             (Representation.build m (Attribute.Constructors.indexBySort m))

@@ -63,7 +63,6 @@ import Data.List qualified as List
 import Data.Maybe qualified as Maybe (
     fromJust,
  )
-import Data.Reflection qualified as Reflection
 import Hedgehog (
     Gen,
     Property,
@@ -1490,27 +1489,25 @@ asPattern ::
     HashMap Key (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asPattern concreteMap =
-    Reflection.give testMetadataTools $
-        Ac.asPattern mapSort $
-            wrapAc
-                NormalizedAc
-                    { elementsWithVariables = []
-                    , concreteElements = MapValue <$> concreteMap
-                    , opaque = []
-                    }
+    Ac.asPattern testMetadataTools mapSort $
+        wrapAc
+            NormalizedAc
+                { elementsWithVariables = []
+                , concreteElements = MapValue <$> concreteMap
+                , opaque = []
+                }
 
 asVariablePattern ::
     HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asVariablePattern variableMap =
-    Reflection.give testMetadataTools $
-        Ac.asPattern mapSort $
-            wrapAc
-                NormalizedAc
-                    { elementsWithVariables = MapElement <$> HashMap.toList variableMap
-                    , concreteElements = HashMap.empty
-                    , opaque = []
-                    }
+    Ac.asPattern testMetadataTools mapSort $
+        wrapAc
+            NormalizedAc
+                { elementsWithVariables = MapElement <$> HashMap.toList variableMap
+                , concreteElements = HashMap.empty
+                , opaque = []
+                }
 
 asVariableInternal ::
     HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->

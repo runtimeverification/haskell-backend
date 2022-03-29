@@ -24,7 +24,6 @@ import Control.Monad.State qualified as State
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
 import Data.Map.Strict qualified as Map
-import Data.Reflection
 import Data.Text qualified as Text
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.SmtLemma
@@ -64,22 +63,19 @@ import SMT (
 -}
 declareSMTLemmas ::
     forall m.
-    ( Given (SmtMetadataTools StepperAttributes)
-    , MonadIO m
+    ( MonadIO m
     , MonadSMT m
     , MonadLog m
     ) =>
+    SmtMetadataTools StepperAttributes ->
     VerifiedModule StepperAttributes ->
     m ()
-declareSMTLemmas m = do
+declareSMTLemmas tools m = do
     declareSortsSymbols $ smtData tools
     mapM_ declareRule $ indexedModuleAxioms m
     isUnsatisfiable <- (Unsat ==) <$> SMT.check
     when isUnsatisfiable errorInconsistentDefinitions
   where
-    tools :: SmtMetadataTools StepperAttributes
-    tools = given
-
     declareRule ::
         ( Attribute.Axiom Internal.Symbol.Symbol VariableName
         , SentenceAxiom (TermLike VariableName)
@@ -94,7 +90,7 @@ declareSMTLemmas m = do
         (lemma, TranslatorState{terms, predicates}) <-
             oldAxiomEncoding
                 & wrapPredicate
-                & translatePredicateWith top translateUninterpreted
+                & translatePredicateWith tools top translateUninterpreted
                 & runTranslator
         addQuantifiers (Map.elems terms <> Map.elems predicates) lemma
             & SMT.assert
