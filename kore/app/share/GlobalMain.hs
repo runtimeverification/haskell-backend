@@ -132,8 +132,8 @@ import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
-    SentenceAxiom,
     ParsedDefinition,
+    SentenceAxiom,
     definitionAttributes,
     getModuleNameForError,
  )
@@ -594,11 +594,12 @@ deserializeDefinition simplifierx solverOptions definitionFilePath mainModuleNam
         0x7c155e7a53f094f2 -> do
             result <- unsafeReadCompact definitionFilePath & liftIO
             either errorParse (return . getCompact) result
-        _ -> makeSerializedDefinition
-            simplifierx
-            solverOptions
-            definitionFilePath
-            mainModuleName
+        _ ->
+            makeSerializedDefinition
+                simplifierx
+                solverOptions
+                definitionFilePath
+                mainModuleName
 
 makeSerializedDefinition ::
     SimplifierXSwitch ->
