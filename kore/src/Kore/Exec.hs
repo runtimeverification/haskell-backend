@@ -356,7 +356,9 @@ getExitCode
                 | otherwise -> ExitFailure (fromInteger exit)
             _ -> ExitFailure 111
 
-        resolve = resolveInternalSymbol (indexedModuleSyntax indexedModule) . noLocationId
+        resolve =
+            resolveInternalSymbol (indexedModuleSyntax indexedModule)
+            . noLocationId
 
         takeExitCode ::
             (([Sort] -> Symbol) -> simplifier ExitCode) ->
