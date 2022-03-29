@@ -358,7 +358,7 @@ getExitCode
 
         resolve =
             resolveInternalSymbol (indexedModuleSyntax indexedModule)
-            . noLocationId
+                . noLocationId
 
         takeExitCode ::
             (([Sort] -> Symbol) -> simplifier ExitCode) ->
