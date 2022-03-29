@@ -585,7 +585,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
     branchingDepth :: KoreLogOptions -> KoreLogOptions
     branchingDepth logOpts
         | Just (KoreProveOptions{finalNodeType = LeafOrBranching}) <-
-            (execOptions & Lens.view (field @"koreProveOptions")) =
+            execOptions & Lens.view (field @"koreProveOptions") =
             logOpts
                 & Lens.over
                     (field @"logEntries")
