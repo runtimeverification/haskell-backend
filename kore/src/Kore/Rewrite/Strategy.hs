@@ -453,6 +453,9 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
 @leavesM@ returns a disjunction of leaves (vertices without descendants) rather
 than constructing the entire graph.
 
+If the flag '--execute-to-branch' is given, branching nodes are also treated
+as leaves
+
 The queue updating function should be 'unfoldBreadthFirst' or
 'unfoldDepthFirst', optionally composed with 'applyBreadthLimit'.
 -}
