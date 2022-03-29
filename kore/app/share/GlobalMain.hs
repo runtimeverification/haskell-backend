@@ -25,8 +25,15 @@ module GlobalMain (
     mainParseSearchPattern,
     mainPatternParseAndVerify,
     addExtraAxioms,
+    execute,
+    SerializedDefinition (..),
+    deserializeDefinition,
+    makeSerializedDefinition,
 ) where
 
+import Control.DeepSeq (
+    deepseq,
+ )
 import Control.Exception (
     evaluate,
  )
@@ -36,6 +43,17 @@ import Control.Lens (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
+import Control.Monad.Catch (
+    MonadMask,
+ )
+import Data.Binary qualified as Binary
+import Data.ByteString.Lazy qualified as ByteString
+import Data.Compact (
+    getCompact,
+ )
+import Data.Compact.Serialize (
+    unsafeReadCompact,
+ )
 import Data.Generics.Product (
     field,
  )
@@ -55,6 +73,8 @@ import Data.Text.IO qualified as Text
 import Data.Version (
     showVersion,
  )
+import Data.Word
+import GHC.Generics qualified as GHC
 import GHC.Stack (
     emptyCallStack,
  )
@@ -72,10 +92,20 @@ import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Builtin qualified as Builtin
+import Kore.Exec (
+    SerializedModule (..),
+    makeSerializedModule,
+ )
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleAxioms),
     VerifiedModule,
     VerifiedModuleSyntax,
+ )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
+    build,
  )
 import Kore.Internal.Conditional (Conditional (..))
 import Kore.Internal.Pattern (Pattern)
@@ -93,6 +123,7 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
+import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     GraphSearchOrder (..),
@@ -101,6 +132,7 @@ import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
+    SentenceAxiom,
     ParsedDefinition,
     definitionAttributes,
     getModuleNameForError,
@@ -140,11 +172,22 @@ import Options.Applicative.Help.Chunk (
     vsepChunks,
  )
 import Options.Applicative.Help.Pretty qualified as Pretty
+import Options.SMT (
+    KoreSolverOptions (..),
+    Solver (..),
+ )
 import Paths_kore qualified as MetaData (
     version,
  )
 import Prelude.Kore
 import Pretty qualified as KorePretty
+import Prof (
+    MonadProf,
+ )
+import SMT (
+    MonadSMT,
+ )
+import SMT qualified
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
@@ -488,6 +531,98 @@ mainParse parser fileName = do
     case parseResult of
         Left err -> errorParse err
         Right definition -> return definition
+
+type MonadExecute exe =
+    ( MonadMask exe
+    , MonadIO exe
+    , MonadSMT exe
+    , MonadProf exe
+    , WithLog LogMessage exe
+    )
+
+-- | Run the worker in the context of the main module.
+execute ::
+    forall r.
+    KoreSolverOptions ->
+    -- | SMT Lemmas
+    SmtMetadataTools StepperAttributes ->
+    [SentenceAxiom (TermLike VariableName)] ->
+    -- | Worker
+    (forall exe. MonadExecute exe => exe r) ->
+    Main r
+execute options metadataTools lemmas worker =
+    clockSomethingIO "Executing" $
+        case solver of
+            Z3 -> withZ3
+            None -> withoutSMT
+  where
+    withZ3 =
+        SMT.runSMT
+            config
+            (declareSMTLemmas metadataTools lemmas)
+            worker
+    withoutSMT = SMT.runNoSMT worker
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
+        options
+    config =
+        SMT.defaultConfig
+            { SMT.timeOut = timeOut
+            , SMT.rLimit = rLimit
+            , SMT.resetInterval = resetInterval
+            , SMT.prelude = prelude
+            }
+
+data SerializedDefinition = SerializedDefinition
+    { serializedModule :: SerializedModule
+    , lemmas :: [SentenceAxiom (TermLike VariableName)]
+    , locations :: KFileLocations
+    }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+
+deserializeDefinition ::
+    SimplifierXSwitch ->
+    KoreSolverOptions ->
+    FilePath ->
+    ModuleName ->
+    Main SerializedDefinition
+deserializeDefinition simplifierx solverOptions definitionFilePath mainModuleName = do
+    bytes <- ByteString.readFile definitionFilePath & liftIO
+    let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
+    let magic = Binary.decode @Word64 magicBytes
+    case magic of
+        0x7c155e7a53f094f2 -> do
+            result <- unsafeReadCompact definitionFilePath & liftIO
+            either errorParse (return . getCompact) result
+        _ -> makeSerializedDefinition
+            simplifierx
+            solverOptions
+            definitionFilePath
+            mainModuleName
+
+makeSerializedDefinition ::
+    SimplifierXSwitch ->
+    KoreSolverOptions ->
+    FilePath ->
+    ModuleName ->
+    Main SerializedDefinition
+makeSerializedDefinition simplifierx solverOptions definitionFileName mainModuleName = do
+    definition <- loadDefinitions [definitionFileName]
+    mainModule <- loadModule mainModuleName definition
+    let metadataTools = MetadataTools.build mainModule
+    let lemmas = getSMTLemmas mainModule
+    serializedModule <-
+        execute solverOptions metadataTools lemmas $
+            makeSerializedModule simplifierx mainModule
+    let locations = kFileLocations definition
+    let serializedDefinition =
+            SerializedDefinition
+                { serializedModule
+                , lemmas
+                , locations
+                }
+    serializedDefinition `deepseq` pure ()
+    return serializedDefinition
 
 type LoadedModule = VerifiedModule Attribute.Symbol
 type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol

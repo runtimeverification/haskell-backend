@@ -19,9 +19,7 @@ module Kore.Exec (
     Rewrite,
     Equality,
     Initialized,
-    deserializeDefinition,
     makeSerializedModule,
-    SerializedDefinition (..),
     SerializedModule (..),
 ) where
 
@@ -39,17 +37,10 @@ import Control.Monad (
  )
 import Control.Monad.Catch (
     MonadMask,
-    MonadThrow,
  )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
- )
-import Data.Compact (
-    getCompact,
- )
-import Data.Compact.Serialize (
-    unsafeReadCompact,
  )
 import Data.Limit (
     Limit (..),
@@ -119,9 +110,6 @@ import Kore.Log.ErrorEquationRightFunction (
  )
 import Kore.Log.ErrorEquationsSameMatch (
     errorEquationsSameMatch,
- )
-import Kore.Log.ErrorParse (
-    errorParse,
  )
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
@@ -196,9 +184,6 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
     SimplifierXSwitch,
  )
-import Kore.Syntax.Definition (
-    SentenceAxiom (..),
- )
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -249,24 +234,6 @@ data SerializedModule = SerializedModule
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
-
-data SerializedDefinition = SerializedDefinition
-    { serializedModule :: SerializedModule
-    , lemmas :: [SentenceAxiom (TermLike VariableName)]
-    , locations :: KFileLocations
-    }
-    deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
-
-deserializeDefinition ::
-    forall m.
-    MonadIO m =>
-    MonadThrow m =>
-    FilePath ->
-    m SerializedDefinition
-deserializeDefinition definitionFilePath = do
-    result <- unsafeReadCompact definitionFilePath & liftIO
-    either errorParse (return . getCompact) result
 
 makeSerializedModule ::
     forall smt.
