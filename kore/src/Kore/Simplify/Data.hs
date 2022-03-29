@@ -269,7 +269,7 @@ evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadata
     initialize = do
         equations <-
             Equation.simplifyExtractedEquations $
-                (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable) $
+                (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
                     rawEquations
         let builtinEvaluators
                 , userEvaluators

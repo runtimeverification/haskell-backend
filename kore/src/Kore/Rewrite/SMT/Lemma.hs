@@ -77,7 +77,7 @@ declareSMTLemmas ::
     m ()
 declareSMTLemmas tools lemmas = do
     declareSortsSymbols $ smtData tools
-    mapM_ declareRule $ lemmas
+    mapM_ declareRule lemmas
     isUnsatisfiable <- (Unsat ==) <$> SMT.check
     when isUnsatisfiable errorInconsistentDefinitions
   where
