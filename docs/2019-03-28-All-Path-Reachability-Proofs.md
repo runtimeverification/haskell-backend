@@ -74,7 +74,12 @@ then `P(γ)` holds, where `P(G)` is recursively defined on configurations as:
     * `G` is not stuck (`G → • T`) and
     * `P(G')` for all configurations `G'` in which `G` can transition
 
-
+__Note:__
+This notation for _weak always finally_ is inspired by LTL's diamond operator, _finally_.
+Intuitively, they both mean that at some point a property holds, in contrast to the
+box operator which means that a property _always_ holds.
+See https://github.com/runtimeverification/haskell-backend/pull/3005#issuecomment-1077444190
+for a more detalied comment on this notation.
 
 Problem Description
 -------------------
