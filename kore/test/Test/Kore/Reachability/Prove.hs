@@ -46,6 +46,7 @@ import Kore.Rewrite.RulePattern (
     rulePattern,
  )
 import Kore.Rewrite.Strategy (
+    FinalNodeType (Leaf),
     GraphSearchOrder (..),
  )
 import Kore.Rewrite.Transition (runTransitionT)
@@ -872,6 +873,7 @@ proveClaims
             breadthLimit
             BreadthFirst
             maxCounterexamples
+            Leaf
             (AllClaims claims)
             (Axioms axioms)
             (AlreadyProven (map unparseToText2 alreadyProven))
