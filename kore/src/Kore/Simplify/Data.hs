@@ -42,10 +42,10 @@ import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Builtin qualified as Builtin
+import Kore.Equation qualified as Equation
 import Kore.Equation.Equation (
     Equation (..),
  )
-import Kore.Equation qualified as Equation
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
@@ -56,10 +56,10 @@ import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
 import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
-import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
-import Kore.IndexedModule.SortGraph qualified as SortGraph
 import Kore.IndexedModule.OverloadGraph
+import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
 import Kore.IndexedModule.SortGraph
+import Kore.IndexedModule.SortGraph qualified as SortGraph
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.Axiom.EvaluationStrategy qualified as Axiom.EvaluationStrategy

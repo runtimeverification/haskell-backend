@@ -196,11 +196,11 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
     SimplifierXSwitch,
  )
-import Kore.Syntax.Module (
-    ModuleName,
- )
 import Kore.Syntax.Definition (
     SentenceAxiom (..),
+ )
+import Kore.Syntax.Module (
+    ModuleName,
  )
 import Kore.TopBottom (
     isBottom,
@@ -282,14 +282,15 @@ makeSerializedModule ::
 makeSerializedModule simplifierx verifiedModule =
     evalSimplifier simplifierx (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
         rewrites <- initializeAndSimplify verifiedModule
-        return SerializedModule
-            { sortGraph
-            , overloadGraph
-            , metadataTools
-            , verifiedModule = indexedModuleSyntax verifiedModule
-            , rewrites
-            , equations
-            }
+        return
+            SerializedModule
+                { sortGraph
+                , overloadGraph
+                , metadataTools
+                , verifiedModule = indexedModuleSyntax verifiedModule
+                , rewrites
+                , equations
+                }
   where
     sortGraph = SortGraph.fromIndexedModule verifiedModule
     overloadGraph = OverloadGraph.fromIndexedModule verifiedModule

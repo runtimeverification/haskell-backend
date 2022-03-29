@@ -26,9 +26,9 @@ import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
-import Kore.Attribute.Symbol
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.SmtLemma
+import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
@@ -54,8 +54,8 @@ import SMT (
  )
 
 getSMTLemmas ::
-  VerifiedModule StepperAttributes ->
-  [SentenceAxiom (TermLike VariableName)]
+    VerifiedModule StepperAttributes ->
+    [SentenceAxiom (TermLike VariableName)]
 getSMTLemmas m = map snd $ filter (isSmtLemma . Attribute.smtLemma . fst) $ indexedModuleAxioms m
 
 {- | Given an indexed module, `declareSMTLemmas` translates all
