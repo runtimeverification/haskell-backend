@@ -16,9 +16,9 @@ module Kore.Attribute.Smtlib.Smthook (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Text qualified as Text
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser
 import Kore.Debug
 import Prelude.Kore

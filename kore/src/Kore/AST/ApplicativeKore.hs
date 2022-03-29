@@ -4,18 +4,18 @@ License     : BSD-3-Clause
 -}
 module Kore.AST.ApplicativeKore (completeDefinition) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition (
     Definition (..),
     Module (..),
     Sentence (..),
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 completeDefinition ::

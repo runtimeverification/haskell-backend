@@ -5,8 +5,8 @@ module Test.Kore.Simplify.Bottom (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -16,7 +16,7 @@ import Kore.Simplify.Bottom (
 import Kore.Sort
 import Kore.Syntax.Bottom
 import Prelude.Kore ()
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

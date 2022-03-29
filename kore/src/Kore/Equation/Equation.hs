@@ -13,35 +13,35 @@ module Kore.Equation.Equation (
     identifiers,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Data.Default as Default
-import qualified Data.Functor.Foldable as Recursive
+import Control.Lens qualified as Lens
+import Data.Default qualified as Default
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Wrapped (
     _Wrapped,
  )
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation
-import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     HasFreeVariables (..),
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
 import Kore.Internal.Predicate (
     Predicate,
     fromPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Symbol (
     Symbol (..),
  )
@@ -50,7 +50,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkVar,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.UnifyingRule (
     Renaming,
  )
@@ -64,13 +64,13 @@ import Kore.TopBottom
 import Kore.Unparser (
     Unparse (..),
  )
-import qualified Kore.Variables.Fresh as Fresh
+import Kore.Variables.Fresh qualified as Fresh
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 {- | A type for representing equational rules, which in K can appear as
 _function definition_ rules or as _simplification_ rules.
@@ -84,7 +84,7 @@ The 'left' field will vary in contents (as described below), but its structure
 should be the same: it should be a term with a function symbol at the top.
 
 For function definition rules, the Kore encoding is specified here:
-https://github.com/kframework/kore/blob/master/design-decisions/2020-05-02-function-rules.md#solution
+https://github.com/runtimeverification/haskell-backend/blob/master/design-decisions/2020-05-02-function-rules.md#solution
 The _Args_ and _Prio_ predicates correspond to the 'argument' and 'antiLeft' field, respectively.
 See the linked design document for the reasons why the 'argument' is encoded like that.
 The 'antiLeft' is used to encode the priority of the function definition. This corresponds
@@ -113,9 +113,9 @@ These are regarded as hints for the backend, they don't carry semantic meaning a
 case of function rules and their priority attributes.
 
 For more information see:
-* https://github.com/kframework/k/blob/master/USER_MANUAL.md#function-and-functional-attributes
-* https://github.com/kframework/k/blob/master/USER_MANUAL.md#simplification-attribute-haskell-backend
-* https://github.com/kframework/k/blob/master/USER_MANUAL.md#owise-and-priority-attributes
+* https://github.com/runtimeverification/k/blob/master/USER_MANUAL.md#function-and-functional-attributes
+* https://github.com/runtimeverification/k/blob/master/USER_MANUAL.md#simplification-attribute-haskell-backend
+* https://github.com/runtimeverification/k/blob/master/USER_MANUAL.md#owise-and-priority-attributes
 * 'Kore.Equation.Sentence.matchEquation', for the structure of all equation types
 -}
 data Equation variable = Equation

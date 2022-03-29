@@ -10,11 +10,11 @@ module Kore.Simplify.Mu (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     fromTermLike,
     simplifiedAttribute,
     toTermLike,
@@ -24,10 +24,10 @@ import Kore.Internal.TermLike (
     SetVariable,
     mkMu,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     setSimplified,
  )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Internal.TermLike qualified as TermLike.DoNotUse
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

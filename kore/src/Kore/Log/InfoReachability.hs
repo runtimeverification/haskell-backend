@@ -8,14 +8,14 @@ module Kore.Log.InfoReachability (
 ) where
 
 import Kore.Reachability.Prim
-import qualified Log
+import Log qualified
 import Prelude.Kore
 import Pretty (
     Doc,
     Pretty,
     (<+>),
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype InfoReachability = InfoReachability {prim :: Prim}
     deriving stock (Show)

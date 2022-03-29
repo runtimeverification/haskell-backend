@@ -26,7 +26,7 @@ let
   kframework =
     let
       tag = lib.fileContents ./deps/k_release;
-      url = "https://github.com/kframework/k/releases/download/${tag}/release.nix";
+      url = "https://github.com/runtimeverification/k/releases/download/${tag}/release.nix";
       args = import (builtins.fetchurl { inherit url; });
       src = pkgs.fetchgit args;
     in import src {};

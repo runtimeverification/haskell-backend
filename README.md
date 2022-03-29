@@ -26,7 +26,7 @@ And Kore is such a language.
 The [docs] directory contains a collection of documents
 that describe the mathematical foundation of Kore and a BNF grammar
 that defines the syntax of Kore language. See
-[/docs/introduction.md](https://github.com/kframework/kore/blob/master/docs/introduction.md)
+[/docs/introduction.md](https://github.com/runtimeverification/haskell-backend/blob/master/docs/introduction.md)
 for an overview of the components of Kore.
 
 The `kore` project is an implementation in Haskell of a Kore parser and symbolic execution engine,
@@ -50,7 +50,14 @@ Using [make]:
 make all # builds all binaries
 ```
 
-### Apple Silicon
+### macOS
+
+Currently, LLVM 13 from Homebrew installs an incompatible version of
+`install_name_tool`, which breaks the Haskell backend build on macOS. To resolve
+this, uninstall `llvm` and install `llvm@12` from Homebrew, then build from
+scratch.
+
+#### Apple Silicon
 
 If you are building the project on an Apple Silicon machine, a temporary
 workaround is necessary to install a new enough version of GHC with support for
@@ -146,11 +153,11 @@ nix-build test.nix --argstr test imp  # run the integration tests in test/imp
 nix-shell test.nix  # enter a shell where we can run tests manually
 ```
 
-[docs]: https://github.com/kframework/kore/tree/master/docs
+[docs]: https://github.com/runtimeverification/haskell-backend/tree/master/docs
 [git]: https://git-scm.com/
 [stack]: https://www.haskellstack.org/
 [cabal]: https://haskell.org/cabal
-[K Framework]: https://github.com/kframework/k
+[K Framework]: https://github.com/runtimeverification/k
 [curl]: https://curl.haxx.se/
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv

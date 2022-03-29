@@ -1,4 +1,4 @@
-// Description of the issue in https://github.com/kframework/kore/issues/1639
+// Description of the issue in https://github.com/runtimeverification/haskell-backend/issues/1639
 module H
 
 imports BOOL

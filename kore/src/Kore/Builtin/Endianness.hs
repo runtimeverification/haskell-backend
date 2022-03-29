@@ -12,18 +12,18 @@ module Kore.Builtin.Endianness (
 ) where
 
 import Data.Functor.Const
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.String (
     IsString,
  )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import Kore.Attribute.Symbol qualified as Attribute.Symbol
 import Kore.Builtin.Builtin
 import Kore.Builtin.Endianness.Endianness
 import Kore.Error
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
@@ -33,7 +33,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 verifiers :: Verifiers

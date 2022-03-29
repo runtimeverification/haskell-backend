@@ -15,7 +15,7 @@ module Kore.Simplify.Overloading (
     MatchResult (..),
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Control.Monad.Trans.Except (
     ExceptT,
     throwE,
@@ -23,11 +23,11 @@ import Control.Monad.Trans.Except (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Text qualified as Text
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import Kore.Attribute.Pattern.FreeVariables qualified as Attribute
 import Kore.Attribute.Synthetic (
     synthesize,
  )
@@ -35,7 +35,7 @@ import Kore.Debug
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -148,7 +148,7 @@ data OverloadingData = OverloadingData
  Tests whether the pair of terms can be coerced to have the same constructors
  at the top, and, if so, returns the thus obtained new pair.
 
- See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
+ See <https://github.com/runtimeverification/haskell-backend/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
 
  If the overloading rules are not applicable, it would return @Nothing@.
  However, if it detects an unification failure, it would return a reason

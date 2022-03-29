@@ -1,19 +1,19 @@
 module Test.Kore.Rewrite.Function.Evaluator (test_evaluateApplication) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Attribute.Synthetic (
     synthesize,
  )
-import qualified Kore.Equation as Equation
+import Kore.Equation qualified as Equation
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.TermLike (
@@ -21,20 +21,20 @@ import Kore.Internal.TermLike (
     Symbol,
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Kore
-import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
-import qualified Kore.Rewrite.Function.Evaluator as Kore
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Rewrite.Axiom.EvaluationStrategy qualified as Kore
+import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
+import Kore.Rewrite.Function.Evaluator qualified as Kore
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Simplify as Kore
+import Kore.Simplify.Simplify qualified as Kore
 import Kore.Syntax.Application (
     Application (..),
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.Kore.Simplify as Test
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit
 

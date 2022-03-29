@@ -26,21 +26,20 @@ module Test.Kore.Builtin.List (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Reflection as Reflection
+import Data.Map.Strict qualified as Map
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
  )
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Kore.Builtin.List as List
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Kore.Builtin.List qualified as List
 import Kore.Internal.From
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeTruePredicate,
@@ -54,12 +53,12 @@ import Prelude.Kore
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
+import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Internal.OrPattern qualified as OrPattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -507,7 +506,7 @@ asPattern ::
     f (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asPattern =
-    Reflection.give testMetadataTools List.asPattern listSort
+    List.asPattern testMetadataTools listSort
         . Seq.fromList
         . toList
 

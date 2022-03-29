@@ -40,7 +40,7 @@ instance Pretty ErrorException where
             _ <- fromException someException :: Maybe AssertionFailed
             (pure . hsep)
                 [ "Please file a bug report:"
-                , "https://github.com/kframework/kore/issues"
+                , "https://github.com/runtimeverification/haskell-backend/issues"
                 ]
 
 instance Entry ErrorException where

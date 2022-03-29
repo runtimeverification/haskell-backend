@@ -3,8 +3,8 @@ name:           kore
 version:        0.60.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
-homepage:       https://github.com/kframework/kore#readme
-bug-reports:    https://github.com/kframework/kore/issues
+homepage:       https://github.com/runtimeverification/haskell-backend#readme
+bug-reports:    https://github.com/runtimeverification/haskell-backend/issues
 author:         Runtime Verification Inc
 maintainer:     ana.pantilie@runtimeverification.com
 copyright:      2018-2021 Runtime Verification Inc
@@ -17,7 +17,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/kframework/kore
+  location: https://github.com/runtimeverification/haskell-backend
 
 flag release
   description: Build a faster runtime, at the expense of a slower build.
@@ -33,6 +33,9 @@ common haskell
   -- Common Haskell dialect
   default-extensions:
     BangPatterns
+    -- GHC2021 prep
+    BinaryLiterals
+    -- end
     ConstraintKinds
     DataKinds
     DefaultSignatures
@@ -41,28 +44,54 @@ common haskell
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
+    -- GHC2021 prep
+    DeriveLift
+    -- end
     DeriveTraversable
     DerivingVia
     DuplicateRecordFields
     EmptyCase
+    -- GHC2021 prep
+    EmptyDataDeriving
+    -- end
     ExistentialQuantification
     FlexibleContexts
     FlexibleInstances
     FunctionalDependencies
     GADTs
     GeneralizedNewtypeDeriving
+    -- GHC2021 prep
+    HexFloatLiterals
+    -- end
     InstanceSigs
+    -- GHC2021 prep
+    ImportQualifiedPost
+    -- end
     KindSignatures
     LambdaCase
     MultiParamTypeClasses
     NamedFieldPuns
+    -- GHC2021 prep
+    NamedWildCards
+    NumericUnderscores
+    -- end
     NoImplicitPrelude
     OverloadedStrings
     PatternSynonyms
+    -- GHC2021 prep
+    PolyKinds
+    PostfixOperators
+    -- end
     RankNTypes
     ScopedTypeVariables
     StandaloneDeriving
+    -- GHC2021 prep
+    StandaloneKindSignatures
+    -- end
     Strict
+    -- GHC2021 prep
+    TupleSections
+    -- end
     TypeApplications
     TypeFamilies
     TypeOperators
@@ -114,6 +143,7 @@ common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
+  build-depends: array
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
@@ -149,7 +179,6 @@ common library
   build-depends: process >=1.6
   build-depends: profunctors >=5.3
   build-depends: recursion-schemes >=5.1
-  build-depends: reflection >=2.1
   build-depends: semialign >=1
   build-depends: sqlite-simple >=0.4
   build-depends: streams
@@ -163,6 +192,8 @@ common library
   build-depends: vector >=0.12
   build-depends: witherable ==0.3.*
   build-depends: zlib >=0.6
+  build-tool-depends: happy:happy
+  build-tool-depends: alex:alex
 
 library
   import: haskell
@@ -341,7 +372,6 @@ library
     Kore.Log.ErrorParse
     Kore.Log.ErrorRewriteLoop
     Kore.Log.ErrorRewritesInstantiation
-    Kore.Log.ErrorRuleMergeDuplicate
     Kore.Log.ErrorVerify
     Kore.Log.InfoAttemptUnification
     Kore.Log.InfoExecBreadth
@@ -369,6 +399,7 @@ library
     Kore.Parser
     Kore.Parser.CString
     Kore.Parser.Lexer
+    Kore.Parser.LexerWrapper
     Kore.Parser.Parser
     Kore.Parser.ParserUtils
     Kore.Reachability
@@ -400,7 +431,6 @@ library
     Kore.Rewrite.Result
     Kore.Rewrite.RewriteStep
     Kore.Rewrite.Rule
-    Kore.Rewrite.Rule.Combine
     Kore.Rewrite.Rule.Expand
     Kore.Rewrite.Rule.Simplify
     Kore.Rewrite.RulePattern
@@ -462,7 +492,6 @@ library
     Kore.Simplify.OverloadSimplifier
     Kore.Simplify.Pattern
     Kore.Simplify.Predicate
-    Kore.Simplify.Rule
     Kore.Simplify.SetVariable
     Kore.Simplify.SimplificationType
     Kore.Simplify.Simplify
@@ -559,7 +588,6 @@ executable kore-exec
   build-depends: exceptions >=0.10
   build-depends: extra >=1.6
   build-depends: generic-lens >=1.1
-  build-depends: reflection >=2.1
   ghc-options: -eventlog
 
 executable kore-format
@@ -592,7 +620,6 @@ executable kore-repl
   main-is: Main.hs
   hs-source-dirs: app/repl
   build-depends: exceptions >=0.10
-  build-depends: reflection >=2.1
 
 executable kore-match-disjunction
   import: haskell
@@ -727,6 +754,7 @@ test-suite kore-test
     Test.Kore.Repl.Graph
     Test.Kore.Repl.Interpreter
     Test.Kore.Repl.Parser
+    Test.Kore.Repl.ParserTest
     Test.Kore.Rewrite
     Test.Kore.Rewrite.AntiLeft
     Test.Kore.Rewrite.Axiom.EvaluationStrategy
@@ -742,7 +770,6 @@ test-suite kore-test
     Test.Kore.Rewrite.Remainder
     Test.Kore.Rewrite.RewriteStep
     Test.Kore.Rewrite.Rule
-    Test.Kore.Rewrite.Rule.Combine
     Test.Kore.Rewrite.Rule.Common
     Test.Kore.Rewrite.Rule.Expand
     Test.Kore.Rewrite.Rule.Simplify
@@ -789,7 +816,6 @@ test-suite kore-test
     Test.Kore.Simplify.Overloading
     Test.Kore.Simplify.Predicate
     Test.Kore.Simplify.Pattern
-    Test.Kore.Simplify.Rule
     Test.Kore.Simplify.StringLiteral
     Test.Kore.Simplify.SubstitutionSimplifier
     Test.Kore.Simplify.TermLike
@@ -828,7 +854,7 @@ test-suite kore-test
   build-depends: quickcheck-instances >=0.3
   build-depends: tasty >=1.2
   build-depends: tasty-golden >=2.3
-  build-depends: tasty-hedgehog >=1.0
+  build-depends: tasty-hedgehog >=1.0 && <1.2
   build-depends: tasty-hunit >=0.10
   build-depends: tasty-quickcheck >=0.10
   build-depends: tasty-test-reporter >=0.1

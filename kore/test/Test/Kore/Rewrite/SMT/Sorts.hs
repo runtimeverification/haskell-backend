@@ -5,15 +5,18 @@ module Test.Kore.Rewrite.SMT.Sorts (
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
+import Kore.Attribute.Sort.ConstructorsBuilder qualified as Attribute.Constructors (
     indexBySort,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Int qualified as Int
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
+ )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
  )
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
@@ -21,12 +24,12 @@ import Kore.Rewrite.SMT.Declaration (
 import Kore.Rewrite.SMT.Encoder (
     encodeName,
  )
-import qualified Kore.Rewrite.SMT.Representation.All as Representation (
+import Kore.Rewrite.SMT.Representation.All qualified as Representation (
     build,
  )
 import Kore.Syntax.Definition
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import Test.Kore.Rewrite.SMT.Builders (
     constructor,
     emptyModule,
@@ -49,7 +52,7 @@ import Test.Kore.Rewrite.SMT.Helpers (
     lt,
     ofType,
  )
-import qualified Test.Kore.Rewrite.SMT.Helpers as Helpers (
+import Test.Kore.Rewrite.SMT.Helpers qualified as Helpers (
     testsForModule,
  )
 import Test.Kore.With (
@@ -365,8 +368,9 @@ test_sortDeclaration =
 
     declareSymbolsAndSorts ::
         SMT.MonadSMT m =>
+        SmtMetadataTools Attribute.Symbol ->
         VerifiedModule Attribute.Symbol ->
         m ()
-    declareSymbolsAndSorts m =
+    declareSymbolsAndSorts _tools m =
         declareSortsSymbols
             (Representation.build m (Attribute.Constructors.indexBySort m))

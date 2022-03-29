@@ -36,26 +36,26 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     isFreeVariable,
  )
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified,
  )
 import Kore.Internal.Conditional (
     Condition,
     Conditional (..),
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.Substitution (
     Normalization (..),
  )
-import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.TermLike qualified as TermLike (
     simplifiedAttribute,
  )
 import Kore.Internal.Variable

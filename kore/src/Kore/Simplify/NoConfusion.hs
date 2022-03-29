@@ -9,12 +9,12 @@ module Kore.Simplify.NoConfusion (
     matchDifferentConstructors,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,

@@ -22,25 +22,25 @@ module Kore.Log.KoreLogOptions (
     defaultSeverity,
 ) where
 
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Default
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.List (
     intercalate,
  )
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
-import qualified Kore.Equation as Equation
+import Data.Text qualified as Text
+import GHC.Generics qualified as GHC
+import Kore.Equation qualified as Equation
 import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
@@ -63,15 +63,15 @@ import Options.Applicative (
     Parser,
     option,
  )
-import qualified Options.Applicative as Options
-import qualified Options.Applicative.Help.Pretty as OptPretty
+import Options.Applicative qualified as Options
+import Options.Applicative.Help.Pretty qualified as OptPretty
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import System.Clock (
     TimeSpec,
  )
-import qualified Text.Megaparsec as Parser
-import qualified Text.Megaparsec.Char as Parser
+import Text.Megaparsec qualified as Parser
+import Text.Megaparsec.Char qualified as Parser
 import Type.Reflection (
     SomeTypeRep (..),
  )

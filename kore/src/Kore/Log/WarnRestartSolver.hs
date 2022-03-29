@@ -7,13 +7,13 @@ module Kore.Log.WarnRestartSolver (
     warnRestartSolver,
 ) where
 
-import qualified Control.Monad.Catch as Exception
+import Control.Monad.Catch qualified as Exception
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 import SMT.SimpleSMT (SolverException)
 
 newtype WarnRestartSolver = WarnRestartSolver

@@ -7,7 +7,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 This module is intended to be imported qualified:
 @
 import Data.Limit ( Limit (..) )
-import qualified Data.Limit as Limit
+import Data.Limit qualified as Limit
 @
 -}
 module Data.Limit (

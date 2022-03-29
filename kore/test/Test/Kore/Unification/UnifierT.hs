@@ -3,46 +3,46 @@ module Test.Kore.Unification.UnifierT (
     test_simplifyCondition,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Kore.Equation as Equation
+import Data.Map.Strict qualified as Map
+import Kore.Equation qualified as Equation
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrCondition as OrCondition
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrCondition qualified as OrCondition
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.Substitution (
     Assignment,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.Axiom.EvaluationStrategy as EvaluationStrategy
-import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
+import Kore.Rewrite.Axiom.EvaluationStrategy qualified as EvaluationStrategy
+import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Condition as Condition
+import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.Data (
     Env (..),
  )
-import qualified Kore.Simplify.Not as Not
-import qualified Kore.Simplify.Simplify as Simplifier
-import qualified Kore.Unification.UnifierT as Monad.Unify
-import qualified Logic
+import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Simplify qualified as Simplifier
+import Kore.Unification.UnifierT qualified as Monad.Unify
+import Logic qualified
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.Kore.Simplify as Test
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -2,27 +2,27 @@ module Test.Kore.Simplify.Not (
     test_simplifyEvaluated,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
-import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Internal.Predicate as Predicate
+import Pretty qualified
+import Test.Kore.Internal.OrPattern qualified as OrPattern
+import Test.Kore.Internal.Pattern qualified as Pattern
+import Test.Kore.Internal.Predicate qualified as Predicate
 import Test.Kore.Internal.Substitution as Substitution
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty (
     TestTree,

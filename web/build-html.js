@@ -11,7 +11,7 @@ generatePagesFromMarkdownFiles({
   globPattern: path.resolve(__dirname, "../") + "/**/*.md",
   globOptions: { ignore: [path.resolve(__dirname, "../web/**/*")] },
   origin:
-    "https://github.com/kframework/kore/tree/master/",
+    "https://github.com/runtimeverification/haskell-backend/tree/master/",
   sourceDirectory: path.resolve(__dirname, "../"),
   outputDirectory: path.resolve(__dirname, "./public_content/"),
   websiteDirectory: path.resolve(__dirname, "./public_content/"),

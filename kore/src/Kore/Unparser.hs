@@ -36,16 +36,16 @@ module Kore.Unparser (
     unparseConcat',
 ) where
 
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Functor.Const
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Void
 import Generics.SOP (
     All2,
@@ -53,8 +53,8 @@ import Generics.SOP (
     Generic,
     Proxy (..),
  )
-import qualified Generics.SOP as SOP
-import qualified Numeric
+import Generics.SOP qualified as SOP
+import Numeric qualified
 import Prelude.Kore
 import Pretty hiding (
     list,

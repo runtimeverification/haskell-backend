@@ -9,7 +9,7 @@ module Kore.Simplify.OrPattern (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition (
+import Kore.Internal.Condition qualified as Condition (
     bottom,
     fromPredicate,
     toPredicate,
@@ -17,18 +17,18 @@ import qualified Kore.Internal.Condition as Condition (
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional (
+import Kore.Internal.Conditional qualified as Conditional (
     Conditional (..),
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     splitTerm,
     withCondition,
  )
@@ -40,14 +40,14 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     toPredicate,
     top,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.SMT.Evaluator as SMT.Evaluator (
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Simplify.Simplify (
@@ -60,7 +60,7 @@ import Kore.TopBottom (
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 simplifyConditionsWithSmt ::

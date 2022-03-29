@@ -11,13 +11,12 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
-import Data.Reflection
 import GlobalMain
 import Kore.BugReport
 import Kore.Exec (
     proveWithRepl,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Log (
@@ -37,7 +36,7 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (
@@ -66,7 +65,7 @@ import Options.SMT (
     parseKoreSolverOptions,
  )
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -242,9 +241,9 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
                         SMT.runSMT
                             smtConfig
-                            ( give
+                            ( declareSMTLemmas
                                 (MetadataTools.build validatedDefinition)
-                                (declareSMTLemmas validatedDefinition)
+                                validatedDefinition
                             )
                             $ proveWithRepl
                                 simplifierx

@@ -12,7 +12,7 @@ import Control.Monad.Catch (
     MonadThrow,
     throwM,
  )
-import qualified Kore.Error as Kore
+import Kore.Error qualified as Kore
 import Kore.Validate.Error (
     VerifyError,
  )

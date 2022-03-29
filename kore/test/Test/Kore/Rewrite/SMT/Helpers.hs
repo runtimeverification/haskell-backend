@@ -18,15 +18,11 @@ import Control.Exception (
     ErrorCall,
     catch,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
 import Data.Limit
-import Data.Reflection (
-    Given,
-    give,
- )
 import Data.Sup (
     Sup (Element),
  )
@@ -34,7 +30,7 @@ import Data.Text (
     Text,
  )
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
@@ -43,7 +39,7 @@ import Kore.IndexedModule.IndexedModule (
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Internal.Symbol
@@ -53,7 +49,7 @@ import Kore.Syntax.Sentence (
     Sentence (..),
     SentenceAxiom (SentenceAxiom),
  )
-import qualified Kore.Syntax.Sentence as SentenceAxiom (
+import Kore.Syntax.Sentence qualified as SentenceAxiom (
     SentenceAxiom (..),
  )
 import Numeric.Natural (
@@ -66,7 +62,7 @@ import SMT (
     TimeOut (..),
     defaultConfig,
  )
-import qualified SMT
+import SMT qualified
 import Test.Kore (
     testId,
  )
@@ -74,7 +70,7 @@ import Test.Kore.Builtin.Builtin (
     runSMTWithConfig,
  )
 import Test.Kore.Builtin.External
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Kore.Rewrite.SMT.Builders (
     noJunk,
  )
@@ -210,9 +206,8 @@ assertSmtTestCase name expected actions prelude =
 testsForModule ::
     String ->
     ( forall m.
-      ( Given (SmtMetadataTools Attribute.Symbol)
-      , SMT.MonadSMT m
-      ) =>
+      SMT.MonadSMT m =>
+      SmtMetadataTools Attribute.Symbol ->
       VerifiedModule Attribute.Symbol ->
       m ()
     ) ->
@@ -224,7 +219,7 @@ testsForModule name functionToTest indexedModule tests =
   where
     prelude =
         SmtPrelude
-            (give tools $ functionToTest indexedModule)
+            (functionToTest tools indexedModule)
     tools = MetadataTools.build indexedModule
 
 constructorAxiom :: Text -> [(Text, [Text])] -> ParsedSentence

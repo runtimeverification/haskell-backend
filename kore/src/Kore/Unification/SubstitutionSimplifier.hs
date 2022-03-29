@@ -14,11 +14,11 @@ import Control.Error (
     MaybeT,
     maybeT,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -46,16 +46,16 @@ import Kore.Simplify.AndTerms (
     termUnification,
  )
 import Kore.Simplify.NotSimplifier
-import qualified Kore.Simplify.Simplify as Simplifier
+import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
     SubstitutionSimplifier (..),
     deduplicateSubstitution,
     simplifySubstitutionWorker,
  )
-import qualified Kore.TopBottom as TopBottom
+import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Unify
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 {- | A 'SubstitutionSimplifier' to use during unification.

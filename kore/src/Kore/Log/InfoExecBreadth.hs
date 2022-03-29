@@ -14,7 +14,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 newtype ExecBreadth = ExecBreadth {getExecBreadth :: Natural}
     deriving stock (Show)

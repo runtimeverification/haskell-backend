@@ -5,7 +5,7 @@ module Test.Kore.Simplify.Or (
     test_valueProperties,
 ) where
 
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Text (
     Text,
  )
@@ -19,7 +19,7 @@ import Kore.Internal.Predicate (
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -29,15 +29,15 @@ import Kore.Simplify.Or (
     simplify,
     simplifyEvaluated,
  )
-import qualified Kore.Unparser as Unparser
+import Kore.Unparser qualified as Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Terse
 

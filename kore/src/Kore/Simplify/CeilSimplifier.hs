@@ -17,7 +17,7 @@ import Control.Error (
 import Control.Monad (
     (<=<),
  )
-import qualified Control.Monad.Morph as Morph
+import Control.Monad.Morph qualified as Morph
 import Control.Monad.Reader (
     ReaderT (..),
  )

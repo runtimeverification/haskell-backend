@@ -13,14 +13,14 @@ import Data.Aeson (
     FromJSON,
     ToJSON,
  )
-import qualified Data.Aeson as Aeson
+import Data.Aeson qualified as Aeson
 import Data.Word
 import Debug
-import qualified GHC.Generics as GHC
-import qualified GHC.Stats as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import GHC.Stats qualified as GHC
+import Generics.SOP qualified as SOP
 import Prelude.Kore
-import qualified System.Mem as System
+import System.Mem qualified as System
 
 data Stats = Stats
     { gcs, major_gcs :: !Word32

@@ -52,11 +52,11 @@ module Kore.Repl.State (
 ) where
 
 import Control.Concurrent.MVar
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Error.Class (
     MonadError,
  )
-import qualified Control.Monad.Error.Class as Monad.Error
+import Control.Monad.Error.Class qualified as Monad.Error
 import Control.Monad.Reader (
     MonadReader,
     asks,
@@ -67,7 +67,7 @@ import Control.Monad.State.Strict (
     modify,
     put,
  )
-import qualified Control.Monad.Trans.Class as Monad.Trans
+import Control.Monad.Trans.Class qualified as Monad.Trans
 import Data.Bitraversable (
     bisequence,
     bitraverse,
@@ -75,13 +75,13 @@ import Data.Bitraversable (
 import Data.Coerce (
     coerce,
  )
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Data.Generics.Product
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
-import qualified Data.Graph.Inductive.Query.DFS as Graph
+import Data.Graph.Inductive.Query.DFS qualified as Graph
 import Data.List.Extra (
     findIndex,
     genericLength,
@@ -90,7 +90,7 @@ import Data.List.Extra (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Proxy (
     Proxy (..),
  )
@@ -100,7 +100,7 @@ import Data.Sequence (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
     pack,
@@ -109,12 +109,12 @@ import Data.Text (
 import GHC.Exts (
     toList,
  )
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Label as AttrLabel
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.Label qualified as AttrLabel
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -122,8 +122,8 @@ import Kore.Internal.TermLike (
     Sort,
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Log as Log
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log qualified as Log
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom,
  )
@@ -144,7 +144,7 @@ import Kore.Rewrite.AxiomPattern (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Data (
     MonadSimplify,
  )

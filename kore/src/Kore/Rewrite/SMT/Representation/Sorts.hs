@@ -12,53 +12,53 @@ module Kore.Rewrite.SMT.Representation.Sorts (
 import Control.Monad (
     zipWithM,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
-import qualified Data.Text as Text
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Data.Text qualified as Text
 import Kore.Attribute.Hook (
     Hook (Hook),
  )
-import qualified Kore.Attribute.Hook as Hook
+import Kore.Attribute.Hook qualified as Hook
 import Kore.Attribute.Smtlib (
     applySExpr,
  )
 import Kore.Attribute.Smtlib.Smtlib (
     Smtlib (Smtlib),
  )
-import qualified Kore.Attribute.Smtlib.Smtlib as Smtlib
-import qualified Kore.Attribute.Sort as Attribute (
+import Kore.Attribute.Smtlib.Smtlib qualified as Smtlib
+import Kore.Attribute.Sort qualified as Attribute (
     Sort,
  )
-import qualified Kore.Attribute.Sort as Attribute.Sort
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Kore.Attribute.Sort qualified as Attribute.Sort
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
-import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors (
+import Kore.Attribute.Sort.Constructors qualified as Attribute.Constructors (
     Constructor (Constructor),
     ConstructorLike (ConstructorLikeConstructor),
     Constructors (getConstructors),
  )
-import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
-import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Builtin.Int as Int
+import Kore.Attribute.Sort.Constructors qualified as Constructors.DoNotUse
+import Kore.Builtin.Bool qualified as Bool
+import Kore.Builtin.Int qualified as Int
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     recursiveIndexedModuleSortDescriptions,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.SMT.AST as AST
+import Kore.Rewrite.SMT.AST qualified as AST
 import Kore.Syntax.Sentence (
     SentenceSort (SentenceSort),
  )
-import qualified Kore.Syntax.Sentence as SentenceSort (
+import Kore.Syntax.Sentence qualified as SentenceSort (
     SentenceSort (..),
  )
 import Kore.Unparser (
     unparseToString,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
-import qualified SMT (
+import SMT qualified (
     Constructor (Constructor),
     ConstructorArgument (ConstructorArgument),
     DataTypeDeclaration (DataTypeDeclaration),
@@ -68,16 +68,16 @@ import qualified SMT (
     tBool,
     tInt,
  )
-import qualified SMT as SMT.Constructor (
+import SMT qualified as SMT.Constructor (
     Constructor (..),
  )
-import qualified SMT as SMT.ConstructorArgument (
+import SMT qualified as SMT.ConstructorArgument (
     ConstructorArgument (..),
  )
-import qualified SMT as SMT.DataTypeDeclaration (
+import SMT qualified as SMT.DataTypeDeclaration (
     DataTypeDeclaration (..),
  )
-import qualified SMT as SMT.SortDeclaration (
+import SMT qualified as SMT.SortDeclaration (
     SortDeclaration (..),
  )
 

@@ -38,8 +38,8 @@ module SQL (
     module SQL.SQL,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Control.Monad.Extra as Monad
+import Control.Lens qualified as Lens
+import Control.Monad.Extra qualified as Monad
 import Data.Generics.Wrapped
 import Data.Int (
     Int64,
@@ -50,10 +50,10 @@ import Data.Proxy (
 import Data.Text (
     Text,
  )
-import qualified Database.SQLite.Simple as SQLite
-import qualified Generics.SOP as SOP
+import Database.SQLite.Simple qualified as SQLite
+import Generics.SOP qualified as SOP
 import Prelude.Kore
-import qualified SMT.SimpleSMT as SMT (
+import SMT.SimpleSMT qualified as SMT (
     Result (..),
  )
 import SQL.ColumnDef
@@ -62,7 +62,7 @@ import SQL.SOP (
     ColumnImpl (..),
     TableName (..),
  )
-import qualified SQL.SOP as SOP
+import SQL.SOP qualified as SOP
 import SQL.SQL
 
 -- * Column

@@ -59,19 +59,19 @@ import Control.Exception (
     IOException,
     SomeException,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     join,
  )
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
     MonadThrow,
  )
-import qualified Control.Monad.Catch as Exception
-import qualified Control.Monad.Counter as Counter
-import qualified Control.Monad.Morph as Morph
+import Control.Monad.Catch qualified as Exception
+import Control.Monad.Counter qualified as Counter
+import Control.Monad.Morph qualified as Morph
 import Control.Monad.RWS.Strict (
     RWST,
  )
@@ -79,18 +79,18 @@ import Control.Monad.Reader (
     ReaderT,
     runReaderT,
  )
-import qualified Control.Monad.Reader as Reader
-import qualified Control.Monad.State.Lazy as State.Lazy
+import Control.Monad.Reader qualified as Reader
+import Control.Monad.State.Lazy qualified as State.Lazy
 import Control.Monad.State.Strict (
     StateT,
     runStateT,
  )
-import qualified Control.Monad.State.Strict as State.Strict
-import qualified Control.Monad.Trans as Trans
+import Control.Monad.State.Strict qualified as State.Strict
+import Control.Monad.Trans qualified as Trans
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
-import qualified Control.Monad.Trans.Maybe as Maybe
+import Control.Monad.Trans.Maybe qualified as Maybe
 import Data.Generics.Product (
     field,
  )
@@ -98,7 +98,7 @@ import Data.Limit
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Log (
     LogAction,
@@ -106,7 +106,7 @@ import Log (
     MonadLog (..),
     SomeEntry,
  )
-import qualified Log
+import Log qualified
 import Logic (
     LogicT,
     mapLogicT,
@@ -132,7 +132,7 @@ import SMT.SimpleSMT (
     pop,
     push,
  )
-import qualified SMT.SimpleSMT as SimpleSMT
+import SMT.SimpleSMT qualified as SimpleSMT
 
 -- * Interface
 

@@ -8,21 +8,21 @@ import Kore.Internal.Condition (
     Condition,
     Conditional (..),
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Conditional
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Conditional
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeCeilPredicate,
@@ -32,11 +32,11 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -48,8 +48,8 @@ import Kore.Simplify.Equals (
     simplify,
  )
 import Prelude.Kore
-import qualified Pretty
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Pretty qualified
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

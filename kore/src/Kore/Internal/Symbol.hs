@@ -35,16 +35,16 @@ module Kore.Internal.Symbol (
 import Control.DeepSeq (
     deepseq,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.ApplicationSorts
@@ -52,11 +52,11 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import SMT.AST (
     SExpr,
  )
-import qualified SQL
+import SQL qualified
 
 data Symbol = Symbol
     { symbolConstructor :: !Id

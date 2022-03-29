@@ -4,22 +4,22 @@ module Test.Kore.Simplify.Condition (
     test_simplifyPredicates,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Condition as Conditional
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Condition qualified as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -31,27 +31,27 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     firstFullEvaluation,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Condition as Condition
+import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
+import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.TopBottom
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.Kore.Simplify as Test
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

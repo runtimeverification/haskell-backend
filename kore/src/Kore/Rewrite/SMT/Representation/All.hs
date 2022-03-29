@@ -9,24 +9,24 @@ module Kore.Rewrite.SMT.Representation.All (
     build,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.Rewrite.SMT.AST as AST
+import Kore.Rewrite.SMT.AST qualified as AST
 import Kore.Rewrite.SMT.Representation.Resolve (
     resolve,
  )
-import qualified Kore.Rewrite.SMT.Representation.Sorts as Sorts (
+import Kore.Rewrite.SMT.Representation.Sorts qualified as Sorts (
     buildRepresentations,
  )
-import qualified Kore.Rewrite.SMT.Representation.Symbols as Symbols (
+import Kore.Rewrite.SMT.Representation.Symbols qualified as Symbols (
     buildRepresentations,
  )
 import Kore.Syntax.Id (

@@ -13,8 +13,8 @@ module Kore.Internal.Alias (
 import Control.DeepSeq (
     deepseq,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,

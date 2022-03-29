@@ -14,21 +14,21 @@ module Kore.VersionInfo (
 import Data.Aeson (
     FromJSON,
  )
-import qualified Data.Aeson as Aeson
-import qualified Data.List as List
-import qualified Development.GitRev as GitRev
-import qualified GHC.Generics as GHC
+import Data.Aeson qualified as Aeson
+import Data.List qualified as List
+import Development.GitRev qualified as GitRev
+import GHC.Generics qualified as GHC
 import Language.Haskell.TH (
     Exp,
     Q,
  )
-import qualified Language.Haskell.TH as TH
+import Language.Haskell.TH qualified as TH
 import Language.Haskell.TH.Syntax (
     Lift,
  )
-import qualified Language.Haskell.TH.Syntax as TH
+import Language.Haskell.TH.Syntax qualified as TH
 import Prelude.Kore
-import qualified System.Directory as Directory
+import System.Directory qualified as Directory
 import System.FilePath (
     isRelative,
     joinPath,

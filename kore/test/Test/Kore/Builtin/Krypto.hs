@@ -14,23 +14,23 @@ module Test.Kore.Builtin.Krypto (
     test_hashRipemd160,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Sum.Constructors
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Proxy
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified GHC.TypeLits as TypeLits
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.Krypto as Krypto
-import qualified Kore.Builtin.String as String
-import qualified Kore.Internal.OrPattern as OrPattern
+import Data.Text qualified as Text
+import GHC.TypeLits qualified as TypeLits
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin.Krypto qualified as Krypto
+import Kore.Builtin.String qualified as String
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.TermLike
@@ -44,11 +44,11 @@ import Kore.Simplify.Simplify (
     AttemptedAxiomResults (..),
     BuiltinAndAxiomSimplifier (..),
  )
-import qualified Kore.TopBottom as TopBottom
+import Kore.TopBottom qualified as TopBottom
 import Prelude.Kore
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Builtin.Int as Test.Int
+import Test.Kore.Builtin.Int qualified as Test.Int
 import Test.SMT (
     runNoSMT,
  )

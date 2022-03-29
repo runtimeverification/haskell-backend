@@ -9,13 +9,13 @@ module Test.Kore.IndexedModule.MockMetadataTools (
     sortInjectionAttributes,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Injective
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
 import Kore.Attribute.SortInjection
@@ -24,13 +24,13 @@ import Kore.IndexedModule.MetadataTools (
     MetadataTools (MetadataTools),
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools (
+import Kore.IndexedModule.MetadataTools qualified as MetadataTools (
     MetadataTools (..),
  )
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts,
  )
-import qualified Kore.Rewrite.SMT.AST as SMT.AST (
+import Kore.Rewrite.SMT.AST qualified as SMT.AST (
     SmtDeclarations,
  )
 import Kore.Sort (

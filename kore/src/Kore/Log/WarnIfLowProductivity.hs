@@ -14,7 +14,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 import Stats
 
 {- | @WarnIfLowProductivity@ is emitted when productuvity drops below a certain
@@ -45,7 +45,7 @@ instance Pretty WarnIfLowProductivity where
                 , kFiles
                 ,
                     [ "Poor productivity may indicate a performance bug."
-                    , "Please file a bug report: https://github.com/kframework/kore/issues"
+                    , "Please file a bug report: https://github.com/runtimeverification/haskell-backend/issues"
                     ]
                 ]
           where

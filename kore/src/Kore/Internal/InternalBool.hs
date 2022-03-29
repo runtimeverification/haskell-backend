@@ -7,8 +7,8 @@ module Kore.Internal.InternalBool (
 ) where
 
 import Data.Functor.Const
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -20,7 +20,7 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | Internal representation of the builtin @BOOL.Bool@ domain.
 data InternalBool = InternalBool

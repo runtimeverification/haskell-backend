@@ -3,38 +3,38 @@ module Test.Kore.Simplify.Exists (
     test_simplify,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
  )
-import qualified Kore.Internal.Conditional as Conditional (
+import Kore.Internal.Conditional qualified as Conditional (
     Conditional (..),
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Exists as Exists
+import Kore.Simplify.Exists qualified as Exists
 import Kore.Simplify.Simplify (
     SimplifierXSwitch (..),
  )
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Pattern qualified as Pattern
 import Test.Kore.Internal.Predicate as Predicate
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

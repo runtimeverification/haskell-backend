@@ -17,16 +17,16 @@ module Kore.IndexedModule.OverloadGraph (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     recursiveIndexedModuleAxioms,
