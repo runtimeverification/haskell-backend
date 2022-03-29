@@ -64,10 +64,10 @@ data MetadataSyntaxData attributes
 
 We do not derive Functor on this type because it is not currently possible
 to guarantee that the type the Functor is mapping to will implement
-Serialize. If you need to implement Functor here, your best bet is to replace
-the Serialize constraint in MetadataSyntaxData with a Typeable constraint and
-modify the Serialize instance so that it uses Typeable to check that the type
-it contains is serializable.
+NFData. If you need to implement Functor here, your best bet is to replace
+the NFData constraint in MetadataSyntaxData with a Typeable constraint and
+modify the NFData instance so that it uses Typeable to check that the type
+it contains has an NFData instance.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
     { -- | syntax of module
