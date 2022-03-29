@@ -53,11 +53,11 @@ instance ExtractSyntax VerifiedModuleSyntax where
     extractSymbolAttributes = getSymbolAttributes
 
 data MetadataSyntaxData attributes
-  = MetadataSyntaxData (VerifiedModuleSyntax attributes)
-  | forall syntaxData.
+    = MetadataSyntaxData (VerifiedModuleSyntax attributes)
+    | forall syntaxData.
         ( ExtractSyntax syntaxData
         ) =>
-    MetadataSyntaxDataExtension (syntaxData attributes)
+      MetadataSyntaxDataExtension (syntaxData attributes)
 
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
