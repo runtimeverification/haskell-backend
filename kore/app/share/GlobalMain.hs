@@ -212,7 +212,7 @@ parseKoreProveOptions =
             Leaf
             LeafOrBranching
             ( long "execute-to-branch"
-                <> help "Execute untill the proof branches."
+                <> help "Execute until the proof branches."
             )
   where
     parseGraphSearch =
