@@ -4,33 +4,33 @@ module Test.Kore.Simplify.SubstitutionSimplifier (
     test_SubstitutionSimplifier,
 ) where
 
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrCondition as OrCondition
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrCondition qualified as OrCondition
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.Substitution (
     mkNormalization,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
-import qualified Kore.Simplify.SubstitutionSimplifier as Simplification
+import Kore.Simplify.SubstitutionSimplifier qualified as Simplification
 import Kore.Unification.SubstitutionNormalization
-import qualified Kore.Unification.SubstitutionSimplifier as Unification (
+import Kore.Unification.SubstitutionSimplifier qualified as Unification (
     substitutionSimplifier,
  )
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
     runSimplifier,
  )
@@ -218,12 +218,12 @@ test_SubstitutionSimplifier =
     test ::
         HasCallStack =>
         TestName ->
-        -- | Test input
+        -- Test input
         [ ( SomeVariable RewritingVariableName
           , TermLike RewritingVariableName
           )
         ] ->
-        -- | Expected normalized, denormalized outputs
+        -- Expected normalized, denormalized outputs
         [Normalization RewritingVariableName] ->
         TestTree
     test

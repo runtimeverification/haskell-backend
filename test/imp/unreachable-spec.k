@@ -1,19 +1,9 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
 
-
-module VERIFICATION
-  imports IMP
-
-// verification ids
-  syntax Id ::= "a"  [token]
-              | "b"  [token]
-              | "r"  [token]
-endmodule
-
+requires "imp.k"
 
 module UNREACHABLE-SPEC
   imports IMP
-  imports VERIFICATION
 
   claim
     <k>

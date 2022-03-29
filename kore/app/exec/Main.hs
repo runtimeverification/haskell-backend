@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadMask,
     handle,
@@ -20,20 +20,10 @@ import Data.Limit (
 import Data.List (
     intercalate,
  )
-import Data.Reflection
 import Data.Text (
-    Text,
     unpack,
  )
-import qualified Data.Text as Text (
-    null,
-    split,
- )
-import qualified Data.Text.IO as Text (
-    hPutStrLn,
-    readFile,
- )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import GlobalMain
 import Kore.Attribute.Definition (
     KFileLocations (..),
@@ -45,14 +35,14 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     indexedModuleRawSentences,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
@@ -76,7 +66,7 @@ import Kore.Log.WarnBoundedModelChecker (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import qualified Kore.ModelChecker.Bounded as Bounded (
+import Kore.ModelChecker.Bounded qualified as Bounded (
     CheckResult (..),
  )
 import Kore.Parser.ParserUtils (
@@ -89,20 +79,17 @@ import Kore.Reachability (
     getConfiguration,
     lensClaimPattern,
  )
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
  )
 import Kore.Rewrite.RewritingVariable
-import Kore.Rewrite.RulePattern (
-    mapRuleVariables,
- )
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
@@ -112,7 +99,7 @@ import Kore.Syntax.Definition (
     ModuleName (..),
     Sentence (..),
  )
-import qualified Kore.Syntax.Definition as Definition.DoNotUse
+import Kore.Syntax.Definition qualified as Definition.DoNotUse
 import Kore.Unparser (
     unparse,
  )
@@ -133,8 +120,8 @@ import Options.Applicative (
     strOption,
     value,
  )
-import qualified Options.Applicative as Options
-import qualified Options.Applicative.Help.Pretty as OptPretty
+import Options.Applicative qualified as Options
+import Options.Applicative.Help.Pretty qualified as OptPretty
 import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
@@ -148,7 +135,6 @@ import Pretty (
     Doc,
     hPutDoc,
     putDoc,
-    vsep,
  )
 import Prof (
     MonadProf,
@@ -156,7 +142,7 @@ import Prof (
 import SMT (
     MonadSMT,
  )
-import qualified SMT
+import SMT qualified
 import Stats
 import System.Clock (
     Clock (Monotonic),
@@ -181,7 +167,6 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (WriteMode),
-    stderr,
     withFile,
  )
 
@@ -285,7 +270,6 @@ data KoreExecOptions = KoreExecOptions
     , koreLogOptions :: !KoreLogOptions
     , koreSearchOptions :: !(Maybe KoreSearchOptions)
     , koreProveOptions :: !(Maybe KoreProveOptions)
-    , koreMergeOptions :: !(Maybe KoreMergeOptions)
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
@@ -330,7 +314,6 @@ parseKoreExecOptions startTime =
             <*> parseKoreLogOptions (ExeName "kore-exec") startTime
             <*> pure Nothing
             <*> optional parseKoreProveOptions
-            <*> optional parseKoreMergeOptions
             <*> optional parseRtsStatistics
             <*> parseBugReportOption
             <*> parseMaxCounterexamples
@@ -413,11 +396,6 @@ unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
     , unwords ["--searchType", show searchType]
     ]
 
-unparseKoreMergeOptions :: KoreMergeOptions -> [String]
-unparseKoreMergeOptions (KoreMergeOptions _ maybeBatchSize) =
-    ["--merge-rules mergeRules.kore"]
-        <> maybe mempty ((: []) . ("--merge-batch-size " <>) . show) maybeBatchSize
-
 unparseKoreProveOptions :: KoreProveOptions -> [String]
 unparseKoreProveOptions
     ( KoreProveOptions
@@ -451,7 +429,6 @@ koreExecSh
                             koreLogOptions
                             koreSearchOptions
                             koreProveOptions
-                            koreMergeOptions
                             rtsStatistics
                             _
                             maxCounterexamples
@@ -483,7 +460,6 @@ koreExecSh
                 , unparseKoreLogOptions koreLogOptions
                 , maybe mempty unparseKoreSearchOptions koreSearchOptions
                 , maybe mempty unparseKoreProveOptions koreProveOptions
-                , maybe mempty unparseKoreMergeOptions koreMergeOptions
                 ]
         unparseExecutionMode All = "all"
         unparseExecutionMode Any = "any"
@@ -499,10 +475,6 @@ defaultRtsStatisticsFilePath = "rts-statistics.json"
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions{searchFileName} =
     copyFile searchFileName $ reportFile <> "/searchFile.kore"
-
-writeKoreMergeFiles :: FilePath -> KoreMergeOptions -> IO ()
-writeKoreMergeFiles reportFile KoreMergeOptions{rulesFileName} =
-    copyFile rulesFileName $ reportFile <> "/mergeRules.kore"
 
 writeKoreProveFiles :: FilePath -> KoreProveOptions -> IO ()
 writeKoreProveFiles reportFile koreProveOptions = do
@@ -523,7 +495,6 @@ writeOptionsAndKoreFiles
         , koreSolverOptions
         , koreSearchOptions
         , koreProveOptions
-        , koreMergeOptions
         } =
         do
             let shellScript = reportDirectory </> "kore-exec.sh"
@@ -543,9 +514,6 @@ writeOptionsAndKoreFiles
             for_
                 koreSearchOptions
                 (writeKoreSearchFiles reportDirectory)
-            for_
-                koreMergeOptions
-                (writeKoreMergeFiles reportDirectory)
             for_
                 koreProveOptions
                 (writeKoreProveFiles reportDirectory)
@@ -574,9 +542,10 @@ main = do
 {- | Use the parsed 'KoreExecOptions' to set up output and logging, then
 dispatch the requested command.
 -}
-mainWithOptions :: KoreExecOptions -> IO ()
-mainWithOptions execOptions = do
-    let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} = execOptions
+mainWithOptions :: LocalOptions KoreExecOptions -> IO ()
+mainWithOptions LocalOptions{execOptions, simplifierx} = do
+    let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} =
+            execOptions
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tmpDir -> do
@@ -586,7 +555,7 @@ mainWithOptions execOptions = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch execOptions'
+                mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog tmpDir koreLogOptions
@@ -612,7 +581,7 @@ mainWithOptions execOptions = do
                 throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
-mainDispatch :: KoreExecOptions -> Main ExitCode
+mainDispatch :: LocalOptions KoreExecOptions -> Main ExitCode
 mainDispatch = warnProductivity . mainDispatchWorker
   where
     warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
@@ -620,28 +589,27 @@ mainDispatch = warnProductivity . mainDispatchWorker
         (kFileLocations, exitCode) <- action
         warnIfLowProductivity kFileLocations
         return exitCode
-    mainDispatchWorker :: KoreExecOptions -> Main (KFileLocations, ExitCode)
-    mainDispatchWorker execOptions
+    mainDispatchWorker ::
+        LocalOptions KoreExecOptions ->
+        Main (KFileLocations, ExitCode)
+    mainDispatchWorker localOptions@LocalOptions{execOptions}
         | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
             if bmc
-                then koreBmc execOptions proveOptions
-                else koreProve execOptions proveOptions
+                then koreBmc localOptions proveOptions
+                else koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
-            koreSearch execOptions searchOptions
-        | Just mergeOptions <- koreMergeOptions =
-            koreMerge execOptions mergeOptions
+            koreSearch localOptions searchOptions
         | otherwise =
-            koreRun execOptions
+            koreRun localOptions
       where
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
-        KoreExecOptions{koreMergeOptions} = execOptions
 
 koreSearch ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch execOptions searchOptions = do
+koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -652,7 +620,14 @@ koreSearch execOptions searchOptions = do
     initial <- loadPattern mainModule patternFileName
     final <-
         execute execOptions mainModule $
-            search depthLimit breadthLimit mainModule initial target config
+            search
+                simplifierx
+                depthLimit
+                breadthLimit
+                mainModule
+                initial
+                target
+                config
     lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, ExitSuccess)
   where
@@ -660,8 +635,8 @@ koreSearch execOptions searchOptions = do
     config = Search.Config{bound, searchType}
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
-koreRun :: KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun execOptions = do
+koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions{mainModuleName} = execOptions
@@ -670,17 +645,17 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <-
         execute execOptions mainModule $
-            exec depthLimit breadthLimit mainModule strategy initial
+            exec simplifierx depthLimit breadthLimit mainModule strategy initial
     lift $ renderResult execOptions (unparse final)
     return (kFileLocations definition, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
 koreProve ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreProve execOptions proveOptions = do
+koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -696,6 +671,7 @@ koreProve execOptions proveOptions = do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
+            simplifierx
             graphSearch
             breadthLimit
             depthLimit
@@ -785,10 +761,10 @@ koreProve execOptions proveOptions = do
                 }
 
 koreBmc ::
-    KoreExecOptions ->
+    LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreBmc execOptions proveOptions = do
+koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -801,6 +777,7 @@ koreBmc execOptions proveOptions = do
             KoreProveOptions{graphSearch} = proveOptions
         checkResult <-
             boundedModelCheck
+                simplifierx
                 breadthLimit
                 depthLimit
                 mainModule
@@ -817,42 +794,6 @@ koreBmc execOptions proveOptions = do
   where
     failure pat = (ExitFailure 1, pat)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
-
-koreMerge ::
-    KoreExecOptions ->
-    KoreMergeOptions ->
-    Main (KFileLocations, ExitCode)
-koreMerge execOptions mergeOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    definition <- loadDefinitions [definitionFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
-    let KoreMergeOptions{rulesFileName} = mergeOptions
-    ruleIds <- lift $ loadRuleIds rulesFileName
-    let KoreMergeOptions{maybeBatchSize} = mergeOptions
-    eitherMergedRule <- execute execOptions mainModule $
-        case maybeBatchSize of
-            Just batchSize ->
-                mergeRulesConsecutiveBatches batchSize mainModule ruleIds
-            Nothing -> mergeAllRules mainModule ruleIds
-    case eitherMergedRule of
-        (Left err) -> do
-            lift $ Text.hPutStrLn stderr err
-            return (kFileLocations definition, ExitFailure 1)
-        (Right mergedRule) -> do
-            let mergedRule' =
-                    mergedRule <&> mapRuleVariables getRewritingVariable
-            lift $ renderResult execOptions (vsep (map unparse mergedRule'))
-            return (kFileLocations definition, ExitSuccess)
-
-loadRuleIds :: FilePath -> IO [Text]
-loadRuleIds fileName = do
-    fileContents <- Text.readFile fileName
-    return
-        ( filter
-            (not . Text.null)
-            (Text.split (`elem` (" \t\n\r" :: String)) fileContents)
-        )
 
 type MonadExecute exe =
     ( MonadMask exe
@@ -880,10 +821,7 @@ execute options mainModule worker =
     withZ3 =
         SMT.runSMT
             config
-            ( give
-                (MetadataTools.build mainModule)
-                (declareSMTLemmas mainModule)
-            )
+            (declareSMTLemmas (MetadataTools.build mainModule) mainModule)
             worker
     withoutSMT = SMT.runNoSMT worker
     KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =

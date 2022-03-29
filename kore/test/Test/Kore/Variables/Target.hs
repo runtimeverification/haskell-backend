@@ -6,10 +6,10 @@ module Test.Kore.Variables.Target (
     test_FreshName,
 ) where
 
-import qualified Control.Monad as Monad
-import qualified Data.Set as Set
+import Control.Monad qualified as Monad
+import Data.Set qualified as Set
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
+import Hedgehog.Gen qualified as Gen
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Variables.Target

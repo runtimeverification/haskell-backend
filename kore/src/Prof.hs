@@ -20,16 +20,16 @@ import Control.Monad.Trans.Except (
 import Control.Monad.Trans.Reader (
     ReaderT,
  )
-import qualified Control.Monad.Trans.State.Lazy as Lazy (
+import Control.Monad.Trans.State.Lazy qualified as Lazy (
     StateT,
  )
-import qualified Control.Monad.Trans.State.Strict as Strict (
+import Control.Monad.Trans.State.Strict qualified as Strict (
     StateT,
  )
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Debug.Trace.Text (
     traceEventIO,
  )

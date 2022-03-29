@@ -13,35 +13,35 @@ module Test.Kore.Rewrite.Function.Integration (
     test_Ceil,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Sup
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Int as Int (
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
+import Kore.Builtin.AssociativeCommutative qualified as Ac
+import Kore.Builtin.Int qualified as Int (
     builtinFunctions,
  )
-import qualified Kore.Builtin.Map as Map (
+import Kore.Builtin.Map qualified as Map (
     builtinFunctions,
  )
 import Kore.Equation
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-import qualified Kore.IndexedModule.SortGraph as SortGraph
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
+import Kore.IndexedModule.SortGraph qualified as SortGraph
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
@@ -52,10 +52,10 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
@@ -68,14 +68,14 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
+import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
     mkConfigVariable,
  )
-import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier (
     InjSimplifier,
     mkInjSimplifier,
@@ -84,8 +84,8 @@ import Kore.Simplify.Simplify
 import Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
-import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Simplify.TermLike as TermLike
+import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Syntax.Definition hiding (
     Symbol (..),
  )
@@ -97,14 +97,14 @@ import Kore.Validate.Error (
 import Prelude.Kore hiding (
     succ,
  )
-import qualified Pretty
+import Pretty qualified
 import Test.Kore
-import qualified Test.Kore.Builtin.Bool as Bool
-import qualified Test.Kore.Builtin.Builtin as Builtin
-import qualified Test.Kore.Builtin.Definition as Builtin
-import qualified Test.Kore.Builtin.Int as Int
-import qualified Test.Kore.Builtin.List as List
-import qualified Test.Kore.Builtin.Map as Map
+import Test.Kore.Builtin.Bool qualified as Bool
+import Test.Kore.Builtin.Builtin qualified as Builtin
+import Test.Kore.Builtin.Definition qualified as Builtin
+import Test.Kore.Builtin.Int qualified as Int
+import Test.Kore.Builtin.List qualified as List
+import Test.Kore.Builtin.Map qualified as Map
 import Test.Kore.Equation.Common (
     axiom,
     axiom_,
@@ -115,7 +115,7 @@ import Test.Kore.Rewrite.Axiom.Matcher (
     doesn'tMatch,
     matches,
  )
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -2037,6 +2037,8 @@ testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
 
+-- TODO(Ana): if needed, create copy with experimental simplifier
+-- enabled
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
@@ -2053,6 +2055,7 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier
+        , simplifierXSwitch = DisabledSimplifierX
         }
 
 testEnvUnification :: Env (SimplifierT NoSMT)

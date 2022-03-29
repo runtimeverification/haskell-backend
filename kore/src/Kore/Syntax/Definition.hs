@@ -16,20 +16,20 @@ module Kore.Syntax.Definition (
 import Data.Kind (
     Type,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Syntax.Module
 import Kore.Syntax.Sentence
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 {- | Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
 Because there are plans to extend this to a list of 'Module's, the @definition@
-syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#definition-modules kore-syntax.md#definition-modules>
+syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#definition-modules kore-syntax.md#definition-modules>
 (Declaration and Definitions) is split here into 'Definition' and 'Module'.
 
 'definitionAttributes' corresponds to the first non-terminal of @definition@,

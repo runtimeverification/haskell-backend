@@ -8,6 +8,16 @@ KOMPILED = test-kompiled
 
 test: test-k
 
+build-test: $(TEST_DEPS)
+
+test-simplifierx: test-k-simplifierx
+
+test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx
+test-k-simplifierx: KORE_REPL_OPTS += --simplifierx
+test-k-simplifierx: KORE_MATCH_DISJUNCTION_OPTS += --simplifierx
+test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
+test-k-simplifierx: $(OUTS)
+
 test-k: test-kompiled/definition.kore
 
 golden:
@@ -15,7 +25,9 @@ golden:
 clean:
 	rm -fr $(KOMPILED)
 
-.PHONY: test-k test golden clean
+clean-execution:
+
+.PHONY: test-k test-k-simplifierx test golden clean clean-execution
 
 test-kompiled/definition.kore: test.k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<

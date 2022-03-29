@@ -20,12 +20,12 @@ module Kore.Log (
 import Colog (
     LogAction (..),
  )
-import qualified Colog
+import Colog qualified
 import Control.Concurrent.MVar
 import Control.Monad.Catch (
     MonadMask,
  )
-import qualified Control.Monad.Catch as Exception
+import Control.Monad.Catch qualified as Exception
 import Control.Monad.Cont (
     ContT (..),
     runContT,
@@ -40,7 +40,7 @@ import Kore.Log.DebugSolver (
     DebugSolverOptions (DebugSolverOptions),
     solverTranscriptLogger,
  )
-import qualified Kore.Log.DebugSolver as DebugSolver.DoNotUse
+import Kore.Log.DebugSolver qualified as DebugSolver.DoNotUse
 import Kore.Log.KoreLogOptions as KoreLogOptions
 import Kore.Log.Registry (
     lookupTextFromTypeWithError,
@@ -49,7 +49,7 @@ import Kore.Log.Registry (
 import Kore.Log.SQLite
 import Log
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,

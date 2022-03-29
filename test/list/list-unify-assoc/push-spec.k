@@ -1,12 +1,8 @@
-module VERIFICATION
-
-  imports TEST
-
-endmodule
+requires "test.k"
 
 module PUSH-SPEC
 
-  imports VERIFICATION
+  imports TEST
 
   claim
     <k> push(X) => . ... </k>

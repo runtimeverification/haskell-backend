@@ -10,9 +10,9 @@ module Kore.Simplify.Inhabitant (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     markSimplified,
  )
 import Kore.Rewrite.RewritingVariable (

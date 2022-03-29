@@ -30,7 +30,7 @@ import Kore.Internal.InternalBool
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     fromTermLike,
  )
 import Kore.Internal.TermLike (
@@ -39,7 +39,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkInternalBool,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     markSimplified,
  )
 import Prelude.Kore

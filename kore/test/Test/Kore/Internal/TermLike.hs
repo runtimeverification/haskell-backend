@@ -15,9 +15,9 @@ module Test.Kore.Internal.TermLike (
     module Kore.Internal.TermLike,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Reader as Reader
-import qualified Data.Bifunctor as Bifunctor
+import Data.Bifunctor qualified as Bifunctor
 import Data.Functor.Identity (
     runIdentity,
  )
@@ -27,11 +27,11 @@ import Data.Generics.Product (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Sup
-import qualified Hedgehog
-import qualified Hedgehog.Gen as Gen
+import Hedgehog qualified
+import Hedgehog.Gen qualified as Gen
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariable,
@@ -54,7 +54,7 @@ import Test.Kore hiding (
     symbolGen,
  )
 import Test.Kore.Internal.Symbol
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Terse

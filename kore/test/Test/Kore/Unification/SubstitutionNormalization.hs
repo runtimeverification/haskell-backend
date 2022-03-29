@@ -13,7 +13,7 @@ import Kore.Internal.Substitution (
 import Kore.Internal.TermLike
 import Kore.Unification.SubstitutionNormalization
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -338,9 +338,9 @@ test_normalize =
     test ::
         HasCallStack =>
         TestName ->
-        -- | Test input
+        -- Test input
         Map (SomeVariable VariableName) (TermLike VariableName) ->
-        -- | Expected output
+        -- Expected output
         Normalization VariableName ->
         TestTree
     test testName input normalization =
@@ -352,7 +352,7 @@ test_normalize =
     testBottom ::
         HasCallStack =>
         TestName ->
-        -- | Test input
+        -- Test input
         Map (SomeVariable VariableName) (TermLike VariableName) ->
         TestTree
     testBottom testName input =

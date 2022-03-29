@@ -3,13 +3,11 @@
 // Base test that a rewrite we use in all the other tests works as expected.
 // Can be removed from the current test suite without losing anything.
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
+requires "simplified.k"
 
 module ONE-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

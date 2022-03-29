@@ -15,13 +15,9 @@ module Test.Kore.Parser.Lexer (
 
 import Data.Text (
     Text,
-    unpack,
  )
 import Kore.Parser.Lexer
-import Kore.Syntax.Definition
-import Kore.Syntax.StringLiteral
 import Prelude.Kore
-import Test.Kore
 import Test.Kore.Parser
 import Test.Tasty (
     TestTree,
@@ -29,335 +25,343 @@ import Test.Tasty (
 
 test_colon :: [TestTree]
 test_colon =
-    parseSkipTree
-        colon
-        [ Skip [":", ": ", ":/**/"]
-        , FailureWithoutMessage ["", " :", " ", ","]
-        ]
+    lexTree
+        (successes [":", " :", ": ", ":/**/"] [TokenColon])
 
 test_comma :: [TestTree]
 test_comma =
-    parseSkipTree
-        comma
-        [ Skip [",", ", ", ",/**/"]
-        , FailureWithoutMessage ["", " ,", " ", ":"]
-        ]
+    lexTree
+        (successes [",", " ,", ", ", ",/**/"] [TokenComma])
 
 test_bracesPair :: [TestTree]
 test_bracesPair =
-    parseTree
-        (bracesPair parseId)
-        [ success "{a,B}" (testId "a", testId "B")
-        , success "{ a , B } " (testId "a", testId "B")
-        , success "{/**/a/**/,/**/B/**/}/**/" (testId "a", testId "B")
-        , success "{/*/**/a,/**/B/**/}/**/" (testId "a", testId "B")
-        , FailureWithoutMessage
-            [ ""
+    lexTree
+        ( successes
+            [ "{a,B}"
             , " {a,B}"
-            , "{a}"
-            , "{B}"
-            , "{a,}"
-            , "{,B}"
-            , "{a{},b}"
-            , "{a,B,c}"
-            , "(a,B)"
+            , "{ a , B } "
+            , "{/**/a/**/,/**/B/**/}/**/"
+            , "{/*/**/a,/**/B/**/}/**/"
             ]
-        ]
+            [ TokenLeftBrace
+            , TokenIdent "a"
+            , TokenComma
+            , TokenIdent "B"
+            , TokenRightBrace
+            ]
+            ++ [ success
+                    "{a,b}"
+                    [ TokenLeftBrace
+                    , TokenIdent "a"
+                    , TokenComma
+                    , TokenIdent "b"
+                    , TokenRightBrace
+                    ]
+               , success "{a}" [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
+               , success "{B}" [TokenLeftBrace, TokenIdent "B", TokenRightBrace]
+               , success "{a,}" [TokenLeftBrace, TokenIdent "a", TokenComma, TokenRightBrace]
+               , success "{,B}" [TokenLeftBrace, TokenComma, TokenIdent "B", TokenRightBrace]
+               , success
+                    "{a{},b}"
+                    [ TokenLeftBrace
+                    , TokenIdent "a"
+                    , TokenLeftBrace
+                    , TokenRightBrace
+                    , TokenComma
+                    , TokenIdent "b"
+                    , TokenRightBrace
+                    ]
+               , success
+                    "{a,B,c}"
+                    [ TokenLeftBrace
+                    , TokenIdent "a"
+                    , TokenComma
+                    , TokenIdent "B"
+                    , TokenComma
+                    , TokenIdent "c"
+                    , TokenRightBrace
+                    ]
+               ]
+        )
 
 test_parseSymbolId :: [TestTree]
 test_parseSymbolId =
-    parseTree
-        parseSymbolId
-        [ success "A" (testId "A")
-        , success "a" (testId "a")
-        , success "abc" (testId "abc")
-        , success "a'" (testId "a'")
-        , success "a-" (testId "a-")
-        , success "a'2" (testId "a'2")
-        , success "a " (testId "a")
-        , success "a/**/ " (testId "a")
-        , success "\\something" (testId "\\something")
-        , Failure
-            FailureTest
-                { failureInput = "["
-                , failureExpected =
-                    "<test-string>:1:1:\n\
-                    \  |\n\
-                    \1 | [\n\
-                    \  | ^\n\
-                    \unexpected '['\n\
-                    \expecting symbol or alias identifier\n"
-                }
-        , Failure
-            FailureTest
-                { failureInput = "module"
-                , failureExpected =
-                    "<test-string>:1:7:\n\
-                    \  |\n\
-                    \1 | module\n\
-                    \  |       ^\n\
-                    \Identifiers should not be keywords: 'module'.\n"
-                }
-        , FailureWithoutMessage
-            [ ""
-            , "'"
-            , "'a"
-            , "2"
-            , "2a"
-            , "`"
-            , "`a"
-            , "#"
-            , "#'"
-            , "#'a"
-            , "#2"
-            , "#2a"
-            , "#`"
-            , "#`'"
-            , "#`'a"
-            , "#`2"
-            , "#`2a"
-            , "a#"
-            , ","
-            , " a"
+    lexTree $
+        mappend
+            (successes ["a", "a ", " a", "a/**/ ", "//\na"] [TokenIdent "a"])
+            [ success "A" [TokenIdent "A"]
+            , success "abc" [TokenIdent "abc"]
+            , success "a'" [TokenIdent "a'"]
+            , success "a-" [TokenIdent "a-"]
+            , success "a'2" [TokenIdent "a'2"]
+            , success "\\something" [TokenIdent "\\something"]
+            , success "[" [TokenLeftBracket]
+            , success "module" [TokenModule]
+            , FailureWithoutMessage
+                [ "'"
+                , "'a"
+                , "2"
+                , "2a"
+                , "`"
+                , "`a"
+                , "#"
+                , "#'"
+                , "#'a"
+                , "#2"
+                , "#2a"
+                , "#`"
+                , "#`'"
+                , "#`'a"
+                , "#`2"
+                , "#`2a"
+                , "a#"
+                ]
             ]
-        ]
 
 test_braces :: [TestTree]
 test_braces =
-    parseTree
-        (braces parseId)
-        [ success "{a}" (testId "a")
-        , success "{ a } " (testId "a")
-        , success "{/**/a/**/}/**/" (testId "a")
-        , FailureWithoutMessage
-            ["", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
-        ]
+    lexTree
+        ( successes
+            ["{a}", "{ a } ", "{/**/a/**/}/**/", " {a}"]
+            [TokenLeftBrace, TokenIdent "a", TokenRightBrace]
+            ++ [ success "{}" [TokenLeftBrace, TokenRightBrace]
+               , success
+                    "{a{}}"
+                    [ TokenLeftBrace
+                    , TokenIdent "a"
+                    , TokenLeftBrace
+                    , TokenRightBrace
+                    , TokenRightBrace
+                    ]
+               , success "a}" [TokenIdent "a", TokenRightBrace]
+               , success "{a" [TokenLeftBrace, TokenIdent "a"]
+               ]
+        )
 
 test_parens :: [TestTree]
 test_parens =
-    parseTree
-        (parens parseId)
-        [ success "(a)" (testId "a")
-        , success "( a ) " (testId "a")
-        , success "(/**/a/**/)/**/" (testId "a")
-        , FailureWithoutMessage
-            ["", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
-        ]
+    lexTree
+        ( successes
+            ["(a)", "( a ) ", "(/**/a/**/)/**/", " (a)"]
+            [TokenLeftParen, TokenIdent "a", TokenRightParen]
+            ++ successes
+                ["(a,B)", "( a , B ) ", "(/**/a/**/,/**/B/**/)/**/", " (a,B)"]
+                [ TokenLeftParen
+                , TokenIdent "a"
+                , TokenComma
+                , TokenIdent "B"
+                , TokenRightParen
+                ]
+            ++ [ success "()" [TokenLeftParen, TokenRightParen]
+               , success
+                    "(a())"
+                    [ TokenLeftParen
+                    , TokenIdent "a"
+                    , TokenLeftParen
+                    , TokenRightParen
+                    , TokenRightParen
+                    ]
+               , success "a)" [TokenIdent "a", TokenRightParen]
+               , success "(a" [TokenLeftParen, TokenIdent "a"]
+               , success "(B)" [TokenLeftParen, TokenIdent "B", TokenRightParen]
+               , success
+                    "(a,b)"
+                    [ TokenLeftParen
+                    , TokenIdent "a"
+                    , TokenComma
+                    , TokenIdent "b"
+                    , TokenRightParen
+                    ]
+               ]
+        )
 
 test_brackets :: [TestTree]
 test_brackets =
-    parseTree
-        (brackets parseId)
-        [ success "[a]" (testId "a")
-        , success "[ a ] " (testId "a")
-        , success "[/**/a/**/]/**/" (testId "a")
-        , FailureWithoutMessage
-            ["", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
-        ]
+    lexTree
+        ( successes
+            ["[a]", "[ a ] ", "[/**/a/**/]/**/", " [a]"]
+            [TokenLeftBracket, TokenIdent "a", TokenRightBracket]
+            ++ [ success "[]" [TokenLeftBracket, TokenRightBracket]
+               , success
+                    "[a,b]"
+                    [ TokenLeftBracket
+                    , TokenIdent "a"
+                    , TokenComma
+                    , TokenIdent "b"
+                    , TokenRightBracket
+                    ]
+               , success
+                    "[a[]]"
+                    [ TokenLeftBracket
+                    , TokenIdent "a"
+                    , TokenLeftBracket
+                    , TokenRightBracket
+                    , TokenRightBracket
+                    ]
+               , success "a]" [TokenIdent "a", TokenRightBracket]
+               , success "[a" [TokenLeftBracket, TokenIdent "a"]
+               ]
+        )
 
 test_keyword :: [TestTree]
 test_keyword =
-    parseSkipTree
-        (keyword "hello")
-        [ Skip ["hello", "hello ", "hello/**/ "]
-        , FailureWithoutMessage ["", "Hello", " hello", "hello-world"]
-        ]
+    lexTree
+        ( successes ["hello", "hello ", "hello/**/ ", " hello"] [TokenIdent "hello"]
+            ++ [ success "Hello" [TokenIdent "Hello"]
+               , success "hello-world" [TokenIdent "hello-world"]
+               ]
+        )
 
 test_parseModuleName :: [TestTree]
 test_parseModuleName =
-    parseTree
-        parseModuleName
-        [ success "A" (ModuleName "A")
-        , success "A-" (ModuleName "A-")
-        , success "A2" (ModuleName "A2")
-        , success "a'-2" (ModuleName "a'-2")
-        , success "A " (ModuleName "A")
-        , success "A/**/ " (ModuleName "A")
-        , FailureWithoutMessage
-            [ ""
-            , "-"
-            , "-A"
-            , "2"
-            , "2A"
-            , "#"
-            , "#A"
-            , " A"
-            , ","
+    lexTree $
+        mappend
+            (successes ["A", "A ", "A/**/ ", " A"] [TokenIdent "A"])
+            [ success "A-" [TokenIdent "A-"]
+            , success "A2" [TokenIdent "A2"]
+            , success "a'-2" [TokenIdent "a'-2"]
+            , FailureWithoutMessage
+                [ "-"
+                , "-A"
+                , "2"
+                , "2A"
+                , "#"
+                , "#A"
+                ]
             ]
-        ]
 
 test_parensTuple :: [TestTree]
 test_parensTuple =
-    parseTree
-        (parensTuple parseId parseModuleName)
-        [ success "(a,B)" (testId "a", ModuleName "B")
-        , success "( a , B ) " (testId "a", ModuleName "B")
-        , success "(/**/a/**/,/**/B/**/)/**/" (testId "a", ModuleName "B")
-        , FailureWithoutMessage
-            [ ""
-            , " (a,B)"
-            , "(a)"
-            , "(B)"
-            , "(a,)"
-            , "(,B)"
-            , "(a(),b)"
-            , "(a,B,c)"
-            , "{a,B}"
+    lexTree
+        [ success "(a,)" [TokenLeftParen, TokenIdent "a", TokenComma, TokenRightParen]
+        , success "(,B)" [TokenLeftParen, TokenComma, TokenIdent "B", TokenRightParen]
+        , success
+            "(a(),b)"
+            [ TokenLeftParen
+            , TokenIdent "a"
+            , TokenLeftParen
+            , TokenRightParen
+            , TokenComma
+            , TokenIdent "b"
+            , TokenRightParen
+            ]
+        , success
+            "(a,B,c)"
+            [ TokenLeftParen
+            , TokenIdent "a"
+            , TokenComma
+            , TokenIdent "B"
+            , TokenComma
+            , TokenIdent "c"
+            , TokenRightParen
             ]
         ]
 
 test_space :: [TestTree]
 test_space =
-    parseSkipTree
-        space
-        [ Skip
-            [ ""
-            , " "
-            , "\n"
-            , "\r"
-            , "\t"
-            , "/**/"
-            , "//\n"
-            , "/*\n*/"
-            , "/*//*/"
-            , "/****/"
-            , "/* * / */"
-            , "/*/*/"
-            , "//hello\n"
-            , "//hello"
-            , "\t//hello\n /* world\n //*/  //!\n"
+    lexTree $
+        mappend
+            ( successes
+                [ ""
+                , " "
+                , "\n"
+                , "\r"
+                , "\t"
+                , "/**/"
+                , "//\n"
+                , "/*\n*/"
+                , "/*//*/"
+                , "/****/"
+                , "/* * / */"
+                , "/*/*/"
+                , "//hello\n"
+                , "//hello"
+                , "\t//hello\n /* world\n //*/  //!\n"
+                ]
+                []
+            )
+            [ Failure
+                FailureTest
+                    { failureInput = "/*/"
+                    , failureExpected =
+                        "<test-string>:1:4: unexpected end of input\n"
+                    }
+            , FailureWithoutMessage
+                [ "/*"
+                , "/**"
+                , "/***"
+                , "/*hello"
+                , "/*//"
+                , "*/"
+                , "/ /"
+                , "/**//"
+                ]
             ]
-        , Failure
-            FailureTest
-                { failureInput = "/*/"
-                , failureExpected =
-                    "<test-string>:1:4:\n\
-                    \  |\n\
-                    \1 | /*/\n\
-                    \  |    ^\n\
-                    \unexpected end of input\n\
-                    \expecting \"*/\"\n"
-                }
-        , FailureWithoutMessage
-            [ "a"
-            , "/*"
-            , "/**"
-            , "/***"
-            , "/*hello"
-            , "/*//"
-            , "*/"
-            , "/ /"
-            , "/**//"
-            , "//\na"
-            ]
-        ]
 
 test_parseStringLiteral :: [TestTree]
 test_parseStringLiteral =
-    parseTree
-        parseStringLiteral
-        [ success "\"\"" (StringLiteral "")
-        , success "\"a\"" (StringLiteral "a")
-        , success "\"\\\"\"" (StringLiteral "\"")
-        , success "\"\\f\"" (StringLiteral "\12")
-        , success "\"\\n\"" (StringLiteral "\10")
-        , success "\"\\r\"" (StringLiteral "\13")
-        , success "\"\\t\"" (StringLiteral "\9")
-        , success "\"\\u1ABC\"" (StringLiteral "\6844")
-        , success "\"\\u1ABCa\"" (StringLiteral ("\6844" <> "a"))
-        , success "\"\\u1abc\"" (StringLiteral "\6844")
-        , success "\"\\U000120FF\"" (StringLiteral "\73983")
-        , success "\"\\U000120FFa\"" (StringLiteral ("\73983" <> "a"))
-        , success "\"\\U000120ff\"" (StringLiteral "\73983")
-        , success "\"\\xFF\"" (StringLiteral "\xFF")
-        , success "\"\\xff\"" (StringLiteral "\xFF")
+    lexTree
+        [ success "\"\"" [TokenString ""]
+        , success "\"a\"" [TokenString "a"]
+        , success "\"\\\"\"" [TokenString "\""]
+        , success "\"\\f\"" [TokenString "\12"]
+        , success "\"\\n\"" [TokenString "\10"]
+        , success "\"\\r\"" [TokenString "\13"]
+        , success "\"\\t\"" [TokenString "\9"]
+        , success "\"\\u1ABC\"" [TokenString "\6844"]
+        , success "\"\\u1ABCa\"" [TokenString $ "\6844" <> "a"]
+        , success "\"\\u1abc\"" [TokenString "\6844"]
+        , success "\"\\U000120FF\"" [TokenString "\73983"]
+        , success "\"\\U000120FFa\"" [TokenString $ "\73983" <> "a"]
+        , success "\"\\U000120ff\"" [TokenString "\73983"]
+        , success "\"\\xFF\"" [TokenString "\xFF"]
+        , success "\"\\xff\"" [TokenString "\xFF"]
         , Failure
             FailureTest
                 { failureInput = "\"\\xF\""
                 , failureExpected =
-                    unlines
-                        [ "<test-string>:1:5:"
-                        , "  |"
-                        , "1 | \"\\xF\""
-                        , "  |     ^"
-                        , "unexpected '\"'"
-                        , "expecting hexadecimal digit"
-                        ]
+                    "<test-string>:1:5: unexpected character '\"'\n"
                 }
         , Failure
             FailureTest
                 { failureInput = "\"\\xFr\""
                 , failureExpected =
-                    unlines
-                        [ "<test-string>:1:5:"
-                        , "  |"
-                        , "1 | \"\\xFr\""
-                        , "  |     ^"
-                        , "unexpected 'r'"
-                        , "expecting hexadecimal digit"
-                        ]
+                    "<test-string>:1:5: unexpected character 'r'\n"
                 }
-        , invalidEscape "\"\\'\""
-        , invalidEscape "\"\\b\""
-        , invalidEscape "\"\\?\""
-        , invalidEscape "\"\\a\""
-        , invalidEscape "\"\\v\""
-        , invalidEscape "\"\\377\""
-        , invalidEscape "\"\\77\""
-        , invalidEscape "\"\\77a\""
+        , invalidEscape "\"\\'\"" "\\'"
+        , invalidEscape "\"\\b\"" "b"
+        , invalidEscape "\"\\?\"" "?"
+        , invalidEscape "\"\\a\"" "a"
+        , invalidEscape "\"\\v\"" "v"
+        , invalidEscape "\"\\377\"" "3"
+        , invalidEscape "\"\\77\"" "7"
+        , invalidEscape "\"\\77a\"" "7"
         , Failure
             FailureTest
                 { failureInput = "\"\DEL\""
                 , failureExpected =
-                    unlines
-                        [ "<test-string>:1:2:"
-                        , "  |"
-                        , "1 | \"\DEL\""
-                        , "  |  ^"
-                        , "unexpected delete"
-                        , "expecting '\"' or printable ASCII character"
-                        ]
+                    "<test-string>:1:1: non-printable character '\\DEL' in string literal\n"
                 }
         , Failure
             FailureTest
                 { failureInput = "\"\\uD800\""
                 , failureExpected =
-                    unlines
-                        [ "<test-string>:1:8:"
-                        , "  |"
-                        , "1 | \"\\uD800\""
-                        , "  |        ^"
-                        , illegalSurrogate "D800"
-                        ]
+                    "<test-string>:1:1: surrogate character '\\55296' in string literal\n"
                 }
         , Failure
             FailureTest
                 { failureInput = "\"\\uZZZZ\""
                 , failureExpected =
-                    unlines
-                        [ "<test-string>:1:4:"
-                        , "  |"
-                        , "1 | \"\\uZZZZ\""
-                        , "  |    ^"
-                        , "unexpected 'Z'"
-                        , "expecting hexadecimal digit"
-                        ]
+                    "<test-string>:1:4: unexpected character 'Z'\n"
                 }
         , Failure
             FailureTest
                 { failureInput = "\"\\UFFFFFFFF\""
                 , failureExpected =
-                    unlines
-                        [ "<test-string>:1:12:"
-                        , "  |"
-                        , "1 | \"\\UFFFFFFFF\""
-                        , "  |            ^"
-                        , unrepresentableCode "FFFFFFFF"
-                        ]
+                    "<test-string>:1:1: code point 4294967295 outside range of Unicode\n"
                 }
         , FailureWithoutMessage
-            [ ""
-            , "'a'"
+            [ "'a'"
             , "\"\\z\""
             , "\"\\xzf\""
             , "\"\\u123\""
@@ -365,15 +369,9 @@ test_parseStringLiteral =
             ]
         ]
 
-invalidEscape :: Text -> ParserTest a
-invalidEscape failureInput =
+invalidEscape :: Text -> String -> ParserTest a
+invalidEscape failureInput nextChar =
     Failure FailureTest{failureInput, failureExpected}
   where
     failureExpected =
-        unlines
-            [ "<test-string>:1:4:"
-            , "  |"
-            , "1 | " ++ unpack failureInput
-            , "  |    ^"
-            , "expecting escape sequence"
-            ]
+        "<test-string>:1:3: unexpected character '" ++ nextChar ++ "'\n"

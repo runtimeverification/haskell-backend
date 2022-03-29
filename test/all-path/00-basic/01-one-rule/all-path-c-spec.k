@@ -1,10 +1,6 @@
-module VERIFICATION
-  imports PATH
-
-endmodule
+requires "path.k"
 
 module ALL-PATH-C-SPEC
-  imports VERIFICATION
   imports PATH
 
   // This should not be provable as the only axiom is a => b.

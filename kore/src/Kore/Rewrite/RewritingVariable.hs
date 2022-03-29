@@ -40,11 +40,11 @@ module Kore.Rewrite.RewritingVariable (
     getRewritingTerm,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.AST.AstWithLocation (
     AstWithLocation (..),
  )
@@ -52,13 +52,13 @@ import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     toNames,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike hiding (
     refreshVariables,
  )

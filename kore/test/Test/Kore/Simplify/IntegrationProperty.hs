@@ -14,7 +14,7 @@ import Control.Monad.Catch (
 import Data.List (
     isInfixOf,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Hedgehog (
     PropertyT,
     annotate,
@@ -26,20 +26,20 @@ import Kore.Internal.From (fromIn_)
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     toRepresentation,
     top,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
@@ -50,16 +50,16 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
  )
-import qualified Kore.Simplify.Data as Simplification
-import qualified Kore.Simplify.Pattern as Pattern (
+import Kore.Simplify.Data qualified as Simplification
+import Kore.Simplify.Pattern qualified as Pattern (
     simplify,
  )
 import Kore.Simplify.Simplify
 import Kore.Unparser
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import Test.ConsistentKore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.SMT (
     testPropertyWithoutSolver,
@@ -128,7 +128,7 @@ test_regressionGeneratedTerms =
                 (Pattern.fromTermLike term)
                 & runSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
-    , -- See https://github.com/kframework/kore/pull/2819#issuecomment-929492780
+    , -- See https://github.com/runtimeverification/haskell-backend/pull/2819#issuecomment-929492780
       testCase "Don't forget simplified of sub-term predicates" $ do
         let iffTerm =
                 mkIff

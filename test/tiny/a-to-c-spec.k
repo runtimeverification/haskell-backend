@@ -1,10 +1,7 @@
-module VERIFICATION
-  imports TINY
-
-endmodule
+requires "tiny.k"
 
 module A-TO-C-SPEC
-  imports VERIFICATION
+  imports TINY
 
   claim a => c
 

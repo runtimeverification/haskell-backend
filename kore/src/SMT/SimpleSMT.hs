@@ -154,7 +154,7 @@ module SMT.SimpleSMT (
     existsQ,
 ) where
 
-import qualified Colog
+import Colog qualified
 import Control.Concurrent (
     forkIO,
  )
@@ -162,9 +162,9 @@ import Control.Exception (
     AsyncException,
     SomeException (..),
  )
-import qualified Control.Exception as X
-import qualified Control.Monad as Monad
-import qualified Control.Monad.Catch as Exception
+import Control.Exception qualified as X
+import Control.Monad qualified as Monad
+import Control.Monad.Catch qualified as Exception
 import Data.Bits (
     testBit,
  )
@@ -179,9 +179,9 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
-import qualified GHC.Generics as GHC
+import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
+import GHC.Generics qualified as GHC
 import GHC.Stack (
     callStack,
  )
@@ -192,7 +192,7 @@ import Kore.Log.DebugSolver (
     logDebugSolverRecvWith,
     logDebugSolverSendWith,
  )
-import qualified Log
+import Log qualified
 import Numeric (
     readHex,
     showFFloat,
@@ -210,8 +210,8 @@ import Prelude.Kore hiding (
     not,
     or,
  )
-import qualified Prelude.Kore as Prelude
-import qualified Pretty
+import Prelude.Kore qualified as Prelude
+import Pretty qualified
 import SMT.AST
 import System.Exit (
     ExitCode (..),
@@ -231,7 +231,7 @@ import System.Process (
     proc,
     waitForProcess,
  )
-import qualified Text.Megaparsec as Parser
+import Text.Megaparsec qualified as Parser
 import Text.Read (
     readMaybe,
  )

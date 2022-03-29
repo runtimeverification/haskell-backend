@@ -11,13 +11,12 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
-import Data.Reflection
 import GlobalMain
 import Kore.BugReport
 import Kore.Exec (
     proveWithRepl,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Log (
@@ -37,7 +36,7 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (
@@ -66,7 +65,7 @@ import Options.SMT (
     parseKoreSolverOptions,
  )
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -194,8 +193,77 @@ main = do
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions
 
-mainWithOptions :: KoreReplOptions -> IO ()
-mainWithOptions
+mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
+mainWithOptions LocalOptions{execOptions, simplifierx} = do
+    exitCode <-
+        withBugReport Main.exeName bugReportOption $ \tempDirectory ->
+            withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
+                mvarLogAction <- newMVar actualLogAction
+                let swapLogAction = swappableLogger mvarLogAction
+                flip runLoggerT swapLogAction $
+                    runExceptionHandlers $ do
+                        definition <-
+                            loadDefinitions [definitionFileName, specFile]
+                        indexedModule <- loadModule mainModuleName definition
+                        specDefIndexedModule <- loadModule specModule definition
+                        let validatedDefinition =
+                                addExtraAxioms indexedModule specDefIndexedModule
+
+                        let smtConfig =
+                                SMT.defaultConfig
+                                    { SMT.timeOut = smtTimeOut
+                                    , SMT.rLimit = smtRLimit
+                                    , SMT.resetInterval = smtResetInterval
+                                    , SMT.prelude = smtPrelude
+                                    }
+
+                        when
+                            ( replMode == RunScript
+                                && isNothing (unReplScript replScript)
+                            )
+                            $ lift $ do
+                                hPutStrLn
+                                    stderr
+                                    "You must supply the path to the repl script\
+                                    \ in order to run the repl in run-script mode."
+                                exitFailure
+
+                        when
+                            ( replMode == Interactive
+                                && scriptModeOutput == EnableOutput
+                            )
+                            $ lift $ do
+                                hPutStrLn
+                                    stderr
+                                    "The --save-run-output flag is only available\
+                                    \ when running the repl in run-script mode."
+                                exitFailure
+
+                        SMT.runSMT
+                            smtConfig
+                            ( declareSMTLemmas
+                                (MetadataTools.build validatedDefinition)
+                                validatedDefinition
+                            )
+                            $ proveWithRepl
+                                simplifierx
+                                validatedDefinition
+                                specDefIndexedModule
+                                Nothing
+                                mvarLogAction
+                                replScript
+                                replMode
+                                scriptModeOutput
+                                outputFile
+                                mainModuleName
+                                koreLogOptions
+                                (GlobalMain.kFileLocations definition)
+
+                        warnIfLowProductivity
+                            (GlobalMain.kFileLocations definition)
+                        pure ExitSuccess
+    exitWith exitCode
+  where
     KoreReplOptions
         { definitionModule
         , proveOptions
@@ -206,122 +274,53 @@ mainWithOptions
         , outputFile
         , koreLogOptions
         , bugReportOption
-        } =
-        do
-            exitCode <-
-                withBugReport Main.exeName bugReportOption $ \tempDirectory ->
-                    withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
-                        mvarLogAction <- newMVar actualLogAction
-                        let swapLogAction = swappableLogger mvarLogAction
-                        flip runLoggerT swapLogAction $
-                            runExceptionHandlers $ do
-                                definition <-
-                                    loadDefinitions [definitionFileName, specFile]
-                                indexedModule <- loadModule mainModuleName definition
-                                specDefIndexedModule <- loadModule specModule definition
+        } = execOptions
+    runExceptionHandlers action =
+        action
+            & handle exitReplHandler
+            & handle withConfigurationHandler
+            & handle someExceptionHandler
 
-                                let validatedDefinition =
-                                        addExtraAxioms indexedModule specDefIndexedModule
-                                    smtConfig =
-                                        SMT.defaultConfig
-                                            { SMT.timeOut = smtTimeOut
-                                            , SMT.rLimit = smtRLimit
-                                            , SMT.resetInterval = smtResetInterval
-                                            , SMT.prelude = smtPrelude
-                                            }
+    exitReplHandler :: ExitCode -> Main ExitCode
+    exitReplHandler = pure
 
-                                when
-                                    ( replMode == RunScript
-                                        && isNothing (unReplScript replScript)
-                                    )
-                                    $ lift $ do
-                                        hPutStrLn
-                                            stderr
-                                            "You must supply the path to the repl script\
-                                            \ in order to run the repl in run-script mode."
-                                        exitFailure
+    withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
+    withConfigurationHandler
+        (Claim.WithConfiguration lastConfiguration someException) =
+            do
+                liftIO $
+                    hPutStrLn
+                        stderr
+                        ("// Last configuration:\n" <> unparseToString lastConfiguration)
+                throwM someException
 
-                                when
-                                    ( replMode == Interactive
-                                        && scriptModeOutput == EnableOutput
-                                    )
-                                    $ lift $ do
-                                        hPutStrLn
-                                            stderr
-                                            "The --save-run-output flag is only available\
-                                            \ when running the repl in run-script mode."
-                                        exitFailure
+    someExceptionHandler :: SomeException -> Main ExitCode
+    someExceptionHandler someException = do
+        case fromException someException of
+            Just (SomeEntry entry) -> logEntry entry
+            Nothing -> errorException someException
+        throwM someException
 
-                                SMT.runSMT
-                                    smtConfig
-                                    ( give
-                                        (MetadataTools.build validatedDefinition)
-                                        (declareSMTLemmas validatedDefinition)
-                                    )
-                                    $ proveWithRepl
-                                        validatedDefinition
-                                        specDefIndexedModule
-                                        Nothing
-                                        mvarLogAction
-                                        replScript
-                                        replMode
-                                        scriptModeOutput
-                                        outputFile
-                                        mainModuleName
-                                        koreLogOptions
-                                        (GlobalMain.kFileLocations definition)
+    mainModuleName :: ModuleName
+    mainModuleName = moduleName definitionModule
 
-                                warnIfLowProductivity
-                                    (GlobalMain.kFileLocations definition)
-                                pure ExitSuccess
-            exitWith exitCode
-      where
-        runExceptionHandlers action =
-            action
-                & handle exitReplHandler
-                & handle withConfigurationHandler
-                & handle someExceptionHandler
+    definitionFileName :: FilePath
+    definitionFileName = fileName definitionModule
 
-        exitReplHandler :: ExitCode -> Main ExitCode
-        exitReplHandler = pure
+    specModule :: ModuleName
+    specModule = specMainModule proveOptions
 
-        withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
-        withConfigurationHandler
-            (Claim.WithConfiguration lastConfiguration someException) =
-                do
-                    liftIO $
-                        hPutStrLn
-                            stderr
-                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
-                    throwM someException
+    specFile :: FilePath
+    specFile = specFileName proveOptions
 
-        someExceptionHandler :: SomeException -> Main ExitCode
-        someExceptionHandler someException = do
-            case fromException someException of
-                Just (SomeEntry entry) -> logEntry entry
-                Nothing -> errorException someException
-            throwM someException
+    smtTimeOut :: SMT.TimeOut
+    smtTimeOut = timeOut smtOptions
 
-        mainModuleName :: ModuleName
-        mainModuleName = moduleName definitionModule
+    smtRLimit :: SMT.RLimit
+    smtRLimit = rLimit smtOptions
 
-        definitionFileName :: FilePath
-        definitionFileName = fileName definitionModule
+    smtResetInterval :: SMT.ResetInterval
+    smtResetInterval = resetInterval smtOptions
 
-        specModule :: ModuleName
-        specModule = specMainModule proveOptions
-
-        specFile :: FilePath
-        specFile = specFileName proveOptions
-
-        smtTimeOut :: SMT.TimeOut
-        smtTimeOut = timeOut smtOptions
-
-        smtRLimit :: SMT.RLimit
-        smtRLimit = rLimit smtOptions
-
-        smtResetInterval :: SMT.ResetInterval
-        smtResetInterval = resetInterval smtOptions
-
-        smtPrelude :: SMT.Prelude
-        smtPrelude = prelude smtOptions
+    smtPrelude :: SMT.Prelude
+    smtPrelude = prelude smtOptions

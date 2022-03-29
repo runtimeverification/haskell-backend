@@ -1,12 +1,6 @@
-
-module VERIFICATION
-  imports SETVARS
-
-endmodule
-
+requires "setvars.k"
 
 module DIV-SPEC
-  imports VERIFICATION
   imports SETVARS
 
   rule

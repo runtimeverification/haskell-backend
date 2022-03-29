@@ -21,51 +21,51 @@ module Test.Kore.Rewrite.MockSymbols where
    * symbols without any special attribute are called "plain<n><k>"
    * variables are called x, y, z...
 -}
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Default as Default
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
+import Data.Bifunctor qualified as Bifunctor
+import Data.Default qualified as Default
 import Data.Generics.Product
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
+import Data.HashMap.Strict qualified as HashMap
+import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
+import Data.Set qualified as Set
 import Data.Sup
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Kore.Attribute.Hook (
     Hook (..),
  )
 import Kore.Attribute.Pattern.ConstructorLike (
     isConstructorLike,
  )
-import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute
-import qualified Kore.Attribute.Sort.Constructors as Attribute (
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.Concat qualified as Attribute
+import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
-import qualified Kore.Attribute.Sort.Element as Attribute
-import qualified Kore.Attribute.Sort.Unit as Attribute
+import Kore.Attribute.Sort.Element qualified as Attribute
+import Kore.Attribute.Sort.Unit qualified as Attribute
 import Kore.Attribute.Subsort
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic (
     synthesize,
  )
-import qualified Kore.Builtin.Bool as Builtin.Bool
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Int as Builtin.Int
-import qualified Kore.Builtin.KEqual as Builtin.KEqual
-import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.Set as Set
-import qualified Kore.Builtin.String as Builtin.String
+import Kore.Builtin.Bool qualified as Builtin.Bool
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Builtin.Int
+import Kore.Builtin.KEqual qualified as Builtin.KEqual
+import Kore.Builtin.List qualified as List
+import Kore.Builtin.Map qualified as Map
+import Kore.Builtin.Set qualified as Set
+import Kore.Builtin.String qualified as Builtin.String
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
-import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
+import Kore.IndexedModule.SortGraph qualified as SortGraph
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
@@ -78,51 +78,52 @@ import Kore.Internal.TermLike (
     TermLike,
     retractKey,
  )
-import qualified Kore.Internal.TermLike as Internal
+import Kore.Internal.TermLike qualified as Internal
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
     mkEquationVariable,
     mkRuleVariable,
  )
-import qualified Kore.Rewrite.SMT.AST as SMT
-import qualified Kore.Rewrite.SMT.Representation.Resolve as SMT (
+import Kore.Rewrite.SMT.AST qualified as SMT
+import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.Data (
     Env (Env),
     MonadSimplify,
  )
-import qualified Kore.Simplify.Data as SimplificationData.DoNotUse
+import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
+    SimplifierXSwitch (..),
  )
-import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
+import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Prelude.Kore
-import qualified SMT.AST as SMT
-import qualified SMT.SimpleSMT as SMT
-import qualified Test.ConsistentKore as ConsistentKore (
+import SMT.AST qualified as SMT
+import SMT.SimpleSMT qualified as SMT
+import Test.ConsistentKore qualified as ConsistentKore (
     CollectionSorts (..),
     Setup (..),
  )
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -2292,6 +2293,8 @@ overloadGraph = OverloadGraph.fromOverloads overloads
 overloadSimplifier :: OverloadSimplifier
 overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
+-- TODO(Ana): if needed, create copy with experimental simplifier
+-- enabled
 env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
@@ -2301,6 +2304,7 @@ env =
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
+        , simplifierXSwitch = DisabledSimplifierX
         }
 
 generatorSetup :: ConsistentKore.Setup

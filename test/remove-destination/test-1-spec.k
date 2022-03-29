@@ -1,9 +1,7 @@
-module VERIFICATION
-  imports TEST
-endmodule
+requires "test.k"
 
 module TEST-1-SPEC
-  imports VERIFICATION
+  imports TEST
 
   claim a(K:Int |-> V:Int M:Map) => a(3 |-> 2 5 |-> 4)
 

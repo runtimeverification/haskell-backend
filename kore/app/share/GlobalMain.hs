@@ -3,12 +3,11 @@
 module GlobalMain (
     MainOptions (..),
     GlobalOptions (..),
+    LocalOptions (..),
     KoreProveOptions (..),
-    KoreMergeOptions (..),
     ExeName (..),
     Main,
     parseKoreProveOptions,
-    parseKoreMergeOptions,
     mainGlobal,
     clockSomething,
     clockSomethingIO,
@@ -34,8 +33,8 @@ import Control.Lens (
     (%~),
     (<>~),
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
 import Data.Generics.Product (
     field,
  )
@@ -46,12 +45,12 @@ import Data.List (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
     pack,
  )
-import qualified Data.Text.IO as Text
+import Data.Text.IO qualified as Text
 import Data.Version (
     showVersion,
  )
@@ -68,10 +67,10 @@ import Kore.Attribute.SourceLocation (
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleAxioms),
     VerifiedModule,
@@ -92,13 +91,10 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
-import qualified Kore.Parser.Lexer as Lexer
-import Kore.Parser.ParserUtils (
-    parseOnly,
- )
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -111,7 +107,7 @@ import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinitionWithBase,
  )
 import Kore.Validate.PatternVerifier as PatternVerifier
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Kore.VersionInfo
 import Options.Applicative (
     InfoMod,
@@ -125,7 +121,6 @@ import Options.Applicative (
     helper,
     info,
     long,
-    maybeReader,
     metavar,
     option,
     overFailure,
@@ -136,27 +131,23 @@ import Options.Applicative (
     value,
     (<**>),
  )
-import qualified Options.Applicative as Options
+import Options.Applicative qualified as Options
 import Options.Applicative.Help.Chunk (
     Chunk (..),
     vsepChunks,
  )
-import qualified Options.Applicative.Help.Pretty as Pretty
-import qualified Paths_kore as MetaData (
+import Options.Applicative.Help.Pretty qualified as Pretty
+import Paths_kore qualified as MetaData (
     version,
  )
 import Prelude.Kore
-import qualified Pretty as KorePretty
+import Pretty qualified as KorePretty
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
     getTime,
  )
-import qualified System.Environment as Env
-import qualified Text.Megaparsec as Parser
-import Text.Read (
-    readMaybe,
- )
+import System.Environment qualified as Env
 
 type Main = LoggerT IO
 
@@ -185,10 +176,8 @@ parseModuleName metaName longName helpMsg =
 
 readModuleName :: Options.ReadM ModuleName
 readModuleName = do
-    opt <- str
-    case parseOnly (Lexer.parseModuleName <* Parser.eof) "<command-line>" opt of
-        Left err -> readerError err
-        Right something -> pure something
+    getModuleName <- str
+    pure ModuleName{getModuleName}
 
 parseKoreProveOptions :: Parser KoreProveOptions
 parseKoreProveOptions =
@@ -245,31 +234,6 @@ parseKoreProveOptions =
                         known = "Known search order are: " ++ names
                      in readerError (unknown ++ known)
 
-data KoreMergeOptions = KoreMergeOptions
-    { -- | Name for file containing a sequence of rules to merge.
-      rulesFileName :: !FilePath
-    , maybeBatchSize :: Maybe Int
-    }
-
-parseKoreMergeOptions :: Parser KoreMergeOptions
-parseKoreMergeOptions =
-    KoreMergeOptions
-        <$> strOption
-            ( metavar "MERGE_RULES_FILE"
-                <> long "merge-rules"
-                <> help
-                    "List of rules to merge."
-            )
-        <*> optional
-            ( option
-                (maybeReader readMaybe)
-                ( metavar "MERGE_BATCH_SIZE"
-                    <> long "merge-batch-size"
-                    <> help
-                        "The size of a merge batch."
-                )
-            )
-
 {- | Record Type containing common command-line arguments for each executable in
 the project
 -}
@@ -281,7 +245,12 @@ data GlobalOptions = GlobalOptions
 -- | Record type to store all state and options for the subMain operations
 data MainOptions a = MainOptions
     { globalOptions :: !GlobalOptions
-    , localOptions :: !(Maybe a)
+    , localOptions :: !(Maybe (LocalOptions a))
+    }
+
+data LocalOptions a = LocalOptions
+    { execOptions :: !a
+    , simplifierx :: !SimplifierXSwitch
     }
 
 {- |
@@ -331,6 +300,15 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
+parseSimplifierX :: Parser SimplifierXSwitch
+parseSimplifierX =
+    flag
+        DisabledSimplifierX
+        EnabledSimplifierX
+        ( long "simplifierx"
+            <> help "Enable the experimental simplifier"
+        )
+
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->
@@ -366,10 +344,14 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
             | otherwise = id
     handleParseResult $ changeHelpOverFailure parseResult
   where
+    parseLocalOptions =
+        LocalOptions
+            <$> parser
+            <*> parseSimplifierX
     parseMainOptions =
         MainOptions
             <$> globalCommandLineParser
-            <*> optional parser
+            <*> optional parseLocalOptions
             <**> helper
 
     changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp

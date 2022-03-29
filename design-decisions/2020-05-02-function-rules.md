@@ -1,6 +1,6 @@
 # Interpretation of function rules
 
-Applying function rules in the form of equations is implemented in [`Kore.Equation.Application`](https://github.com/kframework/kore/blob/master/kore/src/Kore/Equation/Application.hs).
+Applying function rules in the form of equations is implemented in [`Kore.Equation.Application`](https://github.com/runtimeverification/haskell-backend/blob/master/kore/src/Kore/Equation/Application.hs).
 
 ## Purpose
 
@@ -39,7 +39,7 @@ axiom \implies(Preᵢ({Y}), (fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) = (ψᵢ({Y}
 
 ### Partial heads
 
-See also: [kframework/kore#1146](https://github.com/kframework/kore/issues/1146)
+See also: [runtimeverification/haskell-backend#1146](https://github.com/runtimeverification/haskell-backend/issues/1146)
 
 Rules with partial heads are potentially unsound.
 Consider the family of rules
@@ -70,7 +70,7 @@ sizeMap(\bottom) = +Int(1, 1)
 
 ### Or patterns
 
-See also: [kframework/kore#1245](https://github.com/kframework/kore/issues/1245)
+See also: [runtimeverification/haskell-backend#1245](https://github.com/runtimeverification/haskell-backend/issues/1245)
 
 Consider this family of rules defining function `fun`,
 

@@ -1,10 +1,6 @@
-module VERIFICATION
-  imports PATH
-
-endmodule
+requires "path.k"
 
 module ALL-PATH-SELECT-A-B-C-SPEC
-  imports VERIFICATION
   imports PATH
 
   // This should be provable as an one-path claim, but should not be provable as an

@@ -10,7 +10,7 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
 import Kore.Internal.Pattern (Pattern)
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     pattern Or_,
  )
@@ -44,6 +44,7 @@ import Options.Applicative (
  )
 import Prelude.Kore
 import Pretty
+import SMT (runNoSMT)
 import System.Clock (
     Clock (..),
     TimeSpec,
@@ -130,19 +131,19 @@ main = do
             parserInfoModifiers
     for_ (localOptions options) mainWithOptions
 
-mainWithOptions :: KoreMatchDisjunctionOptions -> IO ()
-mainWithOptions options = do
+mainWithOptions :: LocalOptions KoreMatchDisjunctionOptions -> IO ()
+mainWithOptions localOptions@LocalOptions{execOptions} = do
     exitCode <-
         withBugReport exeName bugReportOption $ \tmpDir ->
-            koreMatchDisjunction options
+            koreMatchDisjunction localOptions
                 & runKoreLog tmpDir koreLogOptions
     exitWith exitCode
   where
-    KoreMatchDisjunctionOptions{bugReportOption} = options
-    KoreMatchDisjunctionOptions{koreLogOptions} = options
+    KoreMatchDisjunctionOptions{bugReportOption} = execOptions
+    KoreMatchDisjunctionOptions{koreLogOptions} = execOptions
 
-koreMatchDisjunction :: KoreMatchDisjunctionOptions -> Main ExitCode
-koreMatchDisjunction options = do
+koreMatchDisjunction :: LocalOptions KoreMatchDisjunctionOptions -> Main ExitCode
+koreMatchDisjunction LocalOptions{execOptions, simplifierx} = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     matchPattern <- mainParseMatchPattern mainModule matchFileName
@@ -150,10 +151,15 @@ koreMatchDisjunction options = do
         mainParseDisjunctionPattern mainModule disjunctionFileName
     final <-
         clockSomethingIO "Executing" $
-            matchDisjunction mainModule matchPattern disjunctionPattern
+            runNoSMT $
+                matchDisjunction
+                    simplifierx
+                    mainModule
+                    matchPattern
+                    disjunctionPattern
     lift $
         renderResult
-            options
+            execOptions
             (unparse final)
     return ExitSuccess
   where
@@ -165,7 +171,7 @@ koreMatchDisjunction options = do
         , disjunctionFileName
         , matchFileName
         , mainModuleName
-        } = options
+        } = execOptions
 
 mainParseDisjunctionPattern ::
     VerifiedModule StepperAttributes ->

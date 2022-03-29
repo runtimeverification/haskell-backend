@@ -34,70 +34,70 @@ import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Hedgehog
-import qualified Kore.Attribute.Null as Attribute
+import Hedgehog qualified
+import Kore.Attribute.Null qualified as Attribute
 import Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
+import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Error (
     Error,
  )
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
-import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
-import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
+import Kore.IndexedModule.SortGraph qualified as SortGraph
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (Predicate)
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
-import qualified Kore.Internal.Symbol as Internal (
+import Kore.Internal.Symbol qualified as Internal (
     Symbol,
  )
 import Kore.Internal.TermLike
 import Kore.Parser (
     parseKorePattern,
  )
-import qualified Kore.Rewrite.Function.Memo as Memo
-import qualified Kore.Rewrite.RewriteStep as Step
+import Kore.Rewrite.Function.Memo qualified as Memo
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
-import qualified Kore.Rewrite.Step as Step
+import Kore.Rewrite.Step qualified as Step
 import Kore.Simplify.AndTerms (termUnification)
-import qualified Kore.Simplify.Condition as Simplifier.Condition
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.Data hiding (simplifyPattern)
 import Kore.Simplify.InjSimplifier
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.OverloadSimplifier
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify hiding (simplifyPattern)
-import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Simplify.TermLike as TermLike
+import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
@@ -114,8 +114,8 @@ import Kore.Validate.PatternVerifier (
     runPatternVerifier,
     verifyStandalonePattern,
  )
-import qualified Kore.Validate.PatternVerifier as PatternVerifier
-import qualified Logic
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
+import Logic qualified
 import Prelude.Kore
 import SMT (
     NoSMT,
@@ -241,6 +241,8 @@ testOverloadSimplifier :: OverloadSimplifier
 testOverloadSimplifier =
     mkOverloadSimplifier testOverloadGraph testInjSimplifier
 
+-- TODO(Ana): if needed, create copy with experimental simplifier
+-- enabled
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
@@ -250,6 +252,7 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier
+        , simplifierXSwitch = DisabledSimplifierX
         }
 
 simplify :: TermLike RewritingVariableName -> IO [Pattern RewritingVariableName]

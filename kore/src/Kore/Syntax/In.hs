@@ -6,17 +6,17 @@ module Kore.Syntax.In (
     In (..),
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
-{- |'In' corresponds to the @\\in@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
+{- |'In' corresponds to the @\\in@ branch of the @matching-logic-pattern@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 
 'inOperandSort' is the sort of the operands.
 

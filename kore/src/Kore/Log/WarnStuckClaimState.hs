@@ -15,7 +15,7 @@ import Prelude.Kore
 import Pretty (
     Pretty,
  )
-import qualified Pretty
+import Pretty qualified
 
 {- | @WarnStuckClaimState@ is emitted when a proof gets stuck.
 

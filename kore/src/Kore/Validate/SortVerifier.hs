@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Kore.Validate.SortVerifier (verifySort) where
 
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.AST.Error
 import Kore.Error
 import Kore.Syntax

@@ -3,13 +3,11 @@
 // Similar to one-spec.k, tests a basic claim, can be removed without losing
 // anything.
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
+requires "simplified.k"
 
 module FIVE-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

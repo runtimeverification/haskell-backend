@@ -11,18 +11,21 @@ module Test.Kore.Exec (
 ) where
 
 import Control.Exception as Exception
+import Control.Monad.Catch (
+    MonadMask,
+ )
 import Data.Default (
     def,
  )
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Limit (
     Limit (..),
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
@@ -30,17 +33,17 @@ import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
-import qualified Kore.Attribute.Priority as Attribute.Axiom
+import Kore.Attribute.Priority qualified as Attribute.Axiom
 import Kore.Attribute.Simplification
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Int
 import Kore.Equation.Equation (
     Equation (..),
     mkEquation,
     toTermLike,
  )
-import qualified Kore.Error
+import Kore.Error qualified
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
@@ -48,13 +51,13 @@ import Kore.Internal.Pattern (
     Conditional (Conditional),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
  )
@@ -64,11 +67,13 @@ import Kore.Log.ErrorEquationsSameMatch (
 import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
+    Natural,
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
-import qualified Kore.Rewrite.AntiLeft as AntiLeft.DoNotUse
+import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -79,28 +84,29 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.Search (
     SearchType (..),
  )
-import qualified Kore.Rewrite.Search as Search
+import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
 import Kore.Simplify.Data (
-    evalSimplifier,
+    MonadProf,
  )
+import Kore.Simplify.Simplify (MonadSMT, SimplifierXSwitch (..))
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
  )
-import qualified Kore.Syntax.Definition as Syntax
-import qualified Kore.Syntax.Sentence as Sentence (
+import Kore.Syntax.Definition qualified as Syntax
+import Kore.Syntax.Sentence qualified as Sentence (
     Symbol (..),
  )
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Log (
     Entry (..),
-    runLoggerT,
+    MonadLog (..),
  )
 import Prelude.Kore
 import System.Exit (
@@ -108,7 +114,7 @@ import System.Exit (
  )
 import Test.Kore
 import Test.Kore.Builtin.External
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.SMT (
     runNoSMT,
  )
@@ -119,7 +125,7 @@ test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
   where
     actual =
-        exec
+        execTest
             Unlimited
             Unlimited
             verifiedModule
@@ -164,7 +170,7 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
         assertEqual "" [expectedWarning] actualDepthWarnings
   where
     actual =
-        exec
+        execTest
             (Limit 1)
             Unlimited
             verifiedModule
@@ -192,62 +198,79 @@ test_matchDisjunction =
     [ testCase "match disjunction" $
         do
             let actual =
-                    matchDisjunction verifiedModule initial [final1, final2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest verifiedModule initial [final1, final2]
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         unreachable
                         [final1, final2, next1, next2]
-            result <- runLoggerT actual mempty
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 2" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         initial
                         [final1, final2, next1, next2]
-            result <- runLoggerT actual mempty
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 3" $
         do
             let actual =
-                    matchDisjunction verifiedModule unreachable [final1, final2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest
+                        verifiedModule
+                        unreachable
+                        [final1, final2]
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 4" $
         do
             let actual =
-                    matchDisjunction verifiedModule initial [next1, next2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest
+                        verifiedModule
+                        initial
+                        [next1, next2]
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 5" $
         do
             let actual =
-                    matchDisjunction verifiedModule unreachable [next1, next2]
-            result <- runLoggerT actual mempty
+                    matchDisjunctionTest
+                        verifiedModule
+                        unreachable
+                        [next1, next2]
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 6" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         unreachable
                         [final1, final2, initial, next1, next2]
-            result <- runLoggerT actual mempty
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - top" $
         do
             let actual =
-                    matchDisjunction
+                    matchDisjunctionTest
                         verifiedModule
                         initial
                         [final1, final2, initial, next1, next2]
-            result <- runLoggerT actual mempty
+                        & runNoSMT
+            result <- actual
             assertEqual "" (mkTop mySort) result
     ]
   where
@@ -299,8 +322,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -319,8 +341,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isLeft actual
@@ -337,8 +358,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -357,8 +377,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -378,8 +397,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isLeft actual
@@ -399,8 +417,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctions verifiedModule
-                    & evalSimplifier verifiedModule
+                checkFunctionsTest verifiedModule
                     & runTestLog runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -485,7 +502,7 @@ test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
   where
     actual =
-        exec
+        execTest
             Unlimited
             Unlimited
             verifiedModule
@@ -523,7 +540,7 @@ test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns.
   where
     expected = mkBottom mySort
     result =
-        exec
+        execTest
             Unlimited
             Unlimited
             verifiedModule
@@ -549,7 +566,7 @@ test_searchPriority =
         actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
         finalPattern <-
-            search
+            searchTest
                 Unlimited
                 Unlimited
                 verifiedModule
@@ -623,7 +640,7 @@ test_searchExceedingBreadthLimit =
 
     actual searchType = do
         finalPattern <-
-            search
+            searchTest
                 Unlimited
                 (Limit 0)
                 verifiedModule
@@ -918,7 +935,7 @@ test_execGetExitCode =
             actual testModule inputInteger >>= assertEqual "" expectedCode
 
     actual testModule exitCode =
-        exec
+        execTest
             Unlimited
             Unlimited
             (verifiedMyModule testModule)
@@ -1001,3 +1018,58 @@ test_execGetExitCode =
                         }
                 , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }
+
+-- TODO(Ana): these functions should run the procedures twice,
+-- once with the experimental simplifier enabled and once with it
+-- disabled; this change should be made when we add the first
+-- experimental feature;
+execTest ::
+    MonadIO smt =>
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    Limit Natural ->
+    Limit Natural ->
+    VerifiedModule Attribute.StepperAttributes ->
+    ExecutionMode ->
+    TermLike VariableName ->
+    smt (ExitCode, TermLike VariableName)
+execTest = exec DisabledSimplifierX
+
+searchTest ::
+    MonadIO smt =>
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    Limit Natural ->
+    Limit Natural ->
+    VerifiedModule Attribute.StepperAttributes ->
+    TermLike VariableName ->
+    Pattern VariableName ->
+    Search.Config ->
+    smt (TermLike VariableName)
+searchTest = search DisabledSimplifierX
+
+matchDisjunctionTest ::
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadIO smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    VerifiedModule Attribute.Symbol ->
+    Pattern RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    smt (TermLike VariableName)
+matchDisjunctionTest = matchDisjunction DisabledSimplifierX
+
+checkFunctionsTest ::
+    MonadLog smt =>
+    MonadSMT smt =>
+    MonadIO smt =>
+    MonadMask smt =>
+    MonadProf smt =>
+    VerifiedModule Attribute.StepperAttributes ->
+    smt ()
+checkFunctionsTest = checkFunctions DisabledSimplifierX

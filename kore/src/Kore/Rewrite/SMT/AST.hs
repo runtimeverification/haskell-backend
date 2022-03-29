@@ -38,12 +38,12 @@ module Kore.Rewrite.SMT.AST (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Smtlib.Smthook (
     SExpr (..),
  )
@@ -51,14 +51,14 @@ import Kore.Debug
 import Kore.Rewrite.SMT.Encoder (
     encodeName,
  )
-import qualified Kore.Sort as Kore (
+import Kore.Sort qualified as Kore (
     Sort,
  )
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Syntax.Id qualified as Kore (
     Id (Id, getId),
  )
 import Prelude.Kore
-import qualified SMT.AST as AST
+import SMT.AST qualified as AST
 
 {- | A representation of the Kore Sort type together with its related
 declarations (constructors, noJunk axioms), optimized for dealing with the SMT.

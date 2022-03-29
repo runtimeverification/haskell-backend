@@ -11,13 +11,11 @@
 // cc(x) and x>0 => aa(x) and x>0 => g(x) and x>0 ~= s(x) and x>0
 // dd(x) and x<=0 => aa(x) and x>0 => g(x) and x<=0 ~= s(x) and x<=0
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
+requires "simplified.k"
 
 module SIX-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

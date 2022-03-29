@@ -27,26 +27,26 @@ module Control.Monad.Counter (
     evalCounter,
 ) where
 
-import qualified Control.Monad.Except as Monad.Except
-import qualified Control.Monad.Identity as Monad.Identity
-import qualified Control.Monad.Morph as Morph
-import qualified Control.Monad.RWS.Lazy as Monad.RWS.Lazy
-import qualified Control.Monad.RWS.Strict as Monad.RWS.Strict
+import Control.Monad.Except qualified as Monad.Except
+import Control.Monad.Identity qualified as Monad.Identity
+import Control.Monad.Morph qualified as Morph
+import Control.Monad.RWS.Lazy qualified as Monad.RWS.Lazy
+import Control.Monad.RWS.Strict qualified as Monad.RWS.Strict
 import Control.Monad.Reader (
     MonadReader,
  )
-import qualified Control.Monad.Reader as Monad.Reader
+import Control.Monad.Reader qualified as Monad.Reader
 import Control.Monad.State (
     MonadState,
  )
-import qualified Control.Monad.State.Class as Monad.State
-import qualified Control.Monad.State.Lazy as Monad.State.Lazy
-import qualified Control.Monad.State.Strict as Monad.State.Strict
+import Control.Monad.State.Class qualified as Monad.State
+import Control.Monad.State.Lazy qualified as Monad.State.Lazy
+import Control.Monad.State.Strict qualified as Monad.State.Strict
 import Control.Monad.Trans.Maybe (
     MaybeT,
  )
-import qualified Control.Monad.Writer.Lazy as Monad.Writer.Lazy
-import qualified Control.Monad.Writer.Strict as Monad.Writer.Strict
+import Control.Monad.Writer.Lazy qualified as Monad.Writer.Lazy
+import Control.Monad.Writer.Strict qualified as Monad.Writer.Strict
 import Numeric.Natural
 import Prelude.Kore
 

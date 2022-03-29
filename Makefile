@@ -1,7 +1,7 @@
 include include.mk
 
-.PHONY: all kore clean docs haddock \
-		test test-kore test-k \
+.PHONY: all kore clean clean-execution docs haddock \
+		test test-kore test-k test-k-simplifierx test-simplifierx \
 		kore-exec kore-repl kore-parser kore-check-functions \
 		kore-format kore-match-disjunction kore-prof
 
@@ -53,8 +53,14 @@ test-kore:
 coverage_report: test-kore
 	cp -r $$($(STACK_TEST) path --local-hpc-root) coverage_report
 
+build-test:
+	$(MAKE) -C test build-test
+
 test-k:
 	$(MAKE) -C test test
+
+test-k-simplifierx:
+	$(MAKE) -C test test-simplifierx
 
 clean:
 	$(STACK) clean --full
@@ -66,3 +72,6 @@ clean:
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
 	$(MAKE) -C test clean
+
+clean-execution:
+	$(MAKE) -C test clean-execution

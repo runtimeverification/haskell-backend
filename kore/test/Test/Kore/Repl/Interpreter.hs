@@ -3,7 +3,7 @@ module Test.Kore.Repl.Interpreter (
 ) where
 
 import Control.Concurrent.MVar
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad.Reader (
     runReaderT,
  )
@@ -15,39 +15,39 @@ import Data.Coerce (
     coerce,
  )
 import Data.Generics.Product
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.IORef (
     IORef,
     modifyIORef,
     newIORef,
     readIORef,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Map.Strict as StrictMap
-import qualified Data.Sequence as Seq
+import Data.Map.Strict qualified as Map
+import Data.Map.Strict qualified as StrictMap
+import Data.Sequence qualified as Seq
 import Data.Text (
     pack,
  )
-import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Int qualified as Int
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     TermLike,
     mkBottom,
     mkElemVar,
  )
-import qualified Kore.Log as Log
+import Kore.Log qualified as Log
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom (..),
     mkDebugUnifyBottom,
  )
-import qualified Kore.Log.Registry as Log
+import Kore.Log.Registry qualified as Log
 import Kore.Reachability hiding (
     AppliedRule,
  )
@@ -62,7 +62,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import qualified Kore.Simplify.Data as Kore
+import Kore.Simplify.Data qualified as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -73,7 +73,7 @@ import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,

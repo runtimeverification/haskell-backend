@@ -1,10 +1,6 @@
-module VERIFICATION
-  imports PATH
-
-endmodule
+requires "path.k"
 
 module IDENTITY-SPEC
-  imports VERIFICATION
   imports PATH
 
   claim <k> a => a </k> [all-path]

@@ -1,9 +1,7 @@
-module VERIFICATION
-  imports LOCALS
-endmodule
+requires "locals.k"
 
 module LOCALS-SPEC
-  imports VERIFICATION
+  imports LOCALS
 
   claim
     <k> begin X:Int => end V:Value </k>

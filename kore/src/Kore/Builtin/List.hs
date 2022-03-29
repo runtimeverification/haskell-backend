@@ -49,30 +49,29 @@ import Control.Error (
     MaybeT,
     hoistMaybe,
  )
-import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe (
+import Control.Monad qualified as Monad
+import Control.Monad.Trans.Maybe qualified as Monad.Trans.Maybe (
     mapMaybeT,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Data.Reflection as Reflection
+import Data.Map.Strict qualified as Map
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.Bool as Bool
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin (
     acceptAnySort,
  )
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.List.List
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -82,7 +81,7 @@ import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike (
     Key,
@@ -98,7 +97,7 @@ import Kore.Internal.TermLike (
     pattern InternalList_,
     pattern Var_,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     Symbol (..),
     isFunctionPattern,
     markSimplified,
@@ -250,7 +249,7 @@ returnList ::
     m (Pattern variable)
 returnList builtinListSort builtinListChild = do
     tools <- Simplifier.askMetadataTools
-    return (Reflection.give tools $ asPattern builtinListSort builtinListChild)
+    return $ asPattern tools builtinListSort builtinListChild
 
 evalElement :: Builtin.Function
 evalElement _ resultSort =
@@ -538,14 +537,13 @@ unifyEquals
         unifyEqualsConcrete builtin1 builtin2 term1 term2
             | Seq.length list1 /= Seq.length list2 = bottomWithExplanation term1 term2
             | otherwise = do
-                Reflection.give tools $ do
-                    unified <- sequence $ Seq.zipWith simplifyChild list1 list2
-                    let propagatedUnified = propagateConditions unified
-                        result =
-                            TermLike.markSimplified
-                                . asInternal tools internalListSort
-                                <$> propagatedUnified
-                    return result
+                unified <- sequence $ Seq.zipWith simplifyChild list1 list2
+                let propagatedUnified = propagateConditions unified
+                    result =
+                        TermLike.markSimplified
+                            . asInternal tools internalListSort
+                            <$> propagatedUnified
+                return result
           where
             InternalList{internalListSort} = builtin1
             InternalList{internalListChild = list1} = builtin1

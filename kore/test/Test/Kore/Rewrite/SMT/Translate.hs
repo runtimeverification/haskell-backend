@@ -5,38 +5,35 @@ module Test.Kore.Rewrite.SMT.Translate (
 import Control.Error (
     runMaybeT,
  )
-import qualified Data.HashSet as HashSet
-import Data.Reflection (
-    give,
- )
-import qualified Data.Text as Text
+import Data.HashSet qualified as HashSet
+import Data.Text qualified as Text
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable
-import qualified Kore.Rewrite.SMT.Evaluator as Evaluator
+import Kore.Rewrite.SMT.Evaluator qualified as Evaluator
 import Kore.Rewrite.SMT.Translate (
     Translator,
     evalTranslator,
  )
-import qualified Kore.Rewrite.SMT.Translate as SMT
+import Kore.Rewrite.SMT.Translate qualified as SMT
 import Prelude.Kore hiding (
     and,
  )
 import SMT
-import qualified SMT.SimpleSMT
+import SMT.SimpleSMT qualified
 import Test.Expect
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
-import qualified Test.SMT
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
+import Test.SMT qualified
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -231,11 +228,11 @@ translatePattern ::
     TermLike VariableName ->
     Translator VariableName NoSMT SExpr
 translatePattern sideCondition =
-    give Mock.metadataTools $
-        SMT.translatePattern
-            sideCondition
-            Evaluator.translateTerm
-            Mock.testSort
+    SMT.translatePattern
+        Mock.metadataTools
+        sideCondition
+        Evaluator.translateTerm
+        Mock.testSort
 
 translatingPred :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translatingPred =

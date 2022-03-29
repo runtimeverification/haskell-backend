@@ -7,7 +7,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 This module should be imported qualified to avoid collisions with "Prelude":
 @
 import Kore.Rewrite.Strategy ( Strategy )
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 @
 -}
 module Kore.Rewrite.Strategy (
@@ -58,7 +58,7 @@ module Kore.Rewrite.Strategy (
 import Control.Error (
     maybeT,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     guard,
     (>=>),
@@ -67,15 +67,15 @@ import Control.Monad.Catch (
     Exception (..),
     MonadThrow,
  )
-import qualified Control.Monad.Catch as Exception
+import Control.Monad.Catch qualified as Exception
 import Control.Monad.State.Strict (
     MonadState,
  )
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product (
     field,
  )
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
@@ -83,12 +83,12 @@ import Data.Limit (
     Limit (..),
     withinLimit,
  )
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Maybe (
     fromJust,
  )
-import qualified Data.Sequence as Seq
-import qualified GHC.Generics as GHC
+import Data.Sequence qualified as Seq
+import GHC.Generics qualified as GHC
 import Kore.Rewrite.Transition
 import Numeric.Natural
 import Prelude.Kore hiding (
@@ -339,7 +339,7 @@ executionHistoryStep transit prim exe@ExecutionGraph{graph} node
     nodeIsNotLeaf = Graph.outdeg graph node > 0
 
     mkChildNode ::
-        -- | Child node identifier and configuration
+        -- Child node identifier and configuration
         (config, Seq rule) ->
         ChildNode config rule
     mkChildNode (config, rules) =

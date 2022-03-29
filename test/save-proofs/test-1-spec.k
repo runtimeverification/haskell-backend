@@ -1,12 +1,8 @@
-module VERIFICATION
-  imports SAVE-PROOFS
-
-  rule BB(X:Int) => CC(X:Int)
-endmodule
+requires "save-proofs.k"
 
 // This claim is proven and saved.
 module TEST-1-SPEC
-  imports VERIFICATION
+  imports SAVE-PROOFS
 
   claim BB(X:Int) => CC(X:Int)
 endmodule

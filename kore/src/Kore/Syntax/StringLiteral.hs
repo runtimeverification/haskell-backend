@@ -10,8 +10,8 @@ import Data.Functor.Const
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     emptyFreeVariables,
@@ -21,9 +21,9 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
--- |'StringLiteral' corresponds to the @string-literal@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#string-literals kore-syntax.md#string-literals>.
+-- |'StringLiteral' corresponds to the @string-literal@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#string-literals kore-syntax.md#string-literals>.
 newtype StringLiteral = StringLiteral {getStringLiteral :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

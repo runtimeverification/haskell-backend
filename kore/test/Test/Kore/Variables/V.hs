@@ -5,14 +5,14 @@ module Test.Kore.Variables.V (
     sortVariable,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
 import Data.Sup
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Kore.Variables.Fresh

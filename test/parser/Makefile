@@ -2,6 +2,7 @@ ifeq ($(origin TOP), undefined)
 	TOP = $(shell git rev-parse --show-toplevel)
 endif
 
+DEF_KORE =
 include $(TOP)/include.mk
 
 DIFF = diff -u
@@ -24,11 +25,23 @@ GOLDEN += $(foreach TEST, $(TESTS), $(TEST).golden)
 
 test: test-k
 
+test-simplifierx: test-k-simplifierx
+
+test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx
+test-k-simplifierx: KORE_REPL_OPTS += --simplifierx
+test-k-simplifierx: KORE_MATCH_DISJUNCTION_OPTS += --simplifierx
+test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
+test-k-simplifierx: $(OUTS)
+
 test-k: $(OUTS)
+
+build-test:
 
 golden: $(GOLDEN)
 
-clean:
+clean: clean-execution
+
+clean-execution:
 	rm -fr *.out *.fail
 
-.PHONY: test-k test golden clean
+.PHONY: test-k test-k-simplifierx test golden clean clean-execution

@@ -1,10 +1,7 @@
-module VERIFICATION
-    imports TEST
-
-endmodule
+requires "test.k"
 
 module TEST-SPEC
-    imports VERIFICATION
+    imports TEST
 
     claim <k> (a ~> _ => .) ... </k>
 

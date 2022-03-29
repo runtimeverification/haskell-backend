@@ -2,26 +2,26 @@ module Test.Kore.Simplify.Floor (
     test_floorSimplification,
 ) where
 
-import qualified Data.Default as Default
-import qualified Kore.Internal.Condition as Condition (
+import Data.Default qualified as Default
+import Kore.Internal.Condition qualified as Condition (
     top,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Conditional (..),
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeAndPredicate,
     makeEqualsPredicate,
     makeFloorPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (

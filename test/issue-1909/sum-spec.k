@@ -1,9 +1,7 @@
-module VERIFICATION
-  imports TEST
-endmodule
+requires "test.k"
 
 module SUM-SPEC
-  import VERIFICATION
+  imports TEST
 
   claim  <k> loop(N:Int) => . ...</k>
         <counter> C:Int => ?_ </counter>

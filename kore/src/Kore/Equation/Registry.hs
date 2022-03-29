@@ -18,14 +18,15 @@ import Data.List (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Kore.Attribute.Axiom (
     Assoc (Assoc),
     Comm (Comm),
     Idem (Idem),
+    NonExecutable (NonExecutable),
     Unit (Unit),
  )
-import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Overload
 import Kore.Attribute.Symbol (
     StepperAttributes,
@@ -33,21 +34,21 @@ import Kore.Attribute.Symbol (
 import Kore.Equation.Equation (
     Equation (..),
  )
-import qualified Kore.Equation.Equation as Equation
-import qualified Kore.Equation.Sentence as Equation
+import Kore.Equation.Equation qualified as Equation
+import Kore.Equation.Sentence qualified as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
 
 -- | Create a mapping from symbol identifiers to their defining axioms.
@@ -115,11 +116,11 @@ partitionEquations equations =
             . sortOn Equation.equationPriority
             $ equations'
 
-{- | Should we ignore the 'EqualityRule' for evaluation or simplification?
+{- | Should we ignore the 'Equation' for evaluation or simplification?
 
-@ignoreEqualityRule@ returns 'True' if the 'EqualityRule' should not be used in
+@ignoreEquation@ returns 'True' if the 'EqualityRule' should not be used in
 evaluation or simplification, such as if it is an associativity or commutativity
-axiom.
+axiom, or if it was marked non-executable.
 -}
 ignoreEquation :: Equation RewritingVariableName -> Bool
 ignoreEquation Equation{attributes}
@@ -129,6 +130,7 @@ ignoreEquation Equation{attributes}
     -- extraction of their axioms.
     | isUnit = True
     | isIdem = True
+    | isNonExecutable = True
     | Just _ <- getOverload = False
     | otherwise = False
   where
@@ -137,3 +139,4 @@ ignoreEquation Equation{attributes}
     Unit{isUnit} = Attribute.unit attributes
     Idem{isIdem} = Attribute.idem attributes
     Overload{getOverload} = Attribute.overload attributes
+    NonExecutable{isNonExecutable} = Attribute.nonExecutable attributes

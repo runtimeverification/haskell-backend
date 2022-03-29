@@ -39,36 +39,32 @@ module Kore.Builtin.AssociativeCommutative (
 import Control.Error (
     MaybeT,
  )
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet (
     HashSet,
  )
-import qualified Data.HashSet as HashSet
+import Data.HashSet qualified as HashSet
 import Data.Kind (
     Type,
  )
-import qualified Data.List
-import qualified Data.List as List
-import Data.Reflection (
-    Given,
- )
-import qualified Data.Reflection as Reflection
+import Data.List qualified
+import Data.List qualified as List
 import Data.Text (Text)
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified,
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Map.Map as Map
-import qualified Kore.Builtin.Set.Set as Set
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Map.Map qualified as Map
+import Kore.Builtin.Set.Set qualified as Set
 import Kore.Debug
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -76,20 +72,20 @@ import Kore.IndexedModule.MetadataTools (
 import Kore.Internal.Condition (
     Condition,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional,
     andCondition,
     withCondition,
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition (
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition qualified as SideCondition (
     topTODO,
  )
 import Kore.Internal.Symbol (
@@ -105,7 +101,7 @@ import Kore.Internal.TermLike (
     pattern InternalMap_,
     pattern InternalSet_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
  )
@@ -125,10 +121,10 @@ import Kore.Unparser (
     unparse,
     unparseToString,
  )
-import qualified Kore.Unparser as Unparser
+import Kore.Unparser qualified as Unparser
 import Logic
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | Any @TermWrapper@ may be inside of an 'InternalAc'.
 class
@@ -613,17 +609,14 @@ elementListAsNormalized terms = do
 -- | Render a 'NormalizedAc' as an extended domain value pattern.
 asPattern ::
     ( InternalVariable variable
-    , Given (SmtMetadataTools Attribute.Symbol)
     , TermWrapper normalized
     ) =>
+    SmtMetadataTools Attribute.Symbol ->
     Sort ->
     TermNormalizedAc normalized variable ->
     Pattern variable
-asPattern resultSort =
+asPattern tools resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
-  where
-    tools :: SmtMetadataTools Attribute.Symbol
-    tools = Reflection.given
 
 {- | Evaluates a concatenation of two AC structures represented as
 NormalizedOrBottom, providind the result in the form of a function result.
@@ -1358,9 +1351,9 @@ unifyEqualsElementLists
             return (result, [])
       where
         unifyWithPermutations ::
-            -- | First structure elements
+            -- First structure elements
             [ConcreteOrWithVariable normalized variable] ->
-            -- | Second structure elements
+            -- Second structure elements
             [ConcreteOrWithVariable normalized variable] ->
             unifier
                 ( Conditional

@@ -12,31 +12,31 @@ import Control.Monad.Catch (
     MonadThrow (throwM),
  )
 import Data.Functor.Identity
-import qualified Data.Graph.Inductive as Gr
+import Data.Graph.Inductive qualified as Gr
 import Data.Limit (
     Limit (..),
  )
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Sequence qualified as Seq
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Reachability.Claim (
     AppliedRule (..),
     ApplyResult (..),
     Claim (..),
  )
-import qualified Kore.Reachability.Claim as Claim
-import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Reachability.Prim as Prim
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Reachability.Claim qualified as Claim
+import Kore.Reachability.ClaimState qualified as ClaimState
+import Kore.Reachability.Prim qualified as Prim
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.Data (
     MonadSimplify (..),
  )
@@ -170,9 +170,9 @@ test_transitionRule_ApplyClaims =
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives ::
         HasCallStack =>
-        -- | rules to apply in parallel
+        -- rules to apply in parallel
         [MockRule] ->
-        -- | transitions
+        -- transitions
         [(MockClaimState, Seq MockAppliedRule)] ->
         TestTree
     derives rules = equals_ (run rules $ ClaimState.Claimed (MockClaim (A, C)))
@@ -201,9 +201,9 @@ test_transitionRule_ApplyAxioms =
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives ::
         HasCallStack =>
-        -- | rules to apply in parallel
+        -- rules to apply in parallel
         [MockRule] ->
-        -- | transitions
+        -- transitions
         [(MockClaimState, Seq MockAppliedRule)] ->
         TestTree
     derives rules =
@@ -242,11 +242,11 @@ test_runStrategy =
                 (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves ::
         HasCallStack =>
-        -- | Axioms
+        -- Axioms
         [MockRule] ->
-        -- | Proof goal
+        -- Proof goal
         MockClaim ->
-        -- | Unproven goals
+        -- Unproven goals
         [MockClaim] ->
         TestTree
     disproves axioms (MockClaim goal) unproven =
@@ -256,9 +256,9 @@ test_runStrategy =
             (show axioms ++ " disproves " ++ show goal)
     proves ::
         HasCallStack =>
-        -- | Axioms
+        -- Axioms
         [MockRule] ->
-        -- | Proof goal
+        -- Proof goal
         MockClaim ->
         TestTree
     proves axioms (MockClaim goal) =
@@ -425,6 +425,7 @@ instance MonadSimplify AllPathIdentity where
     askOverloadSimplifier = undefined
     getCache = undefined
     putCache = undefined
+    askSimplifierXSwitch = undefined
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =

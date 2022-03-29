@@ -1,18 +1,9 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
 
-
-module VERIFICATION
-  imports IMP
-
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
-endmodule
-
+requires "imp.k"
 
 module SUM-DIV-SPEC
   imports IMP
-  imports VERIFICATION
 
 
   claim

@@ -19,13 +19,11 @@
 //    => f(t(x)) and x<=0
 //    == t(t(x)) and x<=0
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
+requires "simplified.k"
 
 module THREE-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

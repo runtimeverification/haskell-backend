@@ -2,7 +2,7 @@ module Test.Kore.Repl.Graph (
     test_graph,
 ) where
 
-import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
  )
@@ -13,8 +13,9 @@ import Data.Set (
     Set,
     isSubsetOf,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.Repl.State (
+    EdgeLabel (..),
     smoothOutGraph,
  )
 import Prelude.Kore
@@ -159,7 +160,7 @@ tree2 =
         , (4, 11)
         ]
 
-g1', g2', chain', tree1', tree2' :: Gr () (Maybe ())
+g1', g2', chain', tree1', tree2' :: Gr () (EdgeLabel ())
 g1' = fromJust $ smoothOutGraph g1
 g2' = fromJust $ smoothOutGraph g2
 chain' = fromJust $ smoothOutGraph chain
@@ -171,16 +172,16 @@ expectedG1'
     , expectedChain'
     , expectedTree1'
     , expectedTree2' ::
-        Gr () (Maybe ())
+        Gr () (EdgeLabel ())
 expectedG1' = Graph.mkGraph [(1, ())] []
 expectedG2' =
     Graph.mkGraph
         [(1, ()), (2, ())]
-        [(1, 2, Just ())]
+        [(1, 2, IndividualLabel ())]
 expectedChain' =
     Graph.mkGraph
         [(0, ()), (100, ())]
-        [(0, 100, Nothing)]
+        [(0, 100, OmmitedNodes 99)]
 expectedTree1' =
     Graph.mkGraph
         [ (0, ())
@@ -195,16 +196,16 @@ expectedTree1' =
         , (10, ())
         , (13, ())
         ]
-        [ (0, 1, Just ())
-        , (1, 2, Just ())
-        , (1, 3, Just ())
-        , (2, 5, Nothing)
-        , (5, 6, Just ())
-        , (5, 7, Just ())
-        , (5, 8, Just ())
-        , (6, 9, Just ())
-        , (8, 10, Just ())
-        , (3, 13, Nothing)
+        [ (0, 1, IndividualLabel ())
+        , (1, 2, IndividualLabel ())
+        , (1, 3, IndividualLabel ())
+        , (2, 5, OmmitedNodes 1)
+        , (5, 6, IndividualLabel ())
+        , (5, 7, IndividualLabel ())
+        , (5, 8, IndividualLabel ())
+        , (6, 9, IndividualLabel ())
+        , (8, 10, IndividualLabel ())
+        , (3, 13, OmmitedNodes 2)
         ]
 expectedTree2' =
     Graph.mkGraph
@@ -217,11 +218,11 @@ expectedTree2' =
         , (10, ())
         , (9, ())
         ]
-        [ (0, 1, Just ())
-        , (0, 2, Just ())
-        , (0, 3, Just ())
-        , (0, 4, Just ())
-        , (2, 10, Nothing)
-        , (3, 9, Nothing)
-        , (4, 11, Just ())
+        [ (0, 1, IndividualLabel ())
+        , (0, 2, IndividualLabel ())
+        , (0, 3, IndividualLabel ())
+        , (0, 4, IndividualLabel ())
+        , (2, 10, OmmitedNodes 3)
+        , (3, 9, OmmitedNodes 1)
+        , (4, 11, IndividualLabel ())
         ]

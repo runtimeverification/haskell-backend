@@ -85,4 +85,10 @@ module CHAIN
      => nth(N -Int 1, B1, ?B2:Int) and ?B2 <~ B3 </g>
         requires N >Int 0
 
+    // for nth2-spec
+    syntax Bool ::= const(Int) [function, smtlib(con)]
+
+    syntax Int ::= k(Int) [function, functional, injective, smtlib(k)]
+
+    rule (k(N) +Int 1) -Int 1 => k(N) [simplification]
 endmodule

@@ -1,11 +1,10 @@
 // Testing that the smt-lemma works by proving that
 // the final configuration is equivalent to 5<Int X
-module VERIFICATION
-  imports SMT-LEMMA
-endmodule
+
+requires "smt-lemma.k"
 
 module ONE-SPEC
-  imports VERIFICATION
+  imports SMT-LEMMA
 
   claim
     <k> delayed(X:Int)

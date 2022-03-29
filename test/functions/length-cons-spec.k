@@ -1,13 +1,9 @@
 // Copyright (c) 2019 K Team. All Rights Reserved.
 
-
-module VERIFICATION
-  imports FUNCTIONS
-endmodule
+requires "functions.k"
 
 module LENGTH-CONS-SPEC
-
-  imports VERIFICATION
+  imports FUNCTIONS
 
   // test claim
   claim

@@ -35,12 +35,12 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Kore.Builtin.Encoding as Encoding
-import qualified Kore.Builtin.Symbols as Builtin
+import Kore.Builtin.Encoding qualified as Encoding
+import Kore.Builtin.Symbols qualified as Builtin
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     fromTermLike,
  )
 import Kore.Internal.Symbol
@@ -50,7 +50,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkInternalBytes,
  )
-import qualified Kore.Internal.TermLike as TermLike (
+import Kore.Internal.TermLike qualified as TermLike (
     markSimplified,
     pattern App_,
     pattern StringLiteral_,

@@ -9,45 +9,45 @@ module Kore.Rewrite.SMT.Representation.Symbols (
     buildRepresentations,
 ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Constructor as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Constructor qualified as Attribute (
     Constructor (Constructor, isConstructor),
  )
-import qualified Kore.Attribute.Functional as Attribute (
+import Kore.Attribute.Functional qualified as Attribute (
     Functional (Functional, isDeclaredFunctional),
  )
-import qualified Kore.Attribute.Smtlib.Smthook as Attribute (
+import Kore.Attribute.Smtlib.Smthook qualified as Attribute (
     Smthook (Smthook, getSmthook),
  )
-import qualified Kore.Attribute.Smtlib.Smtlib as Attribute (
+import Kore.Attribute.Smtlib.Smtlib qualified as Attribute (
     Smtlib (Smtlib, getSmtlib),
  )
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol (
+import Kore.Attribute.Symbol qualified as Attribute.Symbol (
     Symbol (..),
  )
 import Kore.IndexedModule.IndexedModule (
     IndexedModule,
     recursiveIndexedModuleSymbolSentences,
  )
-import qualified Kore.Rewrite.SMT.AST as AST
+import Kore.Rewrite.SMT.AST qualified as AST
 import Kore.Syntax.Id (
     Id,
  )
 import Kore.Syntax.Sentence (
     SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol),
  )
-import qualified Kore.Syntax.Sentence as Sentence (
+import Kore.Syntax.Sentence qualified as Sentence (
     Symbol (Symbol),
  )
-import qualified Kore.Syntax.Sentence as Sentence.Symbol (
+import Kore.Syntax.Sentence qualified as Sentence.Symbol (
     Symbol (..),
  )
-import qualified Kore.Verified as Verified
+import Kore.Verified qualified as Verified
 import Prelude.Kore
-import qualified SMT
+import SMT qualified
 
 {- | Builds smt representations for symbols in the given module.
 

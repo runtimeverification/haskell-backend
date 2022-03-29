@@ -19,36 +19,36 @@ import Control.Monad (
 import Data.List (
     sortBy,
  )
-import qualified Data.Map.Strict as Map
-import qualified Kore.Internal.Condition as Condition
+import Data.Map.Strict qualified as Map
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
-import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiAnd as MultiAnd (
+import Kore.Internal.Conditional qualified as Conditional
+import Kore.Internal.MultiAnd qualified as MultiAnd (
     make,
  )
-import qualified Kore.Internal.OrCondition as OrCondition (
+import Kore.Internal.OrCondition qualified as OrCondition (
     fromCondition,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern (
+import Kore.Internal.Pattern qualified as Pattern (
     splitTerm,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     ElementVariable,
     Exists (Exists),
@@ -60,24 +60,24 @@ import Kore.Internal.TermLike (
     retractElementVariable,
     withoutFreeVariable,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Matcher (
     matchIncremental,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Simplify.AndPredicates as And (
+import Kore.Simplify.AndPredicates qualified as And (
     simplifyEvaluatedMultiPredicate,
  )
 import Kore.Simplify.Simplify
 import Kore.Substitute
-import qualified Kore.TopBottom as TopBottom
+import Kore.TopBottom qualified as TopBottom
 import Kore.Unparser
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
@@ -304,9 +304,11 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
                         substitute boundSubstitution $
                             Conditional.predicate normalized
                     }
-        orPattern <-
-            simplifyPattern sideCondition substituted
-                & lift
+        orPattern <- do
+            simplifierX <- askSimplifierXSwitch
+            case simplifierX of
+                EnabledSimplifierX -> simplifyPatternId substituted
+                DisabledSimplifierX -> simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)

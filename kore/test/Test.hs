@@ -1,8 +1,8 @@
 module Main (main) where
 
-import qualified Driver
+import Driver qualified
 import Prelude.Kore
-import qualified System.Environment as Environment
+import System.Environment qualified as Environment
 
 main :: IO ()
 main = do

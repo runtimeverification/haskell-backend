@@ -41,64 +41,68 @@ module Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     makeEvaluateCeil,
 
+    -- * Experimental simplifier,
+    SimplifierXSwitch (..),
+
     -- * Re-exports
     MonadSMT,
     MonadLog,
 ) where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
  )
-import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (
     RWST,
  )
-import qualified Control.Monad.State.Strict as Strict
+import Control.Monad.State.Strict qualified as Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
-import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Map.Strict as Map
+import Data.HashMap.Strict qualified as HashMap
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Symbol as Attribute
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
 import Kore.Equation.Equation (Equation)
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.OrPattern (
     OrPattern,
+    fromPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.Symbol
@@ -118,8 +122,8 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
-import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
+import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -137,7 +141,7 @@ import Prelude.Kore
 import Pretty (
     (<+>),
  )
-import qualified Pretty
+import Pretty qualified
 import SMT (
     MonadSMT (..),
  )
@@ -255,6 +259,19 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     putCache = lift . putCache
     {-# INLINE putCache #-}
 
+    askSimplifierXSwitch :: m SimplifierXSwitch
+    default askSimplifierXSwitch ::
+        (MonadTrans t, MonadSimplify n, m ~ t n) =>
+        m SimplifierXSwitch
+    askSimplifierXSwitch = lift askSimplifierXSwitch
+    {-# INLINE askSimplifierXSwitch #-}
+
+    simplifyPatternId ::
+        Pattern RewritingVariableName ->
+        m (OrPattern RewritingVariableName)
+    simplifyPatternId = pure . fromPattern
+    {-# INLINE simplifyPatternId #-}
+
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
@@ -282,6 +299,12 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 instance MonadSimplify m => MonadSimplify (RWST r () s m)
 
+-- * Experimental simplifier
+data SimplifierXSwitch
+    = EnabledSimplifierX
+    | DisabledSimplifierX
+    deriving stock (Show, Eq)
+
 -- * Term simplifiers
 
 -- TODO (thomas.tuegel): Factor out these types.
@@ -292,8 +315,12 @@ simplifyPatternScatter ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-simplifyPatternScatter sideCondition patt =
-    simplifyPattern sideCondition patt >>= Logic.scatter
+simplifyPatternScatter sideCondition patt = do
+    simplifierX <- askSimplifierXSwitch
+    Logic.scatter
+        =<< case simplifierX of
+            EnabledSimplifierX -> simplifyPatternId patt
+            DisabledSimplifierX -> simplifyPattern sideCondition patt
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies
@@ -446,7 +473,7 @@ criticalMissingHook symbol hookName =
         , Pretty.indent 4 (unparse attribute)
         , "We don't recognize that hook and it was not given any rules."
         , "Please open a feature request at"
-        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
+        , Pretty.indent 4 "https://github.com/runtimeverification/haskell-backend/issues"
         , "and include the text of this message."
         , "Workaround: Give rules for" <+> unparse symbol
         ]

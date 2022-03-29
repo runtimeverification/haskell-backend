@@ -1,10 +1,6 @@
-module VERIFICATION
-  imports PATH
-
-endmodule
+requires "path.k"
 
 module ALL-PATH-B-D-SPEC
-  imports VERIFICATION
   imports PATH
 
   // This should be provable

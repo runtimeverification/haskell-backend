@@ -3,14 +3,14 @@ module Test.Kore.Internal.MultiAnd (
     test_make,
 ) where
 
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.TermLike (ElementVariable, mkElemVar)
 import Kore.Rewrite.RewritingVariable (RewritingVariableName)
@@ -18,7 +18,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

@@ -15,12 +15,12 @@ module Kore.Validate.ModuleVerifier (
 import Control.Lens (
     (%=),
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad.Reader.Class as Reader
-import qualified Control.Monad.State.Class as State
+import Control.Lens qualified as Lens
+import Control.Monad.Reader.Class qualified as Reader
+import Control.Monad.State.Class qualified as State
 import Data.Generics.Product
-import qualified Data.List as List
-import qualified Data.Map.Strict as Map
+import Data.List qualified as List
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -28,7 +28,7 @@ import Kore.AST.Error
 import Kore.Attribute.Parser (
     ParseAttributes,
  )
-import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Parser qualified as Attribute.Parser
 import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
@@ -45,7 +45,7 @@ import Kore.Validate.SentenceVerifier (
     verifySorts,
     verifySymbols,
  )
-import qualified Kore.Validate.SentenceVerifier as SentenceVerifier
+import Kore.Validate.SentenceVerifier qualified as SentenceVerifier
 import Kore.Validate.Verifier
 import Prelude.Kore
 

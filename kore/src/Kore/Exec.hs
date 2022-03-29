@@ -10,8 +10,6 @@ Expose concrete execution as a library
 -}
 module Kore.Exec (
     exec,
-    mergeAllRules,
-    mergeRulesConsecutiveBatches,
     search,
     prove,
     proveWithRepl,
@@ -29,7 +27,7 @@ import Control.DeepSeq (
 import Control.Error (
     hoistMaybe,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     filterM,
     (>=>),
@@ -37,20 +35,9 @@ import Control.Monad (
 import Control.Monad.Catch (
     MonadMask,
  )
-import Control.Monad.Trans.Except (
-    ExceptT,
-    runExceptT,
-    throwE,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
- )
-import Data.Generics.Product (
-    field,
- )
-import Data.Generics.Wrapped (
-    _Unwrapped,
  )
 import Data.Limit (
     Limit (..),
@@ -58,24 +45,21 @@ import Data.Limit (
 import Data.List (
     tails,
  )
-import qualified Data.Map.Strict as Map
-import Data.Text (
-    Text,
- )
-import qualified Kore.Attribute.Axiom as Attribute
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
 import Kore.Equation (
     Equation,
     extractEquations,
     isSimplificationRule,
     right,
  )
-import qualified Kore.Equation as Equation (
+import Kore.Equation qualified as Equation (
     Equation (antiLeft),
     argument,
     requires,
@@ -83,30 +67,30 @@ import qualified Kore.Equation as Equation (
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.IndexedModule.Resolvers (
     resolveInternalSymbol,
  )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalInt
-import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     fromPredicate,
     makeMultipleOrPredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
@@ -117,10 +101,6 @@ import Kore.Log.ErrorEquationsSameMatch (
 import Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
  )
-import Kore.Log.ErrorRuleMergeDuplicate (
-    errorRuleMergeDuplicateIds,
-    errorRuleMergeDuplicateLabels,
- )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
@@ -129,7 +109,7 @@ import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
-import qualified Kore.ModelChecker.Bounded as Bounded
+import Kore.ModelChecker.Bounded qualified as Bounded
 import Kore.Reachability (
     AllClaims (AllClaims),
     AlreadyProven (AlreadyProven),
@@ -143,17 +123,13 @@ import Kore.Reachability (
     lensClaimPattern,
     proveClaims,
  )
-import qualified Kore.Repl as Repl
-import qualified Kore.Repl.Data as Repl.Data
+import Kore.Repl qualified as Repl
+import Kore.Repl.Data qualified as Repl.Data
 import Kore.Rewrite
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
     extractImplicationClaims,
     extractRewriteAxioms,
- )
-import qualified Kore.Rewrite.Rule.Combine as Rules (
-    mergeRules,
-    mergeRulesConsecutiveBatches,
  )
 import Kore.Rewrite.Rule.Expand (
     ExpandSingleConstructors (..),
@@ -161,6 +137,7 @@ import Kore.Rewrite.Rule.Expand (
 import Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
  )
+import Kore.Rewrite.Rule.Simplify qualified as Rule
 import Kore.Rewrite.RulePattern (
     ImplicationRule (..),
     RewriteRule (..),
@@ -174,8 +151,8 @@ import Kore.Rewrite.RulePattern as RulePattern (
 import Kore.Rewrite.Search (
     searchGraph,
  )
-import qualified Kore.Rewrite.Search as Search
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Search qualified as Search
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
@@ -183,11 +160,11 @@ import Kore.Rewrite.Transition (
 import Kore.Simplify.Data (
     evalSimplifier,
  )
-import qualified Kore.Simplify.Data as Simplifier
-import qualified Kore.Simplify.Pattern as Pattern
-import qualified Kore.Simplify.Rule as Rule
+import Kore.Simplify.Data qualified as Simplifier
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    SimplifierXSwitch,
  )
 import Kore.Syntax.Module (
     ModuleName,
@@ -200,21 +177,19 @@ import Kore.Unparser (
     unparseToText2,
  )
 import Log (
-    LoggerT,
     MonadLog,
  )
-import qualified Log
+import Log qualified
 import Logic (
     LogicT,
     observeAllT,
  )
-import qualified Logic
+import Logic qualified
 import Prelude.Kore
 import Prof
 import SMT (
     MonadSMT,
     SMT,
-    runNoSMT,
  )
 import System.Exit (
     ExitCode (..),
@@ -238,6 +213,7 @@ exec ::
     , MonadMask smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -247,12 +223,13 @@ exec ::
     TermLike VariableName ->
     smt (ExitCode, TermLike VariableName)
 exec
+    simplifierx
     depthLimit
     breadthLimit
     verifiedModule
     strategy
     (mkRewritingTerm -> initialTerm) =
-        evalSimplifier verifiedModule' $ do
+        evalSimplifier simplifierx verifiedModule' $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
             finals <-
@@ -395,6 +372,7 @@ search ::
     , MonadMask smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -407,13 +385,14 @@ search ::
     Search.Config ->
     smt (TermLike VariableName)
 search
+    simplifierx
     depthLimit
     breadthLimit
     verifiedModule
     (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig =
-        evalSimplifier verifiedModule $ do
+        evalSimplifier simplifierx verifiedModule $ do
             initialized <- initializeAndSimplify verifiedModule
             let Initialized{rewriteRules} = initialized
             simplifiedPatterns <-
@@ -467,6 +446,7 @@ prove ::
     , MonadSMT smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Strategy.GraphSearchOrder ->
     Limit Natural ->
     Limit Natural ->
@@ -479,6 +459,7 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     smt ProveClaimsResult
 prove
+    simplifierx
     searchOrder
     breadthLimit
     depthLimit
@@ -486,7 +467,7 @@ prove
     definitionModule
     specModule
     trustedModule =
-        evalSimplifier definitionModule $ do
+        evalSimplifier simplifierx definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -514,6 +495,7 @@ prove
  the repl until the user exits.
 -}
 proveWithRepl ::
+    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
@@ -534,6 +516,7 @@ proveWithRepl ::
     KFileLocations ->
     SMT ()
 proveWithRepl
+    simplifierx
     definitionModule
     specModule
     trustedModule
@@ -545,7 +528,7 @@ proveWithRepl
     mainModuleName
     logOptions
     kFileLocations =
-        evalSimplifier definitionModule $ do
+        evalSimplifier simplifierx definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -572,6 +555,7 @@ boundedModelCheck ::
     , MonadMask smt
     , MonadProf smt
     ) =>
+    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -584,43 +568,54 @@ boundedModelCheck ::
             (TermLike VariableName)
             (ImplicationRule VariableName)
         )
-boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
-    evalSimplifier definitionModule $ do
-        initialized <- initializeAndSimplify definitionModule
-        let Initialized{rewriteRules} = initialized
-            specClaims = extractImplicationClaims specModule
-        assertSomeClaims specClaims
-        assertSingleClaim specClaims
-        let axioms = fmap Bounded.Axiom rewriteRules
-            claims =
-                mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
-                    <$> specClaims
+boundedModelCheck
+    simplifierx
+    breadthLimit
+    depthLimit
+    definitionModule
+    specModule
+    searchOrder =
+        evalSimplifier simplifierx definitionModule $ do
+            initialized <- initializeAndSimplify definitionModule
+            let Initialized{rewriteRules} = initialized
+                specClaims = extractImplicationClaims specModule
+            assertSomeClaims specClaims
+            assertSingleClaim specClaims
+            let axioms = fmap Bounded.Axiom rewriteRules
+                claims =
+                    mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
+                        <$> specClaims
 
-        Bounded.checkClaim
-            breadthLimit
-            (Bounded.bmcStrategy axioms)
-            searchOrder
-            (head claims, depthLimit)
+            Bounded.checkClaim
+                breadthLimit
+                (Bounded.bmcStrategy axioms)
+                searchOrder
+                (head claims, depthLimit)
 
 matchDisjunction ::
+    ( MonadLog smt
+    , MonadSMT smt
+    , MonadIO smt
+    , MonadMask smt
+    , MonadProf smt
+    ) =>
+    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    LoggerT IO (TermLike VariableName)
-matchDisjunction mainModule matchPattern disjunctionPattern =
-    do
-        SMT.runNoSMT $
-            evalSimplifier mainModule $ do
-                results <-
-                    traverse (runMaybeT . match matchPattern) disjunctionPattern
-                        <&> catMaybes
-                        <&> concatMap toList
-                results
-                    <&> Condition.toPredicate
-                    & Predicate.makeMultipleOrPredicate
-                    & Predicate.fromPredicate sort
-                    & getRewritingTerm
-                    & return
+    smt (TermLike VariableName)
+matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
+    evalSimplifier simplifierx mainModule $ do
+        results <-
+            traverse (runMaybeT . match matchPattern) disjunctionPattern
+                <&> catMaybes
+                <&> concatMap toList
+        results
+            <&> Condition.toPredicate
+            & Predicate.makeMultipleOrPredicate
+            & Predicate.fromPredicate sort
+            & getRewritingTerm
+            & return
   where
     sort = Pattern.patternSort matchPattern
     match = Search.matchWith SideCondition.top
@@ -643,19 +638,25 @@ See 'checkEquation',
 'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
-    MonadLog m =>
-    MonadSimplify m =>
+    ( MonadLog smt
+    , MonadSMT smt
+    , MonadIO smt
+    , MonadMask smt
+    , MonadProf smt
+    ) =>
+    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
-    m ()
-checkFunctions verifiedModule = do
-    -- check if RHS is function pattern
-    equations >>= filter (not . isFunctionPattern . right)
-        & mapM_ errorEquationRightFunction
-    -- check if two equations both match the same term
-    equations >>= inOrderPairs
-        & filterM (uncurry bothMatch)
-        >>= mapM_ (uncurry errorEquationsSameMatch)
+    smt ()
+checkFunctions simplifierx verifiedModule =
+    evalSimplifier simplifierx verifiedModule $ do
+        -- check if RHS is function pattern
+        equations >>= filter (not . isFunctionPattern . right)
+            & mapM_ errorEquationRightFunction
+        -- check if two equations both match the same term
+        equations >>= inOrderPairs
+            & filterM (uncurry bothMatch)
+            >>= mapM_ (uncurry errorEquationsSameMatch)
   where
     equations :: [[Equation VariableName]]
     equations =
@@ -666,7 +667,7 @@ checkFunctions verifiedModule = do
     inOrderPairs xs = [(x, y) | (x : ys) <- tails xs, y <- ys]
 
 {- | Returns true when both equations match the same term.  See:
-https://github.com/kframework/kore/issues/2472#issue-833143685
+https://github.com/runtimeverification/haskell-backend/issues/2472#issue-833143685
 -}
 bothMatch ::
     MonadSimplify m =>
@@ -690,120 +691,6 @@ bothMatch eq1 eq2 =
         sort = termLikeSort $ right eq1
         patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
-
--- | Rule merging
-mergeAllRules ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadProf smt
-    , MonadMask smt
-    ) =>
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The list of rules to merge
-    [Text] ->
-    smt (Either Text [RewriteRule RewritingVariableName])
-mergeAllRules = mergeRules Rules.mergeRules
-
--- | Rule merging
-mergeRulesConsecutiveBatches ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadProf smt
-    , MonadMask smt
-    ) =>
-    -- | Batch size
-    Int ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The list of rules to merge
-    [Text] ->
-    smt (Either Text [RewriteRule RewritingVariableName])
-mergeRulesConsecutiveBatches batchSize =
-    mergeRules (Rules.mergeRulesConsecutiveBatches batchSize)
-
--- | Rule merging in batches
-mergeRules ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadProf smt
-    , MonadMask smt
-    ) =>
-    -- | The rule merger
-    ( NonEmpty (RewriteRule RewritingVariableName) ->
-      Simplifier.SimplifierT smt [RewriteRule RewritingVariableName]
-    ) ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The list of rules to merge
-    [Text] ->
-    smt (Either Text [RewriteRule RewritingVariableName])
-mergeRules ruleMerger verifiedModule ruleNames =
-    evalSimplifier verifiedModule $
-        runExceptT $ do
-            initialized <- initializeWithoutSimplification verifiedModule
-            let Initialized{rewriteRules} = initialized
-                rewriteRules' = rewriteRules
-            rules <- extractAndSimplifyRules rewriteRules' ruleNames
-            lift $ ruleMerger rules
-
-extractAndSimplifyRules ::
-    forall m.
-    MonadSimplify m =>
-    [RewriteRule RewritingVariableName] ->
-    [Text] ->
-    ExceptT Text m (NonEmpty (RewriteRule RewritingVariableName))
-extractAndSimplifyRules rules names = do
-    let rulesById = mapMaybe ruleById rules
-        rulesByLabel = mapMaybe ruleByLabel rules
-    whenDuplicate errorRuleMergeDuplicateIds rulesById
-    whenDuplicate errorRuleMergeDuplicateLabels rulesByLabel
-    let ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
-    extractedRules <-
-        traverse (extractRule ruleRegistry >=> simplifyRuleLhs) names
-            & fmap (>>= toList)
-    case extractedRules of
-        [] -> throwE "Empty rule list."
-        (r : rs) -> return (r :| rs)
-  where
-    ruleById = ruleByName (field @"uniqueId")
-
-    ruleByLabel = ruleByName (field @"label")
-
-    ruleByName lens rule = do
-        name <-
-            Lens.view
-                (_Unwrapped . field @"attributes" . lens . _Unwrapped)
-                rule
-        return (name, rule)
-
-    extractRule registry ruleName =
-        maybe
-            (throwE $ "Rule not found: '" <> ruleName <> "'.")
-            return
-            (Map.lookup ruleName registry)
-
-    whenDuplicate logErr withNames = do
-        let duplicateNames =
-                findCollisions . mkMapWithCollisions $ withNames
-        unless (null duplicateNames) (logErr duplicateNames)
-
-mkMapWithCollisions ::
-    Ord key =>
-    [(key, val)] ->
-    Map.Map key [val]
-mkMapWithCollisions pairs =
-    Map.fromListWith (<>) $
-        (fmap . fmap) pure pairs
-
-findCollisions :: Map.Map key [val] -> Map.Map key [val]
-findCollisions = filter (not . isSingleton)
-  where
-    isSingleton [_] = True
-    isSingleton _ = False
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
@@ -838,13 +725,6 @@ initializeAndSimplify ::
     simplifier Initialized
 initializeAndSimplify verifiedModule =
     initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
-
-initializeWithoutSimplification ::
-    MonadSimplify simplifier =>
-    VerifiedModule StepperAttributes ->
-    simplifier Initialized
-initializeWithoutSimplification verifiedModule =
-    initialize return verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::

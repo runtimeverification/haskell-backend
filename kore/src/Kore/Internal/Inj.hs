@@ -17,12 +17,12 @@ import Control.Exception (
     throw,
  )
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
-import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic (
     Synthetic (..),
  )
@@ -37,7 +37,7 @@ import Kore.TopBottom (
  )
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 data Inj a = Inj
     { injConstructor :: !Id

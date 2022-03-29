@@ -30,50 +30,50 @@ import Control.Monad.Catch (
     MonadMask,
     MonadThrow,
  )
-import qualified Control.Monad.Morph as Morph
+import Control.Monad.Morph qualified as Morph
 import Control.Monad.Reader
 import Control.Monad.State.Strict
-import qualified Data.Map.Strict as Map
-import qualified Kore.Attribute.Symbol as Attribute (
+import Data.Map.Strict qualified as Map
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Equation as Equation
+import Kore.Builtin qualified as Builtin
+import Kore.Equation qualified as Equation
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
-import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
+import Kore.IndexedModule.OverloadGraph qualified as OverloadGraph
+import Kore.IndexedModule.SortGraph qualified as SortGraph
 import Kore.Internal.Pattern (Pattern)
-import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Rewrite.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Rewrite.Axiom.EvaluationStrategy qualified as Axiom.EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier (
     matchAxiomIdentifier,
  )
 import Kore.Rewrite.Axiom.Registry (
     mkEvaluatorRegistry,
  )
-import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkEquationVariable,
  )
-import qualified Kore.Simplify.Condition as Condition
+import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Simplify.TermLike as TermLike
+import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Log
 import Logic
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Prof
 import SMT (
     SMT (..),
@@ -88,6 +88,7 @@ data Env simplifier = Env
     , memo :: !(Memo.Self simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
+    , simplifierXSwitch :: !SimplifierXSwitch
     }
 
 {- | @Simplifier@ represents a simplification action.
@@ -174,6 +175,9 @@ instance
     putCache = put
     {-# INLINE putCache #-}
 
+    askSimplifierXSwitch = asks simplifierXSwitch
+    {-# INLINE askSimplifierXSwitch #-}
+
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
     Monad smt =>
@@ -202,10 +206,11 @@ that may branch.
 evalSimplifier ::
     forall smt a.
     (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
+    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     SimplifierT smt a ->
     smt a
-evalSimplifier verifiedModule simplifier = do
+evalSimplifier simplifierXSwitch verifiedModule simplifier = do
     !env <- runSimplifier earlyEnv initialize
     runSimplifier env simplifier
   where
@@ -218,6 +223,7 @@ evalSimplifier verifiedModule simplifier = do
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
+            , simplifierXSwitch
             }
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}
@@ -282,6 +288,7 @@ evalSimplifier verifiedModule simplifier = do
                 , memo
                 , injSimplifier
                 , overloadSimplifier
+                , simplifierXSwitch
                 }
 
 mapSimplifierT ::

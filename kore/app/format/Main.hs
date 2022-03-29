@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified Data.Text.IO as Text
+import Data.Text.IO qualified as Text
 import GlobalMain
 import Kore.Parser (
     parseKoreDefinition,
@@ -52,30 +52,30 @@ infoMod =
         <> header "kore-format - parse and render Kore definitions"
 
 main :: IO ()
-main =
-    do
-        options <-
-            mainGlobal
-                (ExeName "kore-format")
-                Nothing -- environment variable name for extra arguments
-                commandLine
-                infoMod
-        case localOptions options of
-            Nothing ->
-                {-  Global options were parsed, but local options were not.
-                    Exit gracefully. -}
-                return ()
-            Just KoreFormatOptions{fileName, width} ->
-                do
-                    defn <- readKoreOrDie fileName
-                    let layoutOptions =
-                            defaultLayoutOptions
-                                { layoutPageWidth =
-                                    if width > 0
-                                        then AvailablePerLine width 1.0
-                                        else Unbounded
-                                }
-                    renderIO stdout (layoutPretty layoutOptions $ unparse defn)
+main = do
+    options <-
+        mainGlobal
+            (ExeName "kore-format")
+            Nothing -- environment variable name for extra arguments
+            commandLine
+            infoMod
+    for_ (localOptions options) mainWorker
+  where
+    mainWorker
+        LocalOptions
+            { execOptions =
+                KoreFormatOptions{fileName, width}
+            } =
+            do
+                defn <- readKoreOrDie fileName
+                let layoutOptions =
+                        defaultLayoutOptions
+                            { layoutPageWidth =
+                                if width > 0
+                                    then AvailablePerLine width 1.0
+                                    else Unbounded
+                            }
+                renderIO stdout (layoutPretty layoutOptions $ unparse defn)
 
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
 readKoreOrDie :: FilePath -> IO ParsedDefinition

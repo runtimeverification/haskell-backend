@@ -21,21 +21,21 @@ import Data.List (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Kore.Internal.Conditional as Conditional
+import Data.Set qualified as Set
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
  )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -49,11 +49,11 @@ import Kore.Internal.TermLike (
     pattern And_,
     pattern Not_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import qualified Kore.Rewrite.Substitution as Substitution
+import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.AndTerms (
     maybeTermAnd,
  )

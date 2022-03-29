@@ -1,12 +1,9 @@
-module VERIFICATION
+requires "test.k"
+
+module TEST-SPEC
     imports TEST
     imports INT-SYNTAX
 
-endmodule
-
-module TEST-SPEC
-    imports VERIFICATION
-
-    claim <k> foo => 1234 </k> 
+    claim <k> foo => 1234 </k>
 
 endmodule

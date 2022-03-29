@@ -39,4 +39,10 @@ module PRIORITY
     requires func3(X) ==K four
   rule func4(_:Int) => seven  [owise]
 
+  // for priority-1-spec
+  syntax KItem ::= runTest  ( S )
+                 | doneTest ( S )
+
+  rule runTest ( T ) => doneTest ( T )
+
 endmodule

@@ -9,17 +9,17 @@ module Test.Kore.Builtin.KEqual (
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.KEqual as KEqual
+import Hedgehog.Gen qualified as Gen
+import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.KEqual qualified as KEqual
 import Kore.Internal.From
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -31,7 +31,7 @@ import Kore.Simplify.AndTerms (
 import Kore.Simplify.Data (
     runSimplifierBranch,
  )
-import qualified Kore.Simplify.Not as Not
+import Kore.Simplify.Not qualified as Not
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
@@ -42,10 +42,10 @@ import SMT (
 import Test.Kore (
     testId,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
+import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.SMT
 import Test.Tasty
 

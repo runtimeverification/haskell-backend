@@ -11,9 +11,9 @@ module Kore.Internal.ApplicationSorts (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Error
 import Kore.Sort hiding (

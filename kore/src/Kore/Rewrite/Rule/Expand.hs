@@ -13,41 +13,41 @@ import Control.Monad.State.Strict (
     State,
     evalState,
  )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.State.Strict qualified as State
+import Data.Bifunctor qualified as Bifunctor
 import Data.Generics.Product (
     field,
  )
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
-import qualified Debug
-import qualified GHC.Generics as GHC
+import Data.Set qualified as Set
+import Debug qualified
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors (
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Sort.Constructors qualified as Attribute.Constructors (
     Constructor (Constructor),
     ConstructorLike (ConstructorLikeConstructor),
     Constructors (Constructors),
  )
-import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
+import Kore.Attribute.Sort.Constructors qualified as Constructors.DoNotUse
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
     findSortConstructors,
  )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Substitution (
     Substitution,
  )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
@@ -70,14 +70,14 @@ import Kore.Sort (
     Sort (..),
     SortActual (SortActual),
  )
-import qualified Kore.Sort as Sort.DoNotUse
+import Kore.Sort qualified as Sort.DoNotUse
 import Kore.Substitute
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh (
     refreshVariable,
  )
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
 -- | Instantiate variables on sorts with a single constructor
 

@@ -8,7 +8,7 @@ import Control.Monad.State.Strict (
 import Kore.Internal.TermLike
 import Kore.Rewrite.Function.Memo
 import Prelude.Kore
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

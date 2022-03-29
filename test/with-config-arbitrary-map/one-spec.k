@@ -1,12 +1,7 @@
-module VERIFICATION
-    imports WITH-CONFIG
-
-    syntax EntryAction ::= totalBalance ( AccountId )
-    rule <k> totalBalance(AID) => total_balance(AID) ... </k>
-endmodule
+requires "with-config.k"
 
 module ONE-SPEC
-    imports VERIFICATION
+    imports WITH-CONFIG
 
     claim <k> totalBalance(AID) => 50 ... </k>
         <accounts>

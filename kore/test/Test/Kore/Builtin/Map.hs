@@ -52,18 +52,17 @@ import Control.Error (
 import Control.Monad (
     guard,
  )
-import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Default as Default
+import Data.Bifunctor qualified as Bifunctor
+import Data.Default qualified as Default
 import Data.HashMap.Strict (
     HashMap,
  )
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet as HashSet
-import qualified Data.List as List
-import qualified Data.Maybe as Maybe (
+import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet qualified as HashSet
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe (
     fromJust,
  )
-import qualified Data.Reflection as Reflection
 import Hedgehog (
     Gen,
     Property,
@@ -72,27 +71,27 @@ import Hedgehog (
     forAll,
     (===),
  )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.Map.Map as Map
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Kore.Builtin.AssociativeCommutative qualified as Ac
+import Kore.Builtin.Map qualified as Map
+import Kore.Builtin.Map.Map qualified as Map
 import Kore.Internal.From
 import Kore.Internal.InternalMap
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeMultipleAndPredicate,
     makeTruePredicate,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike hiding (
     asConcrete,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
@@ -112,7 +111,7 @@ import Test.Kore (
     standaloneGen,
     testId,
  )
-import qualified Test.Kore.Builtin.Bool as Test.Bool
+import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.Int (
@@ -120,11 +119,11 @@ import Test.Kore.Builtin.Int (
     genIntegerKey,
     genIntegerPattern,
  )
-import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Builtin.List as Test.List
-import qualified Test.Kore.Builtin.Set as Test.Set
-import qualified Test.Kore.Internal.OrPattern as OrPattern
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Builtin.Int qualified as Test.Int
+import Test.Kore.Builtin.List qualified as Test.List
+import Test.Kore.Builtin.Set qualified as Test.Set
+import Test.Kore.Internal.OrPattern qualified as OrPattern
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
     runSimplifier,
  )
@@ -1309,9 +1308,9 @@ test_renormalize =
     becomes ::
         HasCallStack =>
         TestName ->
-        -- | original, (possibly) de-normalized map
+        -- original, (possibly) de-normalized map
         NormalizedMap Key (TermLike RewritingVariableName) ->
-        -- | expected normalized map
+        -- expected normalized map
         NormalizedMap Key (TermLike RewritingVariableName) ->
         TestTree
     becomes name origin expect =
@@ -1333,11 +1332,11 @@ test_renormalize =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
     mkMap' ::
-        -- | abstract elements
+        -- abstract elements
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        -- | concrete elements
+        -- concrete elements
         [(Key, TermLike RewritingVariableName)] ->
-        -- | opaque terms
+        -- opaque terms
         [NormalizedMap Key (TermLike RewritingVariableName)] ->
         NormalizedMap Key (TermLike RewritingVariableName)
     mkMap' abstract concrete opaque =
@@ -1490,27 +1489,25 @@ asPattern ::
     HashMap Key (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asPattern concreteMap =
-    Reflection.give testMetadataTools $
-        Ac.asPattern mapSort $
-            wrapAc
-                NormalizedAc
-                    { elementsWithVariables = []
-                    , concreteElements = MapValue <$> concreteMap
-                    , opaque = []
-                    }
+    Ac.asPattern testMetadataTools mapSort $
+        wrapAc
+            NormalizedAc
+                { elementsWithVariables = []
+                , concreteElements = MapValue <$> concreteMap
+                , opaque = []
+                }
 
 asVariablePattern ::
     HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asVariablePattern variableMap =
-    Reflection.give testMetadataTools $
-        Ac.asPattern mapSort $
-            wrapAc
-                NormalizedAc
-                    { elementsWithVariables = MapElement <$> HashMap.toList variableMap
-                    , concreteElements = HashMap.empty
-                    , opaque = []
-                    }
+    Ac.asPattern testMetadataTools mapSort $
+        wrapAc
+            NormalizedAc
+                { elementsWithVariables = MapElement <$> HashMap.toList variableMap
+                , concreteElements = HashMap.empty
+                , opaque = []
+                }
 
 asVariableInternal ::
     HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->

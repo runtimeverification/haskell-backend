@@ -17,16 +17,16 @@ import Data.String (
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import Data.Text qualified as Text
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Unparser
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 
--- | 'ModuleName' corresponds to the @module-name@ syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#identifiers kore-syntax#identifiers>.
+-- | 'ModuleName' corresponds to the @module-name@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax#identifiers>.
 newtype ModuleName = ModuleName {getModuleName :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -46,7 +46,7 @@ getModuleNameForError = Text.unpack . getModuleName
 'Attributes'.
 
 They correspond to the second, third and forth non-terminals of the @definition@
-syntactic category from <https://github.com/kframework/kore/blob/master/docs/kore-syntax.md#definition-modules kore-syntax#definition-modues>.
+syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#definition-modules kore-syntax#definition-modues>.
 -}
 data Module (sentence :: Type) = Module
     { moduleName :: !ModuleName

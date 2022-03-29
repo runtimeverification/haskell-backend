@@ -8,7 +8,7 @@ module Test.SMT (
     runNoSMT,
 ) where
 
-import qualified Control.Monad.Morph as Morph
+import Control.Monad.Morph qualified as Morph
 import Hedgehog
 import Log (
     runLoggerT,
@@ -18,7 +18,7 @@ import SMT (
     NoSMT,
     SMT,
  )
-import qualified SMT
+import SMT qualified
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Hedgehog

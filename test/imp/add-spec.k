@@ -1,15 +1,9 @@
 /*
 */
 
-module VERIFICATION
-  imports IMP
-
-  syntax Id ::= "sum" [token]
-endmodule
-
+requires "imp.k"
 
 module ADD-SPEC
-  imports VERIFICATION
   imports IMP
 
   claim

@@ -10,7 +10,7 @@ module Injection (
 import Control.Lens (
     Prism',
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Dynamic (
     Dynamic,
     Typeable,

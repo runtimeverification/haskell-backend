@@ -11,12 +11,12 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.58.0.0"; };
+      identifier = { name = "kore"; version = "0.60.0.0"; };
       license = "BSD-3-Clause";
       copyright = "2018-2021 Runtime Verification Inc";
       maintainer = "ana.pantilie@runtimeverification.com";
       author = "Runtime Verification Inc";
-      homepage = "https://github.com/kframework/kore#readme";
+      homepage = "https://github.com/runtimeverification/haskell-backend#readme";
       url = "";
       synopsis = "";
       description = "Please see the [README](README.md) file.";
@@ -36,6 +36,7 @@
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+          (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
@@ -71,7 +72,6 @@
           (hsPkgs."process" or (errorHandler.buildDepError "process"))
           (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
           (hsPkgs."recursion-schemes" or (errorHandler.buildDepError "recursion-schemes"))
-          (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
           (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
           (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
           (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
@@ -85,6 +85,10 @@
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
           (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
+          ];
+        build-tools = [
+          (hsPkgs.buildPackages.happy.components.exes.happy or (pkgs.buildPackages.happy or (errorHandler.buildToolDepError "happy:happy")))
+          (hsPkgs.buildPackages.alex.components.exes.alex or (pkgs.buildPackages.alex or (errorHandler.buildToolDepError "alex:alex")))
           ];
         buildable = true;
         modules = [
@@ -106,6 +110,7 @@
           "Kore/Attribute/Axiom"
           "Kore/Attribute/Axiom/Concrete"
           "Kore/Attribute/Axiom/Constructor"
+          "Kore/Attribute/Axiom/NonExecutable"
           "Kore/Attribute/Axiom/Symbolic"
           "Kore/Attribute/Axiom/Unit"
           "Kore/Attribute/Comm"
@@ -246,6 +251,7 @@
           "Kore/Log/DebugBeginClaim"
           "Kore/Log/DebugEvaluateCondition"
           "Kore/Log/DebugProven"
+          "Kore/Log/DebugRetrySolverQuery"
           "Kore/Log/DebugSolver"
           "Kore/Log/DebugSubstitutionSimplifier"
           "Kore/Log/DebugTransition"
@@ -259,7 +265,6 @@
           "Kore/Log/ErrorParse"
           "Kore/Log/ErrorRewriteLoop"
           "Kore/Log/ErrorRewritesInstantiation"
-          "Kore/Log/ErrorRuleMergeDuplicate"
           "Kore/Log/ErrorVerify"
           "Kore/Log/InfoAttemptUnification"
           "Kore/Log/InfoExecBreadth"
@@ -275,7 +280,7 @@
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnNotImplemented"
-          "Kore/Log/DebugRetrySolverQuery"
+          "Kore/Log/WarnRestartSolver"
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"
@@ -287,6 +292,7 @@
           "Kore/Parser"
           "Kore/Parser/CString"
           "Kore/Parser/Lexer"
+          "Kore/Parser/LexerWrapper"
           "Kore/Parser/Parser"
           "Kore/Parser/ParserUtils"
           "Kore/Reachability"
@@ -318,7 +324,6 @@
           "Kore/Rewrite/Result"
           "Kore/Rewrite/RewriteStep"
           "Kore/Rewrite/Rule"
-          "Kore/Rewrite/Rule/Combine"
           "Kore/Rewrite/Rule/Expand"
           "Kore/Rewrite/Rule/Simplify"
           "Kore/Rewrite/RulePattern"
@@ -380,7 +385,6 @@
           "Kore/Simplify/OverloadSimplifier"
           "Kore/Simplify/Pattern"
           "Kore/Simplify/Predicate"
-          "Kore/Simplify/Rule"
           "Kore/Simplify/SetVariable"
           "Kore/Simplify/SimplificationType"
           "Kore/Simplify/Simplify"
@@ -482,7 +486,6 @@
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
-            (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -565,7 +568,6 @@
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -629,6 +631,7 @@
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+            (hsPkgs."array" or (errorHandler.buildDepError "array"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
@@ -664,7 +667,6 @@
             (hsPkgs."process" or (errorHandler.buildDepError "process"))
             (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
             (hsPkgs."recursion-schemes" or (errorHandler.buildDepError "recursion-schemes"))
-            (hsPkgs."reflection" or (errorHandler.buildDepError "reflection"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
@@ -690,6 +692,8 @@
             (hsPkgs."tasty-test-reporter" or (errorHandler.buildDepError "tasty-test-reporter"))
             ];
           build-tools = [
+            (hsPkgs.buildPackages.happy.components.exes.happy or (pkgs.buildPackages.happy or (errorHandler.buildToolDepError "happy:happy")))
+            (hsPkgs.buildPackages.alex.components.exes.alex or (pkgs.buildPackages.alex or (errorHandler.buildToolDepError "alex:alex")))
             (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
@@ -716,6 +720,7 @@
             "Test/Kore/Attribute/Idem"
             "Test/Kore/Attribute/Injective"
             "Test/Kore/Attribute/Label"
+            "Test/Kore/Attribute/NonExecutable"
             "Test/Kore/Attribute/Overload"
             "Test/Kore/Attribute/Owise"
             "Test/Kore/Attribute/Parser"
@@ -803,6 +808,7 @@
             "Test/Kore/Repl/Graph"
             "Test/Kore/Repl/Interpreter"
             "Test/Kore/Repl/Parser"
+            "Test/Kore/Repl/ParserTest"
             "Test/Kore/Rewrite"
             "Test/Kore/Rewrite/AntiLeft"
             "Test/Kore/Rewrite/Axiom/EvaluationStrategy"
@@ -818,7 +824,6 @@
             "Test/Kore/Rewrite/Remainder"
             "Test/Kore/Rewrite/RewriteStep"
             "Test/Kore/Rewrite/Rule"
-            "Test/Kore/Rewrite/Rule/Combine"
             "Test/Kore/Rewrite/Rule/Common"
             "Test/Kore/Rewrite/Rule/Expand"
             "Test/Kore/Rewrite/Rule/Simplify"
@@ -865,7 +870,6 @@
             "Test/Kore/Simplify/Overloading"
             "Test/Kore/Simplify/Predicate"
             "Test/Kore/Simplify/Pattern"
-            "Test/Kore/Simplify/Rule"
             "Test/Kore/Simplify/StringLiteral"
             "Test/Kore/Simplify/SubstitutionSimplifier"
             "Test/Kore/Simplify/TermLike"

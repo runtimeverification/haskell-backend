@@ -22,7 +22,7 @@ module Kore.Reachability.Prove (
 import Control.DeepSeq (
     deepseq,
  )
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Control.Monad (
     (>=>),
  )
@@ -37,27 +37,27 @@ import Control.Monad.Except (
     ExceptT,
     runExceptT,
  )
-import qualified Control.Monad.Except as Monad.Except
+import Control.Monad.Except qualified as Monad.Except
 import Control.Monad.State.Strict (
     StateT,
     evalStateT,
     runStateT,
  )
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Graph.Inductive.Graph as Graph
+import Control.Monad.State.Strict qualified as State
+import Data.Graph.Inductive.Graph qualified as Graph
 import Data.Limit (
     Limit,
  )
-import qualified Data.Limit as Limit
+import Data.Limit qualified as Limit
 import Data.List.Extra (
     groupSortOn,
  )
 import Data.Text (
     Text,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Debug
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -65,11 +65,11 @@ import Kore.Internal.Conditional (
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
-import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     getMultiAndPredicate,
@@ -95,8 +95,8 @@ import Kore.Reachability.ClaimState (
     extractStuck,
     extractUnproven,
  )
-import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Reachability.Prim as Prim (
+import Kore.Reachability.ClaimState qualified as ClaimState
+import Kore.Reachability.Prim qualified as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
@@ -113,11 +113,11 @@ import Kore.Rewrite.Strategy (
     Strategy,
     executionHistoryStep,
  )
-import qualified Kore.Rewrite.Strategy as Strategy
+import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Kore.Unparser
@@ -127,12 +127,12 @@ import Log (
 import Logic (
     LogicT,
  )
-import qualified Logic
+import Logic qualified
 import Numeric.Natural (
     Natural,
  )
 import Prelude.Kore
-import qualified Pretty
+import Pretty qualified
 import Prof
 
 type CommonClaimState = ClaimState.ClaimState SomeClaim
@@ -514,7 +514,7 @@ checkStuckConfiguration rule prim proofState = do
                 [ "Found '\\not(\\ceil(_))' in stuck configuration:"
                 , Pretty.pretty rule'
                 , "Please file a bug report:\
-                  \ https://github.com/kframework/kore/issues"
+                  \ https://github.com/runtimeverification/haskell-backend/issues"
                 ]
     return proofState'
   where

@@ -1,10 +1,7 @@
-module VERIFICATION
-    imports TEST
-
-endmodule
+requires "test.k"
 
 module TEST-1-REPL-SCRIPT-SPEC
-    imports VERIFICATION
+    imports TEST
 
     claim a => f(c)
 

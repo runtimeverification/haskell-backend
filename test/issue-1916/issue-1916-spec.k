@@ -1,9 +1,7 @@
-module VERIFICATION
-  imports TEST
-endmodule
+requires "test.k"
 
 module ISSUE-1916-SPEC
-  imports VERIFICATION
+  imports TEST
 
   // Proving this claim requires that the right-hand side is simplified using
   // the conditions from the left-hand side.

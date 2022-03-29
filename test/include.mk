@@ -27,7 +27,6 @@ TESTS = \
 	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
-	$(wildcard $(TEST_DIR)/*.merge) \
 	$(wildcard $(TEST_DIR)/test-*.sh)
 
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
@@ -35,7 +34,6 @@ GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
 
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
-KPROVE_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KORE_EXEC_OPTS += \
 	$(if $(STORE_PROOFS),\
 		--save-proofs $(STORE_PROOFS),\
@@ -43,8 +41,8 @@ KORE_EXEC_OPTS += \
 			--save-proofs $(@:.out=.save-proofs.kore)\
 		)\
 	)
-KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
+KPROVE_SPEC_OPTS =
 
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
@@ -101,11 +99,11 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
-	@echo ">>>" $(CURDIR) "kprove" $<
+	@echo ">>>" $(CURDIR) "kprovex" $<
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
-	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) >$@ || true
+	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC_OPTS) $(KPROVE_SPEC) >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
 
@@ -130,16 +128,8 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### BMC
 
 %-bmc-spec.k.out: KPROVE = $(KBMC)
-%-bmc-spec.k.out: KPROVE_SPEC = --raw-spec $<
+%-bmc-spec.k.out: KPROVE_SPEC_OPTS = --raw-spec
 %-bmc-spec.k.out: KPROVE_OPTS += --depth $(KBMC_DEPTH)
-
-### MERGE
-
-%.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE)
-	@echo ">>>" $(CURDIR) "kore-exec --merge-rules" $<
-	rm -f $@
-	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
-	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SCRIPTS
 
@@ -153,11 +143,24 @@ test-%.sh.out: $(TEST_DIR)/test-%.sh
 
 test: test-k
 
+test-simplifierx: test-k-simplifierx
+
+test-k-simplifierx: KORE_EXEC_OPTS += --simplifierx
+test-k-simplifierx: KORE_REPL_OPTS += --simplifierx
+test-k-simplifierx: KORE_MATCH_DISJUNCTION_OPTS += --simplifierx
+test-k-simplifierx: KORE_CHECK_FUNCTIONS_OPTS += --simplifierx
+test-k-simplifierx: $(OUTS)
+
 test-k: $(OUTS)
+
+build-test: $(TEST_DEPS)
 
 golden: $(GOLDEN)
 
-clean:
-	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
+clean: clean-execution
+	rm -fr $(KOMPILED)
 
-.PHONY: test-k test golden clean
+clean-execution:
+	rm -fr $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
+
+.PHONY: test-k test-k-simplifierx test-simplifierx test golden clean clean-execution

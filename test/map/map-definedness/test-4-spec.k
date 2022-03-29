@@ -1,9 +1,7 @@
-module VERIFICATION
-  imports TEST
-endmodule
+requires "test.k"
 
 module TEST-4-SPEC
-  imports VERIFICATION
+  imports TEST
 
   claim
     <k> add(f(X), f(3)) => end </k>

@@ -7,11 +7,11 @@ module Test.Kore.Attribute.Overload (
     test_dont_ignore,
 ) where
 
-import qualified Data.Default as Default
-import qualified Data.Map.Strict as Map
+import Data.Default qualified as Default
+import Data.Map.Strict qualified as Map
 import Kore.Attribute.Overload
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Equation as Equation
+import Kore.Builtin qualified as Builtin
+import Kore.Equation qualified as Equation
 import Kore.Error
 import Kore.Internal.Symbol (
     applicationSorts,
@@ -20,7 +20,7 @@ import Kore.Internal.Symbol (
     toSymbolOrAlias,
  )
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
 import Kore.Rewrite.Axiom.Registry
 import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
@@ -38,7 +38,7 @@ import Test.Kore.Builtin.Definition (
     symbolDecl,
  )
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit
 

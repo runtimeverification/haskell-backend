@@ -1,9 +1,7 @@
-module VERIFICATION
-  imports SIMPLE-LISTS
-endmodule
+requires "simple-lists.k"
 
 module BROKEN-SPEC
-  imports VERIFICATION
+  imports SIMPLE-LISTS
 
   claim i1 i2 => d1 d2
 endmodule

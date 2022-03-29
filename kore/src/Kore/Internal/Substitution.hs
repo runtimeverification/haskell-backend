@@ -54,20 +54,20 @@ module Kore.Internal.Substitution (
     pattern UnorderedAssignment,
 ) where
 
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import ErrorContext
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Attribute (
+import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified (..),
  )
 import Kore.Debug
@@ -75,8 +75,8 @@ import Kore.Internal.Predicate (
     Predicate,
     pattern PredicateEquals,
  )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike (
@@ -84,7 +84,7 @@ import Kore.Internal.TermLike (
     mkVar,
     pattern Var_,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable
 import Kore.Substitute
 import Kore.TopBottom (
@@ -101,8 +101,8 @@ import Prelude.Kore hiding (
 import Pretty (
     Pretty,
  )
-import qualified Pretty
-import qualified SQL
+import Pretty qualified
+import SQL qualified
 
 data Assignment variable = Assignment_
     { assignedVariable :: !(SomeVariable variable)

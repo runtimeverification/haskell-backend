@@ -22,7 +22,7 @@ import Control.Monad.Trans.Reader (
 import Data.Kind (
     Type,
  )
-import qualified Kore.Simplify.Condition as ConditionSimplifier
+import Kore.Simplify.Condition qualified as ConditionSimplifier
 import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify (
     ConditionSimplifier (..),

@@ -1,10 +1,6 @@
-module VERIFICATION
-  imports PATH
-
-endmodule
+requires "path.k"
 
 module ALL-PATH-B-SPEC
-  imports VERIFICATION
   imports PATH
 
   // Everything is provable if I can reach a cycling rule

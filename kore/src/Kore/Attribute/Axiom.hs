@@ -26,6 +26,7 @@ module Kore.Attribute.Axiom (
     RuleIndex (..),
     RuleIndexCase (..),
     UniqueId (..),
+    NonExecutable (..),
     PriorityAttributes (..),
     axiomSymbolToSymbolOrAlias,
     mapAxiomVariables,
@@ -33,20 +34,21 @@ module Kore.Attribute.Axiom (
     getPriorityOfAxiom,
 ) where
 
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
+import Control.Lens qualified as Lens
+import Control.Monad qualified as Monad
 import Data.Default (
     Default (..),
  )
-import qualified Data.Default as Default
+import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Proxy
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Assoc
 import Kore.Attribute.Attributes
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
+import Kore.Attribute.Axiom.NonExecutable
 import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Axiom.Unit
 import Kore.Attribute.Comm
@@ -79,7 +81,7 @@ import Kore.Syntax.Variable hiding (
     Concrete,
  )
 import Prelude.Kore
-import qualified SQL
+import SQL qualified
 
 -- | Attributes specific to Kore axiom sentences.
 data Axiom symbol variable = Axiom
@@ -124,6 +126,8 @@ data Axiom symbol variable = Axiom
       uniqueId :: !UniqueId
     , -- | This is an owise evaluation rule.
       owise :: !Owise
+    , -- | Won't be used during execution.
+      nonExecutable :: !NonExecutable
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -155,6 +159,7 @@ instance Default (Axiom symbol variable) where
             , identifier = def
             , uniqueId = def
             , owise = def
+            , nonExecutable = def
             }
 
 instance
@@ -182,6 +187,7 @@ instance
                 , from . functional
                 , from . subsorts
                 , from . uniqueId
+                , from . nonExecutable
                 , from . owise
                 ]
 
@@ -237,6 +243,7 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=> typed @Functional (parseAttribute attr)
         Monad.>=> typed @Subsorts (parseAttribute attr)
         Monad.>=> typed @UniqueId (parseAttribute attr)
+        Monad.>=> typed @NonExecutable (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
 parseAxiomAttributes ::

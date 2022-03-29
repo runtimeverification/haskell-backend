@@ -10,25 +10,25 @@ module Kore.Internal.MultiExists (
     filterRelevant,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Sequence (
     Seq,
     (<|),
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Debug
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
+import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
     freeVariableNames,
     occursIn,
  )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Internal.Variable (
     ElementVariable,
     SomeVariable,
@@ -48,7 +48,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 {- | @MultiExists@ represents a pattern (type @child@) quantified by many
  variables (type @'ElementVariable' variable@), that is:

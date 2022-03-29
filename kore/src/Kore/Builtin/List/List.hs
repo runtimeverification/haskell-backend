@@ -27,23 +27,19 @@ module Kore.Builtin.List.List (
     updateAllKey,
 ) where
 
-import Data.Reflection (
-    Given,
- )
-import qualified Data.Reflection as Reflection
 import Data.Sequence (
     Seq,
  )
-import qualified Data.Sequence as Seq
+import Data.Sequence qualified as Seq
 import Data.String (
     IsString,
  )
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.Symbols as Builtin
-import qualified Kore.Error as Kore
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin.Symbols qualified as Builtin
+import Kore.Error qualified as Kore
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -54,7 +50,7 @@ import Kore.Internal.InternalList
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike
 import Prelude.Kore
 
@@ -96,16 +92,13 @@ See also: 'asPattern'
 -}
 asPattern ::
     ( InternalVariable variable
-    , Given (SmtMetadataTools Attribute.Symbol)
     ) =>
+    SmtMetadataTools Attribute.Symbol ->
     Sort ->
     Seq (TermLike variable) ->
     Pattern variable
-asPattern resultSort =
+asPattern tools resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
-  where
-    tools :: SmtMetadataTools Attribute.Symbol
-    tools = Reflection.given
 
 internalize ::
     InternalVariable variable =>

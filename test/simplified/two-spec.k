@@ -13,13 +13,11 @@
 // c(x) and x>0 => a(x) and x>0 => f(x) and x>0 == t(x) and x>0
 // d(x) and x<=0 => a(x) and x>0 => f(x) and x<=0 == t(x) and x<=0
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
+requires "simplified.k"
 
 module TWO-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

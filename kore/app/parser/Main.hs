@@ -5,22 +5,23 @@ import Control.Monad.Catch (
     SomeException,
     handle,
  )
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import GlobalMain
 import Kore.AST.ApplicativeKore
-import qualified Kore.Attribute.Symbol as Attribute (
+import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.Debug
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     toVerifiedDefinition,
  )
 import Kore.Log (
+    LoggerT,
     runLoggerT,
  )
-import qualified Kore.Log as Log
+import Kore.Log qualified as Log
 import Kore.Log.ErrorVerify (
     errorVerify,
  )
@@ -34,7 +35,7 @@ import Kore.Unparser as Unparser
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
-import qualified Kore.Validate.PatternVerifier as PatternVerifier
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Prelude.Kore
 import Pretty (
     putDoc,
@@ -77,7 +78,10 @@ main = handleTop $ do
             Nothing -- environment variable name for extra arguments
             parseKoreParserOptions
             parserInfoModifiers
-    for_ (localOptions options) $ \koreParserOptions -> runEmptyLogger $ do
+    for_ (localOptions options) (runEmptyLogger . mainWorker)
+  where
+    mainWorker :: LocalOptions KoreParserOptions -> LoggerT IO ()
+    mainWorker LocalOptions{execOptions = koreParserOptions} = do
         indexedModules <- do
             let KoreParserOptions{fileName} = koreParserOptions
             parsedDefinition <- mainDefinitionParse fileName

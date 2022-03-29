@@ -11,22 +11,21 @@ module Kore.Rewrite.SMT.Lemma (
     declareSMTLemmas,
 ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Comonad.Trans.Cofree qualified as Cofree
 import Control.Error (
     hoistMaybe,
     hush,
     runMaybeT,
  )
-import qualified Control.Lens as Lens
-import qualified Control.Monad.Counter as Counter
+import Control.Lens qualified as Lens
+import Control.Monad.Counter qualified as Counter
 import Control.Monad.Except
-import qualified Control.Monad.State as State
-import qualified Data.Functor.Foldable as Recursive
+import Control.Monad.State qualified as State
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
-import qualified Data.Map.Strict as Map
-import Data.Reflection
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Axiom as Attribute
+import Data.Map.Strict qualified as Map
+import Data.Text qualified as Text
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.SmtLemma
 import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
@@ -35,7 +34,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.SideCondition (
     top,
  )
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol qualified as Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
@@ -64,22 +63,19 @@ import SMT (
 -}
 declareSMTLemmas ::
     forall m.
-    ( Given (SmtMetadataTools StepperAttributes)
-    , MonadIO m
+    ( MonadIO m
     , MonadSMT m
     , MonadLog m
     ) =>
+    SmtMetadataTools StepperAttributes ->
     VerifiedModule StepperAttributes ->
     m ()
-declareSMTLemmas m = do
+declareSMTLemmas tools m = do
     declareSortsSymbols $ smtData tools
     mapM_ declareRule $ indexedModuleAxioms m
     isUnsatisfiable <- (Unsat ==) <$> SMT.check
     when isUnsatisfiable errorInconsistentDefinitions
   where
-    tools :: SmtMetadataTools StepperAttributes
-    tools = given
-
     declareRule ::
         ( Attribute.Axiom Internal.Symbol.Symbol VariableName
         , SentenceAxiom (TermLike VariableName)
@@ -94,14 +90,14 @@ declareSMTLemmas m = do
         (lemma, TranslatorState{terms, predicates}) <-
             oldAxiomEncoding
                 & wrapPredicate
-                & translatePredicateWith top translateUninterpreted
+                & translatePredicateWith tools top translateUninterpreted
                 & runTranslator
         addQuantifiers (Map.elems terms <> Map.elems predicates) lemma
             & SMT.assert
 
     -- Translate an "unparsed" equation for Z3.
     -- Convert new encoding back to old.
-    -- See https://github.com/kframework/k/pull/2061#issuecomment-927922217
+    -- See https://github.com/runtimeverification/k/pull/2061#issuecomment-927922217
     convert :: TermLike VariableName -> Maybe (TermLike VariableName)
     convert
         ( Implies_

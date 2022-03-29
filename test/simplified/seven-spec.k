@@ -21,13 +21,11 @@
 //    => g(s(x)) and x<=0
 //    ~= s(s(x)) and x<=0
 
-module VERIFICATION
-  imports SIMPLIFIED
-endmodule
+requires "simplified.k"
 
 module SEVEN-SPEC
 
-  imports VERIFICATION
+  imports SIMPLIFIED
 
   // test claim
   claim

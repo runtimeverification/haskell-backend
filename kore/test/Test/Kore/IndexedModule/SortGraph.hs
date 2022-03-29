@@ -4,15 +4,15 @@ module Test.Kore.IndexedModule.SortGraph (
     test_fromIndexedModule,
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Kore.Attribute.Subsort (
     subsortAttribute,
  )
-import qualified Kore.Builtin as Builtin
+import Kore.Builtin qualified as Builtin
 import Kore.Error (
     assertRight,
  )

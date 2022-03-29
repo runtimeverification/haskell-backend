@@ -1,9 +1,7 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
-requires "verification.k"
-
 
 module SUM-INVARIANT
-  imports VERIFICATION
+  imports IMP
 
   claim
     <k> loop => .K ... </k>

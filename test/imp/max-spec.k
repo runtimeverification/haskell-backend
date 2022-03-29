@@ -1,17 +1,9 @@
 /*
 */
 
-module VERIFICATION
-  imports IMP
-
-  syntax Id ::= "a" [token]
-  syntax Id ::= "b" [token]
-  syntax Id ::= "max" [token]
-endmodule
-
+requires "imp.k"
 
 module MAX-SPEC
-  imports VERIFICATION
   imports IMP
 
   claim

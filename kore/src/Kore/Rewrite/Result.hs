@@ -19,25 +19,25 @@ module Kore.Rewrite.Result (
     toAttemptedAxiom,
 ) where
 
-import qualified Control.Lens as Lens
+import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
 import Data.Sequence (
     Seq,
  )
-import qualified GHC.Generics as GHC
+import GHC.Generics qualified as GHC
 import Kore.Internal.MultiOr (
     MultiOr,
  )
-import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Rewrite.Transition (
     TransitionT,
  )
-import qualified Kore.Rewrite.Transition as Transition
+import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (AttemptedAxiomResults),

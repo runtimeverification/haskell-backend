@@ -10,11 +10,11 @@ module Kore.Log.DebugAppliedRewriteRules (
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
-import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.Pattern (
     Pattern,
  )
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable (
     VariableName,
     toVariableName,
@@ -26,7 +26,7 @@ import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import qualified Pretty
+import Pretty qualified
 
 data DebugAppliedRewriteRules = DebugAppliedRewriteRules
     { configuration :: Pattern VariableName

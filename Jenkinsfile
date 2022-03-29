@@ -37,7 +37,8 @@ pipeline {
       steps {
         sshagent(['rv-jenkins-github']) {
           sh '''
-            git remote set-url origin git@github.com:kframework/kore
+            git clone git@github.com:runtimeverification/haskell-backend.git kore-update-tests
+            cd kore-update-tests
             ./scripts/update-tests.sh
           '''
         }
@@ -92,7 +93,7 @@ pipeline {
                 JOBS = 2
               }
               options {
-                timeout(time: 48, unit: 'MINUTES')
+                timeout(time: 96, unit: 'MINUTES')
               }
               steps {
                 sh '''
@@ -105,10 +106,10 @@ pipeline {
         stage('Update K Submodules') {
           when { branch 'master' }
           steps {
-            build job: 'DevOps/master', propagate: false, wait: false                                   \
-                , parameters: [ booleanParam ( name: 'UPDATE_DEPS'         , value: true              ) \
-                              , string       ( name: 'UPDATE_DEPS_REPO'    , value: 'kframework/kore' ) \
-                              , string       ( name: 'UPDATE_DEPS_VERSION' , value: "${env.LONG_REV}" ) \
+            build job: 'DevOps/master', propagate: false, wait: false                                                       \
+                , parameters: [ booleanParam ( name: 'UPDATE_DEPS'         , value: true                                  ) \
+                              , string       ( name: 'UPDATE_DEPS_REPO'    , value: 'runtimeverification/haskell-backend' ) \
+                              , string       ( name: 'UPDATE_DEPS_VERSION' , value: "${env.LONG_REV}"                     ) \
                               ]
           }
         }
@@ -122,8 +123,8 @@ pipeline {
             sshagent(['rv-jenkins-github']) {
               dir('project-site') {
                 sh '''
-                  git clone 'ssh://github.com/kframework/kore.git'
-                  cd kore
+                  git clone 'ssh://github.com/runtimeverification/haskell-backend.git'
+                  cd haskell-backend
                   git checkout -B gh-pages origin/master
                   git submodule update --init --recursive -- ./web
                   cd web

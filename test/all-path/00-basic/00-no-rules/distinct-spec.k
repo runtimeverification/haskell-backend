@@ -1,10 +1,6 @@
-module VERIFICATION
-  imports PATH
-
-endmodule
+requires "path.k"
 
 module DISTINCT-SPEC
-  imports VERIFICATION
   imports PATH
 
   // should not be provable, as there is no axiom

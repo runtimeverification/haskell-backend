@@ -25,11 +25,11 @@ import Data.Char (
 import Data.Set (
     Set,
  )
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (
     Text,
  )
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Numeric (
     showHex,
     showOct,

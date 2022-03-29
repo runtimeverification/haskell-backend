@@ -2,23 +2,23 @@ module Test.Kore.Rewrite.Axiom.Registry (
     test_functionRegistry,
 ) where
 
-import qualified Data.Default as Default
-import qualified Data.Map.Strict as Map
+import Data.Default qualified as Default
+import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
-import qualified Kore.Attribute.Owise as Attribute
+import Kore.Attribute.Owise qualified as Attribute
 import Kore.Attribute.Priority (
     defaultPriority,
     owisePriority,
  )
-import qualified Kore.Attribute.Priority as Attribute
+import Kore.Attribute.Priority qualified as Attribute
 import Kore.Attribute.Simplification (
     simplificationAttribute,
  )
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
-import qualified Kore.Equation as Equation
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin qualified as Builtin
+import Kore.Equation qualified as Equation
 import Kore.Equation.Registry
 import Kore.Error (
     printError,
@@ -29,13 +29,13 @@ import Kore.IndexedModule.IndexedModule (
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools (
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-import qualified Kore.Rewrite.Axiom.Identifier as AxiomIdentifier (
+import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
 import Kore.Rewrite.Axiom.Registry
@@ -46,7 +46,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.Rule (
     extractRewriteAxioms,
  )
-import qualified Kore.Simplify.Pattern as Pattern
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify
 import Kore.Syntax.Definition hiding (
     Symbol,
@@ -55,7 +55,7 @@ import Kore.Validate.DefinitionVerifier
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.External
-import qualified Test.Kore.Rewrite.MockSymbols as Mock
+import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Kore.Validate.DefinitionVerifier
 import Test.Tasty (

@@ -12,7 +12,7 @@
 # > };
 #
 # Use `cleanGitSubtree` whenever possible to preserve the same source code
-# layout as the kframework/kore repository (to enable cache re-use).
+# layout as the runtimeverification/haskell-backend repository (to enable cache re-use).
 #
 , src ? null
 }:
@@ -95,8 +95,9 @@ let
       };
 
       # Change the compiler when updating our own resolver.
-      compiler-nix-name = "ghc8104";
-      index-state = "2021-02-09T00:00:00Z";
+      compiler-nix-name = "ghc8107";
+      ghcVersion = "8.10.7";
+      index-state = "2021-12-03T00:00:00Z";
     };
 
 in default

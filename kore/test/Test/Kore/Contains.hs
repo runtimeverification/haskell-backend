@@ -5,14 +5,14 @@ module Test.Kore.Contains (
 import Data.Map.Strict (
     Map,
  )
-import qualified Data.Map.Strict as Map
-import qualified Kore.Rewrite.SMT.AST as AST (
+import Data.Map.Strict qualified as Map
+import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Sort,
     Symbol,
  )
-import qualified Kore.Rewrite.SMT.AST as AST.DoNotUse
-import qualified Kore.Syntax.Id as Kore (
+import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
+import Kore.Syntax.Id qualified as Kore (
     Id,
  )
 import Prelude.Kore
