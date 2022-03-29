@@ -580,18 +580,16 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
     exitWith exitCode
   where
     KoreExecOptions{koreLogOptions} = execOptions
+
+    -- Display the proof's depth if the flag '--execute-to-branch' was given
     branchingDepth :: KoreLogOptions -> KoreLogOptions
-    branchingDepth
-        logOpts@KoreLogOptions{logEntries = entries}
-            | KoreExecOptions
-                { koreProveOptions =
-                    Just (KoreProveOptions{finalNodeType = LeafOrBranching})
-                } <-
-                execOptions =
-                logOpts
-                    { logEntries =
-                        Set.insert (someTypeRep (Proxy @InfoProofDepth)) entries
-                    }
+    branchingDepth logOpts
+        | Just (KoreProveOptions{finalNodeType = LeafOrBranching}) <-
+            (execOptions & Lens.view (field @"koreProveOptions")) =
+            logOpts
+                & Lens.over
+                    (field @"logEntries")
+                    (Set.insert (someTypeRep $ Proxy @InfoProofDepth))
     branchingDepth logOpts = logOpts
 
     handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
