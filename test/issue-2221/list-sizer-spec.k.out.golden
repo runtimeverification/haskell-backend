@@ -14,7 +14,7 @@
   }
 #And
   {
-    _0
+    _Gen0
   #Equals
     _E .MyList
   }

@@ -36,6 +36,7 @@ module Kore.Rewrite.Strategy (
     unfoldSearchOrder,
     unfoldTransition,
     GraphSearchOrder (..),
+    FinalNodeType (..),
     constructExecutionGraph,
     ExecutionGraph (..),
     insNode,
@@ -372,6 +373,8 @@ newtype LimitExceeded a = LimitExceeded (Seq a)
 
 instance (Show a, Typeable a) => Exception (LimitExceeded a)
 
+data FinalNodeType = Leaf | LeafOrBranching deriving stock (Eq)
+
 updateGraph ::
     forall instr config rule m.
     MonadState (ExecutionGraph config rule) m =>
@@ -450,6 +453,9 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
 @leavesM@ returns a disjunction of leaves (vertices without descendants) rather
 than constructing the entire graph.
 
+If the flag '--execute-to-branch' is given, branching nodes are also treated
+as leaves
+
 The queue updating function should be 'unfoldBreadthFirst' or
 'unfoldDepthFirst', optionally composed with 'applyBreadthLimit'.
 -}
@@ -457,6 +463,7 @@ leavesM ::
     forall m a.
     Monad m =>
     Alternative m =>
+    FinalNodeType ->
     -- | queue updating function
     ([a] -> Seq a -> m (Seq a)) ->
     -- | unfolding function
@@ -464,16 +471,19 @@ leavesM ::
     -- | initial vertex
     a ->
     m a
-leavesM mkQueue next a0 =
+leavesM finalNodeType mkQueue next a0 =
     mkQueue [a0] Seq.empty >>= worker
   where
     worker Seq.Empty = empty
     worker (a Seq.:<| as) =
-        do
+        ( do
             as' <- lift (next a)
-            (guard . not) (null as')
+            (guard . not) (null as' || needToStopOnBranching as')
             lift (mkQueue as' as)
+        )
             & maybeT (return a <|> worker as) worker
+    needToStopOnBranching as' =
+        finalNodeType == LeafOrBranching && (length as' > 1)
 
 {- | Unfold the function from the initial vertex.
 
