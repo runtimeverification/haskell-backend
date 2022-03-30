@@ -28,10 +28,10 @@ import Kore.Rewrite.SMT.AST qualified as AST (
     Symbol (Symbol),
     symbolSmtFromSortArgs,
  )
+import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
 import Kore.Rewrite.SMT.Representation.Sorts qualified as AST (
     sortSmtFromSortArgs,
  )
-import Kore.Rewrite.SMT.AST qualified as AST.DoNotUse
 import Kore.Sort (
     Sort (SortActualSort, SortVariableSort),
     SortActual (SortActual, sortActualName, sortActualSorts),
