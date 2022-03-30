@@ -20,6 +20,8 @@ import Data.Limit (
 import Data.List (
     intercalate,
  )
+import Data.Proxy
+import Data.Set.Internal qualified as Set
 import Data.Text (
     unpack,
  )
@@ -60,6 +62,7 @@ import Kore.Log (
 import Kore.Log.ErrorException (
     handleSomeException,
  )
+import Kore.Log.InfoProofDepth
 import Kore.Log.WarnBoundedModelChecker (
     warnBoundedModelChecker,
  )
@@ -91,6 +94,7 @@ import Kore.Rewrite.Search (
  )
 import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
+    FinalNodeType (..),
     GraphSearchOrder (..),
  )
 import Kore.Syntax.Definition (
@@ -168,6 +172,9 @@ import System.FilePath (
 import System.IO (
     IOMode (WriteMode),
     withFile,
+ )
+import Type.Reflection (
+    someTypeRep,
  )
 
 {-
@@ -404,6 +411,7 @@ unparseKoreProveOptions
             graphSearch
             bmc
             saveProofs
+            finalNodeType
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -413,6 +421,7 @@ unparseKoreProveOptions
             ]
         , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
+        , if finalNodeType == LeafOrBranching then "--execute-to-branch" else ""
         ]
 
 koreExecSh :: KoreExecOptions -> String
@@ -558,7 +567,9 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                 mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
                     & handle handleWithConfiguration
                     & handle handleSomeException
-                    & runKoreLog tmpDir koreLogOptions
+                    & runKoreLog
+                        tmpDir
+                        (branchingDepth koreLogOptions)
             case outputFileName of
                 Nothing -> readFile (tmpDir </> "result.kore") >>= putStr
                 Just fileName -> copyFile (tmpDir </> "result.kore") fileName
@@ -569,6 +580,17 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
     exitWith exitCode
   where
     KoreExecOptions{koreLogOptions} = execOptions
+
+    -- Display the proof's depth if the flag '--execute-to-branch' was given
+    branchingDepth :: KoreLogOptions -> KoreLogOptions
+    branchingDepth logOpts
+        | Just (KoreProveOptions{finalNodeType = LeafOrBranching}) <-
+            execOptions & Lens.view (field @"koreProveOptions") =
+            logOpts
+                & Lens.over
+                    (field @"logEntries")
+                    (Set.insert (someTypeRep $ Proxy @InfoProofDepth))
+    branchingDepth logOpts = logOpts
 
     handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
     handleWithConfiguration
@@ -669,13 +691,14 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{maxCounterexamples} = execOptions
     proveResult <- execute execOptions mainModule' $ do
         let KoreExecOptions{breadthLimit, depthLimit} = execOptions
-            KoreProveOptions{graphSearch} = proveOptions
+            KoreProveOptions{graphSearch, finalNodeType} = proveOptions
         prove
             simplifierx
             graphSearch
             breadthLimit
             depthLimit
             maxCounterexamples
+            finalNodeType
             mainModule'
             specModule
             maybeAlreadyProvenModule

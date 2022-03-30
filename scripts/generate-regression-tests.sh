@@ -23,7 +23,7 @@ kollect-file() {
 
 build-evm() {
     cd $KORE
-    git clone git@github.com:kframework/evm-semantics.git
+    git clone git@github.com:runtimeverification/evm-semantics.git
     cd evm-semantics
     git submodule update --init --recursive
     make plugin-deps
@@ -33,7 +33,7 @@ build-evm() {
 
 build-wasm() {
     cd $KORE
-    git clone git@github.com:kframework/wasm-semantics.git
+    git clone git@github.com:runtimeverification/wasm-semantics.git
     cd wasm-semantics
     git submodule update --init --recursive
     make build-haskell
