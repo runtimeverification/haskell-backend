@@ -10,6 +10,7 @@ module Test.Kore.IndexedModule.MockMetadataTools (
 ) where
 
 import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -21,6 +22,8 @@ import Kore.Attribute.Sort.Constructors qualified as Attribute (
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol
 import Kore.IndexedModule.MetadataTools (
+    ExtractSyntax (..),
+    MetadataSyntaxData (..),
     MetadataTools (MetadataTools),
     SmtMetadataTools,
  )
@@ -44,8 +47,27 @@ import Kore.Syntax.Id (
  )
 import Prelude.Kore
 
+data MockSyntaxData attributes = MockSyntaxData
+    { sortAttributes :: [(Sort, Attribute.Sort)]
+    , applicationSorts :: [(SymbolOrAlias, ApplicationSorts)]
+    , symbolAttributes :: [(SymbolOrAlias, attributes)]
+    }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+
+instance ExtractSyntax MockSyntaxData where
+    extractSortAttributes sdata = caseBasedFunction $ sortAttributes sdata
+    extractApplicationSorts sdata = caseBasedFunction $ applicationSorts sdata
+    extractSymbolAttributes sdata =
+        caseBasedFunction
+            ( map
+                ( \(SymbolOrAlias{symbolOrAliasConstructor}, a) ->
+                    (symbolOrAliasConstructor, a)
+                )
+                (symbolAttributes sdata)
+            )
+
 makeMetadataTools ::
-    HasCallStack =>
     [(SymbolOrAlias, StepperAttributes)] ->
     [(Sort, Attribute.Sort)] ->
     [(SymbolOrAlias, ApplicationSorts)] ->
@@ -54,19 +76,16 @@ makeMetadataTools ::
     SmtMetadataTools StepperAttributes
 makeMetadataTools attr sortTypes sorts declarations sortConstructors =
     MetadataTools
-        { sortAttributes = caseBasedFunction sortTypes
-        , -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
-          -- 'isSubsortOf' only work with direct (non-transitive) relationships.
-          -- For now, we can manually add the relationships for tests.
-          applicationSorts = caseBasedFunction sorts
-        , symbolAttributes =
-            caseBasedFunction
-                ( map
-                    ( \(SymbolOrAlias{symbolOrAliasConstructor}, a) ->
-                        (symbolOrAliasConstructor, a)
-                    )
-                    attr
-                )
+        { syntax =
+            MetadataSyntaxDataExtension $
+                MockSyntaxData
+                    { sortAttributes = sortTypes
+                    , -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
+                      -- 'isSubsortOf' only work with direct (non-transitive) relationships.
+                      -- For now, we can manually add the relationships for tests.
+                      applicationSorts = sorts
+                    , symbolAttributes = attr
+                    }
         , smtData = declarations
         , sortConstructors
         }

@@ -72,7 +72,7 @@ import Kore.Attribute.Symbol qualified as Attribute (
  )
 import Kore.Builtin qualified as Builtin
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule (indexedModuleAxioms),
+    IndexedModule (indexedModuleAxioms, indexedModuleSyntax),
     VerifiedModule,
  )
 import Kore.Internal.Conditional (Conditional (..))
@@ -418,7 +418,7 @@ mainPatternVerify verifiedModule patt = do
     either errorVerify return verifyResult
   where
     context =
-        PatternVerifier.verifiedModuleContext verifiedModule
+        PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
 lookupMainModule ::

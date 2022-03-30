@@ -212,7 +212,7 @@ verifyPattern expectedSort termLike =
         verifyStandalonePattern expectedSort parsedPattern
   where
     context =
-        PatternVerifier.verifiedModuleContext verifiedModule
+        PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
     parsedPattern = externalize termLike
 
@@ -225,7 +225,7 @@ testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
-testEvaluators = Builtin.koreEvaluators verifiedModule
+testEvaluators = Builtin.koreEvaluators $ indexedModuleSyntax verifiedModule
 
 testSortGraph :: SortGraph.SortGraph
 testSortGraph = SortGraph.fromIndexedModule verifiedModule

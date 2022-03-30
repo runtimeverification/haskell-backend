@@ -2031,7 +2031,7 @@ testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
-testEvaluators = Builtin.koreEvaluators verifiedModule
+testEvaluators = Builtin.koreEvaluators $ indexedModuleSyntax verifiedModule
 
 testInjSimplifier :: InjSimplifier
 testInjSimplifier =
