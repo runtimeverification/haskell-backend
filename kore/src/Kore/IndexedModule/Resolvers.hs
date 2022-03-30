@@ -262,7 +262,10 @@ resolveHook indexedModule builtinName builtinSort =
             resolveHooks indexedModule builtinName
   where
     relevant name =
-        involvesSort (indexedModuleSyntax indexedModule) builtinSort (SymbolOrAlias name [])
+        involvesSort
+            (indexedModuleSyntax indexedModule)
+            builtinSort
+            (SymbolOrAlias name [])
 
 involvesSort ::
     IndexedModuleSyntax patternType declAtts ->

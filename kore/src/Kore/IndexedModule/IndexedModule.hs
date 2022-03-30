@@ -166,14 +166,16 @@ recursiveIndexedModuleSortDescriptions ::
     IndexedModule pat declAtts axiomAtts ->
     Map.Map Id (Attribute.Sort, SentenceSort)
 recursiveIndexedModuleSortDescriptions =
-    recursiveIndexedModuleStuff (indexedModuleSortDescriptions . indexedModuleSyntax)
+    recursiveIndexedModuleStuff
+        (indexedModuleSortDescriptions . indexedModuleSyntax)
 
 recursiveIndexedModuleSymbolSentences ::
     forall pat axiomAtts.
     IndexedModule pat Attribute.Symbol axiomAtts ->
     Map.Map Id (Attribute.Symbol, SentenceSymbol)
 recursiveIndexedModuleSymbolSentences =
-    recursiveIndexedModuleStuff (indexedModuleSymbolSentences . indexedModuleSyntax)
+    recursiveIndexedModuleStuff
+        (indexedModuleSymbolSentences . indexedModuleSyntax)
 
 recursiveIndexedModuleAxioms ::
     forall pat declAtts axiomAtts.
