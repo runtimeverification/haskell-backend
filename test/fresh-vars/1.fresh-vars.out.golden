@@ -1,3 +1,3 @@
 <k>
-  ?_0:Int +Int ( ?_1:Int +Int ?_2:Int ) ~> .
+  ?_Gen0:Int +Int ( ?_Gen1:Int +Int ?_Gen2:Int ) ~> .
 </k>

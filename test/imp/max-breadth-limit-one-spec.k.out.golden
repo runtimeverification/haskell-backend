@@ -7,7 +7,7 @@
       <state>
         a |-> A:Int
         b |-> B:Int
-        max |-> _0
+        max |-> _Gen0
       </state>
     </T>
   #And
@@ -26,7 +26,7 @@
       <state>
         a |-> A:Int
         b |-> B:Int
-        max |-> _0
+        max |-> _Gen0
       </state>
     </T>
   #And

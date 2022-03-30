@@ -1,8 +1,8 @@
-  #Not ( #Exists _0 . #Exists S . {
+  #Not ( #Exists _Gen0 . #Exists S . {
     keys ( _M )
   #Equals
     S
-    SetItem ( _0 )
+    SetItem ( _Gen0 )
   } )
 #And
   #Not ( {
