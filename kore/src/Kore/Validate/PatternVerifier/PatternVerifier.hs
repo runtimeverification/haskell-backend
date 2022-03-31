@@ -48,7 +48,6 @@ import Data.Set (
  )
 import GHC.Generics qualified as GHC
 import Kore.AST.Error
-import Kore.Attribute.Null qualified as Attribute
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -109,21 +108,19 @@ data Context = Context
       declaredSortVariables :: !(Set SortVariable)
     , -- | The indexed Kore module containing all definitions in scope.
       indexedModule ::
-        !(IndexedModule Verified.Pattern Attribute.Symbol Attribute.Null)
+        !(IndexedModuleSyntax Verified.Pattern Attribute.Symbol)
     , patternVerifierHook :: !PatternVerifierHook
     }
     deriving stock (GHC.Generic)
 
-verifiedModuleContext :: VerifiedModule Attribute.Symbol -> Context
-verifiedModuleContext verifiedModule =
+verifiedModuleContext :: VerifiedModuleSyntax Attribute.Symbol -> Context
+verifiedModuleContext indexedModule =
     Context
         { declaredVariables = mempty
         , declaredSortVariables = mempty
         , indexedModule
         , patternVerifierHook = mempty
         }
-  where
-    indexedModule = eraseAxiomAttributes verifiedModule
 
 newtype PatternVerifier a = PatternVerifier
     {getPatternVerifier :: ReaderT Context (Either (Error VerifyError)) a}

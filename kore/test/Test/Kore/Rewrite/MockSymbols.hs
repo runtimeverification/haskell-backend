@@ -2262,7 +2262,7 @@ emptyMetadataTools =
         emptySmtDeclarations
         Map.empty -- sortConstructors
 
-metadataTools :: HasCallStack => SmtMetadataTools Attribute.Symbol
+metadataTools :: SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping

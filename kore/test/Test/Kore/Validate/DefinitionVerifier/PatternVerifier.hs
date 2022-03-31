@@ -14,6 +14,9 @@ import Kore.Error
 import Kore.IndexedModule.Error (
     noSort,
  )
+import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
+ )
 import Kore.Internal.TermLike qualified as Internal
 import Kore.Syntax
 import Kore.Syntax.Definition
@@ -717,7 +720,7 @@ test_verifyBinder =
     , testVerifyForall
     ]
   where
-    context = PatternVerifier.verifiedModuleContext Builtin.verifiedModule
+    context = PatternVerifier.verifiedModuleContext $ indexedModuleSyntax Builtin.verifiedModule
     testVerifyBinder name expect =
         testCase name $ do
             let original = externalize expect

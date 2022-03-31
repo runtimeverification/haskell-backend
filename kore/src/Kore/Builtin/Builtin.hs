@@ -75,10 +75,10 @@ import Kore.Error (
  )
 import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
     VerifiedModule,
  )
 import Kore.IndexedModule.MetadataTools (
-    MetadataTools (MetadataTools),
     SmtMetadataTools,
  )
 import Kore.IndexedModule.MetadataTools qualified as MetadataTools
@@ -341,7 +341,9 @@ lookupSymbol builtinName builtinSort indexedModule = do
     symbolConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
     (symbolAttributes, sentenceSymbol) <-
-        IndexedModule.resolveSymbol indexedModule symbolConstructor
+        IndexedModule.resolveSymbol
+            (indexedModuleSyntax indexedModule)
+            symbolConstructor
     symbolSorts <- symbolOrAliasSorts [] sentenceSymbol
     return
         Symbol
@@ -477,7 +479,7 @@ isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
     | SortVariableSort _ <- sort = Nothing
     | otherwise =
-        let MetadataTools{sortAttributes} = tools
+        let sortAttributes = MetadataTools.sortAttributes tools
             Attribute.Sort{hook} = sortAttributes sort
          in Just (getHook hook == Just builtinName)
 

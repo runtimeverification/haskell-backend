@@ -137,11 +137,16 @@ verifyImport sentence =
         let importName = sentenceImportModuleName sentence
         verified <- lift $ verifyModule importName
         State.modify' $ addImport verified attrs1 attrs0
+        State.modify' $ addImportSyntax verified attrs1 attrs0
   where
     addImport verified attrs1 attrs0 =
         Lens.over
             (field @"indexedModuleImports")
             ((attrs1, attrs0, verified) :)
+    addImportSyntax verified attrs1 attrs0 =
+        Lens.over
+            (field @"indexedModuleSyntax" . field @"indexedModuleImportsSyntax")
+            ((attrs1, attrs0, indexedModuleSyntax verified) :)
 
 parseAttributes' ::
     forall attrs error e.
