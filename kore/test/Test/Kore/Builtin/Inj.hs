@@ -8,6 +8,9 @@ import Kore.Builtin.Verifiers
 import Kore.Error (
     assertRight,
  )
+import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
+ )
 import Kore.Internal.TermLike
 import Kore.Unparser (
     unparse,
@@ -29,7 +32,7 @@ import Test.Tasty.HUnit.Ext
 test_patternVerifierHook :: [TestTree]
 test_patternVerifierHook =
     [ testCase "patternVerifierHook" $ do
-        let context = verifiedModuleContext verifiedModule
+        let context = verifiedModuleContext (indexedModuleSyntax verifiedModule)
             actual =
                 assertRight
                     . runPatternVerifier context
@@ -38,7 +41,7 @@ test_patternVerifierHook =
         assertEqual (message actual) expect actual
     , testCase "verifyStandalonePattern" $ do
         let context =
-                verifiedModuleContext verifiedModule
+                verifiedModuleContext (indexedModuleSyntax verifiedModule)
                     & withBuiltinVerifiers Builtin.koreVerifiers
             actual =
                 assertRight

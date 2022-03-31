@@ -9,10 +9,15 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools (
+    ExtractSyntax (..),
     MetadataTools (..),
+    MetadataSyntaxData (..),
     SmtMetadataTools,
     extractMetadataTools,
     findSortConstructors,
+    sortAttributes,
+    applicationSorts,
+    symbolAttributes,
 ) where
 
 import Data.Map.Strict (
@@ -25,7 +30,9 @@ import Kore.Attribute.Sort.Constructors qualified as Attribute (
  )
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
-import Kore.Internal.ApplicationSorts
+import Kore.Internal.ApplicationSorts hiding (
+    applicationSorts,
+ )
 import Kore.Rewrite.SMT.AST qualified as SMT.AST (
     SmtDeclarations,
  )
@@ -35,22 +42,41 @@ import Kore.Syntax.Application (
  )
 import Prelude.Kore
 
+class ExtractSyntax a where
+    extractSortAttributes :: a attributes -> Sort -> Attribute.Sort
+    extractApplicationSorts :: a attributes -> SymbolOrAlias -> ApplicationSorts
+    extractSymbolAttributes :: a attributes -> Id -> attributes
+
+instance ExtractSyntax VerifiedModuleSyntax where
+    extractSortAttributes = getSortAttributes
+    extractApplicationSorts = getHeadApplicationSorts
+    extractSymbolAttributes = getSymbolAttributes
+
+data MetadataSyntaxData attributes
+    = MetadataSyntaxData (VerifiedModuleSyntax attributes)
+    | forall syntaxData.
+        ( ExtractSyntax syntaxData
+        ) =>
+      MetadataSyntaxDataExtension (syntaxData attributes)
+
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
+
+We do not derive Functor on this type because it is not currently possible
+to guarantee that the type the Functor is mapping to will implement
+NFData. If you need to implement Functor here, your best bet is to replace
+the NFData constraint in MetadataSyntaxData with a Typeable constraint and
+modify the NFData instance so that it uses Typeable to check that the type
+it contains has an NFData instance.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
-    { -- | get the attributes of a sort
-      sortAttributes :: Sort -> Attribute.Sort
-    , -- | Sorts for a specific symbol application.
-      applicationSorts :: SymbolOrAlias -> ApplicationSorts
-    , -- | get the attributes of a symbol
-      symbolAttributes :: Id -> attributes
+    { -- | syntax of module
+      syntax :: MetadataSyntaxData attributes
     , -- | The SMT data for the given module.
       smtData :: smt
     , -- | The constructors for each sort.
       sortConstructors :: Map Id sortConstructors
     }
-    deriving stock (Functor)
 
 type SmtMetadataTools attributes =
     MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
@@ -68,9 +94,7 @@ extractMetadataTools ::
     MetadataTools sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
-        { sortAttributes = getSortAttributes m
-        , applicationSorts = getHeadApplicationSorts m
-        , symbolAttributes = getSymbolAttributes m
+        { syntax = MetadataSyntaxData $ indexedModuleSyntax m
         , smtData = smtExtractor m constructors
         , sortConstructors = constructors
         }
@@ -90,3 +114,30 @@ findSortConstructors
     MetadataTools{sortConstructors}
     sortId =
         Map.lookup sortId sortConstructors
+
+sortAttributes ::
+    MetadataTools sortConstructors smt attributes ->
+    Sort ->
+    Attribute.Sort
+sortAttributes MetadataTools{syntax = MetadataSyntaxData sdata} s =
+    extractSortAttributes sdata s
+sortAttributes MetadataTools{syntax = MetadataSyntaxDataExtension sdata} s =
+    extractSortAttributes sdata s
+
+applicationSorts ::
+    MetadataTools sortConstructors smt attributes ->
+    SymbolOrAlias ->
+    ApplicationSorts
+applicationSorts MetadataTools{syntax = MetadataSyntaxData sdata} s =
+    extractApplicationSorts sdata s
+applicationSorts MetadataTools{syntax = MetadataSyntaxDataExtension sdata} s =
+    extractApplicationSorts sdata s
+
+symbolAttributes ::
+    MetadataTools sortConstructors smt attributes ->
+    Id ->
+    attributes
+symbolAttributes MetadataTools{syntax = MetadataSyntaxData sdata} s =
+    extractSymbolAttributes sdata s
+symbolAttributes MetadataTools{syntax = MetadataSyntaxDataExtension sdata} s =
+    extractSymbolAttributes sdata s

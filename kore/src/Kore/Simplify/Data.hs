@@ -40,6 +40,7 @@ import Kore.Attribute.Symbol qualified as Attribute (
 import Kore.Builtin qualified as Builtin
 import Kore.Equation qualified as Equation
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
     VerifiedModule,
  )
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
@@ -272,7 +273,7 @@ evalSimplifier simplifierXSwitch verifiedModule simplifier = do
             userEvaluators = mkEvaluatorRegistry equations
             builtinEvaluators =
                 Axiom.EvaluationStrategy.builtinEvaluation
-                    <$> Builtin.koreEvaluators verifiedModule'
+                    <$> Builtin.koreEvaluators (indexedModuleSyntax verifiedModule')
             simplifierAxioms =
                 {-# SCC "evalSimplifier/simplifierAxioms" #-}
                 Map.unionWith

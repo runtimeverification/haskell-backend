@@ -65,6 +65,7 @@ import Kore.Equation qualified as Equation (
     requires,
  )
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
     VerifiedModule,
  )
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
@@ -357,7 +358,9 @@ getExitCode
                 | otherwise -> ExitFailure (fromInteger exit)
             _ -> ExitFailure 111
 
-        resolve = resolveInternalSymbol indexedModule . noLocationId
+        resolve =
+            resolveInternalSymbol (indexedModuleSyntax indexedModule)
+                . noLocationId
 
         takeExitCode ::
             (([Sort] -> Symbol) -> simplifier ExitCode) ->

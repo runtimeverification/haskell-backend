@@ -173,6 +173,9 @@ testIndexedObjectModule =
     fromMaybe (error $ "Missing module: " ++ show testObjectModuleName) $
         Map.lookup testObjectModuleName indexedModules
 
+testIndexedModuleSyntax :: VerifiedModuleSyntax Attribute.Symbol
+testIndexedModuleSyntax = indexedModuleSyntax testIndexedModule
+
 test_resolvers :: [TestTree]
 test_resolvers =
     [ testCase
@@ -188,7 +191,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveSort testIndexedModule (testId "s1" :: Id))
+            (resolveSort testIndexedModuleSyntax (testId "s1" :: Id))
         )
     , testCase
         "meta sort"
@@ -203,7 +206,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveSort testIndexedModule stringMetaId)
+            (resolveSort testIndexedModuleSyntax stringMetaId)
         )
     , testCase
         "object symbol"
@@ -220,7 +223,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveSymbol testIndexedModule (testId "a" :: Id))
+            (resolveSymbol testIndexedModuleSyntax (testId "a" :: Id))
         )
     , testCase
         "meta symbol"
@@ -236,7 +239,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveSymbol testIndexedModule (testId "#a" :: Id))
+            (resolveSymbol testIndexedModuleSyntax (testId "#a" :: Id))
         )
     , testCase
         "object alias"
@@ -269,7 +272,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveAlias testIndexedModule (testId "b" :: Id))
+            (resolveAlias testIndexedModuleSyntax (testId "b" :: Id))
         )
     , testCase
         "meta alias"
@@ -302,7 +305,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveAlias testIndexedModule (testId "#b" :: Id))
+            (resolveAlias testIndexedModuleSyntax (testId "#b" :: Id))
         )
     , testCase
         "symbol getHeadApplicationSorts"
@@ -313,7 +316,7 @@ test_resolvers =
                 , applicationSortsResult = objectS1
                 }
             ( getHeadApplicationSorts
-                testIndexedModule
+                testIndexedModuleSyntax
                 (getSentenceSymbolOrAliasHead objectA [])
             )
         )
@@ -326,7 +329,7 @@ test_resolvers =
                 , applicationSortsResult = objectS1
                 }
             ( getHeadApplicationSorts
-                testIndexedModule
+                testIndexedModuleSyntax
                 (getSentenceSymbolOrAliasHead objectB [])
             )
         )
@@ -356,7 +359,7 @@ test_resolver_undefined_messages =
     produces_ resolver formatter =
         checkLeftOf_ (run resolver) (checkWith formatter)
     run resolver =
-        resolver testIndexedModule (testId "#anyOldId" :: Id)
+        resolver testIndexedModuleSyntax (testId "#anyOldId" :: Id)
     checkWith formatter =
         assertError_ ["(<test data>)"] $ formatter "#anyOldId"
 
