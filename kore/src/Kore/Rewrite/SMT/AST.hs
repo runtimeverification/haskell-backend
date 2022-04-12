@@ -17,7 +17,7 @@ module Kore.Rewrite.SMT.AST (
     SmtSymbol,
     Sort (..),
     SortReference (..),
-    SortSExprFactory (..),
+    SortSExprSpec (..),
     Symbol (..),
     SymbolReference (..),
     UnresolvedConstructor,
@@ -73,7 +73,7 @@ data Sort sort symbol name = Sort
       -- an S-expression that can be used, say, when declaring symbols of
       -- that sort.
       sortData ::
-        SortSExprFactory
+        SortSExprSpec
     , -- | Information needed for declaring the sort, also listing all
       -- dependencies on other sorts and symbols.
       sortDeclaration :: !(KoreSortDeclaration sort symbol name)
@@ -93,7 +93,7 @@ instance
                     ++ show sortDeclaration
                     ++ "}"
 
-data SortSExprFactory
+data SortSExprSpec
     = EmptySortArgsToSmt AST.SExpr
     | ApplyToArgs AST.SExpr
     | ConstSExpr AST.SExpr
@@ -101,7 +101,7 @@ data SortSExprFactory
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
-instance Diff SortSExprFactory where
+instance Diff SortSExprSpec where
     diffPrec = diffPrecIgnore
 
 {- | A representation of the Kore SymbolOrAlias type together with symbol

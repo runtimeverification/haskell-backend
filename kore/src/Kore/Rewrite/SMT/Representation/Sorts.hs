@@ -258,7 +258,7 @@ simpleSortDeclaration
         encodedName = AST.encodable sentenceSortName
 simpleSortDeclaration _ = Nothing
 
-sortSmtFromSortArgs :: AST.SortSExprFactory -> Map Kore.Id AST.SmtSort -> [Kore.Sort] -> Maybe SMT.SExpr
+sortSmtFromSortArgs :: AST.SortSExprSpec -> Map Kore.Id AST.SmtSort -> [Kore.Sort] -> Maybe SMT.SExpr
 sortSmtFromSortArgs (AST.EmptySortArgsToSmt smtRepresentation) = emptySortArgsToSmt smtRepresentation
 sortSmtFromSortArgs (AST.ApplyToArgs smtRepresentation) = applyToArgs smtRepresentation
 sortSmtFromSortArgs (AST.ConstSExpr smtRepresentation) = const $ const $ Just smtRepresentation

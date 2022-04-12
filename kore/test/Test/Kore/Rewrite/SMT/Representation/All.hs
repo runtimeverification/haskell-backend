@@ -19,7 +19,7 @@ import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     KoreSortDeclaration (SortDeclarationSort),
     Sort (Sort),
-    SortSExprFactory (..),
+    SortSExprSpec (..),
     encodable,
     encode,
  )

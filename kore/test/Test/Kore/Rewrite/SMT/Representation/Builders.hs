@@ -23,7 +23,7 @@ import Kore.Rewrite.SMT.AST qualified as AST (
     KoreSymbolDeclaration (..),
     Sort (Sort),
     SortReference (SortReference),
-    SortSExprFactory (..),
+    SortSExprSpec (..),
     Symbol (Symbol),
     SymbolReference (SymbolReference),
     UnresolvedConstructor,
