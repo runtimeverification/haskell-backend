@@ -93,6 +93,10 @@ instance
                     ++ show sortDeclaration
                     ++ "}"
 
+{- | A defunctionalized data type containing the information needed to invoke
+sortSmtFromSortArgs, which constructs an S-expression of a sort from its sort
+arguments.
+-}
 data SortSExprSpec
     = EmptySortArgsToSmt AST.SExpr
     | ApplyToArgs AST.SExpr
