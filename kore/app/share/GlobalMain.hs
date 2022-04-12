@@ -602,24 +602,24 @@ deserializeDefinition
     definitionFilePath
     mainModuleName
     exeLastModifiedTime =
-    do
-        bytes <- ByteString.readFile definitionFilePath & liftIO
-        let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
-        let magic = Binary.decode @Word64 magicBytes
-        case magic of
-            0x7c155e7a53f094f2 -> do
-                defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
-                if defnLastModifiedTime < exeLastModifiedTime then
-                    errorOutOfDate "serialized definition is out of date. Rerun kompile or kore-exec --serialize."
-                else do
-                    result <- unsafeReadCompact definitionFilePath & liftIO
-                    either errorParse (return . getCompact) result
-            _ ->
-                makeSerializedDefinition
-                    simplifierx
-                    solverOptions
-                    definitionFilePath
-                    mainModuleName
+        do
+            bytes <- ByteString.readFile definitionFilePath & liftIO
+            let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
+            let magic = Binary.decode @Word64 magicBytes
+            case magic of
+                0x7c155e7a53f094f2 -> do
+                    defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
+                    if defnLastModifiedTime < exeLastModifiedTime
+                        then errorOutOfDate "serialized definition is out of date. Rerun kompile or kore-exec --serialize."
+                        else do
+                            result <- unsafeReadCompact definitionFilePath & liftIO
+                            either errorParse (return . getCompact) result
+                _ ->
+                    makeSerializedDefinition
+                        simplifierx
+                        solverOptions
+                        definitionFilePath
+                        mainModuleName
 
 makeSerializedDefinition ::
     SimplifierXSwitch ->
