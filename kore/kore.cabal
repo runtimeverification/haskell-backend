@@ -194,8 +194,6 @@ common library
   build-depends: zlib >=0.6
   build-tool-depends: happy:happy
   build-tool-depends: alex:alex
-  ghc-options:
-    -j
 
 library
   import: haskell
