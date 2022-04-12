@@ -30,6 +30,9 @@ import Data.Set.Internal qualified as Set
 import Data.Text (
     unpack,
  )
+import Data.Time.Clock (
+    UTCTime (..),
+ )
 import GHC.Generics qualified as GHC
 import GlobalMain
 import Kore.Attribute.Definition (
@@ -155,11 +158,15 @@ import System.Directory (
     copyFile,
     doesFileExist,
     emptyPermissions,
+    getModificationTime,
     setOwnerExecutable,
     setOwnerReadable,
     setOwnerSearchable,
     setOwnerWritable,
     setPermissions,
+ )
+import System.Environment (
+    getExecutablePath,
  )
 import System.Exit (
     exitWith,
@@ -546,19 +553,21 @@ envName = "KORE_EXEC_OPTS"
 main :: IO ()
 main = do
     startTime <- getTime Monotonic
+    exePath <- getExecutablePath
+    exeLastModifiedTime <- getModificationTime exePath
     options <-
         mainGlobal
             Main.exeName
             (Just envName)
             (parseKoreExecOptions startTime)
             parserInfoModifiers
-    for_ (localOptions options) mainWithOptions
+    for_ (localOptions options) $ mainWithOptions exeLastModifiedTime
 
 {- | Use the parsed 'KoreExecOptions' to set up output and logging, then
 dispatch the requested command.
 -}
-mainWithOptions :: LocalOptions KoreExecOptions -> IO ()
-mainWithOptions LocalOptions{execOptions, simplifierx} = do
+mainWithOptions :: UTCTime -> LocalOptions KoreExecOptions -> IO ()
+mainWithOptions exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} =
             execOptions
     ensureSmtPreludeExists koreSolverOptions
@@ -570,7 +579,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
+                mainDispatch exeLastModifiedTime LocalOptions{execOptions = execOptions', simplifierx}
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog
@@ -609,8 +618,8 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                 throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
-mainDispatch :: LocalOptions KoreExecOptions -> Main ExitCode
-mainDispatch = warnProductivity . mainDispatchWorker
+mainDispatch :: UTCTime -> LocalOptions KoreExecOptions -> Main ExitCode
+mainDispatch exeLastModifiedTime = warnProductivity . mainDispatchWorker
   where
     warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
     warnProductivity action = do
@@ -626,25 +635,27 @@ mainDispatch = warnProductivity . mainDispatchWorker
                 then koreBmc localOptions proveOptions
                 else koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
-            koreSearch localOptions searchOptions
+            koreSearch exeLastModifiedTime localOptions searchOptions
         | True <- serialize =
             koreSerialize localOptions
         | otherwise =
-            koreRun localOptions
+            koreRun exeLastModifiedTime localOptions
       where
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
         KoreExecOptions{serialize} = execOptions
 
 koreSearch ::
+    UTCTime ->
     LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
+koreSearch exeLastModifiedTime LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
-    SerializedDefinition{serializedModule, lemmas, locations} <- deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
+    SerializedDefinition{serializedModule, lemmas, locations} <-
+        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName exeLastModifiedTime
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions{searchFileName} = searchOptions
     target <- mainParseSearchPattern verifiedModule searchFileName
@@ -667,12 +678,13 @@ koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     config = Search.Config{bound, searchType}
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
-koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun LocalOptions{execOptions, simplifierx} = do
+koreRun :: UTCTime -> LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
-    SerializedDefinition{serializedModule, lemmas, locations} <- deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
+    SerializedDefinition{serializedModule, lemmas, locations} <-
+        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName exeLastModifiedTime
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern verifiedModule patternFileName

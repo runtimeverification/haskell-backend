@@ -136,6 +136,7 @@ common global-main
   build-depends: compact >= 0.2.0.0
   build-depends: containers >=0.5
   build-depends: deepseq >=1.4
+  build-depends: directory >=1.3
   build-depends: exceptions >=0.10
   build-depends: filepath >=1.4
   build-depends: generic-lens >=1.1
@@ -143,6 +144,7 @@ common global-main
   build-depends: megaparsec >=7.0
   build-depends: optparse-applicative >=0.14
   build-depends: text >=1.2
+  build-depends: time >=1.9.3
 
 common library
   -- Dependencies of the library, shared in common with the tests
@@ -374,6 +376,7 @@ library
     Kore.Log.ErrorEquationRightFunction
     Kore.Log.ErrorEquationsSameMatch
     Kore.Log.ErrorException
+    Kore.Log.ErrorOutOfDate
     Kore.Log.ErrorParse
     Kore.Log.ErrorRewriteLoop
     Kore.Log.ErrorRewritesInstantiation

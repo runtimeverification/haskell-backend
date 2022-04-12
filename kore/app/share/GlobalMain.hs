@@ -70,6 +70,9 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
+import Data.Time.Clock (
+    UTCTime (..),
+ )
 import Data.Version (
     showVersion,
  )
@@ -112,6 +115,9 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (makePredicate)
 import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
+import Kore.Log.ErrorOutOfDate (
+    errorOutOfDate,
+ )
 import Kore.Log.ErrorParse (
     errorParse,
  )
@@ -192,6 +198,9 @@ import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
     getTime,
+ )
+import System.Directory (
+    getModificationTime,
  )
 import System.Environment qualified as Env
 
@@ -585,21 +594,32 @@ deserializeDefinition ::
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
+    UTCTime ->
     Main SerializedDefinition
-deserializeDefinition simplifierx solverOptions definitionFilePath mainModuleName = do
-    bytes <- ByteString.readFile definitionFilePath & liftIO
-    let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
-    let magic = Binary.decode @Word64 magicBytes
-    case magic of
-        0x7c155e7a53f094f2 -> do
-            result <- unsafeReadCompact definitionFilePath & liftIO
-            either errorParse (return . getCompact) result
-        _ ->
-            makeSerializedDefinition
-                simplifierx
-                solverOptions
-                definitionFilePath
-                mainModuleName
+deserializeDefinition
+    simplifierx
+    solverOptions
+    definitionFilePath
+    mainModuleName
+    exeLastModifiedTime =
+    do
+        bytes <- ByteString.readFile definitionFilePath & liftIO
+        let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
+        let magic = Binary.decode @Word64 magicBytes
+        case magic of
+            0x7c155e7a53f094f2 -> do
+                defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
+                if defnLastModifiedTime < exeLastModifiedTime then
+                    errorOutOfDate "serialized definition is out of date. Rerun kompile or kore-exec --serialize."
+                else do
+                    result <- unsafeReadCompact definitionFilePath & liftIO
+                    either errorParse (return . getCompact) result
+            _ ->
+                makeSerializedDefinition
+                    simplifierx
+                    solverOptions
+                    definitionFilePath
+                    mainModuleName
 
 makeSerializedDefinition ::
     SimplifierXSwitch ->
