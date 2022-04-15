@@ -12,6 +12,8 @@ module Kore.Rewrite.RewriteStep (
     applyClaimsSequence,
 ) where
 
+import qualified Pretty
+
 import Control.Monad.State.Strict qualified as State
 import Control.Monad.Trans.Class qualified as Monad.Trans
 import Data.Sequence qualified as Seq
@@ -167,7 +169,11 @@ constructConfiguration
             finalTerm' = substitute substitution' finalTerm
         -- TODO (thomas.tuegel): Should the final term be simplified after
         -- substitution?
-        return (finalTerm' `Pattern.withCondition` finalCondition)
+        -- TODO: this seems like the place where new substitutions are
+        -- applied and then discarded, so I should try to store them some way;
+        -- keeping them in the Condition turns into a huge performance issue
+        trace ("\nApplied substitution:\n" <> (show . Pretty.pretty . Substitution.toPredicate) substitution)
+            $ return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
     forall simplifier.
