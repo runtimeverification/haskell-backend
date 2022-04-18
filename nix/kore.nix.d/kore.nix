@@ -282,6 +282,7 @@
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnNotImplemented"
           "Kore/Log/WarnRestartSolver"
+          "Kore/Log/WarnSMTTranslation"
           "Kore/Log/WarnStuckClaimState"
           "Kore/Log/WarnSymbolSMTRepresentation"
           "Kore/Log/WarnTrivialClaim"
