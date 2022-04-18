@@ -66,11 +66,11 @@ import Kore.Internal.SideCondition (
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Internal.TermLike qualified as TermLike
-import Kore.Log.WarnSymbolSMTRepresentation (
-    warnSymbolSMTRepresentation,
- )
 import Kore.Log.WarnSMTTranslation (
     WarnSMTTranslation,
+ )
+import Kore.Log.WarnSymbolSMTRepresentation (
+    warnSymbolSMTRepresentation,
  )
 import Kore.Rewrite.SMT.Resolvers (
     translateSort,
@@ -422,7 +422,8 @@ instance Default TranslatorEnv where
 
 newtype Translator variable m a = Translator
     { getTranslator ::
-        ExceptT WarnSMTTranslation
+        ExceptT
+            WarnSMTTranslation
             ( RWST
                 TranslatorEnv
                 ()

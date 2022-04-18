@@ -14,8 +14,8 @@ module Test.Expect (
 
 import Control.Error (
     ExceptT,
-    exceptT,
     MaybeT,
+    exceptT,
     maybeT,
  )
 import Data.These

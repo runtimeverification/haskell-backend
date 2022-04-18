@@ -316,8 +316,9 @@ lookupVariable var =
   where
     lookupQuantifiedVariable = do
         TranslatorState{quantifiedVars} <- State.get
-        eitherToTranslator $ maybe (warnSMTTranslation ("unknown quantified variable " ++ (show var))) Right $ 
-            SMT.Atom . smtName <$> Map.lookup var quantifiedVars
+        eitherToTranslator $
+            maybe (warnSMTTranslation ("unknown quantified variable " ++ (show var))) Right $
+                SMT.Atom . smtName <$> Map.lookup var quantifiedVars
     lookupFreeVariable = do
         TranslatorState{freeVars} <- State.get
         eitherToTranslator $ maybe (warnSMTTranslation ("unknown free variable " ++ (show var))) Right $ Map.lookup var freeVars
