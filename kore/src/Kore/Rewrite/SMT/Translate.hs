@@ -11,16 +11,12 @@ module Kore.Rewrite.SMT.Translate (
     translateSMTDependentAtom,
     evalTranslator,
     runTranslator,
-    maybeToTranslator,
+    eitherToTranslator,
     -- For testing
     translatePattern,
 ) where
 
 import Control.Comonad.Trans.Cofree qualified as Cofree
-import Control.Error (
-    MaybeT,
-    hoistMaybe,
- )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
 import Control.Monad.Counter (
@@ -72,6 +68,9 @@ import Kore.Internal.TermLike
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
+ )
+import Kore.Log.WarnSMTTranslation (
+    WarnSMTTranslation,
  )
 import Kore.Rewrite.SMT.Resolvers (
     translateSort,
@@ -233,7 +232,7 @@ translatePredicateWith tools sideCondition translateTerm predicate =
                 Just builtinSort
                     | builtinSort == Builtin.Bool.sort -> pure SMT.tBool
                     | builtinSort == Builtin.Int.sort -> pure SMT.tInt
-                _ -> translateSort tools variableSort & maybeToTranslator
+                _ -> translateSort tools variableSort & eitherToTranslator
         Attribute.Sort{hook = Hook{getHook}} =
             sortAttributes tools variableSort
 
@@ -258,7 +257,7 @@ translatePattern tools sideCondition translateTerm sort pat =
             | builtinSort == Builtin.Int.sort -> translateInt pat
         _ -> case Cofree.tailF $ Recursive.project pat of
             VariableF _ -> do
-                smtSort <- maybeToTranslator $ translateSort tools sort
+                smtSort <- eitherToTranslator $ translateSort tools sort
                 translateUninterpreted translateTerm smtSort pat
             ApplySymbolF app ->
                 translateApplication (translateSort tools sort) pat app
@@ -282,7 +281,7 @@ translatePattern tools sideCondition translateTerm sort pat =
             InternalIntF (Const InternalInt{internalIntValue}) ->
                 return $ SMT.int internalIntValue
             ApplySymbolF app ->
-                translateApplication (Just SMT.tInt) pat' app
+                translateApplication (Right SMT.tInt) pat' app
             _ -> empty
     translateBool :: TermLike variable -> Translator variable monad SExpr
     translateBool pat'
@@ -304,11 +303,11 @@ translatePattern tools sideCondition translateTerm sort pat =
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
             TermLike.ApplySymbolF app ->
-                translateApplication (Just SMT.tBool) pat' app
+                translateApplication (Right SMT.tBool) pat' app
             _ -> empty
 
     translateApplication ::
-        Maybe SExpr ->
+        Either WarnSMTTranslation SExpr ->
         TermLike variable ->
         Application Symbol (TermLike variable) ->
         Translator variable monad SExpr
@@ -332,7 +331,7 @@ translatePattern tools sideCondition translateTerm sort pat =
                     Monad.guard (assumeDefined && isFunctionPattern original)
             translateInterpretedApplication = do
                 let translated = translateSymbol tools applicationSymbolOrAlias
-                sexpr <- maybe warnAndDiscard return translated
+                sexpr <- either (const warnAndDiscard) return translated
                 children <-
                     zipWithM
                         (translatePattern tools sideCondition translateTerm)
@@ -345,7 +344,7 @@ translatePattern tools sideCondition translateTerm sort pat =
                     >> empty
             translateUninterpreted' = do
                 guardLocalFunctionalPattern
-                sort' <- maybeToTranslator maybeSort
+                sort' <- eitherToTranslator maybeSort
                 translateUninterpreted translateTerm sort' original
 
 translateUninterpreted ::
@@ -423,7 +422,7 @@ instance Default TranslatorEnv where
 
 newtype Translator variable m a = Translator
     { getTranslator ::
-        MaybeT
+        ExceptT WarnSMTTranslation
             ( RWST
                 TranslatorEnv
                 ()
@@ -450,7 +449,7 @@ instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
 
 instance MonadSimplify m => MonadSimplify (Translator variable m)
 
-evalTranslator :: Monad m => Translator p m a -> MaybeT m a
+evalTranslator :: Monad m => Translator p m a -> ExceptT WarnSMTTranslation m a
 evalTranslator (Translator translator) =
     Morph.hoist (evalCounterT . evalRST def def) translator
   where
@@ -458,7 +457,7 @@ evalTranslator (Translator translator) =
         (result, _) <- evalRWST rwst env state
         return result
 
-runTranslator :: Monad m => Translator p m a -> MaybeT m (a, TranslatorState p)
+runTranslator :: Monad m => Translator p m a -> ExceptT WarnSMTTranslation m (a, TranslatorState p)
 runTranslator = evalTranslator . includeState
   where
     includeState comp = do
@@ -466,8 +465,8 @@ runTranslator = evalTranslator . includeState
         state <- State.get
         pure (comp', state)
 
-maybeToTranslator :: Monad m => Maybe a -> Translator p m a
-maybeToTranslator = Translator . hoistMaybe
+eitherToTranslator :: Monad m => Either WarnSMTTranslation a -> Translator p m a
+eitherToTranslator = Translator . liftEither
 
 withDefinednessAssumption :: Monad m => Translator p m a -> Translator p m a
 withDefinednessAssumption =

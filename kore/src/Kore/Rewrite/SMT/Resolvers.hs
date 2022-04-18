@@ -22,6 +22,7 @@ import Kore.IndexedModule.MetadataTools qualified as MetadataTools (
     MetadataTools (smtData),
  )
 import Kore.Internal.Symbol
+import Kore.Log.WarnSMTTranslation
 import Kore.Rewrite.SMT.AST qualified as AST (
     Declarations (Declarations),
     Sort (Sort),
@@ -45,9 +46,9 @@ the given SmtMetadataTools.
 translateSymbol ::
     SmtMetadataTools Attribute.Symbol ->
     Symbol ->
-    Maybe SMT.SExpr
+    Either WarnSMTTranslation SMT.SExpr
 translateSymbol tools Symbol{symbolConstructor, symbolParams} = do
-    AST.Symbol{symbolData} <- Map.lookup symbolConstructor symbols
+    AST.Symbol{symbolData} <- maybe (warnSMTTranslation ("unknown symbol " ++ (show symbolConstructor))) Right $ Map.lookup symbolConstructor symbols
     AST.symbolSmtFromSortArgs symbolData sorts symbolParams
   where
     MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
@@ -55,13 +56,13 @@ translateSymbol tools Symbol{symbolConstructor, symbolParams} = do
 translateSort ::
     SmtMetadataTools Attribute.Symbol ->
     Sort ->
-    Maybe SMT.SExpr
+    Either WarnSMTTranslation SMT.SExpr
 translateSort
     tools
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{sortData} <- Map.lookup sortActualName sorts
+            AST.Sort{sortData} <- maybe (warnSMTTranslation ("unknown sort " ++ (show sortActualName))) Right $ Map.lookup sortActualName sorts
             AST.sortSmtFromSortArgs sortData sorts sortActualSorts
       where
         MetadataTools{smtData = AST.Declarations{sorts}} = tools
-translateSort _ (SortVariableSort _) = Nothing
+translateSort _ (SortVariableSort _) = warnSMTTranslation "cannot translate sort variable"

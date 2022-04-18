@@ -50,6 +50,7 @@ import Kore.Attribute.Smtlib.Smthook (
     SExpr (..),
  )
 import Kore.Debug
+import Kore.Log.WarnSMTTranslation
 import Kore.Rewrite.SMT.Encoder (
     encodeName,
  )
@@ -130,8 +131,8 @@ data Symbol sort name = Symbol
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-symbolSmtFromSortArgs :: AST.SExpr -> Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr
-symbolSmtFromSortArgs astName = const . const $ Just astName
+symbolSmtFromSortArgs :: AST.SExpr -> Map Kore.Id SmtSort -> [Kore.Sort] -> Either WarnSMTTranslation AST.SExpr
+symbolSmtFromSortArgs astName = const . const $ Right astName
 
 instance (Show sort, Show name) => Show (Symbol sort name) where
     show s@(Symbol _ _) =

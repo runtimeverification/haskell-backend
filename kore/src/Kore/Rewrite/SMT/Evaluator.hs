@@ -66,6 +66,7 @@ import Kore.Log.DebugRetrySolverQuery (
 import Kore.Log.ErrorDecidePredicateUnknown (
     errorDecidePredicateUnknown,
  )
+import Kore.Log.WarnSMTTranslation
 import Kore.Rewrite.SMT.Translate
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom (
@@ -313,11 +314,11 @@ lookupVariable var =
   where
     lookupQuantifiedVariable = do
         TranslatorState{quantifiedVars} <- State.get
-        maybeToTranslator $
+        eitherToTranslator $ maybe (warnSMTTranslation ("unknown quantified variable " ++ (show var))) Right $ 
             SMT.Atom . smtName <$> Map.lookup var quantifiedVars
     lookupFreeVariable = do
         TranslatorState{freeVars} <- State.get
-        maybeToTranslator $ Map.lookup var freeVars
+        eitherToTranslator $ maybe (warnSMTTranslation ("unknown free variable " ++ (show var))) Right $ Map.lookup var freeVars
 
 declareVariable ::
     InternalVariable variable =>

@@ -52,6 +52,7 @@ import Kore.IndexedModule.IndexedModule (
     recursiveIndexedModuleSortDescriptions,
  )
 import Kore.Internal.TermLike
+import Kore.Log.WarnSMTTranslation
 import Kore.Rewrite.SMT.AST qualified as AST
 import Kore.Sort qualified as Kore
 import Kore.Syntax.Sentence (
@@ -91,14 +92,14 @@ import SMT qualified as SMT.SortDeclaration (
 translateSort ::
     Map.Map Id AST.SmtSort ->
     Sort ->
-    Maybe SMT.SExpr
+    Either WarnSMTTranslation SMT.SExpr
 translateSort
     sorts
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{sortData} <- Map.lookup sortActualName sorts
+            AST.Sort{sortData} <- maybe (warnSMTTranslation ("unknown sort " ++ (show sortActualName))) Right $ Map.lookup sortActualName sorts
             sortSmtFromSortArgs sortData sorts sortActualSorts
-translateSort _ _ = Nothing
+translateSort _ _ = warnSMTTranslation "cannot translate sort variable"
 
 {- | Builds smt representations for sorts in the given module.
 
@@ -224,7 +225,7 @@ applyToArgs ::
     SMT.SExpr ->
     Map.Map Id AST.SmtSort ->
     [Sort] ->
-    Maybe SMT.SExpr
+    Either WarnSMTTranslation SMT.SExpr
 applyToArgs sExpr definitions children = do
     children' <- mapM (translateSort definitions) children
     return $ applySExpr sExpr children'
@@ -258,19 +259,19 @@ simpleSortDeclaration
         encodedName = AST.encodable sentenceSortName
 simpleSortDeclaration _ = Nothing
 
-sortSmtFromSortArgs :: AST.SortSExprSpec -> Map Kore.Id AST.SmtSort -> [Kore.Sort] -> Maybe SMT.SExpr
+sortSmtFromSortArgs :: AST.SortSExprSpec -> Map Kore.Id AST.SmtSort -> [Kore.Sort] -> Either WarnSMTTranslation SMT.SExpr
 sortSmtFromSortArgs (AST.EmptySortArgsToSmt smtRepresentation) = emptySortArgsToSmt smtRepresentation
 sortSmtFromSortArgs (AST.ApplyToArgs smtRepresentation) = applyToArgs smtRepresentation
-sortSmtFromSortArgs (AST.ConstSExpr smtRepresentation) = const $ const $ Just smtRepresentation
+sortSmtFromSortArgs (AST.ConstSExpr smtRepresentation) = const $ const $ Right smtRepresentation
 
 emptySortArgsToSmt ::
     SMT.SExpr ->
     Map.Map Id AST.SmtSort ->
     [Sort] ->
-    Maybe SMT.SExpr
-emptySortArgsToSmt representation _ [] = Just representation
+    Either WarnSMTTranslation SMT.SExpr
+emptySortArgsToSmt representation _ [] = Right representation
 emptySortArgsToSmt representation _ args =
-    (error . unlines)
+    (warnSMTTranslation . unlines)
         [ "Sorts with arguments not supported yet."
         , "representation=" ++ SMT.showSExpr representation
         , "args = " ++ show (fmap unparseToString args)

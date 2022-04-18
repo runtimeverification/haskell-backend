@@ -103,12 +103,12 @@ smtResolvers Declarations{sorts, symbols} =
                         ]
                 Just Sort{sortData} ->
                     case sortSmtFromSortArgs sortData Map.empty [] of
-                        Nothing ->
+                        Left _ ->
                             (error . unlines)
                                 [ "Expecting to be able to produce sort representation"
                                 , "for defining it."
                                 ]
-                        Just value -> return value
+                        Right value -> return value
     referenceCheckSort _ =
         error "Unimplemented: sort with arguments."
 
@@ -121,13 +121,13 @@ smtResolvers Declarations{sorts, symbols} =
                     ]
             Just Symbol{symbolData} ->
                 case symbolSmtFromSortArgs symbolData Map.empty [] of
-                    Nothing ->
+                    Left _ ->
                         (error . unlines)
                             [ "Expecting to be able to produce symbol"
                             , "representation for defining it."
                             ]
-                    Just (SMT.Atom name) -> return name
-                    Just _ ->
+                    Right (SMT.Atom name) -> return name
+                    Right _ ->
                         error
                             "Unable to understand symbol representation."
 
