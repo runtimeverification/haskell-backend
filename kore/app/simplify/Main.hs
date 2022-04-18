@@ -5,6 +5,7 @@ import Kore.Attribute.Symbol (
     StepperAttributes,
  )
 import Kore.BugReport
+import Kore.Exec (simplify)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
  )
@@ -127,8 +128,7 @@ mainWithOptions localOptions@LocalOptions{execOptions} = do
                 & runKoreLog tmpDir koreLogOptions
     exitWith exitCode
   where
-    KoreSimplifyOptions{bugReportOption} = execOptions
-    KoreSimplifyOptions{koreLogOptions} = execOptions
+    KoreSimplifyOptions{bugReportOption, koreLogOptions} = execOptions
 
 koreSimplify :: LocalOptions KoreSimplifyOptions -> Main ExitCode
 koreSimplify LocalOptions{execOptions} = do
@@ -136,7 +136,7 @@ koreSimplify LocalOptions{execOptions} = do
     mainModule <- loadModule mainModuleName definition
     inputPattern <-
         mainParseInputPattern mainModule patternFileName
-    let final = inputPattern
+    final <- simplify inputPattern
     lift $
         renderResult
             execOptions

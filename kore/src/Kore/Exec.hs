@@ -16,6 +16,7 @@ module Kore.Exec (
     boundedModelCheck,
     matchDisjunction,
     checkFunctions,
+    simplify,
     Rewrite,
     Equality,
 ) where
@@ -696,6 +697,12 @@ bothMatch eq1 eq2 =
         sort = termLikeSort $ right eq1
         patt = Pattern.fromPredicateSorted sort check
      in (not . isBottom) <$> Pattern.simplify patt
+
+simplify ::
+    (Monad m) =>
+    Pattern RewritingVariableName ->
+    m (Pattern RewritingVariableName)
+simplify = return
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
