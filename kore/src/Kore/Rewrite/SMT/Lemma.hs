@@ -16,15 +16,18 @@ import Control.Comonad.Trans.Cofree qualified as Cofree
 import Control.Error (
     hoistMaybe,
     hush,
-    runMaybeT,
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Counter qualified as Counter
 import Control.Monad.Except
 import Control.Monad.State qualified as State
+import Control.Monad.Trans.Maybe
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
 import Data.Map.Strict qualified as Map
+import Data.Monoid (
+    Last (..),
+ )
 import Data.Text qualified as Text
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.SmtLemma
@@ -36,6 +39,7 @@ import Kore.Internal.SideCondition (
     top,
  )
 import Kore.Internal.TermLike
+import Kore.Log.WarnSMTTranslation
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
  )
@@ -77,18 +81,21 @@ declareSMTLemmas ::
     m ()
 declareSMTLemmas tools lemmas = do
     declareSortsSymbols $ smtData tools
-    mapM_ declareRule lemmas
+    results <- mapM declareRule lemmas
+    let errors = filter isLeft results
+    mapM_ (logEntry . fromLeft undefined) errors
     isUnsatisfiable <- (Unsat ==) <$> SMT.check
     when isUnsatisfiable errorInconsistentDefinitions
   where
     declareRule ::
         SentenceAxiom (TermLike VariableName) ->
-        m (Maybe ())
-    declareRule axiomDeclaration = runMaybeT $ do
+        m (Either WarnSMTTranslation ())
+    declareRule axiomDeclaration = runExceptT $ do
         oldAxiomEncoding <-
             sentenceAxiomPattern axiomDeclaration
                 & convert
                 & hoistMaybe
+                & (maybeToExceptT $ WarnSMTTranslation{message = Last $ Just "Could not convert lemma encoding"})
         (lemma, TranslatorState{terms, predicates}) <-
             oldAxiomEncoding
                 & wrapPredicate
