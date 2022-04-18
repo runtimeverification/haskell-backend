@@ -53,6 +53,9 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Monoid (
+    Last (..),
+ )
 import Data.Proxy
 import Data.Sequence (
     Seq,
@@ -317,6 +320,8 @@ instance Debug a => Debug (Maybe a)
 instance Debug a => Debug (Sup a)
 
 instance Debug a => Debug (Identity a)
+
+instance Debug a => Debug (Last a)
 
 instance (Debug a, Debug (f b)) => Debug (CofreeF f a b) where
     debugPrec cofreeF =
@@ -585,6 +590,8 @@ instance (Debug a, Diff a) => Diff (Maybe a)
 instance (Debug a, Diff a) => Diff (Sup a)
 
 instance (Debug a, Diff a) => Diff (Identity a)
+
+instance (Debug a, Diff a) => Diff (Last a)
 
 instance (Debug a, Debug (f b), Diff a, Diff (f b)) => Diff (CofreeF f a b) where
     diffPrec x y =
