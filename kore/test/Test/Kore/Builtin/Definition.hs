@@ -8,6 +8,7 @@ import Data.ByteString (
     ByteString,
  )
 import Data.ByteString qualified as ByteString
+import Data.ByteString.Short qualified as ShortByteString
 import Data.Default qualified as Default
 import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (
@@ -1277,10 +1278,10 @@ signednessSort =
 signednessSortDecl :: ParsedSentence
 signednessSortDecl = sortDecl signednessSort
 builtinBytes :: ByteString -> InternalBytes
-builtinBytes internalBytesValue =
+builtinBytes byteString =
     InternalBytes
         { internalBytesSort = bytesSort
-        , internalBytesValue
+        , internalBytesValue = ShortByteString.toShort byteString
         }
 mkBytes :: InternalVariable variable => [Word8] -> TermLike variable
 mkBytes = mkInternalBytes' . builtinBytes . ByteString.pack
