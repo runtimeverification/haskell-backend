@@ -23,6 +23,9 @@ import Control.Comonad.Trans.Cofree
 import Data.ByteString (
     ByteString,
  )
+import Data.ByteString.Short (
+    ShortByteString,
+ )
 import Data.Char qualified as Char
 import Data.Functor.Const (
     Const,
@@ -277,6 +280,9 @@ instance Debug Text where
     debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug ByteString where
+    debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
+
+instance Debug ShortByteString where
     debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Void
@@ -537,6 +543,9 @@ instance {-# OVERLAPS #-} Diff String where
     diffPrec = diffPrecEq
 
 instance Diff ByteString where
+    diffPrec = diffPrecEq
+
+instance Diff ShortByteString where
     diffPrec = diffPrecEq
 
 instance Diff Text where
