@@ -499,7 +499,7 @@ test_checkFunctions =
             & SentenceAxiomSentence
 
 test_simplify :: TestTree
-test_simplify = 
+test_simplify =
     testGroup
         "simplify"
         [testCase "dummy simplify test" $ assertBool "" True]
