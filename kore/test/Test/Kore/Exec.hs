@@ -498,6 +498,12 @@ test_checkFunctions =
             }
             & SentenceAxiomSentence
 
+test_simplify :: TestTree
+test_simplify = 
+    testGroup
+        "simplify"
+        [testCase "dummy simplify test" $ assertBool "" True]
+
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
   where
