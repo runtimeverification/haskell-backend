@@ -80,7 +80,7 @@ smtForSortIs
                 Just AST.Sort{sortData} ->
                     assertEqual
                         ""
-                        (Just expectedSExpr)
+                        (Right expectedSExpr)
                         (AST.showSExpr <$> AST.sortSmtFromSortArgs sortData Map.empty [])
 
 smtForSymbolIs ::
@@ -105,5 +105,5 @@ smtForSymbolIs
                 Just AST.Symbol{symbolData} ->
                     assertEqual
                         ""
-                        (Just expectedSExpr)
+                        (Right expectedSExpr)
                         (AST.showSExpr <$> AST.symbolSmtFromSortArgs symbolData Map.empty [])

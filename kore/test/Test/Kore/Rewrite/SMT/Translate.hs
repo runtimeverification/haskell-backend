@@ -3,7 +3,7 @@ module Test.Kore.Rewrite.SMT.Translate (
 ) where
 
 import Control.Error (
-    runMaybeT,
+    runExceptT,
  )
 import Data.HashSet qualified as HashSet
 import Data.Text qualified as Text
@@ -20,6 +20,9 @@ import Kore.Internal.TermLike (
  )
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable
+import Kore.Log.WarnSMTTranslation (
+    WarnSMTTranslation,
+ )
 import Kore.Rewrite.SMT.Evaluator qualified as Evaluator
 import Kore.Rewrite.SMT.Translate (
     Translator,
@@ -151,7 +154,7 @@ test_translatePredicateWith =
                 actual2 <- translatePredicate input2
                 return (actual1, actual2)
                 & evalTranslator
-                & expectJustT
+                & expectRightT
                 & Test.SMT.runNoSMT
         assertEqual "" actual1 actual2
     , -- In the tests below, a and b are not tranlated correctly
@@ -232,22 +235,22 @@ translatePattern sideCondition =
         Evaluator.translateTerm
         Mock.testSort
 
-translatingPred :: Predicate VariableName -> IO (Maybe SExpr)
+translatingPred :: Predicate VariableName -> IO (Either WarnSMTTranslation SExpr)
 translatingPred =
-    Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
+    Test.SMT.runNoSMT . runExceptT . evalTranslator . translatePredicate
 
 translatingPatt ::
     SideCondition VariableName ->
     TermLike VariableName ->
-    IO (Maybe SExpr)
+    IO (Either WarnSMTTranslation SExpr)
 translatingPatt sideCondition =
     Test.SMT.runNoSMT
-        . runMaybeT
+        . runExceptT
         . evalTranslator
         . translatePattern sideCondition
 
-yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
-actual `yields` expected = actual >>= assertEqual "" (Just expected)
+yields :: HasCallStack => IO (Either WarnSMTTranslation SExpr) -> SExpr -> IO ()
+actual `yields` expected = actual >>= assertEqual "" (Right expected)
 
 --
 -- fails :: HasCallStack => IO (Maybe SExpr) -> IO ()

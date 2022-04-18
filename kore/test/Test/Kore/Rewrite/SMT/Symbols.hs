@@ -3,8 +3,8 @@ module Test.Kore.Rewrite.SMT.Symbols (
     test_resolve,
 ) where
 
-import Control.Monad.Trans.Maybe (
-    MaybeT (..),
+import Control.Monad.Trans.Except (
+    runExceptT,
  )
 import Data.Map.Strict qualified as Map
 import Data.Maybe (
@@ -228,14 +228,14 @@ test_sortDeclaration =
         m SExpr
     encodePredicate tools predicate = do
         expr <-
-            runMaybeT $
+            runExceptT $
                 evalTranslator $
                     translatePredicateWith
                         tools
                         SideCondition.top
                         translateTerm
                         predicate
-        maybe (error "Could not encode predicate") return expr
+        either (error "Could not encode predicate") return expr
 
     sSortId :: Id
     sSortId = testId "S"
