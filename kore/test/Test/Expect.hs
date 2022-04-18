@@ -9,9 +9,12 @@ module Test.Expect (
     assertTop,
     expectBool,
     expectJustT,
+    expectRightT,
 ) where
 
 import Control.Error (
+    ExceptT,
+    exceptT,
     MaybeT,
     maybeT,
  )
@@ -71,4 +74,10 @@ expectJustT :: MonadIO io => HasCallStack => MaybeT io a -> io a
 expectJustT =
     maybeT
         (liftIO $ assertFailure "expected Just")
+        return
+
+expectRightT :: MonadIO io => HasCallStack => ExceptT e io a -> io a
+expectRightT =
+    exceptT
+        (const $ liftIO $ assertFailure "expected Right")
         return
