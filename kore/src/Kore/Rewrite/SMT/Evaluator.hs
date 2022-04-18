@@ -15,12 +15,12 @@ module Kore.Rewrite.SMT.Evaluator (
 ) where
 
 import Control.Error (
-    MaybeT,
-    runMaybeT,
+    ExceptT,
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Counter qualified as Counter
 import Control.Monad.State.Strict qualified as State
+import Control.Monad.Trans.Maybe
 import Data.Generics.Product.Fields
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -172,8 +172,8 @@ decidePredicate sideCondition predicates =
 
     whenUnknown f Unknown = f
     whenUnknown _ result = return result
-    query :: MaybeT simplifier Result
-    query =
+    queryOrError :: ExceptT WarnSMTTranslation simplifier Result
+    queryOrError =
         SMT.withSolver . evalTranslator $ do
             tools <- Simplifier.askMetadataTools
             predicates' <-
@@ -182,6 +182,8 @@ decidePredicate sideCondition predicates =
                     predicates
             traverse_ SMT.assert predicates'
             SMT.check
+    query :: MaybeT simplifier Result
+    query = exceptToMaybeT queryOrError
 
     retry = do
         SMT.reinit
