@@ -7,10 +7,16 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Rewrite.SMT.Representation.Sorts (
     buildRepresentations,
+    sortSmtFromSortArgs,
+    emptySortArgsToSmt,
+    applyToArgs,
 ) where
 
 import Control.Monad (
     zipWithM,
+ )
+import Data.Map.Strict (
+    Map,
  )
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -47,6 +53,7 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Internal.TermLike
 import Kore.Rewrite.SMT.AST qualified as AST
+import Kore.Sort qualified as Kore
 import Kore.Syntax.Sentence (
     SentenceSort (SentenceSort),
  )
@@ -89,8 +96,8 @@ translateSort
     sorts
     (SortActualSort SortActual{sortActualName, sortActualSorts}) =
         do
-            AST.Sort{sortSmtFromSortArgs} <- Map.lookup sortActualName sorts
-            sortSmtFromSortArgs sorts sortActualSorts
+            AST.Sort{sortData} <- Map.lookup sortActualName sorts
+            sortSmtFromSortArgs sortData sorts sortActualSorts
 translateSort _ _ = Nothing
 
 {- | Builds smt representations for sorts in the given module.
@@ -180,7 +187,7 @@ builtinSortDeclaration
             return
                 ( sentenceSortName
                 , AST.Sort
-                    { sortSmtFromSortArgs = emptySortArgsToSmt smtRepresentation
+                    { sortData = AST.EmptySortArgsToSmt smtRepresentation
                     , sortDeclaration =
                         AST.SortDeclaredIndirectly
                             (AST.AlreadyEncoded smtRepresentation)
@@ -201,7 +208,7 @@ smtlibSortDeclaration
             return
                 ( sentenceSortName
                 , AST.Sort
-                    { sortSmtFromSortArgs = applyToArgs smtRepresentation
+                    { sortData = AST.ApplyToArgs smtRepresentation
                     , sortDeclaration =
                         AST.SortDeclarationSort
                             SMT.SortDeclaration
@@ -211,15 +218,16 @@ smtlibSortDeclaration
                     }
                 )
       where
-        applyToArgs ::
-            SMT.SExpr ->
-            Map.Map Id AST.SmtSort ->
-            [Sort] ->
-            Maybe SMT.SExpr
-        applyToArgs sExpr definitions children = do
-            children' <- mapM (translateSort definitions) children
-            return $ applySExpr sExpr children'
         Smtlib{getSmtlib} = Attribute.Sort.smtlib attributes
+
+applyToArgs ::
+    SMT.SExpr ->
+    Map.Map Id AST.SmtSort ->
+    [Sort] ->
+    Maybe SMT.SExpr
+applyToArgs sExpr definitions children = do
+    children' <- mapM (translateSort definitions) children
+    return $ applySExpr sExpr children'
 
 simpleSortDeclaration ::
     ( Attribute.Sort
@@ -236,8 +244,8 @@ simpleSortDeclaration
         Just
             ( sentenceSortName
             , AST.Sort
-                { sortSmtFromSortArgs =
-                    emptySortArgsToSmt (AST.encode encodedName)
+                { sortData =
+                    AST.EmptySortArgsToSmt (AST.encode encodedName)
                 , sortDeclaration =
                     AST.SortDeclarationSort
                         SMT.SortDeclaration
@@ -249,6 +257,11 @@ simpleSortDeclaration
       where
         encodedName = AST.encodable sentenceSortName
 simpleSortDeclaration _ = Nothing
+
+sortSmtFromSortArgs :: AST.SortSExprSpec -> Map Kore.Id AST.SmtSort -> [Kore.Sort] -> Maybe SMT.SExpr
+sortSmtFromSortArgs (AST.EmptySortArgsToSmt smtRepresentation) = emptySortArgsToSmt smtRepresentation
+sortSmtFromSortArgs (AST.ApplyToArgs smtRepresentation) = applyToArgs smtRepresentation
+sortSmtFromSortArgs (AST.ConstSExpr smtRepresentation) = const $ const $ Just smtRepresentation
 
 emptySortArgsToSmt ::
     SMT.SExpr ->
@@ -276,8 +289,8 @@ sortWithConstructor sortConstructors sortId = do
     return
         ( sortId
         , AST.Sort
-            { sortSmtFromSortArgs =
-                emptySortArgsToSmt (AST.encode encodedName)
+            { sortData =
+                AST.EmptySortArgsToSmt (AST.encode encodedName)
             , sortDeclaration =
                 AST.SortDeclarationDataType
                     SMT.DataTypeDeclaration
