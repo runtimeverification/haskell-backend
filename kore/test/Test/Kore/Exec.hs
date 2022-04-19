@@ -8,6 +8,7 @@ module Test.Kore.Exec (
     test_execDepthLimitExceeded,
     test_matchDisjunction,
     test_checkFunctions,
+    test_simplify,
 ) where
 
 import Control.Exception as Exception
