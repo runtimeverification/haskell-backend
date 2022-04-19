@@ -382,8 +382,9 @@ reachabilityNextStep =
         , Simplify
         ]
 
--- | A strategy for the last step of depth-limited reachability proofs.
---   The final such step should only perform a CheckImplication.
+{- | A strategy for the last step of depth-limited reachability proofs.
+   The final such step should only perform a CheckImplication.
+-}
 reachabilityCheckOnly :: Strategy Prim
 reachabilityCheckOnly =
     Strategy.sequence [Strategy.apply Begin, Strategy.apply CheckImplication]
