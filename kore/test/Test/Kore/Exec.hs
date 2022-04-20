@@ -8,6 +8,7 @@ module Test.Kore.Exec (
     test_execDepthLimitExceeded,
     test_matchDisjunction,
     test_checkFunctions,
+    test_simplify,
 ) where
 
 import Control.Exception as Exception
@@ -497,6 +498,12 @@ test_checkFunctions =
                 Attributes [simplificationAttribute Nothing]
             }
             & SentenceAxiomSentence
+
+test_simplify :: TestTree
+test_simplify =
+    testGroup
+        "simplify"
+        [testCase "dummy simplify test" $ assertBool "" True]
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected

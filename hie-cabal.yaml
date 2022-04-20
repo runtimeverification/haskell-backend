@@ -10,3 +10,4 @@ cradle:
   - { path: "./kore/app/prof", component: "kore:kore-prof" }
   - { path: "./kore/app/repl", component: "kore:kore-repl" }
   - { path: "./kore/app/match-disjunction", component: "kore:kore-match-disjunction" }
+  - { path: "./kore/app/simplify", component: "kore:kore-simplify" }
