@@ -2,9 +2,7 @@ ifeq ($(origin TOP), undefined)
 	TOP = $(shell git rev-parse --show-toplevel)
 endif
 
-TEMP := $(KORE_EXEC_OPTS)
 include $(TOP)/include.mk
-KORE_EXEC_OPTS += $(TEMP)
 
 DEF_DIR ?= .
 TEST_DIR ?= .
