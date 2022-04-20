@@ -589,6 +589,10 @@ data SerializedDefinition = SerializedDefinition
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
 
+{- | Read a definition from disk, detect if it is a serialized compact region or not,
+and either deserialize it, or else treat it as a text KORE definition and manually
+construct the needed SerializedDefinition object from it.	
+ -}
 deserializeDefinition ::
     SimplifierXSwitch ->
     KoreSolverOptions ->
@@ -607,6 +611,16 @@ deserializeDefinition
             let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
             let magic = Binary.decode @Word64 magicBytes
             case magic of
+                -- This magic number comes from the Data.Compact.Serialize moduile source:
+                -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
+                -- The field is not exported by the package so we have to manually specify it here.
+                -- If you update the version of the compact package, you should double check that
+                -- the file format has not changed. They don't provide any particular guarantees
+                -- of stability across versions because the serialized data becomes invalid when
+                -- any changes are made to the binary at all, so there would be no point.
+                --
+                -- We use this magic number to detect if the input file for the definition is
+                -- a serialized Data.Compact region or if it is a textual KORE definition.
                 0x7c155e7a53f094f2 -> do
                     defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
                     if defnLastModifiedTime < exeLastModifiedTime

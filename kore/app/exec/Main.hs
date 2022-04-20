@@ -702,6 +702,11 @@ koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
+-- kore-exec --serialize calls this function in order to construct the definition to serialize
+-- and write it to the output file specified by the user. It is an error to not specify an output
+-- file as binary data cannot be displayed on the terminal. We put this functionality in the
+-- kore-exec binary because that's where most of the logic it needed in order to function already
+-- lived.
 koreSerialize :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
 koreSerialize LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
