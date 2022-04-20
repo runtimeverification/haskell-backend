@@ -591,8 +591,8 @@ data SerializedDefinition = SerializedDefinition
 
 {- | Read a definition from disk, detect if it is a serialized compact region or not,
 and either deserialize it, or else treat it as a text KORE definition and manually
-construct the needed SerializedDefinition object from it.	
- -}
+construct the needed SerializedDefinition object from it.
+-}
 deserializeDefinition ::
     SimplifierXSwitch ->
     KoreSolverOptions ->
