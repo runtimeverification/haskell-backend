@@ -7,6 +7,7 @@ module Test.Kore.Builtin.External (
 ) where
 
 import Control.Monad.Free (Free (..))
+import Data.ByteString.Short qualified as ByteString
 import Data.Functor.Const (
     Const (..),
  )
@@ -319,7 +320,7 @@ externalizeBytes builtin =
     InternalBytes{internalBytesValue} = builtin
     domainValueChild =
         Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
-            StringLiteral (Encoding.decode8Bit internalBytesValue)
+            StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 

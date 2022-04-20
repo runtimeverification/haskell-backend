@@ -295,7 +295,7 @@ unescape t =
   let dropQuotes str = Text.take (Text.length str - 2) . Text.drop 1 $ str
       escape rest c = either Left (\s -> Right (c : s)) $ go rest
       validate rest c
-          | c >= 0x10ffff = Left ("code point " ++ show c ++ " outside range of Unicode")
+          | c > 0x10ffff = Left ("code point " ++ show c ++ " outside range of Unicode")
           | generalCategory (chr c) == Surrogate 
               = Left ("surrogate character " ++ show (chr c) ++ " in string literal")
           | otherwise = escape rest $ chr c

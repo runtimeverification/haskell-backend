@@ -6,9 +6,10 @@ module Kore.Internal.InternalBytes (
     InternalBytes (..),
 ) where
 
-import Data.ByteString (
-    ByteString,
+import Data.ByteString.Short (
+    ShortByteString,
  )
+import Data.ByteString.Short qualified as ByteString
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.Defined
@@ -24,7 +25,7 @@ import Prelude.Kore
 
 data InternalBytes = InternalBytes
     { internalBytesSort :: !Sort
-    , internalBytesValue :: !ByteString
+    , internalBytesValue :: !ShortByteString
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -36,14 +37,14 @@ instance Unparse InternalBytes where
     unparse internalBytes@(InternalBytes _ _) =
         "\\dv"
             <> parameters [internalBytesSort]
-            <> arguments [StringLiteral (Encoding.decode8Bit internalBytesValue)]
+            <> arguments [StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)]
       where
         InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
 
     unparse2 internalBytes@(InternalBytes _ _) =
         "\\dv2"
             <> parameters2 [internalBytesSort]
-            <> arguments2 [StringLiteral (Encoding.decode8Bit internalBytesValue)]
+            <> arguments2 [StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)]
       where
         InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
 

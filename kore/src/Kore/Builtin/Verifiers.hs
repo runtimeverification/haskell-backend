@@ -83,7 +83,7 @@ import Kore.Error (
  )
 import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule,
+    IndexedModuleSyntax,
     VerifiedModule,
  )
 import Kore.IndexedModule.Resolvers qualified as IndexedModule
@@ -360,7 +360,7 @@ getConcatId Attribute.Sort{concat = Attribute.Sort.Concat sortConcat} =
 Fail if the symbol is not defined or the attribute is missing.
 -}
 assertSymbolHook ::
-    IndexedModule patternType declAttrs axiomAttrs ->
+    IndexedModuleSyntax patternType declAttrs ->
     -- | Symbol identifier
     Id ->
     -- | Expected hook
@@ -388,7 +388,7 @@ assertSymbolHook indexedModule symbolId expected = do
 Fail if the symbol is not defined.
 -}
 assertSymbolResultSort ::
-    IndexedModule patternType declAttrs axiomAttrs ->
+    IndexedModuleSyntax patternType declAttrs ->
     -- | Symbol identifier
     Id ->
     -- | Expected result sort
