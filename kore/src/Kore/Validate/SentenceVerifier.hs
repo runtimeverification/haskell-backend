@@ -154,7 +154,7 @@ type SentenceVerifier = StateT VerifiedModule' Verifier
 findSort :: Id -> SentenceVerifier SentenceSort
 findSort identifier = do
     verifiedModule <- State.get
-    findIndexedSort verifiedModule identifier
+    findIndexedSort (indexedModuleSyntax verifiedModule) identifier
 
 askVerifierContext :: SentenceVerifier VerifierContext
 askVerifierContext = Reader.ask
@@ -168,7 +168,7 @@ askPatternContext variables = do
     verifiedModule <- State.get
     VerifierContext{builtinVerifiers} <- askVerifierContext
     let context =
-            PatternVerifier.verifiedModuleContext verifiedModule
+            PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
                 & PatternVerifier.withBuiltinVerifiers builtinVerifiers
                 & Lens.set (field @"declaredSortVariables") variables
     return context
@@ -180,7 +180,7 @@ It is an error to use this before 'verifySorts'.
 lookupSortAttributes :: Id -> SentenceVerifier Attribute.Sort
 lookupSortAttributes name = do
     verifiedModule <- State.get
-    (attrs, _) <- Resolvers.resolveSort verifiedModule name
+    (attrs, _) <- Resolvers.resolveSort (indexedModuleSyntax verifiedModule) name
     return attrs
 
 runSentenceVerifier ::
@@ -231,7 +231,7 @@ verifyHookedSymbolSentence sentence =
         verifiedModule <- State.get
         Builtin.runSymbolVerifier
             (Builtin.symbolVerifier builtinVerifiers hook)
-            (findIndexedSort verifiedModule)
+            (findIndexedSort (indexedModuleSyntax verifiedModule))
             sentence
             & either throwError return
         let Symbol{symbolConstructor = name} = sentenceSymbolSymbol sentence
@@ -243,7 +243,7 @@ addIndexedModuleHook ::
     VerifiedModule' ->
     VerifiedModule'
 addIndexedModuleHook name hook =
-    Lens.over (field @"indexedModuleHookedIdentifiers") (Set.insert name)
+    Lens.over (field @"indexedModuleSyntax" . field @"indexedModuleHookedIdentifiers") (Set.insert name)
         . Lens.over (field @"indexedModuleHooks") addHook
   where
     addHook
@@ -279,7 +279,7 @@ verifySymbolSentence sentence =
   where
     addSymbol verified attrs =
         Lens.over
-            (field @"indexedModuleSymbolSentences")
+            (field @"indexedModuleSyntax" . field @"indexedModuleSymbolSentences")
             (Map.insert name (attrs, verified))
       where
         Symbol{symbolConstructor = name} = sentenceSymbolSymbol verified
@@ -436,7 +436,7 @@ verifySortSentence sentence =
   where
     addSort verified attrs =
         Lens.over
-            (field @"indexedModuleSortDescriptions")
+            (field @"indexedModuleSyntax" . field @"indexedModuleSortDescriptions")
             (Map.insert (sentenceSortName verified) (attrs, verified))
 
 verifyNonHooks ::

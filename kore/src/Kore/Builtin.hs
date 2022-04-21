@@ -61,8 +61,8 @@ import Kore.Builtin.Set qualified as Set
 import Kore.Builtin.Signedness qualified as Signedness
 import Kore.Builtin.String qualified as String
 import Kore.IndexedModule.IndexedModule (
-    IndexedModule (..),
-    VerifiedModule,
+    IndexedModuleSyntax (..),
+    VerifiedModuleSyntax,
  )
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
@@ -110,7 +110,7 @@ koreVerifiers =
 -}
 koreEvaluators ::
     -- | Module under which evaluation takes place
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     Map AxiomIdentifier BuiltinAndAxiomSimplifier
 koreEvaluators = evaluators builtins
   where
@@ -139,7 +139,7 @@ evaluators ::
     -- | Builtin functions indexed by name
     Map Text BuiltinAndAxiomSimplifier ->
     -- | Module under which evaluation takes place
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     Map AxiomIdentifier BuiltinAndAxiomSimplifier
 evaluators builtins indexedModule =
     Map.mapMaybe
@@ -150,19 +150,19 @@ evaluators builtins indexedModule =
         )
   where
     hookedSymbolAttributes ::
-        VerifiedModule StepperAttributes ->
+        VerifiedModuleSyntax StepperAttributes ->
         Map Id StepperAttributes
     hookedSymbolAttributes im =
         Map.union
             (justAttributes <$> IndexedModule.hookedObjectSymbolSentences im)
             ( Map.unions
-                (importHookedSymbolAttributes <$> indexedModuleImports im)
+                (importHookedSymbolAttributes <$> indexedModuleImportsSyntax im)
             )
       where
         justAttributes (attrs, _) = attrs
 
     importHookedSymbolAttributes ::
-        (a, b, VerifiedModule StepperAttributes) ->
+        (a, b, VerifiedModuleSyntax StepperAttributes) ->
         Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 

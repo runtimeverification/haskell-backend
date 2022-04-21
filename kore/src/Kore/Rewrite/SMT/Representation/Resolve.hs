@@ -40,8 +40,12 @@ import Kore.Rewrite.SMT.AST (
     UnresolvedSortDeclaration,
     UnresolvedSymbol,
     encode,
+    symbolSmtFromSortArgs,
  )
 import Kore.Rewrite.SMT.AST qualified as DoNotUse
+import Kore.Rewrite.SMT.Representation.Sorts (
+    sortSmtFromSortArgs,
+ )
 import Kore.Sort qualified as Kore (
     Sort (SortActualSort),
     SortActual (SortActual),
@@ -97,8 +101,8 @@ smtResolvers Declarations{sorts, symbols} =
                         [ "All references should be resolved before transforming"
                         , "to smt declarations."
                         ]
-                Just Sort{sortSmtFromSortArgs} ->
-                    case sortSmtFromSortArgs Map.empty [] of
+                Just Sort{sortData} ->
+                    case sortSmtFromSortArgs sortData Map.empty [] of
                         Nothing ->
                             (error . unlines)
                                 [ "Expecting to be able to produce sort representation"
@@ -115,8 +119,8 @@ smtResolvers Declarations{sorts, symbols} =
                     [ "All references should be resolved before transforming"
                     , "to smt declarations."
                     ]
-            Just Symbol{symbolSmtFromSortArgs} ->
-                case symbolSmtFromSortArgs Map.empty [] of
+            Just Symbol{symbolData} ->
+                case symbolSmtFromSortArgs symbolData Map.empty [] of
                     Nothing ->
                         (error . unlines)
                             [ "Expecting to be able to produce symbol"
@@ -204,13 +208,13 @@ resolveSort ::
     Maybe (Sort sort symbol name)
 resolveSort
     resolvers
-    Sort{sortSmtFromSortArgs, sortDeclaration} =
+    Sort{sortData, sortDeclaration} =
         traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration] $
             do
                 newDeclaration <- resolveKoreSortDeclaration resolvers sortDeclaration
                 return
                     Sort
-                        { sortSmtFromSortArgs = sortSmtFromSortArgs
+                        { sortData = sortData
                         , sortDeclaration = newDeclaration
                         }
 
@@ -296,13 +300,13 @@ resolveSymbol ::
 resolveSymbol
     resolvers
     symbolId
-    Symbol{symbolSmtFromSortArgs, symbolDeclaration} =
+    Symbol{symbolData, symbolDeclaration} =
         traceMaybe D_SMT_resolveSymbol [debugArg "declaration" symbolDeclaration] $ do
             newDeclaration <-
                 resolveKoreSymbolDeclaration resolvers symbolId symbolDeclaration
             return
                 Symbol
-                    { symbolSmtFromSortArgs = symbolSmtFromSortArgs
+                    { symbolData = symbolData
                     , symbolDeclaration = newDeclaration
                     }
 

@@ -8,6 +8,7 @@ module Kore.Attribute.Sort.Constructors (
     Constructor (..),
 ) where
 
+import GHC.Generics qualified as GHC
 import Kore.Internal.Symbol (
     Symbol,
  )
@@ -21,11 +22,15 @@ data Constructor = Constructor
     , sorts :: ![Sort]
     }
     deriving stock (Show, Eq)
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 data ConstructorLike
     = ConstructorLikeConstructor !Constructor
     | ConstructorLikeInjection
     deriving stock (Show, Eq)
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 {- | @Nothing@ means that the sort has no constructors that we can recognize.
 @Just value@ means that we recognized the sort's constructors, and @value@
@@ -33,3 +38,5 @@ contains the list of these constructors.
 -}
 newtype Constructors = Constructors {getConstructors :: Maybe (NonEmpty ConstructorLike)}
     deriving stock (Show, Eq)
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)

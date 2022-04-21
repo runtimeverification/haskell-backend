@@ -216,14 +216,12 @@ test_translatePredicateWith =
             & SideCondition.fromDefinedTerms
 
 translatePredicate ::
-    HasCallStack =>
     Predicate VariableName ->
     Translator VariableName NoSMT SExpr
 translatePredicate =
     Evaluator.translatePredicate SideCondition.top Mock.metadataTools
 
 translatePattern ::
-    HasCallStack =>
     SideCondition VariableName ->
     TermLike VariableName ->
     Translator VariableName NoSMT SExpr
@@ -234,12 +232,11 @@ translatePattern sideCondition =
         Evaluator.translateTerm
         Mock.testSort
 
-translatingPred :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
+translatingPred :: Predicate VariableName -> IO (Maybe SExpr)
 translatingPred =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
 
 translatingPatt ::
-    HasCallStack =>
     SideCondition VariableName ->
     TermLike VariableName ->
     IO (Maybe SExpr)

@@ -19,13 +19,21 @@ module GlobalMain (
     lookupMainModule,
     LoadedDefinition (..),
     LoadedModule,
+    LoadedModuleSyntax,
     loadDefinitions,
     loadModule,
     mainParseSearchPattern,
     mainPatternParseAndVerify,
     addExtraAxioms,
+    execute,
+    SerializedDefinition (..),
+    deserializeDefinition,
+    makeSerializedDefinition,
 ) where
 
+import Control.DeepSeq (
+    deepseq,
+ )
 import Control.Exception (
     evaluate,
  )
@@ -35,6 +43,17 @@ import Control.Lens (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
+import Control.Monad.Catch (
+    MonadMask,
+ )
+import Data.Binary qualified as Binary
+import Data.ByteString.Lazy qualified as ByteString
+import Data.Compact (
+    getCompact,
+ )
+import Data.Compact.Serialize (
+    unsafeReadCompact,
+ )
 import Data.Generics.Product (
     field,
  )
@@ -51,9 +70,14 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
+import Data.Time.Clock (
+    UTCTime (..),
+ )
 import Data.Version (
     showVersion,
  )
+import Data.Word
+import GHC.Generics qualified as GHC
 import GHC.Stack (
     emptyCallStack,
  )
@@ -71,15 +95,29 @@ import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Builtin qualified as Builtin
+import Kore.Exec (
+    SerializedModule (..),
+    makeSerializedModule,
+ )
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleAxioms),
     VerifiedModule,
+    VerifiedModuleSyntax,
+ )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
+    build,
  )
 import Kore.Internal.Conditional (Conditional (..))
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (makePredicate)
 import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
+import Kore.Log.ErrorOutOfDate (
+    errorOutOfDate,
+ )
 import Kore.Log.ErrorParse (
     errorParse,
  )
@@ -91,6 +129,7 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
+import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     GraphSearchOrder (..),
@@ -100,6 +139,7 @@ import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
     ParsedDefinition,
+    SentenceAxiom,
     definitionAttributes,
     getModuleNameForError,
  )
@@ -138,15 +178,29 @@ import Options.Applicative.Help.Chunk (
     vsepChunks,
  )
 import Options.Applicative.Help.Pretty qualified as Pretty
+import Options.SMT (
+    KoreSolverOptions (..),
+    Solver (..),
+ )
 import Paths_kore qualified as MetaData (
     version,
  )
 import Prelude.Kore
 import Pretty qualified as KorePretty
+import Prof (
+    MonadProf,
+ )
+import SMT (
+    MonadSMT,
+ )
+import SMT qualified
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
     getTime,
+ )
+import System.Directory (
+    getModificationTime,
  )
 import System.Environment qualified as Env
 
@@ -406,7 +460,7 @@ clockSomethingIO description something = do
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify ::
     -- | Module containing definitions visible in the pattern
-    VerifiedModule Attribute.Symbol ->
+    VerifiedModuleSyntax Attribute.Symbol ->
     -- | Parsed pattern to check well-formedness
     ParsedPattern ->
     Main Verified.Pattern
@@ -487,7 +541,126 @@ mainParse parser fileName = do
         Left err -> errorParse err
         Right definition -> return definition
 
+type MonadExecute exe =
+    ( MonadMask exe
+    , MonadIO exe
+    , MonadSMT exe
+    , MonadProf exe
+    , WithLog LogMessage exe
+    )
+
+-- | Run the worker in the context of the main module.
+execute ::
+    forall r.
+    KoreSolverOptions ->
+    -- | SMT Lemmas
+    SmtMetadataTools StepperAttributes ->
+    [SentenceAxiom (TermLike VariableName)] ->
+    -- | Worker
+    (forall exe. MonadExecute exe => exe r) ->
+    Main r
+execute options metadataTools lemmas worker =
+    clockSomethingIO "Executing" $
+        case solver of
+            Z3 -> withZ3
+            None -> withoutSMT
+  where
+    withZ3 =
+        SMT.runSMT
+            config
+            (declareSMTLemmas metadataTools lemmas)
+            worker
+    withoutSMT = SMT.runNoSMT worker
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
+        options
+    config =
+        SMT.defaultConfig
+            { SMT.timeOut = timeOut
+            , SMT.rLimit = rLimit
+            , SMT.resetInterval = resetInterval
+            , SMT.prelude = prelude
+            }
+
+data SerializedDefinition = SerializedDefinition
+    { serializedModule :: SerializedModule
+    , lemmas :: [SentenceAxiom (TermLike VariableName)]
+    , locations :: KFileLocations
+    }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+
+{- | Read a definition from disk, detect if it is a serialized compact region or not,
+and either deserialize it, or else treat it as a text KORE definition and manually
+construct the needed SerializedDefinition object from it.
+-}
+deserializeDefinition ::
+    SimplifierXSwitch ->
+    KoreSolverOptions ->
+    FilePath ->
+    ModuleName ->
+    UTCTime ->
+    Main SerializedDefinition
+deserializeDefinition
+    simplifierx
+    solverOptions
+    definitionFilePath
+    mainModuleName
+    exeLastModifiedTime =
+        do
+            bytes <- ByteString.readFile definitionFilePath & liftIO
+            let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
+            let magic = Binary.decode @Word64 magicBytes
+            case magic of
+                -- This magic number comes from the Data.Compact.Serialize moduile source:
+                -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
+                -- The field is not exported by the package so we have to manually specify it here.
+                -- If you update the version of the compact package, you should double check that
+                -- the file format has not changed. They don't provide any particular guarantees
+                -- of stability across versions because the serialized data becomes invalid when
+                -- any changes are made to the binary at all, so there would be no point.
+                --
+                -- We use this magic number to detect if the input file for the definition is
+                -- a serialized Data.Compact region or if it is a textual KORE definition.
+                0x7c155e7a53f094f2 -> do
+                    defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
+                    if defnLastModifiedTime < exeLastModifiedTime
+                        then errorOutOfDate "serialized definition is out of date. Rerun kompile or kore-exec --serialize."
+                        else do
+                            result <- unsafeReadCompact definitionFilePath & liftIO
+                            either errorParse (return . getCompact) result
+                _ ->
+                    makeSerializedDefinition
+                        simplifierx
+                        solverOptions
+                        definitionFilePath
+                        mainModuleName
+
+makeSerializedDefinition ::
+    SimplifierXSwitch ->
+    KoreSolverOptions ->
+    FilePath ->
+    ModuleName ->
+    Main SerializedDefinition
+makeSerializedDefinition simplifierx solverOptions definitionFileName mainModuleName = do
+    definition <- loadDefinitions [definitionFileName]
+    mainModule <- loadModule mainModuleName definition
+    let metadataTools = MetadataTools.build mainModule
+    let lemmas = getSMTLemmas mainModule
+    serializedModule <-
+        execute solverOptions metadataTools lemmas $
+            makeSerializedModule simplifierx mainModule
+    let locations = kFileLocations definition
+    let serializedDefinition =
+            SerializedDefinition
+                { serializedModule
+                , lemmas
+                , locations
+                }
+    serializedDefinition `deepseq` pure ()
+    return serializedDefinition
+
 type LoadedModule = VerifiedModule Attribute.Symbol
+type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol
 
 data LoadedDefinition = LoadedDefinition
     { indexedModules :: Map ModuleName LoadedModule
@@ -522,7 +695,7 @@ loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
 
 mainParseSearchPattern ::
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     String ->
     Main (Pattern VariableName)
 mainParseSearchPattern indexedModule patternFileName = do
@@ -545,7 +718,7 @@ mainParseSearchPattern indexedModule patternFileName = do
  converts it to a pure pattern, and prints timing information.
 -}
 mainPatternParseAndVerify ::
-    VerifiedModule StepperAttributes ->
+    VerifiedModuleSyntax StepperAttributes ->
     String ->
     Main (TermLike VariableName)
 mainPatternParseAndVerify indexedModule patternFileName =

@@ -16,6 +16,7 @@ module Kore.Reachability.Claim (
     extractClaims,
     reachabilityFirstStep,
     reachabilityNextStep,
+    reachabilityCheckOnly,
     transitionRule,
     isTrusted,
 
@@ -88,6 +89,7 @@ import Kore.Internal.Pattern (
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
+    makeInPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -100,7 +102,6 @@ import Kore.Internal.TermLike (
     Not (..),
     Sort,
     isFunctionPattern,
-    mkIn,
     termLikeSort,
  )
 import Kore.Log.InfoReachability
@@ -381,6 +382,13 @@ reachabilityNextStep =
         , Simplify
         ]
 
+{- | A strategy for the last step of depth-limited reachability proofs.
+   The final such step should only perform a CheckImplication.
+-}
+reachabilityCheckOnly :: Strategy Prim
+reachabilityCheckOnly =
+    Strategy.sequence [Strategy.apply Begin, Strategy.apply CheckImplication]
+
 strategy :: Stream (Strategy Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
@@ -551,8 +559,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             right' <- Logic.scatter right
             let (rightTerm, rightCondition) = Pattern.splitTerm right'
             unified <-
-                mkIn sort leftTerm rightTerm
-                    & Pattern.fromTermLike
+                makeInPredicate leftTerm rightTerm
+                    & Pattern.fromPredicateSorted sort
                     & Pattern.simplify
                     & (>>= Logic.scatter)
             didUnify

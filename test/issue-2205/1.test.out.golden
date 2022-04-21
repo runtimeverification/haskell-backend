@@ -1,17 +1,17 @@
     #Not ( {
-      ?_0
+      ?_Gen0
     #Equals
       1
     } )
   #And
     #Not ( {
-      ?_0
+      ?_Gen0
     #Equals
       2
     } )
   #And
     <k>
-      ?_0:Int ~> .
+      ?_Gen0:Int ~> .
     </k>
 #Or
     <k>
@@ -19,7 +19,7 @@
     </k>
   #And
     {
-      ?_0
+      ?_Gen0
     #Equals
       1
     }
@@ -29,7 +29,7 @@
     </k>
   #And
     {
-      ?_0
+      ?_Gen0
     #Equals
       2
     }
