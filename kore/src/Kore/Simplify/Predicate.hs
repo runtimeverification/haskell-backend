@@ -7,7 +7,18 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
+import Kore.Rewrite.Function.Evaluator qualified as Axiom (
+    evaluatePattern,
+ )
+import Control.Error (
+    MaybeT,
+    maybeT,
+ )
 import Data.Functor.Foldable qualified as Recursive
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
+import Kore.Internal.Condition qualified as Condition
 import Data.Map.Strict qualified as Map
 import Data.Monoid (
     First (..),
@@ -25,6 +36,7 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -33,6 +45,7 @@ import Kore.Internal.OrPattern (
  )
 import Kore.Internal.Pattern (
     Condition,
+    Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
@@ -544,6 +557,21 @@ simplifyEquals sideCondition sort equals =
             { equalsOperandSort = sort
             , equalsResultSort = sort
             }
+    -- applyUserSimplification =
+    --     _ applyEquations equals'
+
+    -- applyEquations ::
+    --     Equals Sort (Pattern RewritingVariableName) ->
+    --     MaybeT simplifier (OrPattern RewritingVariableName)
+    -- applyEquations (Pattern.splitTerm -> (inputTerm, inputCondition)) = do
+    --     evaluatedTerms <-
+    --         Axiom.evaluatePattern
+    --             sideCondition
+    --             Condition.top
+    --             (synthesize $ TermLike.EqualsF inputTerm)
+    --             (const empty)
+    --     undefined
+
 
 simplifyIn ::
     MonadSimplify simplifier =>

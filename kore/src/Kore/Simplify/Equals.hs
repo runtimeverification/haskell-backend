@@ -14,10 +14,15 @@ module Kore.Simplify.Equals (
     termEquals,
 ) where
 
+import Kore.Unparser (unparseToString)
+
 import Control.Error (
     MaybeT (..),
  )
 import Kore.Internal.Condition qualified as Condition
+import Kore.Rewrite.Function.Evaluator qualified as Axiom (
+    evaluatePattern,
+ )
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
@@ -39,6 +44,7 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -211,11 +217,23 @@ simplifyEvaluated sort sideCondition first second
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
                     Iff.simplifyEvaluated sort sideCondition first second
                         & fmap (MultiOr.map Pattern.withoutTerm)
-                | otherwise ->
-                    makeEvaluate
-                        (OrPattern.toPattern sort first)
-                        (OrPattern.toPattern sort second)
-                        sideCondition
+                | otherwise -> do
+                    let firstPatt = OrPattern.toPattern sort first
+                        secondPatt = OrPattern.toPattern sort second
+                        (firstTerm, firstCondition) = Pattern.splitTerm firstPatt
+                        (secondTerm, secondCondition) = Pattern.splitTerm secondPatt
+                    result <-
+                        applyUserSimplification sideCondition sort firstTerm secondTerm
+                            & runMaybeT
+                            & trace (unparseToString $ TermLike.mkEquals sort firstTerm secondTerm)
+                    case result of
+                        Just x -> return x
+                        Nothing ->
+                            makeEvaluate
+                                firstPatt
+                                secondPatt
+                                sideCondition
+
   where
     firstPatterns = toList first
     secondPatterns = toList second
@@ -295,28 +313,66 @@ makeEvaluate
     first@Conditional{term = firstTerm}
     second@Conditional{term = secondTerm}
     sideCondition =
-        do
-            let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
-            firstCeil <- makeEvaluateCeil sort sideCondition first'
-            let second' = second{term = if termsAreEqual then mkTop sort else secondTerm}
-            secondCeil <- makeEvaluateCeil sort sideCondition second'
-            let mkNotSimplified notChild =
-                    Not.simplify sideCondition Not{notSort = sort, notChild}
-            firstCeilNegation <- mkNotSimplified firstCeil
-            secondCeilNegation <- mkNotSimplified secondCeil
-            termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-            negationAnd <-
-                (And.simplify sort Not.notSimplifier sideCondition)
-                    (MultiAnd.make [firstCeilNegation, secondCeilNegation])
-            equalityAnd <-
-                (And.simplify sort Not.notSimplifier sideCondition)
-                    (MultiAnd.make [termEquality, firstCeil, secondCeil])
-            Or.simplifyEvaluated equalityAnd negationAnd
-                & MultiOr.map Pattern.withoutTerm
-                & return
+        -- result <-
+        --     applyUserSimplification sideCondition sort firstTerm secondTerm
+        --         & runMaybeT
+        --         & trace (unparseToString $ TermLike.mkEquals sort firstTerm secondTerm)
+        -- case result of
+        --     Just x -> return x
+        --     Nothing ->
+                applyBuiltinSimplification sideCondition sort termsAreEqual first second
       where
         sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
         termsAreEqual = firstTerm == secondTerm
+
+applyUserSimplification ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Sort ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT simplifier (OrCondition RewritingVariableName)
+applyUserSimplification sideCondition sort leftTerm rightTerm =
+    Axiom.evaluatePattern
+        sideCondition
+        Condition.top
+        (TermLike.mkEquals sort leftTerm rightTerm)
+        (const empty)
+        <&> MultiOr.map Pattern.withoutTerm
+
+applyBuiltinSimplification ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Sort ->
+    Bool ->
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    simplifier (OrCondition RewritingVariableName)
+applyBuiltinSimplification
+    sideCondition
+    sort
+    termsAreEqual
+    first@Conditional{term = firstTerm}
+    second@Conditional{term = secondTerm}
+  = do
+    let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
+    firstCeil <- makeEvaluateCeil sort sideCondition first'
+    let second' = second{term = if termsAreEqual then mkTop sort else secondTerm}
+    secondCeil <- makeEvaluateCeil sort sideCondition second'
+    let mkNotSimplified notChild =
+            Not.simplify sideCondition Not{notSort = sort, notChild}
+    firstCeilNegation <- mkNotSimplified firstCeil
+    secondCeilNegation <- mkNotSimplified secondCeil
+    termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+    negationAnd <-
+        (And.simplify sort Not.notSimplifier sideCondition)
+            (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+    equalityAnd <-
+        (And.simplify sort Not.notSimplifier sideCondition)
+            (MultiAnd.make [termEquality, firstCeil, secondCeil])
+    Or.simplifyEvaluated equalityAnd negationAnd
+        & MultiOr.map Pattern.withoutTerm
+        & return
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside

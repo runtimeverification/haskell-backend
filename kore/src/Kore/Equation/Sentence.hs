@@ -199,6 +199,9 @@ matchEquation attributes termLike
             do
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                case left of
+                    TermLike.Equals_ _ _ _ _ -> traceM "\nparsing rule\n"
+                    _ -> return ()
                 pure
                     Equation
                         { requires = requires'
