@@ -14,15 +14,10 @@ module Kore.Simplify.Equals (
     termEquals,
 ) where
 
-import Kore.Unparser (unparseToString)
-
 import Control.Error (
     MaybeT (..),
  )
 import Kore.Internal.Condition qualified as Condition
-import Kore.Rewrite.Function.Evaluator qualified as Axiom (
-    evaluatePattern,
- )
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
@@ -45,6 +40,9 @@ import Kore.Internal.SideCondition (
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Rewrite.Function.Evaluator qualified as Axiom (
+    evaluatePattern,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -81,6 +79,7 @@ import Kore.Unification.UnifierT (
 import Kore.Unification.Unify (
     MonadUnify,
  )
+import Kore.Unparser (unparseToString)
 import Logic (
     LogicT,
  )
@@ -320,7 +319,7 @@ makeEvaluate
         -- case result of
         --     Just x -> return x
         --     Nothing ->
-                applyBuiltinSimplification sideCondition sort termsAreEqual first second
+        applyBuiltinSimplification sideCondition sort termsAreEqual first second
       where
         sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
         termsAreEqual = firstTerm == secondTerm
@@ -353,26 +352,26 @@ applyBuiltinSimplification
     sort
     termsAreEqual
     first@Conditional{term = firstTerm}
-    second@Conditional{term = secondTerm}
-  = do
-    let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
-    firstCeil <- makeEvaluateCeil sort sideCondition first'
-    let second' = second{term = if termsAreEqual then mkTop sort else secondTerm}
-    secondCeil <- makeEvaluateCeil sort sideCondition second'
-    let mkNotSimplified notChild =
-            Not.simplify sideCondition Not{notSort = sort, notChild}
-    firstCeilNegation <- mkNotSimplified firstCeil
-    secondCeilNegation <- mkNotSimplified secondCeil
-    termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <-
-        (And.simplify sort Not.notSimplifier sideCondition)
-            (MultiAnd.make [firstCeilNegation, secondCeilNegation])
-    equalityAnd <-
-        (And.simplify sort Not.notSimplifier sideCondition)
-            (MultiAnd.make [termEquality, firstCeil, secondCeil])
-    Or.simplifyEvaluated equalityAnd negationAnd
-        & MultiOr.map Pattern.withoutTerm
-        & return
+    second@Conditional{term = secondTerm} =
+        do
+            let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
+            firstCeil <- makeEvaluateCeil sort sideCondition first'
+            let second' = second{term = if termsAreEqual then mkTop sort else secondTerm}
+            secondCeil <- makeEvaluateCeil sort sideCondition second'
+            let mkNotSimplified notChild =
+                    Not.simplify sideCondition Not{notSort = sort, notChild}
+            firstCeilNegation <- mkNotSimplified firstCeil
+            secondCeilNegation <- mkNotSimplified secondCeil
+            termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+            negationAnd <-
+                (And.simplify sort Not.notSimplifier sideCondition)
+                    (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+            equalityAnd <-
+                (And.simplify sort Not.notSimplifier sideCondition)
+                    (MultiAnd.make [termEquality, firstCeil, secondCeil])
+            Or.simplifyEvaluated equalityAnd negationAnd
+                & MultiOr.map Pattern.withoutTerm
+                & return
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside

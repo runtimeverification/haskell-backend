@@ -17,10 +17,6 @@ import Control.Error (
     runMaybeT,
  )
 import Data.Functor.Foldable qualified as Recursive
-import Kore.Attribute.Synthetic (
-    synthesize,
- )
-import Kore.Internal.Condition qualified as Condition
 import Data.Map.Strict qualified as Map
 import Data.Monoid (
     First (..),
@@ -29,6 +25,10 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     occursIn,
  )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -38,13 +38,13 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Condition,
     Pattern,
@@ -70,6 +70,9 @@ import Kore.Internal.TermLike (
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.WarnUnsimplified (
     warnUnsimplifiedPredicate,
+ )
+import Kore.Rewrite.Function.Evaluator qualified as Axiom (
+    evaluatePattern,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
