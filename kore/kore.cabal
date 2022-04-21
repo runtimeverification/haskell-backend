@@ -637,6 +637,13 @@ executable kore-check-functions
   hs-source-dirs: app/check-functions
   build-depends: exceptions >=0.10
 
+executable kore-simplify
+  import: haskell
+  import: exe
+  import: global-main
+  main-is: Main.hs
+  hs-source-dirs: app/simplify
+
 test-suite kore-test
   import: haskell
   import: library
