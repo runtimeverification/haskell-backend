@@ -84,6 +84,9 @@ import Kore.Log.ErrorEquationsSameMatch (
 import Kore.Log.ErrorException (
     ErrorException,
  )
+import Kore.Log.ErrorOutOfDate (
+    ErrorOutOfDate,
+ )
 import Kore.Log.ErrorParse (
     ErrorParse,
  )
@@ -228,6 +231,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorDecidePredicateUnknown
             , mk $ Proxy @ErrorEquationRightFunction
             , mk $ Proxy @ErrorEquationsSameMatch
+            , mk $ Proxy @ErrorOutOfDate
             , mk $ Proxy @ErrorParse
             , mk $ Proxy @ErrorVerify
             , mk $ Proxy @ErrorException

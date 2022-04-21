@@ -24,6 +24,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Sort qualified as Attribute
 import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
@@ -56,8 +57,13 @@ data MetadataSyntaxData attributes
     = MetadataSyntaxData (VerifiedModuleSyntax attributes)
     | forall syntaxData.
         ( ExtractSyntax syntaxData
+        , NFData (syntaxData attributes)
         ) =>
       MetadataSyntaxDataExtension (syntaxData attributes)
+
+instance NFData (MetadataSyntaxData attributes) where
+    rnf (MetadataSyntaxData sdata) = sdata `seq` ()
+    rnf (MetadataSyntaxDataExtension sdata) = sdata `seq` ()
 
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
@@ -77,6 +83,8 @@ data MetadataTools sortConstructors smt attributes = MetadataTools
     , -- | The constructors for each sort.
       sortConstructors :: Map Id sortConstructors
     }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 type SmtMetadataTools attributes =
     MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
