@@ -7,6 +7,7 @@ import Kore.Attribute.Symbol (
 import Kore.BugReport
 import Kore.Exec (simplify)
 import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
     VerifiedModule,
  )
 import Kore.Internal.Pattern (Pattern)
@@ -154,7 +155,7 @@ mainParseInputPattern ::
     String ->
     Main (Pattern RewritingVariableName)
 mainParseInputPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+    purePattern <- mainPatternParseAndVerify (indexedModuleSyntax indexedModule) patternFileName
     return $ parsePattern purePattern
   where
     parsePattern = mkRewritingPattern . Pattern.fromTermLike
