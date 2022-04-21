@@ -9,8 +9,6 @@ module Kore.Equation.Application (
     applySubstitutionAndSimplify,
 ) where
 
-import Pretty qualified
-
 import Control.Error (
     ExceptT,
     MaybeT (..),
@@ -92,6 +90,7 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
 import Logic qualified
 import Prelude.Kore
+import Pretty qualified
 
 {- | Attempt to apply an 'Equation' to the 'TermLike'.
 

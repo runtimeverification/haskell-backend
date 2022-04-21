@@ -7,10 +7,6 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
-import Kore.Rewrite.Function.Evaluator qualified as Axiom (
-    evaluatePattern,
- )
-import Kore.Unparser (unparseToString)
 import Control.Error (
     MaybeT,
     maybeT,
@@ -103,6 +99,7 @@ import Kore.Syntax (
  )
 import Kore.Syntax.Exists qualified as Exists
 import Kore.Syntax.Forall qualified as Forall
+import Kore.Unparser (unparseToString)
 import Logic
 import Prelude.Kore
 
@@ -574,21 +571,21 @@ simplifyEquals sideCondition sort equals = do
         MaybeT simplifier (OrCondition RewritingVariableName)
     applyEquations
         (Pattern.splitTerm -> (leftTerm, leftCondition))
-        (Pattern.splitTerm -> (rightTerm, rightCondition))
-      = do
-        evaluatedTerms <-
-            Axiom.evaluatePattern
-                sideCondition
-                Condition.top
-                (TermLike.mkEquals sort leftTerm rightTerm)
-                (const empty)
+        (Pattern.splitTerm -> (rightTerm, rightCondition)) =
+            do
+                evaluatedTerms <-
+                    Axiom.evaluatePattern
+                        sideCondition
+                        Condition.top
+                        (TermLike.mkEquals sort leftTerm rightTerm)
+                        (const empty)
                 -- & trace (unparseToString (TermLike.mkEquals sort leftTerm rightTerm))
-        OrPattern.map
-            ( Pattern.withoutTerm
-            . flip Pattern.andCondition (leftCondition <> rightCondition)
-            )
-            evaluatedTerms
-            & return
+                OrPattern.map
+                    ( Pattern.withoutTerm
+                        . flip Pattern.andCondition (leftCondition <> rightCondition)
+                    )
+                    evaluatedTerms
+                    & return
 
 simplifyIn ::
     MonadSimplify simplifier =>

@@ -232,7 +232,6 @@ simplifyEvaluated sort sideCondition first second
                         firstPatt
                         secondPatt
                         sideCondition
-
   where
     firstPatterns = toList first
     secondPatterns = toList second
