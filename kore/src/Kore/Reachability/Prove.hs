@@ -51,6 +51,7 @@ import Data.Limit (
 import Data.Limit qualified as Limit
 import Data.List.Extra (
     groupSortOn,
+    snoc,
  )
 import Data.Text (
     Text,
@@ -322,6 +323,11 @@ proveClaim
                     strategy
                         & toList
                         & Limit.takeWithin depthLimit
+                        {- With a non-Unlimited 'depthLimit', ensure that we
+                           discharge proofs which hold at the depth bound by
+                           adding an additional CheckImplication step at the end.
+                        -}
+                        & (`snoc` reachabilityCheckOnly)
             proofDepths <-
                 Strategy.leavesM
                     finalNodeType

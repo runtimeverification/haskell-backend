@@ -96,7 +96,7 @@ test_proveClaims =
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
-    , testGroup "runs one step with depth = 1" $
+    , testGroup "one step proof completes with depth = 1" $
         let mkTest name mkSimpleClaim =
                 testCase name $ do
                     let claim = mkSimpleClaim Mock.a Mock.b
@@ -107,13 +107,23 @@ test_proveClaims =
                             [simpleAxiom Mock.a Mock.b]
                             [claim]
                             []
-                    -- Note that the check that we have reached the destination
-                    -- happens at the beginning of each step. At the beginning
-                    -- of the first step the pattern is 'a', so we didn't reach
-                    -- our destination yet, even if the rewrite transforms 'a'
-                    -- into 'b'. We detect the success at the beginning of the
-                    -- second step, which does not run here.
-                    let stuck = mkSimpleClaim Mock.b Mock.b
+                    let expect = MultiAnd.top
+                    assertEqual "" expect actual
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
+    , testGroup "runs one step with depth = 1" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claim = mkSimpleClaim Mock.a Mock.c
+                    actual <-
+                        proveClaims_
+                            Unlimited
+                            (Limit 1)
+                            [simpleAxiom Mock.a Mock.b, simpleAxiom Mock.b Mock.c]
+                            [claim]
+                            []
+                    let stuck = mkSimpleClaim Mock.b Mock.c
                         expect = MultiAnd.singleton (StuckClaim stuck)
                     assertEqual "" expect actual
          in [ mkTest "OnePath" simpleOnePathClaim
