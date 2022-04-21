@@ -10,9 +10,11 @@ module Kore.Simplify.Predicate (
 import Kore.Rewrite.Function.Evaluator qualified as Axiom (
     evaluatePattern,
  )
+import Kore.Unparser (unparseToString)
 import Control.Error (
     MaybeT,
     maybeT,
+    runMaybeT,
  )
 import Data.Functor.Foldable qualified as Recursive
 import Kore.Attribute.Synthetic (
@@ -548,8 +550,9 @@ simplifyEquals ::
     Sort ->
     Equals sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyEquals sideCondition sort equals =
-    Equals.simplify sideCondition equals'
+simplifyEquals sideCondition sort equals = do
+    result <- runMaybeT applyUserSimplification
+    maybe (Equals.simplify sideCondition equals') return result
         <&> MultiOr.map (from @(Condition _))
   where
     equals' =
@@ -557,21 +560,32 @@ simplifyEquals sideCondition sort equals =
             { equalsOperandSort = sort
             , equalsResultSort = sort
             }
-    -- applyUserSimplification =
-    --     _ applyEquations equals'
+    applyUserSimplification =
+        let leftPatt = OrPattern.toPattern sort (equalsFirst equals')
+            rightPatt = OrPattern.toPattern sort (equalsSecond equals')
+         in applyEquations leftPatt rightPatt
 
-    -- applyEquations ::
-    --     Equals Sort (Pattern RewritingVariableName) ->
-    --     MaybeT simplifier (OrPattern RewritingVariableName)
-    -- applyEquations (Pattern.splitTerm -> (inputTerm, inputCondition)) = do
-    --     evaluatedTerms <-
-    --         Axiom.evaluatePattern
-    --             sideCondition
-    --             Condition.top
-    --             (synthesize $ TermLike.EqualsF inputTerm)
-    --             (const empty)
-    --     undefined
-
+    applyEquations ::
+        Pattern RewritingVariableName ->
+        Pattern RewritingVariableName ->
+        MaybeT simplifier (OrCondition RewritingVariableName)
+    applyEquations
+        (Pattern.splitTerm -> (leftTerm, leftCondition))
+        (Pattern.splitTerm -> (rightTerm, rightCondition))
+      = do
+        evaluatedTerms <-
+            Axiom.evaluatePattern
+                sideCondition
+                Condition.top
+                (TermLike.mkEquals sort leftTerm rightTerm)
+                (const empty)
+                -- & trace (unparseToString (TermLike.mkEquals sort leftTerm rightTerm))
+        OrPattern.map
+            ( Pattern.withoutTerm
+            . flip Pattern.andCondition (leftCondition <> rightCondition)
+            )
+            evaluatedTerms
+            & return
 
 simplifyIn ::
     MonadSimplify simplifier =>

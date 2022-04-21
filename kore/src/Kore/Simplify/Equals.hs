@@ -220,19 +220,19 @@ simplifyEvaluated sort sideCondition first second
                 | otherwise -> do
                     let firstPatt = OrPattern.toPattern sort first
                         secondPatt = OrPattern.toPattern sort second
-                        (firstTerm, firstCondition) = Pattern.splitTerm firstPatt
-                        (secondTerm, secondCondition) = Pattern.splitTerm secondPatt
-                    result <-
-                        applyUserSimplification sideCondition sort firstTerm secondTerm
-                            & runMaybeT
-                            & trace (unparseToString $ TermLike.mkEquals sort firstTerm secondTerm)
-                    case result of
-                        Just x -> return x
-                        Nothing ->
-                            makeEvaluate
-                                firstPatt
-                                secondPatt
-                                sideCondition
+                    --     (firstTerm, firstCondition) = Pattern.splitTerm firstPatt
+                    --     (secondTerm, secondCondition) = Pattern.splitTerm secondPatt
+                    -- result <-
+                    --     applyUserSimplification sideCondition sort firstTerm secondTerm
+                    --         & runMaybeT
+                    --         & trace (unparseToString $ TermLike.mkEquals sort firstTerm secondTerm)
+                    -- case result of
+                    --     Just x -> return x
+                    --     Nothing ->
+                    makeEvaluate
+                        firstPatt
+                        secondPatt
+                        sideCondition
 
   where
     firstPatterns = toList first

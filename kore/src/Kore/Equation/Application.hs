@@ -9,6 +9,8 @@ module Kore.Equation.Application (
     applySubstitutionAndSimplify,
 ) where
 
+import Pretty qualified
+
 import Control.Error (
     ExceptT,
     MaybeT (..),
@@ -116,6 +118,10 @@ attemptEquation sideCondition termLike equation = do
     attemptEquationWorker =
         whileDebugAttemptEquation' . runExceptT $ do
             let Equation{left, argument, antiLeft} = equationRenamed
+            -- case left of
+            --     TermLike.Equals_ _ _ _ _ ->
+            --         trace (show . Pretty.pretty $ equationRenamed) $ return ()
+            --     _ -> return ()
             (equation', predicate) <- matchAndApplyResults left argument antiLeft
             let Equation{requires} = equation'
             checkRequires sideCondition predicate requires & whileCheckRequires
