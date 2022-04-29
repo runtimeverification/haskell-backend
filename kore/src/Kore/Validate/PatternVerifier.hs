@@ -484,8 +484,9 @@ verifyDomainValue domain = do
     verified <- Internal.DomainValueF <$> sequence domain
     let freeVariables' :: FreeVariables VariableName =
             foldMap
-                freeVariables
-                (Internal.extractAttributes <$> verified)
+                ( freeVariables . Internal.extractAttributes
+                )
+                verified
     unless
         (nullFreeVariables freeVariables')
         (koreFail "Domain value must not contain free variables.")
