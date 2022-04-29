@@ -49,8 +49,7 @@ hprop_transitiveOrd =
 
 hprop_reflexiveOrd :: Property
 hprop_reflexiveOrd =
-    (property . sequence_)
-        (reflexive <$> sups)
+    property (mapM_ reflexive sups)
   where
     reflexive x = do
         annotateShow x
@@ -67,8 +66,7 @@ hprop_antisymmetricOrd =
 
 hprop_reflexiveEq :: Property
 hprop_reflexiveEq =
-    (property . sequence_)
-        (reflexive <$> sups)
+    property (mapM_ reflexive sups)
   where
     reflexive x = do
         annotateShow x
