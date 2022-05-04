@@ -130,14 +130,21 @@ common global-main
     Paths_kore
   hs-source-dirs: app/share
   build-depends: kore
+  build-depends: binary >=0.8.8.0
+  build-depends: bytestring >=0.10
   build-depends: clock >=0.8
+  build-depends: compact >= 0.2.0.0
   build-depends: containers >=0.5
+  build-depends: deepseq >=1.4
+  build-depends: directory >=1.3
+  build-depends: exceptions >=0.10
   build-depends: filepath >=1.4
   build-depends: generic-lens >=1.1
   build-depends: lens >=4.17
   build-depends: megaparsec >=7.0
   build-depends: optparse-applicative >=0.14
   build-depends: text >=1.2
+  build-depends: time >=1.9.3
 
 common library
   -- Dependencies of the library, shared in common with the tests
@@ -369,6 +376,7 @@ library
     Kore.Log.ErrorEquationRightFunction
     Kore.Log.ErrorEquationsSameMatch
     Kore.Log.ErrorException
+    Kore.Log.ErrorOutOfDate
     Kore.Log.ErrorParse
     Kore.Log.ErrorRewriteLoop
     Kore.Log.ErrorRewritesInstantiation
@@ -583,6 +591,7 @@ executable kore-exec
   import: global-main
   main-is: Main.hs
   hs-source-dirs: app/exec
+  build-depends: compact >=0.2.0.0
   build-depends: data-default >=0.7
   build-depends: directory >=1.3
   build-depends: exceptions >=0.10
@@ -636,6 +645,13 @@ executable kore-check-functions
   main-is: Main.hs
   hs-source-dirs: app/check-functions
   build-depends: exceptions >=0.10
+
+executable kore-simplify
+  import: haskell
+  import: exe
+  import: global-main
+  main-is: Main.hs
+  hs-source-dirs: app/simplify
 
 test-suite kore-test
   import: haskell

@@ -63,6 +63,8 @@ extra-deps:
   - tasty-test-reporter-0.1.1.4
   - junit-xml-0.1.0.0
 
+  - compact-0.2.0.0
+
   - git: https://github.com/ttuegel/pipes-ghc-events.git
     commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
     subdirs:

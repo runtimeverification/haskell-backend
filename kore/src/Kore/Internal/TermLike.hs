@@ -190,6 +190,10 @@ import Data.Align (
 import Data.ByteString (
     ByteString,
  )
+import Data.ByteString.Short (
+    ShortByteString,
+ )
+import Data.ByteString.Short qualified as ByteString
 import Data.Default qualified as Default
 import Data.Functor.Const (
     Const (..),
@@ -1322,7 +1326,7 @@ mkInternalBytes sort value =
     updateCallStack . synthesize . InternalBytesF . Const $
         InternalBytes
             { internalBytesSort = sort
-            , internalBytesValue = value
+            , internalBytesValue = ByteString.toShort value
             }
 
 mkInternalBytes' ::
@@ -1620,7 +1624,7 @@ pattern App_ applicationSymbolOrAlias applicationChildren <-
 pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom{bottomSort})
 
-pattern InternalBytes_ :: Sort -> ByteString -> TermLike variable
+pattern InternalBytes_ :: Sort -> ShortByteString -> TermLike variable
 pattern InternalBytes_ internalBytesSort internalBytesValue <-
     ( Recursive.project ->
             _

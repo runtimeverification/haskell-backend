@@ -10,6 +10,7 @@ module Kore.Attribute.Definition (
 import Control.Monad.Catch (MonadThrow)
 import Data.Default qualified as Default
 import Data.Generics.Product (typed)
+import GHC.Generics qualified as GHC
 import Kore.Attribute.Attributes (Attributes (..))
 import Kore.Attribute.Parser (ParseAttributes (..))
 import Kore.Attribute.SourceLocation (SourceLocation)
@@ -23,6 +24,8 @@ by the 'WarnIfLowProductivity' warning.
 newtype KFileLocations = KFileLocations
     {locations :: [SourceLocation]}
     deriving stock (Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
 
 parseKFileAttributes :: MonadThrow m => Attributes -> m SourceLocation
 parseKFileAttributes (Attributes attrs) =
