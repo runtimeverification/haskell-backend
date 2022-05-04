@@ -39,10 +39,6 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import Kore.Internal.TermLike qualified as TermLike
-import Kore.Rewrite.Function.Evaluator qualified as Axiom (
-    evaluatePattern,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -79,7 +75,6 @@ import Kore.Unification.UnifierT (
 import Kore.Unification.Unify (
     MonadUnify,
  )
-import Kore.Unparser (unparseToString)
 import Logic (
     LogicT,
  )
@@ -216,21 +211,10 @@ simplifyEvaluated sort sideCondition first second
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
                     Iff.simplifyEvaluated sort sideCondition first second
                         & fmap (MultiOr.map Pattern.withoutTerm)
-                | otherwise -> do
-                    let firstPatt = OrPattern.toPattern sort first
-                        secondPatt = OrPattern.toPattern sort second
-                    --     (firstTerm, firstCondition) = Pattern.splitTerm firstPatt
-                    --     (secondTerm, secondCondition) = Pattern.splitTerm secondPatt
-                    -- result <-
-                    --     applyUserSimplification sideCondition sort firstTerm secondTerm
-                    --         & runMaybeT
-                    --         & trace (unparseToString $ TermLike.mkEquals sort firstTerm secondTerm)
-                    -- case result of
-                    --     Just x -> return x
-                    --     Nothing ->
+                | otherwise ->
                     makeEvaluate
-                        firstPatt
-                        secondPatt
+                        (OrPattern.toPattern sort first)
+                        (OrPattern.toPattern sort second)
                         sideCondition
   where
     firstPatterns = toList first
@@ -311,47 +295,6 @@ makeEvaluate
     first@Conditional{term = firstTerm}
     second@Conditional{term = secondTerm}
     sideCondition =
-        -- result <-
-        --     applyUserSimplification sideCondition sort firstTerm secondTerm
-        --         & runMaybeT
-        --         & trace (unparseToString $ TermLike.mkEquals sort firstTerm secondTerm)
-        -- case result of
-        --     Just x -> return x
-        --     Nothing ->
-        applyBuiltinSimplification sideCondition sort termsAreEqual first second
-      where
-        sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
-        termsAreEqual = firstTerm == secondTerm
-
-applyUserSimplification ::
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    Sort ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT simplifier (OrCondition RewritingVariableName)
-applyUserSimplification sideCondition sort leftTerm rightTerm =
-    Axiom.evaluatePattern
-        sideCondition
-        Condition.top
-        (TermLike.mkEquals sort leftTerm rightTerm)
-        (const empty)
-        <&> MultiOr.map Pattern.withoutTerm
-
-applyBuiltinSimplification ::
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    Sort ->
-    Bool ->
-    Pattern RewritingVariableName ->
-    Pattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
-applyBuiltinSimplification
-    sideCondition
-    sort
-    termsAreEqual
-    first@Conditional{term = firstTerm}
-    second@Conditional{term = secondTerm} =
         do
             let first' = first{term = if termsAreEqual then mkTop sort else firstTerm}
             firstCeil <- makeEvaluateCeil sort sideCondition first'
@@ -371,6 +314,9 @@ applyBuiltinSimplification
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
                 & return
+      where
+        sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
+        termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside

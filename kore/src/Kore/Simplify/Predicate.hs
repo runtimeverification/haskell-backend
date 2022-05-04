@@ -9,7 +9,6 @@ module Kore.Simplify.Predicate (
 
 import Control.Error (
     MaybeT,
-    maybeT,
     runMaybeT,
  )
 import Data.Functor.Foldable qualified as Recursive
@@ -20,9 +19,6 @@ import Data.Monoid (
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     occursIn,
- )
-import Kore.Attribute.Synthetic (
-    synthesize,
  )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.From
@@ -99,7 +95,6 @@ import Kore.Syntax (
  )
 import Kore.Syntax.Exists qualified as Exists
 import Kore.Syntax.Forall qualified as Forall
-import Kore.Unparser (unparseToString)
 import Logic
 import Prelude.Kore
 
@@ -560,6 +555,9 @@ simplifyEquals sideCondition sort equals = do
             { equalsOperandSort = sort
             , equalsResultSort = sort
             }
+    -- This relies on 'OrPattern.toPattern' which should be retired
+    -- at some point, but that will require a reworking of the
+    -- 'Equals' simplification algorithm.
     applyUserSimplification =
         let leftPatt = OrPattern.toPattern sort (equalsFirst equals')
             rightPatt = OrPattern.toPattern sort (equalsSecond equals')
@@ -579,10 +577,11 @@ simplifyEquals sideCondition sort equals = do
                         Condition.top
                         (TermLike.mkEquals sort leftTerm rightTerm)
                         (const empty)
-                -- & trace (unparseToString (TermLike.mkEquals sort leftTerm rightTerm))
                 OrPattern.map
                     ( Pattern.withoutTerm
-                        . flip Pattern.andCondition (leftCondition <> rightCondition)
+                        . flip
+                            Pattern.andCondition
+                            (leftCondition <> rightCondition)
                     )
                     evaluatedTerms
                     & return
