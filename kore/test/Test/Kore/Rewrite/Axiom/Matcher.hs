@@ -156,17 +156,20 @@ test_matcherEqualHeads =
         let expect =
                 mkMatchResult
                     ( makeTruePredicate
-                    , [ ( inject Mock.tConfig
-                        , mkElemVar Mock.xConfig
-                        )
-                      , ( inject Mock.zConfig
-                        , Mock.a
-                        )
-                      , ( inject Mock.uConfig
-                        , Mock.b
-                        )
+                    , [
+                          ( inject Mock.tConfig
+                          , mkElemVar Mock.xConfig
+                          )
+                      ,
+                          ( inject Mock.zConfig
+                          , Mock.a
+                          )
+                      ,
+                          ( inject Mock.uConfig
+                          , Mock.b
+                          )
                       ]
-                      & Map.fromList
+                        & Map.fromList
                     )
         actual <-
             matchDefinition
