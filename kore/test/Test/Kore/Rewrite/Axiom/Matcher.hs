@@ -152,6 +152,35 @@ test_matcherEqualHeads =
                         }
                 )
         assertEqual "" topCondition actual
+    , testCase "Equals and builtin" $ do
+        let expect =
+                mkMatchResult
+                    ( makeTruePredicate
+                    , [ ( inject Mock.tConfig
+                        , mkElemVar Mock.xConfig
+                        )
+                      , ( inject Mock.zConfig
+                        , Mock.a
+                        )
+                      , ( inject Mock.uConfig
+                        , Mock.b
+                        )
+                      ]
+                      & Map.fromList
+                    )
+        actual <-
+            matchDefinition
+                ( mkEquals
+                    Mock.testSort
+                    (Mock.functional20 (mkElemVar Mock.tConfig) (mkElemVar Mock.zConfig))
+                    (Mock.functional20 (mkElemVar Mock.tConfig) (mkElemVar Mock.uConfig))
+                )
+                ( mkEquals
+                    Mock.testSort
+                    (Mock.functional20 (mkElemVar Mock.xConfig) Mock.a)
+                    (Mock.functional20 (mkElemVar Mock.xConfig) Mock.b)
+                )
+        assertEqual "" expect actual
     , testCase "DomainValue" $ do
         actual <-
             matchDefinition
