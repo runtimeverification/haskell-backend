@@ -79,6 +79,7 @@ data Sort sort symbol name = Sort
       sortDeclaration :: !(KoreSortDeclaration sort symbol name)
     }
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -102,6 +103,7 @@ data SortSExprSpec
     | ApplyToArgs AST.SExpr
     | ConstSExpr AST.SExpr
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
@@ -124,6 +126,7 @@ data Symbol sort name = Symbol
       symbolDeclaration :: !(KoreSymbolDeclaration sort name)
     }
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -153,6 +156,7 @@ data KoreSortDeclaration sort symbol name
       SortDeclaredIndirectly !name
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -174,6 +178,7 @@ data KoreSymbolDeclaration sort name
       SymbolConstructor !(IndirectSymbolDeclaration sort name)
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -184,6 +189,7 @@ data IndirectSymbolDeclaration sort name = IndirectSymbolDeclaration
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug name, Debug sort) => Debug (IndirectSymbolDeclaration sort name)
@@ -206,6 +212,7 @@ data Declarations sort symbol name = Declarations
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

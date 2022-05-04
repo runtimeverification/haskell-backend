@@ -75,6 +75,13 @@ packages:
   original:
     hackage: junit-xml-0.1.0.0
 - completed:
+    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
+    pantry-tree:
+      size: 546
+      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
+  original:
+    hackage: compact-0.2.0.0
+- completed:
     subdir: eventlog2speedscope
     name: eventlog2speedscope
     version: 0.1.0

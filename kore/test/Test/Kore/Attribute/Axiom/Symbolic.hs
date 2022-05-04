@@ -60,7 +60,7 @@ test_symbolic_selectx2 =
                     , symbolicAttribute [inject Mock.z]
                     ]
   where
-    freeVars = foldMap freeVariable $ inject <$> [Mock.x, Mock.y, Mock.z]
+    freeVars = foldMap (freeVariable . inject) [Mock.x, Mock.y, Mock.z]
     symbolicVars = foldMap (freeVariable . inject) [Mock.x, Mock.z]
 
 test_Attributes :: TestTree
