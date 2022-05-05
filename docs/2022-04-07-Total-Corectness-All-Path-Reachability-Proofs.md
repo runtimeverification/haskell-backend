@@ -1,9 +1,7 @@
-Proving Full Correctness All-Path Reachability Claims
+Proving Total Corectness All-Path Reachability Claims
 =====================================================
 
-This document details Full Correctness All-Path Reachability without solving the
-most-general-unifier (MGU) problem.
-MGU will be detailed in a separate document.
+This document details Total Corectness All-Path Reachability.
 
 _Prepared by Traian Șerbănuță, based on [proving All-Path Reachability
 claims](2019-03-28-All-Path-Reachability-Proofs.md)_
@@ -11,39 +9,74 @@ claims](2019-03-28-All-Path-Reachability-Proofs.md)_
 Definitions
 -----------
 
+In the following, by abuse of notation, we will identify a formula with the set
+of configurations it denotes, thus equality between formulae would mean that
+they are equisatisfiable (they denote the same set of configurations).
+
 ### All-path finally
 
-Given a formula `φ`, let `♢φ` denote the formula “all-path finally” `φ`,
+Given a formula `φ`, let `AFφ` denote the formula “all-path finally” `φ`,
 defined by:
 
 ```
-♢φ := μX.φ ∨ (○X ∧ •⊤)
+AFφ := μX.φ ∨ (○X ∧ •⊤)
 ```
 
-one consequence of the above is that `♢φ ≡ φ ∨ (○♢φ ∧ •⊤)`.
+#### Semantics of `AFφ`
 
-Given this definition of all-path finally, a full correctness all-path
-reachability claim
-```
-∀x.φ(x) → ♢∃z.ψ(x,z)
-```
-basically states that if `φ(x)` holds for a configuration `γ`, for some `x`,
-then `P(γ)` holds, where `P(G)` is recursively defined on configurations as:
-* there exists `z` such that `ψ(x,z)` holds for `G`
-* or
-    * `G` is not stuck (`G → • T`) and
-    * `P(G')` for all configurations `G'` in which `G` can transition
+By the definition above, `AFφ` is semantically defined as `LFP(G)`, the
+least-fix-point of the following mapping:
 
-__Note:__
-Using the least fix-point (`μ`) instead of the greatest fix-point (`ν`)
-restricts paths to finite ones. Therefore, the intepretation of a reachability
-claim guarantees full-correctness, as it requires that the conclusion is
-reached in a finite number of steps.
+```
+G(X) := φ ∨ (○X ∧ •⊤)
+```
+
+Note that `G(X)` can be interpreted as the union between the set of
+configurations for which `φ` holds and those which are not stuck and whose all
+possible transitions lead into `X`.
+
+Since `AFφ` is a fixed-point of `G`, the identity `G(AFφ) = AFφ` holds, whence
+`AFφ = φ ∨ (○AFφ ∧ •⊤)`.
+
+Moreover, `G` is monotone (`X` occurs in a positive position) and we can show
+that the conditions of Kleene's fixed-point theorem are satisfied:
+`Gⁿ(⊥) ⊆ Gⁿ⁺¹(⊥)`, because `Gⁿ(⊥)` denotes the set of configurations for which
+on all paths, in at most `n-1` steps, `φ` holds.
+
+Let us argue the above by induction on `n-1`.
+- Base case: `G(⊥) = φ ∨ (○⊥ ∧ •⊤) = φ ∨ (¬•¬⊥ ∧ •⊤) = φ ∨ (¬•⊤ ∧ •⊤) = φ ∨ ⊥ = φ`,
+  so `G(⊥)` is the set of configurations for which `φ` holds.
+- Induction case: Assuming `Gⁿ(⊥)` denotes the set of configurations for which
+  on all paths, in at most `n-1` steps, `φ` holds, `Gⁿ⁺¹(⊥) = G(Gⁿ(⊥))` will be
+  the union between the set of configurations for which `φ` holds and those
+  which are not stuck and whose all possible transitions lead into  the set of
+  configurations for which on all paths, in at most `n-1` steps, `φ` holds, but
+  these are precisely the configurations for which on all paths, in at most `n`
+  steps, `φ` holds.
+
+From Kleene's theorem, `AFφ = ⋁ₙGⁿ(⊥)`, whence, a configuration is in `AFφ` iff
+it is in `Gⁿ(⊥)` for some positive integer `n`. By the characterization of
+`Gⁿ(⊥)` presented above, it follows that `AFφ` denotes the set of configurations
+for which on all paths, in a finite number of steps, `φ` holds.
+
+### Total corectness all-path reachability claims
+
+Given this definition of all-path finally, a total corectness all-path
+reachability claim is of the form
+```
+∀x.φ(x) → AF∃z.ψ(x,z)
+```
+and basically states that from any configuration `γ` satisfying `φ(x)`
+for some `x`, a configuration satisfying `ψ(x,z)` for some `z` will be reached
+in a finite number of steps on any path.
+
+Since the configuration is reached after a finite number of steps,
+such reachability claims guarantee total corectness.
 
 Problem Description
 -------------------
 
-Given a set of reachability claims, of the form `∀x.φ(x) → ♢∃z.ψ(x,z)`,
+Given a set of reachability claims, of the form `∀x.φ(x) → AF∃z.ψ(x,z)`,
 we are trying to prove all of them together, by well-founded induction on a
 given `measure` defined on the quantified variables `x`.
 
@@ -68,7 +101,7 @@ claim group
 
   . . .
 
-  claim φᵢ(x) → ♢∃zᵢ.ψᵢ(x,zᵢ) [using(claimᵢ₁, ..., claimᵢₖ)]
+  claim φᵢ(x) → AF∃zᵢ.ψᵢ(x,zᵢ) [using(claimᵢ₁, ..., claimᵢₖ)]
 
   . . .
 
@@ -92,7 +125,7 @@ have already been proven.  Assume also a given integer pattern `measure(x)`,
 over the same variables as the claims in the group.
 
 Since we're proving all claims together, we can gather them in a single goal,
-`P(x) ::= (φ₁(x) → ♢∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → ♢∃z.ψₙ(x,z))`.
+`P(x) ::= (φ₁(x) → AF∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF∃z.ψₙ(x,z))`.
 
 A well-founded induction principle allowing to prove `P` using `measure` would
 be of the form
@@ -113,19 +146,19 @@ hypothesis `forall x, 0 <= measure(x) < measure(x0) -> P(x)`, we need to prove
 By first-order manipulation we can transform the induction hypothesis for `P`
 into a set of induction hypotheses, one for each claim:
 ```
-∀x. φᵢ(x) ∧ 0 ≤ measure(x) < measure(x₀) → ♢∃z.ψᵢ(x,z)
+∀x. φᵢ(x) ∧ 0 ≤ measure(x) < measure(x₀) → AF∃z.ψᵢ(x,z)
 ```
 
-Similarly we can split the goal into a separate goal `φᵢ(x₀) → ♢∃z.ψᵢ(x₀,z)`
+Similarly we can split the goal into a separate goal `φᵢ(x₀) → AF∃z.ψᵢ(x₀,z)`
 for each claim.
 
 Since we might be using the claims to advance the proof of the claim, to avoid
 confusion (and to reduce caring about indices) we will denote a goal with
-`φ(x₀) → ♢∃z.ψ(x₀,z)` in all subsequent steps, although the exact goal might
+`φ(x₀) → AF∃z.ψ(x₀,z)` in all subsequent steps, although the exact goal might
 change from one step to the next.
 
 Moreover, we will consider the induction hypotheses to be derived claims to
-be applied as circularities, and denote them as `∀x. φᵢ(x) → ♢∃z.ψᵢ(x,z)`,
+be applied as circularities, and denote them as `∀x. φᵢ(x) → AF∃z.ψᵢ(x,z)`,
 where `φᵢ(x)` also contains the guard `0 ≤ measure(x) < measure(x₀)`.
 
 ### Background on unification and remainders of unification
@@ -182,20 +215,20 @@ First, let us eliminate the case when the conclusion holds now. We have
 the following sequence of equivalent claims:
 
 ```
-φ(x₀) → ♢∃z.ψ(x₀,z)
-(φ(x₀) ∧ ∃z.ψ(x₀, z)) ∨ (φ(x₀) ∧ ¬∃z.ψ(x₀, z)) → ♢∃z.ψ(x₀,z)
-(φ(x₀) ∧ ∃z.ψ(x₀, z) → ♢∃z.ψ(x₀,z)) ∧ (φ(x₀) ∧  ¬∃z.ψ(x₀, z) → ♢∃z.ψ(x₀,z))
+φ(x₀) → AF∃z.ψ(x₀,z)
+(φ(x₀) ∧ ∃z.ψ(x₀, z)) ∨ (φ(x₀) ∧ ¬∃z.ψ(x₀, z)) → AF∃z.ψ(x₀,z)
+(φ(x₀) ∧ ∃z.ψ(x₀, z) → AF∃z.ψ(x₀,z)) ∧ (φ(x₀) ∧  ¬∃z.ψ(x₀, z) → AF∃z.ψ(x₀,z))
 ```
 
-The first conjunct, `φ(x₀) ∧ ∃z.ψ(x₀, z) → ♢∃z.ψ(x₀,z)` can be discharged by
-unrolling `♢∃z.ψ(x₀,z)` to `∃z.ψ(x₀,z) φ ∨ (○♢∃z.ψ(x₀,z) ∧ •⊤)`, and then
+The first conjunct, `φ(x₀) ∧ ∃z.ψ(x₀, z) → AF∃z.ψ(x₀,z)` can be discharged by
+unrolling `AF∃z.ψ(x₀,z)` to `∃z.ψ(x₀,z) φ ∨ (○AF∃z.ψ(x₀,z) ∧ •⊤)`, and then
 using that `∃z.ψ(x₀, z)` appears in both lhs (as a conjunct) and rhs (as a
 disjunct).
 
 This reduces the above to proving the following remainder claim:
 
 ```
-φ(x₀) ∧ ¬∃z.ψ(x₀, z) → ♢∃z.ψ(x₀,z)
+φ(x₀) ∧ ¬∃z.ψ(x₀, z) → AF∃z.ψ(x₀,z)
 ```
 
 Note that `φ(x₀) ∧ ¬∃z.ψ(x₀, z)` is also an extended function-like pattern, as
@@ -206,32 +239,32 @@ If `φ(x₀)` is equivalent to `⊥`, then the implication holds and we are done
 ### Applying (extended) claims
 
 Since both circularities (induction hypotheses) and already proven claims are of
-the form `∀x.φᵢ(x) → ♢∃z.ψᵢ(x,z)`, we will refer to all as extended claims.
-Let `∀x.φᵢ(x) → ♢∃z.ψᵢ(x,z)` denote the ith induction hypothesis or already
+the form `∀x.φᵢ(x) → AF∃z.ψᵢ(x,z)`, we will refer to all as extended claims.
+Let `∀x.φᵢ(x) → AF∃z.ψᵢ(x,z)` denote the ith induction hypothesis or already
 proven claim.
 
 ```
-φ(x₀) → ♢∃z.ψ(x₀,z)
-φ(x₀) ∧ (∃x.φ₁(x) ∨ … ∨ ∃x.φₙ(x) ∨ (¬∃x.φ₁(x) ∧ … ∧ ¬∃x.φₙ(x))) → ♢∃z.ψ(x₀,z)
-(φ(x₀) ∧ ∃x.φ₁(x)) ∨ … ∨ (φ(x₀) ∧ ∃x.φₙ(x)) ∨ (φ(x₀) ∧ (¬∃x.φ₁(x) ∧ … ∧ ¬∃x.φₙ(x))) → ♢∃z.ψ(x₀,z)
-(φ(x₀) ∧ ∃x.φ₁(x) → ♢∃z.ψ(x₀,z))  ∧ … (φ(x₀) ∧ ∃x.φₙ(x) → ♢∃z.ψ(x₀,z))
-    ∧ (φ(x₀) ∧ (¬∃x.φ₁(x) ∧ … ∧ ¬∃x.φₙ(x)) → ♢∃z.ψ(x₀,z))
+φ(x₀) → AF∃z.ψ(x₀,z)
+φ(x₀) ∧ (∃x.φ₁(x) ∨ … ∨ ∃x.φₙ(x) ∨ (¬∃x.φ₁(x) ∧ … ∧ ¬∃x.φₙ(x))) → AF∃z.ψ(x₀,z)
+(φ(x₀) ∧ ∃x.φ₁(x)) ∨ … ∨ (φ(x₀) ∧ ∃x.φₙ(x)) ∨ (φ(x₀) ∧ (¬∃x.φ₁(x) ∧ … ∧ ¬∃x.φₙ(x))) → AF∃z.ψ(x₀,z)
+(φ(x₀) ∧ ∃x.φ₁(x) → AF∃z.ψ(x₀,z))  ∧ … (φ(x₀) ∧ ∃x.φₙ(x) → AF∃z.ψ(x₀,z))
+    ∧ (φ(x₀) ∧ (¬∃x.φ₁(x) ∧ … ∧ ¬∃x.φₙ(x)) → AF∃z.ψ(x₀,z))
 ```
 
 assuming that `⌈φ(x₀) ∧ φᵢ(x)⌉ ≡ (x = tᵢ(x₀)) ∧ pᵢ(x₀, x)` for each `i`,
 the above is equivalent with:
 ```
-(φ₁(t₁(x₀)) ∧ p₁(x₀, t₁(x₀)) → ♢∃z.ψ(x₀,z))  ∧ … (φₙ(tₙ(x₀)) ∧ pₙ(x₀, tₙ(x₀)) → ♢∃z.ψ(x₀,z))
-    ∧ (φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀)) → ♢∃z.ψ(x₀,z))
+(φ₁(t₁(x₀)) ∧ p₁(x₀, t₁(x₀)) → AF∃z.ψ(x₀,z))  ∧ … (φₙ(tₙ(x₀)) ∧ pₙ(x₀, tₙ(x₀)) → AF∃z.ψ(x₀,z))
+    ∧ (φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀)) → AF∃z.ψ(x₀,z))
 ```
 
 This can be split into proving a goal for each extended claim,
 ```
-φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → ♢∃z.ψ(x₀,z)
+φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → AF∃z.ψ(x₀,z)
 ```
 and one for the remainder
 ```
-φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀) → ♢∃z.ψ(x₀,z))
+φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀) → AF∃z.ψ(x₀,z))
 ```
 
 Note that, in particular, part of the predicate of the remainder will include
@@ -240,18 +273,18 @@ the negation of the measure check for each induction hypothesis, of the form
 
 #### Using a claim to advance the corresponding goal
 
-Assume `φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → ♢∃z.ψ(x₀,z)` goal to be proven 
-and let `∀x. φᵢ(x) → ♢∃z.ψᵢ(x,z)` be the corresponding extended claim.
+Assume `φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → AF∃z.ψ(x₀,z)` goal to be proven 
+and let `∀x. φᵢ(x) → AF∃z.ψᵢ(x,z)` be the corresponding extended claim.
 By instatiating the claim with `x := tᵢ(x₀)`, we obtain
-`φᵢ(tᵢ(x₀)) → ♢∃z.ψᵢ(tᵢ(x₀),z)`; then, by framing, we obtain
-`φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → (♢∃z.ψᵢ(tᵢ(x₀),z)) ∧ pᵢ(x₀, tᵢ(x₀))`.
+`φᵢ(tᵢ(x₀)) → AF∃z.ψᵢ(tᵢ(x₀),z)`; then, by framing, we obtain
+`φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → (AF∃z.ψᵢ(tᵢ(x₀),z)) ∧ pᵢ(x₀, tᵢ(x₀))`.
 Next, by predicate properties, we can obtain that
-`φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → ♢∃z.(ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)))`.
+`φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → AF∃z.(ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)))`.
 
 We can use transitivity of `→` to replace the initial goal with
-`♢∃z.ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)) → ♢∃z.ψ(x₀,z)`
+`AF∃z.ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)) → AF∃z.ψ(x₀,z)`
 This goal can soundly be replaced with
-`∀z.ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)) → ♢∃z.ψ(x₀,z)`
+`∀z.ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)) → AF∃z.ψ(x₀,z)`
 as proving this goal would ensure that the above also holds.
 
 #### Summary of applying extended claims
@@ -260,8 +293,8 @@ By applying the extended claims, we will replace the existing goal with a set
 consisting of a goal for each extended claim (some with the hypothesis equivalent
 with `⟂`) and a remainder.
 
-- Goals associated to extended claims: `∀z.ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)) → ♢∃z.ψ(x₀,z)`
-- Goal associated to the remainder: `φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀) → ♢∃z.ψ(x₀,z))`
+- Goals associated to extended claims: `∀z.ψᵢ(tᵢ(x₀),z) ∧ pᵢ(x₀, tᵢ(x₀)) → AF∃z.ψ(x₀,z)`
+- Goal associated to the remainder: `φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀) → AF∃z.ψ(x₀,z))`
   By abuse of notation, let `φ(x₀)` denote `φ(x₀) ∧ ¬p₁(x₀, t₁(x₀)) ∧ … ∧ ¬pₙ(x₀, tₙ(x₀)`
 
 ### Applying axioms
@@ -270,16 +303,16 @@ The remainder from the above step denotes the case in which the conclusion
 doesn't hold now, and neither of the extended claims can be applied.
 
 We'll try therefore to apply one step from the semantics.
-Let `φ(x₀) → ♢∃z.ψ(x₀,z))` be the remainder goal. We can unfold `♢` to obtain
-the equivalent `φ(x₀) → ∃z.ψ(x₀,z) ∨ ((○♢∃z.ψ(x₀,z)) ∧ •⊤)`. Since we know
+Let `φ(x₀) → AF∃z.ψ(x₀,z))` be the remainder goal. We can unfold `AF` to obtain
+the equivalent `φ(x₀) → ∃z.ψ(x₀,z) ∨ ((○AF∃z.ψ(x₀,z)) ∧ •⊤)`. Since we know
 that conclusion doesn't hold for `φ(x₀)`, we can replace the goal by
-`φ(x₀) →  (○♢∃z.ψ(x₀,z)) ∧ •⊤`, which is equivalent to
-`(φ(x₀) →  ○♢∃z.ψ(x₀, z)) ∧ (φ(x₀) → •⊤)`
+`φ(x₀) →  (○AF∃z.ψ(x₀,z)) ∧ •⊤`, which is equivalent to
+`(φ(x₀) →  ○AF∃z.ψ(x₀, z)) ∧ (φ(x₀) → •⊤)`
 
 Therefore we need to check two things:
 
 1. That `φ(x₀)` is not stuck
-1. That `φ(x₀) →  ○♢∃z.ψ`
+1. That `φ(x₀) →  ○AF∃z.ψ`
 
 Assume `∀xᵢ.φᵢ(xᵢ) →  •∃zᵢ.ψᵢ(xᵢ,zᵢ), 1 ≤ i ≤ n`  are all the one-step axioms
 in the definition, and `P -> o ⋁ᵢ ∃xᵢ.⌈P ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ)`
@@ -298,14 +331,14 @@ to apply all axioms (i.e., the lhs of the last conjunct) is not equivalent to `�
 
 We want to prove that from the STEP rule and 
 ```
-(∀z₁.∃x₁.ψ₁(x₁,z₁) ∧ ⌈φ(x₀) ∧ φ₁(x₁)⌉ → ♢∃z.ψ(x₀,z)) ∧ … ∧ (∀zₙ.∃xₙ.ψₙ(xₙ,zₙ) ∧ ⌈φ(x₀) ∧ φₙ(xₙ)⌉ → ♢∃z.ψ(x₀,z))
+(∀z₁.∃x₁.ψ₁(x₁,z₁) ∧ ⌈φ(x₀) ∧ φ₁(x₁)⌉ → AF∃z.ψ(x₀,z)) ∧ … ∧ (∀zₙ.∃xₙ.ψₙ(xₙ,zₙ) ∧ ⌈φ(x₀) ∧ φₙ(xₙ)⌉ → AF∃z.ψ(x₀,z))
 ```
 
-we can derive `φ(x₀) →  ○♢∃z.ψ(x₀,z)`
+we can derive `φ(x₀) →  ○AF∃z.ψ(x₀,z)`
 
-This would allow us to replace the goal `φ(x₀) →  ○♢∃z.ψ(x₀,z)` with the set of goals
+This would allow us to replace the goal `φ(x₀) →  ○AF∃z.ψ(x₀,z)` with the set of goals
 ```
-{ ∀zᵢ.ψᵢ(tᵢ(x₀),zᵢ) ∧ pᵢ(tᵢ(x₀)) → ♢∃z.ψ(x₀,z) : 1 ≤ i ≤ n }
+{ ∀zᵢ.ψᵢ(tᵢ(x₀),zᵢ) ∧ pᵢ(tᵢ(x₀)) → AF∃z.ψ(x₀,z) : 1 ≤ i ≤ n }
 ```
 
 _Proof:_
@@ -317,17 +350,17 @@ Apply `(STEP)` on `φ(x₀)`, and we obtain that
 
 We can replace our goal succesively with:
 ```
-o ⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → ○♢∃z.ψ(x₀, z)  // transitivity of → 
-⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → ♢∃z.ψ(x₀, z)  // framing on ○
-∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → ♢∃z.ψ(x₀, z) for all i
+o ⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → ○AF∃z.ψ(x₀, z)  // transitivity of → 
+⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → AF∃z.ψ(x₀, z)  // framing on ○
+∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → AF∃z.ψ(x₀, z) for all i
 ```
 
 #### Summary of applying the claims
 
 - Check that the remainder `φ(x₀) ∧ ¬p₁(t₁(x₀)) ∧ … ∧ ¬pₙ(tₙ(x₀)))` is equivalent to `⟂`
-- Replace the goal `φ(x₀) →  ○♢∃z.ψ(x₀,z)` by the set of goals
+- Replace the goal `φ(x₀) →  ○AF∃z.ψ(x₀,z)` by the set of goals
   ```
-  { ∀zᵢ.ψᵢ(tᵢ(x₀),zᵢ) ∧ pᵢ(tᵢ(x₀)) → ♢∃z.ψ(x₀,z) : 1 ≤ i ≤ n }
+  { ∀zᵢ.ψᵢ(tᵢ(x₀),zᵢ) ∧ pᵢ(tᵢ(x₀)) → AF∃z.ψ(x₀,z) : 1 ≤ i ≤ n }
   ```
 
 ## Algorithms
@@ -349,14 +382,14 @@ never being applied and the proof looping (and branching) forever.
 __Input:__
 
 - set of variables `x`
-- claim group `(φ₁(x) → ♢∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → ♢∃z.ψₙ(x,z))`
+- claim group `(φ₁(x) → AF∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF∃z.ψₙ(x,z))`
 - decreasing `measure(x)`
 
 __Output:__ Proved or Unproved
 
 * Fix an instance `x₀` for the variables `x`
-* Let `claims ::= { ∀ x . φᵢ(x) ∧ measure(x) <Int measure(x₀) → ♢∃z.ψᵢ(x,z) }`
-* For each claim `φᵢ(x₀) → ♢∃z.ψᵢ(x₀,z)`
+* Let `claims ::= { ∀ x . φᵢ(x) ∧ measure(x) <Int measure(x₀) → AF∃z.ψᵢ(x,z) }`
+* For each claim `φᵢ(x₀) → AF∃z.ψᵢ(x₀,z)`
     * check that `φᵢ(x₀) → measure(x₀) >=Int 0`
     * Let `claimsᵢ ::= claims ∪ { claimᵢ₁, ..., claimᵢₖ }`
     * Let `Goals := { φᵢ(x₀) }`
@@ -385,7 +418,7 @@ is equivalent to `φ ∧ ¬pᵢ[tᵢ/xᵢ]`.
 
 __Input:__: goal `φ` and set of tuples `{ (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }` representing either
 
-* extended claims `{ ∀xᵢ.φᵢ → ♢∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`, or
+* extended claims `{ ∀xᵢ.φᵢ → AF∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`, or
 * axioms `{ ∀xᵢ.φᵢ → •∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`
 
 __Output:__ `(Goals, goalᵣₑₘ)`
@@ -394,19 +427,19 @@ __Output:__ `(Goals, goalᵣₑₘ)`
 * Let `Goals := { ∀z₁.(∃x₁.ψ₁ ∧ ⌈φ∧φ₁⌉), … , ∀zₙ.(∃xₙ.ψₙ ∧ ⌈φ∧φₙ⌉) }`
 
 __Note__: `∀zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉)` is obtained from
-`(∃xᵢ.(∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉) → ♢∃z.ψ`
+`(∃xᵢ.(∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉) → AF∃z.ψ`
 
 __Note__: If the unfication condition `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
 with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
-Then the goal `∀zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → ♢∃z.ψ`
-is equivalent to `∀zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → ♢∃z.ψ`.
+Then the goal `∀zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → AF∃z.ψ`
+is equivalent to `∀zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → AF∃z.ψ`.
 
 Similarly `goalᵣₑₘ := (φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉)`
 is equivalent to `(φ ∧ ⋀ⱼ ¬pⱼ[tⱼ/xⱼ])`
 where `j` ranges over the set `{ i : 1 ≤ i ≤ n, φ unifies with φᵢ }`.
 
 __Note__: If `φ` does not unify with `φᵢ`, then `⌈φ∧φᵢ⌉ = ⊥`, hence
-the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → ♢∃z.ψ` is equivalent to
-`∀x.⊥ → ♢∃z.ψ` which can be discharged immediately. Also, in the
+the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → AF∃z.ψ` is equivalent to
+`∀x.⊥ → AF∃z.ψ` which can be discharged immediately. Also, in the
 remainder `¬∃x₁.⌈φ∧φ₁⌉ = ⊤` so the conjunct can be removed.
 
