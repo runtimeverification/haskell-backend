@@ -82,16 +82,21 @@ import Prelude.Kore
 import Prof (
     MonadProf,
  )
+import System.Console.Haskeline (
+    InputT,
+    runInputT,
+    Settings (historyFile),
+    defaultSettings,
+    getInputLine
+ )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
  )
 import System.IO (
-    hFlush,
     hPutStrLn,
-    stderr,
-    stdout,
+    stderr
  )
 import Text.Megaparsec (
     parseMaybe,
@@ -151,7 +156,8 @@ runRepl
                     replGreeting
                     flip evalStateT newState $
                         flip runReaderT config $
-                            forever repl0
+                            runInputT defaultSettings {historyFile = Just "./.kore-repl-history"} $
+                                forever repl0
                 RunScript ->
                     runReplCommand Exit newState
       where
@@ -160,7 +166,8 @@ runRepl
             void $
                 flip evalStateT st $
                     flip runReaderT config $
-                        replInterpreter printIfNotEmpty cmd
+                        runInputT defaultSettings $
+                            replInterpreter printIfNotEmpty cmd
 
         evaluateScript ::
             ReplScript ->
@@ -172,14 +179,14 @@ runRepl
                 (flip parseEvalScript outputFlag)
                 (unReplScript script)
 
-        repl0 :: ReaderT (Config m) (StateT ReplState m) ()
+        repl0 :: InputT (ReaderT (Config m) (StateT ReplState m)) ()
         repl0 = do
             str <- prompt
             let command =
                     fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
                 silent = pure ()
-            when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
-            saveSessionWithMessage silent ".sessionCommands"
+            when (shouldStore command) $ lift $ field @"commands" Lens.%= (Seq.|> str)
+            lift $ saveSessionWithMessage silent ".sessionCommands"
             void $ replInterpreter printIfNotEmpty command
 
         state :: TimeSpec -> ReplState
@@ -292,10 +299,7 @@ runRepl
             liftIO $
                 putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-        prompt :: MonadIO n => MonadState ReplState n => n String
+        prompt :: MonadIO n => MonadMask n => MonadState ReplState n => InputT n String
         prompt = do
-            node <- Lens.use (field @"node")
-            liftIO $ do
-                putStr $ "Kore (" <> show (unReplNode node) <> ")> "
-                hFlush stdout
-                getLine
+            node <- lift $ Lens.use (field @"node")
+            fromMaybe "" <$> getInputLine ("Kore (" <> show (unReplNode node) <> ")> ")
