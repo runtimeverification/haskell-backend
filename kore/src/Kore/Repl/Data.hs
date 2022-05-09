@@ -109,7 +109,7 @@ import Logic
 import Numeric.Natural
 import Prelude.Kore
 import System.Console.Haskeline (
-    InputT
+    InputT,
  )
 
 {- | Represents an optional file name which contains a sequence of

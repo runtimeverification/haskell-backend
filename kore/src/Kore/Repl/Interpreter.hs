@@ -38,7 +38,7 @@ import Control.Monad (
     (<=<),
  )
 import Control.Monad.Catch (
-    MonadMask
+    MonadMask,
  )
 import Control.Monad.Extra (
     ifM,
@@ -207,9 +207,9 @@ import Pretty (
 import Pretty qualified
 import System.Console.Haskeline (
     InputT,
-    runInputT,
     defaultSettings,
-    outputStrLn
+    outputStrLn,
+    runInputT,
  )
 import System.Directory (
     doesDirectoryExist,
