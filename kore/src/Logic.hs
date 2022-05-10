@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Logic (
     module Control.Monad.Logic,
+    module Control.Monad.Trans,
     module Control.Monad,
     gather,
     scatter,
@@ -13,6 +14,7 @@ module Logic (
 
 import Control.Applicative
 import Control.Monad.Logic
+import Control.Monad.Trans
 import Control.Monad
 import Prelude
 
