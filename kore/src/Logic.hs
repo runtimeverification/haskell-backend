@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Logic (
     module Control.Monad.Logic,
+    module Control.Monad,
     gather,
     scatter,
     mapLogicT,
@@ -12,6 +13,7 @@ module Logic (
 
 import Control.Applicative
 import Control.Monad.Logic
+import Control.Monad
 import Prelude
 
 gather :: MonadLogic m => m a -> m [a]
