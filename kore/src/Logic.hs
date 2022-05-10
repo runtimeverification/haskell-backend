@@ -13,9 +13,9 @@ module Logic (
 ) where
 
 import Control.Applicative
+import Control.Monad
 import Control.Monad.Logic
 import Control.Monad.Trans
-import Control.Monad
 import Prelude
 
 gather :: MonadLogic m => m a -> m [a]
