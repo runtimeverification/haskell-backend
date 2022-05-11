@@ -44,8 +44,8 @@ instance Pretty DebugAttemptedRewriteRules where
                 ]
       where
         prettyUnifiedRules =
-                    ["The rule at following location was attempted:"]
-                        <> [pretty attemptedRewriteRule]
+            ["The rule at following location was attempted:"]
+                <> [pretty attemptedRewriteRule]
 
 instance Entry DebugAttemptedRewriteRules where
     entrySeverity _ = Debug
