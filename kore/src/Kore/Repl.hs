@@ -82,21 +82,21 @@ import Prelude.Kore
 import Prof (
     MonadProf,
  )
-import System.Console.Haskeline (
-    InputT,
-    runInputT,
-    Settings (historyFile),
-    defaultSettings,
-    getInputLine
- )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
  )
+import System.Console.Haskeline (
+    InputT,
+    Settings (historyFile),
+    defaultSettings,
+    getInputLine,
+    runInputT,
+ )
 import System.IO (
     hPutStrLn,
-    stderr
+    stderr,
  )
 import Text.Megaparsec (
     parseMaybe,
@@ -156,7 +156,7 @@ runRepl
                     replGreeting
                     flip evalStateT newState $
                         flip runReaderT config $
-                            runInputT defaultSettings {historyFile = Just "./.kore-repl-history"} $
+                            runInputT defaultSettings{historyFile = Just "./.kore-repl-history"} $
                                 forever repl0
                 RunScript ->
                     runReplCommand Exit newState
