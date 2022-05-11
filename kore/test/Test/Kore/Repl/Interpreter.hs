@@ -75,8 +75,8 @@ import Kore.Unparser (
 import Prelude.Kore
 import SMT qualified
 import System.Console.Haskeline (
+    defaultSettings,
     runInputT,
-    defaultSettings
  )
 import System.Clock (
     Clock (Monotonic),
