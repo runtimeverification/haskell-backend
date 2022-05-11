@@ -74,14 +74,14 @@ import Kore.Unparser (
  )
 import Prelude.Kore
 import SMT qualified
-import System.Console.Haskeline (
-    runInputT,
-    defaultSettings
- )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
+ )
+import System.Console.Haskeline (
+    defaultSettings,
+    runInputT,
  )
 import Test.Kore (
     TestLog,
