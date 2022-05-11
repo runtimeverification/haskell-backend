@@ -1342,7 +1342,7 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
             (`runStateT` st) $
                 flip runReaderT config $
                     runInputT defaultSettings $
-                        (replInterpreter0 printAux printKore cmd)
+                        replInterpreter0 printAux printKore cmd
 
 {- | Performs n proof steps, picking the next node unless branching occurs.
  Returns 'Left' while it has to continue looping, and 'Right' when done

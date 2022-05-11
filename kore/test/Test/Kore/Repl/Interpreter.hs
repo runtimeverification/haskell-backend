@@ -74,6 +74,10 @@ import Kore.Unparser (
  )
 import Prelude.Kore
 import SMT qualified
+import System.Console.Haskeline (
+    runInputT,
+    defaultSettings
+ )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -740,12 +744,13 @@ runWithState command axioms claims claim stateTransformer = do
             runTestLog (flip Log.runLoggerT mempty . liftSimplifier)
                 . flip runStateT state
                 . flip runReaderT config
+                . runInputT defaultSettings
     ((c, s), logEntries) <-
         runLogger $
             replInterpreter0
                 @(TestLog (SimplifierT NoSMT))
-                (PrintAuxOutput . modifyAuxOutput $ output)
-                (PrintKoreOutput . modifyKoreOutput $ output)
+                (modifyAuxOutput output)
+                (modifyKoreOutput output)
                 command
 
     output' <- readIORef output
@@ -753,11 +758,11 @@ runWithState command axioms claims claim stateTransformer = do
   where
     liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
-    modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
-    modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
+    modifyAuxOutput :: IORef ReplOutput -> PrintAuxOutput
+    modifyAuxOutput ref = PrintAuxOutput $ \s -> liftIO $ modifyIORef ref (appReplOut . AuxOut $ s)
 
-    modifyKoreOutput :: IORef ReplOutput -> String -> IO ()
-    modifyKoreOutput ref s = modifyIORef ref (appReplOut . KoreOut $ s)
+    modifyKoreOutput :: IORef ReplOutput -> PrintKoreOutput
+    modifyKoreOutput ref = PrintKoreOutput $ \s -> liftIO $ modifyIORef ref (appReplOut . KoreOut $ s)
 
 data Result = Result
     { output :: ReplOutput

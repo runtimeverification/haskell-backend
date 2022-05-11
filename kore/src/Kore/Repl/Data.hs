@@ -160,7 +160,9 @@ newtype ReplOutput = ReplOutput {unReplOutput :: [ReplOut]}
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
--- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
+{- HLINT ignore "Use newtype instead of data" -}
+
+-- | Types for printing functions called by Kore.Repl.Interpreter.replInterpreter0
 data PrintAuxOutput = PrintAuxOutput
     {unPrintAuxOutput :: forall m. MonadIO m => String -> InputT m ()}
 
