@@ -38,7 +38,7 @@ import Control.Monad (
     (<=<),
  )
 import Control.Monad.Catch (
-    MonadMask
+    MonadMask,
  )
 import Control.Monad.Extra (
     ifM,
@@ -207,9 +207,9 @@ import Pretty (
 import Pretty qualified
 import System.Console.Haskeline (
     InputT,
-    runInputT,
     defaultSettings,
-    outputStrLn
+    outputStrLn,
+    runInputT,
  )
 import System.Directory (
     doesDirectoryExist,
@@ -1342,7 +1342,7 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
             (`runStateT` st) $
                 flip runReaderT config $
                     runInputT defaultSettings $
-                        (replInterpreter0 printAux printKore cmd)
+                        replInterpreter0 printAux printKore cmd
 
 {- | Performs n proof steps, picking the next node unless branching occurs.
  Returns 'Left' while it has to continue looping, and 'Right' when done
