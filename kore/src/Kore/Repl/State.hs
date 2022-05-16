@@ -419,9 +419,9 @@ getInterestingBranchingNode ::
     InnerGraph ->
     ReplNode ->
     Maybe ReplNode
+getInterestingBranchingNode 0 _ node = Just node
 getInterestingBranchingNode n graph node
     | nodeIsBottom = Nothing
-    | n == 0 = Just node
     | null sucResults = Just node
     | otherwise =
         case interestingResults of
