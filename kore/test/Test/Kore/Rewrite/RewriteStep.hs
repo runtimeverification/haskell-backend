@@ -20,6 +20,9 @@ import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.SourceLocation (
+    SourceLocation,
+ )
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -136,6 +139,7 @@ test_applyInitialConditions =
 unifyRule ::
     Step.UnifyingRule rule =>
     Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
+    From rule SourceLocation =>
     Pattern RewritingVariableName ->
     rule ->
     IO [Step.UnifiedRule rule]
