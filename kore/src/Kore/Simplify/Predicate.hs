@@ -7,6 +7,10 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
+import Control.Error (
+    MaybeT,
+    runMaybeT,
+ )
 import Data.Functor.Foldable qualified as Recursive
 import Data.Map.Strict qualified as Map
 import Data.Monoid (
@@ -16,6 +20,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     freeVariableNames,
     occursIn,
  )
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -31,8 +36,10 @@ import Kore.Internal.OrCondition (
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Condition,
+    Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
@@ -55,6 +62,9 @@ import Kore.Internal.TermLike (
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.WarnUnsimplified (
     warnUnsimplifiedPredicate,
+ )
+import Kore.Rewrite.Function.Evaluator qualified as Axiom (
+    evaluatePattern,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -535,8 +545,9 @@ simplifyEquals ::
     Sort ->
     Equals sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyEquals sideCondition sort equals =
-    Equals.simplify sideCondition equals'
+simplifyEquals sideCondition sort equals = do
+    result <- runMaybeT applyUserSimplification
+    maybe (Equals.simplify sideCondition equals') return result
         <&> MultiOr.map (from @(Condition _))
   where
     equals' =
@@ -544,6 +555,36 @@ simplifyEquals sideCondition sort equals =
             { equalsOperandSort = sort
             , equalsResultSort = sort
             }
+    -- This relies on 'OrPattern.toPattern' which should be retired
+    -- at some point, but that will require a reworking of the
+    -- 'Equals' simplification algorithm.
+    applyUserSimplification =
+        let leftPatt = OrPattern.toPattern sort (equalsFirst equals')
+            rightPatt = OrPattern.toPattern sort (equalsSecond equals')
+         in applyEquations leftPatt rightPatt
+
+    applyEquations ::
+        Pattern RewritingVariableName ->
+        Pattern RewritingVariableName ->
+        MaybeT simplifier (OrCondition RewritingVariableName)
+    applyEquations
+        (Pattern.splitTerm -> (leftTerm, leftCondition))
+        (Pattern.splitTerm -> (rightTerm, rightCondition)) =
+            do
+                evaluatedTerms <-
+                    Axiom.evaluatePattern
+                        sideCondition
+                        Condition.top
+                        (TermLike.mkEquals sort leftTerm rightTerm)
+                        (const empty)
+                OrPattern.map
+                    ( Pattern.withoutTerm
+                        . flip
+                            Pattern.andCondition
+                            (leftCondition <> rightCondition)
+                    )
+                    evaluatedTerms
+                    & return
 
 simplifyIn ::
     MonadSimplify simplifier =>
