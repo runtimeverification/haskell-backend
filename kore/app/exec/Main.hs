@@ -282,6 +282,7 @@ data KoreExecOptions = KoreExecOptions
     , koreLogOptions :: !KoreLogOptions
     , koreSearchOptions :: !(Maybe KoreSearchOptions)
     , koreProveOptions :: !(Maybe KoreProveOptions)
+    , finalNodeType :: !FinalNodeType
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
@@ -327,6 +328,12 @@ parseKoreExecOptions startTime =
             <*> parseKoreLogOptions (ExeName "kore-exec") startTime
             <*> pure Nothing
             <*> optional parseKoreProveOptions
+            <*> Options.flag
+                Leaf
+                LeafOrBranching
+                ( long "execute-to-branch"
+                    <> help "Execute until the proof branches."
+                )
             <*> optional parseRtsStatistics
             <*> parseBugReportOption
             <*> parseMaxCounterexamples
@@ -423,7 +430,6 @@ unparseKoreProveOptions
             graphSearch
             bmc
             saveProofs
-            finalNodeType
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -433,7 +439,6 @@ unparseKoreProveOptions
             ]
         , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
-        , if finalNodeType == LeafOrBranching then "--execute-to-branch" else ""
         ]
 
 koreExecSh :: KoreExecOptions -> String
@@ -450,6 +455,7 @@ koreExecSh
                             koreLogOptions
                             koreSearchOptions
                             koreProveOptions
+                            finalNodeType
                             rtsStatistics
                             _
                             maxCounterexamples
@@ -482,6 +488,7 @@ koreExecSh
                 , unparseKoreLogOptions koreLogOptions
                 , maybe mempty unparseKoreSearchOptions koreSearchOptions
                 , maybe mempty unparseKoreProveOptions koreProveOptions
+                , ["--execute-to-branch" | finalNodeType == LeafOrBranching]
                 ]
         unparseExecutionMode All = "all"
         unparseExecutionMode Any = "any"
@@ -599,8 +606,8 @@ mainWithOptions exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
     -- Display the proof's depth if the flag '--execute-to-branch' was given
     branchingDepth :: KoreLogOptions -> KoreLogOptions
     branchingDepth logOpts
-        | Just (KoreProveOptions{finalNodeType = LeafOrBranching}) <-
-            execOptions & Lens.view (field @"koreProveOptions") =
+        | LeafOrBranching <-
+            execOptions & Lens.view (field @"finalNodeType") =
             logOpts
                 & Lens.over
                     (field @"logEntries")
@@ -739,8 +746,8 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{maxCounterexamples} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit} = execOptions
-            KoreProveOptions{graphSearch, finalNodeType} = proveOptions
+        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
+            KoreProveOptions{graphSearch} = proveOptions
         prove
             simplifierx
             graphSearch
