@@ -131,7 +131,6 @@ import Kore.Parser (
  )
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
-    FinalNodeType (..),
     GraphSearchOrder (..),
  )
 import Kore.Simplify.Simplify (SimplifierXSwitch (..))
@@ -218,7 +217,6 @@ data KoreProveOptions = KoreProveOptions
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
-    , finalNodeType :: !FinalNodeType
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -261,12 +259,6 @@ parseKoreProveOptions =
                         "The file in which to save the proven claims \
                         \in case the prover fails."
                 )
-            )
-        <*> flag
-            Leaf
-            LeafOrBranching
-            ( long "execute-to-branch"
-                <> help "Execute until the proof branches."
             )
   where
     parseGraphSearch =
