@@ -132,11 +132,12 @@ import Test.Kore.Internal.Pattern qualified as Pattern
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Kore.With
-import Test.SMT
-    ( testCaseWithoutSMT,
-      testPropertyWithoutSolver,
-      testPropertyWithSolver,
-      runNoSMT )
+import Test.SMT (
+    runNoSMT,
+    testCaseWithoutSMT,
+    testPropertyWithSolver,
+    testPropertyWithoutSolver,
+ )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
