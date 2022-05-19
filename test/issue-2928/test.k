@@ -16,8 +16,10 @@ module TEST
     rule X ==Int f(X) => false [simplification]
     rule f(X) ==Int X => false [simplification]
 
+    rule X in SetItem(Y) => false requires X =/=Int Y [simplification]
+
     rule .Set -Set S => .Set [simplification]
     rule (SetItem(X) REST) -Set S => REST -Set S requires X in S [simplification]
-    rule (SetItem(X) REST) -Set S => SetItem(X) (REST -Set S) requires notBool (X in S) [simplification]
+    rule (SetItem(X) REST) -Set S => SetItem(X) (REST -Set S) requires notBool (X in S) [simplification, label(toApply)]
     
 endmodule

@@ -82,12 +82,10 @@ import Kore.Internal.Pattern (
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
-    makeMultipleAndPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     Key,
     TermLike,
