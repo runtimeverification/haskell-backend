@@ -541,6 +541,7 @@ library
     Kore.Unification.SubstitutionSimplifier
     Kore.Unification.UnifierT
     Kore.Unification.Unify
+    Kore.Unification.NewUnifier
     Kore.Unparser
     Kore.Validate.AliasVerifier
     Kore.Validate.AttributesVerifier
