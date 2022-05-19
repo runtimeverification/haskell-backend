@@ -17,6 +17,7 @@ module Kore.Builtin.Map (
     verifiers,
     builtinFunctions,
     internalize,
+    isMapSort,
 
     -- * Unification
     unifyEquals,
