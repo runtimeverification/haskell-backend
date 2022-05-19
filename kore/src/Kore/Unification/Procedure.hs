@@ -14,27 +14,32 @@ module Kore.Unification.Procedure (
 import Kore.Internal.Condition (
     Condition,
  )
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
 import Kore.Internal.Pattern qualified as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import Kore.Internal.Substitution (
+    toMap,
+ )
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
+import Kore.Log.DebugUnification (debugUnificationSolved)
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )
+import Kore.Substitute
 import Kore.TopBottom qualified as TopBottom
+import Kore.Unification.NewUnifier
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -58,13 +63,21 @@ unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
-        pat <- termUnification Not.notSimplifier p1 p2
-        TopBottom.guardAgainstBottom pat
-        let (term, conditions) = Conditional.splitTerm pat
-        orCeil <- makeEvaluateTermCeil sideCondition term
-        ceil' <- Monad.Unify.scatter orCeil
-        lowerLogicT . simplifyCondition sideCondition $
-            Conditional.andCondition ceil' conditions
+        unified <- unifyTerms p1 p2 sideCondition
+        case unified of
+            Nothing -> error "unsupported unification case"
+            Just condition -> do
+                TopBottom.guardAgainstBottom condition
+                debugUnificationSolved (Conditional.fromCondition p1Sort condition)
+                let Conditional{substitution} = condition
+                    normalized = toMap substitution
+                    term1 = substitute normalized p1
+                    term2 = substitute normalized p2
+                    term = mkAnd term1 term2
+                orCeil <- makeEvaluateTermCeil sideCondition term
+                ceil' <- Monad.Unify.scatter orCeil
+                lowerLogicT . simplifyCondition sideCondition $
+                    Conditional.andCondition ceil' condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
