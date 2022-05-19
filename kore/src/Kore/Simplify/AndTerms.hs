@@ -62,7 +62,6 @@ import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnification (
-    debugUnificationSolved,
     debugUnificationUnsolved,
     whileDebugUnification,
  )
@@ -111,7 +110,6 @@ termUnification ::
 termUnification notSimplifier = \term1 term2 ->
     whileDebugUnification term1 term2 $ do
         result <- termUnificationWorker term1 term2
-        debugUnificationSolved result
         pure result
   where
     termUnificationWorker ::
