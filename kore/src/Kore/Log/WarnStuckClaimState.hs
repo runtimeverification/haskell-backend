@@ -34,13 +34,13 @@ instance Pretty WarnStuckClaimState where
     pretty (TermsUnifiableStuck claim) =
         Pretty.hsep
             [ "The configuration's term unifies with the destination's term,\
-                \ but the implication check between the conditions has failed. Location:"
+              \ but the implication check between the conditions has failed. Location:"
             , Pretty.pretty (from claim :: SourceLocation)
             ]
     pretty (TermsNotUnifiableStuck claim) =
         Pretty.hsep
             [ "The configuration's term doesn't unify with the destination's term\
-                \ and the configuration cannot be rewritten further. Location:"
+              \ and the configuration cannot be rewritten further. Location:"
             , Pretty.pretty (from claim :: SourceLocation)
             ]
 
