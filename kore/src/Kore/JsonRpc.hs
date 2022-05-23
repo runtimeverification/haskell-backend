@@ -1,34 +1,48 @@
-module Kore.JsonRpc where
+module Kore.JsonRpc (runServer) where
 
-import Control.Concurrent
-import Control.Concurrent.Async (AsyncCancelled (..), asyncThreadId, withAsync)
-import Control.Concurrent.STM.TChan
-import Control.Exception (Exception, bracketOnError, catch, mask, mask_, onException)
-import Control.Monad
-import Control.Monad.Logger
+import Control.Concurrent (forkIO, throwTo)
+import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
+import Control.Exception (Exception, catch, mask)
+import Control.Monad (forever, liftM)
+import Control.Monad.Logger (MonadLoggerIO, runStderrLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types hiding (Error)
-import Data.Conduit.Network
+import Data.Conduit.Network (serverSettings)
 import qualified Data.Foldable as F
-import Prelude.Kore
-
--- import           Data.Maybe
 import Data.Text (Text)
-
-import qualified Data.Text as T
-import Deriving.Aeson
-import Network.JSONRPC
-
--- import           UnliftIO
--- import           UnliftIO.Concurrent
+import Deriving.Aeson (
+    CamelToKebab,
+    CustomJSON (..),
+    FieldLabelModifier,
+    OmitNothingFields,
+    StripPrefix,
+ )
+import GHC.Generics (Generic)
+import Network.JSONRPC (
+    BatchRequest (BatchRequest, SingleRequest),
+    BatchResponse (BatchResponse, SingleResponse),
+    ErrorObj (..),
+    FromRequest (..),
+    JSONRPCT,
+    Request (..),
+    Respond,
+    Response (ResponseError),
+    Ver (V2),
+    buildResponse,
+    fromRequest,
+    jsonrpcTCPServer,
+    receiveBatchRequest,
+    sendBatchResponse,
+ )
+import Prelude.Kore
 
 data ExecuteRequest = ExecuteRequest
     { executeRequestState :: !Text
     , executeRequestMaxDepth :: !(Maybe Int)
     , executeRequestHaltPatterns :: ![Text]
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "executeRequest", CamelToKebab]] ExecuteRequest
@@ -36,7 +50,7 @@ data ExecuteRequest = ExecuteRequest
 data StepRequest = StepRequest
     { stepRequestState :: !Text
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "stepRequest", CamelToKebab]] StepRequest
@@ -45,7 +59,7 @@ data ImpliesRequest = ImpliesRequest
     { impliesRequestAntecedent :: !Text
     , impliesRequestConsequent :: !Text
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "impliesRequest", CamelToKebab]] ImpliesRequest
@@ -53,12 +67,12 @@ data ImpliesRequest = ImpliesRequest
 data SimplifyRequest = SimplifyRequest
     { simplifyRequestState :: !Text
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "simplifyRequest", CamelToKebab]] SimplifyRequest
 
-data ReqException = CancelRequest deriving (Show)
+data ReqException = CancelRequest deriving stock (Show)
 
 instance Exception ReqException
 
@@ -74,7 +88,7 @@ data PatternMatch = PatternMatch
     { patternMatchPattern :: !Int
     , patternMatchSubstitution :: !Text
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "patternMatch", CamelToKebab]] PatternMatch
@@ -91,7 +105,7 @@ data ReasonForHalting
         { patternMatchDepth :: !Int
         , patternMatchMatches :: ![PatternMatch]
         }
-    deriving (Show, Eq)
+    deriving stock (Show, Eq)
 
 instance ToJSON ReasonForHalting where
     toJSON = \case
@@ -110,7 +124,7 @@ data StepState = StepState
     , stepStateDepth :: !Int
     , stepStateCondition :: !Text
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "stepState", CamelToKebab]] StepState
@@ -120,7 +134,7 @@ data ExecuteResult = ExecuteResult
     , executeResultPatterns :: ![Text]
     , executeResultReason :: !ReasonForHalting
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "executeResult", CamelToKebab]] ExecuteResult
@@ -128,7 +142,7 @@ data ExecuteResult = ExecuteResult
 data StepResult = StepResult
     { stepResultStates :: ![StepState]
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "stepResult", CamelToKebab]] StepResult
@@ -137,7 +151,7 @@ data ImpliesResult = ImpliesResult
     { impliesResultSatisfiable :: !Bool
     , impliesResultSubstitution :: !(Maybe Text)
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "impliesResult", CamelToKebab]] ImpliesResult
@@ -145,7 +159,7 @@ data ImpliesResult = ImpliesResult
 data SimplifyResult = SimplifyResult
     { simplifyResultState :: !Text
     }
-    deriving (Generic, Show, Eq)
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "simplifyResult", CamelToKebab]] SimplifyResult
@@ -171,10 +185,10 @@ data API (r :: ReqOrRes) where
     Simplify :: APIPayload 'SimplifyM r -> API r
     Cancel :: API 'Req
 
-deriving instance Show (API 'Req)
-deriving instance Show (API 'Res)
-deriving instance Eq (API 'Req)
-deriving instance Eq (API 'Res)
+deriving stock instance Show (API 'Req)
+deriving stock instance Show (API 'Res)
+deriving stock instance Eq (API 'Req)
+deriving stock instance Eq (API 'Res)
 
 instance ToJSON (API 'Res) where
     toJSON = \case
@@ -186,7 +200,7 @@ instance ToJSON (API 'Res) where
 respond :: MonadIO m => Respond (API 'Req) m (API 'Res)
 respond = \case
     Execute _ -> pure $ Right $ Execute undefined
-    Step (StepRequest{stepRequestState}) -> pure $ Right $ Step $ StepResult []
+    Step StepRequest{} -> pure $ Right $ Step $ StepResult []
     Implies _ -> pure $ Right $ Implies undefined
     Simplify _ -> pure $ Right $ Simplify undefined
     Cancel -> pure $ Left $ ErrorObj "Cancel Request unsupported in batch mode" (-32001) Null
