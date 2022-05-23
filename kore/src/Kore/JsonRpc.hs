@@ -160,7 +160,7 @@ data API (r :: ReqOrRes) where
   Step :: APIPayload 'StepM r -> API r
   Implies :: APIPayload 'ImpliesM r -> API r
   Simplify :: APIPayload 'SimplifyM r -> API r
-  Cancel :: API r
+  Cancel :: API 'Req
   
 deriving instance Show (API 'Req)
 deriving instance Show (API 'Res)
@@ -173,7 +173,6 @@ instance ToJSON (API 'Res) where
     Step payload -> toJSON payload
     Implies payload -> toJSON payload
     Simplify payload -> toJSON payload
-    Cancel -> Null
 
 respond :: MonadIO m => Respond (API 'Req) m (API 'Res)
 respond = \case
@@ -200,7 +199,7 @@ srv  = do
           let v = getReqVer req
               i = getReqId req
           sendResponses $ SingleResponse $ ResponseError v cancelError i
-        SingleRequest _@Notif{} -> pure ()
+        SingleRequest Notif{} -> pure ()
         BatchRequest reqs -> 
           sendResponses $ BatchResponse $ [ ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req ]
 
