@@ -9,7 +9,7 @@ import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types hiding (Error)
 import Data.Conduit.Network (serverSettings)
-import qualified Data.Foldable as F
+import Data.Foldable qualified as F
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
