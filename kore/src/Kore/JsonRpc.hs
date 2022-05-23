@@ -3,13 +3,12 @@ module Kore.JsonRpc (runServer) where
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception, catch, mask)
-import Control.Monad (forever, liftM)
+import Control.Monad (forever)
 import Control.Monad.Logger (MonadLoggerIO, runStderrLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types hiding (Error)
 import Data.Conduit.Network (serverSettings)
-import Data.Foldable qualified as F
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
@@ -38,39 +37,39 @@ import Network.JSONRPC (
 import Prelude.Kore
 
 data ExecuteRequest = ExecuteRequest
-    { executeRequestState :: !Text
-    , executeRequestMaxDepth :: !(Maybe Int)
-    , executeRequestHaltPatterns :: ![Text]
+    { state :: !Text
+    , maxDepth :: !(Maybe Int)
+    , haltPatterns :: ![Text]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "executeRequest", CamelToKebab]] ExecuteRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteRequest
 
-data StepRequest = StepRequest
-    { stepRequestState :: !Text
+newtype StepRequest = StepRequest
+    { state :: Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "stepRequest", CamelToKebab]] StepRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepRequest
 
 data ImpliesRequest = ImpliesRequest
-    { impliesRequestAntecedent :: !Text
-    , impliesRequestConsequent :: !Text
+    { antecedent :: !Text
+    , consequent :: !Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "impliesRequest", CamelToKebab]] ImpliesRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesRequest
 
-data SimplifyRequest = SimplifyRequest
-    { simplifyRequestState :: !Text
+newtype SimplifyRequest = SimplifyRequest
+    { state :: Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "simplifyRequest", CamelToKebab]] SimplifyRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyRequest
 
 data ReqException = CancelRequest deriving stock (Show)
 
@@ -85,84 +84,84 @@ instance FromRequest (API 'Req) where
     parseParams _ = Nothing
 
 data PatternMatch = PatternMatch
-    { patternMatchPattern :: !Int
-    , patternMatchSubstitution :: !Text
+    { pmPattern :: !Int
+    , pmSubstitution :: !Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "patternMatch", CamelToKebab]] PatternMatch
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
 data ReasonForHalting
     = HaltBranching
-        { branchingDepth :: !Int
+        { depth :: !Int
         }
     | HaltStuck
-        { stuckDepth :: !Int
+        { depth :: !Int
         }
     | HaltDepthBound
     | HaltPatternMatch
-        { patternMatchDepth :: !Int
-        , patternMatchMatches :: ![PatternMatch]
+        { depth :: !Int
+        , matches :: ![PatternMatch]
         }
     deriving stock (Show, Eq)
 
 instance ToJSON ReasonForHalting where
     toJSON = \case
-        HaltBranching{branchingDepth} -> object ["reason" .= ("branching" :: Text), "depth" .= branchingDepth]
-        HaltStuck{stuckDepth} -> object ["reason" .= ("stuck" :: Text), "depth" .= stuckDepth]
+        HaltBranching{depth} -> object ["reason" .= ("branching" :: Text), "depth" .= depth]
+        HaltStuck{depth} -> object ["reason" .= ("stuck" :: Text), "depth" .= depth]
         HaltDepthBound -> object ["reason" .= ("depth-bound" :: Text)]
-        HaltPatternMatch{patternMatchDepth, patternMatchMatches} ->
+        HaltPatternMatch{depth, matches} ->
             object
                 [ "reason" .= ("pattern-match" :: Text)
-                , "depth" .= patternMatchDepth
-                , "matches" .= patternMatchMatches
+                , "depth" .= depth
+                , "matches" .= matches
                 ]
 
 data StepState = StepState
-    { stepStateState :: !Text
-    , stepStateDepth :: !Int
-    , stepStateCondition :: !Text
+    { state :: !Text
+    , depth :: !Int
+    , condition :: !Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "stepState", CamelToKebab]] StepState
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepState
 
 data ExecuteResult = ExecuteResult
-    { executeResultState :: !Text
-    , executeResultPatterns :: ![Text]
-    , executeResultReason :: !ReasonForHalting
+    { state :: !Text
+    , patterns :: ![Text]
+    , reason :: !ReasonForHalting
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "executeResult", CamelToKebab]] ExecuteResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
-data StepResult = StepResult
-    { stepResultStates :: ![StepState]
+newtype StepResult = StepResult
+    { states :: [StepState]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "stepResult", CamelToKebab]] StepResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepResult
 
 data ImpliesResult = ImpliesResult
-    { impliesResultSatisfiable :: !Bool
-    , impliesResultSubstitution :: !(Maybe Text)
+    { satisfiable :: !Bool
+    , substitution :: !(Maybe Text)
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "impliesResult", CamelToKebab]] ImpliesResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
 
-data SimplifyResult = SimplifyResult
-    { simplifyResultState :: !Text
+newtype SimplifyResult = SimplifyResult
+    { state :: Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "simplifyResult", CamelToKebab]] SimplifyResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
 data ReqOrRes = Req | Res
 
@@ -229,9 +228,9 @@ srv = do
         processReq = \case
             SingleRequest req -> do
                 rM <- buildResponse respond req
-                F.forM_ rM (sendResponses . SingleResponse)
+                mapM_ (sendResponses . SingleResponse) rM
             BatchRequest reqs -> do
-                rs <- catMaybes `liftM` forM reqs (buildResponse respond)
+                rs <- catMaybes <$> forM reqs (buildResponse respond)
                 sendResponses $ BatchResponse rs
 
         spawnWorker =
