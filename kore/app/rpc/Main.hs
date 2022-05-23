@@ -4,9 +4,8 @@
 
 module Main (main) where
 
-import Prelude.Kore
-
 import Kore.JsonRpc (runServer)
+import Prelude.Kore
 
 main :: IO ()
 main = runServer
