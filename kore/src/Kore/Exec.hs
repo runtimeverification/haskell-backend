@@ -339,9 +339,7 @@ exec
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
                     MultiOr.make $
-                        catMaybes $
-                            extractProgramState
-                                <$> finalConfigs
+                        mapMaybe extractProgramState finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
                     MultiOr.map getRewritingPattern finalConfigs'
