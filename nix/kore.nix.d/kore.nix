@@ -59,6 +59,7 @@
           (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
           (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
           (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
+          (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
           (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
@@ -248,6 +249,7 @@
           "Kore/Internal/Variable"
           "Kore/Log"
           "Kore/Log/DebugAppliedRewriteRules"
+          "Kore/Log/DebugAttemptedRewriteRules"
           "Kore/Log/DebugBeginClaim"
           "Kore/Log/DebugEvaluateCondition"
           "Kore/Log/DebugProven"
@@ -721,6 +723,7 @@
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
+            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
