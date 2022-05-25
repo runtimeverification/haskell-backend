@@ -95,6 +95,7 @@ import Logic (
 import Logic qualified
 import Prelude.Kore
 import Pretty qualified
+import Kore.Log.DebugAttemptUnification
 
 type UnifiedRule rule = Conditional (UnifyingRuleVariable rule) rule
 
@@ -159,9 +160,20 @@ unifyRule sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
+    debugAttemptUnificationStart (location rule)
+    let unifComp =
+            unificationProcedure sideCondition' initialTerm ruleLeft
+                & evalEnvUnifierT Not.notSimplifier
+    res <- Logic.observeAllT unifComp
     unification <-
-        unificationProcedure sideCondition' initialTerm ruleLeft
-            & evalEnvUnifierT Not.notSimplifier
+        case res of
+            [] -> do
+                debugAttemptUnificationEnd (location rule)
+                empty
+            _ -> do
+                debugAttemptUnificationEnd (location rule)
+                Logic.scatter res
+    debugAttemptUnificationEnd (location rule)
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires

@@ -161,6 +161,7 @@ import Type.Reflection (
     someTypeRep,
     typeOf,
  )
+import Kore.Log.DebugAttemptUnification (DebugAttemptUnificationStart, DebugAttemptUnificationEnd)
 
 data Registry = Registry
     { textToType :: !(Map Text SomeTypeRep)
@@ -229,6 +230,8 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
+            , mk $ Proxy @DebugAttemptUnificationStart
+            , mk $ Proxy @DebugAttemptUnificationEnd
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
