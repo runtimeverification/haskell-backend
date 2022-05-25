@@ -99,6 +99,8 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
+import Kore.Internal.Substitution (Substitution)
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol (
     Symbol,
     isConstructor,
@@ -152,6 +154,7 @@ It contains:
 * a set of terms which are assumed to be defined
 * a set of terms with function application at the top which are known to have been
   simplified as much as possible during the current rewrite step
+* a set of substitutions added to the path constraint by rewriting
 
 Warning! When simplifying a pattern, extra care should be taken that the
 'SideCondition' sent to the simplifier isn't created from the same 'Condition'
@@ -169,6 +172,8 @@ data SideCondition variable = SideCondition
     , definedTerms :: !(HashSet (TermLike variable))
     , simplifiedFunctions ::
         !(HashSet (Application Symbol (TermLike variable)))
+    , addedSubstitutions ::
+        !(HashSet (Substitution variable))
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -181,7 +186,7 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable where
-    freeVariables sideCondition@(SideCondition _ _ _ _ _) =
+    freeVariables sideCondition@(SideCondition _ _ _ _ _ _) =
         freeVariables assumedTrue
             <> foldMap freeVariables definedTerms
       where
@@ -222,7 +227,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
                        ]
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable)) where
-    from condition@(SideCondition _ _ _ _ _) = assumedTrue condition
+    from condition@(SideCondition _ _ _ _ _ _) = assumedTrue condition
     {-# INLINE from #-}
 
 instance
@@ -252,6 +257,7 @@ assumeTrue assumedTrue =
         , replacementsPredicate = HashMap.empty
         , definedTerms = HashSet.empty
         , simplifiedFunctions = HashSet.empty
+        , addedSubstitutions = HashSet.empty
         }
 
 {- | Assumes a single 'Predicate' to be true in the context of another
@@ -324,12 +330,14 @@ addConditionWithReplacements
                     , replacementsPredicate
                     , definedTerms
                     , simplifiedFunctions
+                    , addedSubstitutions
                     }
       where
         SideCondition
             { assumedTrue = oldCondition
             , definedTerms
             , simplifiedFunctions
+            , addedSubstitutions
             } = sideCondition
 
 {- | Smart constructor for creating a 'SideCondition' by just constructing
@@ -351,6 +359,7 @@ constructReplacements predicates =
             , replacementsPredicate
             , definedTerms = HashSet.empty
             , simplifiedFunctions = HashSet.empty
+            , addedSubstitutions = HashSet.empty
             }
 
 {- | Smart constructor for creating a `SideCondition` by assuming
@@ -383,6 +392,7 @@ top =
         , replacementsPredicate = mempty
         , definedTerms = mempty
         , simplifiedFunctions = mempty
+        , addedSubstitutions = mempty
         }
 
 -- TODO(ana.pantilie): Should we look into removing this?
@@ -395,7 +405,7 @@ toPredicate ::
     InternalVariable variable =>
     SideCondition variable ->
     Predicate variable
-toPredicate condition@(SideCondition _ _ _ _ _) =
+toPredicate condition@(SideCondition _ _ _ _ _ _) =
     Predicate.makeAndPredicate
         assumedTruePredicate
         definedPredicate
@@ -414,7 +424,7 @@ mapVariables ::
     AdjSomeVariableName (variable1 -> variable2) ->
     SideCondition variable1 ->
     SideCondition variable2
-mapVariables adj condition@(SideCondition _ _ _ _ _) =
+mapVariables adj condition@(SideCondition _ _ _ _ _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
         replacementsTermLike' =
@@ -425,12 +435,15 @@ mapVariables adj condition@(SideCondition _ _ _ _ _) =
             HashSet.map (TermLike.mapVariables adj) definedTerms
         simplifiedFunctions' =
             (HashSet.map . fmap) (TermLike.mapVariables adj) simplifiedFunctions
+        addedSubstitutions' =
+            HashSet.map (Substitution.mapVariables adj) addedSubstitutions
      in SideCondition
             { assumedTrue = assumedTrue'
             , replacementsTermLike = replacementsTermLike'
             , replacementsPredicate = replacementsPredicate'
             , definedTerms = definedTerms'
             , simplifiedFunctions = simplifiedFunctions'
+            , addedSubstitutions = addedSubstitutions'
             }
   where
     SideCondition
@@ -439,6 +452,7 @@ mapVariables adj condition@(SideCondition _ _ _ _ _) =
         , replacementsPredicate
         , definedTerms
         , simplifiedFunctions
+        , addedSubstitutions
         } = condition
 
 -- | Utility function for mapping on the keys and values of a 'HashMap'.

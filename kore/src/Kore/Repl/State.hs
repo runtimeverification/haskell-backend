@@ -495,12 +495,17 @@ getRuleFor ::
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
-    pure $ targetNode >>= getRewriteRule . Graph.inn graph' . unReplNode
+    let x =
+            case targetNode of
+                Just node -> getRewriteRule . Graph.inn graph' . unReplNode $ node
+                Nothing -> []
+    trace ("\nLength Seq axiom: " <> show (fmap (from @_ @Attribute.SourceLocation) x) <> "\n") $
+        pure $ targetNode >>= headMay . getRewriteRule . Graph.inn graph' . unReplNode
   where
     getRewriteRule ::
         [(a, b, Seq axiom)] ->
-        Maybe axiom
-    getRewriteRule = headMay . concatMap (toList . third)
+        [axiom]
+    getRewriteRule = concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c

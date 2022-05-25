@@ -171,8 +171,8 @@ constructConfiguration
         -- TODO: this seems like the place where new substitutions are
         -- applied and then discarded, so I should try to store them some way;
         -- keeping them in the Condition turns into a huge performance issue
-        trace ("\nApplied substitution:\n" <> (show . Pretty.pretty . Substitution.toPredicate) substitution) $
-            return (finalTerm' `Pattern.withCondition` finalCondition)
+        -- trace ("\nApplied substitution:\n" <> (show . Pretty.pretty . Substitution.toPredicate) substitution) $
+        return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
     forall simplifier.
