@@ -1,8 +1,8 @@
 {
   description = "K Kore Language backend";
   inputs = {
-    haskellNix.url = "github:input-output-hk/haskell.nix";
-    nixpkgs.follows = "haskellNix/nixpkgs-unstable";
+    haskell-nix.url = "github:input-output-hk/haskell.nix";
+    nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     z3src = {
       url = "github:Z3Prover/z3/z3-4.8.15";
@@ -10,15 +10,17 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, haskellNix, z3src }:
+  outputs = { self, nixpkgs, flake-utils, haskell-nix, z3src }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
-        overlays = [ haskellNix.overlay
+        overlays = [
+          haskell-nix.overlay
+
           (final: prev: {
             # This overlay adds our project to pkgs
             k-haskell-backend =
-              final.haskell-nix.stackProject {
-                src = pkgs.haskell-nix.haskellLib.cleanGit {
+              prev.haskell-nix.stackProject {
+                src = prev.haskell-nix.haskellLib.cleanGit {
                   name = "k-haskell-backend-src";
                   src = ./.;
                 };
@@ -40,7 +42,7 @@
             });
           })
         ];
-        pkgs = import nixpkgs { inherit system overlays; inherit (haskellNix) config; };
+        pkgs = import nixpkgs { inherit system overlays; inherit (haskell-nix) config; };
         flake = pkgs.k-haskell-backend.flake { };
 
         # add z3 to the path for the runtime
@@ -56,24 +58,29 @@
         #   '';
         # };
 
-    in flake // {
-      inherit overlays;
-      # apps = flake.apps // {
-      #   "kore:test:kore-test" = {
-      #     type = "app";
-      #     program = "${kore-test-with-z3}/bin/kore-test";
-      #   };
-      # };
+    in
+      flake // {
+        inherit overlays;
+        overlay = nixpkgs.lib.composeManyExtensions overlays;
 
-      devShell = pkgs.k-haskell-backend.shellFor {
-        buildInputs =
-          with pkgs; [
-            gnumake fd z3
-            # hls-renamed
-            ghcid hlint
-            # fourmolu
-            cabal-install stack
-          ];
-      };
-    });
+        prelude-kore = ./src/main/kore/prelude.kore;
+        # apps = flake.apps // {
+        #   "kore:test:kore-test" = {
+        #     type = "app";
+        #     program = "${kore-test-with-z3}/bin/kore-test";
+        #   };
+        # };
+
+        devShell = pkgs.k-haskell-backend.shellFor {
+          buildInputs =
+            with pkgs; [
+              gnumake fd z3
+              # hls-renamed
+              ghcid hlint
+              # fourmolu
+              cabal-install stack
+            ];
+        };
+      }
+  );
 }
