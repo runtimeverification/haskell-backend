@@ -173,7 +173,6 @@ unifyRule sideCondition initial rule = do
             _ -> do
                 debugAttemptUnificationEnd (location rule)
                 Logic.scatter res
-    debugAttemptUnificationEnd (location rule)
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
