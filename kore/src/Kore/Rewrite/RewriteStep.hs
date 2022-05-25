@@ -77,6 +77,7 @@ import Logic (
  )
 import Logic qualified
 import Prelude.Kore
+import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
 
 withoutUnification :: UnifiedRule rule -> rule
 withoutUnification = Conditional.term
@@ -167,6 +168,7 @@ constructConfiguration
             finalTerm' = substitute substitution' finalTerm
         -- TODO (thomas.tuegel): Should the final term be simplified after
         -- substitution?
+        debugCreatedSubstitution substitution (termLikeSort finalTerm)
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::

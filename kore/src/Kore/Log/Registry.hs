@@ -161,6 +161,7 @@ import Type.Reflection (
     someTypeRep,
     typeOf,
  )
+import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 
 data Registry = Registry
     { textToType :: !(Map Text SomeTypeRep)
@@ -229,6 +230,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
+            , mk $ Proxy @DebugCreatedSubstitution
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
