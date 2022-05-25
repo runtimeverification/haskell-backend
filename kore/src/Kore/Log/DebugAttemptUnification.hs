@@ -10,28 +10,26 @@ module Kore.Log.DebugAttemptUnification (
 ) where
 
 import Kore.Attribute.Axiom (SourceLocation)
-import Prelude.Kore
 import Log
+import Prelude.Kore
 import Pretty
 
-newtype DebugAttemptUnificationStart =
-    DebugAttemptUnificationStart
-        { sourceLocationStart :: SourceLocation
-        }
-        deriving stock (Show)
+newtype DebugAttemptUnificationStart = DebugAttemptUnificationStart
+    { sourceLocationStart :: SourceLocation
+    }
+    deriving stock (Show)
 
-newtype DebugAttemptUnificationEnd =
-    DebugAttemptUnificationEnd
-        { sourceLocationEnd :: SourceLocation
-        }
-        deriving stock (Show)
+newtype DebugAttemptUnificationEnd = DebugAttemptUnificationEnd
+    { sourceLocationEnd :: SourceLocation
+    }
+    deriving stock (Show)
 
 instance Pretty DebugAttemptUnificationStart where
-    pretty DebugAttemptUnificationStart { sourceLocationStart } =
+    pretty DebugAttemptUnificationStart{sourceLocationStart} =
         pretty sourceLocationStart
 
 instance Pretty DebugAttemptUnificationEnd where
-    pretty DebugAttemptUnificationEnd { sourceLocationEnd } =
+    pretty DebugAttemptUnificationEnd{sourceLocationEnd} =
         pretty sourceLocationEnd
 
 instance Entry DebugAttemptUnificationStart where
@@ -49,18 +47,11 @@ debugAttemptUnificationStart ::
     SourceLocation ->
     log ()
 debugAttemptUnificationStart sourceLocationStart =
-    logEntry DebugAttemptUnificationStart { sourceLocationStart}
+    logEntry DebugAttemptUnificationStart{sourceLocationStart}
 
 debugAttemptUnificationEnd ::
     MonadLog log =>
     SourceLocation ->
     log ()
 debugAttemptUnificationEnd sourceLocationEnd =
-    logEntry DebugAttemptUnificationEnd { sourceLocationEnd }
-
-
-
-
-
-
-
+    logEntry DebugAttemptUnificationEnd{sourceLocationEnd}

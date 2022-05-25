@@ -41,6 +41,7 @@ import Kore.Equation.DebugEquation (
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
+import Kore.Log.DebugAttemptUnification (DebugAttemptUnificationEnd, DebugAttemptUnificationStart)
 import Kore.Log.DebugAttemptedRewriteRules (
     DebugAttemptedRewriteRules,
  )
@@ -161,7 +162,6 @@ import Type.Reflection (
     someTypeRep,
     typeOf,
  )
-import Kore.Log.DebugAttemptUnification (DebugAttemptUnificationStart, DebugAttemptUnificationEnd)
 
 data Registry = Registry
     { textToType :: !(Map Text SomeTypeRep)

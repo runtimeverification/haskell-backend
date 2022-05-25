@@ -65,6 +65,7 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DebugAttemptUnification
 import Kore.Log.DebugAttemptedRewriteRules (
     debugAttemptedRewriteRule,
  )
@@ -95,7 +96,6 @@ import Logic (
 import Logic qualified
 import Prelude.Kore
 import Pretty qualified
-import Kore.Log.DebugAttemptUnification
 
 type UnifiedRule rule = Conditional (UnifyingRuleVariable rule) rule
 
