@@ -1,5 +1,5 @@
 {
-  description = "K Kore Language backend";
+  description = "K Kore Language Haskell Backend";
   inputs = {
     haskell-nix.url = "github:input-output-hk/haskell.nix";
     nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
@@ -9,10 +9,36 @@
       flake = false;
     };
   };
-
   outputs = { self, nixpkgs, flake-utils, haskell-nix, z3src }:
-    let
-      overlays = [
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ] (
+      system:
+        let
+          pkgs = import nixpkgs { inherit system; inherit (haskell-nix) config; };
+          haskell-backend = haskell-nix.legacyPackages.${system}.haskell-nix.stackProject {
+            src = ./.;
+            materialized = ./nix/kore.nix.d;
+            compiler-nix-name = "ghc8107";
+          };
+          version = haskell-backend.kore.components.exes.kore-exec.version;
+        in {
+          defaultPackage = pkgs.symlinkJoin {
+            name = "kore-${version}";
+            paths = pkgs.lib.attrValues haskell-backend.kore.components.exes;
+          };
+          devShell = haskell-backend.shellFor {
+            buildInputs =
+              with pkgs; [
+                gnumake fd z3
+                # hls-renamed
+                ghcid hlint
+                # fourmolu
+                cabal-install stack
+              ];
+          };
+        }
+    ) // {
+      prelude-kore = ./src/main/kore/prelude.kore;
+      overlay = nixpkgs.lib.composeManyExtensions [
         haskell-nix.overlay
 
         (final: prev: {
@@ -23,7 +49,6 @@
                 name = "k-haskell-backend-src";
                 src = ./.;
               };
-              materialized = ./nix/kore.nix.d;
               compiler-nix-name = "ghc8107";
             };
         })
@@ -41,50 +66,5 @@
           });
         })
       ];
-      finalFlake = flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
-        let
-          pkgs = import nixpkgs { inherit system overlays; inherit (haskell-nix) config; };
-          flake = pkgs.k-haskell-backend.flake { };
-
-          # add z3 to the path for the runtime
-          # very flake-y (pun intended) atm, need to invesitgate why it crashes with segfaults
-          # when ran via `nix run .#kore:test:kore-test`
-          # kore-test-with-z3 = pkgs.symlinkJoin {
-          #   name = "kore-test";
-          #   paths = [ flake.packages."kore:test:kore-test" ];
-          #   buildInputs = [ pkgs.makeWrapper ];
-          #   postBuild = ''
-          #     wrapProgram $out/bin/kore-test \
-          #     --set PATH ${pkgs.lib.makeBinPath [ pkgs.z3 ]}
-          #   '';
-          # };
-
-      in
-        flake // {
-          prelude-kore = ./src/main/kore/prelude.kore;
-          # apps = flake.apps // {
-          #   "kore:test:kore-test" = {
-          #     type = "app";
-          #     program = "${kore-test-with-z3}/bin/kore-test";
-          #   };
-          # };
-
-          devShell = pkgs.k-haskell-backend.shellFor {
-            buildInputs =
-              with pkgs; [
-                gnumake fd z3
-                # hls-renamed
-                ghcid hlint
-                # fourmolu
-                cabal-install stack
-              ];
-          };
-        }
-    );
-
-    pkgs = import nixpkgs { };
-  in
-    finalFlake // {
-      overlay = nixpkgs.lib.composeManyExtensions overlays;
     };
 }
