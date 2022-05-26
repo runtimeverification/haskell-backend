@@ -16,7 +16,7 @@ BUILD_DIR = $(TOP)/.build
 KOMPILE = kompile
 KRUN = krun
 export KRUN
-KPROVE = kprovex
+KPROVE = kprove
 KBMC = kbmc
 
 KOMPILE_OPTS = --backend haskell
