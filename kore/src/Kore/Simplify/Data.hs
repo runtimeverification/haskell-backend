@@ -212,14 +212,8 @@ runSimplifier :: Monad smt => Env (SimplifierT smt) -> SimplifierT smt a -> smt 
 runSimplifier env simplifier =
     runReaderT (evalStateT (runSimplifierT simplifier) initCache) env
 
-{- | Evaluate a simplifier computation, returning the result of only one branch.
-
-__Warning__: @evalSimplifier@ calls 'error' if the 'Simplifier' does not contain
-exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
-that may branch.
--}
-evalSimplifier ::
-    forall smt a.
+mkSimplifierEnv ::
+    forall smt.
     (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
     SimplifierXSwitch ->
     VerifiedModuleSyntax Attribute.Symbol ->
@@ -227,11 +221,9 @@ evalSimplifier ::
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
-    SimplifierT smt a ->
-    smt a
-evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    !env <- runSimplifier earlyEnv initialize
-    runSimplifier env simplifier
+    smt (Env (SimplifierT smt))
+mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations =
+    runSimplifier earlyEnv initialize
   where
     !earlyEnv =
         {-# SCC "evalSimplifier/earlyEnv" #-}
@@ -296,6 +288,27 @@ evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadata
                 , overloadSimplifier
                 , simplifierXSwitch
                 }
+
+{- | Evaluate a simplifier computation, returning the result of only one branch.
+
+__Warning__: @evalSimplifier@ calls 'error' if the 'Simplifier' does not contain
+exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
+that may branch.
+-}
+evalSimplifier ::
+    forall smt a.
+    (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
+    SimplifierXSwitch ->
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    SimplifierT smt a ->
+    smt a
+evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <- mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    runSimplifier env simplifier
 
 evalSimplifierProofs ::
     forall smt a.
