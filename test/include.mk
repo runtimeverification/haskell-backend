@@ -44,6 +44,8 @@ KORE_EXEC_OPTS += \
 KPROVE_SPEC = $<
 KPROVE_SPEC_OPTS =
 
+$(DEF_KORE_DEFAULT): KORE_EXEC_OPTS =
+
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
