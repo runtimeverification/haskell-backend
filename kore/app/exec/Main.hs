@@ -691,7 +691,12 @@ koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     SerializedDefinition{serializedModule, lemmas, locations} <-
-        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName exeLastModifiedTime
+        deserializeDefinition
+            simplifierx
+            koreSolverOptions
+            definitionFileName
+            mainModuleName
+            exeLastModifiedTime
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern verifiedModule patternFileName
@@ -720,7 +725,8 @@ koreSerialize LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{outputFileName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
-    serializedDefinition@SerializedDefinition{locations} <- makeSerializedDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
+    serializedDefinition@SerializedDefinition{locations} <-
+        makeSerializedDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
     case outputFileName of
         Nothing -> return (locations, ExitFailure 1)
         Just outputFile -> do
