@@ -39,6 +39,7 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
+import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
@@ -77,7 +78,6 @@ import Logic (
  )
 import Logic qualified
 import Prelude.Kore
-import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
 
 withoutUnification :: UnifiedRule rule -> rule
 withoutUnification = Conditional.term

@@ -47,6 +47,7 @@ import Kore.Log.DebugAttemptedRewriteRules (
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
  )
+import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
  )
@@ -161,7 +162,6 @@ import Type.Reflection (
     someTypeRep,
     typeOf,
  )
-import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 
 data Registry = Registry
     { textToType :: !(Map Text SomeTypeRep)
