@@ -258,6 +258,7 @@
           "Kore/Log/DebugAppliedRewriteRules"
           "Kore/Log/DebugAttemptedRewriteRules"
           "Kore/Log/DebugBeginClaim"
+          "Kore/Log/DebugCreatedSubstitution"
           "Kore/Log/DebugEvaluateCondition"
           "Kore/Log/DebugProven"
           "Kore/Log/DebugRetrySolverQuery"
