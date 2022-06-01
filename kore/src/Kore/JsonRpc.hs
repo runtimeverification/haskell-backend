@@ -92,7 +92,7 @@ data PatternMatch = PatternMatch
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
-{- HLINT ignore "Use of partial record field selector" -}
+{- HLINT ignore ReasonForHalting -}
 
 data ReasonForHalting
     = HaltBranching
