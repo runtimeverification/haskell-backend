@@ -7,8 +7,7 @@ import Control.Monad (forever)
 import Control.Monad.Logger (MonadLoggerIO, runStderrLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
-
--- import Data.Aeson.Types hiding (Error)
+import Data.Aeson.Types (FromJSON(..), ToJSON(..), (.=), Value(..), object)
 import Data.Conduit.Network (serverSettings)
 import Data.Text (Text)
 import Deriving.Aeson (
