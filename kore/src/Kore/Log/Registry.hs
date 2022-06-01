@@ -47,6 +47,7 @@ import Kore.Log.DebugAttemptedRewriteRules (
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
  )
+import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
  )
@@ -229,6 +230,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
+            , mk $ Proxy @DebugCreatedSubstitution
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
