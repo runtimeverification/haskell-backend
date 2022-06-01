@@ -7,7 +7,7 @@ import Control.Monad (forever)
 import Control.Monad.Logger (MonadLoggerIO, runStderrLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
-import Data.Aeson.Types hiding (Error)
+-- import Data.Aeson.Types hiding (Error)
 import Data.Conduit.Network (serverSettings)
 import Data.Text (Text)
 import Deriving.Aeson (
@@ -91,6 +91,8 @@ data PatternMatch = PatternMatch
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
+
+{- HLINT ignore "Use of partial record field selector" -}
 
 data ReasonForHalting
     = HaltBranching
@@ -202,7 +204,8 @@ respond = \case
     Step StepRequest{} -> pure $ Right $ Step $ StepResult []
     Implies _ -> pure $ Right $ Implies undefined
     Simplify _ -> pure $ Right $ Simplify undefined
-    Cancel -> pure $ Left $ ErrorObj "Cancel Request unsupported in batch mode" (-32001) Null
+    -- this case is only reachable if the cancel appeared as part of a batch request
+    Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
 
 runServer :: IO ()
 runServer = do
@@ -265,78 +268,3 @@ srv = do
         mask $ \restore -> do
             a <- before
             restore (thing a) `catch` \(_ :: ReqException) -> onCancel a
-
--- receiveRequests = runStderrLoggingT $ runReaderT receiveBatchRequest qs
-
--- processRequest = forever $
---     (atomically $ readTChan reqQueue) >>=
---     (\case
---       SingleRequest req -> do
---         rM <- buildResponse respond req
---         F.forM_ rM (sendResponses . SingleResponse)
---       BatchRequest reqs -> do
---         rs <- catMaybes `liftM` forM reqs (buildResponse respond)
---         sendResponses $ BatchResponse rs)
-
--- processRequest =
---   foreverBracketOnReqException
---     (do
---       req <- atomically $ readTChan reqQueue
---       runStderrLoggingT ($(logDebug) ("process Q: " <> T.pack (show req)))
---       return req
---       )
---     (\case
---       SingleRequest req@Request{} -> do
---         let v = getReqVer req
---             i = getReqId req
---         sendResponses $ SingleResponse $ ResponseError v cancelError i
---       SingleRequest _ -> pure ()
---       BatchRequest reqs ->
---         sendResponses $ BatchResponse $ [ ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req ])
---     (\case
---       SingleRequest req -> do
---         rM <- buildResponse respond req
---         F.forM_ rM (sendResponses . SingleResponse)
---       BatchRequest reqs -> do
---         rs <- catMaybes `liftM` forM reqs (buildResponse respond)
---         sendResponses $ BatchResponse rs)
-
-------------
-
-------------
-
--- liftIO $ withAsync processRequest $ \procReq ->
---   let
---     tid = asyncThreadId procReq
---     loop = receiveRequests >>= \case
---       Nothing -> do
---         return ()
---       Just (SingleRequest req) | Right Cancel <- fromRequest req -> do
---         runStderrLoggingT ($(logDebug) "sending cancel")
---         throwTo tid AsyncCancelled
---         loop
---       Just req -> do
---         runStderrLoggingT ($(logDebug) ("add to Q: " <> T.pack (show req)))
---         atomically $ writeTChan reqQueue req
---         loop
---   in
---     loop
-
--- srv2 :: MonadLoggerIO m => JSONRPCT m ()
--- srv2 = do
---     $(logDebug) "listening for new request"
---     qM <- receiveBatchRequest
---     case qM of
---         Nothing -> do
---             $(logDebug) "closed request channel, exting"
---             return ()
---         Just (SingleRequest q) -> do
---             $(logDebug) "got request"
---             rM <- buildResponse respond q
---             F.forM_ rM sendResponse
---             srv2
---         Just (BatchRequest qs) -> do
---             $(logDebug) "got request batch"
---             rs <- catMaybes `liftM` forM qs (buildResponse respond)
---             sendBatchResponse $ BatchResponse rs
---             srv2
