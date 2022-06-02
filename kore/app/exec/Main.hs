@@ -10,7 +10,7 @@ import Data.Compact (
     compactWithSharing,
  )
 import Data.Compact.Serialize (
-    writeCompact,
+    writeCompact, hPutCompact
  )
 import Data.Default (
     def,
@@ -18,6 +18,7 @@ import Data.Default (
 import Data.Generics.Product (
     field,
  )
+import GHC.Fingerprint as Fingerprint
 import Data.Limit (
     Limit (..),
     maybeLimit,
@@ -176,7 +177,7 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (WriteMode),
-    withFile,
+    withFile, hPutStrLn
  )
 import Type.Reflection (
     someTypeRep,
@@ -729,9 +730,13 @@ koreSerialize LocalOptions{execOptions, simplifierx} = do
         makeSerializedDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
     case outputFileName of
         Nothing -> return (locations, ExitFailure 1)
-        Just outputFile -> do
-            compact <- compactWithSharing serializedDefinition & liftIO
-            writeCompact outputFile compact & liftIO
+        Just outputFile -> liftIO $ do
+            execName <- getExecutablePath
+            execHash <- Fingerprint.getFileHash execName
+            compact <- compactWithSharing serializedDefinition
+            withFile outputFile WriteMode $ \outputHandle -> do
+                hPutStrLn outputHandle (show execHash)
+                hPutCompact outputHandle compact
             return (locations, ExitSuccess)
 
 koreProve ::
