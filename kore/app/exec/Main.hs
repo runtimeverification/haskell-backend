@@ -10,7 +10,8 @@ import Data.Compact (
     compactWithSharing,
  )
 import Data.Compact.Serialize (
-    writeCompact, hPutCompact
+    hPutCompact,
+    writeCompact,
  )
 import Data.Default (
     def,
@@ -18,7 +19,6 @@ import Data.Default (
 import Data.Generics.Product (
     field,
  )
-import GHC.Fingerprint as Fingerprint
 import Data.Limit (
     Limit (..),
     maybeLimit,
@@ -34,6 +34,7 @@ import Data.Text (
 import Data.Time.Clock (
     UTCTime (..),
  )
+import GHC.Fingerprint as Fingerprint
 import GHC.Generics qualified as GHC
 import GlobalMain
 import Kore.Attribute.Definition (
@@ -177,7 +178,8 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (WriteMode),
-    withFile, hPutStrLn
+    hPutStrLn,
+    withFile,
  )
 import Type.Reflection (
     someTypeRep,

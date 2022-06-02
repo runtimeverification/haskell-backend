@@ -202,7 +202,7 @@ import System.Directory (
     getModificationTime,
  )
 import System.Environment qualified as Env
-import System.IO (withFile, hGetLine, IOMode (..))
+import System.IO (IOMode (..), hGetLine, withFile)
 
 type Main = LoggerT IO
 
@@ -601,9 +601,10 @@ deserializeDefinition
     exeLastModifiedTime =
         do
             bytes <-
-                liftIO $ withFile definitionFilePath ReadMode $ \definitionHandle -> do
-                    execHash <- hGetLine definitionHandle
-                    ByteString.hGetContents definitionHandle
+                liftIO $
+                    withFile definitionFilePath ReadMode $ \definitionHandle -> do
+                        execHash <- hGetLine definitionHandle
+                        ByteString.hGetContents definitionHandle
             bytes <- ByteString.readFile definitionFilePath & liftIO
             let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
             let magic = Binary.decode @Word64 magicBytes
