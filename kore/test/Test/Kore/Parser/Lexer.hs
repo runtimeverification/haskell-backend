@@ -314,7 +314,7 @@ test_parseStringLiteral =
         , success "\"\\U000120FF\"" [TokenString "\73983"]
         , success "\"\\U000120FFa\"" [TokenString $ "\73983" <> "a"]
         , success "\"\\U000120ff\"" [TokenString "\73983"]
-        , success "\"\\U0010FFFF\"" [TokenString "\1114111"]
+        , success "\"\\U0010FFFF\"" [TokenString "\1114111"] -- #3022
         , success "\"\\xFF\"" [TokenString "\xFF"]
         , success "\"\\xff\"" [TokenString "\xFF"]
         , Failure
