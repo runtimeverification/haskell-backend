@@ -92,7 +92,6 @@ data PatternMatch = PatternMatch
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
-
 newtype Depth = Depth Int
     deriving stock (Show, Eq)
     deriving newtype (ToJSON)
