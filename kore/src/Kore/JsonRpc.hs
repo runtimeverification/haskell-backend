@@ -216,48 +216,19 @@ runServer port = do
 srv :: MonadLoggerIO m => JSONRPCT m ()
 srv = do
     reqQueue <- liftIO $ atomically newTChan
-    rpcSession <- ask
-    logger <- askLoggerIO
-    let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
 
-        cancelReq = \case
-            SingleRequest req@Request{} -> do
-                let v = getReqVer req
-                    i = getReqId req
-                sendResponses $ SingleResponse $ ResponseError v cancelError i
-            SingleRequest Notif{} -> pure ()
-            BatchRequest reqs ->
-                sendResponses $ BatchResponse $ [ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req]
-
-        processReq = \case
-            SingleRequest req -> do
-                rM <- buildResponse respond req
-                mapM_ (sendResponses . SingleResponse) rM
-            BatchRequest reqs -> do
-                rs <- catMaybes <$> forM reqs (buildResponse respond)
-                sendResponses $ BatchResponse rs
-
-        spawnWorker =
-            liftIO $
-                forkIO $
-                    forever $
-                        bracketOnReqException
-                            (atomically $ readTChan reqQueue)
-                            cancelReq
-                            processReq
-
-        mainLoop tid =
+    let mainLoop tid =
             receiveBatchRequest >>= \case
                 Nothing -> do
                     return ()
                 Just (SingleRequest req) | Right (Cancel :: API 'Req) <- fromRequest req -> do
                     liftIO $ throwTo tid CancelRequest
-                    spawnWorker >>= mainLoop
+                    spawnWorker reqQueue >>= mainLoop
                 Just req -> do
                     liftIO $ atomically $ writeTChan reqQueue req
                     mainLoop tid
 
-    spawnWorker >>= mainLoop
+    spawnWorker reqQueue >>= mainLoop
   where
     isRequest = \case
         Request{} -> True
@@ -269,3 +240,33 @@ srv = do
         mask $ \restore -> do
             a <- before
             restore (thing a) `catch` \(_ :: ReqException) -> onCancel a
+
+    spawnWorker reqQueue = do
+        rpcSession <- ask
+        logger <- askLoggerIO
+        let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
+
+            cancelReq = \case
+                SingleRequest req@Request{} -> do
+                    let v = getReqVer req
+                        i = getReqId req
+                    sendResponses $ SingleResponse $ ResponseError v cancelError i
+                SingleRequest Notif{} -> pure ()
+                BatchRequest reqs ->
+                    sendResponses $ BatchResponse $ [ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req]
+
+            processReq = \case
+                SingleRequest req -> do
+                    rM <- buildResponse respond req
+                    mapM_ (sendResponses . SingleResponse) rM
+                BatchRequest reqs -> do
+                    rs <- catMaybes <$> forM reqs (buildResponse respond)
+                    sendResponses $ BatchResponse rs
+
+        liftIO $
+            forkIO $
+                forever $
+                    bracketOnReqException
+                        (atomically $ readTChan reqQueue)
+                        cancelReq
+                        processReq
