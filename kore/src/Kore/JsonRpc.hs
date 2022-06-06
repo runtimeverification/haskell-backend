@@ -92,28 +92,24 @@ data PatternMatch = PatternMatch
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
-{- HLINT ignore ReasonForHalting -}
+
+newtype Depth = Depth Int
+    deriving stock (Show, Eq)
+    deriving newtype (ToJSON)
 
 data ReasonForHalting
-    = HaltBranching
-        { depth :: !Int
-        }
-    | HaltStuck
-        { depth :: !Int
-        }
+    = HaltBranching !Depth
+    | HaltStuck !Depth
     | HaltDepthBound
-    | HaltPatternMatch
-        { depth :: !Int
-        , matches :: ![PatternMatch]
-        }
+    | HaltPatternMatch !Depth ![PatternMatch]
     deriving stock (Show, Eq)
 
 instance ToJSON ReasonForHalting where
     toJSON = \case
-        HaltBranching{depth} -> object ["reason" .= ("branching" :: Text), "depth" .= depth]
-        HaltStuck{depth} -> object ["reason" .= ("stuck" :: Text), "depth" .= depth]
+        HaltBranching depth -> object ["reason" .= ("branching" :: Text), "depth" .= depth]
+        HaltStuck depth -> object ["reason" .= ("stuck" :: Text), "depth" .= depth]
         HaltDepthBound -> object ["reason" .= ("depth-bound" :: Text)]
-        HaltPatternMatch{depth, matches} ->
+        HaltPatternMatch depth matches ->
             object
                 [ "reason" .= ("pattern-match" :: Text)
                 , "depth" .= depth
