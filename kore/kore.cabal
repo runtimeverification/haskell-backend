@@ -141,6 +141,7 @@ common library
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
   build-depends: data-default >=0.7
+  build-depends: decision-diagrams >=0.2.0.0
   build-depends: deepseq >=1.4
   build-depends: deriving-aeson >=0.2
   build-depends: directory >=1.3
@@ -162,11 +163,13 @@ common library
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
   build-depends: logict >=0.7
+  build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
   build-depends: mmorph >=1.1
   build-depends: monad-logger >=0.3.36
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
+  build-depends: multiset >=0.3.4.3
   build-depends: optparse-applicative >=0.14
   build-depends: parser-combinators >=1.1
   build-depends: prettyprinter >=1.2
