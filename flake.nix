@@ -57,7 +57,10 @@
               pkgs'.haskellPackages.fourmolu
               pkgs'.stack
               pkgs'.nixfmt
-            ];
+            ] ++ (if system == "aarch64-darwin" then
+              [ pkgs'.llvm_12 ]
+            else
+              [ ]);
           };
         });
 
@@ -70,11 +73,12 @@
       overlay = nixpkgs.lib.composeManyExtensions [
         haskell-nix.overlay
 
-        (final: prev:
-          projectOverlay {
+        (final: prev: {
+          haskell-backend-stackProject = projectOverlay {
             pkgs = prev;
             shell = { };
-          })
+          };
+        })
 
         (final: prev: {
           z3 = prev.z3.overrideAttrs (old: {
