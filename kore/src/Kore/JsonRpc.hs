@@ -36,9 +36,13 @@ import Network.JSONRPC (
  )
 import Prelude.Kore
 
+newtype Depth = Depth Int
+    deriving stock (Show, Eq)
+    deriving newtype (FromJSON, ToJSON)
+
 data ExecuteRequest = ExecuteRequest
     { state :: !Text
-    , maxDepth :: !(Maybe Int)
+    , maxDepth :: !(Maybe Depth)
     , haltPatterns :: ![Text]
     }
     deriving stock (Generic, Show, Eq)
@@ -92,11 +96,6 @@ data PatternMatch = PatternMatch
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
-
-newtype Depth = Depth Int
-    deriving stock (Show, Eq)
-    deriving newtype (ToJSON)
-
 data ReasonForHalting
     = HaltBranching !Depth
     | HaltStuck !Depth
@@ -118,7 +117,7 @@ instance ToJSON ReasonForHalting where
 
 data StepState = StepState
     { state :: !Text
-    , depth :: !Int
+    , depth :: !Depth
     , condition :: !Text
     }
     deriving stock (Generic, Show, Eq)
