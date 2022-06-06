@@ -6,4 +6,4 @@ import Kore.JsonRpc (runServer)
 import Prelude.Kore
 
 main :: IO ()
-main = runServer
+main = runServer 31337

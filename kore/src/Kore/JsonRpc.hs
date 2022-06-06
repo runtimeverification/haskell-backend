@@ -4,7 +4,7 @@ import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception, catch, mask)
 import Control.Monad (forever)
-import Control.Monad.Logger (MonadLoggerIO, runStderrLoggingT)
+import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT, runStderrLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..), object, (.=))
@@ -207,17 +207,18 @@ respond = \case
     -- this case is only reachable if the cancel appeared as part of a batch request
     Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
 
-runServer :: IO ()
-runServer = do
+runServer :: Int -> IO ()
+runServer port = do
     runStderrLoggingT $ do
-        let ss = serverSettings 31337 "*"
+        let ss = serverSettings port "*"
         jsonrpcTCPServer V2 False ss srv
 
 srv :: MonadLoggerIO m => JSONRPCT m ()
 srv = do
     reqQueue <- liftIO $ atomically newTChan
-    qs <- ask
-    let sendResponses r = runStderrLoggingT $ runReaderT (sendBatchResponse r) qs
+    rpcSession <- ask
+    logger <- askLoggerIO
+    let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
 
         cancelReq = \case
             SingleRequest req@Request{} -> do
