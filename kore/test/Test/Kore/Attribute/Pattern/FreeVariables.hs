@@ -99,8 +99,10 @@ sy = FreeVariables.freeVariable (inject Mock.setY)
 sxy = sx <> sy
 
 test_concat :: [TestTree]
-test_concat = [testCase "x not equal xx" $ do
-    assertBool "" (x /= xx)]
+test_concat =
+    [ testCase "x not equal xx" $ do
+        assertBool "" (x /= xx)
+    ]
 
 gives ::
     (Synthetic (FreeVariables VariableName) base, HasCallStack) =>
