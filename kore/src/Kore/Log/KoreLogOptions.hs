@@ -222,7 +222,7 @@ parseEntryTypes =
     allEntryTypes :: OptPretty.Doc
     allEntryTypes =
         OptPretty.vsep
-            [ "Log entries: logs entries of supplied types"
+            [ "Log entries: comma-separated list logs entries to enable"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
                 (OptPretty.text <$> getEntryTypesAsText)
@@ -485,16 +485,10 @@ unparseKoreLogOptions
             ["--sqlog", file]
 
         debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) =
-            concat $
-                ("--debug-apply-equation" :) . (: []) . Text.unpack
-                    <$> toList set
+            concatMap (("--debug-apply-equation" :) . (: []) . Text.unpack) (toList set)
 
         debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) =
-            concat $
-                ("--debug-attempt-equation" :) . (: []) . Text.unpack
-                    <$> toList set
+            concatMap (("--debug-attempt-equation" :) . (: []) . Text.unpack) (toList set)
 
         debugEquationOptionsFlag (DebugEquationOptions set) =
-            concat $
-                ("--debug-equation" :) . (: []) . Text.unpack
-                    <$> toList set
+            concatMap (("--debug-equation" :) . (: []) . Text.unpack) (toList set)

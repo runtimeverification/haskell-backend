@@ -41,6 +41,7 @@ import Data.ByteString (
     ByteString,
  )
 import Data.ByteString qualified as ByteString
+import Data.ByteString.Short qualified as ShortByteString
 import Data.Functor.Const
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict qualified as HashMap
@@ -196,7 +197,8 @@ patternVerifierHook =
     patternVerifierWorker external =
         case externalChild of
             StringLiteral_ literal -> do
-                internalBytesValue <- Builtin.parseString Encoding.parse8Bit literal
+                bs <- Builtin.parseString Encoding.parse8Bit literal
+                let internalBytesValue = ShortByteString.toShort bs
                 (return . InternalBytesF . Const)
                     InternalBytes{internalBytesSort, internalBytesValue}
             _ -> Kore.Error.koreFail "Expected literal string"
@@ -215,14 +217,14 @@ dotBytesVerifier =
     worker application = do
         unless (null arguments) (Kore.Error.koreFail "expected zero arguments")
         (return . InternalBytesF . Const)
-            InternalBytes{internalBytesSort, internalBytesValue = Encoding.encode8Bit ""}
+            InternalBytes{internalBytesSort, internalBytesValue = ShortByteString.toShort $ Encoding.encode8Bit ""}
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
         internalBytesSort = applicationSortsResult . symbolSorts $ symbol
 
 matchBuiltinBytes :: Monad m => TermLike variable -> MaybeT m ByteString
-matchBuiltinBytes (InternalBytes_ _ byteString) = return byteString
+matchBuiltinBytes (InternalBytes_ _ byteString) = return $ ShortByteString.fromShort byteString
 matchBuiltinBytes _ = empty
 
 evalBytes2String :: BuiltinAndAxiomSimplifier

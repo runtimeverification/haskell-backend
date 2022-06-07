@@ -8,6 +8,7 @@ import Kore.BugReport
 import Kore.Exec (matchDisjunction)
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
+    indexedModuleSyntax,
  )
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
@@ -146,7 +147,7 @@ koreMatchDisjunction :: LocalOptions KoreMatchDisjunctionOptions -> Main ExitCod
 koreMatchDisjunction LocalOptions{execOptions, simplifierx} = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
-    matchPattern <- mainParseMatchPattern mainModule matchFileName
+    matchPattern <- mainParseMatchPattern (indexedModuleSyntax mainModule) matchFileName
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
     final <-
@@ -178,7 +179,7 @@ mainParseDisjunctionPattern ::
     String ->
     Main [Pattern RewritingVariableName]
 mainParseDisjunctionPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+    purePattern <- mainPatternParseAndVerify (indexedModuleSyntax indexedModule) patternFileName
     return $ parseDisjunction purePattern
   where
     parseDisjunction (Or_ _ term1 term2) =

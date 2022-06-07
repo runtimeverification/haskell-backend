@@ -17,6 +17,7 @@ module Kore.Rewrite.SMT.AST (
     SmtSymbol,
     Sort (..),
     SortReference (..),
+    SortSExprSpec (..),
     Symbol (..),
     SymbolReference (..),
     UnresolvedConstructor,
@@ -33,6 +34,7 @@ module Kore.Rewrite.SMT.AST (
     encodable,
     encode,
     mergePreferFirst,
+    symbolSmtFromSortArgs,
 ) where
 
 import Data.Map.Strict (
@@ -70,13 +72,14 @@ data Sort sort symbol name = Sort
       -- Smt representations for sorts and a list of sort arguments, returns
       -- an S-expression that can be used, say, when declaring symbols of
       -- that sort.
-      sortSmtFromSortArgs ::
-        !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
+      sortData ::
+        SortSExprSpec
     , -- | Information needed for declaring the sort, also listing all
       -- dependencies on other sorts and symbols.
       sortDeclaration :: !(KoreSortDeclaration sort symbol name)
     }
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -86,10 +89,26 @@ instance
     where
     show s@(Sort _ _) =
         case s of
-            Sort{sortSmtFromSortArgs = _, sortDeclaration} ->
+            Sort{sortDeclaration} ->
                 "Sort { sortSmtFromSortArgs, sortDeclaration = "
                     ++ show sortDeclaration
                     ++ "}"
+
+{- | A defunctionalized data type containing the information needed to invoke
+sortSmtFromSortArgs, which constructs an S-expression of a sort from its sort
+arguments.
+-}
+data SortSExprSpec
+    = EmptySortArgsToSmt AST.SExpr
+    | ApplyToArgs AST.SExpr
+    | ConstSExpr AST.SExpr
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
+
+instance Diff SortSExprSpec where
+    diffPrec = diffPrecIgnore
 
 {- | A representation of the Kore SymbolOrAlias type together with symbol
 declaration sentences, optimized for dealing with the SMT.
@@ -101,20 +120,23 @@ data Symbol sort name = Symbol
       -- Smt representations for sorts and a list of sort arguments, returns
       -- an s-expression that can be used, say, when building assertions
       -- using that symbol.
-      symbolSmtFromSortArgs ::
-        !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
+      symbolData :: AST.SExpr
     , -- | Information needed for declaring the symbol, also listing all
       -- dependencies on other sorts and symbols.
       symbolDeclaration :: !(KoreSymbolDeclaration sort name)
     }
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+symbolSmtFromSortArgs :: AST.SExpr -> Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr
+symbolSmtFromSortArgs astName = const . const $ Just astName
 
 instance (Show sort, Show name) => Show (Symbol sort name) where
     show s@(Symbol _ _) =
         case s of
-            Symbol{symbolSmtFromSortArgs = _, symbolDeclaration} ->
+            Symbol{symbolDeclaration} ->
                 "Symbol { symbolSmtFromSortArgs, symbolDeclaration = "
                     ++ show symbolDeclaration
                     ++ "}"
@@ -134,6 +156,7 @@ data KoreSortDeclaration sort symbol name
       SortDeclaredIndirectly !name
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -155,6 +178,7 @@ data KoreSymbolDeclaration sort name
       SymbolConstructor !(IndirectSymbolDeclaration sort name)
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
@@ -165,6 +189,7 @@ data IndirectSymbolDeclaration sort name = IndirectSymbolDeclaration
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug name, Debug sort) => Debug (IndirectSymbolDeclaration sort name)
@@ -187,6 +212,7 @@ data Declarations sort symbol name = Declarations
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 

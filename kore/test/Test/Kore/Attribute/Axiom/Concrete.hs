@@ -62,7 +62,7 @@ test_concrete_selectx2 =
                     , concreteAttribute [inject Mock.z]
                     ]
   where
-    freeVars = foldMap freeVariable $ inject <$> [Mock.x, Mock.y, Mock.z]
+    freeVars = foldMap (freeVariable . inject) [Mock.x, Mock.y, Mock.z]
     concreteVars = foldMap (freeVariable . inject) [Mock.x, Mock.z]
 
 test_Attributes :: TestTree

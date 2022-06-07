@@ -1838,7 +1838,7 @@ headSortsMapping =
 zeroarySmtSort :: Id -> SMT.UnresolvedSort
 zeroarySmtSort sortId =
     SMT.Sort
-        { sortSmtFromSortArgs = const (const (Just encodedId))
+        { sortData = SMT.ConstSExpr encodedId
         , sortDeclaration =
             SMT.SortDeclarationSort
                 SMT.SortDeclaration
@@ -1852,7 +1852,7 @@ zeroarySmtSort sortId =
 builtinZeroarySmtSort :: SMT.SExpr -> SMT.UnresolvedSort
 builtinZeroarySmtSort sExpr =
     SMT.Sort
-        { sortSmtFromSortArgs = const (const (Just sExpr))
+        { sortData = SMT.ConstSExpr sExpr
         , sortDeclaration = SMT.SortDeclaredIndirectly (SMT.AlreadyEncoded sExpr)
         }
 
@@ -1860,7 +1860,7 @@ smtBuiltinSymbol ::
     Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtBuiltinSymbol builtin argumentSorts resultSort =
     SMT.Symbol
-        { symbolSmtFromSortArgs = const (const (Just (SMT.Atom builtin)))
+        { symbolData = SMT.Atom builtin
         , symbolDeclaration =
             SMT.SymbolBuiltin
                 SMT.IndirectSymbolDeclaration
@@ -1874,7 +1874,7 @@ smtDeclaredSymbol ::
     Text -> Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtDeclaredSymbol smtName id' argumentSorts resultSort =
     SMT.Symbol
-        { symbolSmtFromSortArgs = const (const (Just (SMT.Atom smtName)))
+        { symbolData = SMT.Atom smtName
         , symbolDeclaration =
             SMT.SymbolDeclaredDirectly
                 SMT.FunctionDeclaration

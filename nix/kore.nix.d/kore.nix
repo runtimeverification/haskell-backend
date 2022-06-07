@@ -37,14 +37,17 @@
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
           (hsPkgs."array" or (errorHandler.buildDepError "array"))
+          (hsPkgs."async" or (errorHandler.buildDepError "async"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
           (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
+          (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
           (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
           (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
           (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
           (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+          (hsPkgs."deriving-aeson" or (errorHandler.buildDepError "deriving-aeson"))
           (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
           (hsPkgs."distributive" or (errorHandler.buildDepError "distributive"))
           (hsPkgs."errors" or (errorHandler.buildDepError "errors"))
@@ -59,11 +62,14 @@
           (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
           (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
           (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
+          (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
           (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+          (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
+          (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
           (hsPkgs."mono-traversable" or (errorHandler.buildDepError "mono-traversable"))
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -74,6 +80,7 @@
           (hsPkgs."recursion-schemes" or (errorHandler.buildDepError "recursion-schemes"))
           (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
           (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
+          (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
           (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
           (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
           (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
@@ -246,9 +253,12 @@
           "Kore/Internal/TermLike/Renaming"
           "Kore/Internal/TermLike/TermLike"
           "Kore/Internal/Variable"
+          "Kore/JsonRpc"
           "Kore/Log"
           "Kore/Log/DebugAppliedRewriteRules"
+          "Kore/Log/DebugAttemptedRewriteRules"
           "Kore/Log/DebugBeginClaim"
+          "Kore/Log/DebugCreatedSubstitution"
           "Kore/Log/DebugEvaluateCondition"
           "Kore/Log/DebugProven"
           "Kore/Log/DebugRetrySolverQuery"
@@ -262,6 +272,7 @@
           "Kore/Log/ErrorEquationRightFunction"
           "Kore/Log/ErrorEquationsSameMatch"
           "Kore/Log/ErrorException"
+          "Kore/Log/ErrorOutOfDate"
           "Kore/Log/ErrorParse"
           "Kore/Log/ErrorRewriteLoop"
           "Kore/Log/ErrorRewritesInstantiation"
@@ -474,17 +485,22 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
             ];
           buildable = true;
@@ -496,18 +512,54 @@
             ""
             ];
           };
-        "kore-format" = {
+        "kore-rpc" = {
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
+            ];
+          buildable = true;
+          modules = [ "GlobalMain" "Paths_kore" ];
+          hsSourceDirs = [ "app/share" "app/rpc" ];
+          mainPath = (([
+            "Main.hs"
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
+            ""
+            ];
+          };
+        "kore-format" = {
+          depends = [
+            (hsPkgs."base" or (errorHandler.buildDepError "base"))
+            (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
+            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
+            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
+            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
+            (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -522,15 +574,21 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -559,15 +617,21 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -582,14 +646,21 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             ];
           buildable = true;
@@ -605,19 +676,54 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/share" "app/check-functions" ];
+          mainPath = (([
+            "Main.hs"
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
+            ""
+            ];
+          };
+        "kore-simplify" = {
+          depends = [
+            (hsPkgs."base" or (errorHandler.buildDepError "base"))
+            (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
+            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
+            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
+            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
+            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
+            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
+            (hsPkgs."text" or (errorHandler.buildDepError "text"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
+            ];
+          buildable = true;
+          modules = [ "GlobalMain" "Paths_kore" ];
+          hsSourceDirs = [ "app/share" "app/simplify" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -632,14 +738,17 @@
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
             (hsPkgs."array" or (errorHandler.buildDepError "array"))
+            (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
             (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
+            (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
             (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
             (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."deriving-aeson" or (errorHandler.buildDepError "deriving-aeson"))
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."distributive" or (errorHandler.buildDepError "distributive"))
             (hsPkgs."errors" or (errorHandler.buildDepError "errors"))
@@ -654,11 +763,14 @@
             (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
             (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
             (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
+            (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
             (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+            (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
+            (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
             (hsPkgs."mono-traversable" or (errorHandler.buildDepError "mono-traversable"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
@@ -669,6 +781,7 @@
             (hsPkgs."recursion-schemes" or (errorHandler.buildDepError "recursion-schemes"))
             (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
             (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
+            (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
             (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
             (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
             (hsPkgs."template-haskell" or (errorHandler.buildDepError "template-haskell"))
