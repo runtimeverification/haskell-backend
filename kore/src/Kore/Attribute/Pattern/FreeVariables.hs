@@ -86,7 +86,7 @@ unionCounts (s, c1) (_, c2) = (s, c1 + c2)
 
 -- toMultiList creates a list with one element per occurrence
 toMultiList :: FreeVariables variable -> [SomeVariable variable]
-toMultiList = concat . map (\(variableName, (variableSort, n)) -> replicate n Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
+toMultiList = concatMap (\(variableName, (variableSort, n)) -> replicate n Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
 {-# INLINE toMultiList #-}
 
 -- toList creates a list with one element per variable
