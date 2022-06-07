@@ -334,7 +334,7 @@ unificationFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -353,7 +353,7 @@ unificationFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -402,7 +402,7 @@ forceFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -421,7 +421,7 @@ forceFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
