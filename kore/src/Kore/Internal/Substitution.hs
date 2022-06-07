@@ -66,7 +66,12 @@ import Data.Set qualified as Set
 import ErrorContext
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables,
+    freeVariable,
+    freeVariables,
+ )
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified (..),
  )
