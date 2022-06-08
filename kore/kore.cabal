@@ -131,10 +131,12 @@ common library
   build-depends: aeson >=1.4
   build-depends: array
   build-depends: async >=2.2
+  build-depends: binary >=0.8.8.0
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
+  build-depends: compact >= 0.2.0.0
   build-depends: conduit-extra >=1.3
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
@@ -180,6 +182,7 @@ common library
   build-depends: temporary >=1.3
   build-depends: text >=1.2
   build-depends: these >=1.0
+  build-depends: time >=1.9.3
   build-depends: transformers >=0.4
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
@@ -558,6 +561,7 @@ library
     Options.SMT
     Pair
     Partial
+    Paths_kore
     Prelude.Kore
     Pretty
     Prof
