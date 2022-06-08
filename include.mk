@@ -69,22 +69,22 @@ export KORE_PROF
 export KORE_PROF_OPTS
 
 $(BUILD_DIR)/kore/bin/kore-exec:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-exec
 
 $(BUILD_DIR)/kore/bin/kore-repl:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-repl
 
 $(BUILD_DIR)/kore/bin/kore-parser:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-parser
 
 $(BUILD_DIR)/kore/bin/kore-check-functions:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-check-functions
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-check-functions
 
 $(BUILD_DIR)/kore/bin/kore-format:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-format
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-format
 
 $(BUILD_DIR)/kore/bin/kore-match-disjunction:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-match-disjunction
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-match-disjunction
 
 $(BUILD_DIR)/kore/bin/kore-prof:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-prof
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore-prof
