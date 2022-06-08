@@ -1,0 +1,41 @@
+#+TITLE: Building haskell-backend in multiple threads
+
+* Random notes
+- maven setup in k repo uses stack
+  - we could use a custom setup in the K repo, but let's optimise at
+    the source instead
+
+* package build
+- can set _ghc-options: -j<N>_ in kore.cabal (as done in the old PR)
+- can also directly pass _--ghc-options=-j<N>_ to stack
+** Timings:
+ - Setting: clean check-out, _stack clean_ between runs
+ - dependencies (package snapshots and extra packages) not rebuilt
+
+ |           | _time stack build_    | Description                   |
+ |-----------+-----------------------+-------------------------------|
+ | Plain     | 4m24.287s             | master, first build           |
+ | stack -j  | not parallel, stopped | stack build -j8               |
+ |-----------+-----------------------+-------------------------------|
+ | plain     | 2m43.503s             | master, kore package only     |
+ | kore -j8  | 1m51.377s             | kore.cabal ghc-options -j8    |
+ | kore -j16 | 2m15.914s             | kore.cabal ghc-options -j16   |
+ | cmd -j8   | 1m50.349s             | stack build --ghc-options -j8 |
+ | cmd -j6   | 1m49.419s             | stack build --ghc-options -j6 |
+ | cmd -j4   | 1m50.586s             | stack build --ghc-options -j4 |
+ | cmd -j2   | 2m3.537s              | stack build --ghc-options -j2 |
+
+* stack and parallel executables
+- passing `-j<N>` to _stack_ has no effect if we only build one package
+- executables are not built in parallel by stack, see github issue
+  https://github.com/commercialhaskell/stack/issues/644#issuecomment-123401800
+- might be able to parallelise exe-builds (by _stack build -j8_) if we
+  move executables into their own packages/directories
+  - need to adapt Makefile: targets for individual executables
+  - options passed to stack would only apply to the currently-built
+    exec package, not the kore dependency.
+
+    As an example: _$ stack build kore-exec --ghc-options=-O0_ builds
+    kore-exec without optimisations but does build kore with
+    optimisations. See
+    https://docs.haskellstack.org/en/stable/GUIDE/#ghc-options
