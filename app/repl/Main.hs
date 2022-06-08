@@ -4,6 +4,7 @@
 
 module Main (main) where
 
+import App.GlobalMain as GlobalMain
 import Control.Concurrent.MVar
 import Control.Monad.Catch (
     SomeException,
@@ -11,7 +12,6 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
-import App.GlobalMain as GlobalMain
 import Kore.BugReport
 import Kore.Exec (
     proveWithRepl,

@@ -11,9 +11,6 @@ match the same term.
 -}
 module Main (main) where
 
-import Control.Monad.Catch (
-    handle,
- )
 import App.GlobalMain as GlobalMain (
     ExeName (..),
     LocalOptions (..),
@@ -22,6 +19,9 @@ import App.GlobalMain as GlobalMain (
     localOptions,
     mainGlobal,
     parseModuleName,
+ )
+import Control.Monad.Catch (
+    handle,
  )
 import Kore.BugReport (
     BugReportOption,

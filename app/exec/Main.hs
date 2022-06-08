@@ -1,5 +1,6 @@
 module Main (main) where
 
+import App.GlobalMain as GlobalMain
 import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     handle,
@@ -34,7 +35,6 @@ import Data.Time.Clock (
     UTCTime (..),
  )
 import GHC.Generics qualified as GHC
-import App.GlobalMain as GlobalMain
 import Kore.Attribute.Definition (
     KFileLocations (..),
  )

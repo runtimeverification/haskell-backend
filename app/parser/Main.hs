@@ -1,12 +1,12 @@
 module Main (main) where
 
+import App.GlobalMain as GlobalMain
 import Control.Monad.Catch (
     Exception (..),
     SomeException,
     handle,
  )
 import Data.Map.Strict qualified as Map
-import App.GlobalMain as GlobalMain
 import Kore.AST.ApplicativeKore
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
