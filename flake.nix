@@ -28,12 +28,19 @@
           inherit (haskell-nix) config;
         };
 
-      projectOverlay = { shell, pkgs }:
+      haskell-src = pkgs: pkgs.applyPatches {
+        src = ./.;
+        postPatch = ''
+          substituteInPlace kore/src/Kore/VersionInfo.hs \
+            --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+        '';
+      };
+
+      projectOverlay = { shell, pkgs, src }:
         pkgs.haskell-nix.stackProject' ({
-          src = ./.;
+          inherit shell src;
           materialized = ./nix/kore.nix.d;
           compiler-nix-name = "ghc8107";
-          inherit shell;
         });
     in {
       prelude-kore = ./src/main/kore/prelude.kore;
@@ -43,6 +50,7 @@
           pkgs' = nixpkgsFor' system;
         in projectOverlay {
           inherit pkgs;
+          src = haskell-src pkgs';
 
           shell = {
             withHoogle = true;
@@ -76,6 +84,7 @@
         (final: prev: {
           haskell-backend-stackProject = projectOverlay {
             pkgs = prev;
+            src = haskell-src prev;
             shell = { };
           };
         })
