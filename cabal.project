@@ -1,5 +1,14 @@
 packages:
   kore
+  app/check-functions
+  app/exec
+  app/format
+  app/match-disjunction
+  app/parser
+  app/prof
+  app/repl
+  app/rpc
+  app/simplify
 
 allow-newer:
   ghc-trace-events:base

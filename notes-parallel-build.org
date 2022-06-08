@@ -42,6 +42,9 @@
 
 ** Prototyped in a separate branch
 - *Timing: 1m32.615s*
-- adaptations required:
-  - Makefile
-  - cabal build setup (multi-project)
+- adaptations:
+  - Makefile: (include.mk), stack invocations get simpler
+  - cabal build setup (multi-project):
+    - cabal.projects extended
+    - first cabal build (incl. dep.s) was 5m6.849s
+    - next _cabal build all_ finished in 1m34.699s
