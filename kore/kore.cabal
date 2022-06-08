@@ -111,6 +111,8 @@ common haskell
     -Wnoncanonical-monad-instances
     -Wmissing-deriving-strategies
   ghc-options:
+    -j6
+  ghc-options:
   if impl(ghc >= 8.4)
     ghc-options: -Wmissing-export-lists -Wpartial-fields
   if impl(ghc >= 8.8)
