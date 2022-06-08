@@ -14,7 +14,7 @@ module Main (main) where
 import Control.Monad.Catch (
     handle,
  )
-import GlobalMain (
+import App.GlobalMain as GlobalMain (
     ExeName (..),
     LocalOptions (..),
     loadDefinitions,

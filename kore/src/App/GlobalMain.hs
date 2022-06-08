@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module GlobalMain (
+module App.GlobalMain (
     MainOptions (..),
     GlobalOptions (..),
     LocalOptions (..),

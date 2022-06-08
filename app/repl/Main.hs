@@ -11,7 +11,7 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
-import GlobalMain
+import App.GlobalMain as GlobalMain
 import Kore.BugReport
 import Kore.Exec (
     proveWithRepl,

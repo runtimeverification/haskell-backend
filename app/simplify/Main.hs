@@ -1,6 +1,6 @@
 module Main (main) where
 
-import GlobalMain
+import App.GlobalMain as GlobalMain
 import Kore.Attribute.Symbol (
     StepperAttributes,
  )

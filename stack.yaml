@@ -43,6 +43,16 @@ nix:
 # will not be run. This is useful for tweaking upstream packages.
 packages:
   - kore
+  - app/check-functions
+  - app/exec
+  - app/format
+  - app/match-disjunction
+  - app/parser
+  - app/prof
+  - app/repl
+  - app/rpc
+  - app/simplify
+
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)

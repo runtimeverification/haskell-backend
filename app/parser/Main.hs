@@ -6,7 +6,7 @@ import Control.Monad.Catch (
     handle,
  )
 import Data.Map.Strict qualified as Map
-import GlobalMain
+import App.GlobalMain as GlobalMain
 import Kore.AST.ApplicativeKore
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
