@@ -39,3 +39,9 @@
     kore-exec without optimisations but does build kore with
     optimisations. See
     https://docs.haskellstack.org/en/stable/GUIDE/#ghc-options
+
+** Prototyped in a separate branch
+- *Timing: 1m32.615s*
+- adaptations required:
+  - Makefile
+  - cabal build setup (multi-project)
