@@ -455,6 +455,86 @@ test_applyRewriteRule_ =
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
     , testCase "Apply non-function-like rule in parallel" $ do
+        let expect =
+                [OrPattern.fromPatterns [Pattern.fromTermLike final]]
+            final = mkElemVar Mock.xConfig
+        let initial =
+                pure
+                    ( Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
+        resultAxiom <- applyRewriteRuleParallel_ initial axiomSigmaTopId
+        resultClaim <- applyClaim initial claimSigmaTopId
+        assertEqual "" expect resultAxiom
+        assertEqual "" expect resultClaim
+    , testCase "Apply list containing non-function-like rule in parallel" $ do
+        let expect =
+                [OrPattern.fromPatterns [Pattern.fromTermLike final]]
+            final = mkElemVar Mock.xConfig
+        let initial =
+                pure
+                    ( Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
+        resultAxiom <-
+            applyRewriteRules_
+                applyRewriteRulesParallel
+                initial
+                [axiomCaseA, axiomSigmaTopId]
+        resultClaim <-
+            applyClaims_
+                applyClaimsSequence
+                initial
+                [claimCaseA, claimSigmaTopId]
+        assertEqual "" expect resultAxiom
+        assertEqual "" expect resultClaim
+    , testCase "Apply non-function-like rule in sequence" $ do
+        let expect =
+                [OrPattern.fromPatterns [Pattern.fromTermLike final]]
+            final = mkElemVar Mock.xConfig
+        let initial =
+                pure
+                    ( Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
+        resultAxiom <-
+            applyRewriteRule_
+                applyRewriteRulesSequence
+                initial
+                axiomSigmaTopId
+        resultClaim <-
+            applyClaim_
+                applyClaimsSequence
+                initial
+                claimSigmaTopId
+        assertEqual "" expect resultAxiom
+        assertEqual "" expect resultClaim
+    , testCase "Apply list containing non-function-like rule in sequence" $ do
+        let expect =
+                [OrPattern.fromPatterns [Pattern.fromTermLike final]]
+            final = mkElemVar Mock.xConfig
+        let initial =
+                pure
+                    ( Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
+        resultAxiom <-
+            applyRewriteRules_
+                applyRewriteRulesParallel
+                initial
+                [axiomCaseA, axiomSigmaTopId]
+        resultClaim <-
+            applyClaims_
+                applyClaimsSequence
+                initial
+                [claimCaseA, claimSigmaTopId]
+        assertEqual "" expect resultAxiom
+        assertEqual "" expect resultClaim
+    , testCase "Apply rule with non-function-like solution in parallel" $ do
         let initial =
                 pure
                     ( Mock.sigma
@@ -463,18 +543,18 @@ test_applyRewriteRule_ =
                     )
         resultAxiom <-
             Exception.try $
-                applyRewriteRuleParallel_ initial axiomSigmaTopId
+                applyRewriteRuleParallel_ initial axiomSigmaImpliesId
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
 
         resultClaim <-
             Exception.try $
-                applyClaim initial claimSigmaTopId
+                applyClaim initial claimSigmaImpliesId
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-    , testCase "Apply list containing non-function-like rule in parallel" $ do
+    , testCase "Apply list containing rule with non-function-like solution in parallel" $ do
         let initial =
                 pure
                     ( Mock.sigma
@@ -486,7 +566,7 @@ test_applyRewriteRule_ =
                 applyRewriteRules_
                     applyRewriteRulesParallel
                     initial
-                    [axiomCaseA, axiomSigmaTopId]
+                    [axiomCaseA, axiomSigmaImpliesId]
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
@@ -496,11 +576,11 @@ test_applyRewriteRule_ =
                 applyClaims_
                     applyClaimsSequence
                     initial
-                    [claimCaseA, claimSigmaTopId]
+                    [claimCaseA, claimSigmaImpliesId]
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-    , testCase "Apply non-function-like rule in sequence" $ do
+    , testCase "Apply rule with non-function-like solution in sequence" $ do
         let initial =
                 pure
                     ( Mock.sigma
@@ -512,7 +592,7 @@ test_applyRewriteRule_ =
                 applyRewriteRule_
                     applyRewriteRulesSequence
                     initial
-                    axiomSigmaTopId
+                    axiomSigmaImpliesId
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
@@ -522,11 +602,11 @@ test_applyRewriteRule_ =
                 applyClaim_
                     applyClaimsSequence
                     initial
-                    claimSigmaTopId
+                    claimSigmaImpliesId
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-    , testCase "Apply list containing non-function-like rule in sequence" $ do
+    , testCase "Apply list containing rule with non-function-like solution in sequence" $ do
         let initial =
                 pure
                     ( Mock.sigma
@@ -538,7 +618,7 @@ test_applyRewriteRule_ =
                 applyRewriteRules_
                     applyRewriteRulesParallel
                     initial
-                    [axiomCaseA, axiomSigmaTopId]
+                    [axiomCaseA, axiomSigmaImpliesId]
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
@@ -548,10 +628,12 @@ test_applyRewriteRule_ =
                 applyClaims_
                     applyClaimsSequence
                     initial
-                    [claimCaseA, claimSigmaTopId]
+                    [claimCaseA, claimSigmaImpliesId]
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
+ 
+
     , testCase "symbol clash" $ do
         let expect = mempty
             fx = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
@@ -1001,6 +1083,19 @@ test_applyRewriteRule_ =
             (Mock.sigma (mkElemVar Mock.xRule) (mkTop Mock.testSort))
             (mkElemVar Mock.xRule)
             []
+
+    axiomSigmaImpliesId =
+        RewriteRule $
+            rulePattern
+                (Mock.sigma (mkElemVar Mock.xRule) (mkImplies (mkElemVar Mock.yRule) (mkElemVar Mock.yRule)))
+                (mkElemVar Mock.xRule)
+
+    claimSigmaImpliesId =
+        claimPatternFromTerms
+            (Mock.sigma (mkElemVar Mock.xRule) (mkImplies (mkElemVar Mock.yRule) (mkElemVar Mock.yRule)))
+            (mkElemVar Mock.xRule)
+            []
+
 
     axiomSigmaXXYY =
         RewriteRule $

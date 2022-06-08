@@ -212,7 +212,8 @@ assertFunctionLikeResults termLike results =
             _ -> return ()
 
 -- |Checks whether configuration and matching pattern are function-like
-checkFunctionLike ::
+checkFunctionLike :: 
+    forall variable rule f.
     InternalVariable variable =>
     InternalVariable (UnifyingRuleVariable rule) =>
     Foldable f =>
@@ -232,14 +233,21 @@ checkFunctionLike unifiedRules pat
             , Pretty.indent 4 (unparse pat)
             ]
   where
-    checkFunctionLikeRule Conditional{term}
-        | TermLike.isFunctionPattern left = return ()
+    checkFunctionLikeRule ::
+        UnifiedRule rule ->
+        Either String ()
+    checkFunctionLikeRule Conditional{term,substitution}
+        | all (TermLike.isFunctionPattern . Substitution.assignedTerm) $
+              Substitution.unwrap substitution = return ()
         | otherwise =
             Left . show . Pretty.vsep $
-                [ "Expected function-like left-hand side of rule, but found:"
-                , Pretty.indent 4 (unparse left)
+                [ "Expected function-like unification solution, but found:"
+                , Pretty.indent 4 (unparse conditional)
                 ]
       where
+        conditional = TermLike.mkTop (TermLike.termLikeSort left)
+                      `Pattern.withCondition`
+                      Condition.fromSubstitution substitution
         left = matchingPattern term
 
 {- | Apply the initial conditions to the results of rule unification.
