@@ -6,13 +6,14 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
+import Data.Binary qualified as Binary
+import Data.ByteString.Lazy (hPut)
 import Data.Compact (
     compactWithSharing,
  )
 import Data.Compact.Serialize (
     hPutCompact,
  )
-import Data.Binary qualified as Binary
 import Data.Default (
     def,
  )
@@ -179,7 +180,6 @@ import System.IO (
 import Type.Reflection (
     someTypeRep,
  )
-import Data.ByteString.Lazy (hPut)
 
 {-
 Main module to run kore-exec

@@ -43,7 +43,6 @@ import Control.Lens (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
-import GHC.Fingerprint as Fingerprint
 import Control.Monad.Catch (
     MonadMask,
  )
@@ -75,6 +74,7 @@ import Data.Version (
     showVersion,
  )
 import Data.Word
+import GHC.Fingerprint as Fingerprint
 import GHC.Generics qualified as GHC
 import GHC.Stack (
     emptyCallStack,
@@ -193,9 +193,9 @@ import System.Clock (
     diffTimeSpec,
     getTime,
  )
+import System.Environment (getExecutablePath)
 import System.Environment qualified as Env
 import System.IO (IOMode (..), withFile)
-import System.Environment (getExecutablePath)
 
 type Main = LoggerT IO
 
@@ -589,45 +589,47 @@ deserializeDefinition
     simplifierx
     solverOptions
     definitionFilePath
-    mainModuleName
-  = do
-    magicNumber <- withFile definitionFilePath ReadMode readHeader & liftIO
-    case magicNumber of
-        -- This magic number comes from the Data.Compact.Serialize moduile source:
-        -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
-        -- The field is not exported by the package so we have to manually specify it here.
-        -- If you update the version of the compact package, you should double check that
-        -- the file format has not changed. They don't provide any particular guarantees
-        -- of stability across versions because the serialized data becomes invalid when
-        -- any changes are made to the binary at all, so there would be no point.
-        --
-        -- We use this magic number to detect if the input file for the definition is
-        -- a serialized Data.Compact region or if it is a textual KORE definition.
-        0x7c155e7a53f094f2 ->
-           liftIO (unsafeReadCompact definitionFilePath)
-           >>= either errorParse (return . getCompact)
-        _ ->
-            makeSerializedDefinition
-                simplifierx
-                solverOptions
-                definitionFilePath
-                mainModuleName
-  where
-    readHeader definitionHandle = do
-        fingerprint <-
-            ByteString.hGet definitionHandle 16
-            <&> Binary.decode
-        checkFingerprint fingerprint
-        ByteString.hGet definitionHandle 34
-            <&> ByteString.drop 8
-            <&> Binary.decode @Word64
+    mainModuleName =
+        do
+            magicNumber <- withFile definitionFilePath ReadMode readHeader & liftIO
+            case magicNumber of
+                -- This magic number comes from the Data.Compact.Serialize moduile source:
+                -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
+                -- The field is not exported by the package so we have to manually specify it here.
+                -- If you update the version of the compact package, you should double check that
+                -- the file format has not changed. They don't provide any particular guarantees
+                -- of stability across versions because the serialized data becomes invalid when
+                -- any changes are made to the binary at all, so there would be no point.
+                --
+                -- We use this magic number to detect if the input file for the definition is
+                -- a serialized Data.Compact region or if it is a textual KORE definition.
+                0x7c155e7a53f094f2 ->
+                    liftIO (unsafeReadCompact definitionFilePath)
+                        >>= either errorParse (return . getCompact)
+                _ ->
+                    makeSerializedDefinition
+                        simplifierx
+                        solverOptions
+                        definitionFilePath
+                        mainModuleName
+      where
+        readHeader definitionHandle = do
+            fingerprint <-
+                ByteString.hGet definitionHandle 16
+                    <&> Binary.decode
+            checkFingerprint fingerprint
+            ByteString.hGet definitionHandle 34
+                <&> ByteString.drop 8
+                <&> Binary.decode @Word64
 
-    checkFingerprint fingerprint = do
-        execHash <- getExecutablePath >>= Fingerprint.getFileHash
-        unless (execHash == fingerprint)
-            (error "The definition was serialized with a different version of kore-exec. \
+        checkFingerprint fingerprint = do
+            execHash <- getExecutablePath >>= Fingerprint.getFileHash
+            unless
+                (execHash == fingerprint)
+                ( error
+                    "The definition was serialized with a different version of kore-exec. \
                     \Re-run kompile with the current executable."
-            )
+                )
 
 makeSerializedDefinition ::
     SimplifierXSwitch ->
