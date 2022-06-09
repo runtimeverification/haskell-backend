@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -6,7 +8,7 @@ Please refer to <http://github.com/runtimeverification/haskell-backend/blob/mast
 -}
 module Kore.Syntax.Id (
     -- * Identifiers
-    Id (..),
+    Id (Id, getId, idLocation),
     getIdForError,
     noLocationId,
     implicitId,
@@ -18,6 +20,16 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
+import Control.Lens (
+    lens,
+ )
+import Data.Generics.Product.Fields (
+    HasField (..),
+ )
+import Data.Interned qualified as Intern
+import Data.Interned.Internal.Text (
+    InternedText (InternedText),
+ )
 import Data.String (
     IsString (..),
  )
@@ -36,29 +48,97 @@ import Pretty qualified
 
 'Id' corresponds to the @identifier@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
-data Id = Id
-    { getId :: !Text
-    , idLocation :: !AstLocation
+data Id = InternedId
+    { getInternedId :: !InternedText
+    , internedIdLocation :: !AstLocation
     }
-    deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug)
+
+deriving stock instance GHC.Generic InternedText
+deriving anyclass instance SOP.Generic InternedText
+deriving anyclass instance SOP.HasDatatypeInfo InternedText
+deriving anyclass instance NFData InternedText
+
+-- | Custom 'Show' instance matches the old uninterned Id interface.
+instance Show Id where
+    showsPrec = showsPrecId False
+
+{- | Produces valid syntax for the 'Id' pattern synonym smart constructor.
+   This hides the interning of the Text, including the transient unique
+   integer value.
+-}
+instance Debug Id where
+    debugPrec a = \p -> Pretty.pretty (showsPrecId True p a "")
+
+{- | ShowS an 'Id' according to the old uninterned interface.
+
+   If the 'Bool' is 'True', spaces are used between the braces and field
+   names. Otherwise, no space is used.
+-}
+showsPrecId :: Bool -> Int -> Id -> ShowS
+showsPrecId useSpace d (Id theId theLoc) = showParen (d > 10) showStr
+  where
+    showStr =
+        showString "Id {" . space . showString "getId = "
+            . shows theId
+            . showString ", idLocation = "
+            . shows theLoc
+            . space
+            . showChar '}'
+    space
+        | useSpace = showChar ' '
+        | otherwise = id
+
+{- | Debug instance hides the interning of InternedText.
+   This is a good idea because we don't want to expose the transient value
+   of the unique identifier for the interned value when creating syntax
+   that could be fed back into GHCi. Instead, we want to produce comfortable
+   syntax for the 'Id' pattern synonym, which uses raw text.
+-}
+instance Debug InternedText where
+    debugPrec = debugPrec . Intern.unintern
+
+-- | Diff instance hides the interning of InternedText. See the Debug instance.
+instance Diff InternedText where
+    diffPrec = diffPrec `on` Intern.unintern
+
+{- | Pattern synonym smart constructor to intern the Text underlying an Id
+   when created, and extract the interned Text when accessed.
+-}
+pattern Id :: Text -> AstLocation -> Id
+pattern Id{getId, idLocation} <-
+    InternedId (Intern.unintern -> getId) idLocation
+    where
+        Id txt loc = InternedId (Intern.intern txt) loc
+
+{-# COMPLETE Id #-}
+
+{- | HasField "idLocation" instance for the Id type maintains compatibility with
+   the old interface of non-interned Ids.
+-}
+instance {-# OVERLAPPING #-} HasField "idLocation" Id Id AstLocation AstLocation where
+    field = field @"internedIdLocation"
+
+{- | HasField "getId" instance for the Id type maintains compatibility with
+   the old interface of non-interned Ids.
+-}
+instance {-# OVERLAPPING #-} HasField "getId" Id Id Text Text where
+    field = lens getId (\(Id _ a) txt' -> Id txt' a)
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
+    compare = compare `on` getInternedId
 
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
-    first == second = compare first second == EQ
+    (==) = (==) `on` getInternedId
     {-# INLINE (==) #-}
 
 -- | 'Hashable' ignores the 'AstLocation'
 instance Hashable Id where
-    hashWithSalt salt (Id text _) = hashWithSalt salt text
+    hashWithSalt salt (InternedId text _) = hashWithSalt salt text
     {-# INLINE hashWithSalt #-}
 
 instance Diff Id where
@@ -91,10 +171,12 @@ implicitId name = Id name AstLocationImplicit
 The location will be 'AstLocationGeneratedVariable'.
 -}
 generatedId :: Text -> Id
-generatedId getId =
-    Id{getId, idLocation}
+generatedId theId =
+    -- Name punning doesn't work properly with pattern synonyms
+    -- so we would get a warning here if we try to use it :(
+    Id{getId = theId, idLocation = theLocation}
   where
-    idLocation = AstLocationGeneratedVariable
+    theLocation = AstLocationGeneratedVariable
 
 -- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String
