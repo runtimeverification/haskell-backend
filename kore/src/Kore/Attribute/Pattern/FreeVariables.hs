@@ -42,7 +42,17 @@ import Prelude.Kore hiding (
  )
 
 newtype FreeVariables variable = FreeVariables
-    { getFreeVariables :: Map (SomeVariableName variable) (Sort, Int)
+    { getFreeVariables :: Map (SomeVariableName variable) FreeVariableInfo
+    }
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+
+data FreeVariableInfo = FreeVariableInfo
+    { sort :: Sort
+    , count :: Int
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -81,23 +91,23 @@ instance From (FreeVariables variable) (Set (SomeVariableName variable)) where
     from = toNames
     {-# INLINE from #-}
 
-unionCounts :: (Sort, Int) -> (Sort, Int) -> (Sort, Int)
-unionCounts (s, c1) (_, c2) = (s, c1 + c2)
+unionCounts :: FreeVariableInfo -> FreeVariableInfo -> FreeVariableInfo
+unionCounts FreeVariableInfo{sort,count=c1} FreeVariableInfo{count=c2} = FreeVariableInfo{sort,count=c1+c2}
 
 -- toMultiList creates a list with one element per occurrence
 toMultiList :: FreeVariables variable -> [SomeVariable variable]
-toMultiList = concatMap (\(variableName, (variableSort, n)) -> replicate n Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
+toMultiList = concatMap (\(variableName, FreeVariableInfo{sort,count}) -> replicate count Variable{variableName, variableSort=sort}) . Map.toAscList . getFreeVariables
 {-# INLINE toMultiList #-}
 
 -- toList creates a list with one element per variable
 toList :: FreeVariables variable -> [SomeVariable variable]
-toList = map (\(variableName, (variableSort, _)) -> Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
+toList = map (\(variableName, FreeVariableInfo{sort=variableSort}) -> Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
 {-# INLINE toList #-}
 
 toMap :: FreeVariables variable -> Map (SomeVariable variable) Int
 toMap =
     Map.fromDistinctAscList
-        . map (\(variableName, (variableSort, n)) -> (Variable{variableName, variableSort}, n))
+        . map (\(variableName, FreeVariableInfo{sort=variableSort, count}) -> (Variable{variableName, variableSort}, count))
         . Map.toAscList
         . getFreeVariables
 {-# INLINE toMap #-}
@@ -155,7 +165,7 @@ isFreeVariable someVariableName (FreeVariables freeVars) =
 
 freeVariable :: SomeVariable variable -> FreeVariables variable
 freeVariable Variable{variableName, variableSort} =
-    FreeVariables (Map.singleton variableName (variableSort, 1))
+    FreeVariables (Map.singleton variableName FreeVariableInfo{sort=variableSort, count=1})
 {-# INLINE freeVariable #-}
 
 mapFreeVariables ::
