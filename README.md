@@ -168,3 +168,4 @@ nix-shell test.nix  # enter a shell where we can run tests manually
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
 [fd]: https://github.com/sharkdp/fd
+[unused] http://www.example.com
