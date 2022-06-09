@@ -38,8 +38,8 @@ import Pretty qualified
 
 data DebugUnifyBottom = DebugUnifyBottom
     { info :: Text
-    , first :: TermLike VariableName
-    , second :: TermLike VariableName
+    , first :: ~(TermLike VariableName)
+    , second :: ~(TermLike VariableName)
     }
     deriving stock (Show, Eq)
 
