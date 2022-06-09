@@ -586,6 +586,7 @@ and either deserialize it, or else treat it as a text KORE definition and manual
 construct the needed SerializedDefinition object from it.
 -}
 deserializeDefinition ::
+    Bool ->
     SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
@@ -593,6 +594,20 @@ deserializeDefinition ::
     UTCTime ->
     Main SerializedDefinition
 deserializeDefinition
+    False
+    simplifierx
+    solverOptions
+    definitionFilePath
+    mainModuleName
+    _
+  =
+    makeSerializedDefinition
+        simplifierx
+        solverOptions
+        definitionFilePath
+        mainModuleName
+deserializeDefinition
+    True
     simplifierx
     solverOptions
     definitionFilePath

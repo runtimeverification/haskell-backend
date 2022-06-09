@@ -287,6 +287,7 @@ data KoreExecOptions = KoreExecOptions
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
     , serialize :: !Bool
+    , useSerializedDefinition :: !Bool
     }
     deriving stock (GHC.Generic)
 
@@ -342,7 +343,13 @@ parseKoreExecOptions startTime =
                 True
                 False
                 False
-                "serialization of initialized definition to disk. [default: disabled]"
+                "Serialization of initialized definition to disk. [default: disabled]"
+            <*> enableDisableFlag
+                "use-serialized-definition"
+                True
+                False
+                True
+                "Use serialized definition to improve start-up time. [default: enabled]"
     parseMaxCounterexamples = counterexamples <|> pure 1
       where
         counterexamples =
@@ -459,6 +466,7 @@ koreExecSh
                             rtsStatistics
                             _
                             maxCounterexamples
+                            _
                             _
                         ) =
         unlines $
@@ -658,11 +666,14 @@ koreSearch ::
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
 koreSearch exeLastModifiedTime LocalOptions{execOptions, simplifierx} searchOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    let KoreExecOptions{mainModuleName} = execOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
     SerializedDefinition{serializedModule, lemmas, locations} <-
-        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName exeLastModifiedTime
+        deserializeDefinition
+            useSerializedDefinition
+            simplifierx
+            koreSolverOptions
+            definitionFileName
+            mainModuleName
+            exeLastModifiedTime
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions{searchFileName} = searchOptions
     target <- mainParseSearchPattern verifiedModule searchFileName
@@ -683,15 +694,17 @@ koreSearch exeLastModifiedTime LocalOptions{execOptions, simplifierx} searchOpti
   where
     KoreSearchOptions{bound, searchType} = searchOptions
     config = Search.Config{bound, searchType}
+    KoreExecOptions{definitionFileName} = execOptions
+    KoreExecOptions{mainModuleName} = execOptions
+    KoreExecOptions{koreSolverOptions} = execOptions
+    KoreExecOptions{useSerializedDefinition} = execOptions
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
 koreRun :: UTCTime -> LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
 koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    let KoreExecOptions{mainModuleName} = execOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
     SerializedDefinition{serializedModule, lemmas, locations} <-
         deserializeDefinition
+            useSerializedDefinition
             simplifierx
             koreSolverOptions
             definitionFileName
@@ -713,6 +726,10 @@ koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
     return (locations, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
+    KoreExecOptions{definitionFileName} = execOptions
+    KoreExecOptions{mainModuleName} = execOptions
+    KoreExecOptions{koreSolverOptions} = execOptions
+    KoreExecOptions{useSerializedDefinition} = execOptions
 
 -- kore-exec --serialize calls this function in order to construct the definition to serialize
 -- and write it to the output file specified by the user. It is an error to not specify an output
