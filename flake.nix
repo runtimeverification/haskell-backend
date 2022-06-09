@@ -8,7 +8,7 @@
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, flake-utils, haskell-nix, z3-src }:
+  outputs = { self, nixpkgs, haskell-nix, z3-src }:
     let
       perSystem = nixpkgs.lib.genAttrs [
         "x86_64-linux"
@@ -28,13 +28,20 @@
           inherit (haskell-nix) config;
         };
 
-      haskell-src = pkgs: pkgs.applyPatches {
-        src = ./.;
-        postPatch = ''
-          substituteInPlace kore/src/Kore/VersionInfo.hs \
-            --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+      haskell-src = pkgs:
+        pkgs.applyPatches {
+          src = ./.;
+          postPatch = ''
+            substituteInPlace kore/src/Kore/VersionInfo.hs \
+              --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+          '';
+        };
+
+      rematerialize-kore = { project, pkgs }:
+        pkgs.writeShellScriptBin "rematerialize-kore-nix" ''
+          #!/bin/sh
+          ${project.stack-nix.passthru.generateMaterialized} ./nix/kore.nix.d
         '';
-      };
 
       projectOverlay = { shell, pkgs, src }:
         pkgs.haskell-nix.stackProject' ({
@@ -73,7 +80,13 @@
         });
 
       flake = perSystem (system: self.project.${system}.flake { });
-      packages = perSystem (system: self.flake.${system}.packages);
+      packages = perSystem (system:
+        self.flake.${system}.packages // {
+          rematerialize = rematerialize-kore {
+            pkgs = nixpkgsFor' system;
+            project = self.project.${system};
+          };
+        });
 
       apps = perSystem (system: self.flake.${system}.apps);
       devShell = perSystem (system: self.flake.${system}.devShell);
