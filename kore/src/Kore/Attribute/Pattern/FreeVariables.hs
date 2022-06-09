@@ -92,22 +92,22 @@ instance From (FreeVariables variable) (Set (SomeVariableName variable)) where
     {-# INLINE from #-}
 
 unionCounts :: FreeVariableInfo -> FreeVariableInfo -> FreeVariableInfo
-unionCounts FreeVariableInfo{sort,count=c1} FreeVariableInfo{count=c2} = FreeVariableInfo{sort,count=c1+c2}
+unionCounts FreeVariableInfo{sort, count = c1} FreeVariableInfo{count = c2} = FreeVariableInfo{sort, count = c1 + c2}
 
 -- toMultiList creates a list with one element per occurrence
 toMultiList :: FreeVariables variable -> [SomeVariable variable]
-toMultiList = concatMap (\(variableName, FreeVariableInfo{sort,count}) -> replicate count Variable{variableName, variableSort=sort}) . Map.toAscList . getFreeVariables
+toMultiList = concatMap (\(variableName, FreeVariableInfo{sort, count}) -> replicate count Variable{variableName, variableSort = sort}) . Map.toAscList . getFreeVariables
 {-# INLINE toMultiList #-}
 
 -- toList creates a list with one element per variable
 toList :: FreeVariables variable -> [SomeVariable variable]
-toList = map (\(variableName, FreeVariableInfo{sort=variableSort}) -> Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
+toList = map (\(variableName, FreeVariableInfo{sort = variableSort}) -> Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
 {-# INLINE toList #-}
 
 toMap :: FreeVariables variable -> Map (SomeVariable variable) Int
 toMap =
     Map.fromDistinctAscList
-        . map (\(variableName, FreeVariableInfo{sort=variableSort, count}) -> (Variable{variableName, variableSort}, count))
+        . map (\(variableName, FreeVariableInfo{sort = variableSort, count}) -> (Variable{variableName, variableSort}, count))
         . Map.toAscList
         . getFreeVariables
 {-# INLINE toMap #-}
@@ -165,7 +165,7 @@ isFreeVariable someVariableName (FreeVariables freeVars) =
 
 freeVariable :: SomeVariable variable -> FreeVariables variable
 freeVariable Variable{variableName, variableSort} =
-    FreeVariables (Map.singleton variableName FreeVariableInfo{sort=variableSort, count=1})
+    FreeVariables (Map.singleton variableName FreeVariableInfo{sort = variableSort, count = 1})
 {-# INLINE freeVariable #-}
 
 mapFreeVariables ::
