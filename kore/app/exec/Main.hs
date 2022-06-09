@@ -11,8 +11,8 @@ import Data.Compact (
  )
 import Data.Compact.Serialize (
     hPutCompact,
-    writeCompact,
  )
+import Data.Binary qualified as Binary
 import Data.Default (
     def,
  )
@@ -30,9 +30,6 @@ import Data.Proxy
 import Data.Set.Internal qualified as Set
 import Data.Text (
     unpack,
- )
-import Data.Time.Clock (
-    UTCTime (..),
  )
 import GHC.Fingerprint as Fingerprint
 import GHC.Generics qualified as GHC
@@ -160,7 +157,6 @@ import System.Directory (
     copyFile,
     doesFileExist,
     emptyPermissions,
-    getModificationTime,
     setOwnerExecutable,
     setOwnerReadable,
     setOwnerSearchable,
@@ -178,12 +174,12 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (WriteMode),
-    hPutStrLn,
     withFile,
  )
 import Type.Reflection (
     someTypeRep,
  )
+import Data.ByteString.Lazy (hPut)
 
 {-
 Main module to run kore-exec
@@ -563,21 +559,19 @@ envName = "KORE_EXEC_OPTS"
 main :: IO ()
 main = do
     startTime <- getTime Monotonic
-    exePath <- getExecutablePath
-    exeLastModifiedTime <- getModificationTime exePath
     options <-
         mainGlobal
             Main.exeName
             (Just envName)
             (parseKoreExecOptions startTime)
             parserInfoModifiers
-    for_ (localOptions options) $ mainWithOptions exeLastModifiedTime
+    for_ (localOptions options) mainWithOptions
 
 {- | Use the parsed 'KoreExecOptions' to set up output and logging, then
 dispatch the requested command.
 -}
-mainWithOptions :: UTCTime -> LocalOptions KoreExecOptions -> IO ()
-mainWithOptions exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
+mainWithOptions :: LocalOptions KoreExecOptions -> IO ()
+mainWithOptions LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} =
             execOptions
     ensureSmtPreludeExists koreSolverOptions
@@ -589,7 +583,7 @@ mainWithOptions exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch exeLastModifiedTime LocalOptions{execOptions = execOptions', simplifierx}
+                mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog
@@ -628,8 +622,8 @@ mainWithOptions exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
                 throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
-mainDispatch :: UTCTime -> LocalOptions KoreExecOptions -> Main ExitCode
-mainDispatch exeLastModifiedTime = warnProductivity . mainDispatchWorker
+mainDispatch :: LocalOptions KoreExecOptions -> Main ExitCode
+mainDispatch = warnProductivity . mainDispatchWorker
   where
     warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
     warnProductivity action = do
@@ -645,27 +639,26 @@ mainDispatch exeLastModifiedTime = warnProductivity . mainDispatchWorker
                 then koreBmc localOptions proveOptions
                 else koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
-            koreSearch exeLastModifiedTime localOptions searchOptions
+            koreSearch localOptions searchOptions
         | True <- serialize =
             koreSerialize localOptions
         | otherwise =
-            koreRun exeLastModifiedTime localOptions
+            koreRun localOptions
       where
         KoreExecOptions{koreProveOptions} = execOptions
         KoreExecOptions{koreSearchOptions} = execOptions
         KoreExecOptions{serialize} = execOptions
 
 koreSearch ::
-    UTCTime ->
     LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch exeLastModifiedTime LocalOptions{execOptions, simplifierx} searchOptions = do
+koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     SerializedDefinition{serializedModule, lemmas, locations} <-
-        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName exeLastModifiedTime
+        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions{searchFileName} = searchOptions
     target <- mainParseSearchPattern verifiedModule searchFileName
@@ -688,8 +681,8 @@ koreSearch exeLastModifiedTime LocalOptions{execOptions, simplifierx} searchOpti
     config = Search.Config{bound, searchType}
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
-koreRun :: UTCTime -> LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
+koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreRun LocalOptions{execOptions, simplifierx} = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
@@ -699,7 +692,6 @@ koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
             koreSolverOptions
             definitionFileName
             mainModuleName
-            exeLastModifiedTime
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern verifiedModule patternFileName
@@ -722,24 +714,30 @@ koreRun exeLastModifiedTime LocalOptions{execOptions, simplifierx} = do
 -- file as binary data cannot be displayed on the terminal. We put this functionality in the
 -- kore-exec binary because that's where most of the logic it needed in order to function already
 -- lived.
-koreSerialize :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreSerialize ::
+    LocalOptions KoreExecOptions ->
+    Main (KFileLocations, ExitCode)
 koreSerialize LocalOptions{execOptions, simplifierx} = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    let KoreExecOptions{mainModuleName} = execOptions
-    let KoreExecOptions{outputFileName} = execOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
     serializedDefinition@SerializedDefinition{locations} <-
-        makeSerializedDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
+        makeSerializedDefinition
+            simplifierx
+            koreSolverOptions
+            definitionFileName
+            mainModuleName
     case outputFileName of
         Nothing -> return (locations, ExitFailure 1)
         Just outputFile -> liftIO $ do
-            execName <- getExecutablePath
-            execHash <- Fingerprint.getFileHash execName
+            execHash <- getExecutablePath >>= Fingerprint.getFileHash
             compact <- compactWithSharing serializedDefinition
             withFile outputFile WriteMode $ \outputHandle -> do
-                hPutStrLn outputHandle (show execHash)
+                hPut outputHandle (Binary.encode execHash)
                 hPutCompact outputHandle compact
             return (locations, ExitSuccess)
+  where
+    KoreExecOptions{definitionFileName} = execOptions
+    KoreExecOptions{mainModuleName} = execOptions
+    KoreExecOptions{outputFileName} = execOptions
+    KoreExecOptions{koreSolverOptions} = execOptions
 
 koreProve ::
     LocalOptions KoreExecOptions ->
