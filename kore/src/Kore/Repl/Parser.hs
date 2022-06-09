@@ -47,6 +47,7 @@ import Text.Megaparsec (
     oneOf,
     option,
     try,
+    sepBy1
  )
 import Text.Megaparsec.Char qualified as Char
 import Text.Megaparsec.Char.Lexer qualified as L
@@ -74,7 +75,7 @@ scriptParser :: Parser [ReplCommand]
 scriptParser =
     some
         ( skipSpacesAndComments
-            *> commandParser0 (void Char.newline)
+            *> commandParser
             <* many Char.newline
             <* skipSpacesAndComments
         )
@@ -85,21 +86,18 @@ scriptParser =
         optional $ spaceConsumer <* Char.newline
 
 commandParser :: Parser ReplCommand
-commandParser = commandParser0 eof
+commandParser =
+    alias <|> logCommand <|> (And <$> sepBy1 commandParserExceptAlias (literal "&&"))
 
-commandParser0 :: Parser () -> Parser ReplCommand
-commandParser0 endParser =
-    alias <|> logCommand <|> commandParserExceptAlias endParser
-
-commandParserExceptAlias :: Parser () -> Parser ReplCommand
-commandParserExceptAlias endParser = do
+commandParserExceptAlias :: Parser ReplCommand
+commandParserExceptAlias = do
     cmd <- nonRecursiveCommand
-    endOfInput cmd endParser
-        <|> pipeWith appendTo cmd
+    pipeWith appendTo cmd
         <|> pipeWith redirect cmd
         <|> appendTo cmd
         <|> redirect cmd
         <|> pipe cmd
+        <|> pure cmd
 
 nonRecursiveCommand :: Parser ReplCommand
 nonRecursiveCommand =
@@ -138,9 +136,6 @@ pipeWith ::
     ReplCommand ->
     Parser ReplCommand
 pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
-
-endOfInput :: ReplCommand -> Parser () -> Parser ReplCommand
-endOfInput cmd p = p $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
@@ -404,8 +399,8 @@ pipe :: ReplCommand -> Parser ReplCommand
 pipe cmd =
     Pipe cmd
         <$$> literal "|"
-        *> quotedOrWordWithout ">"
-        <**> many (quotedOrWordWithout ">")
+        *> quotedOrWordWithout ">&"
+        <**> many (quotedOrWordWithout ">&")
 
 appendTo :: ReplCommand -> Parser ReplCommand
 appendTo cmd =

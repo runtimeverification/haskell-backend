@@ -334,6 +334,8 @@ data ReplCommand
       TryF !RuleReference
     | -- | Remove child nodes from graph.
       Clear !(Maybe ReplNode)
+    | -- | Run several commands keeping the output of the second
+      And [ReplCommand]
     | -- | Pipes a repl command into an external script.
       Pipe ReplCommand !String ![String]
     | -- | Writes all commands executed in this session to a file on disk.

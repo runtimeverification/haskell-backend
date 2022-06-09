@@ -279,7 +279,7 @@ replInterpreter0 ::
     ReplCommand ->
     InputT (ReaderT (Config m) (StateT ReplState m)) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
-    let command = case replCmd of
+    let command = \case
             ShowUsage -> showUsage $> Continue
             Help -> help $> Continue
             ShowClaim mc -> showClaim mc $> Continue
@@ -308,6 +308,7 @@ replInterpreter0 printAux printKore replCmd = do
             Clear n -> clear n $> Continue
             SaveSession file -> saveSession file $> Continue
             SavePartialProof mn f -> savePartialProof mn f $> Continue
+            And cs -> foldr (>>) (pure Continue) $ map command cs
             Pipe inn file args ->
                 pipe inn file args
                     $> Continue
@@ -326,7 +327,7 @@ replInterpreter0 printAux printKore replCmd = do
             DebugApplyEquation op -> debugApplyEquation op $> Continue
             DebugEquation op -> debugEquation op $> Continue
             Exit -> exit
-    (ReplOutput output, shouldContinue) <- lift $ evaluateCommand command
+    (ReplOutput output, shouldContinue) <- lift $ evaluateCommand $ command replCmd
     traverse_
         ( replOut
             (unPrintAuxOutput printAux)
