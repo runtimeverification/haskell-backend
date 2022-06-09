@@ -632,8 +632,6 @@ test_applyRewriteRule_ =
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
- 
-
     , testCase "symbol clash" $ do
         let expect = mempty
             fx = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
@@ -1095,7 +1093,6 @@ test_applyRewriteRule_ =
             (Mock.sigma (mkElemVar Mock.xRule) (mkImplies (mkElemVar Mock.yRule) (mkElemVar Mock.yRule)))
             (mkElemVar Mock.xRule)
             []
-
 
     axiomSigmaXXYY =
         RewriteRule $
