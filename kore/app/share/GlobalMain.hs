@@ -599,13 +599,12 @@ deserializeDefinition
     solverOptions
     definitionFilePath
     mainModuleName
-    _
-  =
-    makeSerializedDefinition
-        simplifierx
-        solverOptions
-        definitionFilePath
-        mainModuleName
+    _ =
+        makeSerializedDefinition
+            simplifierx
+            solverOptions
+            definitionFilePath
+            mainModuleName
 deserializeDefinition
     True
     simplifierx
