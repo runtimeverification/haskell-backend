@@ -46,8 +46,8 @@ import Text.Megaparsec (
     noneOf,
     oneOf,
     option,
+    sepBy1,
     try,
-    sepBy1
  )
 import Text.Megaparsec.Char qualified as Char
 import Text.Megaparsec.Char.Lexer qualified as L
