@@ -40,6 +40,13 @@ packages:
   original:
     hackage: direct-sqlite-2.3.26
 - completed:
+    hackage: witherable-0.4.2@sha256:81fd3b1e56e6d8c5b1acdbed06d49c72186902f7400139152afd70e37ad956d2,2285
+    pantry-tree:
+      size: 384
+      sha256: 9249e2860d2d03f1d4b2204ee996eeeed836cfcfc426512742cc0e07f96fd407
+  original:
+    hackage: witherable-0.4.2
+- completed:
     hackage: witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
     pantry-tree:
       size: 277
@@ -160,13 +167,6 @@ packages:
   original:
     git: https://github.com/byteverse/zigzag.git
     commit: dcf660fd76f134fccd550ce4c30bb26d4fb31b42
-- completed:
-    hackage: witherable-0.4.2@sha256:81fd3b1e56e6d8c5b1acdbed06d49c72186902f7400139152afd70e37ad956d2,2285
-    pantry-tree:
-      size: 384
-      sha256: 9249e2860d2d03f1d4b2204ee996eeeed836cfcfc426512742cc0e07f96fd407
-  original:
-    hackage: witherable-0.4.2
 - completed:
     hackage: ghc-events-0.17.0.3@sha256:7cd7c9f2994cc75c48db99b4a1b71771571224c1cab03cb54990788a10872fb9,3821
     pantry-tree:
