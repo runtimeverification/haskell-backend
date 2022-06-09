@@ -25,8 +25,8 @@ import Kore.Internal.Substitution (
     toMap,
  )
 import Kore.Internal.TermLike
-import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Log.DebugUnification (debugUnificationSolved)
+import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
  )
