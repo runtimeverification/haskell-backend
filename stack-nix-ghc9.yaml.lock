@@ -245,6 +245,13 @@ packages:
   original:
     git: https://github.com/goodlyrottenapple/pipes-sqlite-simple.git
     commit: 89a0c38cc2114eab3c1fb03ef6ec25749edf7a42
+- completed:
+    hackage: json-rpc-1.0.4@sha256:e6805381c86fdfc782102b1aa7e3708e89492f986c8e553d953b0fa21f790a0c,3510
+    pantry-tree:
+      size: 853
+      sha256: df55a5a0556e2e32300ec182a72b95cb8719f005cc45e20a7b1ed0527378178a
+  original:
+    hackage: json-rpc-1.0.4@sha256:e6805381c86fdfc782102b1aa7e3708e89492f986c8e553d953b0fa21f790a0c,3510
 snapshots:
 - completed:
     size: 618507
