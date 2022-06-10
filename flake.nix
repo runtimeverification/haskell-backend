@@ -92,7 +92,7 @@
 
       project = projectForGhc { ghc = "ghc8107"; };
       projectGhc9 = projectForGhc {
-        ghc = "ghc902";
+        ghc = "ghc923";
         stack-yaml = "stack-nix-ghc9.yaml";
       };
 
