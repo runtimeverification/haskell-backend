@@ -108,9 +108,7 @@ termUnification ::
     TermLike RewritingVariableName ->
     unifier (Pattern RewritingVariableName)
 termUnification notSimplifier = \term1 term2 ->
-    whileDebugUnification term1 term2 $ do
-        result <- termUnificationWorker term1 term2
-        pure result
+    whileDebugUnification term1 term2 $ termUnificationWorker term1 term2
   where
     termUnificationWorker ::
         TermLike RewritingVariableName ->
