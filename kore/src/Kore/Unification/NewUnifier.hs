@@ -816,7 +816,7 @@ allSuitableSolutions' basis constrained n =
     makeLower i bdd =
         bdd .&&. BDD.orB (map (BDD.var . snd) $ nonNullBasis i)
     makeUpper :: Int -> BDD AscOrder -> BDD AscOrder
-    makeUpper i bdd = bdd .&&. (snd $ foldl' (makeBounds i) (BDD.true, BDD.true) $ nonNullBasis i)
+    makeUpper i bdd = bdd .&&. snd (foldl' (makeBounds i) (BDD.true, BDD.true) $ nonNullBasis i)
     makeBounds i (bounds0, bounds1) v =
         let value = fst v ! i
             bounds1' = if value <= 1 then BDD.ite (BDD.var $ snd v) bounds0 bounds1 else BDD.ite (BDD.var $ snd v) BDD.false bounds1
@@ -946,7 +946,7 @@ makeAcSubstitutionTerm ::
     Int ->
     AcTerm
 makeAcSubstitutionTerm acSort basis i =
-    AcTerm{acElements = concat $ map (makeAcSubstitutionSubterm i) $ basis, acSort, elementVars = Set.empty}
+    AcTerm{acElements = concatMap (makeAcSubstitutionSubterm i) basis, acSort, elementVars = Set.empty}
 
 makeAcSubstitutionSubterm ::
     Int ->
