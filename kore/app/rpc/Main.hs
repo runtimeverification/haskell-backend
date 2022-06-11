@@ -8,32 +8,26 @@ import Control.Monad.Catch (
 import Data.Time.Clock (
     UTCTime (..),
  )
-import Options.Applicative (
-    InfoMod,
-    Parser,
-    argument,
-    auto,
-    fullDesc,
-    header,
-    help,
-    -- long,
-    metavar,
-    -- option,
-    -- progDesc,
-    -- readerError,
-    str,
-    -- strOption,
-    -- value,
- )
+-- long,
 
-import Options.SMT (
-    KoreSolverOptions (..),
-    ensureSmtPreludeExists,
-    parseKoreSolverOptions,
-    -- unparseKoreSolverOptions,
-    -- writeKoreSolverFiles,
- )
+-- option,
+-- progDesc,
+-- readerError,
 
+-- strOption,
+-- value,
+
+-- unparseKoreSolverOptions,
+-- writeKoreSolverFiles,
+
+-- unparseKoreLogOptions,
+
+-- Definition (Definition),
+-- Module (Module),
+
+-- Sentence (..),
+
+import GlobalMain qualified
 import Kore.BugReport (
     BugReportOption,
     ExitCode,
@@ -43,36 +37,38 @@ import Kore.BugReport (
 import Kore.Exec (
     SerializedModule (..),
  )
+import Kore.JsonRpc (runServer)
 import Kore.Log (
     KoreLogOptions (..),
     parseKoreLogOptions,
     runKoreLog,
-    -- unparseKoreLogOptions,
  )
 import Kore.Log.ErrorException (
     handleSomeException,
  )
-import Kore.Log.InfoProofDepth(
-    InfoProofDepth
+import Kore.Log.InfoProofDepth (
+    InfoProofDepth,
  )
 import Kore.Syntax.Definition (
-    -- Definition (Definition),
-    -- Module (Module),
     ModuleName (..),
-    -- Sentence (..),
  )
-import Kore.JsonRpc (runServer)
+import Options.Applicative (
+    InfoMod,
+    Parser,
+    argument,
+    auto,
+    fullDesc,
+    header,
+    help,
+    metavar,
+    str,
+ )
+import Options.SMT (
+    KoreSolverOptions (..),
+    ensureSmtPreludeExists,
+    parseKoreSolverOptions,
+ )
 import Prelude.Kore
-import GlobalMain qualified
-
-import System.Environment (
-    getExecutablePath,
- )
-
-import System.Exit (
-    ExitCode(ExitSuccess),
-    exitWith,
- )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -81,39 +77,43 @@ import System.Clock (
 import System.Directory (
     getModificationTime,
  )
-data KoreRpcServerOptions =
-   KoreRpcServerOptions
-       { definitionFileName :: !FilePath
-        , mainModuleName :: !ModuleName
-        , koreSolverOptions :: !KoreSolverOptions
-        , koreLogOptions :: !KoreLogOptions
-        , bugReportOption :: !BugReportOption
-        , port :: !Int
-        -- , version :: _ ??
-       }
+import System.Environment (
+    getExecutablePath,
+ )
+import System.Exit (
+    ExitCode (ExitSuccess),
+    exitWith,
+ )
 
-
+data KoreRpcServerOptions = KoreRpcServerOptions
+    { definitionFileName :: !FilePath
+    , mainModuleName :: !ModuleName
+    , koreSolverOptions :: !KoreSolverOptions
+    , koreLogOptions :: !KoreLogOptions
+    , bugReportOption :: !BugReportOption
+    , port :: !Int
+    -- , version :: _ ??
+    }
 
 -- | Command Line Argument Parser
 parseKoreRpcServerOptions :: TimeSpec -> Parser KoreRpcServerOptions
 parseKoreRpcServerOptions startTime =
-        KoreRpcServerOptions
-            <$> argument
-                str
-                ( metavar "DEFINITION_FILE"
-                    <> help "Kore definition file to verify and use for execution"
-                )
-            <*> parseMainModuleName
-            <*> parseKoreSolverOptions
-            <*> parseKoreLogOptions Main.exeName startTime
-            <*> parseBugReportOption
-            <*> argument
-                auto
-                ( metavar "SERVER_PORT"
-                    <> help "Port for the RPC server to bind to"
-                )
-    where
-
+    KoreRpcServerOptions
+        <$> argument
+            str
+            ( metavar "DEFINITION_FILE"
+                <> help "Kore definition file to verify and use for execution"
+            )
+        <*> parseMainModuleName
+        <*> parseKoreSolverOptions
+        <*> parseKoreLogOptions Main.exeName startTime
+        <*> parseBugReportOption
+        <*> argument
+            auto
+            ( metavar "SERVER_PORT"
+                <> help "Port for the RPC server to bind to"
+            )
+  where
     parseMainModuleName =
         GlobalMain.parseModuleName
             "MODULE"
@@ -125,7 +125,6 @@ parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
     fullDesc
         <> header "kore-rpc - a JSON RPC server for symbolically executing Kore definitions"
-
 
 exeName :: GlobalMain.ExeName
 exeName = GlobalMain.ExeName "kore-rpc"
@@ -147,20 +146,20 @@ main = do
             parserInfoModifiers
     for_ (GlobalMain.localOptions options) $ mainWithOptions exeLastModifiedTime
 
-
 -- main :: IO ()
 -- main = runServer 31337
-
 
 mainWithOptions :: UTCTime -> GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
 mainWithOptions exeLastModifiedTime localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
     ensureSmtPreludeExists koreSolverOptions
-    exitWith =<< (withBugReport Main.exeName bugReportOption $ \tmpDir ->
-        koreRpcServerRun exeLastModifiedTime localOptions
-            & handle handleSomeException
-            & runKoreLog
-                tmpDir
-                koreLogOptions)
+    exitWith
+        =<< ( withBugReport Main.exeName bugReportOption $ \tmpDir ->
+                koreRpcServerRun exeLastModifiedTime localOptions
+                    & handle handleSomeException
+                    & runKoreLog
+                        tmpDir
+                        koreLogOptions
+            )
 
 koreRpcServerRun :: UTCTime -> GlobalMain.LocalOptions KoreRpcServerOptions -> GlobalMain.Main ExitCode
 koreRpcServerRun exeLastModifiedTime GlobalMain.LocalOptions{execOptions, simplifierx} = do
@@ -171,17 +170,15 @@ koreRpcServerRun exeLastModifiedTime GlobalMain.LocalOptions{execOptions, simpli
     (exitCode, final) <-
         GlobalMain.execute koreSolverOptions metadataTools lemmas $ do
             undefined
-            -- exec
-            --     simplifierx
-            --     depthLimit
-            --     breadthLimit
-            --     serializedModule
-            --     strategy
-            --     initial
-
+    -- exec
+    --     simplifierx
+    --     depthLimit
+    --     breadthLimit
+    --     serializedModule
+    --     strategy
+    --     initial
 
     pure ExitSuccess
-
 
 -- exec ::
 --     forall smt.
