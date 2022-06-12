@@ -275,7 +275,7 @@ instance MonadSMT NoSMT where
 
 data SolverSetup = SolverSetup
     { userInit :: !(SMT ())
-    , refSolverHandle :: !(MVar SolverHandle)
+    , refSolverHandle :: !(MVar (Maybe SolverHandle))
     , config :: !Config
     }
     deriving stock (GHC.Generic)
@@ -296,7 +296,7 @@ instance MonadProf SMT where
     traceEvent name = SMT (traceEvent name)
     {-# INLINE traceEvent #-}
 
-withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
+withSolverHandle :: (Maybe SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
     Exception.bracket
@@ -304,7 +304,7 @@ withSolverHandle action = do
         (Trans.liftIO . putMVar mvar)
         action
 
-withSolverHandleWithRestart :: (SolverHandle -> SMT a) -> SMT a
+withSolverHandleWithRestart :: (Maybe SolverHandle -> SMT a) -> SMT a
 withSolverHandleWithRestart action = do
     mvar <- SMT (Reader.asks refSolverHandle)
     bracketWithExceptions
@@ -330,9 +330,9 @@ withSolverHandleWithRestart action = do
             Trans.liftIO $
                 Exception.handle handleIOException $
                     SimpleSMT.newSolver exe args logAction
-        _ <- Trans.liftIO $ putMVar mvar newSolverHandle
+        _ <- Trans.liftIO $ putMVar mvar (Just newSolverHandle)
         initSolver config
-        (action newSolverHandle)
+        (action (Just newSolverHandle))
 
     handleIOException :: IOException -> IO SolverHandle
     handleIOException e =
@@ -371,19 +371,30 @@ askConfig :: SMT Config
 askConfig = SMT $ Reader.asks config
 {-# INLINE askConfig #-}
 
-withSolver' :: (Solver -> IO a) -> SMT a
+withSolver' :: (Maybe Solver -> IO a) -> SMT a
 withSolver' action =
-    withSolverHandle $ \solverHandle -> do
+    withSolverHandle $ \mSolverHandle -> do
         logAction <- askLogAction
-        Trans.liftIO $ action (Solver solverHandle logAction)
+        Trans.liftIO
+            $ case mSolverHandle of
+                Just solverHandle ->
+                    action (Just (Solver solverHandle logAction))
+                Nothing ->
+                    action Nothing
 
-withSolverWithRestart :: (Solver -> IO a) -> SMT a
+
+withSolverWithRestart :: (Maybe Solver -> IO a) -> SMT a
 withSolverWithRestart action =
-    withSolverHandleWithRestart $ \solverHandle -> do
+    withSolverHandleWithRestart $ \mSolverHandle -> do
         logAction <- askLogAction
-        Trans.liftIO $ action (Solver solverHandle logAction)
+        Trans.liftIO
+            $ case mSolverHandle of
+                Just solverHandle ->
+                    action (Just (Solver solverHandle logAction))
+                Nothing ->
+                    action Nothing
 
-modifySolverHandle :: StateT SolverHandle SMT a -> SMT a
+modifySolverHandle :: StateT (Maybe SolverHandle) SMT a -> SMT a
 modifySolverHandle action = do
     mvar <- SMT (Reader.asks refSolverHandle)
     solverHandle <- Trans.liftIO $ takeMVar mvar
@@ -414,8 +425,9 @@ unshareSolverHandle action = do
 
 -- | Increase the 'queryCounter' and indicate if the solver should be reset.
 incrementQueryCounter ::
-    Monad monad => ResetInterval -> StateT SolverHandle monad Bool
+    Monad monad => ResetInterval -> StateT (Maybe SolverHandle) monad Bool
 incrementQueryCounter (ResetInterval resetInterval) = do
+    -- TODO: rewrite without lens
     Lens.modifying (field @"queryCounter") (+ 1)
     counter <- Lens.use (field @"queryCounter")
     -- Due to an issue with the SMT solver, we need to reinitialise it after a
@@ -426,11 +438,11 @@ incrementQueryCounter (ResetInterval resetInterval) = do
 instance MonadSMT SMT where
     withSolver action =
         unshareSolverHandle $ do
-            withSolverWithRestart push
+            withSolverWithRestart (traverse_ push)
             Exception.finally
                 action
                 ( do
-                    withSolverWithRestart pop
+                    withSolverWithRestart (traverse_ pop)
                     resetInterval' <- extractResetInterval
                     needReset <-
                         modifySolverHandle
