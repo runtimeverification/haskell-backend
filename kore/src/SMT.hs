@@ -375,20 +375,19 @@ withSolver' :: (Maybe Solver -> IO a) -> SMT a
 withSolver' action =
     withSolverHandle $ \mSolverHandle -> do
         logAction <- askLogAction
-        Trans.liftIO
-            $ case mSolverHandle of
+        Trans.liftIO $
+            case mSolverHandle of
                 Just solverHandle ->
                     action (Just (Solver solverHandle logAction))
                 Nothing ->
                     action Nothing
 
-
 withSolverWithRestart :: (Maybe Solver -> IO a) -> SMT a
 withSolverWithRestart action =
     withSolverHandleWithRestart $ \mSolverHandle -> do
         logAction <- askLogAction
-        Trans.liftIO
-            $ case mSolverHandle of
+        Trans.liftIO $
+            case mSolverHandle of
                 Just solverHandle ->
                     action (Just (Solver solverHandle logAction))
                 Nothing ->
