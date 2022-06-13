@@ -124,7 +124,7 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
     warnFunctionWithoutEvaluators,
  )
 import Kore.Rewrite.Axiom.Identifier (
-    AxiomIdentifier(..),
+    AxiomIdentifier (..),
  )
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
@@ -468,23 +468,23 @@ lookupAxiomSimplifier termLike = do
             Axiom.Identifier.Application _ -> exact
             Variable -> exact
             Ceil _ ->
-              let inexact = Map.lookup (Ceil Variable) simplifierMap
-              in combineEvaluators [exact, inexact]
+                let inexact = Map.lookup (Ceil Variable) simplifierMap
+                 in combineEvaluators [exact, inexact]
             Exists _ ->
-              let inexact = Map.lookup (Exists Variable) simplifierMap
-              in combineEvaluators [exact, inexact]
+                let inexact = Map.lookup (Exists Variable) simplifierMap
+                 in combineEvaluators [exact, inexact]
             Equals id1 id2 ->
-              let inexact1 = Map.lookup (Equals Variable id2) simplifierMap
-                  inexact2 = Map.lookup (Equals id1 Variable) simplifierMap
-                  inexact12 = Map.lookup (Equals Variable Variable) simplifierMap
-              in combineEvaluators [exact, inexact1, inexact2, inexact12]
+                let inexact1 = Map.lookup (Equals Variable id2) simplifierMap
+                    inexact2 = Map.lookup (Equals id1 Variable) simplifierMap
+                    inexact12 = Map.lookup (Equals Variable Variable) simplifierMap
+                 in combineEvaluators [exact, inexact1, inexact2, inexact12]
   where
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
     combineEvaluators maybeEvaluators =
-      case catMaybes maybeEvaluators of
-        [] -> Nothing
-        [a] -> Just a
-        as -> Just $ firstFullEvaluation as
+        case catMaybes maybeEvaluators of
+            [] -> Nothing
+            [a] -> Just a
+            as -> Just $ firstFullEvaluation as
 
 -- |Describes whether simplifiers are allowed to return multiple results or not.
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
