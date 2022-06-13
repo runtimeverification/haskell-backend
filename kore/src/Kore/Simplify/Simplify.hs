@@ -16,6 +16,7 @@ module Kore.Simplify.Simplify (
     -- * Builtin and axiom simplifiers
     SimplifierCache (attemptedEquationsCache),
     EvaluationAttempt (..),
+    AcceptsMultipleResults (..),
     initCache,
     updateCache,
     lookupCache,
@@ -36,6 +37,8 @@ module Kore.Simplify.Simplify (
     notApplicableAxiomEvaluator,
     purePatternAxiomEvaluator,
     isConstructorOrOverloaded,
+    applyFirstSimplifierThatWorks,
+    firstFullEvaluation,
 
     -- * Term and predicate simplifiers
     makeEvaluateTermCeil,
@@ -101,6 +104,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
+    toRepresentation,
  )
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
@@ -120,7 +124,7 @@ import Kore.Log.WarnFunctionWithoutEvaluators (
     warnFunctionWithoutEvaluators,
  )
 import Kore.Rewrite.Axiom.Identifier (
-    AxiomIdentifier,
+    AxiomIdentifier(..),
  )
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
@@ -459,9 +463,152 @@ lookupAxiomSimplifier termLike = do
             empty
     maybe missing return $ do
         axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
-        Map.lookup axiomIdentifier simplifierMap
+        let exact = Map.lookup axiomIdentifier simplifierMap
+        case axiomIdentifier of
+            Axiom.Identifier.Application _ -> exact
+            Variable -> exact
+            Ceil _ ->
+              let inexact = Map.lookup (Ceil Variable) simplifierMap
+              in combineEvaluators [exact, inexact]
+            Exists _ ->
+              let inexact = Map.lookup (Exists Variable) simplifierMap
+              in combineEvaluators [exact, inexact]
+            Equals id1 id2 ->
+              let inexact1 = Map.lookup (Equals Variable id2) simplifierMap
+                  inexact2 = Map.lookup (Equals id1 Variable) simplifierMap
+                  inexact12 = Map.lookup (Equals Variable Variable) simplifierMap
+              in combineEvaluators [exact, inexact1, inexact2, inexact12]
   where
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
+    combineEvaluators maybeEvaluators =
+      case catMaybes maybeEvaluators of
+        [] -> Nothing
+        [a] -> Just a
+        as -> Just $ firstFullEvaluation as
+
+-- |Describes whether simplifiers are allowed to return multiple results or not.
+data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
+    deriving stock (Eq, Ord, Show)
+
+-- |Converts 'AcceptsMultipleResults' to Bool.
+acceptsMultipleResults :: AcceptsMultipleResults -> Bool
+acceptsMultipleResults WithMultipleResults = True
+acceptsMultipleResults OnlyOneResult = False
+
+{- | Creates an evaluator that choses the result of the first evaluator that
+returns Applicable.
+
+If that result contains more than one pattern, or it contains a reminder,
+the evaluation fails with 'error' (may change in the future).
+-}
+firstFullEvaluation ::
+    [BuiltinAndAxiomSimplifier] ->
+    BuiltinAndAxiomSimplifier
+firstFullEvaluation simplifiers =
+    BuiltinAndAxiomSimplifier
+        (applyFirstSimplifierThatWorks simplifiers OnlyOneResult)
+
+{- |Whether a term cannot be simplified regardless of the side condition,
+or only with the current side condition.
+
+Example usage for @applyFirstSimplifierThatWorksWorker@:
+
+We start assuming that if we can't simplify the current term, we will never
+be able to simplify it.
+
+If we manage to apply one of the evaluators with an acceptable result
+(e.g. without remainders), we just return the result and we ignore the
+value of the @NonSimplifiability@ argument.
+
+If the result is not acceptable, we continue trying other evaluators, but we
+assume that, even if we are not able to simplify the term right now, that may
+change when the current side condition changes (i.e. we send @Conditional@
+as an argument to the next @applyFirstSimplifierThatWorksWorker@ call).
+
+If we finished trying all the evaluators without an acceptable result,
+we mark the term as simplified according to the 'NonSimplifiability' argument,
+either as "always simplified", or as "simplified while the current side
+condition is unchanged".
+-}
+data NonSimplifiability
+    = Always
+    | Conditional
+
+applyFirstSimplifierThatWorks ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    [BuiltinAndAxiomSimplifier] ->
+    AcceptsMultipleResults ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    simplifier (AttemptedAxiom RewritingVariableName)
+applyFirstSimplifierThatWorks evaluators multipleResults =
+    applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
+
+applyFirstSimplifierThatWorksWorker ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    [BuiltinAndAxiomSimplifier] ->
+    AcceptsMultipleResults ->
+    NonSimplifiability ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    simplifier (AttemptedAxiom RewritingVariableName)
+applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
+    return NotApplicable
+applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
+    return $
+        NotApplicableUntilConditionChanges $
+            toRepresentation sideCondition
+applyFirstSimplifierThatWorksWorker
+    (BuiltinAndAxiomSimplifier evaluator : evaluators)
+    multipleResults
+    nonSimplifiability
+    patt
+    sideCondition =
+        do
+            applicationResult <- evaluator patt sideCondition
+
+            case applicationResult of
+                Applied
+                    AttemptedAxiomResults
+                        { results = orResults
+                        , remainders = orRemainders
+                        }
+                        | acceptsMultipleResults multipleResults -> return applicationResult
+                        -- below this point multiple results are not accepted
+                        | length orResults > 1 ->
+                            -- We should only allow multiple simplification results
+                            -- when they are created by unification splitting the
+                            -- configuration.
+                            -- However, right now, we shouldn't be able to get more
+                            -- than one result, so we throw an error.
+                            error . show . Pretty.vsep $
+                                [ "Unexpected simplification result with more \
+                                  \than one configuration:"
+                                , Pretty.indent 2 "input:"
+                                , Pretty.indent 4 (unparse patt)
+                                , Pretty.indent 2 "results:"
+                                , (Pretty.indent 4 . Pretty.vsep)
+                                    (unparse <$> toList orResults)
+                                , Pretty.indent 2 "remainders:"
+                                , (Pretty.indent 4 . Pretty.vsep)
+                                    (unparse <$> toList orRemainders)
+                                ]
+                        | not (OrPattern.isFalse orRemainders) ->
+                            tryNextSimplifier Conditional
+                        | otherwise -> return applicationResult
+                NotApplicable -> tryNextSimplifier nonSimplifiability
+                NotApplicableUntilConditionChanges _ ->
+                    tryNextSimplifier Conditional
+      where
+        tryNextSimplifier nonSimplifiability' =
+            applyFirstSimplifierThatWorksWorker
+                evaluators
+                multipleResults
+                nonSimplifiability'
+                patt
+                sideCondition
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
