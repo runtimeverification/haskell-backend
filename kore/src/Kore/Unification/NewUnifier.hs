@@ -1,6 +1,18 @@
-{-
+{- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
+
+Unification algorithm based on "Competing for the AC-Unification Race"
+(https://doi.org/10.1007/BF00881905) and "Combining Unification Algorithms"
+(https://doi.org/10.1006/jsco.1993.1066) by Alexandre Boudet. We have taken
+some adjustments for ACU unification from the Maude codebase as well.
+(https://github.com/SRI-CSL/Maude/blob/master/src/ACU_Theory/ACU_UnificationSubproblem2.cc)
+
+The algorithm for ACU unification has been adapted specifically for K, in
+particular based on the assumption that all ACU unification problems will have
+no uninterpreted functions and each map or set element will consist of a single
+free constructor representing a single element operating over a sort containing
+a single ACU constructor, concatenation.
 -}
 module Kore.Unification.NewUnifier (
     unifyTerms,
@@ -159,17 +171,6 @@ import Logic
 import Pair
 import Prelude.Kore
 
-unifyTerms ::
-    MonadUnify unifier =>
-    HasCallStack =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    unifier (Maybe (Condition RewritingVariableName))
-unifyTerms first second sideCondition =
-    let vars = Set.map variableName $ FreeVariables.toSet $ freeVariables (first, second)
-     in unifyTerms' sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
-
 data AcTerm = AcTerm
     { acElements :: [SomeVariable RewritingVariableName]
     , acSort :: Sort
@@ -300,6 +301,17 @@ combineTheories acBindings freeBindings origVars = do
                 Just substituted -> (Map.insert key substituted accum, subst)
     preprocessBinding key val (accum, subst) =
         (Map.insert key (substitute subst val) accum, subst)
+
+unifyTerms ::
+    MonadUnify unifier =>
+    HasCallStack =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    unifier (Maybe (Condition RewritingVariableName))
+unifyTerms first second sideCondition =
+    let vars = Set.map variableName $ FreeVariables.toSet $ freeVariables (first, second)
+     in unifyTerms' sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
 
 unifyTerms' ::
     forall unifier.
