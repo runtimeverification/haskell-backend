@@ -66,8 +66,8 @@ identifier of its left-hand-side is the same as the term's identifier.
 data AxiomIdentifier
     = -- | An application pattern with the given symbol identifier.
       Application !Id
-      -- | Any domain value pattern.
-    | DV
+    | -- | Any domain value pattern.
+      DV
     | -- | A @\\ceil@ pattern with the given child.
       Ceil !AxiomIdentifier
     | -- | An @\\equals@ pattern with the given children.
