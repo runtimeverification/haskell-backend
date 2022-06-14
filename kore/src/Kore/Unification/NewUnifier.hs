@@ -308,7 +308,7 @@ unifyTerms ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    unifier (Maybe (Condition RewritingVariableName))
+    unifier (Condition RewritingVariableName)
 unifyTerms first second sideCondition =
     let vars = Set.map variableName $ FreeVariables.toSet $ freeVariables (first, second)
      in unifyTerms' sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
@@ -324,7 +324,7 @@ unifyTerms' ::
     Map (SomeVariable RewritingVariableName) Binding ->
     Condition RewritingVariableName ->
     Map Sort [AcEquation] ->
-    unifier (Maybe (Condition RewritingVariableName))
+    unifier (Condition RewritingVariableName)
 unifyTerms' sideCondition origVars _ [] bindings constraints acEquations
     | Map.null acEquations = do
         let freeBindings = Map.map fromFree $ Map.filter isFree bindings
@@ -334,7 +334,7 @@ unifyTerms' sideCondition origVars _ [] bindings constraints acEquations
             subst = Substitution.fromMap finalBindings
         simplifiedSubst <- simplifySubstitution sideCondition subst
         condition <- Logic.scatter simplifiedSubst
-        return $ Just $ Condition.andCondition condition constraints
+        return $ Condition.andCondition condition constraints
   where
     isOrigVar :: SomeVariable RewritingVariableName -> a -> Bool
     isOrigVar v = const $ Set.member (variableName v) origVars
@@ -522,39 +522,39 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
                     unifyIfThenElse condition branch1 branch2 first
             (_, _) | isFunctionPattern first -> trySubstDecompose
             (_, _) | isFunctionPattern second -> trySubstDecompose
-            _ -> return Nothing
+            _ -> constrain $ makeEqualsPredicate first second
   where
     sort = termLikeSort first
 
     discharge ::
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     discharge = unifyTerms' sideCondition origVars vars rest bindings constraints acEquations
 
     failUnify ::
         Text ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     failUnify message = debugUnifyBottomAndReturnBottom message first second
 
     decompose ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     decompose term1 term2 = unifyTerms' sideCondition origVars vars ((term1, term2) : rest) bindings constraints acEquations
 
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     decomposeList terms = unifyTerms' sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
 
     constrain ::
         Predicate RewritingVariableName ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     constrain predicate = unifyTerms' sideCondition origVars vars rest bindings (Condition.andCondition constraints $ Condition.fromPredicate predicate) acEquations
 
     bind ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     bind var term = unifyTerms' sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
 
     binding var = Map.lookup var bindings
@@ -574,7 +574,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     bindVarToPattern ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     bindVarToPattern var term =
         case binding var of
             Nothing -> bind var term
@@ -627,13 +627,13 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     unifyMaps ::
         InternalMap Key (TermLike RewritingVariableName) ->
         InternalMap Key (TermLike RewritingVariableName) ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     unifyMaps ac1 ac2 = unifyAc (normalizeMap (builtinAcElement ac1) $ unwrapAc $ builtinAcChild ac1) (normalizeMap (builtinAcElement ac2) $ unwrapAc $ builtinAcChild ac2)
 
     unifySets ::
         InternalSet Key (TermLike RewritingVariableName) ->
         InternalSet Key (TermLike RewritingVariableName) ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     unifySets ac1 ac2 = unifyAc (normalizeSet (builtinAcElement ac1) $ unwrapAc $ builtinAcChild ac1) (normalizeSet (builtinAcElement ac2) $ unwrapAc $ builtinAcChild ac2)
 
     normalizeMap ::
@@ -681,7 +681,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     unifyAc ::
         AcCollection ->
         AcCollection ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     unifyAc
         AcCollection{elements = elements1, variables = variables1, functions = functions1}
         AcCollection{elements = elements2, variables = variables2, functions = functions2} =
@@ -701,7 +701,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     acUnify ::
         AcCollection ->
         AcCollection ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     acUnify term1@AcCollection{elements = elements1, variables = variables1} term2@AcCollection{elements = elements2, variables = variables2} =
         case (Set.size elements1, MultiSet.size variables1, Set.size elements2, MultiSet.size variables2) of
             (0, 0, 0, 0) -> discharge
@@ -730,7 +730,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     acBindVarToTerm ::
         SomeVariable RewritingVariableName ->
         AcCollection ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     acBindVarToTerm var collection =
         let (vars', term, freeEqs) = variableAbstraction sort vars collection
          in acRecurse sort [acBind term var] vars' freeEqs
@@ -752,7 +752,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
         [Either (SomeVariable RewritingVariableName, Binding) AcEquation] ->
         Set (SomeVariableName RewritingVariableName) ->
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     acRecurse acSort bindings' vars' freeEqs =
         let newBindings = union bindings $ Map.fromList $ lefts bindings'
             newAcEquations = rights bindings'
@@ -761,7 +761,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     acDecompose ::
         AcTerm ->
         AcTerm ->
-        unifier (Maybe (Condition RewritingVariableName))
+        unifier (Condition RewritingVariableName)
     acDecompose term1 term2 = unifyTerms' sideCondition origVars vars rest bindings constraints $ Map.insert (acSort term1) (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations) acEquations
 
 solveAcEquations ::

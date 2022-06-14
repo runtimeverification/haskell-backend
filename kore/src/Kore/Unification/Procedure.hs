@@ -63,21 +63,18 @@ unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
-        unified <- unifyTerms p1 p2 sideCondition
-        case unified of
-            Nothing -> error "unsupported unification case"
-            Just condition -> do
-                TopBottom.guardAgainstBottom condition
-                debugUnificationSolved (Conditional.fromCondition p1Sort condition)
-                let Conditional{substitution} = condition
-                    normalized = toMap substitution
-                    term1 = substitute normalized p1
-                    term2 = substitute normalized p2
-                    term = mkAnd term1 term2
-                orCeil <- makeEvaluateTermCeil sideCondition term
-                ceil' <- Monad.Unify.scatter orCeil
-                lowerLogicT . simplifyCondition sideCondition $
-                    Conditional.andCondition ceil' condition
+        condition <- unifyTerms p1 p2 sideCondition
+        TopBottom.guardAgainstBottom condition
+        debugUnificationSolved (Conditional.fromCondition p1Sort condition)
+        let Conditional{substitution} = condition
+            normalized = toMap substitution
+            term1 = substitute normalized p1
+            term2 = substitute normalized p2
+            term = mkAnd term1 term2
+        orCeil <- makeEvaluateTermCeil sideCondition term
+        ceil' <- Monad.Unify.scatter orCeil
+        lowerLogicT . simplifyCondition sideCondition $
+            Conditional.andCondition ceil' condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
