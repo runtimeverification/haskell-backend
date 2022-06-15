@@ -50,7 +50,6 @@ import Kore.Simplify.AndPredicates qualified as And (
  )
 import Kore.Simplify.AndTerms (
     compareForEquals,
-    maybeTermEquals,
  )
 import Kore.Simplify.Iff qualified as Iff (
     makeEvaluate,
@@ -69,6 +68,9 @@ import Kore.Simplify.Or qualified as Or (
  )
 import Kore.Simplify.Simplify
 import Kore.Sort (sameSort)
+import Kore.Unification.NewUnifier (
+    unifyTermsEquals,
+ )
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
@@ -256,7 +258,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
         Conditional{term = firstTerm}
         (Conditional{term = secondTerm}, secondCeil) =
             do
-                equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+                equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm sideCondition
                 Implies.simplifyEvaluated sort sideCondition secondCeil equality
 
 {- | evaluates an 'Equals' given its two 'Pattern' children.
@@ -304,7 +306,7 @@ makeEvaluate
                     Not.simplify sideCondition Not{notSort = sort, notChild}
             firstCeilNegation <- mkNotSimplified firstCeil
             secondCeilNegation <- mkNotSimplified secondCeil
-            termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+            termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm sideCondition
             negationAnd <-
                 (And.simplify sort Not.notSimplifier sideCondition)
                     (MultiAnd.make [firstCeilNegation, secondCeilNegation])
@@ -324,11 +326,12 @@ makeEvaluateTermsAssumesNoBottom ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
+makeEvaluateTermsAssumesNoBottom firstTerm secondTerm sideCondition = do
     result <-
         runMaybeT $
-            makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
+            makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm sideCondition
     (return . fromMaybe def) result
   where
     sort = termLikeSort firstTerm
@@ -349,9 +352,10 @@ makeEvaluateTermsAssumesNoBottomMaybe ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     MaybeT simplifier (OrPattern RewritingVariableName)
-makeEvaluateTermsAssumesNoBottomMaybe first second = do
-    result <- termEquals first second
+makeEvaluateTermsAssumesNoBottomMaybe first second sideCondition = do
+    result <- termEquals first second sideCondition
     let sort = termLikeSort first
     return (MultiOr.map (Pattern.fromCondition sort) result)
 
@@ -374,7 +378,7 @@ makeEvaluateTermsToPredicate ::
 makeEvaluateTermsToPredicate first second sideCondition
     | first == second = return OrCondition.top
     | otherwise = do
-        result <- runMaybeT $ termEquals first second
+        result <- runMaybeT $ termEquals first second sideCondition
         case result of
             Nothing ->
                 return $
@@ -406,9 +410,10 @@ termEquals ::
     HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     MaybeT simplifier (OrCondition RewritingVariableName)
-termEquals first second = MaybeT $ do
-    maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second
+termEquals first second sideCondition = MaybeT $ do
+    maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second sideCondition
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results ->
@@ -422,48 +427,19 @@ termEqualsAnd ::
     HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     MaybeT (LogicT simplifier) (Pattern RewritingVariableName)
-termEqualsAnd p1 p2 =
-    MaybeT $ run $ maybeTermEqualsWorker p1 p2
+termEqualsAnd p1 p2 sideCondition =
+    MaybeT $ run $ unifyTermsPattern
   where
     run it =
         (runUnifierT Not.notSimplifier . runMaybeT) it
             >>= Logic.scatter
-
-    maybeTermEqualsWorker ::
-        forall unifier.
+    unifyTermsPattern ::
         MonadUnify unifier =>
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
+        HasCallStack =>
         MaybeT unifier (Pattern RewritingVariableName)
-    maybeTermEqualsWorker =
-        maybeTermEquals Not.notSimplifier termEqualsAndWorker
-
-    termEqualsAndWorker ::
-        forall unifier.
-        MonadUnify unifier =>
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        unifier (Pattern RewritingVariableName)
-    termEqualsAndWorker first second =
-        scatterResults
-            =<< runUnification (maybeTermEqualsWorker first second)
-      where
-        runUnification = runUnifierT Not.notSimplifier . runMaybeT
-        scatterResults =
-            maybe
-                (return equalsPattern) -- default if no results
-                Logic.scatter
-                . sequence
-        equalsPattern =
-            makeEqualsPredicate first second
-                & Predicate.markSimplified
-                & Condition.fromPredicate
-                -- Although the term will eventually be discarded, the sub-term
-                -- unifier should return it in case the caller needs to
-                -- reconstruct the unified term. If we returned \top here, then
-                -- the unified pattern wouldn't be a function-like term. Because the
-                -- terms are equal, it does not matter which one is returned; we
-                -- prefer the first term because this is the "configuration" side
-                -- during rule unification.
-                & Pattern.withCondition first
+    unifyTermsPattern = do
+        condition <- unifyTermsEquals p1 p2 sideCondition & lift
+        return $ Pattern.fromCondition sort condition
+    sort = termLikeSort p1

@@ -1584,7 +1584,7 @@ simplifyEquals ::
 simplifyEquals simplifierAxioms first second =
     (fmap . fmap) toList $
         runSimplifier mockEnv $
-            runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
+            runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second) SideCondition.top
   where
     mockEnv = Mock.env{simplifierAxioms}
 
