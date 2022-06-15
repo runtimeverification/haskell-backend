@@ -467,6 +467,7 @@ lookupAxiomSimplifier termLike = do
         case axiomIdentifier of
             Axiom.Identifier.Application _ -> exact
             Variable -> exact
+            DV -> exact
             Ceil _ ->
                 let inexact = Map.lookup (Ceil Variable) simplifierMap
                  in combineEvaluators [exact, inexact]
