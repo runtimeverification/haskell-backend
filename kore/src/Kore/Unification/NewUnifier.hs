@@ -16,6 +16,7 @@ a single ACU constructor, concatenation.
 -}
 module Kore.Unification.NewUnifier (
     unifyTerms,
+    unifiedTermAnd,
     -- exported for debugging and testing
     solveDiophantineEquations,
     allSuitableSolutions',
@@ -162,8 +163,8 @@ import Kore.Simplify.Simplify (
     askOverloadSimplifier,
     simplifyTerm,
  )
-import Kore.Simplify.SubstitutionSimplifier
 import Kore.Substitute
+import Kore.Unification.SubstitutionNormalization
 import Kore.Unification.Unify
 import Kore.Variables.Fresh (
     refreshVariable,
@@ -303,6 +304,18 @@ combineTheories acBindings freeBindings origVars = do
     preprocessBinding key val (accum, subst) =
         (Map.insert key (substitute subst val) accum, subst)
 
+unifiedTermAnd ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName
+unifiedTermAnd p1 p2 condition =
+    let Conditional{substitution} = condition
+        normalized = Substitution.toMap substitution
+        term1 = substitute normalized p1
+        term2 = substitute normalized p2
+    in mkAnd term1 term2
+
 unifyTerms ::
     MonadUnify unifier =>
     HasCallStack =>
@@ -333,16 +346,16 @@ unifyTerms' rootSort sideCondition origVars _ [] bindings constraints acEquation
             (origBindings, acVarBindings) = Map.partitionWithKey isOrigVar freeBindings
             acVarSubst = Map.mapKeys variableName acVarBindings
             finalBindings = Map.map (substitute acVarSubst) origBindings
-            subst = Substitution.fromMap finalBindings
-        simplifiedSubst <- simplifySubstitution sideCondition subst
-        condition <- Logic.scatter simplifiedSubst
-        let solution = Condition.andCondition condition constraints
-        debugUnificationSolved (Pattern.fromCondition rootSort solution)
-        return solution
+        case normalize finalBindings of
+            Nothing -> error "cannot normalize substitution"
+            Just normalization -> do
+                let condition = Condition.fromNormalizationSimplified normalization
+                    solution = Condition.andCondition condition constraints
+                debugUnificationSolved (Pattern.fromCondition rootSort solution)
+                return solution
   where
     isOrigVar :: SomeVariable RewritingVariableName -> a -> Bool
     isOrigVar v = const $ Set.member (variableName v) origVars
-    SubstitutionSimplifier simplifySubstitution = substitutionSimplifier
 unifyTerms' rootSort sideCondition origVars vars [] bindings constraints acEquations = do
     tools <- askMetadataTools
     let (acSolutions, newVars) = Map.foldrWithKey' (solveAcEquations' tools) (Map.empty, vars) acEquations
