@@ -132,6 +132,15 @@ matchAxiomIdentifier = Recursive.fold matchWorker
             InternalBytesF _ -> pure DV
             InternalIntF _ -> pure DV
             InternalStringF _ -> pure DV
+            -- TODO(dwightguth): this is unsound. If we are simplifying a \ceil
+            -- or \equals pattern whose children is not one of the above types
+            -- of term, then this function will return Nothing, meaning that no
+            -- axioms are applied, even if the user explicitly wrote
+            -- simplification rules that do match. I have covered the cases for
+            -- the simplification rules I have needed so far, but this is still
+            -- a known issue which may lead to simplification rules that were
+            -- written by the user to simplify \equals or \ceil not being
+            -- applied.
             _ -> empty
 
     listToId internalList
