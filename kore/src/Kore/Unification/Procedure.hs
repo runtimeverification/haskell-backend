@@ -25,7 +25,6 @@ import Kore.Internal.Substitution (
     toMap,
  )
 import Kore.Internal.TermLike
-import Kore.Log.DebugUnification (debugUnificationSolved)
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
 import Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
@@ -65,7 +64,6 @@ unificationProcedure sideCondition p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
         condition <- unifyTerms p1 p2 sideCondition
         TopBottom.guardAgainstBottom condition
-        debugUnificationSolved (Conditional.fromCondition p1Sort condition)
         let Conditional{substitution} = condition
             normalized = toMap substitution
             term1 = substitute normalized p1
