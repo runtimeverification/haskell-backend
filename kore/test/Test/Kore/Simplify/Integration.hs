@@ -11,8 +11,8 @@ import Control.Lens qualified as Lens
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Map.Strict qualified as Map
-import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Bool qualified as Bool
+import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.List qualified as List
 import Kore.Builtin.Map qualified as Map
@@ -687,7 +687,7 @@ test_simplificationIntegration =
                     { term = mkTop Mock.testSort
                     , predicate = makeEqualsPredicate (Mock.functional10 (mkElemVar Mock.xConfig)) (Mock.functional10 (mkElemVar Mock.yConfig))
                     , substitution = mempty
-                     }
+                    }
             expected = OrPattern.topOf Mock.testSort
         actual <-
             evaluateWithAxioms
@@ -713,7 +713,7 @@ test_simplificationIntegration =
                     { term = mkTop Mock.testSort
                     , predicate = makeEqualsPredicate (Mock.fBool (mkElemVar Mock.xConfigBool)) (Bool.asInternal Mock.boolSort True)
                     , substitution = mempty
-                     }
+                    }
             expected = OrPattern.topOf Mock.testSort
         actual <-
             evaluateWithAxioms
