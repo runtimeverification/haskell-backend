@@ -435,20 +435,24 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
                 ceil <- makeEvaluateTermCeil sideCondition second
                 case toList ceil of
                     [] -> discharge
-                    [Conditional{predicate=PredicateTrue,substitution}]
+                    [Conditional{predicate = PredicateTrue, substitution}]
                         | substitution == mempty -> failUnify "Cannot unify bottom with non-bottom pattern."
-                    _ -> constrain $ makeNotPredicate $
-                        OrCondition.toPredicate $
-                            OrPattern.map Condition.toPredicate ceil
+                    _ ->
+                        constrain $
+                            makeNotPredicate $
+                                OrCondition.toPredicate $
+                                    OrPattern.map Condition.toPredicate ceil
             (_, Bottom_ _, UnifyEquals) -> do
                 ceil <- makeEvaluateTermCeil sideCondition first
                 case toList ceil of
                     [] -> discharge
-                    [Conditional{predicate=PredicateTrue,substitution}]
+                    [Conditional{predicate = PredicateTrue, substitution}]
                         | substitution == mempty -> failUnify "Cannot unify bottom with non-bottom pattern."
-                    _ -> constrain $ makeNotPredicate $
-                        OrCondition.toPredicate $
-                            OrPattern.map Condition.toPredicate ceil
+                    _ ->
+                        constrain $
+                            makeNotPredicate $
+                                OrCondition.toPredicate $
+                                    OrPattern.map Condition.toPredicate ceil
             (_, _, _) | first == second -> discharge
             (InternalInt_ _, InternalInt_ _, _) -> failUnify "Distinct integer domain values"
             (InternalBool_ _, InternalBool_ _, _) -> failUnify "Distinct Boolean domain values"
