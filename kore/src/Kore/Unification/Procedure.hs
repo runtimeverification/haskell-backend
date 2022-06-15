@@ -14,15 +14,9 @@ module Kore.Unification.Procedure (
 import Kore.Internal.Condition (
     Condition,
  )
-import Kore.Internal.Conditional (
-    Conditional (..),
- )
 import Kore.Internal.Pattern qualified as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
- )
-import Kore.Internal.Substitution (
-    toMap,
  )
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
@@ -36,7 +30,6 @@ import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )
-import Kore.Substitute
 import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.NewUnifier
 import Kore.Unification.Unify (
@@ -64,11 +57,7 @@ unificationProcedure sideCondition p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
         condition <- unifyTermsAnd p1 p2 sideCondition
         TopBottom.guardAgainstBottom condition
-        let Conditional{substitution} = condition
-            normalized = toMap substitution
-            term1 = substitute normalized p1
-            term2 = substitute normalized p2
-            term = mkAnd term1 term2
+        let term = unifiedTermAnd p1 p2 condition
         orCeil <- makeEvaluateTermCeil sideCondition term
         ceil' <- Monad.Unify.scatter orCeil
         lowerLogicT . simplifyCondition sideCondition $
