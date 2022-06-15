@@ -12,6 +12,7 @@ import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Map.Strict qualified as Map
 import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.List qualified as List
 import Kore.Builtin.Map qualified as Map
@@ -680,6 +681,58 @@ test_simplificationIntegration =
                     }
         actual <- evaluate patt
         assertEqual "" (OrPattern.fromPattern expected) actual
+    , testCase "Simplify equals with variable" $ do
+        let patt =
+                Conditional
+                    { term = mkTop Mock.testSort
+                    , predicate = makeEqualsPredicate (Mock.functional10 (mkElemVar Mock.xConfig)) (Mock.functional10 (mkElemVar Mock.yConfig))
+                    , substitution = mempty
+                     }
+            expected = OrPattern.topOf Mock.testSort
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [
+                            ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.functional10Id) AxiomIdentifier.Variable
+                            ,
+                                [ axiom
+                                    (mkEquals Mock.boolSort (Mock.functional10 (mkElemVar Mock.xRule)) (mkElemVar Mock.yRule))
+                                    (mkTop Mock.testSort)
+                                    makeTruePredicate
+                                ]
+                            )
+                        ]
+                    )
+                )
+                patt
+        assertEqual "" expected actual
+    , testCase "Simplify equals with dv" $ do
+        let patt =
+                Conditional
+                    { term = mkTop Mock.testSort
+                    , predicate = makeEqualsPredicate (Mock.fBool (mkElemVar Mock.xConfigBool)) (Bool.asInternal Mock.boolSort True)
+                    , substitution = mempty
+                     }
+            expected = OrPattern.topOf Mock.testSort
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [
+                            ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.fBoolId) AxiomIdentifier.DV
+                            ,
+                                [ axiom
+                                    (mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True))
+                                    (mkTop Mock.testSort)
+                                    makeTruePredicate
+                                ]
+                            )
+                        ]
+                    )
+                )
+                patt
+        assertEqual "" expected actual
     ]
 
 test_simplificationIntegrationUnification :: [TestTree]
