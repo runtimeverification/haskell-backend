@@ -132,8 +132,8 @@ import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnification (
-    whileDebugUnification,
     debugUnificationSolved,
+    whileDebugUnification,
  )
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -323,7 +323,7 @@ unifiedTermAnd p1 p2 condition =
         normalized = Substitution.toMap substitution
         term1 = substitute normalized p1
         term2 = substitute normalized p2
-    in mkAnd term1 term2
+     in mkAnd term1 term2
 
 unifyTermsAnd ::
     MonadUnify unifier =>
@@ -430,20 +430,24 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
                 ceil <- makeEvaluateTermCeil sideCondition second
                 case toList ceil of
                     [] -> discharge
-                    [Conditional{predicate=PredicateTrue,substitution}]
+                    [Conditional{predicate = PredicateTrue, substitution}]
                         | substitution == mempty -> failUnify "Cannot unify bottom with non-bottom pattern."
-                    _ -> constrain $ makeNotPredicate $
-                        OrCondition.toPredicate $
-                            OrPattern.map Condition.toPredicate ceil
+                    _ ->
+                        constrain $
+                            makeNotPredicate $
+                                OrCondition.toPredicate $
+                                    OrPattern.map Condition.toPredicate ceil
             (_, Bottom_ _, UnifyEquals) -> do
                 ceil <- makeEvaluateTermCeil sideCondition first
                 case toList ceil of
                     [] -> discharge
-                    [Conditional{predicate=PredicateTrue,substitution}]
+                    [Conditional{predicate = PredicateTrue, substitution}]
                         | substitution == mempty -> failUnify "Cannot unify bottom with non-bottom pattern."
-                    _ -> constrain $ makeNotPredicate $
-                        OrCondition.toPredicate $
-                            OrPattern.map Condition.toPredicate ceil
+                    _ ->
+                        constrain $
+                            makeNotPredicate $
+                                OrCondition.toPredicate $
+                                    OrPattern.map Condition.toPredicate ceil
             (_, _, _) | first == second -> discharge
             (InternalInt_ _, InternalInt_ _, _) -> failUnify "Distinct integer domain values"
             (InternalBool_ _, InternalBool_ _, _) -> failUnify "Distinct Boolean domain values"
@@ -642,9 +646,9 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
                 (Just (Free (ElemVar_ var1')), Just (Free (ElemVar_ var2'))) -> bindVarToVar (inject var1') (inject var2')
                 (Just (Free (ElemVar_ var1')), _) -> bindVarToVar (inject var1') var2
                 (_, Just (Free (ElemVar_ var2'))) -> bindVarToVar var1 (inject var2')
-                (Nothing, _) -> 
+                (Nothing, _) ->
                     let (var, term) = Substitution.normalOrder (var1, second)
-                    in bind var term
+                     in bind var term
                 (_, Nothing) -> bind var2 first
                 (Just (Free term1), Just (Free term2)) -> decompose term1 term2
                 (Just (Ac term1), Just (Ac term2)) -> acDecompose term1 term2
