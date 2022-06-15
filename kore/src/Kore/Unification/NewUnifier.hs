@@ -526,7 +526,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                     unifyIfThenElse condition branch1 branch2 first
             (_, _) | isFunctionPattern first -> trySubstDecompose
             (_, _) | isFunctionPattern second -> trySubstDecompose
-            _ -> constrain $ makeEqualsPredicate first second
+            _ -> constrainEquals first second
   where
     sort = termLikeSort first
 
@@ -554,6 +554,14 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         Predicate RewritingVariableName ->
         unifier (Condition RewritingVariableName)
     constrain predicate = unifyTerms' rootSort sideCondition origVars vars rest bindings (Condition.andCondition constraints $ Condition.fromPredicate predicate) acEquations
+
+    constrainEquals ::
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        unifier (Condition RewritingVariableName)
+    constrainEquals p1 p2 = do
+        let predicate = makeEqualsPredicate p1 p2
+        constrain predicate
 
     bind ::
         SomeVariable RewritingVariableName ->
@@ -602,7 +610,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         (newSecond, secondConstraints) <- substAndSimplify firstConstraints second
         if newFirst /= first || newSecond /= second
             then unifyTerms' rootSort sideCondition origVars vars ((newFirst, newSecond) : rest) bindings secondConstraints acEquations
-            else constrain (makeEqualsPredicate first second)
+            else constrainEquals first second
 
     unifyIfThenElse condition branch1 branch2 other = do
         (bool, branch) <- Logic.scatter [(True, branch1), (False, branch2)]
@@ -700,7 +708,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                 uniqueFunctions2 = MultiSet.difference functions2 commonFunctions
              in case (MultiSet.size uniqueFunctions1, MultiSet.size uniqueFunctions2) of
                     (0, 0) -> acUnify (acCollection uniqueElements1 uniqueVariables1) (acCollection uniqueElements2 uniqueVariables2)
-                    _ -> constrain (makeEqualsPredicate first second)
+                    _ -> constrainEquals first second
 
     acUnify ::
         AcCollection ->
