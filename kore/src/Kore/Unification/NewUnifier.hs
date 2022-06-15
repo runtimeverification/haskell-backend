@@ -642,7 +642,9 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
                 (Just (Free (ElemVar_ var1')), Just (Free (ElemVar_ var2'))) -> bindVarToVar (inject var1') (inject var2')
                 (Just (Free (ElemVar_ var1')), _) -> bindVarToVar (inject var1') var2
                 (_, Just (Free (ElemVar_ var2'))) -> bindVarToVar var1 (inject var2')
-                (Nothing, _) -> bind var1 second
+                (Nothing, _) -> 
+                    let (var, term) = Substitution.normalOrder (var1, second)
+                    in bind var term
                 (_, Nothing) -> bind var2 first
                 (Just (Free term1), Just (Free term2)) -> decompose term1 term2
                 (Just (Ac term1), Just (Ac term2)) -> acDecompose term1 term2
