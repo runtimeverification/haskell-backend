@@ -15,8 +15,9 @@ free constructor representing a single element operating over a sort containing
 a single ACU constructor, concatenation.
 -}
 module Kore.Unification.NewUnifier (
-    unifyTerms,
     unifiedTermAnd,
+    unifyTermsAnd,
+    unifyTermsEquals,
     -- exported for debugging and testing
     solveDiophantineEquations,
     allSuitableSolutions',
@@ -119,11 +120,15 @@ import Kore.Internal.NormalizedAc (
     NormalizedAc (..),
     unwrapAc,
  )
+import Kore.Internal.OrCondition qualified as OrCondition
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
     makeEqualsPredicate,
+    makeNotPredicate,
+    pattern PredicateTrue,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -167,6 +172,7 @@ import Kore.Simplify.Simplify (
     askInjSimplifier,
     askMetadataTools,
     askOverloadSimplifier,
+    makeEvaluateTermCeil,
     simplifyTerm,
  )
 import Kore.Substitute
@@ -199,6 +205,8 @@ data Binding
     = Free (TermLike RewritingVariableName)
     | Ac AcTerm
     deriving stock (Show, Eq)
+
+data UnifyType = UnifyAnd | UnifyEquals
 
 fromFree :: Binding -> TermLike RewritingVariableName
 fromFree (Free a) = a
@@ -322,21 +330,41 @@ unifiedTermAnd p1 p2 condition =
         term2 = substitute normalized p2
      in mkAnd term1 term2
 
-unifyTerms ::
+unifyTermsAnd ::
     MonadUnify unifier =>
     HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     unifier (Condition RewritingVariableName)
-unifyTerms first second sideCondition =
+unifyTermsAnd = unifyTerms UnifyAnd
+
+unifyTermsEquals ::
+    MonadUnify unifier =>
+    HasCallStack =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    unifier (Condition RewritingVariableName)
+unifyTermsEquals = unifyTerms UnifyEquals
+
+unifyTerms ::
+    MonadUnify unifier =>
+    HasCallStack =>
+    UnifyType ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    unifier (Condition RewritingVariableName)
+unifyTerms unifyType first second sideCondition =
     let vars = Set.map variableName $ FreeVariables.toSet $ freeVariables (first, second)
-     in unifyTerms' (termLikeSort first) sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
+     in unifyTerms' unifyType (termLikeSort first) sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
 
 unifyTerms' ::
     forall unifier.
     MonadUnify unifier =>
     HasCallStack =>
+    UnifyType ->
     Sort ->
     SideCondition RewritingVariableName ->
     Set (SomeVariableName RewritingVariableName) ->
@@ -346,7 +374,7 @@ unifyTerms' ::
     Condition RewritingVariableName ->
     Map Sort [AcEquation] ->
     unifier (Condition RewritingVariableName)
-unifyTerms' rootSort _ origVars _ [] bindings constraints acEquations
+unifyTerms' _ rootSort sideCondition origVars _ [] bindings constraints acEquations
     | Map.null acEquations = do
         let freeBindings = Map.map fromFree $ Map.filter isFree bindings
             (origBindings, acVarBindings) = Map.partitionWithKey isOrigVar freeBindings
@@ -362,12 +390,12 @@ unifyTerms' rootSort _ origVars _ [] bindings constraints acEquations
   where
     isOrigVar :: SomeVariable RewritingVariableName -> a -> Bool
     isOrigVar v = const $ Set.member (variableName v) origVars
-unifyTerms' rootSort sideCondition origVars vars [] bindings constraints acEquations = do
+unifyTerms' unifyType rootSort sideCondition origVars vars [] bindings constraints acEquations = do
     tools <- askMetadataTools
     let (acSolutions, newVars) = Map.foldrWithKey' (solveAcEquations' tools) (Map.empty, vars) acEquations
         freeBindings = Map.map fromFree $ Map.filter isFree bindings
     (newEqs, newBindings) <- combineTheories (Map.elems acSolutions) freeBindings origVars
-    unifyTerms' rootSort sideCondition origVars newVars newEqs newBindings constraints Map.empty
+    unifyTerms' unifyType rootSort sideCondition origVars newVars newEqs newBindings constraints Map.empty
   where
     solveAcEquations' ::
         SmtMetadataTools Attribute.Symbol ->
@@ -378,59 +406,81 @@ unifyTerms' rootSort sideCondition origVars vars [] bindings constraints acEquat
     solveAcEquations' tools sort eqs (accum, vars') =
         let (solutions, newVars) = solveAcEquations tools bindings vars' sort eqs
          in (Map.insert sort solutions accum, newVars)
-unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindings constraints acEquations =
+unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : rest) bindings constraints acEquations =
     whileDebugUnification first second $ do
         tools <- askMetadataTools
         injSimplifier <- askInjSimplifier
         overloadSimplifier <- askOverloadSimplifier
         let InjSimplifier{matchInjs, evaluateInj} = injSimplifier
             OverloadSimplifier{isOverloaded} = overloadSimplifier
-        case (first, second) of
-            (_, _) | Just UnifyExpandAlias{term1, term2} <- matchExpandAlias first second -> decompose term1 term2
-            (Bottom_ _, _) -> failUnify "Cannot unify bottom"
-            (_, Bottom_ _) -> failUnify "Cannot unify bottom"
-            (Top_ _, _) -> discharge
-            (_, Top_ _) -> discharge
-            (And_ _ term1 term2, _) -> decomposeList [(term1, second), (term2, second)]
-            (_, And_ _ term1 term2) -> decomposeList [(first, term1), (first, term2)]
-            (Or_ _ term1 term2, _) -> do
+        case (first, second, unifyType) of
+            (_, _, _) | Just UnifyExpandAlias{term1, term2} <- matchExpandAlias first second -> decompose term1 term2
+            (Bottom_ _, _, UnifyAnd) -> failUnify "Cannot unify bottom"
+            (_, Bottom_ _, UnifyAnd) -> failUnify "Cannot unify bottom"
+            (Top_ _, _, UnifyAnd) -> discharge
+            (_, Top_ _, UnifyAnd) -> discharge
+            (And_ _ term1 term2, _, UnifyAnd) -> decomposeList [(term1, second), (term2, second)]
+            (_, And_ _ term1 term2, UnifyAnd) -> decomposeList [(first, term1), (first, term2)]
+            (Or_ _ term1 term2, _, UnifyAnd) -> do
                 term <- Logic.scatter [term1, term2]
                 decompose term second
-            (_, Or_ _ term1 term2) -> do
+            (_, Or_ _ term1 term2, UnifyAnd) -> do
                 term <- Logic.scatter [term1, term2]
                 decompose first term
-            (_, _) | first == second -> discharge
-            (InternalInt_ _, InternalInt_ _) -> failUnify "Distinct integer domain values"
-            (InternalBool_ _, InternalBool_ _) -> failUnify "Distinct Boolean domain values"
-            (InternalString_ _, InternalString_ _) -> failUnify "Distinct string domain values"
-            (DV_ _ _, DV_ _ _) -> failUnify "Distinct domain values"
-            (StringLiteral_ _, StringLiteral_ _) -> failUnify "Distinct string literals"
-            (InternalBytes_ _ _, InternalBytes_ _ _) -> failUnify "Distinct byte-string domain values"
-            (Endianness_ _, Endianness_ _) -> failUnify "Distinct Endianness constructors"
-            (Signedness_ _, Signedness_ _) -> failUnify "Distinct Signedness constructors"
-            (ElemVar_ var1, ElemVar_ var2) -> bindVarToVar (inject var1) (inject var2)
-            (ElemVar_ var1, _) | isFunctionPattern second -> bindVarToPattern (inject var1) second
-            (_, ElemVar_ var2) | isFunctionPattern first -> bindVarToPattern (inject var2) first
-            (App_ firstHead firstChildren, App_ secondHead secondChildren)
+            (Bottom_ _, Bottom_ _, UnifyEquals) -> discharge
+            (Top_ _, Top_ _, UnifyEquals) -> discharge
+            (Bottom_ _, Top_ _, UnifyEquals) -> failUnify "bottom does not equal top"
+            (Top_ _, Bottom_ _, UnifyEquals) -> failUnify "bottom does not equal top"
+            (Bottom_ _, _, UnifyEquals) -> do
+                ceil <- makeEvaluateTermCeil sideCondition second
+                case toList ceil of
+                    [] -> discharge
+                    [Conditional{predicate=PredicateTrue,substitution}]
+                        | substitution == mempty -> failUnify "Cannot unify bottom with non-bottom pattern."
+                    _ -> constrain $ makeNotPredicate $
+                        OrCondition.toPredicate $
+                            OrPattern.map Condition.toPredicate ceil
+            (_, Bottom_ _, UnifyEquals) -> do
+                ceil <- makeEvaluateTermCeil sideCondition first
+                case toList ceil of
+                    [] -> discharge
+                    [Conditional{predicate=PredicateTrue,substitution}]
+                        | substitution == mempty -> failUnify "Cannot unify bottom with non-bottom pattern."
+                    _ -> constrain $ makeNotPredicate $
+                        OrCondition.toPredicate $
+                            OrPattern.map Condition.toPredicate ceil
+            (_, _, _) | first == second -> discharge
+            (InternalInt_ _, InternalInt_ _, _) -> failUnify "Distinct integer domain values"
+            (InternalBool_ _, InternalBool_ _, _) -> failUnify "Distinct Boolean domain values"
+            (InternalString_ _, InternalString_ _, _) -> failUnify "Distinct string domain values"
+            (DV_ _ _, DV_ _ _, _) -> failUnify "Distinct domain values"
+            (StringLiteral_ _, StringLiteral_ _, _) -> failUnify "Distinct string literals"
+            (InternalBytes_ _ _, InternalBytes_ _ _, _) -> failUnify "Distinct byte-string domain values"
+            (Endianness_ _, Endianness_ _, _) -> failUnify "Distinct Endianness constructors"
+            (Signedness_ _, Signedness_ _, _) -> failUnify "Distinct Signedness constructors"
+            (ElemVar_ var1, ElemVar_ var2, _) -> bindVarToVar (inject var1) (inject var2)
+            (ElemVar_ var1, _, _) | isFunctionPattern second -> bindVarToPattern (inject var1) second
+            (_, ElemVar_ var2, _) | isFunctionPattern first -> bindVarToPattern (inject var2) first
+            (App_ firstHead firstChildren, App_ secondHead secondChildren, _)
                 | Symbol.isInjective firstHead
                   , firstHead == secondHead ->
                     decomposeList (zip firstChildren secondChildren)
-            (App_ firstHead _, App_ secondHead _)
+            (App_ firstHead _, App_ secondHead _, _)
                 | firstHead /= secondHead
                   , Symbol.isConstructor firstHead || isOverloaded firstHead
                   , Symbol.isConstructor secondHead || isOverloaded secondHead ->
                     failUnify
                         "Cannot unify different constructors or incompatible \
                         \sort injections"
-            (Inj_ inj1, Inj_ inj2) | Just unifyData <- matchInjs inj1 inj2 ->
+            (Inj_ inj1, Inj_ inj2, _) | Just unifyData <- matchInjs inj1 inj2 ->
                 case unifyData of
                     UnifyInjDirect _ -> decompose (injChild inj1) (injChild inj2)
                     UnifyInjSplit InjPair{inj1 = firstInj, inj2 = secondInj} ->
                         decompose (injChild firstInj) (evaluateInj secondInj{injTo = injFrom firstInj})
                     UnifyInjDistinct _ -> failUnify "Distinct sort injections"
-            (Inj_ _, App_ secondHead _) | Symbol.isConstructor secondHead -> failUnify "Cannot unify sort injection with constructor"
-            (App_ firstHead _, Inj_ _) | Symbol.isConstructor firstHead -> failUnify "Cannot unify sort injection with constructor"
-            (Inj_ inj@Inj{injChild = App_ firstHead firstChildren}, secondTerm@(App_ secondHead _))
+            (Inj_ _, App_ secondHead _, _) | Symbol.isConstructor secondHead -> failUnify "Cannot unify sort injection with constructor"
+            (App_ firstHead _, Inj_ _, _) | Symbol.isConstructor firstHead -> failUnify "Cannot unify sort injection with constructor"
+            (Inj_ inj@Inj{injChild = App_ firstHead firstChildren}, secondTerm@(App_ secondHead _), _)
                 | Just unifyData <-
                     unifyOverloadingVsOverloaded
                         overloadSimplifier
@@ -439,7 +489,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         (Application firstHead firstChildren)
                         inj{injChild = ()} ->
                     decomposeOverload unifyData
-            (firstTerm@(App_ firstHead _), Inj_ inj@Inj{injChild = App_ secondHead secondChildren})
+            (firstTerm@(App_ firstHead _), Inj_ inj@Inj{injChild = App_ secondHead secondChildren}, _)
                 | Just unifyData <-
                     unifyOverloadingVsOverloaded
                         overloadSimplifier
@@ -448,7 +498,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         (Application secondHead secondChildren)
                         inj{injChild = ()} ->
                     decomposeOverload unifyData
-            (Inj_ inj1@Inj{injChild = App_ firstHead firstChildren}, Inj_ Inj{injChild = App_ secondHead secondChildren})
+            (Inj_ inj1@Inj{injChild = App_ firstHead firstChildren}, Inj_ Inj{injChild = App_ secondHead secondChildren}, _)
                 | Just unifyData <-
                     unifyOverloadingCommonOverload
                         overloadSimplifier
@@ -456,7 +506,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         (Application secondHead secondChildren)
                         inj1{injChild = ()} ->
                     decomposeOverload unifyData
-            (firstTerm@(App_ firstHead _), Inj_ inj@Inj{injChild = ElemVar_ secondVar})
+            (firstTerm@(App_ firstHead _), Inj_ inj@Inj{injChild = ElemVar_ secondVar}, _)
                 | Just unifyData <-
                     unifyOverloadingVsOverloadedVariable
                         overloadSimplifier
@@ -465,7 +515,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         secondVar
                         inj{injChild = ()} ->
                     decomposeOverload unifyData
-            (Inj_ inj@Inj{injChild = ElemVar_ firstVar}, secondTerm@(App_ secondHead _))
+            (Inj_ inj@Inj{injChild = ElemVar_ firstVar}, secondTerm@(App_ secondHead _), _)
                 | Just unifyData <-
                     unifyOverloadingVsOverloadedVariable
                         overloadSimplifier
@@ -474,7 +524,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         firstVar
                         inj{injChild = ()} ->
                     decomposeOverload unifyData
-            (Inj_ Inj{injChild = firstTerm@(App_ firstHead firstChildren)}, Inj_ inj@Inj{injChild = ElemVar_ secondVar})
+            (Inj_ Inj{injChild = firstTerm@(App_ firstHead firstChildren)}, Inj_ inj@Inj{injChild = ElemVar_ secondVar}, _)
                 | Just unifyData <-
                     unifyOverloadingInjVsVariable
                         overloadSimplifier
@@ -483,7 +533,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         (FreeVariables.freeVariables firstTerm)
                         inj{injChild = ()} ->
                     decomposeOverload unifyData
-            (Inj_ inj@Inj{injChild = ElemVar_ firstVar}, Inj_ Inj{injChild = secondTerm@(App_ secondHead secondChildren)})
+            (Inj_ inj@Inj{injChild = ElemVar_ firstVar}, Inj_ Inj{injChild = secondTerm@(App_ secondHead secondChildren)}, _)
                 | Just unifyData <-
                     unifyOverloadingInjVsVariable
                         overloadSimplifier
@@ -492,23 +542,23 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         (FreeVariables.freeVariables secondTerm)
                         inj{injChild = ()} ->
                     decomposeOverload unifyData
-            (App_ firstHead _, Inj_ _)
+            (App_ firstHead _, Inj_ _, _)
                 | isOverloaded firstHead ->
                     failUnify "Cannot unify sort injection with overloaded symbol it does not overload with"
-            (Inj_ _, App_ secondHead _)
+            (Inj_ _, App_ secondHead _, _)
                 | isOverloaded secondHead ->
                     failUnify "Cannot unify sort injection with overloaded symbol it does not overload with"
-            (Inj_ _, Inj_ _) -> failUnify "Distinct sort injections"
-            (InternalMap_ map1, InternalMap_ map2) -> unifyMaps map1 map2
-            (InternalMap_ map1, _) ->
+            (Inj_ _, Inj_ _, _) -> failUnify "Distinct sort injections"
+            (InternalMap_ map1, InternalMap_ map2, _) -> unifyMaps map1 map2
+            (InternalMap_ map1, _, _) ->
                 case Ac.toNormalized second of
                     Ac.Bottom -> failUnify "Duplicate elements in normalized map"
                     Ac.Normalized map2 -> unifyMaps map1 $ Ac.asInternalBuiltin tools sort map2
-            (_, InternalMap_ map2) ->
+            (_, InternalMap_ map2, _) ->
                 case Ac.toNormalized first of
                     Ac.Bottom -> failUnify "Duplicate elements in normalized map"
                     Ac.Normalized map1 -> unifyMaps (Ac.asInternalBuiltin tools sort map1) map2
-            (_, _) | Just True <- isMapSort tools sort ->
+            (_, _, _) | Just True <- isMapSort tools sort ->
                 case (Ac.toNormalized first, Ac.toNormalized second) of
                     (Ac.Bottom, _) -> failUnify "Duplicate elements in normalized map"
                     (_, Ac.Bottom) -> failUnify "Duplicate elements in normalized map"
@@ -516,16 +566,16 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         unifyMaps
                             (Ac.asInternalBuiltin tools sort map1)
                             (Ac.asInternalBuiltin tools sort map2)
-            (InternalSet_ set1, InternalSet_ set2) -> unifySets set1 set2
-            (InternalSet_ set1, _) ->
+            (InternalSet_ set1, InternalSet_ set2, _) -> unifySets set1 set2
+            (InternalSet_ set1, _, _) ->
                 case Ac.toNormalized second of
                     Ac.Bottom -> failUnify "Duplicate elements in normalized set"
                     Ac.Normalized set2 -> unifySets set1 $ Ac.asInternalBuiltin tools sort set2
-            (_, InternalSet_ set2) ->
+            (_, InternalSet_ set2, _) ->
                 case Ac.toNormalized first of
                     Ac.Bottom -> failUnify "Duplicate elements in normalized set"
                     Ac.Normalized set1 -> unifySets (Ac.asInternalBuiltin tools sort set1) set2
-            (_, _) | Just True <- isSetSort tools sort ->
+            (_, _, _) | Just True <- isSetSort tools sort ->
                 case (Ac.toNormalized first, Ac.toNormalized second) of
                     (Ac.Bottom, _) -> failUnify "Duplicate elements in normalized set"
                     (_, Ac.Bottom) -> failUnify "Duplicate elements in normalized set"
@@ -587,21 +637,21 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
             -- instead of unification cases, but unlike the other boolean operations,
             -- we can't actually express this rule in K because K does not yet support
             -- parametric rules and #if #then #else #fi is parametric.
-            (App_ ite [condition, branch1, branch2], _)
+            (App_ ite [condition, branch1, branch2], _, _)
                 | Just iteKey == getHook (Symbol.symbolHook ite) ->
                     unifyIfThenElse condition branch1 branch2 second
-            (_, App_ ite [condition, branch1, branch2])
+            (_, App_ ite [condition, branch1, branch2], _)
                 | Just iteKey == getHook (Symbol.symbolHook ite) ->
                     unifyIfThenElse condition branch1 branch2 first
-            (_, _) | isFunctionPattern first -> trySubstDecompose
-            (_, _) | isFunctionPattern second -> trySubstDecompose
+            (_, _, _) | isFunctionPattern first -> trySubstDecompose
+            (_, _, _) | isFunctionPattern second -> trySubstDecompose
             _ -> constrainEquals first second
   where
     sort = termLikeSort first
 
     discharge ::
         unifier (Condition RewritingVariableName)
-    discharge = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints acEquations
+    discharge = unifyTerms' unifyType rootSort sideCondition origVars vars rest bindings constraints acEquations
 
     failUnify ::
         Text ->
@@ -612,17 +662,17 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    decompose term1 term2 = unifyTerms' rootSort sideCondition origVars vars ((term1, term2) : rest) bindings constraints acEquations
+    decompose term1 term2 = unifyTerms' unifyType rootSort sideCondition origVars vars ((term1, term2) : rest) bindings constraints acEquations
 
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         unifier (Condition RewritingVariableName)
-    decomposeList terms = unifyTerms' rootSort sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
+    decomposeList terms = unifyTerms' unifyType rootSort sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
 
     constrain ::
         Predicate RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    constrain predicate = unifyTerms' rootSort sideCondition origVars vars rest bindings (Condition.andCondition constraints $ Condition.fromPredicate predicate) acEquations
+    constrain predicate = unifyTerms' unifyType rootSort sideCondition origVars vars rest bindings (Condition.andCondition constraints $ Condition.fromPredicate predicate) acEquations
 
     constrainEquals ::
         TermLike RewritingVariableName ->
@@ -636,7 +686,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    bind var term = unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
+    bind var term = unifyTerms' unifyType rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
 
     -- like bind, but var2 is the representative currently, and if var2 < var1, we must make var1 the representative
     bindMax ::
@@ -702,13 +752,13 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                             , overloadPair = Pair term1 term2
                             }
                     )
-            ) = unifyTerms' rootSort sideCondition origVars vars ((term1, term2) : rest) bindings (Condition.andCondition constraints narrowingSubst) acEquations
+            ) = unifyTerms' unifyType rootSort sideCondition origVars vars ((term1, term2) : rest) bindings (Condition.andCondition constraints narrowingSubst) acEquations
 
     trySubstDecompose = do
         (newFirst, firstConstraints) <- substAndSimplify constraints first
         (newSecond, secondConstraints) <- substAndSimplify firstConstraints second
         if newFirst /= first || newSecond /= second
-            then unifyTerms' rootSort sideCondition origVars vars ((newFirst, newSecond) : rest) bindings secondConstraints acEquations
+            then unifyTerms' unifyType rootSort sideCondition origVars vars ((newFirst, newSecond) : rest) bindings secondConstraints acEquations
             else constrainEquals first second
 
     unifyIfThenElse condition branch1 branch2 other = do
@@ -717,7 +767,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                 Condition.andCondition constraints $
                     Condition.fromPredicate $
                         makeCeilPredicate $ mkAnd condition $ Bool.asInternal (termLikeSort condition) bool
-        unifyTerms' rootSort sideCondition origVars vars ((branch, other) : rest) bindings newConstraints acEquations
+        unifyTerms' unifyType rootSort sideCondition origVars vars ((branch, other) : rest) bindings newConstraints acEquations
 
     substAndSimplify ::
         Condition RewritingVariableName ->
@@ -867,13 +917,13 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
     acRecurse acSort bindings' vars' freeEqs =
         let newBindings = union bindings $ Map.fromList $ lefts bindings'
             newAcEquations = rights bindings'
-         in unifyTerms' rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints $ Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
+         in unifyTerms' unifyType rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints $ Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
 
     acDecompose ::
         AcTerm ->
         AcTerm ->
         unifier (Condition RewritingVariableName)
-    acDecompose term1 term2 = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints $ Map.insert (acSort term1) (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations) acEquations
+    acDecompose term1 term2 = unifyTerms' unifyType rootSort sideCondition origVars vars rest bindings constraints $ Map.insert (acSort term1) (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations) acEquations
 
 solveAcEquations ::
     HasCallStack =>

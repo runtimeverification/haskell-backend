@@ -55,7 +55,7 @@ unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
-        condition <- unifyTerms p1 p2 sideCondition
+        condition <- unifyTermsAnd p1 p2 sideCondition
         TopBottom.guardAgainstBottom condition
         let term = unifiedTermAnd p1 p2 condition
         orCeil <- makeEvaluateTermCeil sideCondition term
