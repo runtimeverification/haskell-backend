@@ -126,6 +126,7 @@ import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnification (
     whileDebugUnification,
+    debugUnificationSolved,
  )
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -311,12 +312,13 @@ unifyTerms ::
     unifier (Condition RewritingVariableName)
 unifyTerms first second sideCondition =
     let vars = Set.map variableName $ FreeVariables.toSet $ freeVariables (first, second)
-     in unifyTerms' sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
+     in unifyTerms' (termLikeSort first) sideCondition vars vars [(first, second)] Map.empty Condition.topCondition Map.empty
 
 unifyTerms' ::
     forall unifier.
     MonadUnify unifier =>
     HasCallStack =>
+    Sort ->
     SideCondition RewritingVariableName ->
     Set (SomeVariableName RewritingVariableName) ->
     Set (SomeVariableName RewritingVariableName) ->
@@ -325,7 +327,7 @@ unifyTerms' ::
     Condition RewritingVariableName ->
     Map Sort [AcEquation] ->
     unifier (Condition RewritingVariableName)
-unifyTerms' sideCondition origVars _ [] bindings constraints acEquations
+unifyTerms' rootSort sideCondition origVars _ [] bindings constraints acEquations
     | Map.null acEquations = do
         let freeBindings = Map.map fromFree $ Map.filter isFree bindings
             (origBindings, acVarBindings) = Map.partitionWithKey isOrigVar freeBindings
@@ -334,17 +336,19 @@ unifyTerms' sideCondition origVars _ [] bindings constraints acEquations
             subst = Substitution.fromMap finalBindings
         simplifiedSubst <- simplifySubstitution sideCondition subst
         condition <- Logic.scatter simplifiedSubst
-        return $ Condition.andCondition condition constraints
+        let solution = Condition.andCondition condition constraints
+        debugUnificationSolved (Pattern.fromCondition rootSort solution)
+        return solution
   where
     isOrigVar :: SomeVariable RewritingVariableName -> a -> Bool
     isOrigVar v = const $ Set.member (variableName v) origVars
     SubstitutionSimplifier simplifySubstitution = substitutionSimplifier
-unifyTerms' sideCondition origVars vars [] bindings constraints acEquations = do
+unifyTerms' rootSort sideCondition origVars vars [] bindings constraints acEquations = do
     tools <- askMetadataTools
     let (acSolutions, newVars) = Map.foldrWithKey' (solveAcEquations' tools) (Map.empty, vars) acEquations
         freeBindings = Map.map fromFree $ Map.filter isFree bindings
     (newEqs, newBindings) <- combineTheories (Map.elems acSolutions) freeBindings origVars
-    unifyTerms' sideCondition origVars newVars newEqs newBindings constraints Map.empty
+    unifyTerms' rootSort sideCondition origVars newVars newEqs newBindings constraints Map.empty
   where
     solveAcEquations' ::
         SmtMetadataTools Attribute.Symbol ->
@@ -355,7 +359,7 @@ unifyTerms' sideCondition origVars vars [] bindings constraints acEquations = do
     solveAcEquations' tools sort eqs (accum, vars') =
         let (solutions, newVars) = solveAcEquations tools bindings vars' sort eqs
          in (Map.insert sort solutions accum, newVars)
-unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constraints acEquations =
+unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindings constraints acEquations =
     whileDebugUnification first second $ do
         tools <- askMetadataTools
         injSimplifier <- askInjSimplifier
@@ -528,7 +532,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
 
     discharge ::
         unifier (Condition RewritingVariableName)
-    discharge = unifyTerms' sideCondition origVars vars rest bindings constraints acEquations
+    discharge = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints acEquations
 
     failUnify ::
         Text ->
@@ -539,23 +543,23 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    decompose term1 term2 = unifyTerms' sideCondition origVars vars ((term1, term2) : rest) bindings constraints acEquations
+    decompose term1 term2 = unifyTerms' rootSort sideCondition origVars vars ((term1, term2) : rest) bindings constraints acEquations
 
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         unifier (Condition RewritingVariableName)
-    decomposeList terms = unifyTerms' sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
+    decomposeList terms = unifyTerms' rootSort sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
 
     constrain ::
         Predicate RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    constrain predicate = unifyTerms' sideCondition origVars vars rest bindings (Condition.andCondition constraints $ Condition.fromPredicate predicate) acEquations
+    constrain predicate = unifyTerms' rootSort sideCondition origVars vars rest bindings (Condition.andCondition constraints $ Condition.fromPredicate predicate) acEquations
 
     bind ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    bind var term = unifyTerms' sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
+    bind var term = unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
 
     binding var = Map.lookup var bindings
 
@@ -591,13 +595,13 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
                             , overloadPair = Pair term1 term2
                             }
                     )
-            ) = unifyTerms' sideCondition origVars vars ((term1, term2) : rest) bindings (Condition.andCondition constraints narrowingSubst) acEquations
+            ) = unifyTerms' rootSort sideCondition origVars vars ((term1, term2) : rest) bindings (Condition.andCondition constraints narrowingSubst) acEquations
 
     trySubstDecompose = do
         (newFirst, firstConstraints) <- substAndSimplify constraints first
         (newSecond, secondConstraints) <- substAndSimplify firstConstraints second
         if newFirst /= first || newSecond /= second
-            then unifyTerms' sideCondition origVars vars ((newFirst, newSecond) : rest) bindings secondConstraints acEquations
+            then unifyTerms' rootSort sideCondition origVars vars ((newFirst, newSecond) : rest) bindings secondConstraints acEquations
             else constrain (makeEqualsPredicate first second)
 
     unifyIfThenElse condition branch1 branch2 other = do
@@ -606,7 +610,7 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
                 Condition.andCondition constraints $
                     Condition.fromPredicate $
                         makeCeilPredicate $ mkAnd condition $ Bool.asInternal (termLikeSort condition) bool
-        unifyTerms' sideCondition origVars vars ((branch, other) : rest) bindings newConstraints acEquations
+        unifyTerms' rootSort sideCondition origVars vars ((branch, other) : rest) bindings newConstraints acEquations
 
     substAndSimplify ::
         Condition RewritingVariableName ->
@@ -756,13 +760,13 @@ unifyTerms' sideCondition origVars vars ((first, second) : rest) bindings constr
     acRecurse acSort bindings' vars' freeEqs =
         let newBindings = union bindings $ Map.fromList $ lefts bindings'
             newAcEquations = rights bindings'
-         in unifyTerms' sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints $ Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
+         in unifyTerms' rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints $ Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
 
     acDecompose ::
         AcTerm ->
         AcTerm ->
         unifier (Condition RewritingVariableName)
-    acDecompose term1 term2 = unifyTerms' sideCondition origVars vars rest bindings constraints $ Map.insert (acSort term1) (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations) acEquations
+    acDecompose term1 term2 = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints $ Map.insert (acSort term1) (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations) acEquations
 
 solveAcEquations ::
     HasCallStack =>
