@@ -430,7 +430,7 @@ termEqualsAnd ::
     SideCondition RewritingVariableName ->
     MaybeT (LogicT simplifier) (Pattern RewritingVariableName)
 termEqualsAnd p1 p2 sideCondition =
-    MaybeT $ run $ unifyTermsPattern
+    MaybeT $ run unifyTermsPattern
   where
     run it =
         (runUnifierT Not.notSimplifier . runMaybeT) it
