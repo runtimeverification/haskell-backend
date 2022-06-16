@@ -266,7 +266,7 @@ instance
             (if precOut >= 10 then Pretty.parens else id)
                 ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
 
-instance Hashable variable => Hashable (Substitution variable) where
+instance (Ord variable, SubstitutionOrd variable, Hashable variable) => Hashable (Substitution variable) where
     hashWithSalt salt (Substitution denorm) =
         salt `hashWithSalt` (0 :: Int) `hashWithSalt` denorm
     hashWithSalt salt (NormalizedSubstitution norm) =

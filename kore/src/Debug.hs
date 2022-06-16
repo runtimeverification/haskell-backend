@@ -185,7 +185,7 @@ class Debug a where
 
 debugPrecGeneric ::
     forall a ann.
-    (Generic a, HasDatatypeInfo a, All2 Debug (Code a)) =>
+    (HasDatatypeInfo a, All2 Debug (Code a)) =>
     a ->
     -- | Surrounding precedence
     Int ->

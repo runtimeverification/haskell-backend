@@ -39,10 +39,20 @@
         };
 
       projectOverlay =
-        { pkgs, src, shell ? { }, compiler-nix-name ? "ghc8107" }:
+        { pkgs, src, shell ? { }, compiler-nix-name ? "ghc8107", profiling ? false, ghcOptions ? [] }:
         let
           self = pkgs.haskell-nix.stackProject' ({
             inherit shell src compiler-nix-name;
+            modules = [
+              {
+                enableLibraryProfiling = profiling;
+                packages.kore = {
+                  enableLibraryProfiling = profiling;
+                  enableProfiling = profiling;
+                  inherit ghcOptions;
+                };
+              }
+            ];
             materialized = ./nix + "/kore-${compiler-nix-name}.nix.d";
           });
         in self // {
@@ -53,13 +63,27 @@
             '';
         };
 
-      projectForGhc = { ghc, stack-yaml ? null }:
+      binWithFlags = {system, bin, add-flags} :
+        let
+          pkgs = nixpkgsFor' system;
+        in pkgs.symlinkJoin {
+          name = ''${bin}-${add-flags}'';
+          paths = [ bin ];
+          buildInputs = [ pkgs.makeWrapper ];
+          postBuild = ''
+            for i in "$out"/bin/*; do
+              wrapProgram "$i" --add-flags "${add-flags}"
+            done
+          '';
+        };
+
+      projectForGhc = { ghc, stack-yaml ? null, profiling ? false, ghcOptions ? [] }:
         perSystem (system:
           let
             pkgs = nixpkgsFor system;
             pkgs' = nixpkgsFor' system;
           in projectOverlay {
-            inherit pkgs;
+            inherit pkgs profiling ghcOptions;
             src = haskell-src {
               pkgs = pkgs';
               postPatch = if stack-yaml != null then
@@ -67,6 +91,7 @@
               else
                 "";
             };
+
             compiler-nix-name = ghc;
             shell = {
               # withHoogle = true;
@@ -81,6 +106,7 @@
                 pkgs'.haskellPackages.fourmolu
                 pkgs'.stack
                 pkgs'.nixfmt
+                pkgs'.haskellPackages.eventlog2html
               ] ++ (if system == "aarch64-darwin" then
                 [ pkgs'.llvm_12 ]
               else
@@ -96,6 +122,13 @@
         stack-yaml = "stack-nix-ghc9.yaml";
       };
 
+      projectGhc9ProfilingEventlogInfoTable = projectForGhc {
+        ghc = "ghc923";
+        stack-yaml = "stack-nix-ghc9.yaml";
+        profiling = true;
+        ghcOptions = [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
+      };
+
       flake = perSystem (system: self.project.${system}.flake { });
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
 
@@ -103,6 +136,17 @@
         self.flake.${system}.packages // {
           rematerialize = self.project.${system}.rematerialize-kore;
           rematerializeGhc9 = self.projectGhc9.${system}.rematerialize-kore;
+          kore-exec-prof-closure-type = binWithFlags {
+            inherit system;
+            bin = self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+            add-flags = "+RTS -l -hT -RTS";
+          };
+          kore-exec-prof-infotable = binWithFlags {
+            inherit system;
+            bin = self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+            add-flags = "+RTS -l -hi -RTS";
+          };
+
         });
 
       apps = perSystem (system: self.flake.${system}.apps);
