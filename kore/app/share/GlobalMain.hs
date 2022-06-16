@@ -53,6 +53,7 @@ import Data.Compact (
  )
 import Data.Compact.Serialize (
     unsafeReadCompact,
+    hUnsafeGetCompact,
  )
 import Data.Generics.Product (
     field,
@@ -195,7 +196,7 @@ import System.Clock (
  )
 import System.Environment (getExecutablePath)
 import System.Environment qualified as Env
-import System.IO (IOMode (..), withFile)
+import System.IO (IOMode (..), withFile, hSeek, SeekMode(..))
 
 type Main = LoggerT IO
 
@@ -591,36 +592,35 @@ deserializeDefinition
     definitionFilePath
     mainModuleName =
         do
-            magicNumber <- withFile definitionFilePath ReadMode readHeader & liftIO
-            case magicNumber of
-                -- This magic number comes from the Data.Compact.Serialize moduile source:
-                -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
-                -- The field is not exported by the package so we have to manually specify it here.
-                -- If you update the version of the compact package, you should double check that
-                -- the file format has not changed. They don't provide any particular guarantees
-                -- of stability across versions because the serialized data becomes invalid when
-                -- any changes are made to the binary at all, so there would be no point.
-                --
-                -- We use this magic number to detect if the input file for the definition is
-                -- a serialized Data.Compact region or if it is a textual KORE definition.
-                0x7c155e7a53f094f2 ->
-                    liftIO (unsafeReadCompact definitionFilePath)
-                        >>= either errorParse (return . getCompact)
-                _ ->
+            maybeSerializedDefinition <-
+                withFile definitionFilePath ReadMode readContents & liftIO
+            case maybeSerializedDefinition of
+                Just serializedDefinition ->
+                    return serializedDefinition
+                Nothing ->
                     makeSerializedDefinition
                         simplifierx
                         solverOptions
                         definitionFilePath
                         mainModuleName
       where
-        readHeader definitionHandle = do
+        readContents definitionHandle = do
             fingerprint <-
-                ByteString.hGet definitionHandle 16
+                ByteString.hGet definitionHandle 32
                     <&> Binary.decode
-            checkFingerprint fingerprint
-            ByteString.hGet definitionHandle 34
-                <&> ByteString.drop 8
-                <&> Binary.decode @Word64
+            magicNumber <-
+                ByteString.hGet definitionHandle 16
+                    <&> ByteString.drop 8
+                    <&> Binary.decode @Word64
+            case magicNumber of
+                0x7c155e7a53f094f2 -> do
+                    checkFingerprint fingerprint
+                    hSeek definitionHandle AbsoluteSeek 32
+                    serializedDefinition <-
+                        hUnsafeGetCompact definitionHandle
+                            >>= either errorParse (return . getCompact)
+                    return (Just serializedDefinition)
+                _ -> return Nothing
 
         checkFingerprint fingerprint = do
             execHash <- getExecutablePath >>= Fingerprint.getFileHash
