@@ -52,8 +52,8 @@ import Data.Compact (
     getCompact,
  )
 import Data.Compact.Serialize (
-    unsafeReadCompact,
     hUnsafeGetCompact,
+    unsafeReadCompact,
  )
 import Data.Generics.Product (
     field,
@@ -196,7 +196,7 @@ import System.Clock (
  )
 import System.Environment (getExecutablePath)
 import System.Environment qualified as Env
-import System.IO (IOMode (..), withFile, hSeek, SeekMode(..))
+import System.IO (IOMode (..), SeekMode (..), hSeek, withFile)
 
 type Main = LoggerT IO
 
