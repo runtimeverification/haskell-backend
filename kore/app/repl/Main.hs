@@ -36,8 +36,8 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import Kore.Reachability.Claim qualified as Claim
 import Kore.Reachability.Claim (StuckCheck (..))
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (

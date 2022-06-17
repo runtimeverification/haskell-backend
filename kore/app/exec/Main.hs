@@ -91,8 +91,8 @@ import Kore.Reachability (
     getConfiguration,
     lensClaimPattern,
  )
-import Kore.Reachability.Claim qualified as Claim
 import Kore.Reachability.Claim (StuckCheck (..))
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
