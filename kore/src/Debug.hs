@@ -86,7 +86,6 @@ import Generics.SOP (
     Code,
     ConstructorInfo,
     FieldInfo (..),
-    Generic,
     HasDatatypeInfo,
     I (..),
     K (..),
