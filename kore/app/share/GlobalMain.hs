@@ -611,7 +611,6 @@ deserializeDefinition
                 ByteString.hGet definitionHandle 16
                     <&> ByteString.drop 8
                     <&> Binary.decode @Word64
-            traceShowM magicNumber
             case magicNumber of
                 0x7c155e7a53f094f2 -> do
                     checkFingerprint fingerprint
