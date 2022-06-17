@@ -173,9 +173,9 @@ parseKoreReplOptions startTime =
 parseStuckCheck :: Parser StuckCheck
 parseStuckCheck =
     flag
-        DisabledStuckCheck
         EnabledStuckCheck
-        ( long "--disable-stuck-check"
+        DisabledStuckCheck
+        ( long "disable-stuck-check"
             <> help "Disable the heuristic for identifying stuck states."
         )
 

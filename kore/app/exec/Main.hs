@@ -346,9 +346,9 @@ parseKoreExecOptions startTime =
                 False
                 "serialization of initialized definition to disk. [default: disabled]"
             <*> Options.flag
-                DisabledStuckCheck
                 EnabledStuckCheck
-                ( long "--disable-stuck-check"
+                DisabledStuckCheck
+                ( long "disable-stuck-check"
                     <> help "Disable the heuristic for identifying stuck states."
                 )
     parseMaxCounterexamples = counterexamples <|> pure 1
