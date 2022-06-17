@@ -1,5 +1,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{- |
+Copyright   : (c) Runtime Verification, 2020-2022
+License     : BSD-3-Clause
+-}
 module GlobalMain (
     MainOptions (..),
     GlobalOptions (..),
