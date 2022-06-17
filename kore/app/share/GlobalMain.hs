@@ -625,7 +625,7 @@ deserializeDefinition
             execHash <- getExecutablePath >>= Fingerprint.getFileHash
             unless
                 (execHash == fingerprint)
-                ( error
+                ( errorParse
                     "The definition was serialized with a different version of kore-exec. \
                     \Re-run kompile with the current executable."
                 )
