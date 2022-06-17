@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     toList,
+    toMap,
     toSet,
     toNames,
     nullFreeVariables,
@@ -41,14 +42,30 @@ import Prelude.Kore hiding (
  )
 
 newtype FreeVariables variable = FreeVariables
-    { getFreeVariables :: Map (SomeVariableName variable) Sort
+    { getFreeVariables :: Map (SomeVariableName variable) FreeVariableInfo
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving newtype (Semigroup, Monoid)
+
+data FreeVariableInfo = FreeVariableInfo
+    { sort :: Sort
+    , count :: Int
+    }
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+
+instance Ord variable => Semigroup (FreeVariables variable) where
+    (<>) FreeVariables{getFreeVariables = m1} FreeVariables{getFreeVariables = m2} = FreeVariables $ Map.unionWith unionCounts m1 m2
+
+instance Semigroup (FreeVariables variable) => Monoid (FreeVariables variable) where
+    mempty :: FreeVariables variable
+    mempty = FreeVariables{getFreeVariables = Map.empty}
 
 instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt = hashWithSalt salt . toList
@@ -74,9 +91,26 @@ instance From (FreeVariables variable) (Set (SomeVariableName variable)) where
     from = toNames
     {-# INLINE from #-}
 
+unionCounts :: FreeVariableInfo -> FreeVariableInfo -> FreeVariableInfo
+unionCounts FreeVariableInfo{sort, count = c1} FreeVariableInfo{count = c2} = FreeVariableInfo{sort, count = c1 + c2}
+
+-- toMultiList creates a list with one element per occurrence
+toMultiList :: FreeVariables variable -> [SomeVariable variable]
+toMultiList = concatMap (\(variableName, FreeVariableInfo{sort, count}) -> replicate count Variable{variableName, variableSort = sort}) . Map.toAscList . getFreeVariables
+{-# INLINE toMultiList #-}
+
+-- toList creates a list with one element per variable
 toList :: FreeVariables variable -> [SomeVariable variable]
-toList = map (uncurry Variable) . Map.toAscList . getFreeVariables
+toList = map (\(variableName, FreeVariableInfo{sort = variableSort}) -> Variable{variableName, variableSort}) . Map.toAscList . getFreeVariables
 {-# INLINE toList #-}
+
+toMap :: FreeVariables variable -> Map (SomeVariable variable) Int
+toMap =
+    Map.fromDistinctAscList
+        . map (\(variableName, FreeVariableInfo{sort = variableSort, count}) -> (Variable{variableName, variableSort}, count))
+        . Map.toAscList
+        . getFreeVariables
+{-# INLINE toMap #-}
 
 fromList ::
     Ord variable =>
@@ -87,10 +121,7 @@ fromList = foldMap freeVariable
 
 toSet :: FreeVariables variable -> Set (SomeVariable variable)
 toSet =
-    Set.fromDistinctAscList
-        . map (uncurry Variable)
-        . Map.toAscList
-        . getFreeVariables
+    Set.fromDistinctAscList . toList
 {-# INLINE toSet #-}
 
 toNames :: FreeVariables variable -> Set (SomeVariableName variable)
@@ -134,7 +165,7 @@ isFreeVariable someVariableName (FreeVariables freeVars) =
 
 freeVariable :: SomeVariable variable -> FreeVariables variable
 freeVariable Variable{variableName, variableSort} =
-    FreeVariables (Map.singleton variableName variableSort)
+    FreeVariables (Map.singleton variableName FreeVariableInfo{sort = variableSort, count = 1})
 {-# INLINE freeVariable #-}
 
 mapFreeVariables ::
@@ -142,7 +173,7 @@ mapFreeVariables ::
     AdjSomeVariableName (variable1 -> variable2) ->
     FreeVariables variable1 ->
     FreeVariables variable2
-mapFreeVariables adj = fromList . map (mapSomeVariable adj) . toList
+mapFreeVariables adj = fromList . map (mapSomeVariable adj) . toMultiList
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables ::
@@ -152,7 +183,7 @@ traverseFreeVariables ::
     FreeVariables variable1 ->
     f (FreeVariables variable2)
 traverseFreeVariables adj =
-    fmap fromList . traverse (traverseSomeVariable adj) . toList
+    fmap fromList . traverse (traverseSomeVariable adj) . toMultiList
 {-# INLINE traverseFreeVariables #-}
 
 -- | Extracts the list of free element variables
