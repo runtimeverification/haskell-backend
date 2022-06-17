@@ -31,12 +31,13 @@ haddock:
 		--fast \
 		>haddock.log 2>&1 \
 		|| ( cat haddock.log; exit 1; )
-	cat haddock.log
-	if grep -B 2 'Module header' haddock.log; then \
+        #remove header warning for Paths_kore
+	sed "N;N;/[^\n]*in 'Paths_kore'\n.*\n.*/d" haddock.log | tee haddock.log.noPaths
+	if grep -B 2 'Module header' haddock.log.noPaths; then \
 		echo >&2 "Please fix the missing documentation!"; \
 		exit 1; \
 	else \
-		rm haddock.log; \
+		rm haddock.log*; \
 	fi
 
 haskell_documentation: haddock
