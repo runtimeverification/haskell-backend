@@ -132,6 +132,7 @@ import Kore.Reachability (
     Rule (ReachabilityRewriteRule),
     SomeClaim (..),
     ToProve (ToProve),
+    StuckCheck (..),
     extractClaims,
     isTrusted,
     lensClaimPattern,
@@ -521,6 +522,7 @@ prove ::
     , MonadSMT smt
     , MonadProf smt
     ) =>
+    StuckCheck ->
     SimplifierXSwitch ->
     Strategy.GraphSearchOrder ->
     Limit Natural ->
@@ -535,6 +537,7 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     smt ProveClaimsResult
 prove
+    stuckCheck
     simplifierx
     searchOrder
     breadthLimit
@@ -552,6 +555,7 @@ prove
                     trustedModule
             let InitializedProver{axioms, claims, alreadyProven} = initialized
             proveClaims
+                stuckCheck
                 breadthLimit
                 searchOrder
                 maxCounterexamples
@@ -573,6 +577,7 @@ prove
  the repl until the user exits.
 -}
 proveWithRepl ::
+    StuckCheck ->
     SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
@@ -594,6 +599,7 @@ proveWithRepl ::
     KFileLocations ->
     SMT ()
 proveWithRepl
+    stuckCheck
     simplifierx
     definitionModule
     specModule
@@ -614,6 +620,7 @@ proveWithRepl
                     trustedModule
             let InitializedProver{axioms, claims} = initialized
             Repl.runRepl
+                stuckCheck
                 axioms
                 claims
                 mvar

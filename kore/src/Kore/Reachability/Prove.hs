@@ -200,6 +200,7 @@ proveClaims ::
     MonadMask simplifier =>
     MonadSimplify simplifier =>
     MonadProf simplifier =>
+    StuckCheck ->
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
@@ -212,6 +213,7 @@ proveClaims ::
     ToProve SomeClaim ->
     simplifier ProveClaimsResult
 proveClaims
+    stuckCheck
     breadthLimit
     searchOrder
     maxCounterexamples
@@ -223,6 +225,7 @@ proveClaims
         do
             (result, provenClaims) <-
                 proveClaimsWorker
+                    stuckCheck
                     breadthLimit
                     searchOrder
                     maxCounterexamples
@@ -258,6 +261,7 @@ proveClaimsWorker ::
     MonadSimplify simplifier =>
     MonadMask simplifier =>
     MonadProf simplifier =>
+    StuckCheck ->
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
@@ -269,6 +273,7 @@ proveClaimsWorker ::
     ToProve SomeClaim ->
     ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
 proveClaimsWorker
+    stuckCheck
     breadthLimit
     searchOrder
     maxCounterexamples
@@ -284,6 +289,7 @@ proveClaimsWorker
         verifyWorker unprovenClaim@(claim, _) = do
             debugBeginClaim claim
             proveClaim
+                stuckCheck
                 breadthLimit
                 searchOrder
                 maxCounterexamples
@@ -301,6 +307,7 @@ proveClaim ::
     MonadSimplify simplifier =>
     MonadMask simplifier =>
     MonadProf simplifier =>
+    StuckCheck ->
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
@@ -310,6 +317,7 @@ proveClaim ::
     (SomeClaim, Limit Natural) ->
     ExceptT StuckClaims simplifier ()
 proveClaim
+    stuckCheck
     breadthLimit
     searchOrder
     maxCounterexamples
@@ -390,7 +398,7 @@ proveClaim
 
         transit instr config =
             Strategy.transitionRule
-                ( transitionRule' claims axioms
+                ( transitionRule' stuckCheck claims axioms
                     & trackProofDepth
                     & throwStuckClaims maxCounterexamples
                 )
@@ -410,6 +418,7 @@ proveClaimStep ::
     MonadSimplify simplifier =>
     MonadMask simplifier =>
     MonadProf simplifier =>
+    StuckCheck ->
     -- | list of claims in the spec module
     [SomeClaim] ->
     -- | list of axioms in the main module
@@ -419,7 +428,7 @@ proveClaimStep ::
     -- | selected node in the graph
     Graph.Node ->
     simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
-proveClaimStep claims axioms executionGraph node =
+proveClaimStep stuckCheck claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
         strategy'
@@ -445,24 +454,26 @@ proveClaimStep claims axioms executionGraph node =
     transitionRule'' prim state
         | isRoot =
             transitionRule'
+                stuckCheck
                 claims
                 axioms
                 prim
                 (Lens.over lensClaimPattern mkGoal <$> state)
         | otherwise =
-            transitionRule' claims axioms prim state
+            transitionRule' stuckCheck claims axioms prim state
 
 transitionRule' ::
     MonadSimplify simplifier =>
     MonadProf simplifier =>
     MonadMask simplifier =>
+    StuckCheck ->
     [SomeClaim] ->
     [Rule SomeClaim] ->
     CommonTransitionRule simplifier
-transitionRule' claims axioms = \prim proofState ->
+transitionRule' stuckCheck claims axioms = \prim proofState ->
     deepseq
         proofState
-        ( transitionRule claims axiomGroups
+        ( transitionRule stuckCheck claims axiomGroups
             & withWarnings
             & profTransitionRule
             & withConfiguration

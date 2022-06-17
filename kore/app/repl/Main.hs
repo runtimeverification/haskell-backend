@@ -37,6 +37,7 @@ import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
 import Kore.Reachability.Claim qualified as Claim
+import Kore.Reachability.Claim (StuckCheck (..))
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (
@@ -97,6 +98,7 @@ data KoreReplOptions = KoreReplOptions
     , outputFile :: !OutputFile
     , koreLogOptions :: !KoreLogOptions
     , bugReportOption :: !BugReportOption
+    , stuckCheck :: !StuckCheck
     }
 
 -- | Parse options after being given the value of startTime for KoreLogOptions
@@ -112,6 +114,7 @@ parseKoreReplOptions startTime =
         <*> parseOutputFile
         <*> parseKoreLogOptions (ExeName "kore-repl") startTime
         <*> parseBugReportOption
+        <*> parseStuckCheck
   where
     parseMainModule :: Parser KoreModule
     parseMainModule =
@@ -166,6 +169,15 @@ parseKoreReplOptions startTime =
                         <> help "Output file to contain final Kore pattern."
                     )
                 )
+
+parseStuckCheck :: Parser StuckCheck
+parseStuckCheck =
+    flag
+        DisabledStuckCheck
+        EnabledStuckCheck
+        ( long "--disable-stuck-check"
+            <> help "Disable the heuristic for identifying stuck states."
+        )
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -246,6 +258,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                                 (getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
+                                stuckCheck
                                 simplifierx
                                 validatedDefinition
                                 specDefIndexedModule
@@ -274,6 +287,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
         , outputFile
         , koreLogOptions
         , bugReportOption
+        , stuckCheck
         } = execOptions
     runExceptionHandlers action =
         action

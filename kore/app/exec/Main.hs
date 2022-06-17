@@ -92,6 +92,7 @@ import Kore.Reachability (
     lensClaimPattern,
  )
 import Kore.Reachability.Claim qualified as Claim
+import Kore.Reachability.Claim (StuckCheck (..))
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,
@@ -287,6 +288,7 @@ data KoreExecOptions = KoreExecOptions
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
     , serialize :: !Bool
+    , stuckCheck :: !StuckCheck
     }
     deriving stock (GHC.Generic)
 
@@ -343,6 +345,12 @@ parseKoreExecOptions startTime =
                 False
                 False
                 "serialization of initialized definition to disk. [default: disabled]"
+            <*> Options.flag
+                DisabledStuckCheck
+                EnabledStuckCheck
+                ( long "--disable-stuck-check"
+                    <> help "Disable the heuristic for identifying stuck states."
+                )
     parseMaxCounterexamples = counterexamples <|> pure 1
       where
         counterexamples =
@@ -460,6 +468,7 @@ koreExecSh
                             _
                             maxCounterexamples
                             _
+                            stuckCheck
                         ) =
         unlines $
             [ "#!/bin/sh"
@@ -489,6 +498,7 @@ koreExecSh
                 , maybe mempty unparseKoreSearchOptions koreSearchOptions
                 , maybe mempty unparseKoreProveOptions koreProveOptions
                 , ["--execute-to-branch" | finalNodeType == LeafOrBranching]
+                , ["--disable-stuck-check" | stuckCheck == DisabledStuckCheck]
                 ]
         unparseExecutionMode All = "all"
         unparseExecutionMode Any = "any"
@@ -752,9 +762,10 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{maxCounterexamples} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
+        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType, stuckCheck} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
+            stuckCheck
             simplifierx
             graphSearch
             breadthLimit
