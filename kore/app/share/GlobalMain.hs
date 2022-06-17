@@ -53,7 +53,6 @@ import Data.Compact (
  )
 import Data.Compact.Serialize (
     hUnsafeGetCompact,
-    unsafeReadCompact,
  )
 import Data.Generics.Product (
     field,
@@ -606,16 +605,17 @@ deserializeDefinition
       where
         readContents definitionHandle = do
             fingerprint <-
-                ByteString.hGet definitionHandle 32
+                ByteString.hGet definitionHandle 16
                     <&> Binary.decode
             magicNumber <-
                 ByteString.hGet definitionHandle 16
                     <&> ByteString.drop 8
                     <&> Binary.decode @Word64
+            traceShowM magicNumber
             case magicNumber of
                 0x7c155e7a53f094f2 -> do
                     checkFingerprint fingerprint
-                    hSeek definitionHandle AbsoluteSeek 32
+                    hSeek definitionHandle AbsoluteSeek 16
                     serializedDefinition <-
                         hUnsafeGetCompact definitionHandle
                             >>= either errorParse (return . getCompact)
