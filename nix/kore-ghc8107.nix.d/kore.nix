@@ -38,10 +38,12 @@
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
           (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."async" or (errorHandler.buildDepError "async"))
+          (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
           (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
+          (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
           (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
           (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
           (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
@@ -87,6 +89,7 @@
           (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
+          (hsPkgs."time" or (errorHandler.buildDepError "time"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -107,6 +110,7 @@
           "Debug"
           "ErrorContext"
           "From"
+          "GlobalMain"
           "Injection"
           "Kore/AST/ApplicativeKore"
           "Kore/AST/AstWithLocation"
@@ -464,6 +468,7 @@
           "Options/SMT"
           "Pair"
           "Partial"
+          "Paths_kore"
           "Prelude/Kore"
           "Pretty"
           "Prof"
@@ -478,34 +483,29 @@
           "SQL/SQL"
           "Stats"
           ];
-        hsSourceDirs = [ "src" ];
+        hsSourceDirs = [ "src" "app/share" ];
         };
       exes = {
         "kore-exec" = {
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
+            (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
             (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
             (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."time" or (errorHandler.buildDepError "time"))
-            (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
-            (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/exec" ];
+          hsSourceDirs = [ "app/exec" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -516,25 +516,9 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
-            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
-            (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/rpc" ];
+          hsSourceDirs = [ "app/rpc" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -545,25 +529,11 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
-            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/format" ];
+          hsSourceDirs = [ "app/format" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -574,25 +544,11 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
-            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
-            (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/parser" ];
+          hsSourceDirs = [ "app/parser" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -602,6 +558,7 @@
         "kore-prof" = {
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
+            (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."eventlog2speedscope" or (errorHandler.buildDepError "eventlog2speedscope"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             ];
@@ -617,25 +574,12 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
-            (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/repl" ];
+          hsSourceDirs = [ "app/repl" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -646,26 +590,12 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
-            (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/match-disjunction" ];
+          hsSourceDirs = [ "app/match-disjunction" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -676,25 +606,11 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
-            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
-            (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/check-functions" ];
+          hsSourceDirs = [ "app/check-functions" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -705,25 +621,11 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
-            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
-            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-            (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
-            (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
-            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
-            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
-            (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
-            (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
-            (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
-            (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
-            (hsPkgs."text" or (errorHandler.buildDepError "text"))
-            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
-          hsSourceDirs = [ "app/share" "app/simplify" ];
+          hsSourceDirs = [ "app/simplify" ];
           mainPath = (([
             "Main.hs"
             ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ [
@@ -739,10 +641,12 @@
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
             (hsPkgs."array" or (errorHandler.buildDepError "array"))
             (hsPkgs."async" or (errorHandler.buildDepError "async"))
+            (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
             (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
             (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
+            (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
             (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
@@ -788,6 +692,7 @@
             (hsPkgs."temporary" or (errorHandler.buildDepError "temporary"))
             (hsPkgs."text" or (errorHandler.buildDepError "text"))
             (hsPkgs."these" or (errorHandler.buildDepError "these"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
             (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
             (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
