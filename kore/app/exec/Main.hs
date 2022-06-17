@@ -734,10 +734,11 @@ koreSerialize LocalOptions{execOptions, simplifierx} = do
                 hPutCompact outputHandle compact
             return (locations, ExitSuccess)
   where
-    KoreExecOptions{definitionFileName} = execOptions
-    KoreExecOptions{mainModuleName} = execOptions
-    KoreExecOptions{outputFileName} = execOptions
-    KoreExecOptions{koreSolverOptions} = execOptions
+    KoreExecOptions { definitionFileName
+                    , mainModuleName
+                    , outputFileName
+                    , koreSolverOptions
+                    } = execOptions
 
 koreProve ::
     LocalOptions KoreExecOptions ->
