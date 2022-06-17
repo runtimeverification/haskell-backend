@@ -61,7 +61,6 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
     definitionEvaluation,
-    firstFullEvaluation,
     simplificationEvaluation,
     simplifierWithFallback,
  )
