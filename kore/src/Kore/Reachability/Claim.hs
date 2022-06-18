@@ -433,8 +433,8 @@ strategyWithMinDepth (MinDepth minDepth) =
         reachabilitySteps
   where
     noCheckReachabilitySteps =
-        reachabilityFirstStepNoCheck
-        : replicate (minDepth - 1) reachabilityNextStepNoCheck
+        reachabilityFirstStepNoCheck :
+        replicate (minDepth - 1) reachabilityNextStepNoCheck
     reachabilitySteps =
         Stream.iterate id reachabilityNextStep
 
