@@ -125,39 +125,18 @@ common exe
   else
     ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
 
-common global-main
-  -- Common options for all executables that depend on GlobalMain
-  other-modules:
-    GlobalMain
-    Paths_kore
-  hs-source-dirs: app/share
-  build-depends: kore
-  build-depends: binary >=0.8.8.0
-  build-depends: bytestring >=0.10
-  build-depends: clock >=0.8
-  build-depends: compact >= 0.2.0.0
-  build-depends: containers >=0.5
-  build-depends: deepseq >=1.4
-  build-depends: directory >=1.3
-  build-depends: exceptions >=0.10
-  build-depends: filepath >=1.4
-  build-depends: generic-lens >=1.1
-  build-depends: lens >=4.17
-  build-depends: megaparsec >=7.0
-  build-depends: optparse-applicative >=0.14
-  build-depends: text >=1.2
-  build-depends: time >=1.9.3
-
 common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
   build-depends: array
   build-depends: async >=2.2
+  build-depends: binary >=0.8.8.0
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
+  build-depends: compact >= 0.2.0.0
   build-depends: conduit-extra >=1.3
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
@@ -203,6 +182,7 @@ common library
   build-depends: temporary >=1.3
   build-depends: text >=1.2
   build-depends: these >=1.0
+  build-depends: time >=1.9.3
   build-depends: transformers >=0.4
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
@@ -223,6 +203,7 @@ library
     Debug
     ErrorContext
     From
+    GlobalMain
     Injection
     Kore.AST.ApplicativeKore
     Kore.AST.AstWithLocation
@@ -580,6 +561,7 @@ library
     Options.SMT
     Pair
     Partial
+    Paths_kore
     Prelude.Kore
     Pretty
     Prof
@@ -593,44 +575,56 @@ library
     SQL.SOP
     SQL.SQL
     Stats
-  hs-source-dirs: src
+  hs-source-dirs:
+    src
+    app/share
   if !flag(release)
     ghc-options: -fno-specialise
 
 executable kore-exec
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/exec
+  build-depends: kore
+  build-depends: clock >=0.8
   build-depends: compact >=0.2.0.0
+  build-depends: containers >=0.5
   build-depends: data-default >=0.7
   build-depends: directory >=1.3
   build-depends: exceptions >=0.10
   build-depends: extra >=1.6
+  build-depends: filepath >=1.4
   build-depends: generic-lens >=1.1
+  build-depends: lens >=4.17
+  build-depends: optparse-applicative >=0.14
+  build-depends: text >=1.2
+  build-depends: time >=1.9.3
   ghc-options: -eventlog
 
 executable kore-rpc
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/rpc
+  build-depends: kore
 
 executable kore-format
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/format
+  build-depends: kore
+  build-depends: optparse-applicative >=0.14
+  build-depends: text >=1.2
 
 executable kore-parser
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/parser
+  build-depends: kore
+  build-depends: containers >=0.5
   build-depends: exceptions >=0.10
 
 executable kore-prof
@@ -638,39 +632,47 @@ executable kore-prof
   import: exe
   main-is: Main.hs
   hs-source-dirs: app/prof
+  build-depends: kore
   build-depends: eventlog2speedscope
   build-depends: optparse-applicative >=0.14
 
 executable kore-repl
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/repl
+  build-depends: kore
+  build-depends: clock >=0.8
   build-depends: exceptions >=0.10
+  build-depends: optparse-applicative >=0.14
 
 executable kore-match-disjunction
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/match-disjunction
+  build-depends: kore
+  build-depends: clock >=0.8
+  build-depends: optparse-applicative >=0.14
   build-depends: transformers >= 0.5
 
 executable kore-check-functions
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/check-functions
+  build-depends: kore
+  build-depends: clock >=0.8
   build-depends: exceptions >=0.10
 
 executable kore-simplify
   import: haskell
   import: exe
-  import: global-main
   main-is: Main.hs
   hs-source-dirs: app/simplify
+  build-depends: kore
+  build-depends: clock >=0.8
+  build-depends: optparse-applicative >=0.14
 
 test-suite kore-test
   import: haskell
