@@ -8,6 +8,8 @@ module Kore.Reachability.Claim (
     AppliedRule (..),
     retractApplyRemainder,
     strategy,
+    MinDepth,
+    strategyWithMinDepth,
     TransitionRule,
     Prim,
     ClaimExtractor (..),

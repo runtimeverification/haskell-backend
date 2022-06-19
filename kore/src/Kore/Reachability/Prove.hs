@@ -200,6 +200,7 @@ proveClaims ::
     MonadMask simplifier =>
     MonadSimplify simplifier =>
     MonadProf simplifier =>
+    Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
     GraphSearchOrder ->
@@ -213,6 +214,7 @@ proveClaims ::
     ToProve SomeClaim ->
     simplifier ProveClaimsResult
 proveClaims
+    maybeMinDepth
     stuckCheck
     breadthLimit
     searchOrder
@@ -225,6 +227,7 @@ proveClaims
         do
             (result, provenClaims) <-
                 proveClaimsWorker
+                    maybeMinDepth
                     stuckCheck
                     breadthLimit
                     searchOrder
@@ -261,6 +264,7 @@ proveClaimsWorker ::
     MonadSimplify simplifier =>
     MonadMask simplifier =>
     MonadProf simplifier =>
+    Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
     GraphSearchOrder ->
@@ -273,6 +277,7 @@ proveClaimsWorker ::
     ToProve SomeClaim ->
     ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
 proveClaimsWorker
+    maybeMinDepth
     stuckCheck
     breadthLimit
     searchOrder
@@ -289,6 +294,7 @@ proveClaimsWorker
         verifyWorker unprovenClaim@(claim, _) = do
             debugBeginClaim claim
             proveClaim
+                maybeMinDepth
                 stuckCheck
                 breadthLimit
                 searchOrder
@@ -307,6 +313,7 @@ proveClaim ::
     MonadSimplify simplifier =>
     MonadMask simplifier =>
     MonadProf simplifier =>
+    Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
     GraphSearchOrder ->
@@ -317,6 +324,7 @@ proveClaim ::
     (SomeClaim, Limit Natural) ->
     ExceptT StuckClaims simplifier ()
 proveClaim
+    maybeMinDepth
     stuckCheck
     breadthLimit
     searchOrder
@@ -328,7 +336,7 @@ proveClaim
         traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
             let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
                 limitedStrategy =
-                    strategy
+                    pickStrategy
                         & toList
                         & Limit.takeWithin depthLimit
                         {- With a non-Unlimited 'depthLimit', ensure that we
@@ -350,6 +358,9 @@ proveClaim
             infoProvenDepth maxProofDepth
             warnProvenClaimZeroDepth maxProofDepth goal
       where
+        pickStrategy =
+            maybe strategy strategyWithMinDepth maybeMinDepth
+
         discardStrategy = snd
 
         handleLimitExceeded ::

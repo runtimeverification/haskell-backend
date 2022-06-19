@@ -133,6 +133,7 @@ import Kore.Reachability (
     SomeClaim (..),
     StuckCheck (..),
     ToProve (ToProve),
+    MinDepth,
     extractClaims,
     isTrusted,
     lensClaimPattern,
@@ -522,6 +523,7 @@ prove ::
     , MonadSMT smt
     , MonadProf smt
     ) =>
+    Maybe MinDepth ->
     StuckCheck ->
     SimplifierXSwitch ->
     Strategy.GraphSearchOrder ->
@@ -537,6 +539,7 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     smt ProveClaimsResult
 prove
+    maybeMinDepth
     stuckCheck
     simplifierx
     searchOrder
@@ -555,6 +558,7 @@ prove
                     trustedModule
             let InitializedProver{axioms, claims, alreadyProven} = initialized
             proveClaims
+                maybeMinDepth
                 stuckCheck
                 breadthLimit
                 searchOrder

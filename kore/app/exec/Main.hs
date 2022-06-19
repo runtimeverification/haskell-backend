@@ -88,6 +88,7 @@ import Kore.Reachability (
     ProveClaimsResult (..),
     SomeClaim,
     StuckClaim (..),
+    MinDepth,
     getConfiguration,
     lensClaimPattern,
  )
@@ -289,6 +290,7 @@ data KoreExecOptions = KoreExecOptions
     , maxCounterexamples :: Natural
     , serialize :: !Bool
     , stuckCheck :: !StuckCheck
+    , minDepth :: !(Maybe MinDepth)
     }
     deriving stock (GHC.Generic)
 
@@ -350,6 +352,13 @@ parseKoreExecOptions startTime =
                 DisabledStuckCheck
                 ( long "disable-stuck-check"
                     <> help "Disable the heuristic for identifying stuck states."
+                )
+            <*> optional
+                ( strOption
+                    ( metavar "PATTERN_OUTPUT_FILE"
+                        <> long "output"
+                        <> help "Output file to contain final Kore pattern."
+                    )
                 )
     parseMaxCounterexamples = counterexamples <|> pure 1
       where
@@ -762,9 +771,10 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{maxCounterexamples} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType, stuckCheck} = execOptions
+        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType, stuckCheck, minDepth} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
+            minDepth
             stuckCheck
             simplifierx
             graphSearch
