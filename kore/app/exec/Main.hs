@@ -91,7 +91,6 @@ import Kore.Reachability (
     getConfiguration,
     lensClaimPattern,
  )
-import Kore.Reachability.Claim (StuckCheck (..))
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
@@ -288,7 +287,6 @@ data KoreExecOptions = KoreExecOptions
     , bugReportOption :: !BugReportOption
     , maxCounterexamples :: Natural
     , serialize :: !Bool
-    , stuckCheck :: !StuckCheck
     }
     deriving stock (GHC.Generic)
 
@@ -345,12 +343,6 @@ parseKoreExecOptions startTime =
                 False
                 False
                 "serialization of initialized definition to disk. [default: disabled]"
-            <*> Options.flag
-                EnabledStuckCheck
-                DisabledStuckCheck
-                ( long "disable-stuck-check"
-                    <> help "Disable the heuristic for identifying stuck states."
-                )
     parseMaxCounterexamples = counterexamples <|> pure 1
       where
         counterexamples =
@@ -438,6 +430,7 @@ unparseKoreProveOptions
             graphSearch
             bmc
             saveProofs
+            stuckCheck
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -447,6 +440,7 @@ unparseKoreProveOptions
             ]
         , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
+        , if stuckCheck == Claim.DisabledStuckCheck then "--disable-stuck-check" else ""
         ]
 
 koreExecSh :: KoreExecOptions -> String
@@ -468,7 +462,6 @@ koreExecSh
                             _
                             maxCounterexamples
                             _
-                            stuckCheck
                         ) =
         unlines $
             [ "#!/bin/sh"
@@ -498,7 +491,6 @@ koreExecSh
                 , maybe mempty unparseKoreSearchOptions koreSearchOptions
                 , maybe mempty unparseKoreProveOptions koreProveOptions
                 , ["--execute-to-branch" | finalNodeType == LeafOrBranching]
-                , ["--disable-stuck-check" | stuckCheck == DisabledStuckCheck]
                 ]
         unparseExecutionMode All = "all"
         unparseExecutionMode Any = "any"
@@ -750,7 +742,7 @@ koreProve ::
     Main (KFileLocations, ExitCode)
 koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-        KoreProveOptions{specFileName} = proveOptions
+        KoreProveOptions{specFileName, stuckCheck} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
@@ -762,7 +754,7 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{maxCounterexamples} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType, stuckCheck} = execOptions
+        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
             stuckCheck

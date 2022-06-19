@@ -98,7 +98,6 @@ data KoreReplOptions = KoreReplOptions
     , outputFile :: !OutputFile
     , koreLogOptions :: !KoreLogOptions
     , bugReportOption :: !BugReportOption
-    , stuckCheck :: !StuckCheck
     }
 
 -- | Parse options after being given the value of startTime for KoreLogOptions
@@ -114,7 +113,6 @@ parseKoreReplOptions startTime =
         <*> parseOutputFile
         <*> parseKoreLogOptions (ExeName "kore-repl") startTime
         <*> parseBugReportOption
-        <*> parseStuckCheck
   where
     parseMainModule :: Parser KoreModule
     parseMainModule =
@@ -169,15 +167,6 @@ parseKoreReplOptions startTime =
                         <> help "Output file to contain final Kore pattern."
                     )
                 )
-
-parseStuckCheck :: Parser StuckCheck
-parseStuckCheck =
-    flag
-        EnabledStuckCheck
-        DisabledStuckCheck
-        ( long "disable-stuck-check"
-            <> help "Disable the heuristic for identifying stuck states."
-        )
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -258,7 +247,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                                 (getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
-                                stuckCheck
+                                replStuckCheck
                                 simplifierx
                                 validatedDefinition
                                 specDefIndexedModule
@@ -287,7 +276,6 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
         , outputFile
         , koreLogOptions
         , bugReportOption
-        , stuckCheck
         } = execOptions
     runExceptionHandlers action =
         action
@@ -338,3 +326,6 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
     smtPrelude :: SMT.Prelude
     smtPrelude = prelude smtOptions
+
+    replStuckCheck :: StuckCheck
+    replStuckCheck = stuckCheck proveOptions

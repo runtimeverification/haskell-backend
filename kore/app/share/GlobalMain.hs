@@ -206,6 +206,7 @@ import System.Directory (
     getModificationTime,
  )
 import System.Environment qualified as Env
+import Kore.Reachability.Claim (StuckCheck (..))
 
 type Main = LoggerT IO
 
@@ -221,6 +222,8 @@ data KoreProveOptions = KoreProveOptions
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
+      -- | Whether to apply the stuck state detection heuristic
+    , stuckCheck :: !StuckCheck
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -263,6 +266,12 @@ parseKoreProveOptions =
                         "The file in which to save the proven claims \
                         \in case the prover fails."
                 )
+            )
+        <*> Options.flag
+            EnabledStuckCheck
+            DisabledStuckCheck
+            ( long "disable-stuck-check"
+                <> help "Disable the heuristic for detecting stuck states."
             )
   where
     parseGraphSearch =
