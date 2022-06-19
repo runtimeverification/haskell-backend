@@ -85,10 +85,10 @@ import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
 import Kore.Reachability (
+    MinDepth,
     ProveClaimsResult (..),
     SomeClaim,
     StuckClaim (..),
-    MinDepth,
     getConfiguration,
     lensClaimPattern,
  )
