@@ -429,6 +429,7 @@ proveClaimStep ::
     MonadSimplify simplifier =>
     MonadMask simplifier =>
     MonadProf simplifier =>
+    Maybe MinDepth ->
     StuckCheck ->
     -- | list of claims in the spec module
     [SomeClaim] ->
@@ -439,13 +440,19 @@ proveClaimStep ::
     -- | selected node in the graph
     Graph.Node ->
     simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
-proveClaimStep stuckCheck claims axioms executionGraph node =
+proveClaimStep _ stuckCheck claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
         strategy'
         executionGraph
         node
   where
+    -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
+    -- If requested, add a state layer which keeps track of
+    -- the depth, which should compare it to the minDepth and
+    -- decide the appropriate strategy for the next step.
+    -- We should also add a command for toggling this feature on and
+    -- off.
     strategy' :: Strategy Prim
     strategy'
         | isRoot = firstStep

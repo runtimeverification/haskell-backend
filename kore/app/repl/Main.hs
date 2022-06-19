@@ -36,7 +36,7 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import Kore.Reachability.Claim (StuckCheck (..))
+import Kore.Reachability.Claim (StuckCheck (..), MinDepth (..))
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
@@ -247,6 +247,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                                 (getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
+                                replMinDepth
                                 replStuckCheck
                                 simplifierx
                                 validatedDefinition
@@ -329,3 +330,6 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
     replStuckCheck :: StuckCheck
     replStuckCheck = stuckCheck proveOptions
+
+    replMinDepth :: Maybe MinDepth
+    replMinDepth = minDepth proveOptions

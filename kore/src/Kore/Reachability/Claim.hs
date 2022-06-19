@@ -8,7 +8,7 @@ module Kore.Reachability.Claim (
     AppliedRule (..),
     retractApplyRemainder,
     strategy,
-    MinDepth,
+    MinDepth (..),
     strategyWithMinDepth,
     TransitionRule,
     Prim,
@@ -426,7 +426,10 @@ strategy :: Stream (Strategy Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
-newtype MinDepth = MinDepth Int
+newtype MinDepth =
+    MinDepth
+        { getMinDepth :: Int
+        }
 
 strategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
 strategyWithMinDepth (MinDepth minDepth) =

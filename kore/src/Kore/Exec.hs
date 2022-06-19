@@ -581,6 +581,7 @@ prove
  the repl until the user exits.
 -}
 proveWithRepl ::
+    Maybe MinDepth ->
     StuckCheck ->
     SimplifierXSwitch ->
     -- | The main module
@@ -603,6 +604,7 @@ proveWithRepl ::
     KFileLocations ->
     SMT ()
 proveWithRepl
+    minDepth
     stuckCheck
     simplifierx
     definitionModule
@@ -624,6 +626,7 @@ proveWithRepl
                     trustedModule
             let InitializedProver{axioms, claims} = initialized
             Repl.runRepl
+                minDepth
                 stuckCheck
                 axioms
                 claims

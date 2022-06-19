@@ -852,7 +852,7 @@ mkConfig logger =
         ReplNode ->
         TestLog (SimplifierT NoSMT) ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
-        proveClaimStep EnabledStuckCheck claims' axioms' graph node
+        proveClaimStep Nothing EnabledStuckCheck claims' axioms' graph node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->
