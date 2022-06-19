@@ -56,7 +56,7 @@ import Data.Compact (
     getCompact,
  )
 import Data.Compact.Serialize (
-    unsafeReadCompact,
+    hUnsafeGetCompact,
  )
 import Data.Generics.Product (
     field,
@@ -74,13 +74,11 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
-import Data.Time.Clock (
-    UTCTime (..),
- )
 import Data.Version (
     showVersion,
  )
 import Data.Word
+import GHC.Fingerprint as Fingerprint
 import GHC.Generics qualified as GHC
 import GHC.Stack (
     emptyCallStack,
@@ -119,9 +117,6 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (makePredicate)
 import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
-import Kore.Log.ErrorOutOfDate (
-    errorOutOfDate,
- )
 import Kore.Log.ErrorParse (
     errorParse,
  )
@@ -133,6 +128,7 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
+import Kore.Reachability.Claim (StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -202,10 +198,9 @@ import System.Clock (
     diffTimeSpec,
     getTime,
  )
-import System.Directory (
-    getModificationTime,
- )
+import System.Environment (getExecutablePath)
 import System.Environment qualified as Env
+import System.IO (IOMode (..), SeekMode (..), hSeek, withFile)
 
 type Main = LoggerT IO
 
@@ -221,6 +216,8 @@ data KoreProveOptions = KoreProveOptions
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
+    , -- | Whether to apply the stuck state detection heuristic
+      stuckCheck :: !StuckCheck
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -263,6 +260,12 @@ parseKoreProveOptions =
                         "The file in which to save the proven claims \
                         \in case the prover fails."
                 )
+            )
+        <*> Options.flag
+            EnabledStuckCheck
+            DisabledStuckCheck
+            ( long "disable-stuck-check"
+                <> help "Disable the heuristic for detecting stuck states."
             )
   where
     parseGraphSearch =
@@ -594,42 +597,51 @@ deserializeDefinition ::
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
-    UTCTime ->
     Main SerializedDefinition
 deserializeDefinition
     simplifierx
     solverOptions
     definitionFilePath
-    mainModuleName
-    exeLastModifiedTime =
+    mainModuleName =
         do
-            bytes <- ByteString.readFile definitionFilePath & liftIO
-            let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
-            let magic = Binary.decode @Word64 magicBytes
-            case magic of
-                -- This magic number comes from the Data.Compact.Serialize moduile source:
-                -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
-                -- The field is not exported by the package so we have to manually specify it here.
-                -- If you update the version of the compact package, you should double check that
-                -- the file format has not changed. They don't provide any particular guarantees
-                -- of stability across versions because the serialized data becomes invalid when
-                -- any changes are made to the binary at all, so there would be no point.
-                --
-                -- We use this magic number to detect if the input file for the definition is
-                -- a serialized Data.Compact region or if it is a textual KORE definition.
-                0x7c155e7a53f094f2 -> do
-                    defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
-                    if defnLastModifiedTime < exeLastModifiedTime
-                        then errorOutOfDate "serialized definition is out of date. Rerun kompile or kore-exec --serialize."
-                        else do
-                            result <- unsafeReadCompact definitionFilePath & liftIO
-                            either errorParse (return . getCompact) result
-                _ ->
+            maybeSerializedDefinition <-
+                withFile definitionFilePath ReadMode readContents & liftIO
+            case maybeSerializedDefinition of
+                Just serializedDefinition ->
+                    return serializedDefinition
+                Nothing ->
                     makeSerializedDefinition
                         simplifierx
                         solverOptions
                         definitionFilePath
                         mainModuleName
+      where
+        readContents definitionHandle = do
+            fingerprint <-
+                ByteString.hGet definitionHandle 16
+                    <&> Binary.decode
+            magicNumber <-
+                ByteString.hGet definitionHandle 16
+                    <&> ByteString.drop 8
+                    <&> Binary.decode @Word64
+            case magicNumber of
+                0x7c155e7a53f094f2 -> do
+                    checkFingerprint fingerprint
+                    hSeek definitionHandle AbsoluteSeek 16
+                    serializedDefinition <-
+                        hUnsafeGetCompact definitionHandle
+                            >>= either errorParse (return . getCompact)
+                    return (Just serializedDefinition)
+                _ -> return Nothing
+
+        checkFingerprint fingerprint = do
+            execHash <- getExecutablePath >>= Fingerprint.getFileHash
+            unless
+                (execHash == fingerprint)
+                ( errorParse
+                    "The definition was serialized with a different version of kore-exec. \
+                    \Re-run kompile with the current executable."
+                )
 
 makeSerializedDefinition ::
     SimplifierXSwitch ->

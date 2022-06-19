@@ -587,6 +587,8 @@ executable kore-exec
   main-is: Main.hs
   hs-source-dirs: app/exec
   build-depends: kore
+  build-depends: binary >=0.8.8.0
+  build-depends: bytestring >=0.10
   build-depends: clock >=0.8
   build-depends: compact >=0.2.0.0
   build-depends: containers >=0.5
