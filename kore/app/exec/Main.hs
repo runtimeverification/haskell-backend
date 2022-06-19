@@ -446,9 +446,9 @@ unparseKoreProveOptions
             _ -> ""
         , maybe "" unparseMinDepth minDepth
         ]
-  where
-    unparseMinDepth md =
-        unwords [ "--min-depth", (show . getMinDepth) md ]
+      where
+        unparseMinDepth md =
+            unwords ["--min-depth", (show . getMinDepth) md]
 
 koreExecSh :: KoreExecOptions -> String
 koreExecSh

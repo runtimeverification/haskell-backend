@@ -128,7 +128,10 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
-import Kore.Reachability.Claim (StuckCheck (..), MinDepth (..))
+import Kore.Parser.ParserUtils (
+    readPositiveIntegral,
+ )
+import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -172,9 +175,6 @@ import Options.Applicative (
     (<**>),
  )
 import Options.Applicative qualified as Options
-import Kore.Parser.ParserUtils (
-    readPositiveIntegral,
- )
 import Options.Applicative.Help.Chunk (
     Chunk (..),
     vsepChunks,
@@ -221,8 +221,8 @@ data KoreProveOptions = KoreProveOptions
       saveProofs :: !(Maybe FilePath)
     , -- | Whether to apply the stuck state detection heuristic
       stuckCheck :: !StuckCheck
-      -- | Forces the prover to run at least n steps
-    , minDepth :: !(Maybe MinDepth)
+    , -- | Forces the prover to run at least n steps
+      minDepth :: !(Maybe MinDepth)
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
