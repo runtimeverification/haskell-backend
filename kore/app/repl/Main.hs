@@ -36,7 +36,6 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..))
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
@@ -328,8 +327,8 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
     smtPrelude :: SMT.Prelude
     smtPrelude = prelude smtOptions
 
-    replStuckCheck :: StuckCheck
+    replStuckCheck :: Claim.StuckCheck
     replStuckCheck = stuckCheck proveOptions
 
-    replMinDepth :: Maybe MinDepth
+    replMinDepth :: Maybe Claim.MinDepth
     replMinDepth = minDepth proveOptions
