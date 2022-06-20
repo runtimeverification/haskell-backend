@@ -85,6 +85,7 @@ import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
 import Kore.Reachability (
+    MinDepth (..),
     ProveClaimsResult (..),
     SomeClaim,
     StuckClaim (..),
@@ -284,7 +285,7 @@ data KoreExecOptions = KoreExecOptions
     , finalNodeType :: !FinalNodeType
     , rtsStatistics :: !(Maybe FilePath)
     , bugReportOption :: !BugReportOption
-    , maxCounterexamples :: Natural
+    , maxCounterexamples :: !Natural
     , serialize :: !Bool
     }
     deriving stock (GHC.Generic)
@@ -430,6 +431,7 @@ unparseKoreProveOptions
             bmc
             saveProofs
             stuckCheck
+            minDepth
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -439,8 +441,14 @@ unparseKoreProveOptions
             ]
         , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
-        , if stuckCheck == Claim.DisabledStuckCheck then "--disable-stuck-check" else ""
+        , case stuckCheck of
+            Claim.DisabledStuckCheck -> "--disable-stuck-check"
+            _ -> ""
+        , maybe "" unparseMinDepth minDepth
         ]
+      where
+        unparseMinDepth md =
+            unwords ["--min-depth", (show . getMinDepth) md]
 
 koreExecSh :: KoreExecOptions -> String
 koreExecSh
@@ -749,7 +757,7 @@ koreProve ::
     Main (KFileLocations, ExitCode)
 koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-        KoreProveOptions{specFileName, stuckCheck} = proveOptions
+        KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
@@ -762,8 +770,9 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
-            KoreProveOptions{graphSearch} = proveOptions
+            KoreProveOptions{graphSearch, stuckCheck, minDepth} = proveOptions
         prove
+            minDepth
             stuckCheck
             simplifierx
             graphSearch

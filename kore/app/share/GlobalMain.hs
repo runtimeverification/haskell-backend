@@ -128,7 +128,10 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
-import Kore.Reachability.Claim (StuckCheck (..))
+import Kore.Parser.ParserUtils (
+    readPositiveIntegral,
+ )
+import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -218,6 +221,8 @@ data KoreProveOptions = KoreProveOptions
       saveProofs :: !(Maybe FilePath)
     , -- | Whether to apply the stuck state detection heuristic
       stuckCheck :: !StuckCheck
+    , -- | Forces the prover to run at least n steps
+      minDepth :: !(Maybe MinDepth)
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -267,7 +272,18 @@ parseKoreProveOptions =
             ( long "disable-stuck-check"
                 <> help "Disable the heuristic for detecting stuck states."
             )
+        <*> optional
+            ( option
+                parseMinDepth
+                ( metavar "MIN_DEPTH"
+                    <> long "min-depth"
+                    <> help "Force the prover to execute at least n steps."
+                )
+            )
   where
+    parseMinDepth =
+        let minDepth = readPositiveIntegral MinDepth "min-depth"
+         in minDepth <|> pure (MinDepth 1)
     parseGraphSearch =
         option
             readGraphSearch

@@ -880,6 +880,7 @@ proveClaims
     claims
     alreadyProven =
         Kore.Reachability.proveClaims
+            Nothing
             EnabledStuckCheck
             breadthLimit
             BreadthFirst

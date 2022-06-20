@@ -8,6 +8,8 @@ module Kore.Reachability.Claim (
     AppliedRule (..),
     retractApplyRemainder,
     strategy,
+    MinDepth (..),
+    strategyWithMinDepth,
     TransitionRule,
     Prim,
     ClaimExtractor (..),
@@ -394,6 +396,25 @@ reachabilityNextStep =
         , Simplify
         ]
 
+reachabilityFirstStepNoCheck :: Strategy Prim
+reachabilityFirstStepNoCheck =
+    (Strategy.sequence . map Strategy.apply)
+        [ Begin
+        , Simplify
+        , ApplyAxioms
+        , Simplify
+        ]
+
+reachabilityNextStepNoCheck :: Strategy Prim
+reachabilityNextStepNoCheck =
+    (Strategy.sequence . map Strategy.apply)
+        [ Begin
+        , Simplify
+        , ApplyClaims
+        , ApplyAxioms
+        , Simplify
+        ]
+
 {- | A strategy for the last step of depth-limited reachability proofs.
    The final such step should only perform a CheckImplication.
 -}
@@ -404,6 +425,22 @@ reachabilityCheckOnly =
 strategy :: Stream (Strategy Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
+
+newtype MinDepth = MinDepth
+    { getMinDepth :: Int
+    }
+
+strategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
+strategyWithMinDepth (MinDepth minDepth) =
+    Stream.prepend
+        noCheckReachabilitySteps
+        reachabilitySteps
+  where
+    noCheckReachabilitySteps =
+        reachabilityFirstStepNoCheck :
+        replicate (minDepth - 1) reachabilityNextStepNoCheck
+    reachabilitySteps =
+        Stream.iterate id reachabilityNextStep
 
 {- | The result of checking the direct implication of a proof claim.
 

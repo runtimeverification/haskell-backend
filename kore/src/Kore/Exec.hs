@@ -128,6 +128,7 @@ import Kore.Reachability (
     AllClaims (AllClaims),
     AlreadyProven (AlreadyProven),
     Axioms (Axioms),
+    MinDepth,
     ProveClaimsResult (..),
     Rule (ReachabilityRewriteRule),
     SomeClaim (..),
@@ -522,6 +523,7 @@ prove ::
     , MonadSMT smt
     , MonadProf smt
     ) =>
+    Maybe MinDepth ->
     StuckCheck ->
     SimplifierXSwitch ->
     Strategy.GraphSearchOrder ->
@@ -537,6 +539,7 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     smt ProveClaimsResult
 prove
+    maybeMinDepth
     stuckCheck
     simplifierx
     searchOrder
@@ -555,6 +558,7 @@ prove
                     trustedModule
             let InitializedProver{axioms, claims, alreadyProven} = initialized
             proveClaims
+                maybeMinDepth
                 stuckCheck
                 breadthLimit
                 searchOrder
@@ -577,6 +581,7 @@ prove
  the repl until the user exits.
 -}
 proveWithRepl ::
+    Maybe MinDepth ->
     StuckCheck ->
     SimplifierXSwitch ->
     -- | The main module
@@ -599,6 +604,7 @@ proveWithRepl ::
     KFileLocations ->
     SMT ()
 proveWithRepl
+    minDepth
     stuckCheck
     simplifierx
     definitionModule
@@ -620,6 +626,7 @@ proveWithRepl
                     trustedModule
             let InitializedProver{axioms, claims} = initialized
             Repl.runRepl
+                minDepth
                 stuckCheck
                 axioms
                 claims

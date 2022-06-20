@@ -246,6 +246,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                                 (getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
+                                replMinDepth
                                 replStuckCheck
                                 simplifierx
                                 validatedDefinition
@@ -328,3 +329,6 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
     replStuckCheck :: Claim.StuckCheck
     replStuckCheck = stuckCheck proveOptions
+
+    replMinDepth :: Maybe Claim.MinDepth
+    replMinDepth = minDepth proveOptions
