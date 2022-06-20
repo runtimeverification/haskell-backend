@@ -246,6 +246,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                                 (getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
+                                replStuckCheck
                                 simplifierx
                                 validatedDefinition
                                 specDefIndexedModule
@@ -324,3 +325,6 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
     smtPrelude :: SMT.Prelude
     smtPrelude = prelude smtOptions
+
+    replStuckCheck :: Claim.StuckCheck
+    replStuckCheck = stuckCheck proveOptions

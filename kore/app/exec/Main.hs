@@ -429,6 +429,7 @@ unparseKoreProveOptions
             graphSearch
             bmc
             saveProofs
+            stuckCheck
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -438,6 +439,7 @@ unparseKoreProveOptions
             ]
         , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
+        , if stuckCheck == Claim.DisabledStuckCheck then "--disable-stuck-check" else ""
         ]
 
 koreExecSh :: KoreExecOptions -> String
@@ -747,7 +749,7 @@ koreProve ::
     Main (KFileLocations, ExitCode)
 koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
-        KoreProveOptions{specFileName} = proveOptions
+        KoreProveOptions{specFileName, stuckCheck} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
     let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
@@ -762,6 +764,7 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
         let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
             KoreProveOptions{graphSearch} = proveOptions
         prove
+            stuckCheck
             simplifierx
             graphSearch
             breadthLimit

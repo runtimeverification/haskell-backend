@@ -128,6 +128,7 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
+import Kore.Reachability.Claim (StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -215,6 +216,8 @@ data KoreProveOptions = KoreProveOptions
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
+    , -- | Whether to apply the stuck state detection heuristic
+      stuckCheck :: !StuckCheck
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -257,6 +260,12 @@ parseKoreProveOptions =
                         "The file in which to save the proven claims \
                         \in case the prover fails."
                 )
+            )
+        <*> Options.flag
+            EnabledStuckCheck
+            DisabledStuckCheck
+            ( long "disable-stuck-check"
+                <> help "Disable the heuristic for detecting stuck states."
             )
   where
     parseGraphSearch =

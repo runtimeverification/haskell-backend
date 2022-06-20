@@ -19,6 +19,7 @@ module Kore.Reachability.Claim (
     reachabilityCheckOnly,
     transitionRule,
     isTrusted,
+    StuckCheck (..),
 
     -- * Re-exports
     RewriteRule (..),
@@ -295,14 +296,20 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
 
+data StuckCheck
+    = EnabledStuckCheck
+    | DisabledStuckCheck
+    deriving stock (Eq)
+
 transitionRule ::
     forall m claim.
     MonadSimplify m =>
     Claim claim =>
+    StuckCheck ->
     [claim] ->
     [[Rule claim]] ->
     TransitionRule m (AppliedRule claim) (ClaimState claim)
-transitionRule claims axiomGroups = transitionRuleWorker
+transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker ::
         Prim ->
@@ -323,8 +330,8 @@ transitionRule claims axiomGroups = transitionRuleWorker
             result <- checkImplication claim & Logic.lowerLogicT
             case result of
                 Implied -> pure Proven
-                NotImpliedStuck a -> do
-                    pure (Stuck a)
+                NotImpliedStuck a ->
+                    returnStuckOrContinue a
                 NotImplied a
                     | isRemainder claimState -> do
                         pure (Stuck a)
@@ -346,6 +353,11 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     applyResultToClaimState (ApplyRewritten a) = Rewritten a
     applyResultToClaimState (ApplyRemainder a) = Remaining a
+
+    returnStuckOrContinue state =
+        case stuckCheck of
+            EnabledStuckCheck -> return (Stuck state)
+            DisabledStuckCheck -> return (Claimed state)
 
 retractSimplifiable :: ClaimState a -> Maybe a
 retractSimplifiable (Claimed a) = Just a
