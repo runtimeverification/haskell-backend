@@ -327,5 +327,5 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
     smtPrelude :: SMT.Prelude
     smtPrelude = prelude smtOptions
 
-    replStuckCheck :: StuckCheck
+    replStuckCheck :: Claim.StuckCheck
     replStuckCheck = stuckCheck proveOptions
