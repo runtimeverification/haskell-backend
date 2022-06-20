@@ -237,7 +237,7 @@ test_runStrategy =
             . unAllPathIdentity
             $ Strategy.runStrategy
                 Unlimited
-                (Claim.transitionRule [MockClaim (unRule goal)] [axioms])
+                (Claim.transitionRule Claim.EnabledStuckCheck [MockClaim (unRule goal)] [axioms])
                 (toList Claim.strategy)
                 (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves ::
@@ -385,7 +385,7 @@ runTransitionRule ::
     [(MockClaimState, Seq MockAppliedRule)]
 runTransitionRule claims axiomGroups prim state =
     (runIdentity . unAllPathIdentity . runTransitionT)
-        (Claim.transitionRule claims axiomGroups prim state)
+        (Claim.transitionRule Claim.EnabledStuckCheck claims axiomGroups prim state)
 
 newtype AllPathIdentity a = AllPathIdentity {unAllPathIdentity :: Identity a}
     deriving newtype (Functor, Applicative, Monad)

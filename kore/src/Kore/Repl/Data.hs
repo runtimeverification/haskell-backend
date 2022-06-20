@@ -108,6 +108,9 @@ import Kore.Unification.UnifierT qualified as Monad.Unify
 import Logic
 import Numeric.Natural
 import Prelude.Kore
+import System.Console.Haskeline (
+    InputT,
+ )
 
 {- | Represents an optional file name which contains a sequence of
  repl commands.
@@ -157,12 +160,14 @@ newtype ReplOutput = ReplOutput {unReplOutput :: [ReplOut]}
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
--- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
-newtype PrintAuxOutput = PrintAuxOutput
-    {unPrintAuxOutput :: String -> IO ()}
+{- HLINT ignore "Use newtype instead of data" -}
 
-newtype PrintKoreOutput = PrintKoreOutput
-    {unPrintKoreOutput :: String -> IO ()}
+-- | Types for printing functions called by Kore.Repl.Interpreter.replInterpreter0
+data PrintAuxOutput = PrintAuxOutput
+    {unPrintAuxOutput :: forall m. MonadIO m => String -> InputT m ()}
+
+data PrintKoreOutput = PrintKoreOutput
+    {unPrintKoreOutput :: forall m. MonadIO m => String -> InputT m ()}
 
 data ReplOut = AuxOut String | KoreOut String
     deriving stock (Eq, Show)

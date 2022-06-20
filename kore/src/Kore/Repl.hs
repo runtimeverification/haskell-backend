@@ -87,11 +87,16 @@ import System.Clock (
     TimeSpec,
     getTime,
  )
+import System.Console.Haskeline (
+    InputT,
+    Settings (historyFile),
+    defaultSettings,
+    getInputLine,
+    runInputT,
+ )
 import System.IO (
-    hFlush,
     hPutStrLn,
     stderr,
-    stdout,
  )
 import Text.Megaparsec (
     parseMaybe,
@@ -107,6 +112,8 @@ runRepl ::
     MonadIO m =>
     MonadProf m =>
     MonadMask m =>
+    Maybe MinDepth ->
+    StuckCheck ->
     -- | list of axioms to used in the proof
     [Axiom] ->
     -- | list of claims to be proven
@@ -124,13 +131,15 @@ runRepl ::
     Log.KoreLogOptions ->
     KFileLocations ->
     m ()
-runRepl _ [] _ _ _ _ outputFile _ _ _ =
+runRepl _ _ _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike VariableName
     topTerm = mkTop $ mkSortVariable "R"
 runRepl
+    minDepth
+    stuckCheck
     axioms'
     claims'
     logger
@@ -151,7 +160,8 @@ runRepl
                     replGreeting
                     flip evalStateT newState $
                         flip runReaderT config $
-                            forever repl0
+                            runInputT defaultSettings{historyFile = Just "./.kore-repl-history"} $
+                                forever repl0
                 RunScript ->
                     runReplCommand Exit newState
       where
@@ -160,7 +170,8 @@ runRepl
             void $
                 flip evalStateT st $
                     flip runReaderT config $
-                        replInterpreter printIfNotEmpty cmd
+                        runInputT defaultSettings $
+                            replInterpreter printIfNotEmpty cmd
 
         evaluateScript ::
             ReplScript ->
@@ -172,14 +183,14 @@ runRepl
                 (flip parseEvalScript outputFlag)
                 (unReplScript script)
 
-        repl0 :: ReaderT (Config m) (StateT ReplState m) ()
+        repl0 :: InputT (ReaderT (Config m) (StateT ReplState m)) ()
         repl0 = do
             str <- prompt
             let command =
                     fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
                 silent = pure ()
-            when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
-            saveSessionWithMessage silent ".sessionCommands"
+            when (shouldStore command) $ lift $ field @"commands" Lens.%= (Seq.|> str)
+            lift $ saveSessionWithMessage silent ".sessionCommands"
             void $ replInterpreter printIfNotEmpty command
 
         state :: TimeSpec -> ReplState
@@ -262,7 +273,7 @@ runRepl
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep claims axioms graph node
+                    proveClaimStep minDepth stuckCheck claims axioms graph node
                         & Exception.handle (withConfigurationHandler graph)
                         & Exception.handle (someExceptionHandler graph)
                 else pure graph
@@ -292,10 +303,7 @@ runRepl
             liftIO $
                 putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-        prompt :: MonadIO n => MonadState ReplState n => n String
+        prompt :: MonadIO n => MonadMask n => MonadState ReplState n => InputT n String
         prompt = do
-            node <- Lens.use (field @"node")
-            liftIO $ do
-                putStr $ "Kore (" <> show (unReplNode node) <> ")> "
-                hFlush stdout
-                getLine
+            node <- lift $ Lens.use (field @"node")
+            fromMaybe "" <$> getInputLine ("Kore (" <> show (unReplNode node) <> ")> ")

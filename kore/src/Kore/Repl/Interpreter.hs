@@ -37,6 +37,9 @@ import Control.Lens qualified as Lens
 import Control.Monad (
     (<=<),
  )
+import Control.Monad.Catch (
+    MonadMask,
+ )
 import Control.Monad.Extra (
     ifM,
     loop,
@@ -202,6 +205,12 @@ import Pretty (
     Pretty (..),
  )
 import Pretty qualified
+import System.Console.Haskeline (
+    InputT,
+    defaultSettings,
+    outputStrLn,
+    runInputT,
+ )
 import System.Directory (
     doesDirectoryExist,
     doesFileExist,
@@ -250,9 +259,10 @@ replInterpreter ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
-    (String -> IO ()) ->
+    MonadMask m =>
+    (forall n. MonadIO n => String -> InputT n ()) ->
     ReplCommand ->
-    ReaderT (Config m) (StateT ReplState m) ReplStatus
+    InputT (ReaderT (Config m) (StateT ReplState m)) ReplStatus
 replInterpreter fn cmd =
     replInterpreter0
         (PrintAuxOutput fn)
@@ -263,10 +273,11 @@ replInterpreter0 ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     PrintAuxOutput ->
     PrintKoreOutput ->
     ReplCommand ->
-    ReaderT (Config m) (StateT ReplState m) ReplStatus
+    InputT (ReaderT (Config m) (StateT ReplState m)) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
             ShowUsage -> showUsage $> Continue
@@ -315,15 +326,14 @@ replInterpreter0 printAux printKore replCmd = do
             DebugApplyEquation op -> debugApplyEquation op $> Continue
             DebugEquation op -> debugEquation op $> Continue
             Exit -> exit
-    (ReplOutput output, shouldContinue) <- evaluateCommand command
-    liftIO $
-        traverse_
-            ( replOut
-                (unPrintAuxOutput printAux)
-                (unPrintKoreOutput printKore)
-            )
-            output
-    case shouldContinue of
+    (ReplOutput output, shouldContinue) <- lift $ evaluateCommand command
+    traverse_
+        ( replOut
+            (unPrintAuxOutput printAux)
+            (unPrintKoreOutput printKore)
+        )
+        output
+    lift $ case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> do
             warnProductivity
@@ -547,6 +557,7 @@ loadScript ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     -- | path to file
     FilePath ->
     ReplM m ()
@@ -898,6 +909,7 @@ redirect ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     -- | command to redirect
     ReplCommand ->
     -- | file path
@@ -911,6 +923,7 @@ runInterpreterWithOutput ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     PrintAuxOutput ->
     PrintKoreOutput ->
     ReplCommand ->
@@ -921,7 +934,8 @@ runInterpreterWithOutput printAux printKore cmd config =
         >>= ( \st ->
                 lift $
                     execStateReader config st $
-                        replInterpreter0 printAux printKore cmd
+                        runInputT defaultSettings $
+                            replInterpreter0 printAux printKore cmd
             )
         >>= put
 
@@ -1210,6 +1224,7 @@ output.
 pipe ::
     forall m.
     MonadIO m =>
+    MonadMask m =>
     MonadSimplify m =>
     -- | command to pipe
     ReplCommand ->
@@ -1240,21 +1255,22 @@ pipe cmd file args = do
                     { std_in = CreatePipe
                     , std_out = CreatePipe
                     }
-    runExternalProcess :: IORef ReplOutput -> String -> String -> IO ()
-    runExternalProcess pipeOut exec str = do
+    runExternalProcess :: forall n. MonadIO n => IORef ReplOutput -> String -> String -> InputT n ()
+    runExternalProcess pipeOut exec str = liftIO $ do
         (Just hIn, Just hOut, _, _) <- createProcess' exec
         hPutStr hIn str
             `catch` \(X.SomeException e) -> hPutStrLn stderr (displayException e)
-        output <- liftIO $ hGetContents hOut
+        output <- hGetContents hOut
         modifyIORef pipeOut (appReplOut . AuxOut $ output)
-    justPrint :: IORef ReplOutput -> String -> IO ()
-    justPrint outRef = modifyIORef outRef . appReplOut . AuxOut
+    justPrint :: forall n. MonadIO n => IORef ReplOutput -> String -> InputT n ()
+    justPrint outRef = liftIO . modifyIORef outRef . appReplOut . AuxOut
 
 -- | Appends output of a command to a file.
 appendTo ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     -- | command
     ReplCommand ->
     -- | file to append to
@@ -1267,14 +1283,15 @@ appendCommand ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     ReplCommand ->
     FilePath ->
     ReplM m ()
 appendCommand cmd file = do
     config <- ask
     runInterpreterWithOutput
-        (PrintAuxOutput $ appendFile file)
-        (PrintKoreOutput $ appendFile file)
+        (PrintAuxOutput $ \s -> liftIO $ appendFile file s)
+        (PrintKoreOutput $ \s -> liftIO $ appendFile file s)
         cmd
         config
     putStrLn' $ "Redirected output to \"" <> file <> "\"."
@@ -1295,6 +1312,7 @@ tryAlias ::
     forall m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     ReplAlias ->
     PrintAuxOutput ->
     PrintKoreOutput ->
@@ -1322,9 +1340,9 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
     runInterpreter cmd config st =
         lift $
             (`runStateT` st) $
-                runReaderT
-                    (replInterpreter0 printAux printKore cmd)
-                    config
+                flip runReaderT config $
+                    runInputT defaultSettings $
+                        replInterpreter0 printAux printKore cmd
 
 {- | Performs n proof steps, picking the next node unless branching occurs.
  Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1432,11 +1450,11 @@ prettyClaimStateComponent transformation omitList =
 putStrLn' :: MonadWriter ReplOutput m => String -> m ()
 putStrLn' = tell . makeAuxReplOutput
 
-printIfNotEmpty :: String -> IO ()
+printIfNotEmpty :: MonadIO m => String -> InputT m ()
 printIfNotEmpty =
     \case
         "" -> pure ()
-        xs -> putStr xs
+        xs -> outputStrLn xs
 
 printNotFound :: MonadWriter ReplOutput m => m ()
 printNotFound = putStrLn' "Variable or index not found"
@@ -1585,6 +1603,7 @@ parseEvalScript ::
     forall t m.
     MonadSimplify m =>
     MonadIO m =>
+    MonadMask m =>
     MonadState ReplState (t m) =>
     MonadReader (Config m) (t m) =>
     Monad.Trans.MonadTrans t =>
@@ -1632,10 +1651,11 @@ parseEvalScript file scriptModeOutput = do
             ReplCommand ->
             ReaderT (Config m) (StateT ReplState m) ReplStatus
         executeCommand command =
-            replInterpreter0
-                (PrintAuxOutput $ \_ -> return ())
-                (PrintKoreOutput $ \_ -> return ())
-                command
+            runInputT defaultSettings $
+                replInterpreter0
+                    (PrintAuxOutput $ \_ -> return ())
+                    (PrintKoreOutput $ \_ -> return ())
+                    command
 
         executeCommandWithOutput ::
             ReplCommand ->
@@ -1644,10 +1664,11 @@ parseEvalScript file scriptModeOutput = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             liftIO $ print command
-            replInterpreter0
-                (PrintAuxOutput printIfNotEmpty)
-                (PrintKoreOutput printIfNotEmpty)
-                command
+            runInputT defaultSettings $
+                replInterpreter0
+                    (PrintAuxOutput printIfNotEmpty)
+                    (PrintKoreOutput printIfNotEmpty)
+                    command
 
 formatUnificationMessage ::
     Maybe (NonEmpty (Condition RewritingVariableName)) ->

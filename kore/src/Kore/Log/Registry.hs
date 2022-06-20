@@ -41,9 +41,13 @@ import Kore.Equation.DebugEquation (
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules,
  )
+import Kore.Log.DebugAttemptedRewriteRules (
+    DebugAttemptedRewriteRules,
+ )
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
  )
+import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
  )
@@ -199,6 +203,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugSolverRecv
             , mk $ Proxy @DebugTransition
             , mk $ Proxy @DebugAppliedRewriteRules
+            , mk $ Proxy @DebugAttemptedRewriteRules
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
             , mk $ Proxy @WarnSymbolSMTRepresentation
@@ -225,6 +230,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
+            , mk $ Proxy @DebugCreatedSubstitution
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
