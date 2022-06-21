@@ -27,7 +27,7 @@ build-evm() {
     cd evm-semantics
     git submodule update --init --recursive
     make plugin-deps
-    export PATH=$(pwd):$(stack path --local-bin):.build/usr/bin:$PATH
+    export PATH=$(pwd)/.build/usr/bin:$PATH
     make build-haskell
 }
 
