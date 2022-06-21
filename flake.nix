@@ -28,9 +28,18 @@
           inherit (haskell-nix) config;
         };
 
-      haskell-src = { pkgs, postPatch ? "" }:
+      haskell-backend-src = { pkgs, postPatch ? "" }:
         pkgs.applyPatches {
-          src = ./.;
+          name = "haskell-backend-src";
+          # make sure we remove all nix files and flake.lock, since any changes to these triggers re-compilation of kore
+          src = pkgs.nix-gitignore.gitignoreSourcePure [
+            "/nix"
+            "*.nix"
+            "*.nix.sh"
+            "/.github"
+            "flake.lock"
+            ./.gitignore
+          ] ./.;
           postPatch = ''
             substituteInPlace kore/src/Kore/VersionInfo.hs \
               --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
@@ -39,7 +48,8 @@
         };
 
       projectOverlay = { pkgs, src, shell ? { }, compiler-nix-name ? "ghc8107"
-        , profiling ? false, profilingDetail ? null, ghcOptions ? [ ] }:
+        , profiling ? false, profilingDetail ? "toplevel-functions"
+        , ghcOptions ? [ ] }:
         let
           self = pkgs.haskell-nix.stackProject' ({
             inherit shell src compiler-nix-name;
@@ -74,15 +84,15 @@
           '';
         };
 
-      projectForGhc =
-        { ghc, stack-yaml ? null, profiling ? false, profilingDetail ? null, ghcOptions ? [ ] }:
+      projectForGhc = { ghc, stack-yaml ? null, profiling ? false
+        , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
         perSystem (system:
           let
             pkgs = nixpkgsFor system;
             pkgs' = nixpkgsFor' system;
           in projectOverlay {
             inherit pkgs profiling ghcOptions;
-            src = haskell-src {
+            src = haskell-backend-src {
               pkgs = pkgs';
               postPatch = if stack-yaml != null then
                 "cp ${stack-yaml} stack.yaml"
@@ -106,6 +116,7 @@
                 pkgs'.nixfmt
                 pkgs'.haskellPackages.eventlog2html
                 pkgs'.haskellPackages.ghc-prof-flamegraph
+                pkgs'.haskellPackages.hs-speedscope
               ] ++ (if system == "aarch64-darwin" then
                 [ pkgs'.llvm_12 ]
               else
@@ -136,6 +147,12 @@
         self.flake.${system}.packages // {
           rematerialize = self.project.${system}.rematerialize-kore;
           rematerializeGhc9 = self.projectGhc9.${system}.rematerialize-kore;
+          kore-exec-prof = binWithFlags {
+            inherit system;
+            bin =
+              self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+            add-flags = "+RTS -p -l-au -RTS";
+          };
           kore-exec-prof-closure-type = binWithFlags {
             inherit system;
             bin =
@@ -165,7 +182,7 @@
         (final: prev: {
           haskell-backend-stackProject = projectOverlay {
             pkgs = prev;
-            src = haskell-src { pkgs = prev; };
+            src = haskell-backend-src { pkgs = prev; };
           };
         })
 
