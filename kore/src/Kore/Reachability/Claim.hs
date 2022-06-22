@@ -8,6 +8,8 @@ module Kore.Reachability.Claim (
     AppliedRule (..),
     retractApplyRemainder,
     strategy,
+    MinDepth (..),
+    strategyWithMinDepth,
     TransitionRule,
     Prim,
     ClaimExtractor (..),
@@ -19,6 +21,7 @@ module Kore.Reachability.Claim (
     reachabilityCheckOnly,
     transitionRule,
     isTrusted,
+    StuckCheck (..),
 
     -- * Re-exports
     RewriteRule (..),
@@ -295,14 +298,20 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
 
+data StuckCheck
+    = EnabledStuckCheck
+    | DisabledStuckCheck
+    deriving stock (Eq)
+
 transitionRule ::
     forall m claim.
     MonadSimplify m =>
     Claim claim =>
+    StuckCheck ->
     [claim] ->
     [[Rule claim]] ->
     TransitionRule m (AppliedRule claim) (ClaimState claim)
-transitionRule claims axiomGroups = transitionRuleWorker
+transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker ::
         Prim ->
@@ -323,8 +332,8 @@ transitionRule claims axiomGroups = transitionRuleWorker
             result <- checkImplication claim & Logic.lowerLogicT
             case result of
                 Implied -> pure Proven
-                NotImpliedStuck a -> do
-                    pure (Stuck a)
+                NotImpliedStuck a ->
+                    returnStuckOrContinue a
                 NotImplied a
                     | isRemainder claimState -> do
                         pure (Stuck a)
@@ -346,6 +355,11 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     applyResultToClaimState (ApplyRewritten a) = Rewritten a
     applyResultToClaimState (ApplyRemainder a) = Remaining a
+
+    returnStuckOrContinue state =
+        case stuckCheck of
+            EnabledStuckCheck -> return (Stuck state)
+            DisabledStuckCheck -> return (Claimed state)
 
 retractSimplifiable :: ClaimState a -> Maybe a
 retractSimplifiable (Claimed a) = Just a
@@ -382,6 +396,25 @@ reachabilityNextStep =
         , Simplify
         ]
 
+reachabilityFirstStepNoCheck :: Strategy Prim
+reachabilityFirstStepNoCheck =
+    (Strategy.sequence . map Strategy.apply)
+        [ Begin
+        , Simplify
+        , ApplyAxioms
+        , Simplify
+        ]
+
+reachabilityNextStepNoCheck :: Strategy Prim
+reachabilityNextStepNoCheck =
+    (Strategy.sequence . map Strategy.apply)
+        [ Begin
+        , Simplify
+        , ApplyClaims
+        , ApplyAxioms
+        , Simplify
+        ]
+
 {- | A strategy for the last step of depth-limited reachability proofs.
    The final such step should only perform a CheckImplication.
 -}
@@ -392,6 +425,22 @@ reachabilityCheckOnly =
 strategy :: Stream (Strategy Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
+
+newtype MinDepth = MinDepth
+    { getMinDepth :: Int
+    }
+
+strategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
+strategyWithMinDepth (MinDepth minDepth) =
+    Stream.prepend
+        noCheckReachabilitySteps
+        reachabilitySteps
+  where
+    noCheckReachabilitySteps =
+        reachabilityFirstStepNoCheck :
+        replicate (minDepth - 1) reachabilityNextStepNoCheck
+    reachabilitySteps =
+        Stream.iterate id reachabilityNextStep
 
 {- | The result of checking the direct implication of a proof claim.
 
