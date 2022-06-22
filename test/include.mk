@@ -47,7 +47,7 @@ KPROVE_SPEC_OPTS =
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
-	$(KOMPILE) $(KOMPILE_OPTS) $<
+	env -u KORE_EXEC_OPTS $(KOMPILE) $(KOMPILE_OPTS) $<
 
 # From make 3.82 news: http://cvs.savannah.gnu.org/viewvc/*checkout*/make/make/NEWS?revision=2.120
 # * WARNING: Backward-incompatibility!
