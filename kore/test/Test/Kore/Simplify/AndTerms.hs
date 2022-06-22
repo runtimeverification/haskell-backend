@@ -22,17 +22,11 @@ import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Internal.Condition as Condition
 import Kore.Internal.From
 import Kore.Internal.InternalSet
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
-import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
-    makeAndPredicate,
     makeCeilPredicate,
     makeEqualsPredicate,
-    makeNotPredicate,
     makeTruePredicate,
  )
 import Kore.Internal.SideCondition (
@@ -1250,13 +1244,7 @@ test_andTermsSimplification =
         ]
     , testGroup
         "KEquals"
-        [ testCase "Equal unification" $ do
-            let input1 = Mock.keqBool (cf xVar) a
-                input2 = Mock.builtinBool False
-                expected = [Condition.top]
-            Just actual <- simplifyEquals mempty input1 input2
-            assertEqual "" expected actual
-        , testCase "And unification" $ do
+        [ testCase "And unification" $ do
             let input1 = Mock.keqBool (cf xVar) a
                 input2 = Mock.builtinBool False
                 expected = [Pattern.fromTermLike input2]
@@ -1274,14 +1262,6 @@ test_andTermsSimplification =
                             & pure
                 actual <- simplify input1 input2
                 assertEqual "" expected actual
-        , testCase
-            "Equal unification fails if pattern\
-            \ is not function-like"
-            $ do
-                let input1 = Mock.keqBool (TermLike.mkOr a (cf xVar)) b
-                    input2 = Mock.builtinBool False
-                actual <- simplifyEquals mempty input1 input2
-                assertEqual "" Nothing actual
         ]
     ]
   where
@@ -1342,13 +1322,13 @@ test_equalsTermsSimplification =
             expected = Just $ do
                 -- list monad
                 (xValue, xSetValue) <-
-                    [ (Mock.a, [Mock.b])
-                        , (Mock.b, [Mock.a])
+                    [ (Mock.a, Mock.b)
+                        , (Mock.b, Mock.a)
                         ]
                 mconcat
                     [ Condition.assign (inject Mock.xConfig) xValue
                     , Condition.assign (inject Mock.xConfigSet) $
-                        asInternal $ Set.fromList xSetValue
+                        Mock.elementSet xSetValue
                     ]
                     & pure
         actual <-
@@ -1370,95 +1350,6 @@ test_equalsTermsSimplification =
                     makeEqualsPredicate Mock.a (Mock.f Mock.b)
                         & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
-            assertEqual "" (Just [expect]) actual
-        , testCase "no keys in empty Map" $ do
-            let expect = Condition.top
-            actual <-
-                simplifyEquals
-                    mempty
-                    (Mock.builtinBool False)
-                    ( Mock.inKeysMap
-                        (mkElemVar Mock.xConfig)
-                        (Mock.builtinMap [])
-                    )
-            assertEqual "" (Just [expect]) actual
-        , testCase "key not in singleton Map" $ do
-            let expect =
-                    makeEqualsPredicate
-                        (mkElemVar Mock.xConfig)
-                        (mkElemVar Mock.yConfig)
-                        & makeNotPredicate
-                        & Condition.fromPredicate
-            actual <-
-                simplifyEquals
-                    mempty
-                    (Mock.builtinBool False)
-                    ( Mock.inKeysMap
-                        (mkElemVar Mock.xConfig)
-                        ( Mock.builtinMap
-                            [(mkElemVar Mock.yConfig, Mock.a)]
-                        )
-                    )
-            assertEqual "" (Just [expect]) actual
-        , testCase "key not in two-element Map" $ do
-            let expect =
-                    [ makeNotPredicate $
-                        makeEqualsPredicate
-                            (mkElemVar Mock.xConfig)
-                            (mkElemVar Mock.yConfig)
-                    , makeNotPredicate $
-                        makeEqualsPredicate
-                            (mkElemVar Mock.xConfig)
-                            (mkElemVar Mock.zConfig)
-                    , -- Definedness condition
-                      makeNotPredicate $
-                        makeEqualsPredicate
-                            (mkElemVar Mock.yConfig)
-                            (mkElemVar Mock.zConfig)
-                    ]
-                        & MultiAnd.make
-            actual <-
-                simplifyEquals
-                    mempty
-                    (Mock.builtinBool False)
-                    ( Mock.inKeysMap
-                        (mkElemVar Mock.xConfig)
-                        ( Mock.builtinMap
-                            [ (mkElemVar Mock.yConfig, Mock.a)
-                            , (mkElemVar Mock.zConfig, Mock.a)
-                            ]
-                        )
-                    )
-                    & (fmap . fmap . fmap) (from @_ @(MultiAnd _))
-            assertEqual "" (Just [expect]) actual
-        , testCase "unevaluated function key in singleton Map" $ do
-            let expect =
-                    makeAndPredicate
-                        ( makeNotPredicate
-                            ( makeAndPredicate
-                                ( makeCeilPredicate
-                                    (Mock.f (mkElemVar Mock.xConfig))
-                                )
-                                ( makeEqualsPredicate
-                                    (mkElemVar Mock.yConfig)
-                                    (Mock.f (mkElemVar Mock.xConfig))
-                                )
-                            )
-                        )
-                        ( makeCeilPredicate
-                            (Mock.f (mkElemVar Mock.xConfig))
-                        )
-                        & Condition.fromPredicate
-            actual <-
-                simplifyEquals
-                    mempty
-                    (Mock.builtinBool False)
-                    ( Mock.inKeysMap
-                        (Mock.f (mkElemVar Mock.xConfig))
-                        ( Mock.builtinMap
-                            [(mkElemVar Mock.yConfig, Mock.a)]
-                        )
-                    )
             assertEqual "" (Just [expect]) actual
         ]
     ]

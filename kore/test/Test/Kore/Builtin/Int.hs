@@ -39,7 +39,6 @@ module Test.Kore.Builtin.Int (
     test_unifyAnd_Fn,
     test_reflexivity_symbolic,
     test_symbolic_eq_not_conclusive,
-    test_unifyIntEq,
     hprop_unparse,
     test_contradiction,
     --
@@ -88,7 +87,6 @@ import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern
-import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
@@ -551,111 +549,6 @@ idName `ofSort` sort =
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
-
-test_unifyIntEq :: [TestTree]
-test_unifyIntEq =
-    [ testCase "\\equals(false, X ==Int Y)" $ do
-        let term1 = Test.Bool.asInternal False
-            term2 = eqInt (mkElemVar x) (mkElemVar y)
-            expect =
-                makeEqualsPredicate (mkElemVar x) (mkElemVar y)
-                    & makeNotPredicate
-                    & Condition.fromPredicate
-                    & Pattern.fromCondition boolSort
-        -- unit test
-        do
-            actual <- unifyIntEq term1 term2
-            let expect' = expect{term = term1}
-            assertEqual "" [Just expect'] actual
-        -- integration test
-        do
-            actual <-
-                makeEqualsPredicate term1 term2
-                    & Condition.fromPredicate
-                    & simplifyCondition'
-            assertEqual "" [expect{term = ()}] actual
-        -- integration test (see #2586)
-        do
-            actual <-
-                makeInPredicate term1 term2
-                    & Condition.fromPredicate
-                    & simplifyCondition'
-            assertEqual "" [expect{term = ()}] actual
-        do
-            actual <-
-                mkAnd term1 term2
-                    & Pattern.fromTermLike
-                    & simplifyPattern
-            assertEqual "" [expect{term = term1}] actual
-    , testCase "\\equals(true, X ==Int Y)" $ do
-        let term1 = Test.Bool.asInternal True
-            term2 = eqInt (mkElemVar x) (mkElemVar y)
-            expect =
-                Condition.assign (inject x) (mkElemVar y)
-                    & Pattern.fromCondition boolSort
-        -- unit test
-        do
-            actual <- unifyIntEq term1 term2
-            -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
-            -- inconsistency.
-            let expect' = expect{term = term1}
-            assertEqual "" [Just expect'] actual
-        -- integration test
-        do
-            actual <-
-                makeEqualsPredicate term1 term2
-                    & Condition.fromPredicate
-                    & simplifyCondition'
-            assertEqual "" [expect{term = ()}] actual
-        -- integration test (see #2586)
-        do
-            actual <-
-                makeInPredicate term1 term2
-                    & Condition.fromPredicate
-                    & simplifyCondition'
-            assertEqual "" [expect{term = ()}] actual
-        do
-            actual <-
-                mkAnd term1 term2
-                    & Pattern.fromTermLike
-                    & simplifyPattern
-            assertEqual "" [expect{term = term1}] actual
-    , testCase "\\equals(X +Int 1 ==Int Y +Int 1, false)" $ do
-        let term1 =
-                eqInt
-                    (addInt (mkElemVar x) (asInternal 1))
-                    (addInt (mkElemVar y) (asInternal 1))
-            term2 = Test.Bool.asInternal False
-            expect =
-                makeEqualsPredicate
-                    (addInt (mkElemVar x) (asInternal 1))
-                    (addInt (mkElemVar y) (asInternal 1))
-                    & makeNotPredicate
-                    & Condition.fromPredicate
-                    & Pattern.fromCondition boolSort
-        -- unit test
-        do
-            actual <- unifyIntEq term1 term2
-            let expect' = expect{term = term2}
-            assertEqual "" [Just expect'] actual
-        -- integration test
-        do
-            actual <-
-                makeEqualsPredicate term1 term2
-                    & Condition.fromPredicate
-                    & simplifyCondition'
-            assertEqual "" [expect{term = ()}] actual
-    ]
-  where
-    x, y :: ElementVariable RewritingVariableName
-    x = "x" `ofSort` intSort
-    y = "y" `ofSort` intSort
-
-    unifyIntEq ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        IO [Maybe (Pattern RewritingVariableName)]
-    unifyIntEq = unifyEq Int.eqKey
 
 test_contradiction :: TestTree
 test_contradiction =
