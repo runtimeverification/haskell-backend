@@ -1,4 +1,4 @@
-# Profiling
+# Profiling and debugging
 
 There are two main ways we may want to profile the Haskell binaries in this repo. One is to do with how much time our program is spending on various stages of execution and the other is to do with how much memory it uses to do so. The first question may help us answer how to make our algorithms more efficient, whilst the second is more to do with Haskell's laziness, which often results in memory leaks. However, analysing the memory usage can be beneficial not just for detecting memory leaks, but may point to inefficiencies such as preforming unnecessary re-computations, etc.
 
@@ -54,7 +54,7 @@ nix shell .#kore-exec-prof-closure-type
 nix shell .#kore-exec-prof-infotable
 ```
 
-Running any of the commands above will build a profiled version of `kore-exec` and wrap the binary with the requisite RTS arguments automatically (to see which arguments get passed to the RTS for the give version, see the `add-flags` argument for each of the derivations above in [`flake.nix`](./flake.nix)).
+Running any of the commands above will build a profiled version of `kore-exec` and wrap the binary with the requisite RTS arguments automatically (to see which arguments get passed to the RTS for the give version, see the `add-flags` argument for each of the derivations above in [`flake.nix`](./flake.nix)). Any useful profiling pre-sets should be added to the flake for ease of use as well as documentation purposes.
 
 
 ## Runtime options
@@ -63,9 +63,8 @@ Running any of the commands above will build a profiled version of `kore-exec` a
 
 | RTS Flag | GHC Compile flag | Description | Output |
 |---|---|---|---|
-| `-p` | `-prof -fprof-auto`/<br>`-prof -fprof-auto-top`/<br>`-prof -fprof-auto-exported` | Produces a standard time profile report. Can be visualized via [`ghc-prof-flamegraph`](https://github.com/fpco/ghc-prof-flamegraph/) | `⟨program⟩.prof` |
+| `-p` | `-prof -fprof-auto`/<br>`-prof -fprof-auto-top`/<br>`-prof -fprof-auto-exported` | Produces a standard time profile report. Can be visualized via [`ghc-prof-flamegraph`](https://github.com/fpco/ghc-prof-flamegraph/), [`profiteur`](https://github.com/jaspervdj/profiteur) or [`profiterole`](https://github.com/ndmitchell/profiterole) | `⟨program⟩.prof` |
 | `-p` | `-prof -fprof-callers=⟨name⟩` | Automatically enclose all occurrences of the named function in an `SCC`. Note that these cost-centres are added late in compilation (after simplification) and consequently the names may be slightly different than they appear in the source program. |  |
-| `-xc` | `-prof -fprof-auto` | Causes the runtime to print out the current cost-centre stack whenever an exception is raised. Useful for debugging the location of exceptions, such as `Prelude.head: empty list` error. | stderr |
 | `-l` | `-prof -eventlog` | Log events in binary format. This logs a default set of events, use [`hs-speedscope`](https://github.com/mpickering/hs-speedscope) with [`speedscope`](https://www.speedscope.app/) to view. | `⟨program⟩.eventlog` |
 | `-l-au` | `-prof -eventlog` | Disable all log event classes except for user events. These are events emitted from Haskell code using functions such as <br>`Debug.Trace.traceEvent`. For other options, see https://ghc.gitlab.haskell.org/ghc/doc/users_guide/runtime_control.html#rts-eventlog | `⟨program⟩.eventlog` |
 
@@ -82,6 +81,14 @@ The table below lists compile and runtime options in (roughly) increasing level 
 | `-l -hd` | `-prof -eventlog` | Breaks down the graph by closure description (e.g. `Just`, `THUNK`). | `⟨program⟩.eventlog` |
 | `-l -hc` | `-prof -eventlog` | Breaks down the graph by lexical scope (known as "cost-centres"). | `⟨program⟩.eventlog` |
 | `-l -hi` | `-prof -eventlog -fdistinct-constructor-tables -finfo-table-map` | `-hi` collates heap allocations by their info table identity<br/>`-fdistinct-constructor-tables` tells the code generator to produce a distinct info table for each constructor allocation (new in GHC 9.2)<br/>`-finfo-table-map` tells the code generator to produce an auxiliary data structure which allows distinct info tables to be mapped back to source locations | `⟨program⟩.eventlog` |
+
+### Debugging
+
+The profiling information can also be useful when hunting for other bugs, such as runtime exceptions, which can be difficult to find, since Haskell does not print a stack trace (by default) when such an exception occurs.
+
+| RTS Flag | GHC Compile flag | Description | Output |
+|---|---|---|---|
+| `-xc` | `-prof -fprof-auto` | Causes the runtime to print out the current cost-centre stack whenever an exception is raised. Useful for debugging the location of exceptions, such as `Prelude.head: empty list` error. | stderr |
 
 
 ## Costs and disadvantages of profiling
@@ -100,7 +107,6 @@ There are two main issues with profiling:
 
 * [A First Look at Info Table Profiling](https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/) - an intro to the new `-hi` profiling mode in GHC 9.2
 * [Memory Fragmentation: A Deeper Look With ghc-debug](https://well-typed.com/blog/2021/01/fragmentation-deeper-look/) - a demo of the `ghc-debug` tool
-* [Ticky-ticky profiling](https://gitlab.haskell.org/ghc/ghc/-/wikis/debugging/ticky-ticky) - low level cost center like profiling which doesn’t interfere with core optimizations, but is not a stable feature. May be replaced by the [`-fprof-late-ccs` flag in GHC 9.4.1](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/profiling.html)?
+* [Ticky-ticky profiling](https://gitlab.haskell.org/ghc/ghc/-/wikis/debugging/ticky-ticky) - low level cost center like profiling which doesn’t interfere with core optimizations, but is not a stable feature. The [`-fprof-late-ccs` flag in GHC 9.4.1](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/profiling.html) seems like a proper alternative.
 * [DWARF support in GHC](https://well-typed.com/blog/2020/04/dwarf-1/) and [Towards system profiler support for GHC](https://well-typed.com/blog/2021/07/ghc-sp-profiling/) discuss th epossibility of using native profiling tools like Linux's `perf` to get meaningful data on Haskell programs. The second article discusses the possibility of recording Haskell call stacks via `perf`, but this is currently not possible and unlikely in the near future
-
 * [The Layout of Heap Objects](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects) - potentially useful information when interacting with `ghc_debug`
