@@ -127,8 +127,8 @@ import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnification (
-    whileDebugUnification,
     debugUnificationSolved,
+    whileDebugUnification,
  )
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -315,7 +315,7 @@ unifiedTermAnd p1 p2 condition =
         normalized = Substitution.toMap substitution
         term1 = substitute normalized p1
         term2 = substitute normalized p2
-    in mkAnd term1 term2
+     in mkAnd term1 term2
 
 unifyTerms ::
     MonadUnify unifier =>
@@ -592,9 +592,9 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                 (Just (Free (ElemVar_ var1')), Just (Free (ElemVar_ var2'))) -> bindVarToVar (inject var1') (inject var2')
                 (Just (Free (ElemVar_ var1')), _) -> bindVarToVar (inject var1') var2
                 (_, Just (Free (ElemVar_ var2'))) -> bindVarToVar var1 (inject var2')
-                (Nothing, _) -> 
+                (Nothing, _) ->
                     let (var, term) = Substitution.normalOrder (var1, second)
-                    in bind var term
+                     in bind var term
                 (_, Nothing) -> bind var2 first
                 (Just (Free term1), Just (Free term2)) -> decompose term1 term2
                 (Just (Ac term1), Just (Ac term2)) -> acDecompose term1 term2
