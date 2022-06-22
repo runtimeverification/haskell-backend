@@ -95,6 +95,7 @@ import Kore.IndexedModule.MetadataTools (
  )
 import Kore.Internal.Condition (
     Condition,
+    Conditional (..),
  )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.InternalMap (
@@ -340,14 +341,14 @@ unifyTerms' ::
     Condition RewritingVariableName ->
     Map Sort [AcEquation] ->
     unifier (Condition RewritingVariableName)
-unifyTerms' rootSort sideCondition origVars _ [] bindings constraints acEquations
+unifyTerms' rootSort _ origVars _ [] bindings constraints acEquations
     | Map.null acEquations = do
         let freeBindings = Map.map fromFree $ Map.filter isFree bindings
             (origBindings, acVarBindings) = Map.partitionWithKey isOrigVar freeBindings
             acVarSubst = Map.mapKeys variableName acVarBindings
             finalBindings = Map.map (substitute acVarSubst) origBindings
         case normalize finalBindings of
-            Nothing -> error "cannot normalize substitution"
+            Nothing -> empty
             Just normalization -> do
                 let condition = Condition.fromNormalizationSimplified normalization
                     solution = Condition.andCondition condition constraints
