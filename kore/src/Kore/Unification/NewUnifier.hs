@@ -374,7 +374,7 @@ unifyTerms' ::
     Condition RewritingVariableName ->
     Map Sort [AcEquation] ->
     unifier (Condition RewritingVariableName)
-unifyTerms' _ rootSort sideCondition origVars _ [] bindings constraints acEquations
+unifyTerms' _ rootSort _ origVars _ [] bindings constraints acEquations
     | Map.null acEquations = do
         let freeBindings = Map.map fromFree $ Map.filter isFree bindings
             (origBindings, acVarBindings) = Map.partitionWithKey isOrigVar freeBindings
