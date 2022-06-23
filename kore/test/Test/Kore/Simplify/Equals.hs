@@ -675,7 +675,7 @@ test_equalsSimplification_TermLike =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
-                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                , (inject Mock.mConfig, Mock.elementMap Mock.b fOfB)
                                 ]
                     }
                 ]
@@ -720,7 +720,7 @@ test_equalsSimplification_TermLike =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
-                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                , (inject Mock.mConfig, Mock.elementMap Mock.b fOfB)
                                 ]
                     }
                 ]
@@ -765,7 +765,7 @@ test_equalsSimplification_TermLike =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
-                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                , (inject Mock.mConfig, Mock.elementMap Mock.b fOfB)
                                 ]
                     }
                 ]
@@ -810,7 +810,7 @@ test_equalsSimplification_TermLike =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
-                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                , (inject Mock.mConfig, Mock.elementMap Mock.b fOfB)
                                 ]
                     }
                 ]
