@@ -583,6 +583,31 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         unifier (Condition RewritingVariableName)
     bind var term = unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
 
+    -- like bind, but var2 is the representative currently, and if var2 < var1, we must make var1 the representative
+    bindMax ::
+        SomeVariable RewritingVariableName ->
+        SomeVariable RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        unifier (Condition RewritingVariableName)
+    bindMax var1 var2 term1 term2 =
+        let (var, _) = Substitution.normalOrder (var1, term2) in
+        if var == var1 then bind var1 term2
+        else let newBindings = makeRepresentative bindings var1 var2 term1 term2
+        in unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var2 (Free term1) newBindings) constraints acEquations
+
+    makeRepresentative ::
+        Map (SomeVariable RewritingVariableName) Binding ->
+        SomeVariable RewritingVariableName ->
+        SomeVariable RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        Map (SomeVariable RewritingVariableName) Binding
+    makeRepresentative bindings' var1 var2 term1 term2 =
+        Map.map (replace (Free term2) (Free term1)) $ Map.mapKeys (replace var2 var1) bindings'
+      where
+        replace a b x = if x == a then b else x
+
     binding var = Map.lookup var bindings
 
     bindVarToVar var1 var2 =
@@ -592,10 +617,11 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                 (Just (Free (ElemVar_ var1')), Just (Free (ElemVar_ var2'))) -> bindVarToVar (inject var1') (inject var2')
                 (Just (Free (ElemVar_ var1')), _) -> bindVarToVar (inject var1') var2
                 (_, Just (Free (ElemVar_ var2'))) -> bindVarToVar var1 (inject var2')
-                (Nothing, _) ->
+                (Nothing, Nothing) ->
                     let (var, term) = Substitution.normalOrder (var1, second)
                      in bind var term
-                (_, Nothing) -> bind var2 first
+                (Nothing, Just _) -> bindMax var1 var2 first second
+                (Just _, Nothing) -> bindMax var2 var1 second first
                 (Just (Free term1), Just (Free term2)) -> decompose term1 term2
                 (Just (Ac term1), Just (Ac term2)) -> acDecompose term1 term2
                 _ -> error "invalid free binding for AC sort"
