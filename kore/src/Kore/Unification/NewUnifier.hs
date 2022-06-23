@@ -714,7 +714,7 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
                 then bind var1 term2
                 else
                     let newBindings = makeRepresentative bindings var1 var2 term1 term2
-                     in unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var2 (Free term1) newBindings) constraints acEquations
+                     in unifyTerms' unifyType rootSort sideCondition origVars vars rest (Map.insert var2 (Free term1) newBindings) constraints acEquations
 
     makeRepresentative ::
         Map (SomeVariable RewritingVariableName) Binding ->
