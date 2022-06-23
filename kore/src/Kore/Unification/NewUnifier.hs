@@ -659,7 +659,7 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
 
     failUnify ::
         Text ->
-        unifier (Condition RewritingVariableName)
+        unifier result
     failUnify message = debugUnifyBottomAndReturnBottom message first second
 
     decompose ::
