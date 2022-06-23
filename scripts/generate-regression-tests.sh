@@ -45,42 +45,9 @@ generate-evm() {
     export \
         TEST_CONCRETE_BACKEND=haskell \
         TEST_SYMBOLIC_BACKEND=haskell \
-        TEST_OPTIONS="--dry-run --save-temps" \
+        TEST_OPTIONS="--dry-run --debug" \
         CHECK=true \
         KEEP_OUTPUTS=true
-
-    local testpop1=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmIOandFlowOperations/pop1.json
-    local testadd0=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmArithmeticTest/add0.json
-    local testmul0=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmArithmeticTest/mul0.json
-    local testsha3_bigSize=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmSha3Test/sha3_bigSize.json
-    local testand0=tests/ethereum-tests/LegacyTests/Constantinople/VMTests/vmBitwiseLogicOperation/and0.json
-    local testsumTo10=tests/interactive/sumTo10.evm
-
-    kollect-file test-pop1 "$testpop1.haskell-out" \
-        make "$testpop1.run-interactive" -e
-
-    kollect-file test-add0 "$testadd0.haskell-out" \
-        make "$testadd0.run-interactive" -e
-
-    kollect-file test-mul0 "$testmul0.haskell-out" \
-        make "$testmul0.run-interactive" -e
-
-    kollect-file test-and0 "$testand0.haskell-out" \
-        make "$testand0.run-interactive" -e
-
-    kollect-file test-sha3_bigSize "$testsha3_bigSize.haskell-out" \
-        make "$testsha3_bigSize.run-interactive" -e
-
-    kollect-file test-sumTo10 $testsumTo10.haskell-out \
-        make "$testsumTo10.run-interactive" -e
-
-    for search in \
-        branching-no-invalid straight-line-no-invalid \
-        branching-invalid straight-line
-    do
-        kollect-file "test-$search" "tests/interactive/search/$search.evm.search-out" \
-            make "tests/interactive/search/$search.evm.search" -e
-    done
 
     kollect test-sum-to-n \
         make tests/specs/examples/sum-to-n-spec.k.prove -s -e

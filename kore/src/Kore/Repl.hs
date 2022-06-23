@@ -112,6 +112,8 @@ runRepl ::
     MonadIO m =>
     MonadProf m =>
     MonadMask m =>
+    Maybe MinDepth ->
+    StuckCheck ->
     -- | list of axioms to used in the proof
     [Axiom] ->
     -- | list of claims to be proven
@@ -129,13 +131,15 @@ runRepl ::
     Log.KoreLogOptions ->
     KFileLocations ->
     m ()
-runRepl _ [] _ _ _ _ outputFile _ _ _ =
+runRepl _ _ _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike VariableName
     topTerm = mkTop $ mkSortVariable "R"
 runRepl
+    minDepth
+    stuckCheck
     axioms'
     claims'
     logger
@@ -269,7 +273,7 @@ runRepl
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep claims axioms graph node
+                    proveClaimStep minDepth stuckCheck claims axioms graph node
                         & Exception.handle (withConfigurationHandler graph)
                         & Exception.handle (someExceptionHandler graph)
                 else pure graph

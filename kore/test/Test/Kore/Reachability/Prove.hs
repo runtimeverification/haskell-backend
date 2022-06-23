@@ -795,7 +795,7 @@ test_transitionRule =
     claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
     runTransitionRule claims axiomGroups prim cState =
         runSimplifierSMT Mock.env . runTransitionT $
-            transitionRule claims axiomGroups prim cState
+            transitionRule EnabledStuckCheck claims axiomGroups prim cState
 
 simpleAxiom ::
     TermLike VariableName ->
@@ -880,6 +880,8 @@ proveClaims
     claims
     alreadyProven =
         Kore.Reachability.proveClaims
+            Nothing
+            EnabledStuckCheck
             breadthLimit
             BreadthFirst
             maxCounterexamples
