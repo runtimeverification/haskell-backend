@@ -3,6 +3,7 @@ endmodule
 
 module TEST
   imports DOMAINS
+  imports MAP-SYMBOLIC
 
   configuration <k> $PGM:K </k> <state> .Map </state>
   syntax KItem ::= "foo" | "bar"
