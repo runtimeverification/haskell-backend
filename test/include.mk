@@ -99,7 +99,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
-	@echo ">>>" $(CURDIR) "kprovex" $<
+	@echo ">>>" $(CURDIR) "kprove" $<
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
