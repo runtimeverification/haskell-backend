@@ -690,7 +690,16 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
-    bind var term = unifyTerms' unifyType rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
+    bind var term =
+        case unifyType of
+            UnifyAnd -> unifyTerms' unifyType rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) constraints acEquations
+            UnifyEquals -> do
+                predicate <- do
+                    resultOr <- makeEvaluateTermCeil sideCondition term
+                    case toList resultOr of
+                        [] -> failUnify "Cannot unify variable with bottom."
+                        resultConditions -> scatter resultConditions
+                unifyTerms' unifyType rootSort sideCondition origVars vars rest (Map.insert var (Free term) bindings) (Condition.andCondition constraints predicate) acEquations
 
     -- like bind, but var2 is the representative currently, and if var2 < var1, we must make var1 the representative
     bindMax ::
