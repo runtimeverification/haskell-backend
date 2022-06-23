@@ -669,8 +669,14 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
+                            ( makeAndPredicate
+                                ( makeAndPredicate
+                                    (makeCeilPredicate fOfA)
+                                    (makeCeilPredicate fOfB)
+                                )
+                                (makeCeilPredicate fOfA)
+                            )
                             (makeCeilPredicate fOfB)
-                            (makeCeilPredicate fOfA)
                     , substitution =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
@@ -714,8 +720,14 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
+                            ( makeAndPredicate
+                                ( makeAndPredicate
+                                    (makeCeilPredicate fOfA)
+                                    (makeCeilPredicate fOfB)
+                                )
+                                (makeCeilPredicate fOfA)
+                            )
                             (makeCeilPredicate fOfB)
-                            (makeCeilPredicate fOfA)
                     , substitution =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
@@ -759,8 +771,14 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
+                            ( makeAndPredicate
+                                ( makeAndPredicate
+                                    (makeCeilPredicate fOfA)
+                                    (makeCeilPredicate fOfB)
+                                )
+                                (makeCeilPredicate fOfA)
+                            )
                             (makeCeilPredicate fOfB)
-                            (makeCeilPredicate fOfA)
                     , substitution =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
@@ -804,8 +822,14 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
+                            ( makeAndPredicate
+                                ( makeAndPredicate
+                                    (makeCeilPredicate fOfA)
+                                    (makeCeilPredicate fOfB)
+                                )
+                                (makeCeilPredicate fOfA)
+                            )
                             (makeCeilPredicate fOfB)
-                            (makeCeilPredicate fOfA)
                     , substitution =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
