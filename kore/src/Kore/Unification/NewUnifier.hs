@@ -587,7 +587,7 @@ unifyTerms' unifyType rootSort sideCondition origVars vars ((first, second) : re
                         unifySets
                             (Ac.asInternalBuiltin tools sort set1)
                             (Ac.asInternalBuiltin tools sort set2)
-            (_, _) | Just True <- List.isListSort tools sort ->
+            (_, _, _) | Just True <- List.isListSort tools sort ->
                 case (List.normalize first, List.normalize second) of
                     (ElemVar_ var1, ElemVar_ var2) -> bindVarToVar (inject var1) (inject var2)
                     (ElemVar_ var1, _) | isFunctionPattern second -> bindVarToPattern (inject var1) second
