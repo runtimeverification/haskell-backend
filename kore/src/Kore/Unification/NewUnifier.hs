@@ -591,10 +591,12 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
     bindMax var1 var2 term1 term2 =
-        let (var, _) = Substitution.normalOrder (var1, term2) in
-        if var == var1 then bind var1 term2
-        else let newBindings = makeRepresentative bindings var1 var2 term1 term2
-        in unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var2 (Free term1) newBindings) constraints acEquations
+        let (var, _) = Substitution.normalOrder (var1, term2)
+         in if var == var1
+                then bind var1 term2
+                else
+                    let newBindings = makeRepresentative bindings var1 var2 term1 term2
+                     in unifyTerms' rootSort sideCondition origVars vars rest (Map.insert var2 (Free term1) newBindings) constraints acEquations
 
     makeRepresentative ::
         Map (SomeVariable RewritingVariableName) Binding ->
