@@ -61,6 +61,7 @@ import Data.MultiSet (
     MultiSet,
  )
 import Data.MultiSet qualified as MultiSet
+import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
  )
@@ -84,6 +85,7 @@ import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.KEqual (
     iteKey,
  )
+import Kore.Builtin.List qualified as List
 import Kore.Builtin.Map (
     isMapSort,
  )
@@ -98,6 +100,9 @@ import Kore.Internal.Condition (
     Conditional (..),
  )
 import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.InternalList (
+    InternalList (..),
+ )
 import Kore.Internal.InternalMap (
     InternalMap,
     NormalizedMap (..),
@@ -528,6 +533,51 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                         unifySets
                             (Ac.asInternalBuiltin tools sort set1)
                             (Ac.asInternalBuiltin tools sort set2)
+            (_, _) | Just True <- List.isListSort tools sort ->
+                case (List.normalize first, List.normalize second) of
+                    (ElemVar_ var1, ElemVar_ var2) -> bindVarToVar (inject var1) (inject var2)
+                    (ElemVar_ var1, _) | isFunctionPattern second -> bindVarToPattern (inject var1) second
+                    (_, ElemVar_ var2) | isFunctionPattern second -> bindVarToPattern (inject var2) first
+                    (App_ symbol1 [InternalList_ InternalList{internalListChild=l1}, var1@(ElemVar_ _)], App_ symbol2 [InternalList_ InternalList{internalListChild=l2}, var2@(ElemVar_ _)])
+                        | List.isSymbolConcat symbol1, List.isSymbolConcat symbol2 ->
+                        let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
+                            left = Seq.drop (length l1') l2' in
+                        decomposeList $ (var1', mkApplySymbol symbol1 [List.asInternal tools sort left, var2']) : zip (toList l1') (toList (Seq.take (length l1') l2'))
+                    (App_ symbol1 [var1@(ElemVar_ _), InternalList_ InternalList{internalListChild=l1}], App_ symbol2 [var2@(ElemVar_ _), InternalList_ InternalList{internalListChild=l2}])
+                        | List.isSymbolConcat symbol1, List.isSymbolConcat symbol2 ->
+                        let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
+                            left = Seq.take (length l2' - length l1') l2' in
+                        decomposeList $ (var1', mkApplySymbol symbol1 [var2', List.asInternal tools sort left]) : zip (toList l1') (toList (Seq.drop (length l2' - length l1') l2'))
+                    (InternalList_ InternalList{internalListChild=l1}, InternalList_ InternalList{internalListChild=l2}) ->
+                        if length l1 == length l2 then
+                            decomposeList $ zip (toList l1) (toList l2)
+                        else failUnify "Lists of different length"
+                    (InternalList_ InternalList{internalListChild=l1}, App_ symbol [InternalList_ InternalList{internalListChild=l2}, var@(ElemVar_ _)])
+                        | List.isSymbolConcat symbol ->
+                        if length l2 <= length l1 then
+                            let l1' = Seq.drop (length l2) l1 in
+                            decomposeList $ (List.asInternal tools sort l1', var) : zip (toList (Seq.take (length l2) l1)) (toList l2)
+                        else failUnify "Lists of different length"
+                    (App_ symbol [InternalList_ InternalList{internalListChild=l1}, var@(ElemVar_ _)], InternalList_ InternalList{internalListChild=l2})
+                        | List.isSymbolConcat symbol ->
+                        if length l1 <= length l2 then
+                            let l2' = Seq.drop (length l1) l2 in
+                            decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList (Seq.take (length l1) l2))
+                        else failUnify "Lists of different length"
+                    (InternalList_ InternalList{internalListChild=l1}, App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild=l2}])
+                        | List.isSymbolConcat symbol ->
+                        if length l2 <= length l1 then
+                            let l1' = Seq.take (length l1 - length l2) l1 in
+                            decomposeList $ (List.asInternal tools sort l1', var) : zip (toList (Seq.drop (length l1 - length l2) l1)) (toList l2)
+                        else failUnify "Lists of different length"
+                    (App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild=l1}], InternalList_ InternalList{internalListChild=l2})
+                        | List.isSymbolConcat symbol ->
+                        if length l1 <= length l2 then
+                            let l2' = Seq.take (length l2 - length l1) l2 in
+                            decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList (Seq.drop (length l2 - length l1) l2))
+                        else failUnify "Lists of different length"
+                    (_, _) -> constrainEquals first second
+ 
             -- in theory we could now implement these cases as simplification rules
             -- instead of unification cases, but unlike the other boolean operations,
             -- we can't actually express this rule in K because K does not yet support
