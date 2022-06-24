@@ -386,9 +386,12 @@ makeEvaluateTermsToPredicate first second sideCondition
                         Predicate.markSimplified $
                             makeEqualsPredicate first second
             Just condition
-                | condition == OrCondition.fromCondition (Condition.fromPredicate $
-                    makeEqualsPredicate first second) ->
-                return condition
+                | condition
+                    == OrCondition.fromCondition
+                        ( Condition.fromPredicate $
+                            makeEqualsPredicate first second
+                        ) ->
+                    return condition
             Just predicatedOr -> do
                 firstCeilOr <- makeEvaluateTermCeil sideCondition first
                 secondCeilOr <- makeEvaluateTermCeil sideCondition second
