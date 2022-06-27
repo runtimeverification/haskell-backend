@@ -212,13 +212,13 @@ mkClaimPattern left right existentials =
 The 'TermLike' has the following form:
 
 @
-\\implies{S}(\\and{S}(left, requires), alias{S}(right))
+\\implies{S}(\\and{S}(requires, left), alias{S}(right))
 @
 
 that is,
 
 @
-left ∧ requires → alias(right)
+requires ∧ left → alias(right)
 @
 -}
 claimPatternToTerm ::
