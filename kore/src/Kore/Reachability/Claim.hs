@@ -8,6 +8,7 @@ module Kore.Reachability.Claim (
     AppliedRule (..),
     retractApplyRemainder,
     reachabilityStrategy,
+    functionalStrategy,
     MinDepth (..),
     reachabilityStrategyWithMinDepth,
     TransitionRule,
@@ -18,6 +19,8 @@ module Kore.Reachability.Claim (
     extractClaims,
     reachabilityFirstStep,
     reachabilityNextStep,
+    functionalFirstStep,
+    functionalNextStep,
     checkOnly,
     transitionRule,
     isTrusted,
@@ -436,6 +439,21 @@ checkOnly =
 reachabilityStrategy :: Stream (Strategy Prim)
 reachabilityStrategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
+
+functionalFirstStep :: Strategy Prim
+functionalFirstStep =
+    (Strategy.sequence . map Strategy.apply)
+        [ Begin
+        , Simplify
+        , CheckImplication
+        ]
+
+functionalNextStep :: Strategy Prim
+functionalNextStep = Strategy.continue
+
+functionalStrategy :: Stream (Strategy Prim)
+functionalStrategy =
+    functionalFirstStep :> Stream.iterate id functionalNextStep
 
 newtype MinDepth = MinDepth
     { getMinDepth :: Int
