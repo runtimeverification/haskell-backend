@@ -6,11 +6,14 @@ module Kore.Reachability.FunctionalClaim (
 
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Error
 import Prelude.Kore
+import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
+    mkRuleVariable,
  )
 import Kore.Reachability.Claim
 import Kore.Rewrite.ClaimPattern (
@@ -19,11 +22,10 @@ import Kore.Rewrite.ClaimPattern (
     claimPatternToTerm,
  )
 import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
-import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
-import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.OrPattern (OrPattern)
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.TermLike (ElementVariable, TermLike, VariableName)
 import Kore.Internal.TermLike qualified as TermLike
 import Data.Generics.Wrapped (_Unwrapped)
@@ -84,7 +86,6 @@ instance Unparse FunctionalClaim where
 
     unparse2 claim = unparse2 $ functionalClaimToTerm claim
 
-
 functionalClaimToTerm :: FunctionalClaim -> TermLike VariableName
 functionalClaimToTerm (FunctionalClaim claimPattern) =
     case claimTerm of
@@ -103,6 +104,45 @@ functionalClaimToTerm (FunctionalClaim claimPattern) =
         -- The choice of WAF is arbitrary here. We just want to share
         -- the work that 'claimPatternToTerm' does already.
         claimTerm = claimPatternToTerm TermLike.WAF claimPattern
+
+instance TopBottom FunctionalClaim where
+    isTop _ = False
+    isBottom _ = False
+
+instance From FunctionalClaim Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getFunctionalClaim
+
+instance From FunctionalClaim Attribute.Label where
+    from = Attribute.label . attributes . getFunctionalClaim
+
+instance From FunctionalClaim Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getFunctionalClaim
+
+instance From FunctionalClaim Attribute.Trusted where
+    from = Attribute.trusted . attributes . getFunctionalClaim
+
+{-
+instance UnifyingRule FunctionalClaim where
+    type UnifyingRuleVariable FunctionalClaim = RewritingVariableName
+
+    matchingPattern (FunctionalClaim claim) = matchingPattern claim
+
+    precondition (FunctionalClaim claim) = precondition claim
+
+    refreshRule stale (FunctionalClaim claim) =
+        AllPathClaim <$> refreshRule stale claim
+-}
+
+instance From FunctionalClaim (AxiomPattern VariableName) where
+    from = AxiomPattern . functionalClaimToTerm
+
+instance From FunctionalClaim (AxiomPattern RewritingVariableName) where
+    from =
+        AxiomPattern
+            . TermLike.mapVariables (pure mkRuleVariable)
+            . functionalClaimToTerm
+
+
 
 {-| Check the implication of a functional claim by direct implication.
 
@@ -133,16 +173,21 @@ functionalCheckImplication
         let definedReq = 
                 Pattern.andCondition left $
                     from $ makeCeilPredicate (Pattern.term left)
-        let patts = MultiOr.map (definedReq <*) right
-        simpl <- Logic.scatter patts
-            >>= Pattern.simplify
-            >>= SMT.Evaluator.filterMultiOr
-            >>= Logic.scatter
+        let right' = OrPattern.toPattern claimSort right
+        let claimTerm = Pattern.toTermLike $ definedReq <* right'
+        let floorTerm = TermLike.mkFloor claimSort claimTerm
+        let pat = Pattern.fromTermLike floorTerm
+        simpl <- Pattern.simplify pat >>= Logic.scatter
         return $ examine simpl
 
     where
+        claimSort = ClaimPattern.getClaimPatternSort claimPattern
+
         ClaimPattern{left, right} = claimPattern
 
         examine patt
             | isTop patt = Implied
             | otherwise  = NotImpliedStuck (FunctionalClaim claimPattern)
+
+instance ClaimExtractor FunctionalClaim where
+
