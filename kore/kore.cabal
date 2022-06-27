@@ -407,6 +407,7 @@ library
     Kore.Reachability.AllPathClaim
     Kore.Reachability.Claim
     Kore.Reachability.ClaimState
+    Kore.Reachability.FunctionalClaim
     Kore.Reachability.OnePathClaim
     Kore.Reachability.Prim
     Kore.Reachability.Prove
