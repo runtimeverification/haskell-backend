@@ -238,7 +238,7 @@ test_runStrategy =
             $ Strategy.runStrategy
                 Unlimited
                 (Claim.transitionRule Claim.EnabledStuckCheck [MockClaim (unRule goal)] [axioms])
-                (toList Claim.strategy)
+                (toList Claim.reachabilityStrategy)
                 (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves ::
         HasCallStack =>
@@ -341,6 +341,12 @@ instance Claim MockClaim where
         deriving stock (GHC.Generic)
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
+
+    strategy _ = Claim.reachabilityStrategy
+    strategyWithMinDepth _ = Claim.reachabilityStrategyWithMinDepth
+    firstStep _ = Claim.reachabilityFirstStep
+    nextStep _ = Claim.reachabilityNextStep
+
 
     checkImplication (MockClaim (src, dst))
         | src' == Bot = return Claim.Implied

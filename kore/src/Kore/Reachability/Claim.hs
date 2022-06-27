@@ -7,9 +7,9 @@ module Kore.Reachability.Claim (
     ApplyResult (..),
     AppliedRule (..),
     retractApplyRemainder,
-    strategy,
+    reachabilityStrategy,
     MinDepth (..),
-    strategyWithMinDepth,
+    reachabilityStrategyWithMinDepth,
     TransitionRule,
     Prim,
     ClaimExtractor (..),
@@ -18,7 +18,7 @@ module Kore.Reachability.Claim (
     extractClaims,
     reachabilityFirstStep,
     reachabilityNextStep,
-    reachabilityCheckOnly,
+    checkOnly,
     transitionRule,
     isTrusted,
     StuckCheck (..),
@@ -190,6 +190,17 @@ class Claim claim where
         [[Rule claim]] ->
         claim ->
         Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+
+    strategy :: claim -> Stream (Strategy Prim)
+    strategy proxy = firstStep proxy :> Stream.iterate id (nextStep proxy)
+
+    strategyWithMinDepth :: claim -> MinDepth -> Stream (Strategy Prim)
+
+    firstStep :: claim -> Strategy Prim
+
+    nextStep :: claim -> Strategy Prim
+
+    {-# MINIMAL checkImplication, simplify, applyClaims, applyAxioms, strategyWithMinDepth, firstStep, nextStep #-}
 
 {- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
 
@@ -415,23 +426,23 @@ reachabilityNextStepNoCheck =
         , Simplify
         ]
 
-{- | A strategy for the last step of depth-limited reachability proofs.
+{- | A strategy for the last step of depth-limited proofs.
    The final such step should only perform a CheckImplication.
 -}
-reachabilityCheckOnly :: Strategy Prim
-reachabilityCheckOnly =
+checkOnly :: Strategy Prim
+checkOnly =
     Strategy.sequence [Strategy.apply Begin, Strategy.apply CheckImplication]
 
-strategy :: Stream (Strategy Prim)
-strategy =
+reachabilityStrategy :: Stream (Strategy Prim)
+reachabilityStrategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
 newtype MinDepth = MinDepth
     { getMinDepth :: Int
     }
 
-strategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
-strategyWithMinDepth (MinDepth minDepth) =
+reachabilityStrategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
+reachabilityStrategyWithMinDepth (MinDepth minDepth) =
     Stream.prepend
         noCheckReachabilitySteps
         reachabilitySteps

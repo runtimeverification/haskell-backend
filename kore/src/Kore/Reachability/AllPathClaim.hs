@@ -138,6 +138,11 @@ instance Claim AllPathClaim where
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
+    
+    strategyWithMinDepth _ = reachabilityStrategyWithMinDepth
+    strategy             _ = reachabilityStrategy
+    firstStep            _ = reachabilityFirstStep
+    nextStep             _ = reachabilityNextStep
 
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped

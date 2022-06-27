@@ -945,7 +945,7 @@ runOnePathSteps
                     coinductiveRewrites
                     (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
                     claim
-                    (Limit.takeWithin depthLimit (toList strategy))
+                    (Limit.takeWithin depthLimit (toList reachabilityStrategy))
             return (sort $ nub result)
 
 assertStuck ::

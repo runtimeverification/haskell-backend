@@ -89,7 +89,7 @@ import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
-import Kore.Reachability.Claim
+import Kore.Reachability.Claim hiding (strategy)
 import Kore.Reachability.ClaimState (
     ClaimState,
     ClaimStateTransformer (..),
@@ -343,7 +343,7 @@ proveClaim
                            discharge proofs which hold at the depth bound by
                            adding an additional CheckImplication step at the end.
                         -}
-                        & (`snoc` reachabilityCheckOnly)
+                        & (`snoc` checkOnly)
             proofDepths <-
                 Strategy.leavesM
                     finalNodeType
@@ -359,7 +359,7 @@ proveClaim
             warnProvenClaimZeroDepth maxProofDepth goal
       where
         pickStrategy =
-            maybe strategy strategyWithMinDepth maybeMinDepth
+            maybe (strategy goal) (strategyWithMinDepth goal) maybeMinDepth
 
         discardStrategy = snd
 
@@ -454,17 +454,25 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
     -- We should also add a command for toggling this feature on and
     -- off.
     strategy' :: Strategy Prim
-    strategy'
-        | isRoot = firstStep
-        | otherwise = followupStep
+    strategy' = case someClaim of
+        Nothing -> Strategy.continue
+        Just sc
+            | isRoot -> firstStep sc
+            | otherwise -> nextStep sc
 
-    firstStep :: Strategy Prim
-    firstStep = reachabilityFirstStep
+    ExecutionGraph{graph, root} = executionGraph
 
-    followupStep :: Strategy Prim
-    followupStep = reachabilityNextStep
+    claimState :: Maybe CommonClaimState
+    claimState = Graph.lab graph node
 
-    ExecutionGraph{root} = executionGraph
+    someClaim :: Maybe SomeClaim
+    someClaim = claimState >>= \case
+       ClaimState.Claimed sc -> Just sc
+       ClaimState.Remaining sc -> Just sc
+       ClaimState.Rewritten sc -> Just sc
+       ClaimState.Stuck sc -> Just sc
+       ClaimState.Proven -> Nothing
+    
 
     isRoot :: Bool
     isRoot = node == root

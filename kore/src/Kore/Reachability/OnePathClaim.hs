@@ -161,6 +161,11 @@ instance Claim OnePathClaim where
         deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
 
+    strategyWithMinDepth _ = reachabilityStrategyWithMinDepth
+    strategy             _ = reachabilityStrategy
+    firstStep            _ = reachabilityFirstStep
+    nextStep             _ = reachabilityNextStep
+
     simplify = simplify' _Unwrapped
 
     checkImplication = checkImplication' _Unwrapped

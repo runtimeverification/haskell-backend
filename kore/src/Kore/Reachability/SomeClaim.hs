@@ -194,6 +194,18 @@ instance Claim SomeClaim where
         deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
 
+    strategy (AllPath claim) = strategy claim
+    strategy (OnePath claim) = strategy claim
+
+    strategyWithMinDepth (AllPath claim) = strategyWithMinDepth claim
+    strategyWithMinDepth (OnePath claim) = strategyWithMinDepth claim
+
+    firstStep (AllPath claim) = firstStep claim
+    firstStep (OnePath claim) = firstStep claim
+
+    nextStep (AllPath claim) = nextStep claim
+    nextStep (OnePath claim) = nextStep claim
+
     simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
     simplify (OnePath claim) = onePathTransition $ OnePath <$> simplify claim
 
