@@ -185,6 +185,7 @@ data AcTerm = AcTerm
     , elementVars :: Set (SomeVariableName RewritingVariableName)
     }
     deriving stock (Show, Eq)
+
 data AcEquation = AcEquation AcTerm AcTerm
     deriving stock (Show, Eq)
 
