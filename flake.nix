@@ -28,7 +28,7 @@
           inherit (haskell-nix) config;
         };
 
-      haskell-backend-src = { pkgs, postPatch ? "" }:
+      haskell-backend-src = { pkgs, ghc, postPatch ? "" }:
         pkgs.applyPatches {
           name = "haskell-backend-src";
           # make sure we remove all nix files and flake.lock, since any changes to these triggers re-compilation of kore
@@ -42,7 +42,7 @@
           ] ./.;
           postPatch = ''
             substituteInPlace kore/src/Kore/VersionInfo.hs \
-              --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+              --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}-${ghc}"'
             ${postPatch}
           '';
         };
@@ -93,6 +93,7 @@
           in projectOverlay {
             inherit pkgs profiling ghcOptions;
             src = haskell-backend-src {
+              inherit ghc;
               pkgs = pkgs';
               postPatch = if stack-yaml != null then
                 "cp ${stack-yaml} stack.yaml"
@@ -140,6 +141,12 @@
           [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
       };
 
+      projectProfilingEventlog = projectForGhc {
+        ghc = "ghc8107";
+        profiling = true;
+        ghcOptions = [ "-eventlog" ];
+      };
+
       flake = perSystem (system: self.project.${system}.flake { });
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
 
@@ -147,11 +154,22 @@
         self.flake.${system}.packages // {
           rematerialize = self.project.${system}.rematerialize-kore;
           rematerializeGhc9 = self.projectGhc9.${system}.rematerialize-kore;
-          kore-exec-prof = binWithFlags {
+
+          kore-prof-ghc9 = self.flakeGhc9.${system}.packages."kore:exe:kore-prof";
+
+          kore-exec-to-kore-prof = self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+
+          kore-exec-to-kore-prof-ghc9 = binWithFlags {
             inherit system;
             bin =
-              self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-            add-flags = "+RTS -p -l-au -RTS";
+              self.projectGhc9.${system}.hsPkgs.kore.components.exes.kore-exec;
+            add-flags = "+RTS -l -RTS";
+          };
+          kore-exec-prof-ghc8 = binWithFlags {
+            inherit system;
+            bin =
+              self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+            add-flags = "+RTS -l -RTS";
           };
           kore-exec-prof-closure-type = binWithFlags {
             inherit system;
@@ -182,7 +200,7 @@
         (final: prev: {
           haskell-backend-stackProject = projectOverlay {
             pkgs = prev;
-            src = haskell-backend-src { pkgs = prev; };
+            src = haskell-backend-src { pkgs = prev; ghc = "ghc8107"; };
           };
         })
 
