@@ -244,10 +244,12 @@ of occurrences of ui in ti'.
 We then compute the set of positive, non-null, minimal solutions of this system
 of equations, called S, using an algorithm defined in
 "Competing for the AC-Unification Race" by Alexandre Boudet. Each solution Sj
-in S is one element of the *diophantine basis* of P. For each solution
-`Sj = (d1, ..., dn)` in this set, we associate a new (existentially quantified)
-term variable Vj.  Each subset `{s1, ..., sq}` of S is a *potential solution*
-of P. The potential solution is *suitable* if:
+in S is one element of what we choose to call the *diophantine basis* of P.
+It is called a basis because, in a mathematical sense, each solution to P
+consists of some algebraic combination of the elements of the basis. For each
+solution `Sj = (d1, ..., dn)` in this set, we associate a new (existentially
+quantified) term variable Vj.  Each subset `{s1, ..., sq}` of S is a
+*potential solution* of P. The potential solution is *suitable* if:
 
 * It is maximal; i.e., there is not another potential solution which is a
   superset of this one which is also suitable.
