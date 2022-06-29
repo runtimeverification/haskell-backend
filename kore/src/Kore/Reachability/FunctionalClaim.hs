@@ -190,4 +190,4 @@ functionalCheckImplication
             | otherwise  = NotImpliedStuck (FunctionalClaim claimPattern)
 
 instance ClaimExtractor FunctionalClaim where
-
+    extractClaim _ = Nothing
