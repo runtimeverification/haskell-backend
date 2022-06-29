@@ -115,7 +115,7 @@ test_matcherEqualHeads =
                 (mkCeil Mock.topSort (Mock.plain10 (mkElemVar Mock.xConfig)))
                 (mkCeil Mock.topSort (Mock.plain10 Mock.a))
         assertEqual "" expect actual
-    , testCase "TESTING" $ do
+    , testCase "Match multiple opaque parts" $ do
         let expect =
                 mkMatchResult
                     ( makeTruePredicate
