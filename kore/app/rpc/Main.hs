@@ -3,34 +3,28 @@
 module Main (main) where
 
 import Control.Monad.Catch (
+    bracket,
     handle,
-    bracket
  )
 import Control.Monad.Reader (
-    ReaderT(..),
+    ReaderT (..),
  )
 import Data.Time.Clock (
     UTCTime (..),
  )
--- long,
 
+-- long,
 -- option,
 -- progDesc,
 -- readerError,
-
 -- strOption,
 -- value,
-
 -- unparseKoreSolverOptions,
 -- writeKoreSolverFiles,
-
 -- unparseKoreLogOptions,
-
 -- Definition (Definition),
 -- Module (Module),
-
 -- Sentence (..),
-
 import GlobalMain qualified
 import Kore.BugReport (
     BugReportOption,
@@ -54,11 +48,9 @@ import Kore.Log.InfoProofDepth (
     InfoProofDepth,
  )
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
-
 import Kore.Syntax.Definition (
     ModuleName (..),
  )
-
 import Log qualified
 import Options.Applicative (
     InfoMod,
@@ -78,7 +70,6 @@ import Options.SMT (
  )
 import Prelude.Kore
 import SMT qualified
-
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -189,8 +180,8 @@ koreRpcServerRun exeLastModifiedTime GlobalMain.LocalOptions{execOptions, simpli
     GlobalMain.clockSomethingIO "Executing" $
         bracket
             (SMT.newSolver smtConfig)
-            SMT.stopSolver $
-            \mvar -> do
+            SMT.stopSolver
+            $ \mvar -> do
                 let solverSetup = SMT.SolverSetup{userInit = declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
                 runReaderT (SMT.getSMT SMT.initSolver) solverSetup
                 Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv

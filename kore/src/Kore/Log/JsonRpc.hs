@@ -7,23 +7,25 @@ module Kore.Log.JsonRpc (
 ) where
 
 import Control.Monad.Logger (
-    Loc, LogSource, LogLevel(..), LogStr,
-    defaultLogStr, fromLogStr
+    Loc,
+    LogLevel (..),
+    LogSource,
+    LogStr,
+    defaultLogStr,
+    fromLogStr,
  )
-
 import Data.Text.Encoding qualified as Text
-
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
 
-data LogJsonRpcServer = LogJsonRpcServer {
-    loc :: Loc,
-    src :: LogSource,
-    level :: LogLevel,
-    msg :: LogStr
+data LogJsonRpcServer = LogJsonRpcServer
+    { loc :: Loc
+    , src :: LogSource
+    , level :: LogLevel
+    , msg :: LogStr
     }
     deriving stock (Show)
 

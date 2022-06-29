@@ -13,7 +13,7 @@ module Log (
 
     -- * Implementation
     LoggerT (..),
-    LoggerEnv(..),
+    LoggerEnv (..),
     runLoggerT,
     askLogAction,
 

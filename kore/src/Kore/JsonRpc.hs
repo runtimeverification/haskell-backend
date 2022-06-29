@@ -25,6 +25,8 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Log qualified
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
@@ -43,8 +45,6 @@ import Network.JSONRPC (
  )
 import Prelude.Kore
 import SMT qualified
-import Log qualified
-import Kore.Log.JsonRpc(LogJsonRpcServer(..))
 
 newtype Depth = Depth Int
     deriving stock (Show, Eq)
@@ -217,13 +217,13 @@ runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} = do
     flip runLoggingT logFun $ do
         let ss = serverSettings port "*"
         jsonrpcTCPServer V2 False ss $ srv runSMT
-    where
-        someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
+  where
+    someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
 
-        logFun loc src level msg =
-            Log.logWith someLogAction $ LogJsonRpcServer {loc, src, level, msg}
+    logFun loc src level msg =
+        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
 
-        runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
+    runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
 
 srv :: MonadLoggerIO m => (SMT.SMT a -> IO a) -> JSONRPCT m ()
 srv _runSMT = do

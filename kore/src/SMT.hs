@@ -9,7 +9,7 @@ module SMT (
     SMT,
     getSMT,
     Solver,
-    SolverSetup(..),
+    SolverSetup (..),
     newSolver,
     initSolver,
     stopSolver,
@@ -554,7 +554,6 @@ initSolver = do
     setRLimit rLimit
     traverse_ loadFile preludeFile
     join $ SMT (Reader.asks userInit)
-
 
 {- | Initialize a new solverHandle with the given 'Config'.
 
