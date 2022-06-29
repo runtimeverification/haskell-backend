@@ -133,6 +133,14 @@
         stack-yaml = "stack-nix-ghc9.yaml";
       };
 
+      projectGhc9ProfilingEventlog = projectForGhc {
+        ghc = "ghc923";
+        stack-yaml = "stack-nix-ghc9.yaml";
+        profiling = true;
+        ghcOptions =
+          [ "-eventlog" ];
+      };
+
       projectGhc9ProfilingEventlogInfoTable = projectForGhc {
         ghc = "ghc923";
         stack-yaml = "stack-nix-ghc9.yaml";
@@ -141,11 +149,6 @@
           [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
       };
 
-      projectProfilingEventlog = projectForGhc {
-        ghc = "ghc8107";
-        profiling = true;
-        ghcOptions = [ "-eventlog" ];
-      };
 
       flake = perSystem (system: self.project.${system}.flake { });
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
@@ -155,35 +158,8 @@
           rematerialize = self.project.${system}.rematerialize-kore;
           rematerializeGhc9 = self.projectGhc9.${system}.rematerialize-kore;
 
-          kore-prof-ghc9 = self.flakeGhc9.${system}.packages."kore:exe:kore-prof";
-
-          kore-exec-to-kore-prof = self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-
-          kore-exec-to-kore-prof-ghc9 = binWithFlags {
-            inherit system;
-            bin =
-              self.projectGhc9.${system}.hsPkgs.kore.components.exes.kore-exec;
-            add-flags = "+RTS -l -RTS";
-          };
-          kore-exec-prof-ghc8 = binWithFlags {
-            inherit system;
-            bin =
-              self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-            add-flags = "+RTS -l -RTS";
-          };
-          kore-exec-prof-closure-type = binWithFlags {
-            inherit system;
-            bin =
-              self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-            add-flags = "+RTS -l -hT -RTS";
-          };
-          kore-exec-prof-infotable = binWithFlags {
-            inherit system;
-            bin =
-              self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-            add-flags = "+RTS -l -hi -RTS";
-          };
-
+          kore-exec-prof = self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec-prof-infotable = self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
         });
 
       apps = perSystem (system: self.flake.${system}.apps);
