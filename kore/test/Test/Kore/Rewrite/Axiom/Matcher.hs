@@ -115,6 +115,28 @@ test_matcherEqualHeads =
                 (mkCeil Mock.topSort (Mock.plain10 (mkElemVar Mock.xConfig)))
                 (mkCeil Mock.topSort (Mock.plain10 Mock.a))
         assertEqual "" expect actual
+    , testCase "TESTING" $ do
+        let expect =
+                mkMatchResult
+                    ( makeTruePredicate
+                    , Map.fromList
+                        [ (inject Mock.setXConfigSetSort, mkElemVar Mock.xConfigSet)
+                        , (inject Mock.setYConfigSetSort, mkElemVar Mock.yConfigSet)
+                        ]
+                    )
+        actual <-
+            matchDefinition
+                    (Mock.framedSet
+                        []
+                        [ mkSetVar Mock.setXConfigSetSort
+                        , mkSetVar Mock.setYConfigSetSort
+                        ]
+                    )
+                    (Mock.framedSet
+                        []
+                        [mkElemVar Mock.xConfigSet, mkElemVar Mock.yConfigSet]
+                    )
+        assertEqual "" expect actual
     , testCase "Equals" $ do
         let expect =
                 mkMatchResult
