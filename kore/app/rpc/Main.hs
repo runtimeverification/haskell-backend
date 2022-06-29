@@ -4,6 +4,10 @@ module Main (main) where
 
 import Control.Monad.Catch (
     handle,
+    bracket
+ )
+import Control.Monad.Reader (
+    ReaderT(..),
  )
 import Data.Time.Clock (
     UTCTime (..),
@@ -49,9 +53,13 @@ import Kore.Log.ErrorException (
 import Kore.Log.InfoProofDepth (
     InfoProofDepth,
  )
+import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
+
 import Kore.Syntax.Definition (
     ModuleName (..),
  )
+
+import Log qualified
 import Options.Applicative (
     InfoMod,
     Parser,
@@ -69,6 +77,8 @@ import Options.SMT (
     parseKoreSolverOptions,
  )
 import Prelude.Kore
+import SMT qualified
+
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -163,20 +173,27 @@ mainWithOptions exeLastModifiedTime localOptions@GlobalMain.LocalOptions{execOpt
 
 koreRpcServerRun :: UTCTime -> GlobalMain.LocalOptions KoreRpcServerOptions -> GlobalMain.Main ExitCode
 koreRpcServerRun exeLastModifiedTime GlobalMain.LocalOptions{execOptions, simplifierx} = do
-    let KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions} = execOptions
+    let KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
+        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} = koreSolverOptions
     GlobalMain.SerializedDefinition{serializedModule, lemmas, locations} <-
-        GlobalMain.deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName exeLastModifiedTime
+        GlobalMain.deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
-    (exitCode, final) <-
-        GlobalMain.execute koreSolverOptions metadataTools lemmas $ do
-            undefined
-    -- exec
-    --     simplifierx
-    --     depthLimit
-    --     breadthLimit
-    --     serializedModule
-    --     strategy
-    --     initial
+    let smtConfig =
+            SMT.defaultConfig
+                { SMT.timeOut = timeOut
+                , SMT.rLimit = rLimit
+                , SMT.resetInterval = resetInterval
+                , SMT.prelude = prelude
+                }
+
+    GlobalMain.clockSomethingIO "Executing" $
+        bracket
+            (SMT.newSolver smtConfig)
+            SMT.stopSolver $
+            \mvar -> do
+                let solverSetup = SMT.SolverSetup{userInit = declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
+                runReaderT (SMT.getSMT SMT.initSolver) solverSetup
+                Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv
 
     pure ExitSuccess
 

@@ -375,6 +375,7 @@ library
     Kore.Log.ErrorRewritesInstantiation
     Kore.Log.ErrorVerify
     Kore.Log.InfoAttemptUnification
+    Kore.Log.JsonRpc
     Kore.Log.InfoExecBreadth
     Kore.Log.InfoExecDepth
     Kore.Log.InfoProofDepth
@@ -610,6 +611,12 @@ executable kore-rpc
   main-is: Main.hs
   hs-source-dirs: app/rpc
   build-depends: kore
+  build-depends: clock >=0.8
+  build-depends: directory >=1.3
+  build-depends: exceptions >=0.10
+  build-depends: mtl >=2.2
+  build-depends: optparse-applicative >=0.14
+  build-depends: time >=1.9.3
 
 executable kore-format
   import: haskell

@@ -9,6 +9,9 @@ module SMT (
     SMT,
     getSMT,
     Solver,
+    SolverSetup(..),
+    newSolver,
+    initSolver,
     stopSolver,
     runSMT,
     MonadSMT (..),
@@ -331,7 +334,7 @@ withSolverHandleWithRestart action = do
                 Exception.handle handleIOException $
                     SimpleSMT.newSolver exe args logAction
         _ <- Trans.liftIO $ putMVar mvar newSolverHandle
-        initSolver config
+        initSolver
         (action newSolverHandle)
 
     handleIOException :: IOException -> IO SolverHandle
@@ -467,8 +470,7 @@ instance MonadSMT SMT where
 
     reinit = unshareSolverHandle $ do
         withSolver' $ \solver -> SimpleSMT.simpleCommand solver ["reset"]
-        config <- SMT (Reader.asks config)
-        initSolver config
+        initSolver
         modifySolverHandle $ Lens.assign (field @"queryCounter") 0
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
@@ -544,14 +546,15 @@ defaultConfig =
         , resetInterval = ResetInterval 100
         }
 
-initSolver :: Config -> SMT ()
-initSolver Config{timeOut, rLimit, prelude} = do
+initSolver :: SMT ()
+initSolver = do
+    Config{timeOut, rLimit, prelude} <- askConfig
+    let preludeFile = getPrelude prelude
     setTimeOut timeOut
     setRLimit rLimit
     traverse_ loadFile preludeFile
     join $ SMT (Reader.asks userInit)
-  where
-    preludeFile = getPrelude prelude
+
 
 {- | Initialize a new solverHandle with the given 'Config'.
 
@@ -597,9 +600,9 @@ runSMT config userInit smt =
         (\mvar -> runSMT' config userInit mvar smt)
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
-runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
+runSMT' config userInit refSolverHandle smt =
     runReaderT
-        (getSMT (initSolver config) >> smt)
+        (getSMT $ initSolver >> smt)
         SolverSetup{userInit, refSolverHandle, config}
 
 -- Need to quote every identifier in SMT between pipes

@@ -4,11 +4,14 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (runServer) where
 
+import Colog (
+    cmap,
+ )
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception, catch, mask)
 import Control.Monad (forever)
-import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT, runStderrLoggingT)
+import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..), object, (.=))
@@ -39,6 +42,9 @@ import Network.JSONRPC (
     sendBatchResponse,
  )
 import Prelude.Kore
+import SMT qualified
+import Log qualified
+import Kore.Log.JsonRpc(LogJsonRpcServer(..))
 
 newtype Depth = Depth Int
     deriving stock (Show, Eq)
@@ -206,14 +212,21 @@ respond = \case
     -- this case is only reachable if the cancel appeared as part of a batch request
     Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
 
-runServer :: Int -> IO ()
-runServer port = do
-    runStderrLoggingT $ do
+runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> IO ()
+runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} = do
+    flip runLoggingT logFun $ do
         let ss = serverSettings port "*"
-        jsonrpcTCPServer V2 False ss srv
+        jsonrpcTCPServer V2 False ss $ srv runSMT
+    where
+        someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
 
-srv :: MonadLoggerIO m => JSONRPCT m ()
-srv = do
+        logFun loc src level msg =
+            Log.logWith someLogAction $ LogJsonRpcServer {loc, src, level, msg}
+
+        runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
+
+srv :: MonadLoggerIO m => (SMT.SMT a -> IO a) -> JSONRPCT m ()
+srv _runSMT = do
     reqQueue <- liftIO $ atomically newTChan
 
     let mainLoop tid =
