@@ -126,16 +126,16 @@ test_matcherEqualHeads =
                     )
         actual <-
             matchDefinition
-                    (Mock.framedSet
-                        []
-                        [ mkSetVar Mock.setXConfigSetSort
-                        , mkSetVar Mock.setYConfigSetSort
-                        ]
-                    )
-                    (Mock.framedSet
-                        []
-                        [mkElemVar Mock.xConfigSet, mkElemVar Mock.yConfigSet]
-                    )
+                ( Mock.framedSet
+                    []
+                    [ mkSetVar Mock.setXConfigSetSort
+                    , mkSetVar Mock.setYConfigSetSort
+                    ]
+                )
+                ( Mock.framedSet
+                    []
+                    [mkElemVar Mock.xConfigSet, mkElemVar Mock.yConfigSet]
+                )
         assertEqual "" expect actual
     , testCase "Equals" $ do
         let expect =
