@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -24,10 +27,10 @@ The warning message distinguishes for the user the ways that a proof can be stuc
 data WarnStuckClaimState
     = -- | The terms of the left- and right-hand sides do not unify,
       -- and the left-hand side cannot be rewritten any further.
-      TermsUnifiableStuck !SomeClaim
+      TermsUnifiableStuck SomeClaim
     | -- | The left- and right-hand side terms are unifiable, but the left-hand side
       -- condition does not imply the right-hand side condition.
-      TermsNotUnifiableStuck !SomeClaim
+      TermsNotUnifiableStuck SomeClaim
     deriving stock (Show)
 
 instance Pretty WarnStuckClaimState where
