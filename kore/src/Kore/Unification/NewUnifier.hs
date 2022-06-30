@@ -316,7 +316,7 @@ combineTheories acBindings freeBindings origVars = do
     -- M2 = V2
     --
     -- Our goal is to remove all bindings from the ac solution which bind
-    -- variables to variables. However, there are multiple ways of doing this.	
+    -- variables to variables. However, there are multiple ways of doing this.
     -- We could substitute Elem1 and M1, or we could substitute Elem1 and M2,
     -- etc. From a unification perspective, it doesn't really matter which ones
     -- we replace as we will end up with the same equalities in the end no
