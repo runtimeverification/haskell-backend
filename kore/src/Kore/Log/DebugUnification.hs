@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -23,9 +26,9 @@ import Pretty (
 import Pretty qualified
 
 data DebugUnification
-    = DebugUnificationWhile !WhileDebugUnification
+    = DebugUnificationWhile WhileDebugUnification
     | DebugUnificationSolved UnificationSolved
-    | DebugUnificationUnsolved !UnificationUnsolved
+    | DebugUnificationUnsolved UnificationUnsolved
     deriving stock (Show)
 
 instance Pretty DebugUnification where
