@@ -43,7 +43,7 @@ instance Entry DebugUnification where
     oneLineDoc (DebugUnificationUnsolved _) = "DebugUnificationUnsolved"
 
 -- | @WhileDebugUnification@ encloses the context of unification log entries.
-data WhileDebugUnification = WhileDebugUnification {term1, term2 :: ~(TermLike VariableName)}
+data WhileDebugUnification = WhileDebugUnification {term1, term2 :: TermLike VariableName}
     deriving stock (Show)
 
 instance Pretty WhileDebugUnification where
@@ -56,7 +56,7 @@ instance Pretty WhileDebugUnification where
             ]
 
 -- | @UnificationUnsolved@ represents an unsolved unification problem.
-data UnificationUnsolved = UnificationUnsolved {term1, term2 :: ~(TermLike VariableName)}
+data UnificationUnsolved = UnificationUnsolved {term1, term2 :: TermLike VariableName}
     deriving stock (Show)
 
 instance Pretty UnificationUnsolved where
@@ -89,8 +89,8 @@ whileDebugUnification ::
 whileDebugUnification term1' term2' =
     logWhile $ DebugUnificationWhile WhileDebugUnification{term1, term2}
   where
-    ~term1 = TermLike.mapVariables (pure toVariableName) term1'
-    ~term2 = TermLike.mapVariables (pure toVariableName) term2'
+    term1 = TermLike.mapVariables (pure toVariableName) term1'
+    term2 = TermLike.mapVariables (pure toVariableName) term2'
 
 debugUnificationSolved ::
     MonadLog m =>
@@ -100,7 +100,7 @@ debugUnificationSolved ::
 debugUnificationSolved solution' =
     logEntry $ DebugUnificationSolved UnificationSolved{solution}
   where
-    ~solution = Pattern.mapVariables (pure toVariableName) solution'
+    solution = Pattern.mapVariables (pure toVariableName) solution'
 
 debugUnificationUnsolved ::
     MonadLog m =>
@@ -111,5 +111,5 @@ debugUnificationUnsolved ::
 debugUnificationUnsolved term1' term2' =
     logEntry $ DebugUnificationUnsolved UnificationUnsolved{term1, term2}
   where
-    ~term1 = TermLike.mapVariables (pure toVariableName) term1'
-    ~term2 = TermLike.mapVariables (pure toVariableName) term2'
+    term1 = TermLike.mapVariables (pure toVariableName) term1'
+    term2 = TermLike.mapVariables (pure toVariableName) term2'

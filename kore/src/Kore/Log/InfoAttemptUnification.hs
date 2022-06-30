@@ -29,7 +29,7 @@ import Pretty (
  )
 import Pretty qualified
 
-data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: ~(TermLike VariableName)}
+data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike VariableName}
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -60,5 +60,5 @@ infoAttemptUnification term1' term2' =
     logWhile InfoAttemptUnification{term1, term2}
   where
     mapVariables = TermLike.mapVariables (pure toVariableName)
-    ~term1 = mapVariables term1'
-    ~term2 = mapVariables term2'
+    term1 = mapVariables term1'
+    term2 = mapVariables term2'

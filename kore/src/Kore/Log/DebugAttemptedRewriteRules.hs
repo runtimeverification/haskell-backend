@@ -32,7 +32,7 @@ import Pretty (
 import Pretty qualified
 
 data DebugAttemptedRewriteRules = DebugAttemptedRewriteRules
-    { configuration :: ~(Pattern VariableName)
+    { configuration :: Pattern VariableName
     , attemptedRewriteRule :: SourceLocation
     }
     deriving stock (Show)
@@ -68,6 +68,6 @@ debugAttemptedRewriteRule initial attemptedRewriteRule =
             , attemptedRewriteRule
             }
   where
-    ~configuration = mapConditionalVariables TermLike.mapVariables initial
+    configuration = mapConditionalVariables TermLike.mapVariables initial
     mapConditionalVariables mapTermVariables =
         Conditional.mapVariables mapTermVariables (pure toVariableName)
