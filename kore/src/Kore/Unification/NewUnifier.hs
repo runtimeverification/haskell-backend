@@ -296,19 +296,58 @@ combineTheories acBindings freeBindings origVars = do
     preprocessTheory ::
         Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName) ->
         Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
-    preprocessTheory bindings = fst $ Map.foldrWithKey' preprocessBinding (Map.empty, Map.empty) bindings
+    -- this fold is rather tricky. We might have a unification problem that
+    -- looks something like this:
+    --
+    -- (free)
+    -- ------
+    -- Elem1 = K1 |-> V1
+    -- Elem2 = K2 |-> V2
+    --
+    -- (ac equation)
+    -- -------------
+    -- Elem1 M1 = Elem2 M2
+    --
+    -- (ac solution)
+    -- ----------
+    -- Elem1 = V1
+    -- M1 = V2
+    -- Elem2 = V1
+    -- M2 = V2
+    --
+    -- Our goal is to remove all bindings from the ac solution which bind
+    -- variables to variables. However, there are multiple ways of doing this.	
+    -- We could substitute Elem1 and M1, or we could substitute Elem1 and M2,
+    -- etc. From a unification perspective, it doesn't really matter which ones
+    -- we replace as we will end up with the same equalities in the end no
+    -- matter what. However, it turns out we are actually constrained as to
+    -- which ones we substitute, since it affects the /orientation/ of the
+    -- equalities. The substitution normalization algorithm requires that
+    -- variables which compare less-than be on the LHS and variables which
+    -- compare greater-than be on the RHS. This is important if, as here,
+    -- these equalities, once simplified, end up in the final solution.
+    --
+    -- Thus, we must use `foldlWithKey`, which processes elements from the
+    -- greatest to the least, not `foldrWithKey`, which processes elements from
+    -- the least to the greatest. That's because the elements we process first
+    -- get removed from the substitution, while the elements we process last
+    -- merely have their variables substituted on the rhs. By processing from
+    -- greatest to least, we guarantee that the least elements in the
+    -- substitution are the ones that remain at the end, which ought to
+    -- preserve the invariant.
+    preprocessTheory bindings = fst $ Map.foldlWithKey' preprocessBinding (Map.empty, Map.empty) bindings
     preprocessBinding ::
+        (Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName), Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)) ->
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
-        (Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName), Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)) ->
         (Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName), Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName))
-    preprocessBinding key (ElemVar_ var) (accum, subst) =
+    preprocessBinding (accum, subst) key (ElemVar_ var) =
         let substKey = variableName $ inject var
             substVal = mkElemVar $ fromJust $ retract key
          in case Map.lookup substKey subst of
                 Nothing -> (Map.map (substitute (Map.singleton substKey substVal)) accum, Map.insert substKey substVal subst)
                 Just substituted -> (Map.insert key substituted accum, subst)
-    preprocessBinding key val (accum, subst) =
+    preprocessBinding (accum, subst) key val =
         (Map.insert key (substitute subst val) accum, subst)
 
 unifiedTermAnd ::
