@@ -129,6 +129,7 @@ common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
+  build-depends: aeson-pretty == 0.8.9
   build-depends: array
   build-depends: async >=2.2
   build-depends: binary >=0.8.8.0
@@ -195,6 +196,7 @@ library
   import: haskell
   import: library
   exposed-modules:
+    KoreJson
     Changed
     Control.Monad.Counter
     Data.Graph.TopologicalSort
