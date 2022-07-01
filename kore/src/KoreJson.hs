@@ -90,8 +90,11 @@ data KorePattern
         , source :: KorePattern
         , dest :: KorePattern
         }
-    | -- | domain value, a string literal. ???
-      KJDomainValue {value :: Text}
+    | -- | domain value, a string literal with a sort
+      KJDomainValue
+        { sort :: Sort
+        , value :: Text
+        }
     | -- syntactic sugar
 
       -- | left/right associative or-cascade
