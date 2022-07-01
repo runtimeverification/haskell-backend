@@ -7,7 +7,6 @@ module KoreJson (
     ) where
 
 --    KorePattern(..)
-
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
