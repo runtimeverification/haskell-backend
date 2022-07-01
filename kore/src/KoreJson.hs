@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-# Options -Wno-partial-fields #-}
 
@@ -44,7 +45,7 @@ data KorePattern
         , args :: [KorePattern]
         }
     | -- | string literal
-      KJString {value :: Text}
+      KJString Text
     | -- matching logic pattern
 
       -- | Connective (top, bottom, not, and, or, implies, iff)
@@ -219,7 +220,21 @@ toParsedPattern x = Prelude.Left (KoreError $ "not implemented: " ++ show x)
 
 -- | Write a Pattern to a json byte string
 encodePattern :: Pattern a -> ByteString
-encodePattern = Json.encodePretty . fromParsedPattern
+encodePattern = encodeKoreJson . fromParsedPattern
+
+encodeKoreJson :: KorePattern -> ByteString
+encodeKoreJson = Json.encodePretty' prettyJsonOpts
+  where
+    prettyJsonOpts =
+        defConfig
+            { confIndent = Spaces 2
+            , confCompare = argsLast
+            }
+    argsLast :: Text -> Text -> Ordering
+    argsLast "args" "args" = EQ
+    argsLast "args" _ = GT
+    argsLast _ "args" = LT
+    argsLast x y = compare x y
 
 fromParsedPattern :: Pattern a -> KorePattern
 fromParsedPattern _ = error "not implemented"
