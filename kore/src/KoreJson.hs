@@ -11,16 +11,17 @@ import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Char (toLower)
 import Data.Either.Extra
-import Data.Functor.Const (Const(..))
+import Data.Functor.Const (Const (..))
 import Data.Text (Text)
 import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Internal.Pattern (Pattern)
-import Kore.Syntax.PatternF (PatternF(..))
+import Kore.Syntax.PatternF (PatternF (..))
+
 -- import Kore.Internal.TermLike.TermLike (TermLikeF(..))
 import Kore.Parser (embedParsedPattern)
-import Kore.Syntax.Variable (SomeVariable(..), SomeVariableName(..), Variable(..), VariableName(..), ElementVariableName(..), SetVariableName(..))
 import Kore.Sort qualified as Kore
+import Kore.Syntax.Variable (ElementVariableName (..), SetVariableName (..), SomeVariable (..), SomeVariableName (..), Variable (..), VariableName (..))
 import Prelude.Kore as Prelude
 
 {- | Json representation of Kore patterns as a Haskell type.
@@ -142,18 +143,19 @@ newtype Id = Id Text
     deriving stock (Eq, Show, Generic)
     deriving newtype (ToJSON, FromJSON)
 
-data Sort = Sort
-    { name :: Id -- may start by a backslash
-    , args :: [Sort]
-    }
+data Sort
+    = Sort
+        { name :: Id -- may start by a backslash
+        , args :: [Sort]
+        }
     | SortVariable Text -- may start by a backslash
     deriving stock (Eq, Show, Generic)
 
 instance ToJSON Sort where
-    toJSON = genericToJSON codecOptions { sumEncoding = UntaggedValue }
+    toJSON = genericToJSON codecOptions{sumEncoding = UntaggedValue}
 
 instance FromJSON Sort where
-    parseJSON = genericParseJSON codecOptions { sumEncoding = UntaggedValue }
+    parseJSON = genericParseJSON codecOptions{sumEncoding = UntaggedValue}
 
 -- TODO could omit the args field if empty (custom instance)
 
@@ -232,32 +234,31 @@ decodeKoreJson = Json.eitherDecode'
 -- see Parser.y
 toParsedPattern :: KorePattern -> Either JsonError ParsedPattern
 toParsedPattern = \case
-  KJEVar n s -> do
-    variableName <- eVarName n
-    variableSort <- mkSort s
-    pure $ embedParsedPattern $
-      VariableF $
-      Const $
-      Variable { variableName, variableSort }
-
-  x -> Prelude.Left . NotImplemented $ show x
-
+    KJEVar n s -> do
+        variableName <- eVarName n
+        variableSort <- mkSort s
+        pure $
+            embedParsedPattern $
+                VariableF $
+                    Const $
+                        Variable{variableName, variableSort}
+    x -> Prelude.Left . NotImplemented $ show x
   where
     mkSort :: Sort -> Either JsonError Kore.Sort
     mkSort Sort{name, args} =
-      fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
-      mapM mkSort args
+        fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
+            mapM mkSort args
     mkSort (SortVariable name) =
-      pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
+        pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
 
     koreId :: Id -> Kore.Id
     koreId (Id name) = Kore.Id name Kore.AstLocationNone
 
     eVarName :: Id -> Either JsonError (SomeVariableName VariableName)
     eVarName = pure . SomeVariableNameElement . ElementVariableName . flip VariableName Nothing . koreId
-    -- TODO check well-formed (initial letter, char. set)
-    -- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
 
+-- TODO check well-formed (initial letter, char. set)
+-- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
 
 ------------------------------------------------------------
 -- writing
