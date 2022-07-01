@@ -36,6 +36,7 @@
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+          (hsPkgs."aeson-pretty" or (errorHandler.buildDepError "aeson-pretty"))
           (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."async" or (errorHandler.buildDepError "async"))
           (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
@@ -102,6 +103,7 @@
           ];
         buildable = true;
         modules = [
+          "KoreJson"
           "Changed"
           "Control/Monad/Counter"
           "Data/Graph/TopologicalSort"
@@ -641,6 +643,7 @@
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+            (hsPkgs."aeson-pretty" or (errorHandler.buildDepError "aeson-pretty"))
             (hsPkgs."array" or (errorHandler.buildDepError "array"))
             (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
