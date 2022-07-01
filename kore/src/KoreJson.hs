@@ -148,7 +148,12 @@ data Sort = Sort
     }
     | SortVariable Text -- may start by a backslash
     deriving stock (Eq, Show, Generic)
-    deriving anyclass (ToJSON, FromJSON)
+
+instance ToJSON Sort where
+    toJSON = genericToJSON codecOptions { sumEncoding = UntaggedValue }
+
+instance FromJSON Sort where
+    parseJSON = genericParseJSON codecOptions { sumEncoding = UntaggedValue }
 
 -- TODO could omit the args field if empty (custom instance)
 
@@ -249,7 +254,7 @@ toParsedPattern = \case
     koreId (Id name) = Kore.Id name Kore.AstLocationNone
 
     eVarName :: Id -> Either JsonError (SomeVariableName VariableName)
-    eVarName = pure . ElementVariableName . flip VariableName Nothing
+    eVarName = pure . SomeVariableNameElement . ElementVariableName . flip VariableName Nothing . koreId
     -- TODO check well-formed (initial letter, char. set)
     -- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
 
