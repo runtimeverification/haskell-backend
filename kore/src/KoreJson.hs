@@ -6,17 +6,22 @@
 module KoreJson (
     ) where
 
---    KorePattern(..)
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Char (toLower)
 import Data.Either.Extra
+import Data.Functor.Const (Const(..))
 import Data.Text (Text)
-import GHC.Generics
+import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Internal.Pattern (Pattern)
-import Prelude
+import Kore.Syntax.PatternF (PatternF(..))
+-- import Kore.Internal.TermLike.TermLike (TermLikeF(..))
+import Kore.Parser (embedParsedPattern)
+import Kore.Syntax.Variable (SomeVariable(..), SomeVariableName(..), Variable(..), VariableName(..), ElementVariableName(..), SetVariableName(..))
+import Kore.Sort qualified as Kore
+import Prelude.Kore as Prelude
 
 {- | Json representation of Kore patterns as a Haskell type.
  Modeled after kore-syntax.md, merging some of the ML pattern
@@ -141,6 +146,7 @@ data Sort = Sort
     { name :: Id -- may start by a backslash
     , args :: [Sort]
     }
+    | SortVariable Text -- may start by a backslash
     deriving stock (Eq, Show, Generic)
     deriving anyclass (ToJSON, FromJSON)
 
@@ -196,12 +202,8 @@ data LeftRight
     deriving stock (Eq, Show, Generic)
     deriving anyclass (ToJSON, FromJSON)
 
---------------------------------------------------
--- parsing utilities
-
--- | low-level: read text into KorePattern
-decodeKoreJson :: ByteString -> Either String KorePattern
-decodeKoreJson = Json.eitherDecode'
+------------------------------------------------------------
+-- reading
 
 {- | read text into KorePattern, then check for consistency and
  construct a ParsedPattern
@@ -216,9 +218,44 @@ data JsonError
       ParseError String
     | -- | Inconsistent data parsed. TODO: refine!
       KoreError String
+    | NotImplemented String
 
+-- | low-level: read text into KorePattern
+decodeKoreJson :: ByteString -> Either String KorePattern
+decodeKoreJson = Json.eitherDecode'
+
+-- see Parser.y
 toParsedPattern :: KorePattern -> Either JsonError ParsedPattern
-toParsedPattern x = Prelude.Left (KoreError $ "not implemented: " ++ show x)
+toParsedPattern = \case
+  KJEVar n s -> do
+    variableName <- eVarName n
+    variableSort <- mkSort s
+    pure $ embedParsedPattern $
+      VariableF $
+      Const $
+      Variable { variableName, variableSort }
+
+  x -> Prelude.Left . NotImplemented $ show x
+
+  where
+    mkSort :: Sort -> Either JsonError Kore.Sort
+    mkSort Sort{name, args} =
+      fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
+      mapM mkSort args
+    mkSort (SortVariable name) =
+      pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
+
+    koreId :: Id -> Kore.Id
+    koreId (Id name) = Kore.Id name Kore.AstLocationNone
+
+    eVarName :: Id -> Either JsonError (SomeVariableName VariableName)
+    eVarName = pure . ElementVariableName . flip VariableName Nothing
+    -- TODO check well-formed (initial letter, char. set)
+    -- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
+
+
+------------------------------------------------------------
+-- writing
 
 -- | Write a Pattern to a json byte string
 encodePattern :: Pattern a -> ByteString
