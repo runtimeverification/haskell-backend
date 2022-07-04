@@ -4,7 +4,7 @@
 {-# Options -Wno-partial-fields #-}
 
 module KoreJson (
-  ) where
+    ) where
 
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
@@ -25,7 +25,7 @@ import Kore.Sort qualified as Kore
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Variable (ElementVariableName (..), SetVariableName (..), SomeVariableName (..), Variable (..), VariableName (..))
 import Prelude.Kore hiding (Left, Right, pred)
-import Prelude.Kore qualified as Prelude (Either(..))
+import Prelude.Kore qualified as Prelude (Either (..))
 
 {- | Json representation of Kore patterns as a Haskell type.
  Modeled after kore-syntax.md, merging some of the ML pattern
@@ -112,8 +112,9 @@ data KorePattern
         , sort :: Sort
         , args :: [KorePattern]
         }
-        -- TODO textual parser also understands And/Implies/Iff
-    | -- | left/right associative app pattern
+    | -- TODO textual parser also understands And/Implies/Iff
+
+      -- | left/right associative app pattern
       KJMultiApp
         { assoc :: LeftRight
         , symbol :: Id -- may start by a '\\'
@@ -244,45 +245,50 @@ toParsedPattern = \case
         embedParsedPattern . StringLiteralF . Const <$> pure (Kore.StringLiteral t)
     KJConnective c s as ->
         embedParsedPattern <$> mkConnective c s as
-    KJQuantifier {quant = Forall, sort, var, varSort, arg} ->
-        fmap (embedParsedPattern . ForallF) $ Kore.Forall
-            <$> mkSort sort
-            <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
-            <*> toParsedPattern arg
-    KJQuantifier {quant = Exists, sort, var, varSort, arg} ->
-        fmap (embedParsedPattern . ExistsF) $ Kore.Exists
-            <$> mkSort sort
-            <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
-            <*> toParsedPattern arg
-    KJFixpoint {combinator = Mu, var, varSort, arg} ->
-        fmap (embedParsedPattern . MuF) $ Kore.Mu
-            <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
-            <*> toParsedPattern arg
-    KJFixpoint {combinator = Nu, var, varSort, arg} ->
-        fmap (embedParsedPattern . NuF) $ Kore.Nu
-            <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
-            <*> toParsedPattern arg
-    KJPredicate {pred, sort, sort2, args} ->
+    KJQuantifier{quant = Forall, sort, var, varSort, arg} ->
+        fmap (embedParsedPattern . ForallF) $
+            Kore.Forall
+                <$> mkSort sort
+                <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
+                <*> toParsedPattern arg
+    KJQuantifier{quant = Exists, sort, var, varSort, arg} ->
+        fmap (embedParsedPattern . ExistsF) $
+            Kore.Exists
+                <$> mkSort sort
+                <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
+                <*> toParsedPattern arg
+    KJFixpoint{combinator = Mu, var, varSort, arg} ->
+        fmap (embedParsedPattern . MuF) $
+            Kore.Mu
+                <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
+                <*> toParsedPattern arg
+    KJFixpoint{combinator = Nu, var, varSort, arg} ->
+        fmap (embedParsedPattern . NuF) $
+            Kore.Nu
+                <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
+                <*> toParsedPattern arg
+    KJPredicate{pred, sort, sort2, args} ->
         embedParsedPattern <$> mkPredicate pred sort sort2 args
-    KJNext { sort, dest} ->
-        fmap (embedParsedPattern . NextF) $ Kore.Next
-            <$> mkSort sort
-            <*> toParsedPattern dest
-    KJRewrites { sort, source, dest} ->
-        fmap (embedParsedPattern . RewritesF) $ Kore.Rewrites
-            <$> mkSort sort
-            <*> toParsedPattern source
-            <*> toParsedPattern dest
-    KJDomainValue { sort, value} ->
-        fmap (embedParsedPattern . DomainValueF) $ Kore.DomainValue
-            <$> mkSort sort
-            <*> toParsedPattern (KJString value)
-    KJMultiOr {assoc, sort, args} ->
-      withAssoc assoc <$> mkOr sort <*> traverse toParsedPattern args
-
-    KJMultiApp { assoc, symbol, sorts, args} ->
-      withAssoc assoc <$> mkF symbol sorts <*> traverse toParsedPattern args
-
+    KJNext{sort, dest} ->
+        fmap (embedParsedPattern . NextF) $
+            Kore.Next
+                <$> mkSort sort
+                <*> toParsedPattern dest
+    KJRewrites{sort, source, dest} ->
+        fmap (embedParsedPattern . RewritesF) $
+            Kore.Rewrites
+                <$> mkSort sort
+                <*> toParsedPattern source
+                <*> toParsedPattern dest
+    KJDomainValue{sort, value} ->
+        fmap (embedParsedPattern . DomainValueF) $
+            Kore.DomainValue
+                <$> mkSort sort
+                <*> toParsedPattern (KJString value)
+    KJMultiOr{assoc, sort, args} ->
+        withAssoc assoc <$> mkOr sort <*> traverse toParsedPattern args
+    KJMultiApp{assoc, symbol, sorts, args} ->
+        withAssoc assoc <$> mkF symbol sorts <*> traverse toParsedPattern args
   where
     embedVar ::
         (VariableName -> SomeVariableName VariableName) ->
@@ -290,7 +296,7 @@ toParsedPattern = \case
         Sort ->
         Either JsonError (Variable (SomeVariableName VariableName))
     embedVar cons n s =
-            Variable <$> mkVarName cons n <*> mkSort s
+        Variable <$> mkVarName cons n <*> mkSort s
 
     mkVarName ::
         (VariableName -> SomeVariableName VariableName) ->
@@ -307,19 +313,20 @@ toParsedPattern = \case
 
     mkOr :: Sort -> Either JsonError (ParsedPattern -> ParsedPattern -> ParsedPattern)
     mkOr s = do
-      sort <- mkSort s
-      pure (\a b -> embedParsedPattern $ OrF $ Kore.Or sort a b)
+        sort <- mkSort s
+        pure (\a b -> embedParsedPattern $ OrF $ Kore.Or sort a b)
 
     mkF :: Id -> [Sort] -> Either JsonError (ParsedPattern -> ParsedPattern -> ParsedPattern)
     mkF n sorts = do
-      sym <- toSymbol n sorts -- TODO should maybe check that length ss == 2?
-      pure (\a b -> embedParsedPattern $ ApplicationF $ Kore.Application sym [a, b])
+        sym <- toSymbol n sorts -- TODO should maybe check that length ss == 2?
+        pure (\a b -> embedParsedPattern $ ApplicationF $ Kore.Application sym [a, b])
 
 koreId :: Id -> Kore.Id
 koreId (Id name) = Kore.Id name Kore.AstLocationNone
 
 koreVar :: Id -> Kore.VariableName
 koreVar = flip VariableName Nothing . koreId
+
 -- TODO check well-formed (initial letter, char. set)
 -- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
 
@@ -356,7 +363,7 @@ mkConnective Iff s [a, b] =
         Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
 -- fall-through cases because of wrong argument count
 mkConnective conn _ as =
-  Prelude.Left $ WrongArgCount (show conn) (length as)
+    Prelude.Left $ WrongArgCount (show conn) (length as)
 
 mkPredicate ::
     Pred ->
@@ -365,20 +372,19 @@ mkPredicate ::
     [KorePattern] ->
     Either JsonError (PatternF VariableName ParsedPattern)
 mkPredicate Ceil s s2 [a] =
-  fmap CeilF $
-      Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+    fmap CeilF $
+        Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
 mkPredicate Floor s s2 [a] =
-  fmap FloorF $
-      Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+    fmap FloorF $
+        Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
 mkPredicate Equals s s2 [a, b] =
-  fmap EqualsF $
-      Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+    fmap EqualsF $
+        Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
 mkPredicate In s s2 [a, b] =
-  fmap InF $
-      Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+    fmap InF $
+        Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
 mkPredicate pred _ _ as =
-  Prelude.Left $ WrongArgCount (show pred) (length as)
-
+    Prelude.Left $ WrongArgCount (show pred) (length as)
 
 ------------------------------------------------------------
 -- writing
