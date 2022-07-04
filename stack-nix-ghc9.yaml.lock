@@ -203,11 +203,11 @@ packages:
     pantry-tree:
       size: 363
       sha256: 5c8e4a1e411927009f73f439bc81a4c4cdd31db5a600f82f5304228d0008afe0
-    commit: 0b6b43a5d6547cc3ca394d095bd551befb4d0b4e
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
   original:
     git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
     subdir: eventlog2speedscope
-    commit: 0b6b43a5d6547cc3ca394d095bd551befb4d0b4e
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
 - completed:
     name: pipes-aeson
     version: 0.4.2
@@ -216,11 +216,11 @@ packages:
     pantry-tree:
       size: 841
       sha256: ca2885de6e0e32293ff25b2e4ef2ed38b46df3308be004b88c73e7f8b4ed92ff
-    commit: 0b6b43a5d6547cc3ca394d095bd551befb4d0b4e
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
   original:
     git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
     subdir: pipes-aeson
-    commit: 0b6b43a5d6547cc3ca394d095bd551befb4d0b4e
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
 - completed:
     name: pipes-ghc-events
     version: 0.1.0.0
@@ -229,22 +229,24 @@ packages:
     pantry-tree:
       size: 234
       sha256: 442cb60eae9a3f52d872d5fbae872a5b2bf8fe144940cb2b10f75f6a0caf3182
-    commit: 0b6b43a5d6547cc3ca394d095bd551befb4d0b4e
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
   original:
     git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
     subdir: pipes-ghc-events
-    commit: 0b6b43a5d6547cc3ca394d095bd551befb4d0b4e
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
 - completed:
     name: pipes-sqlite-simple
     version: '0.2'
-    git: https://github.com/goodlyrottenapple/pipes-sqlite-simple.git
+    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
+    subdir: pipes-sqlite-simple
     pantry-tree:
       size: 631
       sha256: 7e6a1c449ab2b3bb7b987f4819578b82ce905e7cc877ea10c5ed740c21b29e41
-    commit: 89a0c38cc2114eab3c1fb03ef6ec25749edf7a42
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
   original:
-    git: https://github.com/goodlyrottenapple/pipes-sqlite-simple.git
-    commit: 89a0c38cc2114eab3c1fb03ef6ec25749edf7a42
+    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
+    subdir: pipes-sqlite-simple
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
 - completed:
     hackage: json-rpc-1.0.4@sha256:e6805381c86fdfc782102b1aa7e3708e89492f986c8e553d953b0fa21f790a0c,3510
     pantry-tree:
