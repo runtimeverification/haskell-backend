@@ -26,6 +26,8 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Log qualified
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
@@ -275,8 +277,8 @@ runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simp
     where
         someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
 
-        logFun loc src level msg =
-            Log.logWith someLogAction $ LogJsonRpcServer {loc, src, level, msg}
+    logFun loc src level msg =
+        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
 
         runSMT :: forall a. SMT.SMT a -> IO a
         runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m

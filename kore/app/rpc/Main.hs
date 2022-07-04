@@ -3,11 +3,11 @@
 module Main (main) where
 
 import Control.Monad.Catch (
+    bracket,
     handle,
-    bracket
  )
 import Control.Monad.Reader (
-    ReaderT(..),
+    ReaderT (..),
  )
 
 
@@ -32,11 +32,9 @@ import Kore.Log.ErrorException (
  )
 
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
-
 import Kore.Syntax.Definition (
     ModuleName (..),
  )
-
 import Log qualified
 import Options.Applicative (
     InfoMod,
@@ -56,7 +54,6 @@ import Options.SMT (
  )
 import Prelude.Kore
 import SMT qualified
-
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -159,8 +156,8 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
     GlobalMain.clockSomethingIO "Executing" $
         bracket
             (SMT.newSolver smtConfig)
-            SMT.stopSolver $
-            \mvar -> do
+            SMT.stopSolver
+            $ \mvar -> do
                 let solverSetup = SMT.SolverSetup{userInit = declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
                 runReaderT (SMT.getSMT SMT.initSolver) solverSetup
                 Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
