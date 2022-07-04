@@ -168,10 +168,10 @@ data Connective
     | Or
     | Implies
     | Iff
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic, Enum, Bounded)
     deriving anyclass (ToJSON, FromJSON)
 
--- TODO are these string-tag encoded in the generated instance?
+-- string-tag encoded in the generated instance. Should they be lower-case?
 
 connArity :: Connective -> Int
 connArity Top = 0
@@ -186,13 +186,13 @@ connArity Iff = 2
 data Quant
     = Forall
     | Exists
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic, Enum, Bounded)
     deriving anyclass (ToJSON, FromJSON)
 
 data Fix
     = Mu
     | Nu
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic, Enum, Bounded)
     deriving anyclass (ToJSON, FromJSON)
 
 data Pred
@@ -200,13 +200,13 @@ data Pred
     | Floor
     | Equals
     | In
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic, Enum, Bounded)
     deriving anyclass (ToJSON, FromJSON)
 
 data LeftRight
     = Left
     | Right
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic, Enum, Bounded)
     deriving anyclass (ToJSON, FromJSON)
 
 ------------------------------------------------------------

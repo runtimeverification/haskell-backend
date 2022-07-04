@@ -79,8 +79,8 @@ The CofreeF structure makes the encoding unsuitable for external consumption.
 
 
 ** IN_PROGRESS model textual kore in Haskell data types (follow Ana's general model)
+*** DONE Haskell data types to model a simple json format for textual kore
 *** write a Json schema along the textual core specification
-
 
 
 *** write a conversion to/from internal types. "to" is probably incomplete
