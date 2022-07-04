@@ -4,14 +4,15 @@
 {-# Options -Wno-partial-fields #-}
 
 module KoreJson (
-    ) where
+  ) where
 
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Char (toLower)
-import Data.Either.Extra
+import Data.Either.Extra hiding (Left, Right)
 import Data.Functor.Const (Const (..))
+import Data.List (foldl1')
 import Data.Text (Text)
 import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
@@ -23,7 +24,8 @@ import Kore.Parser (embedParsedPattern)
 import Kore.Sort qualified as Kore
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Variable (ElementVariableName (..), SetVariableName (..), SomeVariableName (..), Variable (..), VariableName (..))
-import Prelude.Kore as Prelude
+import Prelude.Kore hiding (Left, Right, pred)
+import Prelude.Kore qualified as Prelude (Either(..))
 
 {- | Json representation of Kore patterns as a Haskell type.
  Modeled after kore-syntax.md, merging some of the ML pattern
@@ -107,13 +109,15 @@ data KorePattern
       -- | left/right associative or-cascade
       KJMultiOr
         { assoc :: LeftRight
+        , sort :: Sort
         , args :: [KorePattern]
         }
+        -- TODO textual parser also understands And/Implies/Iff
     | -- | left/right associative app pattern
       KJMultiApp
         { assoc :: LeftRight
         , symbol :: Id -- may start by a '\\'
-        , sort :: Sort
+        , sorts :: [Sort]
         , args :: [KorePattern]
         }
     deriving stock (Eq, Show, Generic)
@@ -228,9 +232,11 @@ decodeKoreJson = Json.eitherDecode'
 toParsedPattern :: KorePattern -> Either JsonError ParsedPattern
 toParsedPattern = \case
     KJEVar n s ->
-        embedVar (SomeVariableNameElement . ElementVariableName) n s
+        fmap (embedParsedPattern . VariableF . Const) $
+            embedVar (SomeVariableNameElement . ElementVariableName) n s
     KJSVar n s ->
-        embedVar (SomeVariableNameSet . SetVariableName) n s
+        fmap (embedParsedPattern . VariableF . Const) $
+            embedVar (SomeVariableNameSet . SetVariableName) n s
     KJApp n ss as ->
         fmap (embedParsedPattern . ApplicationF) $
             Kore.Application <$> toSymbol n ss <*> traverse toParsedPattern as
@@ -238,33 +244,84 @@ toParsedPattern = \case
         embedParsedPattern . StringLiteralF . Const <$> pure (Kore.StringLiteral t)
     KJConnective c s as ->
         embedParsedPattern <$> mkConnective c s as
-    x -> todo $ show x
-  where
-    todo = Prelude.Left . NotImplemented
+    KJQuantifier {quant = Forall, sort, var, varSort, arg} ->
+        fmap (embedParsedPattern . ForallF) $ Kore.Forall
+            <$> mkSort sort
+            <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
+            <*> toParsedPattern arg
+    KJQuantifier {quant = Exists, sort, var, varSort, arg} ->
+        fmap (embedParsedPattern . ExistsF) $ Kore.Exists
+            <$> mkSort sort
+            <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
+            <*> toParsedPattern arg
+    KJFixpoint {combinator = Mu, var, varSort, arg} ->
+        fmap (embedParsedPattern . MuF) $ Kore.Mu
+            <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
+            <*> toParsedPattern arg
+    KJFixpoint {combinator = Nu, var, varSort, arg} ->
+        fmap (embedParsedPattern . NuF) $ Kore.Nu
+            <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
+            <*> toParsedPattern arg
+    KJPredicate {pred, sort, sort2, args} ->
+        embedParsedPattern <$> mkPredicate pred sort sort2 args
+    KJNext { sort, dest} ->
+        fmap (embedParsedPattern . NextF) $ Kore.Next
+            <$> mkSort sort
+            <*> toParsedPattern dest
+    KJRewrites { sort, source, dest} ->
+        fmap (embedParsedPattern . RewritesF) $ Kore.Rewrites
+            <$> mkSort sort
+            <*> toParsedPattern source
+            <*> toParsedPattern dest
+    KJDomainValue { sort, value} ->
+        fmap (embedParsedPattern . DomainValueF) $ Kore.DomainValue
+            <$> mkSort sort
+            <*> toParsedPattern (KJString value)
+    KJMultiOr {assoc, sort, args} ->
+      withAssoc assoc <$> mkOr sort <*> traverse toParsedPattern args
 
+    KJMultiApp { assoc, symbol, sorts, args} ->
+      withAssoc assoc <$> mkF symbol sorts <*> traverse toParsedPattern args
+
+  where
     embedVar ::
         (VariableName -> SomeVariableName VariableName) ->
         Id ->
         Sort ->
-        Either JsonError ParsedPattern
+        Either JsonError (Variable (SomeVariableName VariableName))
     embedVar cons n s =
-        fmap (embedParsedPattern . VariableF . Const) $
             Variable <$> mkVarName cons n <*> mkSort s
 
     mkVarName ::
         (VariableName -> SomeVariableName VariableName) ->
         Id ->
         Either JsonError (SomeVariableName VariableName)
-    mkVarName embed = pure . embed . flip VariableName Nothing . koreId
+    mkVarName embed = pure . embed . koreVar
 
     toSymbol :: Id -> [Sort] -> Either JsonError Kore.SymbolOrAlias
     toSymbol n sorts = Kore.SymbolOrAlias <$> pure (koreId n) <*> traverse mkSort sorts
 
--- TODO check well-formed (initial letter, char. set)
--- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
+    withAssoc :: LeftRight -> (a -> a -> a) -> [a] -> a
+    withAssoc Left = foldl1'
+    withAssoc Right = foldr1
+
+    mkOr :: Sort -> Either JsonError (ParsedPattern -> ParsedPattern -> ParsedPattern)
+    mkOr s = do
+      sort <- mkSort s
+      pure (\a b -> embedParsedPattern $ OrF $ Kore.Or sort a b)
+
+    mkF :: Id -> [Sort] -> Either JsonError (ParsedPattern -> ParsedPattern -> ParsedPattern)
+    mkF n sorts = do
+      sym <- toSymbol n sorts -- TODO should maybe check that length ss == 2?
+      pure (\a b -> embedParsedPattern $ ApplicationF $ Kore.Application sym [a, b])
 
 koreId :: Id -> Kore.Id
 koreId (Id name) = Kore.Id name Kore.AstLocationNone
+
+koreVar :: Id -> Kore.VariableName
+koreVar = flip VariableName Nothing . koreId
+-- TODO check well-formed (initial letter, char. set)
+-- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
 
 mkSort :: Sort -> Either JsonError Kore.Sort
 mkSort Sort{name, args} =
@@ -298,7 +355,30 @@ mkConnective Iff s [a, b] =
     fmap IffF $
         Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
 -- fall-through cases because of wrong argument count
-mkConnective conn _ as = Prelude.Left $ WrongArgCount (show conn) (length as)
+mkConnective conn _ as =
+  Prelude.Left $ WrongArgCount (show conn) (length as)
+
+mkPredicate ::
+    Pred ->
+    Sort ->
+    Sort ->
+    [KorePattern] ->
+    Either JsonError (PatternF VariableName ParsedPattern)
+mkPredicate Ceil s s2 [a] =
+  fmap CeilF $
+      Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+mkPredicate Floor s s2 [a] =
+  fmap FloorF $
+      Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+mkPredicate Equals s s2 [a, b] =
+  fmap EqualsF $
+      Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+mkPredicate In s s2 [a, b] =
+  fmap InF $
+      Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+mkPredicate pred _ _ as =
+  Prelude.Left $ WrongArgCount (show pred) (length as)
+
 
 ------------------------------------------------------------
 -- writing
