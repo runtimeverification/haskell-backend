@@ -9,27 +9,7 @@ import Control.Monad.Catch (
 import Control.Monad.Reader (
     ReaderT(..),
  )
-import Data.Time.Clock (
-    UTCTime (..),
- )
--- long,
 
--- option,
--- progDesc,
--- readerError,
-
--- strOption,
--- value,
-
--- unparseKoreSolverOptions,
--- writeKoreSolverFiles,
-
--- unparseKoreLogOptions,
-
--- Definition (Definition),
--- Module (Module),
-
--- Sentence (..),
 
 import GlobalMain qualified
 import Kore.BugReport (
@@ -50,9 +30,7 @@ import Kore.Log (
 import Kore.Log.ErrorException (
     handleSomeException,
  )
-import Kore.Log.InfoProofDepth (
-    InfoProofDepth,
- )
+
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 
 import Kore.Syntax.Definition (
@@ -83,12 +61,6 @@ import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
- )
-import System.Directory (
-    getModificationTime,
- )
-import System.Environment (
-    getExecutablePath,
  )
 import System.Exit (
     ExitCode (ExitSuccess),
@@ -146,38 +118,36 @@ envName = "KORE_RPC_OPTS"
 main :: IO ()
 main = do
     startTime <- getTime Monotonic
-    exePath <- getExecutablePath
-    exeLastModifiedTime <- getModificationTime exePath
     options <-
         GlobalMain.mainGlobal
             Main.exeName
             (Just envName)
             (parseKoreRpcServerOptions startTime)
             parserInfoModifiers
-    for_ (GlobalMain.localOptions options) $ mainWithOptions exeLastModifiedTime
+    for_ (GlobalMain.localOptions options) mainWithOptions
 
 -- main :: IO ()
 -- main = runServer 31337
 
-mainWithOptions :: UTCTime -> GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
-mainWithOptions exeLastModifiedTime localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
+mainWithOptions :: GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
+mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
     ensureSmtPreludeExists koreSolverOptions
     exitWith
         =<< ( withBugReport Main.exeName bugReportOption $ \tmpDir ->
-                koreRpcServerRun exeLastModifiedTime localOptions
+                koreRpcServerRun localOptions
                     & handle handleSomeException
                     & runKoreLog
                         tmpDir
                         koreLogOptions
             )
 
-koreRpcServerRun :: UTCTime -> GlobalMain.LocalOptions KoreRpcServerOptions -> GlobalMain.Main ExitCode
-koreRpcServerRun exeLastModifiedTime GlobalMain.LocalOptions{execOptions, simplifierx} = do
+koreRpcServerRun :: GlobalMain.LocalOptions KoreRpcServerOptions -> GlobalMain.Main ExitCode
+koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
     let KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
-        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} = koreSolverOptions
-    GlobalMain.SerializedDefinition{serializedModule, lemmas, locations} <-
+        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions
+    GlobalMain.SerializedDefinition{serializedModule, lemmas} <-
         GlobalMain.deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
-    let SerializedModule{verifiedModule, metadataTools} = serializedModule
+    let SerializedModule{metadataTools} = serializedModule
     let smtConfig =
             SMT.defaultConfig
                 { SMT.timeOut = timeOut
@@ -193,7 +163,7 @@ koreRpcServerRun exeLastModifiedTime GlobalMain.LocalOptions{execOptions, simpli
             \mvar -> do
                 let solverSetup = SMT.SolverSetup{userInit = declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
                 runReaderT (SMT.getSMT SMT.initSolver) solverSetup
-                Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv
+                Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
 
     pure ExitSuccess
 

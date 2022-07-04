@@ -294,6 +294,39 @@ exec
     simplifierx
     depthLimit
     breadthLimit
+    serializedModule
+    strategy
+    trm = do
+        (exitCode, finalTrm, _) <- execDetailed
+            simplifierx
+            depthLimit
+            breadthLimit
+            serializedModule
+            strategy
+            trm
+        pure (exitCode, finalTrm)
+
+execDetailed ::
+    forall smt.
+    ( MonadIO smt
+    , MonadLog smt
+    , MonadSMT smt
+    , MonadMask smt
+    , MonadProf smt
+    ) =>
+    SimplifierXSwitch ->
+    Limit Natural ->
+    Limit Natural ->
+    -- | The main module
+    SerializedModule ->
+    ExecutionMode ->
+    -- | The input pattern
+    TermLike VariableName ->
+    smt (ExitCode, TermLike VariableName, [(ExecDepth, ProgramState (Pattern RewritingVariableName))])
+execDetailed
+    simplifierx
+    depthLimit
+    breadthLimit
     SerializedModule
         { sortGraph
         , overloadGraph
@@ -347,7 +380,7 @@ exec
                     MultiOr.map getRewritingPattern finalConfigs'
                         & OrPattern.toTermLike initialSort
                         & sameTermLikeSort initialSort
-            return (exitCode, finalTerm)
+            return (exitCode, finalTerm, finals)
       where
         dropStrategy = snd
         getFinalConfigsOf act = observeAllT $ fmap snd act
