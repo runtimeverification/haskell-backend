@@ -30,7 +30,14 @@
 
       haskell-src = pkgs:
         pkgs.applyPatches {
-          src = ./.;
+          src = pkgs.nix-gitignore.gitignoreSourcePure [
+            "/nix"
+            "*.nix"
+            "*.nix.sh"
+            "/.github"
+            "flake.lock"
+            ./.gitignore
+          ] ./.;
           postPatch = ''
             substituteInPlace kore/src/Kore/VersionInfo.hs \
               --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
