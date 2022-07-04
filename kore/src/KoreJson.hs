@@ -17,6 +17,7 @@ import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Internal.Pattern (Pattern)
 import Kore.Syntax.PatternF (PatternF (..))
+
 -- import Kore.Internal.TermLike.TermLike (TermLikeF(..))
 import Kore.Parser (embedParsedPattern)
 import Kore.Sort qualified as Kore
@@ -227,35 +228,33 @@ decodeKoreJson = Json.eitherDecode'
 toParsedPattern :: KorePattern -> Either JsonError ParsedPattern
 toParsedPattern = \case
     KJEVar n s ->
-      embedVar (SomeVariableNameElement . ElementVariableName) n s
-
+        embedVar (SomeVariableNameElement . ElementVariableName) n s
     KJSVar n s ->
-      embedVar (SomeVariableNameSet . SetVariableName) n s
-
+        embedVar (SomeVariableNameSet . SetVariableName) n s
     KJApp n ss as ->
-      fmap (embedParsedPattern . ApplicationF) $
-      Kore.Application <$> toSymbol n ss <*> traverse toParsedPattern as
-
+        fmap (embedParsedPattern . ApplicationF) $
+            Kore.Application <$> toSymbol n ss <*> traverse toParsedPattern as
     KJString t ->
-      embedParsedPattern . StringLiteralF . Const <$> pure (Kore.StringLiteral t)
-
+        embedParsedPattern . StringLiteralF . Const <$> pure (Kore.StringLiteral t)
     KJConnective c s as ->
-      embedParsedPattern <$> mkConnective c s as
-
+        embedParsedPattern <$> mkConnective c s as
     x -> todo $ show x
-
   where
     todo = Prelude.Left . NotImplemented
 
-    embedVar :: (VariableName -> SomeVariableName VariableName)
-             -> Id -> Sort -> Either JsonError ParsedPattern
+    embedVar ::
+        (VariableName -> SomeVariableName VariableName) ->
+        Id ->
+        Sort ->
+        Either JsonError ParsedPattern
     embedVar cons n s =
-      fmap (embedParsedPattern . VariableF . Const) $
-      Variable <$> mkVarName cons n <*> mkSort s
+        fmap (embedParsedPattern . VariableF . Const) $
+            Variable <$> mkVarName cons n <*> mkSort s
 
-    mkVarName :: (VariableName -> SomeVariableName VariableName)
-            -> Id
-            -> Either JsonError (SomeVariableName VariableName)
+    mkVarName ::
+        (VariableName -> SomeVariableName VariableName) ->
+        Id ->
+        Either JsonError (SomeVariableName VariableName)
     mkVarName embed = pure . embed . flip VariableName Nothing . koreId
 
     toSymbol :: Id -> [Sort] -> Either JsonError Kore.SymbolOrAlias
@@ -269,37 +268,37 @@ koreId (Id name) = Kore.Id name Kore.AstLocationNone
 
 mkSort :: Sort -> Either JsonError Kore.Sort
 mkSort Sort{name, args} =
-  fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
-  mapM mkSort args
+    fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
+        mapM mkSort args
 mkSort (SortVariable name) =
-  pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
+    pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
 
-mkConnective :: Connective
-             -> Sort
-             -> [KorePattern]
-             -> Either JsonError (PatternF VariableName ParsedPattern)
+mkConnective ::
+    Connective ->
+    Sort ->
+    [KorePattern] ->
+    Either JsonError (PatternF VariableName ParsedPattern)
 mkConnective Top s [] =
-  TopF . Kore.Top <$> (mkSort s)
+    TopF . Kore.Top <$> (mkSort s)
 mkConnective Bottom s [] =
-  BottomF . Kore.Bottom <$> (mkSort s)
+    BottomF . Kore.Bottom <$> (mkSort s)
 mkConnective Not s [a] =
-  fmap NotF $
-  Kore.Not <$> mkSort s <*> toParsedPattern a
-mkConnective And s [a,b] =
-  fmap AndF $
-  Kore.And <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
-mkConnective Or s [a,b] =
-  fmap OrF $
-  Kore.Or <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
-mkConnective Implies s [a,b] =
-  fmap ImpliesF $
-  Kore.Implies <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
-mkConnective Iff s [a,b] =
-  fmap IffF $
-  Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+    fmap NotF $
+        Kore.Not <$> mkSort s <*> toParsedPattern a
+mkConnective And s [a, b] =
+    fmap AndF $
+        Kore.And <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+mkConnective Or s [a, b] =
+    fmap OrF $
+        Kore.Or <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+mkConnective Implies s [a, b] =
+    fmap ImpliesF $
+        Kore.Implies <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+mkConnective Iff s [a, b] =
+    fmap IffF $
+        Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
 -- fall-through cases because of wrong argument count
 mkConnective conn _ as = Prelude.Left $ WrongArgCount (show conn) (length as)
-
 
 ------------------------------------------------------------
 -- writing
