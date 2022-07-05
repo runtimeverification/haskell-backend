@@ -24,7 +24,6 @@ import Data.List (foldl1')
 import Data.Text (Text)
 import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
-import Kore.Internal.Pattern (Pattern)
 import Kore.Parser (embedParsedPattern)
 import Kore.Sort qualified as Kore
 import Kore.Syntax qualified as Kore
@@ -402,7 +401,7 @@ mkPredicate pred _ _ as =
 -- writing
 
 -- | Write a Pattern to a json byte string
-encodePattern :: Pattern VariableName -> ByteString
+encodePattern :: Kore.Pattern VariableName ann -> ByteString
 encodePattern = encodeKoreJson . fromParsedPattern
 
 encodeKoreJson :: KorePattern -> ByteString
@@ -419,5 +418,5 @@ encodeKoreJson = Json.encodePretty' prettyJsonOpts
     argsLast _ "args" = LT
     argsLast x y = compare x y
 
-fromParsedPattern :: Pattern VariableName -> KorePattern
+fromParsedPattern :: Kore.Pattern VariableName ann -> KorePattern
 fromParsedPattern _ = error "not implemented"
