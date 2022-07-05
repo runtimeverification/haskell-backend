@@ -356,19 +356,10 @@ evalDifference
     ( TermLike.Application
             TermLike.Symbol{symbolSorts = ApplicationSorts _ resultSort}
             [_set1, _set2]
-        ) =
-        do
-            let rightIdentity = do
-                    _set2 <- expectConcreteBuiltinSet ctx _set2
-                    if HashMap.null _set2
-                        then return (Pattern.fromTermLike _set1)
-                        else empty
-                bothConcrete = do
-                    _set1 <- expectConcreteBuiltinSet ctx _set1
-                    _set2 <- expectConcreteBuiltinSet ctx _set2
-                    returnConcreteSet resultSort (HashMap.difference _set1 _set2)
-
-            rightIdentity <|> bothConcrete
+        ) = do
+        _set1 <- expectConcreteBuiltinSet ctx _set1
+        _set2 <- expectConcreteBuiltinSet ctx _set2
+        returnConcreteSet resultSort (HashMap.difference _set1 _set2)
       where
         ctx = Set.differenceKey
 evalDifference _ _ =
