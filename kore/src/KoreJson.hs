@@ -2,9 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {-# Options -Wno-partial-fields #-}
+{-# Options -Wno-duplicate-exports #-}
+-- while exporting the entire module
 
 module KoreJson (
-    ) where
+    -- API
+    JsonError (..),
+    encodePattern,
+    decodePattern,
+    -- export everything for debugging and testing only
+    module KoreJson,
+) where
 
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
@@ -17,13 +25,17 @@ import Data.Text (Text)
 import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Internal.Pattern (Pattern)
-import Kore.Syntax.PatternF (PatternF (..))
-
--- import Kore.Internal.TermLike.TermLike (TermLikeF(..))
 import Kore.Parser (embedParsedPattern)
 import Kore.Sort qualified as Kore
 import Kore.Syntax qualified as Kore
-import Kore.Syntax.Variable (ElementVariableName (..), SetVariableName (..), SomeVariableName (..), Variable (..), VariableName (..))
+import Kore.Syntax.PatternF (PatternF (..))
+import Kore.Syntax.Variable (
+    ElementVariableName (..),
+    SetVariableName (..),
+    SomeVariableName (..),
+    Variable (..),
+    VariableName (..),
+ )
 import Prelude.Kore hiding (Left, Right, pred)
 import Prelude.Kore qualified as Prelude (Either (..))
 
@@ -390,7 +402,7 @@ mkPredicate pred _ _ as =
 -- writing
 
 -- | Write a Pattern to a json byte string
-encodePattern :: Pattern a -> ByteString
+encodePattern :: Pattern VariableName -> ByteString
 encodePattern = encodeKoreJson . fromParsedPattern
 
 encodeKoreJson :: KorePattern -> ByteString
@@ -407,5 +419,5 @@ encodeKoreJson = Json.encodePretty' prettyJsonOpts
     argsLast _ "args" = LT
     argsLast x y = compare x y
 
-fromParsedPattern :: Pattern a -> KorePattern
+fromParsedPattern :: Pattern VariableName -> KorePattern
 fromParsedPattern _ = error "not implemented"
