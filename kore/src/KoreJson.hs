@@ -17,13 +17,14 @@ module KoreJson (
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
-import Data.Char (toLower)
+import Data.Char (isDigit, toLower)
 import Data.Either.Extra hiding (Left, Right)
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
 import Data.List (foldl1')
 import Data.Sup (Sup (..))
-import Data.Text (Text, pack)
+import Data.Text (Text)
+import Data.Text qualified as T
 import GHC.Generics -- FIXME switch to TH-generated Json instances
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Parser (embedParsedPattern)
@@ -337,10 +338,20 @@ koreId :: Id -> Kore.Id
 koreId (Id name) = Kore.Id name Kore.AstLocationNone
 
 koreVar :: Id -> Kore.VariableName
-koreVar = flip VariableName Nothing . koreId
-
--- TODO check well-formed (initial letter, char. set)
--- FIXME do we need to read a numeric suffix? (-> Parser.y:getVariableName)
+koreVar (Id name) =
+    -- TODO check well-formed (initial letter, char. set)
+    VariableName (Kore.Id base Kore.AstLocationNone) suffix
+  where
+    baseName = T.dropWhileEnd isDigit name
+    endDigits = T.takeWhileEnd isDigit name
+    (zeros, actualNum) = T.break (== '0') endDigits
+    (base, suffix) =
+        if T.null endDigits
+            then (baseName, Nothing)
+            else
+                if T.null actualNum
+                    then (baseName <> T.init zeros, Just $ Element 0)
+                    else (baseName <> zeros, Just $ Element (read $ T.unpack actualNum))
 
 mkSort :: Sort -> Either JsonError Kore.Sort
 mkSort Sort{name, args} =
@@ -588,7 +599,5 @@ fromPatternF = \case
             Kore.getId base
                 <> case counter of
                     Nothing -> ""
-                    Just (Element n) -> pack $ show n
+                    Just (Element n) -> T.pack $ show n
                     Just Sup -> error "Found Sup while converting variable name"
-
--- TODO refactor dual (conversion to ParsedPattern) to do the right thing
