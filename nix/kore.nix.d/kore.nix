@@ -730,6 +730,7 @@
             "Test/Expect"
             "Test/Injection"
             "Test/Kore"
+            "Test/KoreJson"
             "Test/Kore/AST/Common"
             "Test/Kore/Attribute/Assoc"
             "Test/Kore/Attribute/Axiom/Concrete"
