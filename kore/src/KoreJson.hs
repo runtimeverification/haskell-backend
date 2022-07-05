@@ -581,8 +581,7 @@ fromPatternF = \case
 
     fromKoreId :: Kore.Id -> Id
     fromKoreId =
-      Id . Kore.getId -- forgetting the location
-
+        Id . Kore.getId -- forgetting the location
     fromKoreVariableName :: Kore.VariableName -> Id
     fromKoreVariableName VariableName{base, counter} =
         Id $
