@@ -2,6 +2,8 @@ module Test.KoreJson (
     module Test.KoreJson,
 ) where
 
+import Control.Monad (forever)
+import Data.ByteString.Lazy qualified as BS
 import Data.Char (isPrint)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -13,13 +15,14 @@ import Prelude.Kore hiding (Left, Right)
 
 genKorePattern :: Gen KorePattern
 genKorePattern =
-    Gen.choice $
+    Gen.recursive
+        Gen.choice
         [ KJEVar <$> genId Nothing <*> genSort
         , KJSVar <$> (genId (Just '@')) <*> genSort
-        , genApp
         , KJString <$> genPrintableAscii
+        , KJDomainValue <$> genSort <*> genPrintableAscii
         ]
-            <> map genConn [minBound .. maxBound]
+        $ map genConn [minBound .. maxBound]
             <> [ KJQuantifier
                     <$> Gen.element [Forall, Exists]
                     <*> genSort
@@ -31,11 +34,11 @@ genKorePattern =
                     <*> genId (Just '@')
                     <*> genSort
                     <*> genKorePattern
+               , genApp
                ]
             <> map (uncurry genPred) (zip [minBound .. maxBound] [1, 1, 2, 2])
             <> [ KJNext <$> genSort <*> genKorePattern
                , KJRewrites <$> genSort <*> genKorePattern <*> genKorePattern
-               , KJDomainValue <$> genSort <*> genPrintableAscii
                , KJMultiOr <$> Gen.element [Left, Right] <*> genSort <*> upTo 12 genKorePattern
                , KJMultiApp <$> Gen.element [Left, Right] <*> genId (Just '\\') <*> exactly 3 genSort <*> upTo 12 genKorePattern
                ]
@@ -79,7 +82,7 @@ genId optChar =
     fmap Id $ (<>) <$> genName <*> genDigits
   where
     genName = maybe id T.cons optChar <$> genVarName
-    genDigits = Gen.text (Range.linear 0 5) Gen.digit
+    genDigits = Gen.text (Range.constant 0 5) Gen.digit
 
 genVarName :: Gen Text
 genVarName =
@@ -87,7 +90,11 @@ genVarName =
 
 genIdChar :: Gen Char
 genIdChar =
-    Gen.choice [Gen.alphaNum, pure '\'', pure '_']
+    Gen.frequency
+        [ (10, Gen.alpha)
+        , (3, Gen.digit)
+        , (1, Gen.element "_'")
+        ]
 
 genPrintableAscii :: Gen Text
 genPrintableAscii =
@@ -102,3 +109,10 @@ upTo :: Int -> Gen a -> Gen [a]
 upTo n g
     | n >= 0 = Gen.list (Range.linear 0 n) g
     | otherwise = error "negative range limit requested"
+
+showExamples :: IO a
+showExamples =
+    forever $ do
+        korePattern <- Gen.sample genKorePattern
+        BS.putStr $ encodeKoreJson korePattern
+        void getLine
