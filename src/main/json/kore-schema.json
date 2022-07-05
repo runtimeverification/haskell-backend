@@ -84,8 +84,11 @@
                 "name": {
                     "type": "string"
                 },
-                "sort": {
-                    "$ref": "#/definitions/Sort"
+                "sorts": {
+                    "type": "array",
+                    "items": {
+	                    "$ref": "#/definitions/Sort"
+                    }
                 },
                 "args": {
                     "type": "array",
@@ -96,7 +99,7 @@
             },
             "required": [
                 "name",
-                "sort",
+                "sorts",
                 "args"
             ],
             "title": "App"
@@ -112,7 +115,7 @@
             "properties": {
                 "conn": {
                     "type": "string",
-                    "enum": [ "Top", "Bottom", "Not", "And", "Or", 		"Implies", "Iff" ]
+                    "enum": [ "Top", "Bottom", "Not", "And", "Or", "Implies", "Iff" ]
                 },
                 "sort": {
                     "$ref": "#/definitions/Sort"
@@ -260,7 +263,7 @@
             "additionalProperties": false,
             "properties": {
                 "sort": {
-                    "type": "string"
+                    "$ref": "#/definitions/Sort"
                 },
                 "value": {
                     "type": "string"
@@ -304,8 +307,11 @@
                 "symbol": {
                     "type": "string"
                 },
-                "sort": {
-                    "$ref": "#/definitions/Sort"
+                "sorts": {
+                    "type": "array",
+                    "items": {
+	                    "$ref": "#/definitions/Sort"
+                    }
                 },
                 "args": {
                     "type": "array",
@@ -317,7 +323,7 @@
             "required": [
                 "assoc",
                 "symbol",
-                "sort",
+                "sorts",
                 "args"
             ],
             "title": "MultiApp"
