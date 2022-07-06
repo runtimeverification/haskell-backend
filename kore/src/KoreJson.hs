@@ -91,12 +91,11 @@ data KorePattern
         , varSort :: Sort
         , arg :: KorePattern
         }
-    | -- | ceil, floor, equals, in. NOTE these do not really fit together
-      -- nicely... the two sorts have vastly different meaning
+    | -- | ceil, floor, equals, in
       KJPredicate
         { pred :: Pred
-        , sort :: Sort
-        , sort2 :: Sort
+        , argSort :: Sort
+        , resultSort :: Sort
         , args :: [KorePattern]
         }
     | -- next, rewrites
@@ -255,7 +254,7 @@ toParsedPattern = \case
         fmap (embedParsedPattern . ApplicationF) $
             Kore.Application <$> toSymbol n ss <*> traverse toParsedPattern as
     KJString t ->
-        embedParsedPattern . StringLiteralF . Const <$> pure (Kore.StringLiteral t)
+        pure . embedParsedPattern . StringLiteralF . Const $ Kore.StringLiteral t
     KJConnective c s as ->
         embedParsedPattern <$> mkConnective c s as
     KJQuantifier{quant = Forall, sort, var, varSort, arg} ->
@@ -280,8 +279,8 @@ toParsedPattern = \case
             Kore.Nu
                 <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
                 <*> toParsedPattern arg
-    KJPredicate{pred, sort, sort2, args} ->
-        embedParsedPattern <$> mkPredicate pred sort sort2 args
+    KJPredicate{pred, argSort, resultSort, args} ->
+        embedParsedPattern <$> mkPredicate pred argSort resultSort args
     KJNext{sort, dest} ->
         fmap (embedParsedPattern . NextF) $
             Kore.Next
@@ -318,7 +317,7 @@ toParsedPattern = \case
     mkVarName embed = pure . embed . koreVar
 
     toSymbol :: Id -> [Sort] -> Either JsonError Kore.SymbolOrAlias
-    toSymbol n sorts = Kore.SymbolOrAlias <$> pure (koreId n) <*> traverse mkSort sorts
+    toSymbol n sorts = Kore.SymbolOrAlias (koreId n) <$> traverse mkSort sorts
 
     withAssoc :: LeftRight -> (a -> a -> a) -> [a] -> a
     withAssoc Left = foldl1'
@@ -344,14 +343,12 @@ koreVar (Id name) =
   where
     baseName = T.dropWhileEnd isDigit name
     endDigits = T.takeWhileEnd isDigit name
-    (zeros, actualNum) = T.break (== '0') endDigits
-    (base, suffix) =
-        if T.null endDigits
-            then (baseName, Nothing)
-            else
-                if T.null actualNum
-                    then (baseName <> T.init zeros, Just $ Element 0)
-                    else (baseName <> zeros, Just $ Element (read $ T.unpack actualNum))
+    (zeros, actualNum) = T.break (/= '0') endDigits
+    (base, suffix)
+        | T.null endDigits = (baseName, Nothing)
+        | T.null actualNum = (baseName <> T.init zeros, Just $ Element 0)
+        | otherwise =
+            (baseName <> zeros, Just $ Element (read $ T.unpack actualNum))
 
 mkSort :: Sort -> Either JsonError Kore.Sort
 mkSort Sort{name, args} =
@@ -463,8 +460,8 @@ fromPatternF = \case
     CeilF Kore.Ceil{ceilOperandSort, ceilResultSort, ceilChild} ->
         KJPredicate
             { pred = Ceil
-            , sort = fromSort ceilOperandSort
-            , sort2 = fromSort ceilResultSort
+            , argSort = fromSort ceilOperandSort
+            , resultSort = fromSort ceilResultSort
             , args = [fromPattern ceilChild]
             }
     DomainValueF Kore.DomainValue{domainValueSort, domainValueChild}
@@ -479,8 +476,8 @@ fromPatternF = \case
     EqualsF Kore.Equals{equalsOperandSort, equalsResultSort, equalsFirst, equalsSecond} ->
         KJPredicate
             { pred = Equals
-            , sort = fromSort equalsOperandSort
-            , sort2 = fromSort equalsResultSort
+            , argSort = fromSort equalsOperandSort
+            , resultSort = fromSort equalsResultSort
             , args = map fromPattern [equalsFirst, equalsSecond]
             }
     ExistsF Kore.Exists{existsSort, existsVariable, existsChild} ->
@@ -494,8 +491,8 @@ fromPatternF = \case
     FloorF Kore.Floor{floorOperandSort, floorResultSort, floorChild} ->
         KJPredicate
             { pred = Floor
-            , sort = fromSort floorOperandSort
-            , sort2 = fromSort floorResultSort
+            , argSort = fromSort floorOperandSort
+            , resultSort = fromSort floorResultSort
             , args = [fromPattern floorChild]
             }
     ForallF Kore.Forall{forallSort, forallVariable, forallChild} ->
@@ -521,8 +518,8 @@ fromPatternF = \case
     InF Kore.In{inOperandSort, inResultSort, inContainedChild, inContainingChild} ->
         KJPredicate
             { pred = In
-            , sort = fromSort inOperandSort
-            , sort2 = fromSort inResultSort
+            , argSort = fromSort inOperandSort
+            , resultSort = fromSort inResultSort
             , args = map fromPattern [inContainedChild, inContainingChild]
             }
     MuF Kore.Mu{muVariable, muChild} ->

@@ -198,10 +198,10 @@
                     "type": "string",
                     "enum": [ "Ceil", "Floor", "Equals", "In" ]
                 },
-                "sort": {
+                "argSort": {
                     "$ref": "#/definitions/Sort"
                 },
-                "sort2": {
+                "resultSort": {
                     "$ref": "#/definitions/Sort"
                 },
                 "args": {
@@ -213,8 +213,8 @@
             },
             "required": [
                 "pred",
-                "sort",
-                "sort2",
+                "argSort",
+                "resultSort",
                 "args"
             ],
             "title": "Fixpoint"

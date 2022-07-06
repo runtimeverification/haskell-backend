@@ -36,7 +36,7 @@ genKorePattern =
                     <*> genKorePattern
                , genApp
                ]
-            <> map (uncurry genPred) (zip [minBound .. maxBound] [1, 1, 2, 2])
+            <> zipWith genPred [minBound .. maxBound] [1, 1, 2, 2]
             <> [ KJNext <$> genSort <*> genKorePattern
                , KJRewrites <$> genSort <*> genKorePattern <*> genKorePattern
                , KJMultiOr <$> Gen.element [Left, Right] <*> genSort <*> upTo 12 genKorePattern
