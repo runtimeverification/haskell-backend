@@ -40,8 +40,8 @@ genKorePattern =
             <> zipWith genPred [minBound .. maxBound] [1, 1, 2, 2]
             <> [ KJNext <$> genSort <*> genKorePattern
                , KJRewrites <$> genSort <*> genKorePattern <*> genKorePattern
-               , KJMultiOr <$> Gen.element [Left, Right] <*> genSort <*> between 1 12 genKorePattern
-               , KJMultiApp <$> Gen.element [Left, Right] <*> genId (Just '\\') <*> exactly 3 genSort <*> between 1 12 genKorePattern
+               , KJMultiOr <$> Gen.element [Left, Right] <*> genSort <*> between 3 12 genKorePattern
+               , KJMultiApp <$> Gen.element [Left, Right] <*> genId (Just '\\') <*> exactly 3 genSort <*> between 3 12 genKorePattern
                ]
   where
     genApp :: Gen KorePattern
