@@ -7,7 +7,7 @@ module Kore.Log.DebugProven (
 ) where
 
 import Kore.Attribute.SourceLocation (SourceLocation)
-import Kore.Reachability.SomeClaim (
+import Kore.Claim.SomeClaim (
     SomeClaim (..),
  )
 import Log

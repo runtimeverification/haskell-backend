@@ -40,6 +40,7 @@ import Kore.Attribute.Definition (
  )
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
+import Kore.Claim.Claim qualified as Claim
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
@@ -92,7 +93,6 @@ import Kore.Reachability (
     getConfiguration,
     lensClaimPattern,
  )
-import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite
 import Kore.Rewrite.ClaimPattern (
     getClaimPatternSort,

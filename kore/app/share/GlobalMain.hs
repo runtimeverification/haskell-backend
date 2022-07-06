@@ -97,6 +97,7 @@ import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
 import Kore.Builtin qualified as Builtin
+import Kore.Claim.Claim (MinDepth (..), StuckCheck (..))
 import Kore.Exec (
     SerializedModule (..),
     makeSerializedModule,
@@ -131,7 +132,6 @@ import Kore.Parser (
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
-import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),

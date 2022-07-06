@@ -44,6 +44,8 @@ import Kore.Attribute.RuleIndex (
     RuleIndex (..),
  )
 import Kore.Attribute.RuleIndex qualified as Attribute
+import Kore.Claim.Claim
+import Kore.Claim.Claim qualified as Claim
 import Kore.Internal.TermLike (
     TermLike,
     mkSortVariable,
@@ -57,8 +59,6 @@ import Kore.Reachability (
     SomeClaim,
     lensClaimPattern,
  )
-import Kore.Reachability.Claim
-import Kore.Reachability.Claim qualified as Claim
 import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Repl.Interpreter

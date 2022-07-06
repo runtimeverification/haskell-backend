@@ -18,6 +18,7 @@ import Data.Generics.Wrapped (
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Claim.Claim
 import Kore.Debug
 import Kore.Internal.Alias (
     Alias (aliasConstructor),
@@ -38,7 +39,6 @@ import Kore.Internal.TermLike (
     weakAlwaysFinally,
  )
 import Kore.Internal.TermLike qualified as TermLike
-import Kore.Reachability.Claim
 import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
@@ -138,11 +138,11 @@ instance Claim AllPathClaim where
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
-    
+
     strategyWithMinDepth _ = reachabilityStrategyWithMinDepth
-    strategy             _ = reachabilityStrategy
-    firstStep            _ = reachabilityFirstStep
-    nextStep             _ = reachabilityNextStep
+    strategy _ = reachabilityStrategy
+    firstStep _ = reachabilityFirstStep
+    nextStep _ = reachabilityNextStep
 
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped

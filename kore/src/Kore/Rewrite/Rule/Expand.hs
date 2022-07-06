@@ -166,6 +166,10 @@ instance ExpandSingleConstructors SomeClaim where
             . expandSingleConstructors tools
             . getAllPathClaim
             $ rule
+    -- This class is for rewriting, which Equational claims are not
+    -- subject to.
+    expandSingleConstructors _tools (Equational rule) =
+        Equational rule
 
 newtype Expansion variable = Expansion {stale :: Set (ElementVariableName variable)}
     deriving stock (GHC.Generic)

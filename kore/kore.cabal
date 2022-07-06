@@ -302,6 +302,9 @@ library
     Kore.Builtin.String.String
     Kore.Builtin.Symbols
     Kore.Builtin.Verifiers
+    Kore.Claim.Claim
+    Kore.Claim.EquationalClaim
+    Kore.Claim.SomeClaim
     Kore.Debug
     Kore.Equation
     Kore.Equation.Application
@@ -405,13 +408,10 @@ library
     Kore.Parser.ParserUtils
     Kore.Reachability
     Kore.Reachability.AllPathClaim
-    Kore.Reachability.Claim
     Kore.Reachability.ClaimState
-    Kore.Reachability.FunctionalClaim
     Kore.Reachability.OnePathClaim
     Kore.Reachability.Prim
     Kore.Reachability.Prove
-    Kore.Reachability.SomeClaim
     Kore.Repl
     Kore.Repl.Data
     Kore.Repl.Interpreter

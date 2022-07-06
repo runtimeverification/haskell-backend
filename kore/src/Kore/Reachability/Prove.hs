@@ -59,6 +59,8 @@ import Data.Text (
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute.Axiom
+import Kore.Claim.Claim hiding (strategy)
+import Kore.Claim.SomeClaim
 import Kore.Debug
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -89,7 +91,6 @@ import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
-import Kore.Reachability.Claim hiding (strategy)
 import Kore.Reachability.ClaimState (
     ClaimState,
     ClaimStateTransformer (..),
@@ -100,7 +101,6 @@ import Kore.Reachability.ClaimState qualified as ClaimState
 import Kore.Reachability.Prim qualified as Prim (
     Prim (..),
  )
-import Kore.Reachability.SomeClaim
 import Kore.Rewrite.ClaimPattern (
     mkGoal,
  )
@@ -466,13 +466,13 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
     claimState = Graph.lab graph node
 
     someClaim :: Maybe SomeClaim
-    someClaim = claimState >>= \case
-       ClaimState.Claimed sc -> Just sc
-       ClaimState.Remaining sc -> Just sc
-       ClaimState.Rewritten sc -> Just sc
-       ClaimState.Stuck sc -> Just sc
-       ClaimState.Proven -> Nothing
-    
+    someClaim =
+        claimState >>= \case
+            ClaimState.Claimed sc -> Just sc
+            ClaimState.Remaining sc -> Just sc
+            ClaimState.Rewritten sc -> Just sc
+            ClaimState.Stuck sc -> Just sc
+            ClaimState.Proven -> Nothing
 
     isRoot :: Bool
     isRoot = node == root

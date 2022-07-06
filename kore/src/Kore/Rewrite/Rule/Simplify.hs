@@ -125,6 +125,7 @@ instance SimplifyRuleLHS SomeClaim where
         (fmap . MultiAnd.map) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =
         (fmap . MultiAnd.map) AllPath $ simplifyRuleLhs rule
+    simplifyRuleLhs (Equational rule) = pure $ MultiAnd.make [Equational rule]
 
 simplifyClaimRule ::
     forall simplifier.

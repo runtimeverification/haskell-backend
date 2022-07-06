@@ -5,6 +5,7 @@ module Test.Kore.Reachability.SomeClaim (
 import Data.Default (
     def,
  )
+import Kore.Claim.SomeClaim
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
@@ -14,7 +15,6 @@ import Kore.Internal.Predicate (
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Reachability.SomeClaim
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )

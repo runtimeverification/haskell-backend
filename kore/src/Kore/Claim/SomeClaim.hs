@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
-module Kore.Reachability.SomeClaim (
+module Kore.Claim.SomeClaim (
     SomeClaim (..),
     mkSomeClaimOnePath,
     mkSomeClaimAllPath,
@@ -29,6 +29,8 @@ import Data.Generics.Wrapped
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Claim.Claim
+import Kore.Claim.EquationalClaim
 import Kore.Debug
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -41,8 +43,6 @@ import Kore.Internal.TermLike (
     VariableName,
  )
 import Kore.Reachability.AllPathClaim
-import Kore.Reachability.Claim
-import Kore.Reachability.FunctionalClaim
 import Kore.Reachability.OnePathClaim
 import Kore.Rewrite.AxiomPattern
 import Kore.Rewrite.ClaimPattern (
@@ -76,7 +76,7 @@ import Pretty qualified
 data SomeClaim
     = OnePath !OnePathClaim
     | AllPath !AllPathClaim
-    | Functional !FunctionalClaim
+    | Equational !EquationalClaim
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -102,10 +102,10 @@ mkSomeClaimOnePath left right existentials =
 instance Unparse SomeClaim where
     unparse (OnePath rule) = unparse rule
     unparse (AllPath rule) = unparse rule
-    unparse (Functional rule) = unparse rule
+    unparse (Equational rule) = unparse rule
     unparse2 (AllPath rule) = unparse2 rule
     unparse2 (OnePath rule) = unparse2 rule
-    unparse2 (Functional rule) = unparse2 rule
+    unparse2 (Equational rule) = unparse2 rule
 
 instance TopBottom SomeClaim where
     isTop _ = False
@@ -116,33 +116,33 @@ instance Pretty SomeClaim where
         Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
     pretty (AllPath (AllPathClaim rule)) =
         Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
-    pretty (Functional (FunctionalClaim rule)) =
-        Pretty.vsep ["Functional rule:", Pretty.pretty rule]
+    pretty (Equational (EquationalClaim rule _)) =
+        Pretty.vsep ["Equational rule:", Pretty.pretty rule]
 
 instance From SomeClaim Attribute.SourceLocation where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
-    from (Functional functionalRule) = from functionalRule
+    from (Equational functionalRule) = from functionalRule
 
 instance From SomeClaim Attribute.Label where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
-    from (Functional functionalRule) = from functionalRule
+    from (Equational functionalRule) = from functionalRule
 
 instance From SomeClaim Attribute.RuleIndex where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
-    from (Functional functionalRule) = from functionalRule
+    from (Equational functionalRule) = from functionalRule
 
 instance From SomeClaim Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
-    from (Functional functionalRule) = from functionalRule
+    from (Equational functionalRule) = from functionalRule
 
 instance From SomeClaim (AxiomPattern VariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
-    from (Functional functionalRule) = from functionalRule
+    from (Equational functionalRule) = from functionalRule
 
 instance From SomeClaim Verified.Sentence where
     from claim =
@@ -174,8 +174,9 @@ lensClaimPattern =
                 Lens.view _Unwrapped onePathRule
             AllPath allPathRule ->
                 Lens.view _Unwrapped allPathRule
-            Functional functionalRule ->
-                Lens.view _Unwrapped functionalRule
+            Equational functionalRule ->
+                undefined
+                --Lens.view _Unwrapped functionalRule
         )
         ( \case
             OnePath onePathRule -> \attrs ->
@@ -186,10 +187,13 @@ lensClaimPattern =
                 allPathRule
                     & Lens.set _Unwrapped attrs
                     & AllPath
-            Functional functionalRule -> \attrs ->
+            Equational functionalRule -> \attrs ->
+                undefined
+                {-
                 functionalRule
                     & Lens.set _Unwrapped attrs
-                    & Functional
+                    & Equational
+                -}
         )
 
 makeTrusted :: SomeClaim -> SomeClaim
@@ -213,27 +217,27 @@ instance Claim SomeClaim where
 
     strategy (AllPath claim) = strategy claim
     strategy (OnePath claim) = strategy claim
-    strategy (Functional claim) = strategy claim
+    strategy (Equational claim) = strategy claim
 
     strategyWithMinDepth (AllPath claim) = strategyWithMinDepth claim
     strategyWithMinDepth (OnePath claim) = strategyWithMinDepth claim
-    strategyWithMinDepth (Functional claim) = strategyWithMinDepth claim
+    strategyWithMinDepth (Equational claim) = strategyWithMinDepth claim
 
     firstStep (AllPath claim) = firstStep claim
     firstStep (OnePath claim) = firstStep claim
-    firstStep (Functional claim) = firstStep claim
+    firstStep (Equational claim) = firstStep claim
 
     nextStep (AllPath claim) = nextStep claim
     nextStep (OnePath claim) = nextStep claim
-    nextStep (Functional claim) = nextStep claim
+    nextStep (Equational claim) = nextStep claim
 
     simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
     simplify (OnePath claim) = onePathTransition $ OnePath <$> simplify claim
-    simplify (Functional claim) = functionalTransition $ Functional <$> simplify claim
+    simplify (Equational claim) = functionalTransition $ Equational <$> simplify claim
 
     checkImplication (AllPath claim) = fmap AllPath <$> checkImplication claim
     checkImplication (OnePath claim) = fmap OnePath <$> checkImplication claim
-    checkImplication (Functional claim) = fmap Functional <$> checkImplication claim
+    checkImplication (Equational claim) = fmap Equational <$> checkImplication claim
 
     applyClaims claims (AllPath claim) =
         applyClaims (mapMaybe maybeAllPath claims) claim
@@ -243,9 +247,9 @@ instance Claim SomeClaim where
         applyClaims (mapMaybe maybeOnePath claims) claim
             & fmap (fmap OnePath)
             & onePathTransition
-    applyClaims _ (Functional claim) =
+    applyClaims _ (Equational claim) =
         applyClaims [] claim
-            & fmap (fmap Functional)
+            & fmap (fmap Equational)
             & functionalTransition
 
     applyAxioms axiomGroups (AllPath claim) =
@@ -256,9 +260,9 @@ instance Claim SomeClaim where
         applyAxioms (coerce axiomGroups) claim
             & fmap (fmap OnePath)
             & onePathTransition
-    applyAxioms _ (Functional claim) =
+    applyAxioms _ (Equational claim) =
         applyAxioms [] claim
-            & fmap (fmap Functional)
+            & fmap (fmap Equational)
             & functionalTransition
 
 instance From (Rule SomeClaim) Attribute.PriorityAttributes where
@@ -275,9 +279,9 @@ instance From (Rule SomeClaim) Attribute.RuleIndex where
 
 instance ClaimExtractor SomeClaim where
     extractClaim input =
-        (OnePath <$> extractClaim input) <|> 
-        (AllPath <$> extractClaim input) <|>
-        (Functional <$> extractClaim input)
+        (OnePath <$> extractClaim input)
+            <|> (AllPath <$> extractClaim input)
+            <|> (Equational <$> extractClaim input)
 
 allPathTransition ::
     Monad m =>
@@ -293,9 +297,9 @@ onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
 
 functionalTransition ::
     Monad m =>
-    TransitionT (AppliedRule FunctionalClaim) m a ->
+    TransitionT (AppliedRule EquationalClaim) m a ->
     TransitionT (AppliedRule SomeClaim) m a
-functionalTransition = Transition.mapRules ruleFunctionalToRuleReachability
+functionalTransition = Transition.mapRules ruleEquationalToRuleReachability
 
 maybeOnePath :: SomeClaim -> Maybe OnePathClaim
 maybeOnePath (OnePath rule) = Just rule
@@ -321,10 +325,11 @@ ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
 ruleOnePathToRuleReachability (AppliedClaim onePathRule) =
     AppliedClaim (OnePath onePathRule)
 
-ruleFunctionalToRuleReachability ::
-    AppliedRule FunctionalClaim ->
+ruleEquationalToRuleReachability ::
+    AppliedRule EquationalClaim ->
     AppliedRule SomeClaim
-ruleFunctionalToRuleReachability (AppliedClaim functionalRule) =
-    AppliedClaim (Functional functionalRule)
+ruleEquationalToRuleReachability (AppliedClaim functionalRule) =
+    AppliedClaim (Equational functionalRule)
+
 -- Note that `AppliedAxiom` is impossible
--- because `Rule FunctionalClaim` is empty.
+-- because `Rule EquationalClaim` is empty.

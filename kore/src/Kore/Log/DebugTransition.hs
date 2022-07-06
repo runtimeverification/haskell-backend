@@ -12,14 +12,14 @@ module Kore.Log.DebugTransition (
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
+import Kore.Claim.SomeClaim (
+    SomeClaim (..),
+ )
 import Kore.Reachability.ClaimState (
     ClaimState,
  )
 import Kore.Reachability.Prim (
     Prim (..),
- )
-import Kore.Reachability.SomeClaim (
-    SomeClaim (..),
  )
 import Log
 import Prelude.Kore

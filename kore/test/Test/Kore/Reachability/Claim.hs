@@ -7,6 +7,11 @@ import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
+import Kore.Claim.Claim (
+    CheckImplicationResult (..),
+    checkImplicationWorker,
+    simplifyRightHandSide,
+ )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -33,11 +38,6 @@ import Kore.Internal.TermLike (
     mkElemVar,
  )
 import Kore.Internal.TermLike qualified as TermLike
-import Kore.Reachability.Claim (
-    CheckImplicationResult (..),
-    checkImplicationWorker,
-    simplifyRightHandSide,
- )
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern,
     mkClaimPattern,

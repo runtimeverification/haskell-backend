@@ -9,7 +9,7 @@ module Kore.Log.WarnStuckClaimState (
 ) where
 
 import Kore.Attribute.SourceLocation
-import Kore.Reachability.SomeClaim
+import Kore.Claim.SomeClaim
 import Log
 import Prelude.Kore
 import Pretty (

@@ -9,8 +9,8 @@ module Kore.Log.WarnTrivialClaim (
 ) where
 
 import Kore.Attribute.SourceLocation
+import Kore.Claim.SomeClaim
 import Kore.Log.InfoProofDepth
-import Kore.Reachability.SomeClaim
 import Log
 import Prelude.Kore
 import Pretty (

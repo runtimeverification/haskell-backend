@@ -13,6 +13,7 @@ import Control.Monad.Catch (
  )
 import GlobalMain
 import Kore.BugReport
+import Kore.Claim.Claim qualified as Claim
 import Kore.Exec (
     proveWithRepl,
  )
@@ -36,7 +37,6 @@ import Kore.Log.KoreLogOptions (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
-import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
 import Kore.Syntax.Module (

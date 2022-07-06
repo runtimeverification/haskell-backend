@@ -22,14 +22,14 @@ import Data.Sequence (
 import Data.Sequence qualified as Seq
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
-import Kore.Debug
-import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Reachability.Claim (
+import Kore.Claim.Claim (
     AppliedRule (..),
     ApplyResult (..),
     Claim (..),
  )
-import Kore.Reachability.Claim qualified as Claim
+import Kore.Claim.Claim qualified as Claim
+import Kore.Debug
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Reachability.ClaimState qualified as ClaimState
 import Kore.Reachability.Prim qualified as Prim
 import Kore.Rewrite.Strategy qualified as Strategy
@@ -346,7 +346,6 @@ instance Claim MockClaim where
     strategyWithMinDepth _ = Claim.reachabilityStrategyWithMinDepth
     firstStep _ = Claim.reachabilityFirstStep
     nextStep _ = Claim.reachabilityNextStep
-
 
     checkImplication (MockClaim (src, dst))
         | src' == Bot = return Claim.Implied
