@@ -419,17 +419,33 @@ encodePattern = encodeKoreJson . fromPattern
 
 encodeKoreJson :: KorePattern -> ByteString
 encodeKoreJson = Json.encodePretty' prettyJsonOpts
-  where
-    prettyJsonOpts =
-        defConfig
-            { confIndent = Spaces 2
-            , confCompare = argsLast
-            }
-    argsLast :: Text -> Text -> Ordering
-    argsLast "args" "args" = EQ
-    argsLast "args" _ = GT
-    argsLast _ "args" = LT
-    argsLast x y = compare x y
+
+prettyJsonOpts :: Json.Config
+prettyJsonOpts =
+    defConfig
+        { confIndent = Spaces 2
+        , confCompare =
+            keyOrder -- retains the field order in all constructors
+                [ "assoc"
+                , "name"
+                , "conn"
+                , "quant"
+                , "combinator"
+                , "pred"
+                , "symbol"
+                , "sort"
+                , "sorts"
+                , "var"
+                , "varSort"
+                , "argSort"
+                , "resultSort"
+                , "arg"
+                , "args"
+                , "source"
+                , "dest"
+                , "value"
+                ]
+        }
 
 fromPattern :: Kore.Pattern VariableName ann -> KorePattern
 fromPattern pat =

@@ -283,6 +283,9 @@
                     "type": "string",
                     "enum": [ "Left", "Right" ]
                 },
+                "sort": {
+                    "$ref": "#/definitions/Sort"
+                },
                 "args": {
                     "type": "array",
                     "items": {
@@ -292,6 +295,7 @@
             },
             "required": [
                 "assoc",
+                "sort",
                 "args"
             ],
             "title": "MultiOr"
