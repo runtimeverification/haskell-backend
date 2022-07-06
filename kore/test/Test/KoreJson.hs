@@ -146,8 +146,37 @@ parserRoundTrip =
         korePattern <- forAll genKorePattern
         -- testing KorePattern -> parsedPattern -> KorePattern
         -- where KorePattern is known to be valid
-        let convert :: KorePattern -> ParsedPattern
-            convert = either (error . show) id . toParsedPattern
-            parse :: ParsedPattern -> Either () KorePattern
-            parse = pure . fromPattern
-        tripping korePattern convert parse
+
+        -- This round trip fails on "MultiOr" and "MultiApp"
+        -- constructs, as they introduce ambiguity.
+        -- let convert :: KorePattern -> ParsedPattern
+        --     convert = either (error . show) id . toParsedPattern
+        --     parse :: ParsedPattern -> Either () KorePattern
+        --     parse = pure . fromPattern
+        -- tripping korePattern convert parse
+
+        -- testing ParsedPattern -> KorePattern -> ParsedPattern
+        -- after producing ParsedPattern from KorePattern
+        -- (we do not allow "Inhabitant" in ParsedPattern)
+        let parsedP =
+                either (error . show) id $
+                    toParsedPattern korePattern
+        tripping parsedP fromPattern toParsedPattern
+
+fullRoundTrip :: Property
+fullRoundTrip =
+    property $ do
+        korePattern <- forAll genKorePattern
+        -- testing Json -> parsedPattern -> Json
+        -- after producing an initial json bytestring
+
+        -- This round trip fails on "MultiOr" and "MultiApp"
+        -- constructs, as they introduce ambiguity.
+
+        let json = encodeKoreJson korePattern
+            convert :: BS.ByteString -> ParsedPattern
+            convert = either (error . show) id . decodePattern
+            parse :: ParsedPattern -> Either () BS.ByteString
+            parse = pure . encodePattern
+
+        tripping json convert parse
