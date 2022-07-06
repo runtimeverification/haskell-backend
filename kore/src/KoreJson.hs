@@ -233,9 +233,9 @@ data JsonError
       ParseError String
     | -- | Wrong arg count for a connective or other construct
       WrongArgCount String Int
-    | -- | Inconsistent data parsed. TODO: refine!
-      KoreError String
-    | NotImplemented String
+    | -- | MultiOr/MultiApp require a non-empty argument list
+      MissingArg String
+    deriving stock (Eq, Show)
 
 -- | low-level: read text into KorePattern
 decodeKoreJson :: ByteString -> Either String KorePattern
@@ -297,10 +297,14 @@ toParsedPattern = \case
             Kore.DomainValue
                 <$> mkSort sort
                 <*> toParsedPattern (KJString value)
-    KJMultiOr{assoc, sort, args} ->
-        withAssoc assoc <$> mkOr sort <*> traverse toParsedPattern args
-    KJMultiApp{assoc, symbol, sorts, args} ->
-        withAssoc assoc <$> mkF symbol sorts <*> traverse toParsedPattern args
+    KJMultiOr{assoc, sort, args}
+        | null args -> Prelude.Left $ MissingArg "MultiOr"
+        | otherwise ->
+            withAssoc assoc <$> mkOr sort <*> traverse toParsedPattern args
+    KJMultiApp{assoc, symbol, sorts, args}
+        | null args -> Prelude.Left $ MissingArg "MultiApp"
+        | otherwise ->
+            withAssoc assoc <$> mkF symbol sorts <*> traverse toParsedPattern args
   where
     embedVar ::
         (VariableName -> SomeVariableName VariableName) ->
