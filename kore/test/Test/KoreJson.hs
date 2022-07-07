@@ -94,7 +94,27 @@ genIdChar =
 
 genPrintableAscii :: Gen Text
 genPrintableAscii =
-    T.filter isPrint <$> Gen.text (Range.linear 0 128) Gen.ascii
+    T.filter allowed <$> Gen.text (Range.linear 0 128) Gen.ascii
+  where
+    allowed '"' = False
+    allowed '\\' = False
+    allowed c = isPrint c
+
+genEscapeSequence :: Gen Text
+genEscapeSequence =
+    T.cons '\\'
+        <$> Gen.choice
+            [ T.singleton <$> Gen.element "tnfr\"\\"
+            , T.cons 'x' <$> Gen.text (Range.singleton 2) Gen.hexit
+            , T.cons 'u' <$> Gen.text (Range.singleton 4) Gen.hexit
+            , T.cons 'U' <$> Gen.text (Range.singleton 8) Gen.hexit
+            ]
+
+genStringLiteral :: Gen Text
+genStringLiteral =
+    fmap T.concat $
+        Gen.list (Range.linear 0 32) $
+            Gen.choice [genPrintableAscii, genEscapeSequence]
 
 exactly :: Int -> Gen a -> Gen [a]
 exactly n g
@@ -129,13 +149,16 @@ showExamples =
 -- Tests
 
 roundTripTests :: Group
-roundTripTests =
+roundTripTests = roundTripTestsWith 1000
+
+roundTripTestsWith :: TestLimit -> Group
+roundTripTestsWith n =
     Group
         "Json -> KorePattern -> ParsedPattern Round trip tests"
-        [ ("KorePattern -> json -> KorePattern", jsonRoundTrip)
-        , ("KorePattern (no multi-things) -> ParsedPattern -> KorePattern", parsedRoundTrip)
-        , ("ParsedPattern -> KorePattern -> KorePattern", korePatternRoundTrip)
-        , ("json (valid, no multi-things) -> ParsedPattern -> json", fullRoundTrip)
+        [ ("KorePattern -> json -> KorePattern", withTests n jsonRoundTrip)
+        , ("KorePattern (no multi-things) -> ParsedPattern -> KorePattern", withTests n parsedRoundTrip)
+        , ("ParsedPattern -> KorePattern -> KorePattern", withTests n korePatternRoundTrip)
+        , ("json (valid, no multi-things) -> ParsedPattern -> json", withTests n fullRoundTrip)
         ]
 
 jsonRoundTrip :: Property

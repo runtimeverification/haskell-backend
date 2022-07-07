@@ -18,11 +18,11 @@ import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types qualified as Json
 import Data.ByteString.Lazy (ByteString)
-import Data.Char (isAlpha, isDigit)
+import Data.Char (isAlpha, isDigit, isPrint)
 import Data.Either.Extra hiding (Left, Right)
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
-import Data.List (foldl1')
+import Data.List (foldl1', nub)
 import Data.Sup (Sup (..))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -210,50 +210,146 @@ codecOptions =
 ----------------------------------------
 -- Identifiers and lexical checks
 
-{- | Performs a (shallow, top-level, no recursion) lexical check of
- identifiers contained in the given node.
-
- Basic identifiers start with letters and may contain letters,
- digits, _ or '. Set variables start with '@' followed by a basic
- identifier. Symbol variables _may_ start by \, followed by a basic
- identifier.
-
- String literals may contain printable Ascii characters (0x20 -
- 0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
- Unicode escape sequences with 1, 2 or 4 bytes: \sHH, \uHHHH, \UHHHHHH
--}
-lexicalCheck :: KorePattern -> Json.Parser KorePattern
-lexicalCheck x = pure x -- TODO
-
 newtype Id = Id Text
     deriving stock (Eq, Show, Generic)
     deriving newtype (ToJSON, FromJSON)
 
+{- | Performs a (shallow, top-level, no recursion) lexical check of
+ identifiers contained in the given node. For details see the check
+ functions below.
+-}
+lexicalCheck :: KorePattern -> Json.Parser KorePattern
+lexicalCheck p =
+    case p of
+        KJEVar{name = Id n} ->
+            reportErrors n "element variable" checkIdChars
+        KJSVar{name = Id n} ->
+            reportErrors n "set variable" checkSVarName
+        KJApp{name = Id n} ->
+            reportErrors n "app symbol" checkSymbolName
+        KJString txt ->
+            reportErrors txt "string literal" checkStringChars
+        KJForall{var = Id name} ->
+            reportErrors name "quantifier variable" checkIdChars
+        KJExists{var = Id name} ->
+            reportErrors name "quantifier variable" checkIdChars
+        KJMu{var = Id name} ->
+            reportErrors name "fixpoint expression variable" checkSVarName
+        KJNu{var = Id name} ->
+            reportErrors name "fixpoint expression variable" checkSVarName
+        KJDv{value = txt} ->
+            reportErrors txt "domain value string" checkStringChars
+        KJMultiApp{symbol = Id n} ->
+            reportErrors n "multi-app symbol" checkSymbolName
+        _ -> pure p
+  where
+    reportErrors :: Text -> String -> (Text -> [String]) -> Json.Parser KorePattern
+    reportErrors text kind check
+        | null errors = pure p
+        | otherwise =
+            fail . unwords $
+                [ "Lexical"
+                , if length errors == 1 then "error" else "errors"
+                , "in"
+                , kind
+                , ":"
+                , T.unpack text
+                ]
+                    <> map ("* " <>) errors
+      where
+        errors = check text
+
+{- | Basic identifiers start with letters and may contain letters,
+ digits, _ or '. Set variables start with '@' followed by a basic
+ identifier. Symbol variables _may_ start by \, followed by a basic
+ identifier.
+-}
 checkIdChars :: Text -> [String] -- list of lexical errors
--- FIXME collect all lexical errors instead of stopping at one
 checkIdChars name
     | T.null name = ["Empty"]
-checkIdChars name
-    | not $ isAlpha first =
-        ["illegal initial character"]
-    | not $ T.all isIdChar rest =
-        ["contains illegal characters"]
-    | otherwise = []
+checkIdChars name =
+    ["Illegal initial character " <> show first | not $ isAlpha first]
+    ++ [ "Contains illegal characters: " <> show (nub $ T.unpack illegalChars)
+       | not $ T.null illegalChars
+       ]
   where
     first = T.head name
-    rest = T.tail name
+    illegalChars = T.filter (not . isIdChar) $ T.tail name
 
 isIdChar :: Char -> Bool
 isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
 
--- | has to start with `@`, followed by a valid identifier
+-- | Set variable names _have to_ start with `@`, followed by a valid identifier
 checkSVarName :: Text -> [String]
 checkSVarName name
     | T.null name = ["empty"]
-checkSVarName name
-    | T.head name /= '@' = ["must start with `@'"]
-    | otherwise = checkIdChars (T.tail name)
+checkSVarName name =
+    ["Must start with `@'" | T.head name /= '@']
+    <> checkIdChars (T.tail name)
 
+-- | Symbols _may_ start by a backslash.
+checkSymbolName :: Text -> [String]
+checkSymbolName name
+    | Nothing <- mbParts = ["empty"]
+    | Just ('\\', rest) <- mbParts = checkIdChars rest
+    | otherwise = checkIdChars name
+  where
+    mbParts = T.uncons name
+
+{- | String literals may contain printable Ascii characters (0x20 -
+ 0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
+ Unicode escape sequences with 2, 4 or 8 hex: \sHH, \uHHHH, \UHHHHHHHH
+-}
+checkStringChars :: Text -> [String]
+checkStringChars txt =
+    [ "Contains non-printable characters: " <> (show . nub $ T.unpack nonPrintables)
+    | not $ T.null nonPrintables
+    ]
+        ++ ["Contains invalid escape sequences: " <> showList badEscapes "" | not $ null badEscapes]
+  where
+    nonPrintables = T.filter (not . isPrint) txt
+    badEscapes = reverse . fst $ T.foldl' collectEscapes ([], Normal) txt
+
+-- Text fold function to collect invalid escape sequences in a string literal
+data CollectState
+    = Normal
+    | Escape
+    | UTF Int String
+    | Bad Int String
+    deriving stock (Show)
+
+collectEscapes :: ([String], CollectState) -> Char -> ([String], CollectState)
+-- normal mode
+collectEscapes (acc, Normal) '\\' = (acc, Escape) -- enter escaped mode
+collectEscapes (acc, Normal) _ = (acc, Normal) -- could check if printable here
+
+-- escaping mode
+collectEscapes (acc, Escape) 'x' = (acc, UTF 2 "x\\") -- enter UTF mode, expect 2 hex
+collectEscapes (acc, Escape) 'u' = (acc, UTF 4 "u\\") -- enter UTF mode, expect 4 hex
+collectEscapes (acc, Escape) 'U' = (acc, UTF 8 "U\\") -- enter UTF mode, expect 8 hex
+collectEscapes (acc, Escape) c
+    | c `elem` ['t', 'n', 'f', 'r', '\"', '\\'] -- good escape
+        =
+        (acc, Normal)
+    | otherwise -- bad escape
+        =
+        (['\\', c] : acc, Normal)
+-- UTF escape mode (n = remaining hex digits expected)
+collectEscapes s@(acc, UTF n part) c
+    | n > 8 || n < 0 = error $ "Illegal collect state" <> show s
+    | n == 0 = (acc, Normal) -- good UTF escape
+    | c `elem` hexDigits = (acc, UTF (n -1) (c : part))
+    | otherwise = (acc, Bad (n - 1) (c : part))
+  where
+    hexDigits = ['0' .. '9'] <> ['A' .. 'F'] <> ['a' .. 'f']
+
+-- already bad, collect remaining expected hex digits no matter what they are)
+collectEscapes s@(acc, Bad n part) c
+    | n > 7 || n < 0 = error $ "Illegal collect state" <> show s
+    | n == 0 = (reverse part : acc, Normal)
+    | otherwise = (acc, Bad (n - 1) (c : part))
+
+------------------------------------------------------------
 data Sort
     = Sort
         { name :: Id -- may start by a backslash
