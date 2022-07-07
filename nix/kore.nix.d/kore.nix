@@ -49,6 +49,7 @@
           (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
           (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
           (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
+          (hsPkgs."decision-diagrams" or (errorHandler.buildDepError "decision-diagrams"))
           (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
           (hsPkgs."deriving-aeson" or (errorHandler.buildDepError "deriving-aeson"))
           (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
@@ -70,11 +71,13 @@
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
+          (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
           (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
           (hsPkgs."mono-traversable" or (errorHandler.buildDepError "mono-traversable"))
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
+          (hsPkgs."multiset" or (errorHandler.buildDepError "multiset"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
           (hsPkgs."parser-combinators" or (errorHandler.buildDepError "parser-combinators"))
           (hsPkgs."prettyprinter" or (errorHandler.buildDepError "prettyprinter"))
@@ -447,6 +450,7 @@
           "Kore/Unification/SubstitutionSimplifier"
           "Kore/Unification/UnifierT"
           "Kore/Unification/Unify"
+          "Kore/Unification/NewUnifier"
           "Kore/Unparser"
           "Kore/Validate/AliasVerifier"
           "Kore/Validate/AttributesVerifier"
@@ -656,6 +660,7 @@
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
             (hsPkgs."data-default" or (errorHandler.buildDepError "data-default"))
+            (hsPkgs."decision-diagrams" or (errorHandler.buildDepError "decision-diagrams"))
             (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
             (hsPkgs."deriving-aeson" or (errorHandler.buildDepError "deriving-aeson"))
             (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
@@ -677,11 +682,13 @@
             (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
             (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
             (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
+            (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
             (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
             (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
             (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
             (hsPkgs."mono-traversable" or (errorHandler.buildDepError "mono-traversable"))
             (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
+            (hsPkgs."multiset" or (errorHandler.buildDepError "multiset"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             (hsPkgs."parser-combinators" or (errorHandler.buildDepError "parser-combinators"))
             (hsPkgs."prettyprinter" or (errorHandler.buildDepError "prettyprinter"))
