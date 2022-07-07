@@ -18,72 +18,68 @@ genKorePattern :: Gen KorePattern
 genKorePattern =
     Gen.recursive
         Gen.choice
-        [ KJEVar <$> genId Nothing <*> genSort
-        , KJSVar <$> (genId (Just '@')) <*> genSort
+        [ KJEVar <$> genId <*> genSort
+        , KJSVar <$> (('@' -:) <$> genId) <*> genSort
         , KJString <$> genPrintableAscii
-        , KJDomainValue <$> genSort <*> genPrintableAscii
+        , KJTop <$> genSort
+        , KJBottom <$> genSort
+        , KJDv <$> genSort <*> genPrintableAscii
         ]
-        $ map genConn [minBound .. maxBound]
-            <> [ KJQuantifier
-                    <$> Gen.element [Forall, Exists]
-                    <*> genSort
-                    <*> genId Nothing
-                    <*> genSort
-                    <*> genKorePattern
-               , KJFixpoint
-                    <$> Gen.element [Mu, Nu]
-                    <*> genId (Just '@')
-                    <*> genSort
-                    <*> genKorePattern
-               , genApp
-               ]
-            <> zipWith genPred [minBound .. maxBound] [1, 1, 2, 2]
-            <> [ KJNext <$> genSort <*> genKorePattern
-               , KJRewrites <$> genSort <*> genKorePattern <*> genKorePattern
-               , KJMultiOr <$> Gen.element [Left, Right] <*> genSort <*> between 3 12 genKorePattern
-               , KJMultiApp <$> Gen.element [Left, Right] <*> genId (Just '\\') <*> exactly 3 genSort <*> between 3 12 genKorePattern
-               ]
-  where
-    genApp :: Gen KorePattern
-    genApp = do
-        sorts <- between 1 10 genSort
-        args <- exactly (length sorts - 1) genKorePattern
-        name <- genId Nothing
-        pure KJApp{name, sorts, args}
+        [ do sorts <- between 1 10 genSort
+             args <- exactly (length sorts - 1) genKorePattern
+             name <- genId
+             pure KJApp{name, sorts, args}
+        , KJNot <$> genSort <*> genKorePattern
+        , KJAnd <$> genSort <*> genKorePattern <*> genKorePattern
+        , KJOr <$> genSort <*> genKorePattern <*> genKorePattern
+        , KJImplies <$> genSort <*> genKorePattern <*> genKorePattern
+        , KJIff <$> genSort <*> genKorePattern <*> genKorePattern
 
-    genConn :: Connective -> Gen KorePattern
-    genConn c =
-        KJConnective c
-            <$> genSort
-            <*> exactly (arity c) genKorePattern
-    -- makes sure valid argument counts are generated
+        , KJForall <$> genSort <*> genId <*> genSort <*> genKorePattern
+        , KJExists <$> genSort <*> genId <*> genSort <*> genKorePattern
+        , KJMu <$> ('@' -:) <$> genId <*> genSort <*> genKorePattern
+        , KJNu <$> ('@' -:) <$>  genId <*> genSort <*> genKorePattern
+        , KJCeil <$> genSort <*> genSort <*> genKorePattern
+        , KJFloor <$> genSort <*> genSort <*> genKorePattern
+        , KJEquals <$> genSort <*> genSort <*> genKorePattern <*> genKorePattern
+        , KJIn <$> genSort <*> genSort <*> genKorePattern <*> genKorePattern
+        , KJNext <$> genSort <*> genKorePattern
+        , KJRewrites <$> genSort <*> genKorePattern <*> genKorePattern
+        ]
 
-    arity :: Connective -> Int
-    arity Top = 0
-    arity Bottom = 0
-    arity Not = 1
-    arity And = 2
-    arity Or = 2
-    arity Iff = 2
-    arity Implies = 2
+-- | special generator which yields "multi-X" patterns (breaks round-trip testing)
+genMultiKorePattern :: Gen KorePattern
+genMultiKorePattern =
+    Gen.choice
+        [ KJMultiOr
+              <$> Gen.element [Left, Right]
+              <*> genSort
+              <*> between 3 12 (Gen.small genKorePattern)
+        , KJMultiApp
+              <$> Gen.element [Left, Right]
+              <*> (Gen.element [ ('\\' -:), id] <*> genId)
+              <*> exactly 2 genSort
+              <*> between 3 12 (Gen.small genKorePattern)
+        ]
 
-    genPred :: Pred -> Int -> Gen KorePattern
-    genPred p n =
-        KJPredicate p <$> genSort <*> genSort <*> exactly n genKorePattern
+
+(-:) :: Char -> Id -> Id
+c -: (Id x) = Id $ T.cons c x
+
+genAllKorePatterns :: Gen KorePattern
+genAllKorePatterns =
+    Gen.frequency [ (21, genKorePattern), (2, genMultiKorePattern) ]
 
 genSort :: Gen Sort
 genSort =
     Gen.recursive
         Gen.choice
         [SortVariable <$> genVarName]
-        [Sort <$> genId Nothing <*> upTo 10 genSort]
+        [Sort <$> genId <*> upTo 10 genSort]
 
-genId :: Maybe Char -> Gen Id
-genId optChar =
-    fmap Id $ (<>) <$> genName <*> genDigits
-  where
-    genName = maybe id T.cons optChar <$> genVarName
-    genDigits = Gen.text (Range.constant 0 5) Gen.digit
+genId :: Gen Id
+genId =
+    fmap Id $ (<>) <$> genVarName <*> Gen.text (Range.constant 0 5) Gen.digit
 
 genVarName :: Gen Text
 genVarName =
@@ -133,15 +129,24 @@ showExamples =
 ----------------------------------------
 -- Tests
 
+roundTripTests :: Group
+roundTripTests =
+    Group "Json -> KorePattern -> ParsedPattern Round trip tests"
+    [ ("KorePattern -> json -> KorePattern", jsonRoundTrip)
+    , ("KorePattern (no multi-things) -> ParsedPattern -> KorePattern", parsedRoundTrip)
+    , ("ParsedPattern -> KorePattern -> KorePattern", korePatternRoundTrip)
+    , ("json (valid, no multi-things) -> ParsedPattern -> json", fullRoundTrip)
+    ]
+
 jsonRoundTrip :: Property
 jsonRoundTrip =
     property $ do
-        korePattern <- forAll genKorePattern
-        -- this is testing To/FromJSON instances
+        korePattern <- forAll genAllKorePatterns
+        -- this is testing To/FromJSON instances and lexical checks
         tripping korePattern encodeKoreJson decodeKoreJson
 
-parserRoundTrip :: Property
-parserRoundTrip =
+parsedRoundTrip :: Property
+parsedRoundTrip =
     property $ do
         korePattern <- forAll genKorePattern
         -- testing KorePattern -> parsedPattern -> KorePattern
@@ -149,18 +154,20 @@ parserRoundTrip =
 
         -- This round trip fails on "MultiOr" and "MultiApp"
         -- constructs, as they introduce ambiguity.
-        -- let convert :: KorePattern -> ParsedPattern
-        --     convert = either (error . show) id . toParsedPattern
-        --     parse :: ParsedPattern -> Either () KorePattern
-        --     parse = pure . fromPattern
-        -- tripping korePattern convert parse
+        let convert :: KorePattern -> ParsedPattern
+            convert = toParsedPattern `orFailWith` "toParsedPattern"
+            parse :: ParsedPattern -> Either () KorePattern
+            parse = pure . fromPattern
+        tripping korePattern convert parse
 
+korePatternRoundTrip :: Property
+korePatternRoundTrip =
+    property $ do
+        korePattern <- forAll genAllKorePatterns
         -- testing ParsedPattern -> KorePattern -> ParsedPattern
         -- after producing ParsedPattern from KorePattern
         -- (we do not allow "Inhabitant" in ParsedPattern)
-        let parsedP =
-                either (error . show) id $
-                    toParsedPattern korePattern
+        let parsedP = toParsedPattern `orFailWith` "toParsedPattern" $ korePattern
         tripping parsedP fromPattern toParsedPattern
 
 fullRoundTrip :: Property
@@ -175,8 +182,12 @@ fullRoundTrip =
 
         let json = encodeKoreJson korePattern
             convert :: BS.ByteString -> ParsedPattern
-            convert = either (error . show) id . decodePattern
+            convert = decodePattern `orFailWith` "decodePattern"
             parse :: ParsedPattern -> Either () BS.ByteString
             parse = pure . encodePattern
 
         tripping json convert parse
+
+orFailWith :: Show err => (a -> Either err b) -> String -> a -> b
+parse `orFailWith` name = either failed id . parse
+    where failed err = error $ "Error in " <> name <> ": " <> show err

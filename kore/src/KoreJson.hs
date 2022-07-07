@@ -1,4 +1,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 
 {-# Options -Wno-partial-fields #-}
@@ -7,17 +11,18 @@
 
 module KoreJson (
     -- API
-    JsonError (..),
-    encodePattern,
-    decodePattern,
+   JsonError (..),
+   encodePattern,
+   decodePattern,
     -- export everything for debugging and testing only
     module KoreJson,
 ) where
 
 import Data.Aeson as Json
+import Data.Aeson.Types as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
-import Data.Char (isDigit, toLower)
+import Data.Char (isAlpha, isDigit)
 import Data.Either.Extra hiding (Left, Right)
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
@@ -37,7 +42,7 @@ import Kore.Syntax.Variable (
     Variable (..),
     VariableName (..),
  )
-import Prelude.Kore hiding (Left, Right, pred)
+import Prelude.Kore hiding (Left, Right)
 import Prelude.Kore qualified as Prelude (Either (..))
 
 {- | Json representation of Kore patterns as a Haskell type.
@@ -70,36 +75,85 @@ data KorePattern
     | -- matching logic pattern
 
       -- | Connective (top, bottom, not, and, or, implies, iff)
-      KJConnective
-        { conn :: Connective
-        , sort :: Sort
-        , args :: [KorePattern] -- arg count checked in conversion to TermLike, not here
+      KJTop
+        { sort :: Sort
         }
+    | KJBottom
+        { sort :: Sort
+        }
+    | KJNot
+        { sort :: Sort
+        , arg :: KorePattern
+        }
+    | KJAnd
+        { sort :: Sort
+        , first :: KorePattern
+        , second :: KorePattern
+        }
+    | KJOr
+        { sort :: Sort
+        , first :: KorePattern
+        , second :: KorePattern
+        }
+    | KJImplies
+        { sort :: Sort
+        , first :: KorePattern
+        , second :: KorePattern
+        }
+    | KJIff
+        { sort :: Sort
+        , first :: KorePattern
+        , second :: KorePattern
+        }
+
     | -- | Quantifiers: forall, exists
-      KJQuantifier
-        { quant :: Quant
-        , sort :: Sort
+      KJForall
+        { sort :: Sort
+        , var :: Id
+        , varSort :: Sort
+        , arg :: KorePattern
+        }
+    | KJExists
+        { sort :: Sort
         , var :: Id
         , varSort :: Sort
         , arg :: KorePattern
         }
     | -- | mu, nu
-      KJFixpoint
-        { combinator :: Fix
-        , -- no sort
-          var :: Id
+      KJMu
+        { var :: Id
+        , varSort :: Sort
+        , arg :: KorePattern
+        }
+    | KJNu
+        { var :: Id
         , varSort :: Sort
         , arg :: KorePattern
         }
     | -- | ceil, floor, equals, in
-      KJPredicate
-        { pred :: Pred
-        , argSort :: Sort
+      KJCeil
+        { argSort :: Sort
         , resultSort :: Sort
-        , args :: [KorePattern]
+        , arg :: KorePattern
+        }
+    | KJFloor
+        { argSort :: Sort
+        , resultSort :: Sort
+        , arg :: KorePattern
+        }
+    | KJEquals
+        { argSort :: Sort
+        , resultSort :: Sort
+        , first :: KorePattern
+        , second :: KorePattern
+        }
+    | KJIn
+        { argSort :: Sort
+        , resultSort :: Sort
+        , first :: KorePattern
+        , second :: KorePattern
         }
     | -- next, rewrites
-
       -- | goes to 'dest' next
       KJNext
         { sort :: Sort
@@ -112,7 +166,7 @@ data KorePattern
         , dest :: KorePattern
         }
     | -- | domain value, a string literal with a sort
-      KJDomainValue
+      KJDv
         { sort :: Sort
         , value :: Text
         }
@@ -139,27 +193,69 @@ instance ToJSON KorePattern where
     toJSON = genericToJSON codecOptions
 
 instance FromJSON KorePattern where
-    parseJSON = genericParseJSON codecOptions
+    parseJSON v = genericParseJSON codecOptions v >>= lexicalCheck
 
 codecOptions :: Json.Options
 codecOptions =
     Json.defaultOptions
         { constructorTagModifier
         , omitNothingFields = True
-        , sumEncoding = ObjectWithSingleField
+        , sumEncoding = TaggedObject "tag" "contents"
         , unwrapUnaryRecords = True
         , tagSingleConstructors = True
         , rejectUnknownFields = True
         }
   where
     constructorTagModifier = \case
-        'K' : 'J' : x : rest -> toLower x : rest
-        x : rest -> toLower x : rest
-        [] -> [] -- can happen on rogue json input
+        "KJDv" -> "dv"
+        'K':'J':rest -> rest
+        other -> other
+
+----------------------------------------
+-- Identifiers and lexical checks
+
+-- | Performs a (shallow, top-level, no recursion) lexical check of
+-- identifiers contained in the given node.
+--
+-- Basic identifiers start with letters and may contain letters,
+-- digits, _ or '. Set variables start with '@' followed by a basic
+-- identifier. Symbol variables _may_ start by \, followed by a basic
+-- identifier.
+--
+-- String literals may contain printable Ascii characters (0x20 -
+-- 0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
+-- Unicode escape sequences with 1, 2 or 4 bytes: \sHH, \uHHHH, \UHHHHHH
+lexicalCheck :: KorePattern -> Parser KorePattern
+lexicalCheck x = pure x -- TODO
 
 newtype Id = Id Text
     deriving stock (Eq, Show, Generic)
     deriving newtype (ToJSON, FromJSON)
+
+checkIdChars :: Text -> [ String ] -- list of lexical errors
+-- FIXME collect all lexical errors instead of stopping at one
+checkIdChars name
+    | T.null name = [ "Empty" ]
+checkIdChars name
+    | not $ isAlpha first =
+          [ "illegal initial character" ]
+    | not $ T.all isIdChar rest =
+          [ "contains illegal characters" ]
+    | otherwise = []
+  where
+    first = T.head name
+    rest = T.tail name
+
+isIdChar :: Char -> Bool
+isIdChar  c = isAlpha c || isDigit c || c `elem` ['_', '\'' ]
+
+-- | has to start with `@`, followed by a valid identifier
+checkSVarName :: Text -> [ String ]
+checkSVarName name
+    | T.null name = [ "empty" ]
+checkSVarName name
+    | T.head name /= '@' = [ "must start with `@'" ]
+    | otherwise = checkIdChars (T.tail name)
 
 data Sort
     = Sort
@@ -170,46 +266,10 @@ data Sort
     deriving stock (Eq, Show, Generic)
 
 instance ToJSON Sort where
-    toJSON = genericToJSON codecOptions{sumEncoding = UntaggedValue}
+    toJSON = genericToJSON codecOptions
 
 instance FromJSON Sort where
-    parseJSON = genericParseJSON codecOptions{sumEncoding = UntaggedValue}
-
--- TODO could omit the args field if empty (custom instance)
-
--- names of known ML connectives. Arity checked during conversion
-data Connective
-    = Top
-    | Bottom
-    | Not
-    | And
-    | Or
-    | Implies
-    | Iff
-    deriving stock (Eq, Show, Generic, Enum, Bounded)
-    deriving anyclass (ToJSON, FromJSON)
-
--- string-tag encoded in the generated instance. Should they be lower-case?
-
-data Quant
-    = Forall
-    | Exists
-    deriving stock (Eq, Show, Generic, Enum, Bounded)
-    deriving anyclass (ToJSON, FromJSON)
-
-data Fix
-    = Mu
-    | Nu
-    deriving stock (Eq, Show, Generic, Enum, Bounded)
-    deriving anyclass (ToJSON, FromJSON)
-
-data Pred
-    = Ceil
-    | Floor
-    | Equals
-    | In
-    deriving stock (Eq, Show, Generic, Enum, Bounded)
-    deriving anyclass (ToJSON, FromJSON)
+    parseJSON = genericParseJSON codecOptions
 
 data LeftRight
     = Left
@@ -255,32 +315,61 @@ toParsedPattern = \case
             Kore.Application <$> toSymbol n ss <*> traverse toParsedPattern as
     KJString t ->
         pure . embedParsedPattern . StringLiteralF . Const $ Kore.StringLiteral t
-    KJConnective c s as ->
-        embedParsedPattern <$> mkConnective c s as
-    KJQuantifier{quant = Forall, sort, var, varSort, arg} ->
+    KJTop s ->
+        fmap (embedParsedPattern . TopF) $
+            Kore.Top <$> (mkSort s)
+    KJBottom s ->
+        fmap (embedParsedPattern . BottomF) $
+            Kore.Bottom <$> (mkSort s)
+    KJNot s a ->
+        fmap (embedParsedPattern . NotF) $
+            Kore.Not <$> mkSort s <*> toParsedPattern a
+    KJAnd s a b ->
+        fmap (embedParsedPattern . AndF) $
+            Kore.And <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+    KJOr s a b ->
+        fmap (embedParsedPattern . OrF) $
+            Kore.Or <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+    KJImplies s a b ->
+        fmap (embedParsedPattern . ImpliesF) $
+            Kore.Implies <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+    KJIff s a b ->
+        fmap (embedParsedPattern . IffF) $
+            Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+    KJForall{sort, var, varSort, arg} ->
         fmap (embedParsedPattern . ForallF) $
             Kore.Forall
                 <$> mkSort sort
                 <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
                 <*> toParsedPattern arg
-    KJQuantifier{quant = Exists, sort, var, varSort, arg} ->
+    KJExists{sort, var, varSort, arg} ->
         fmap (embedParsedPattern . ExistsF) $
             Kore.Exists
                 <$> mkSort sort
                 <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
                 <*> toParsedPattern arg
-    KJFixpoint{combinator = Mu, var, varSort, arg} ->
+    KJMu{var, varSort, arg} ->
         fmap (embedParsedPattern . MuF) $
             Kore.Mu
                 <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
                 <*> toParsedPattern arg
-    KJFixpoint{combinator = Nu, var, varSort, arg} ->
+    KJNu{var, varSort, arg} ->
         fmap (embedParsedPattern . NuF) $
             Kore.Nu
                 <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
                 <*> toParsedPattern arg
-    KJPredicate{pred, argSort, resultSort, args} ->
-        embedParsedPattern <$> mkPredicate pred argSort resultSort args
+    KJCeil s s2 a ->
+        fmap (embedParsedPattern .CeilF) $
+            Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+    KJFloor s s2 a ->
+        fmap (embedParsedPattern .FloorF) $
+            Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+    KJEquals s s2 a b ->
+        fmap (embedParsedPattern .EqualsF) $
+            Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+    KJIn s s2 a b ->
+        fmap (embedParsedPattern .InF) $
+            Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
     KJNext{sort, dest} ->
         fmap (embedParsedPattern . NextF) $
             Kore.Next
@@ -292,7 +381,7 @@ toParsedPattern = \case
                 <$> mkSort sort
                 <*> toParsedPattern source
                 <*> toParsedPattern dest
-    KJDomainValue{sort, value} ->
+    KJDv{sort, value} ->
         fmap (embedParsedPattern . DomainValueF) $
             Kore.DomainValue
                 <$> mkSort sort
@@ -361,59 +450,10 @@ mkSort Sort{name, args} =
 mkSort (SortVariable name) =
     pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
 
-mkConnective ::
-    Connective ->
-    Sort ->
-    [KorePattern] ->
-    Either JsonError (PatternF VariableName ParsedPattern)
-mkConnective Top s [] =
-    TopF . Kore.Top <$> (mkSort s)
-mkConnective Bottom s [] =
-    BottomF . Kore.Bottom <$> (mkSort s)
-mkConnective Not s [a] =
-    fmap NotF $
-        Kore.Not <$> mkSort s <*> toParsedPattern a
-mkConnective And s [a, b] =
-    fmap AndF $
-        Kore.And <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
-mkConnective Or s [a, b] =
-    fmap OrF $
-        Kore.Or <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
-mkConnective Implies s [a, b] =
-    fmap ImpliesF $
-        Kore.Implies <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
-mkConnective Iff s [a, b] =
-    fmap IffF $
-        Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
--- fall-through cases because of wrong argument count
-mkConnective conn _ as =
-    Prelude.Left $ WrongArgCount (show conn) (length as)
-
-mkPredicate ::
-    Pred ->
-    Sort ->
-    Sort ->
-    [KorePattern] ->
-    Either JsonError (PatternF VariableName ParsedPattern)
-mkPredicate Ceil s s2 [a] =
-    fmap CeilF $
-        Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
-mkPredicate Floor s s2 [a] =
-    fmap FloorF $
-        Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
-mkPredicate Equals s s2 [a, b] =
-    fmap EqualsF $
-        Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
-mkPredicate In s s2 [a, b] =
-    fmap InF $
-        Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
-mkPredicate pred _ _ as =
-    Prelude.Left $ WrongArgCount (show pred) (length as)
-
 ------------------------------------------------------------
 -- writing
 
--- | Write a Pattern to a json byte string
+-- | Write a Pattern to a json byte string.
 encodePattern :: Kore.Pattern VariableName ann -> ByteString
 encodePattern = encodeKoreJson . fromPattern
 
@@ -426,12 +466,9 @@ prettyJsonOpts =
         { confIndent = Spaces 2
         , confCompare =
             keyOrder -- retains the field order in all constructors
-                [ "assoc"
+                [ "tag"
+                , "assoc"
                 , "name"
-                , "conn"
-                , "quant"
-                , "combinator"
-                , "pred"
                 , "symbol"
                 , "sort"
                 , "sorts"
@@ -456,10 +493,10 @@ fromPattern pat =
 fromPatternF :: Kore.PatternF VariableName (Kore.Pattern VariableName ann) -> KorePattern
 fromPatternF = \case
     AndF Kore.And{andSort, andFirst, andSecond} ->
-        KJConnective
-            { conn = And
-            , sort = fromSort andSort
-            , args = map fromPattern [andFirst, andSecond]
+        KJAnd
+            { sort = fromSort andSort
+            , first = fromPattern andFirst
+            , second = fromPattern andSecond
             }
     ApplicationF
         ( Kore.Application
@@ -472,80 +509,71 @@ fromPatternF = \case
                 , args = map fromPattern args
                 }
     BottomF Kore.Bottom{bottomSort} ->
-        KJConnective
-            { conn = Bottom
-            , sort = fromSort bottomSort
-            , args = []
-            }
+        KJBottom { sort = fromSort bottomSort }
     CeilF Kore.Ceil{ceilOperandSort, ceilResultSort, ceilChild} ->
-        KJPredicate
-            { pred = Ceil
-            , argSort = fromSort ceilOperandSort
+        KJCeil
+            { argSort = fromSort ceilOperandSort
             , resultSort = fromSort ceilResultSort
-            , args = [fromPattern ceilChild]
+            , arg = fromPattern ceilChild
             }
     DomainValueF Kore.DomainValue{domainValueSort, domainValueChild}
         | _ :< StringLiteralF (Const Kore.StringLiteral{getStringLiteral}) <-
             -- expected to contain a string literal value
             Recursive.project domainValueChild ->
-            KJDomainValue
+            KJDv
                 { sort = fromSort domainValueSort
                 , value = getStringLiteral
                 }
         | otherwise -> error "Bad domain value"
     EqualsF Kore.Equals{equalsOperandSort, equalsResultSort, equalsFirst, equalsSecond} ->
-        KJPredicate
-            { pred = Equals
-            , argSort = fromSort equalsOperandSort
+        KJEquals
+            { argSort = fromSort equalsOperandSort
             , resultSort = fromSort equalsResultSort
-            , args = map fromPattern [equalsFirst, equalsSecond]
+            , first = fromPattern equalsFirst
+            , second = fromPattern equalsSecond
             }
     ExistsF Kore.Exists{existsSort, existsVariable, existsChild} ->
-        KJQuantifier
-            { quant = Exists
-            , sort = fromSort existsSort
+        KJExists
+            { sort = fromSort existsSort
             , var = fromKoreVariableName $ Kore.unElementVariableName $ Kore.variableName existsVariable
             , varSort = fromSort $ Kore.variableSort existsVariable
             , arg = fromPattern existsChild
             }
     FloorF Kore.Floor{floorOperandSort, floorResultSort, floorChild} ->
-        KJPredicate
-            { pred = Floor
-            , argSort = fromSort floorOperandSort
+        KJFloor
+            { argSort = fromSort floorOperandSort
             , resultSort = fromSort floorResultSort
-            , args = [fromPattern floorChild]
+            , arg = fromPattern floorChild
             }
     ForallF Kore.Forall{forallSort, forallVariable, forallChild} ->
-        KJQuantifier
-            { quant = Forall
-            , sort = fromSort forallSort
+        KJForall
+            { sort = fromSort forallSort
             , var = fromKoreVariableName $ unElementVariableName $ variableName forallVariable
             , varSort = fromSort $ variableSort forallVariable
             , arg = fromPattern forallChild
             }
     IffF Kore.Iff{iffSort, iffFirst, iffSecond} ->
-        KJConnective
-            { conn = Iff
-            , sort = fromSort iffSort
-            , args = map fromPattern [iffFirst, iffSecond]
+        KJIff
+            { sort = fromSort iffSort
+            , first =  fromPattern iffFirst
+            , second = fromPattern iffSecond
             }
     ImpliesF Kore.Implies{impliesSort, impliesFirst, impliesSecond} ->
-        KJConnective
-            { conn = Implies
-            , sort = fromSort impliesSort
-            , args = map fromPattern [impliesFirst, impliesSecond]
+        KJImplies
+            { sort = fromSort impliesSort
+            , first = fromPattern impliesFirst
+            , second = fromPattern impliesSecond
             }
     InF Kore.In{inOperandSort, inResultSort, inContainedChild, inContainingChild} ->
-        KJPredicate
-            { pred = In
-            , argSort = fromSort inOperandSort
+        KJIn
+            { argSort = fromSort inOperandSort
             , resultSort = fromSort inResultSort
-            , args = map fromPattern [inContainedChild, inContainingChild]
+            , first = fromPattern inContainedChild
+            , second = fromPattern inContainingChild
             }
     MuF Kore.Mu{muVariable, muChild} ->
-        KJFixpoint
-            { combinator = Mu
-            , var = fromKoreVariableName $ unSetVariableName $ variableName muVariable
+        KJMu
+            { var = fromKoreVariableName $ unSetVariableName $ variableName muVariable
             , varSort = fromSort $ variableSort muVariable
             , arg = fromPattern muChild
             }
@@ -555,23 +583,21 @@ fromPatternF = \case
             , dest = fromPattern nextChild
             }
     NotF Kore.Not{notSort, notChild} ->
-        KJConnective
-            { conn = Not
-            , sort = fromSort notSort
-            , args = [fromPattern notChild]
+        KJNot
+            { sort = fromSort notSort
+            , arg = fromPattern notChild
             }
     NuF Kore.Nu{nuVariable, nuChild} ->
-        KJFixpoint
-            { combinator = Nu
-            , var = fromKoreVariableName $ unSetVariableName $ variableName nuVariable
+        KJNu
+            { var = fromKoreVariableName $ unSetVariableName $ variableName nuVariable
             , varSort = fromSort $ variableSort nuVariable
             , arg = fromPattern nuChild
             }
     OrF Kore.Or{orSort, orFirst, orSecond} ->
-        KJConnective
-            { conn = Or
-            , sort = fromSort orSort
-            , args = map fromPattern [orFirst, orSecond]
+        KJOr
+            { sort = fromSort orSort
+            , first = fromPattern orFirst
+            , second = fromPattern orSecond
             }
     RewritesF Kore.Rewrites{rewritesSort, rewritesFirst, rewritesSecond} ->
         KJRewrites
@@ -580,11 +606,7 @@ fromPatternF = \case
             , dest = fromPattern rewritesSecond
             }
     TopF Kore.Top{topSort} ->
-        KJConnective
-            { conn = Top
-            , sort = fromSort topSort
-            , args = []
-            }
+        KJTop { sort = fromSort topSort }
     InhabitantF Kore.Inhabitant{} ->
         error "Found inhabitant, not representable in json"
     StringLiteralF (Const Kore.StringLiteral{getStringLiteral}) ->
