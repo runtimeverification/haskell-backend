@@ -67,7 +67,9 @@ data KorePattern
         , args :: [KorePattern]
         }
     | -- | string literal
-      KJString Text
+      KJString
+        { value :: Text
+        }
     | -- matching logic pattern
 
       -- | Connective (top, bottom, not, and, or, implies, iff)
@@ -352,10 +354,12 @@ collectEscapes s@(acc, Bad n part) c
 ------------------------------------------------------------
 data Sort
     = Sort
-        { name :: Id -- may start by a backslash
+        { name :: Id
         , args :: [Sort]
         }
-    | SortVariable Text -- may start by a backslash
+    | SortVariable
+        { name :: Id
+        }
     deriving stock (Eq, Show, Generic)
 
 instance ToJSON Sort where
@@ -541,7 +545,7 @@ mkSort Sort{name, args} =
     fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
         mapM mkSort args
 mkSort (SortVariable name) =
-    pure . Kore.SortVariableSort $ Kore.SortVariable (koreId $ Id name)
+    pure . Kore.SortVariableSort $ Kore.SortVariable (koreId name)
 
 ------------------------------------------------------------
 -- writing
@@ -720,7 +724,7 @@ fromPatternF = \case
                 , args = map fromSort sortActualSorts
                 }
         Kore.SortVariableSort Kore.SortVariable{getSortVariable} ->
-            SortVariable $ Kore.getId getSortVariable
+            SortVariable . Id $ Kore.getId getSortVariable
 
     fromKoreId :: Kore.Id -> Id
     fromKoreId =
