@@ -339,7 +339,7 @@ collectEscapes (acc, Escape) c
 -- UTF escape mode (n = remaining hex digits expected)
 collectEscapes s@(acc, UTF n part) c
     | n > 8 || n < 0 = error $ "Illegal collect state" <> show s
-    | n == 0 = (acc, Normal) -- good UTF escape
+    | n == 0 = collectEscapes (acc, Normal) c -- good UTF escape
     | c `elem` hexDigits = (acc, UTF (n -1) (c : part))
     | otherwise = (acc, Bad (n - 1) (c : part))
   where
@@ -347,8 +347,8 @@ collectEscapes s@(acc, UTF n part) c
 
 -- already bad, collect remaining expected hex digits no matter what they are)
 collectEscapes s@(acc, Bad n part) c
-    | n > 7 || n < 0 = error $ "Illegal collect state" <> show s
-    | n == 0 = (reverse part : acc, Normal)
+    | n > 7 || n < 1 = error $ "Illegal collect state" <> show s
+    | n == 1 = (reverse part : acc, Normal)
     | otherwise = (acc, Bad (n - 1) (c : part))
 
 ------------------------------------------------------------
