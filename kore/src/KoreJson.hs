@@ -229,8 +229,10 @@ lexicalCheck p =
             reportErrors n "set variable" checkSVarName
         KJApp{name = Id n} ->
             reportErrors n "app symbol" checkSymbolName
-        KJString txt ->
-            reportErrors txt "string literal" checkStringChars
+        -- KJString txt ->
+        --     reportErrors txt "string literal" checkStringChars
+        -- for the time being, use standard Text (supports std
+        -- Unicode) and do not check.
         KJForall{var = Id name} ->
             reportErrors name "quantifier variable" checkIdChars
         KJExists{var = Id name} ->
@@ -300,7 +302,7 @@ checkSymbolName name
 
 {- | String literals may contain printable Ascii characters (0x20 -
  0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
- Unicode escape sequences with 2, 4 or 8 hex: \sHH, \uHHHH, \UHHHHHHHH
+ Unicode escape sequences with 2, 4 or 8 hex: \xHH, \uHHHH, \UHHHHHHHH
 -}
 checkStringChars :: Text -> [String]
 checkStringChars txt =
