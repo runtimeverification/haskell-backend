@@ -1,7 +1,7 @@
     #Not ( {
-      ?_Gen0:Int %Int 2
-    #Equals
       1
+    #Equals
+      ?_Gen0:Int %Int 2
     } )
   #And
     <generatedTop>
@@ -23,7 +23,7 @@
     </generatedTop>
   #And
     {
-      ?_Gen0:Int %Int 2
-    #Equals
       1
+    #Equals
+      ?_Gen0:Int %Int 2
     }
