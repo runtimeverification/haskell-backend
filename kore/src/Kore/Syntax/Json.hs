@@ -9,14 +9,13 @@ module Kore.Syntax.Json (
     decodeKoreJson,
 ) where
 
-import Kore.Syntax.Json.Internal
-
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Either.Extra hiding (Left, Right)
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Syntax qualified as Kore
+import Kore.Syntax.Json.Internal
 import Kore.Syntax.Variable (VariableName (..))
 import Prelude.Kore
 
