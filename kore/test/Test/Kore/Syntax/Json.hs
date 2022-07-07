@@ -1,5 +1,7 @@
-module Test.KoreJson (
-    module Test.KoreJson,
+module Test.Kore.Syntax.Json (
+    testRoundTrips, -- Tasty wrapper
+    showExamples, -- convenience function for the repl
+    roundTripTests,
 ) where
 
 import Control.Monad (forever)
@@ -11,8 +13,11 @@ import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Attribute.Attributes (ParsedPattern)
-import KoreJson
+import Kore.Syntax.Json
+import Kore.Syntax.Json.Internal -- for testing and generating test data
 import Prelude.Kore hiding (Left, Right)
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.Hedgehog
 
 genKorePattern :: Gen KorePattern
 genKorePattern =
@@ -147,6 +152,18 @@ showExamples =
 
 ----------------------------------------
 -- Tests
+
+-- Tasty interface, whole group only
+testRoundTrips :: [TestTree]
+testRoundTrips =
+    [ testGroup
+        "Json -> KorePattern -> ParsedPattern Round trip tests"
+        [ testProperty "KorePattern -> json -> KorePattern" jsonRoundTrip
+        , testProperty "KorePattern (no multi-things) -> ParsedPattern -> KorePattern" parsedRoundTrip
+        , testProperty "ParsedPattern -> KorePattern -> KorePattern" korePatternRoundTrip
+        , testProperty "json (valid, no multi-things) -> ParsedPattern -> json" fullRoundTrip
+        ]
+    ]
 
 roundTripTests :: Group
 roundTripTests = roundTripTestsWith 1000
