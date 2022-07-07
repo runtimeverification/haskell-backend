@@ -1,8 +1,4 @@
 {-# LANGUAGE DeriveAnyClass #-}
-
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE DisambiguateRecordFields #-}
-
 {-# LANGUAGE OverloadedStrings #-}
 
 {-# Options -Wno-partial-fields #-}
@@ -11,16 +7,16 @@
 
 module KoreJson (
     -- API
-   JsonError (..),
-   encodePattern,
-   decodePattern,
+    JsonError (..),
+    encodePattern,
+    decodePattern,
     -- export everything for debugging and testing only
     module KoreJson,
 ) where
 
 import Data.Aeson as Json
-import Data.Aeson.Types as Json
 import Data.Aeson.Encode.Pretty as Json
+import Data.Aeson.Types qualified as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Char (isAlpha, isDigit)
 import Data.Either.Extra hiding (Left, Right)
@@ -105,7 +101,6 @@ data KorePattern
         , first :: KorePattern
         , second :: KorePattern
         }
-
     | -- | Quantifiers: forall, exists
       KJForall
         { sort :: Sort
@@ -154,6 +149,7 @@ data KorePattern
         , second :: KorePattern
         }
     | -- next, rewrites
+
       -- | goes to 'dest' next
       KJNext
         { sort :: Sort
@@ -208,53 +204,54 @@ codecOptions =
   where
     constructorTagModifier = \case
         "KJDv" -> "dv"
-        'K':'J':rest -> rest
+        'K' : 'J' : rest -> rest
         other -> other
 
 ----------------------------------------
 -- Identifiers and lexical checks
 
--- | Performs a (shallow, top-level, no recursion) lexical check of
--- identifiers contained in the given node.
---
--- Basic identifiers start with letters and may contain letters,
--- digits, _ or '. Set variables start with '@' followed by a basic
--- identifier. Symbol variables _may_ start by \, followed by a basic
--- identifier.
---
--- String literals may contain printable Ascii characters (0x20 -
--- 0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
--- Unicode escape sequences with 1, 2 or 4 bytes: \sHH, \uHHHH, \UHHHHHH
-lexicalCheck :: KorePattern -> Parser KorePattern
+{- | Performs a (shallow, top-level, no recursion) lexical check of
+ identifiers contained in the given node.
+
+ Basic identifiers start with letters and may contain letters,
+ digits, _ or '. Set variables start with '@' followed by a basic
+ identifier. Symbol variables _may_ start by \, followed by a basic
+ identifier.
+
+ String literals may contain printable Ascii characters (0x20 -
+ 0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
+ Unicode escape sequences with 1, 2 or 4 bytes: \sHH, \uHHHH, \UHHHHHH
+-}
+lexicalCheck :: KorePattern -> Json.Parser KorePattern
 lexicalCheck x = pure x -- TODO
 
 newtype Id = Id Text
     deriving stock (Eq, Show, Generic)
     deriving newtype (ToJSON, FromJSON)
 
-checkIdChars :: Text -> [ String ] -- list of lexical errors
+checkIdChars :: Text -> [String] -- list of lexical errors
 -- FIXME collect all lexical errors instead of stopping at one
 checkIdChars name
-    | T.null name = [ "Empty" ]
+    | T.null name = ["Empty"]
 checkIdChars name
     | not $ isAlpha first =
-          [ "illegal initial character" ]
+        ["illegal initial character"]
     | not $ T.all isIdChar rest =
-          [ "contains illegal characters" ]
+        ["contains illegal characters"]
     | otherwise = []
   where
     first = T.head name
     rest = T.tail name
 
 isIdChar :: Char -> Bool
-isIdChar  c = isAlpha c || isDigit c || c `elem` ['_', '\'' ]
+isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
 
 -- | has to start with `@`, followed by a valid identifier
-checkSVarName :: Text -> [ String ]
+checkSVarName :: Text -> [String]
 checkSVarName name
-    | T.null name = [ "empty" ]
+    | T.null name = ["empty"]
 checkSVarName name
-    | T.head name /= '@' = [ "must start with `@'" ]
+    | T.head name /= '@' = ["must start with `@'"]
     | otherwise = checkIdChars (T.tail name)
 
 data Sort
@@ -359,16 +356,16 @@ toParsedPattern = \case
                 <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
                 <*> toParsedPattern arg
     KJCeil s s2 a ->
-        fmap (embedParsedPattern .CeilF) $
+        fmap (embedParsedPattern . CeilF) $
             Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
     KJFloor s s2 a ->
-        fmap (embedParsedPattern .FloorF) $
+        fmap (embedParsedPattern . FloorF) $
             Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
     KJEquals s s2 a b ->
-        fmap (embedParsedPattern .EqualsF) $
+        fmap (embedParsedPattern . EqualsF) $
             Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
     KJIn s s2 a b ->
-        fmap (embedParsedPattern .InF) $
+        fmap (embedParsedPattern . InF) $
             Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
     KJNext{sort, dest} ->
         fmap (embedParsedPattern . NextF) $
@@ -509,7 +506,7 @@ fromPatternF = \case
                 , args = map fromPattern args
                 }
     BottomF Kore.Bottom{bottomSort} ->
-        KJBottom { sort = fromSort bottomSort }
+        KJBottom{sort = fromSort bottomSort}
     CeilF Kore.Ceil{ceilOperandSort, ceilResultSort, ceilChild} ->
         KJCeil
             { argSort = fromSort ceilOperandSort
@@ -555,7 +552,7 @@ fromPatternF = \case
     IffF Kore.Iff{iffSort, iffFirst, iffSecond} ->
         KJIff
             { sort = fromSort iffSort
-            , first =  fromPattern iffFirst
+            , first = fromPattern iffFirst
             , second = fromPattern iffSecond
             }
     ImpliesF Kore.Implies{impliesSort, impliesFirst, impliesSecond} ->
@@ -606,7 +603,7 @@ fromPatternF = \case
             , dest = fromPattern rewritesSecond
             }
     TopF Kore.Top{topSort} ->
-        KJTop { sort = fromSort topSort }
+        KJTop{sort = fromSort topSort}
     InhabitantF Kore.Inhabitant{} ->
         error "Found inhabitant, not representable in json"
     StringLiteralF (Const Kore.StringLiteral{getStringLiteral}) ->

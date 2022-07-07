@@ -25,20 +25,20 @@ genKorePattern =
         , KJBottom <$> genSort
         , KJDv <$> genSort <*> genPrintableAscii
         ]
-        [ do sorts <- between 1 10 genSort
-             args <- exactly (length sorts - 1) genKorePattern
-             name <- genId
-             pure KJApp{name, sorts, args}
+        [ do
+            sorts <- between 1 10 genSort
+            args <- exactly (length sorts - 1) genKorePattern
+            name <- genId
+            pure KJApp{name, sorts, args}
         , KJNot <$> genSort <*> genKorePattern
         , KJAnd <$> genSort <*> genKorePattern <*> genKorePattern
         , KJOr <$> genSort <*> genKorePattern <*> genKorePattern
         , KJImplies <$> genSort <*> genKorePattern <*> genKorePattern
         , KJIff <$> genSort <*> genKorePattern <*> genKorePattern
-
         , KJForall <$> genSort <*> genId <*> genSort <*> genKorePattern
         , KJExists <$> genSort <*> genId <*> genSort <*> genKorePattern
-        , KJMu <$> ('@' -:) <$> genId <*> genSort <*> genKorePattern
-        , KJNu <$> ('@' -:) <$>  genId <*> genSort <*> genKorePattern
+        , KJMu . ('@' -:) <$> genId <*> genSort <*> genKorePattern
+        , KJNu . ('@' -:) <$> genId <*> genSort <*> genKorePattern
         , KJCeil <$> genSort <*> genSort <*> genKorePattern
         , KJFloor <$> genSort <*> genSort <*> genKorePattern
         , KJEquals <$> genSort <*> genSort <*> genKorePattern <*> genKorePattern
@@ -52,23 +52,22 @@ genMultiKorePattern :: Gen KorePattern
 genMultiKorePattern =
     Gen.choice
         [ KJMultiOr
-              <$> Gen.element [Left, Right]
-              <*> genSort
-              <*> between 3 12 (Gen.small genKorePattern)
+            <$> Gen.element [Left, Right]
+            <*> genSort
+            <*> between 3 12 (Gen.small genKorePattern)
         , KJMultiApp
-              <$> Gen.element [Left, Right]
-              <*> (Gen.element [ ('\\' -:), id] <*> genId)
-              <*> exactly 2 genSort
-              <*> between 3 12 (Gen.small genKorePattern)
+            <$> Gen.element [Left, Right]
+            <*> (Gen.element [('\\' -:), id] <*> genId)
+            <*> exactly 2 genSort
+            <*> between 3 12 (Gen.small genKorePattern)
         ]
-
 
 (-:) :: Char -> Id -> Id
 c -: (Id x) = Id $ T.cons c x
 
 genAllKorePatterns :: Gen KorePattern
 genAllKorePatterns =
-    Gen.frequency [ (21, genKorePattern), (2, genMultiKorePattern) ]
+    Gen.frequency [(21, genKorePattern), (2, genMultiKorePattern)]
 
 genSort :: Gen Sort
 genSort =
@@ -131,12 +130,13 @@ showExamples =
 
 roundTripTests :: Group
 roundTripTests =
-    Group "Json -> KorePattern -> ParsedPattern Round trip tests"
-    [ ("KorePattern -> json -> KorePattern", jsonRoundTrip)
-    , ("KorePattern (no multi-things) -> ParsedPattern -> KorePattern", parsedRoundTrip)
-    , ("ParsedPattern -> KorePattern -> KorePattern", korePatternRoundTrip)
-    , ("json (valid, no multi-things) -> ParsedPattern -> json", fullRoundTrip)
-    ]
+    Group
+        "Json -> KorePattern -> ParsedPattern Round trip tests"
+        [ ("KorePattern -> json -> KorePattern", jsonRoundTrip)
+        , ("KorePattern (no multi-things) -> ParsedPattern -> KorePattern", parsedRoundTrip)
+        , ("ParsedPattern -> KorePattern -> KorePattern", korePatternRoundTrip)
+        , ("json (valid, no multi-things) -> ParsedPattern -> json", fullRoundTrip)
+        ]
 
 jsonRoundTrip :: Property
 jsonRoundTrip =
@@ -190,4 +190,5 @@ fullRoundTrip =
 
 orFailWith :: Show err => (a -> Either err b) -> String -> a -> b
 parse `orFailWith` name = either failed id . parse
-    where failed err = error $ "Error in " <> name <> ": " <> show err
+  where
+    failed err = error $ "Error in " <> name <> ": " <> show err
