@@ -289,7 +289,6 @@ testSVarInitial =
             let withWrongInitial = checkSVarName $ T.cons wrongInitial valid
             withWrongInitial === ["Must start with `@'"]
 
-
 -- error cases for json reader
 
 -- error cases for conversion
