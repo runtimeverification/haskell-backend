@@ -299,7 +299,7 @@ sVarChecks =
         [ testProperty "A valid set variable is accepted" $
             property $ do
                 Id valid <- forAll genId
-                diff (checkIdChars $ T.cons '@' valid) (==) []
+                diff (checkSVarName $ T.cons '@' valid) (==) []
         , testProperty
             "A set variable name has to start by `@'"
             testSVarInitial
