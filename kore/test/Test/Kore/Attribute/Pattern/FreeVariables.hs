@@ -1,6 +1,7 @@
 module Test.Kore.Attribute.Pattern.FreeVariables (
     test_Synthetic,
     test_instance_Synthetic_TermLike,
+    test_concat,
 ) where
 
 import Kore.Attribute.Pattern.FreeVariables (
@@ -23,6 +24,7 @@ import Test.Tasty.HUnit
 test_Synthetic :: [TestTree]
 test_Synthetic =
     [ And sort x y `gives` xy $ "And"
+    , And sort x x `gives` xx $ "And counts"
     , Application sigma [x, y] `gives` xy $ "ApplySymbol"
     , Bottom sort `gives` mempty $ "Bottom"
     , Ceil sort sort x `gives` x $ "Ceil"
@@ -51,6 +53,7 @@ test_Synthetic =
 test_instance_Synthetic_TermLike :: [TestTree]
 test_instance_Synthetic_TermLike =
     [ AndF (And sort x y) `gives'` xy $ "AndF"
+    , AndF (And sort x x) `gives'` xx $ "AndF counts"
     , ApplySymbolF (Application sigma [x, y]) `gives'` xy $ "ApplySymbolF"
     , BottomF (Bottom sort) `gives'` mempty $ "BottomF"
     , CeilF (Ceil sort sort x) `gives'` x $ "CeilF"
@@ -86,13 +89,20 @@ sort = Mock.testSort
 sigma :: Symbol
 sigma = Mock.sigmaSymbol
 
-x, y, xy, sx, sy, sxy :: FreeVariables VariableName
+x, y, xx, xy, sx, sy, sxy :: FreeVariables VariableName
 x = FreeVariables.freeVariable (inject Mock.x)
 y = FreeVariables.freeVariable (inject Mock.y)
+xx = x <> x
 xy = x <> y
 sx = FreeVariables.freeVariable (inject Mock.setX)
 sy = FreeVariables.freeVariable (inject Mock.setY)
 sxy = sx <> sy
+
+test_concat :: [TestTree]
+test_concat =
+    [ testCase "x not equal xx" $ do
+        assertBool "" (x /= xx)
+    ]
 
 gives ::
     (Synthetic (FreeVariables VariableName) base, HasCallStack) =>

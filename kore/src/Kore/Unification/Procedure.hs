@@ -26,15 +26,12 @@ import Kore.Log.InfoAttemptUnification (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     simplifyCondition,
  )
 import Kore.TopBottom qualified as TopBottom
+import Kore.Unification.NewUnifier
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -58,13 +55,13 @@ unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
-        pat <- termUnification Not.notSimplifier p1 p2
-        TopBottom.guardAgainstBottom pat
-        let (term, conditions) = Conditional.splitTerm pat
+        condition <- unifyTerms p1 p2 sideCondition
+        TopBottom.guardAgainstBottom condition
+        let term = unifiedTermAnd p1 p2 condition
         orCeil <- makeEvaluateTermCeil sideCondition term
         ceil' <- Monad.Unify.scatter orCeil
         lowerLogicT . simplifyCondition sideCondition $
-            Conditional.andCondition ceil' conditions
+            Conditional.andCondition ceil' condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2

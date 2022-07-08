@@ -26,9 +26,6 @@ import Kore.Internal.SideCondition qualified as SideCondition (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy (
-    firstFullEvaluation,
- )
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )

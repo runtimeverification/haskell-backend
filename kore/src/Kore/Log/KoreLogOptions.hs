@@ -222,7 +222,7 @@ parseEntryTypes =
     allEntryTypes :: OptPretty.Doc
     allEntryTypes =
         OptPretty.vsep
-            [ "Log entries: logs entries of supplied types"
+            [ "Log entries: comma-separated list logs entries to enable"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
                 (OptPretty.text <$> getEntryTypesAsText)

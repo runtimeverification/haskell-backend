@@ -77,7 +77,8 @@ class SimplifyRuleLHS rule where
         simplifier (MultiAnd rule)
 
 instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
-    simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
+    simplifyRuleLhs rule@RulePattern{left = And_ _ _ (ElemVar_ _)} = return $ MultiAnd.make [rule]
+    simplifyRuleLhs rule = do
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate

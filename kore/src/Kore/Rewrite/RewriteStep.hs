@@ -39,6 +39,7 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
+import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
@@ -167,6 +168,7 @@ constructConfiguration
             finalTerm' = substitute substitution' finalTerm
         -- TODO (thomas.tuegel): Should the final term be simplified after
         -- substitution?
+        debugCreatedSubstitution substitution (termLikeSort finalTerm)
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::

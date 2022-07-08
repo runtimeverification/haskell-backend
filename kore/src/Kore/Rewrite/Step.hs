@@ -35,6 +35,9 @@ import Data.Set (
  )
 import Data.Set qualified as Set
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.SourceLocation (
+    SourceLocation,
+ )
 import Kore.Internal.Condition (
     Condition,
  )
@@ -62,6 +65,9 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DebugAttemptedRewriteRules (
+    debugAttemptedRewriteRule,
+ )
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.Result qualified as Results
 import Kore.Rewrite.Result qualified as Step
@@ -107,6 +113,7 @@ unifyRules ::
     MonadSimplify simplifier =>
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
+    From rule SourceLocation =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -135,6 +142,7 @@ unifyRule ::
     RewritingVariableName ~ UnifyingRuleVariable rule =>
     MonadSimplify simplifier =>
     UnifyingRule rule =>
+    From rule SourceLocation =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -143,6 +151,7 @@ unifyRule ::
     rule ->
     LogicT simplifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
+    debugAttemptedRewriteRule initial (location rule)
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition' =
             sideCondition
@@ -161,6 +170,8 @@ unifyRule sideCondition initial rule = do
             sideCondition'
             (unification <> requires')
     return (rule `Conditional.withCondition` unification')
+  where
+    location = from @_ @SourceLocation
 
 -- | The 'Set' of variables that would be introduced by narrowing.
 
@@ -202,6 +213,7 @@ assertFunctionLikeResults termLike results =
 
 -- |Checks whether configuration and matching pattern are function-like
 checkFunctionLike ::
+    forall variable rule f.
     InternalVariable variable =>
     InternalVariable (UnifyingRuleVariable rule) =>
     Foldable f =>
@@ -221,14 +233,22 @@ checkFunctionLike unifiedRules pat
             , Pretty.indent 4 (unparse pat)
             ]
   where
-    checkFunctionLikeRule Conditional{term}
-        | TermLike.isFunctionPattern left = return ()
+    checkFunctionLikeRule ::
+        UnifiedRule rule ->
+        Either String ()
+    checkFunctionLikeRule Conditional{term, substitution}
+        | all (TermLike.isFunctionPattern . Substitution.assignedTerm) $
+            Substitution.unwrap substitution =
+            return ()
         | otherwise =
             Left . show . Pretty.vsep $
-                [ "Expected function-like left-hand side of rule, but found:"
-                , Pretty.indent 4 (unparse left)
+                [ "Expected function-like unification solution, but found:"
+                , Pretty.indent 4 (unparse conditional)
                 ]
       where
+        conditional =
+            TermLike.mkTop (TermLike.termLikeSort left)
+                `Pattern.withCondition` Condition.fromSubstitution substitution
         left = matchingPattern term
 
 {- | Apply the initial conditions to the results of rule unification.
