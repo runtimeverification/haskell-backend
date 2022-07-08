@@ -47,7 +47,6 @@
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError "unordered-containers"))
-          (hsPkgs."zenc" or (errorHandler.buildDepError "zenc"))
           ];
         buildable = true;
         };
@@ -63,5 +62,5 @@
         };
       };
     } // rec {
-    src = (pkgs.lib).mkDefault /nix/store/j5q53fpbklnl6x5465r5hb04wv2smm31-pipes-ghc-events-b5813b4/eventlog2speedscope;
+    src = (pkgs.lib).mkDefault /nix/store/z146snjiyj61y0sh7ig259acacfnn6av-pipes-ghc-events-c227d88/eventlog2speedscope;
     }

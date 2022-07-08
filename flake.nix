@@ -155,8 +155,8 @@
 
       packages = perSystem (system:
         self.flake.${system}.packages // {
-          rematerialize = self.project.${system}.rematerialize-kore;
-          rematerializeGhc9 = self.projectGhc9.${system}.rematerialize-kore;
+          update-cabal = self.project.${system}.rematerialize-kore;
+          update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
 
           kore-exec-prof = self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof-infotable = self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;

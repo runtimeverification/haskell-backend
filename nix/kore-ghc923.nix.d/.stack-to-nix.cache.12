@@ -36,5 +36,5 @@
         };
       };
     } // rec {
-    src = (pkgs.lib).mkDefault /nix/store/j5q53fpbklnl6x5465r5hb04wv2smm31-pipes-ghc-events-b5813b4/pipes-ghc-events;
+    src = (pkgs.lib).mkDefault /nix/store/z146snjiyj61y0sh7ig259acacfnn6av-pipes-ghc-events-c227d88/pipes-ghc-events;
     }

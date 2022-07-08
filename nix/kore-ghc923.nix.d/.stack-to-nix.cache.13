@@ -35,5 +35,5 @@
         };
       };
     } // rec {
-    src = (pkgs.lib).mkDefault /nix/store/62jya6q996fiwzcgh253s02dhq1z9kp0-pipes-sqlite-simple-89a0c38;
+    src = (pkgs.lib).mkDefault /nix/store/z146snjiyj61y0sh7ig259acacfnn6av-pipes-ghc-events-c227d88/pipes-sqlite-simple;
     }
