@@ -1,5 +1,7 @@
 module Test.Kore.Syntax.Json (
-    test_JsonRoundTrips, -- Tasty wrapper
+    -- Tasty wrappers
+    test_JsonRoundTrips,
+    test_Unit_tests_for_json_failure_modes,
     -- Hedgehog things
     roundTripTests,
     showExamples,
@@ -238,6 +240,7 @@ parse `orFailWith` name = either failed id . parse
 test_Unit_tests_for_json_failure_modes :: [TestTree]
 test_Unit_tests_for_json_failure_modes =
     [ eVarChecks
+    , sVarChecks
     ]
 
 -- lexical check for identifiers
@@ -278,8 +281,25 @@ testEVarCharSet =
             let nonAlphaNumChars = checkIdChars $ T.pack [initial, notAlphaNum]
             length nonAlphaNumChars === 1
             assert ("Contains illegal characters: " `isPrefixOf` head nonAlphaNumChars)
-  where
-    isAllowedChar c = isAlphaNum c || c `elem` ['_', '\'']
+
+isAllowedChar :: Char -> Bool
+isAllowedChar c = isAlphaNum c || c `elem` ['_', '\'']
+
+sVarChecks :: TestTree
+sVarChecks =
+    testGroup
+        "Set variable lexical checks"
+        [ testProperty "A valid set variable is accepted" $
+            property $ do
+                Id valid <- forAll genId
+                diff (checkIdChars $ T.cons '@' valid) (==) []
+        , testProperty
+            "A set variable name has to start by `@'"
+            testSVarInitial
+        , testProperty
+            "A set variable must be a valid identifier after the `@'"
+            testSVarSuffix
+        ]
 
 testSVarInitial =
     property $
@@ -288,6 +308,14 @@ testSVarInitial =
             Id valid <- forAll genId
             let withWrongInitial = checkSVarName $ T.cons wrongInitial valid
             withWrongInitial === ["Must start with `@'"]
+
+testSVarSuffix =
+    property $
+        do
+            notAlphaNum <- forAll $ Gen.filter (not . isAllowedChar) Gen.ascii
+            let withWrongSuffix = checkSVarName $ T.pack ['@', 'X', notAlphaNum]
+            length withWrongSuffix === 1
+            assert ("Contains illegal characters: " `isPrefixOf` head withWrongSuffix)
 
 -- error cases for json reader
 
