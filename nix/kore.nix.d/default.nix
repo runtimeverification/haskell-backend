@@ -13,6 +13,7 @@
         "tasty-test-reporter" = (((hackage.tasty-test-reporter)."0.1.1.4").revisions).default;
         "junit-xml" = (((hackage.junit-xml)."0.1.0.0").revisions).default;
         "compact" = (((hackage.compact)."0.2.0.0").revisions).default;
+        "decision-diagrams" = (((hackage.decision-diagrams)."0.2.0.0").revisions).default;
         "ghc-events" = (((hackage.ghc-events)."0.13.0").revisions).default;
         kore = ./kore.nix;
         eventlog2speedscope = ./.stack-to-nix.cache.0;
