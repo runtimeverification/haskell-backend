@@ -1,7 +1,8 @@
 module Test.Kore.Syntax.Json (
     test_JsonRoundTrips, -- Tasty wrapper
-    showExamples, -- convenience function for the repl
-    roundTripTests, -- hedgehog
+    -- Hedgehog things
+    roundTripTests,
+    showExamples,
 ) where
 
 import Control.Monad (forever)
