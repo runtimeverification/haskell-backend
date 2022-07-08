@@ -261,14 +261,14 @@ lexicalCheck p =
 checkIdChars :: Text -> [String] -- list of lexical errors
 checkIdChars name
     | T.null name = ["Empty"]
-checkIdChars name =
-    ["Illegal initial character " <> show first | not $ isAlpha first]
-    ++ [ "Contains illegal characters: " <> show (nub $ T.unpack illegalChars)
-       | not $ T.null illegalChars
-       ]
+    | otherwise =
+        ["Illegal initial character " <> show first | not $ isAlpha first]
+        ++ [ "Contains illegal characters: " <> show (nub $ T.unpack illegalChars)
+           | not $ T.null illegalChars
+           ]
   where
-    first = T.head name
-    illegalChars = T.filter (not . isIdChar) $ T.tail name
+    ~first = T.head name
+    ~illegalChars = T.filter (not . isIdChar) $ T.tail name
 
 isIdChar :: Char -> Bool
 isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
@@ -277,9 +277,9 @@ isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
 checkSVarName :: Text -> [String]
 checkSVarName name
     | T.null name = ["Empty"]
-checkSVarName name =
-    ["Must start with `@'" | T.head name /= '@']
-    <> checkIdChars (T.tail name)
+    | otherwise =
+        ["Must start with `@'" | T.head name /= '@']
+        <> checkIdChars (T.tail name)
 
 -- | Symbols _may_ start by a backslash.
 checkSymbolName :: Text -> [String]
