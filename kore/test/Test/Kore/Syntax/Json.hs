@@ -259,9 +259,11 @@ eVarChecks =
             withTests 1000 testEVarCharSet
         ]
 
+testNotEmpty :: Property
 testNotEmpty =
     withTests 1 . property $ diff (checkIdChars T.empty) (==) ["Empty"]
 
+testEVarInitial :: Property
 testEVarInitial =
     property $
         do
@@ -277,6 +279,7 @@ testEVarInitial =
             length nonPrintableStart === 1
             assert ("Illegal initial character" `isPrefixOf` head nonLetterStart)
 
+testEVarCharSet :: Property
 testEVarCharSet =
     property $
         do
@@ -305,6 +308,7 @@ sVarChecks =
             testSVarSuffix
         ]
 
+testSVarInitial :: Property
 testSVarInitial =
     property $
         do
@@ -313,6 +317,7 @@ testSVarInitial =
             let withWrongInitial = checkSVarName $ T.cons wrongInitial valid
             withWrongInitial === ["Must start with `@'"]
 
+testSVarSuffix :: Property
 testSVarSuffix =
     property $
         do
