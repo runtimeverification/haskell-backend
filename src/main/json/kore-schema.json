@@ -1,54 +1,136 @@
 {
     "type": "object",
 
-    "oneOf": [
-        { "properties": { "eVar": { "$ref": "#/definitions/KoreJSONEVar" }},
-	  "required": ["eVar"]
+    "properties": {
+        "tag": {
+            "type": "string",
+            "enum": [ "EVar", "SVar", "App", "String",
+                      "Top", "Bottom", "Not", "And", "Or", "Implies", "Iff",
+                      "Forall", "Exists",
+                      "Mu", "Nu",
+                      "Ceil", "Floor", "Equals", "In",
+                      "Next", "Rewrites",
+                      "dv",
+                      "MultiOr", "MultiApp"
+                    ]
+        }
+    },
+    "required": ["tag"],
+
+    "allOf": [
+        {
+            "if": {"properties": {"tag": { "const": "EVar" } } },
+            "then": { "$ref": "#/definitions/KoreJSONEVar" }
         },
-        { "properties": { "sVar": { "$ref": "#/definitions/KoreJSONSVar" }},
-	  "required": ["sVar"]
+        {
+            "if": {"properties": {"tag": { "const": "SVar" } } },
+            "then": { "$ref": "#/definitions/KoreJSONSVar" }
         },
-        { "properties": { "app": { "$ref": "#/definitions/KoreJSONApp" }},
-	  "required": ["app"]
+        {
+            "if": {"properties": {"tag": { "const": "App" } } },
+            "then": { "$ref": "#/definitions/KoreJSONApp" }
         },
-        { "properties": { "string": { "type": "string" }},
-          "required": ["string"]
+        {
+            "if": {"properties": {"tag": { "const": "String" } } },
+            "then": { "$ref": "#/definitions/KoreJSONString" }
         },
-        { "properties": { "connective": { "$ref": "#/definitions/KoreJSONConnective" }},
-	  "required": ["connective"]
+        {
+            "if": {"properties": {"tag": { "const": "Top" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective0" }
         },
-        { "properties": { "quantifier": { "$ref": "#/definitions/KoreJSONQuantifier" }},
-	  "required": ["quantifier"]
+        {
+            "if": {"properties": {"tag": { "const": "Bottom" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective0" }
         },
-        { "properties": { "fixpoint": { "$ref": "#/definitions/KoreJSONFixpoint" }},
-	  "required": ["fixpoint"]
+        {
+            "if": {"properties": {"tag": { "const": "Not" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective1" }
         },
-        { "properties": { "predicate": { "$ref": "#/definitions/KoreJSONPredicate" }},
-	  "required": ["predicate"]
+        {
+            "if": {"properties": {"tag": { "const": "And" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
         },
-        { "properties": { "next": { "$ref": "#/definitions/KoreJSONNext" }},
-	  "required": ["next"]
+        {
+            "if": {"properties": {"tag": { "const": "Or" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
         },
-        { "properties": { "rewrites": { "$ref": "#/definitions/KoreJSONRewrites" }},
-	  "required": ["rewrites"]
+        {
+            "if": {"properties": {"tag": { "const": "Implies" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
         },
-        { "properties": { "domainValue": { "$ref": "#/definitions/KoreJSONDomainValue" }},
-	  "required": ["domainValue"]
+        {
+            "if": {"properties": {"tag": { "const": "Iff" } } },
+            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
         },
-        { "properties": { "multiOr": { "$ref": "#/definitions/KoreJSONMultiOr" }},
-	  "required": ["multiOr"]
+        {
+            "if": {"properties": {"tag": { "const": "Forall" } } },
+            "then": { "$ref": "#/definitions/KoreJSONQuantifier" }
         },
-        { "properties": { "multiApp": { "$ref": "#/definitions/KoreJSONMultiApp" }},
-	  "required": ["multiApp"]
+        {
+            "if": {"properties": {"tag": { "const": "Exists" } } },
+            "then": { "$ref": "#/definitions/KoreJSONQuantifier" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Mu" } } },
+            "then": { "$ref": "#/definitions/KoreJSONFixpoint" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Nu" } } },
+            "then": { "$ref": "#/definitions/KoreJSONFixpoint" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Ceil" } } },
+            "then": { "$ref": "#/definitions/KoreJSONPredicate1" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Floor" } } },
+            "then": { "$ref": "#/definitions/KoreJSONPredicate1" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Equals" } } },
+            "then": { "$ref": "#/definitions/KoreJSONPredicate2" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "In" } } },
+            "then": { "$ref": "#/definitions/KoreJSONPredicate2" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Next" } } },
+            "then": { "$ref": "#/definitions/KoreJSONNext" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "Rewrites" } } },
+            "then": { "$ref": "#/definitions/KoreJSONRewrites" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "dv" } } },
+            "then": { "$ref": "#/definitions/KoreJSONdv" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "MultiOr" } } },
+            "then": { "$ref": "#/definitions/KoreJSONMultiOr" }
+        },
+        {
+            "if": {"properties": {"tag": { "const": "MultiApp" } } },
+            "then": { "$ref": "#/definitions/KoreJSONMultiApp" }
         }
     ],
 
     "definitions": {
+        "KoreJSONId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_']*$"
+        },
+        "KoreJSONSetId": {
+            "type": "string",
+            "pattern": "^@[a-zA-Z][a-zA-Z0-9_']*$"
+        },
+
         "KoreJSONEVar": {
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "$ref": "#/definitions/KoreJSONId"
                 },
                 "sort": {
                     "$ref": "#/definitions/Sort"
@@ -57,15 +139,14 @@
             "required": [
                 "name",
                 "sort"
-            ],
-            "title": "EVar"
+            ]
         },
 
         "KoreJSONSVar": {
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "$ref": "#/definitions/KoreJSONSetId"
                 },
                 "sort": {
                     "$ref": "#/definitions/Sort"
@@ -74,15 +155,15 @@
             "required": [
                 "name",
                 "sort"
-            ],
-            "title": "SVar"
+            ]
         },
 
         "KoreJSONApp": {
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^\\\\?[a-zA-Z][a-zA-Z0-9_']*$"
                 },
                 "sorts": {
                     "type": "array",
@@ -101,52 +182,77 @@
                 "name",
                 "sorts",
                 "args"
-            ],
-            "title": "App"
+            ]
         },
 
         "KoreJSONString": {
-            "type": "string",
-            "title": "String"
-        },
-
-        "KoreJSONConnective": {
             "type": "object",
             "properties": {
-                "conn": {
-                    "type": "string",
-                    "enum": [ "Top", "Bottom", "Not", "And", "Or", "Implies", "Iff" ]
-                },
-                "sort": {
-                    "$ref": "#/definitions/Sort"
-                },
-                "args": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#"
-                    }
+                "value": {
+                    "type": "string"
                 }
             },
             "required": [
-                "args",
-                "conn",
+                "value"
+            ]
+        },
+
+        "KoreJSONConnective0": {
+            "type": "object",
+            "properties": {
+                "sort": {
+                    "$ref": "#/definitions/Sort"
+                }
+            },
+            "required": [
                 "sort"
-            ],
-            "title": "Connective"
+            ]
+        },
+
+        "KoreJSONConnective1": {
+            "type": "object",
+            "properties": {
+                "sort": {
+                    "$ref": "#/definitions/Sort"
+                },
+                "arg": {
+                    "$ref": "#"
+                }
+            },
+            "required": [
+                "sort",
+                "arg"
+            ]
+        },
+
+        "KoreJSONConnective2": {
+            "type": "object",
+            "properties": {
+                "sort": {
+                    "$ref": "#/definitions/Sort"
+                },
+                "first": {
+                    "$ref": "#"
+                },
+                "second": {
+                    "$ref": "#"
+                }
+            },
+            "required": [
+                "sort",
+                "first",
+                "second"
+            ]
         },
 
         "KoreJSONQuantifier": {
             "type": "object",
             "properties": {
-                "quant": {
-                    "type": "string",
-                    "enum": [ "Forall", "Exists" ]
-                },
                 "sort": {
                     "$ref": "#/definitions/Sort"
                 },
                 "var": {
-                    "type": "string"
+                    "$ref": "#/definitions/KoreJSONId"
                 },
                 "varSort": {
                     "$ref": "#/definitions/Sort"
@@ -156,24 +262,18 @@
                 }
             },
             "required": [
-                "quant",
                 "sort",
                 "var",
                 "varSort",
                 "arg"
-            ],
-            "title": "Quantifier"
+            ]
         },
 
         "KoreJSONFixpoint": {
             "type": "object",
             "properties": {
-                "combinator": {
-                    "type": "string",
-                    "enum": [ "Mu", "Nu" ]
-                },
                 "var": {
-                    "type": "string"
+                    "$ref": "#/definitions/KoreJSONSetId"
                 },
                 "varSort": {
                     "$ref": "#/definitions/Sort"
@@ -183,41 +283,55 @@
                 }
             },
             "required": [
-                "combinator",
                 "var",
                 "varSort",
                 "arg"
-            ],
-            "title": "Fixpoint"
+            ]
         },
 
-        "KoreJSONPredicate": {
+        "KoreJSONPredicate1": {
             "type": "object",
             "properties": {
-                "pred": {
-                    "type": "string",
-                    "enum": [ "Ceil", "Floor", "Equals", "In" ]
-                },
                 "argSort": {
                     "$ref": "#/definitions/Sort"
                 },
                 "resultSort": {
                     "$ref": "#/definitions/Sort"
                 },
-                "args": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#"
-                    }
+                "arg": {
+                    "$ref": "#"
                 }
             },
             "required": [
-                "pred",
                 "argSort",
                 "resultSort",
-                "args"
-            ],
-            "title": "Fixpoint"
+                "arg"
+            ]
+        },
+
+
+        "KoreJSONPredicate2": {
+            "type": "object",
+            "properties": {
+                "argSort": {
+                    "$ref": "#/definitions/Sort"
+                },
+                "resultSort": {
+                    "$ref": "#/definitions/Sort"
+                },
+                "first": {
+                    "$ref": "#"
+                },
+                "second": {
+                    "$ref": "#"
+                }
+            },
+            "required": [
+                "argSort",
+                "resultSort",
+                "first",
+                "second"
+            ]
         },
 
         "KoreJSONNext": {
@@ -233,8 +347,7 @@
             "required": [
                 "sort",
                 "dest"
-            ],
-            "title": "Next"
+            ]
         },
 
         "KoreJSONRewrites": {
@@ -254,11 +367,10 @@
                 "sort",
                 "source",
                 "dest"
-            ],
-            "title": "Rewrites"
+            ]
         },
 
-        "KoreJSONDomainValue": {
+        "KoreJSONdv": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -272,8 +384,7 @@
             "required": [
                 "sort",
                 "value"
-            ],
-            "title": "DomainValue"
+            ]
         },
 
         "KoreJSONMultiOr": {
@@ -290,15 +401,15 @@
                     "type": "array",
                     "items": {
                         "$ref": "#"
-                    }
+                    },
+                    "minItems": 1
                 }
             },
             "required": [
                 "assoc",
                 "sort",
                 "args"
-            ],
-            "title": "MultiOr"
+            ]
         },
 
         "KoreJSONMultiApp": {
@@ -314,14 +425,15 @@
                 "sorts": {
                     "type": "array",
                     "items": {
-	                    "$ref": "#/definitions/Sort"
+                        "$ref": "#/definitions/Sort"
                     }
                 },
                 "args": {
                     "type": "array",
                     "items": {
                         "$ref": "#"
-                    }
+                    },
+                    "minItems": 1
                 }
             },
             "required": [
@@ -329,14 +441,26 @@
                 "symbol",
                 "sorts",
                 "args"
-            ],
-            "title": "MultiApp"
+            ]
         },
 
         "Sort": {
-            "oneOf": [
-              { "$ref": "#/definitions/SortApp" },
-              { "$ref": "#/definitions/SortVar" }
+            "type": "object",
+            "properties": {
+                "tag": {
+                }
+            },
+            "required": [ "tag" ],
+
+            "allOf": [
+                {
+                    "if": { "properties": { "tag": { "const": "Sort" } } },
+                    "then": { "$ref": "#/definitions/SortApp" }
+                },
+                {
+                    "if": { "properties": { "tag": { "const": "SortVariable" } } },
+                    "then": { "$ref": "#/definitions/SortVar" }
+                }
             ]
         },
 
@@ -348,18 +472,23 @@
                 },
                 "args": {
                     "type": "array",
-                    "items": {}
+                    "items": {
+	                    "$ref": "#/definitions/Sort"
+                    }
                 }
             },
             "required": [
                 "args",
                 "name"
-            ],
-            "title": "Sort"
+            ]
         },
 
         "SortVar": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+                "name": { "$ref": "#/definitions/KoreJSONId" }
+            },
+            "required": [ "name" ]
         }
     }
 }
