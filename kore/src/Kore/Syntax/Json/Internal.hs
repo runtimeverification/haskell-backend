@@ -276,7 +276,7 @@ isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
 -- | Set variable names _have to_ start with `@`, followed by a valid identifier
 checkSVarName :: Text -> [String]
 checkSVarName name
-    | T.null name = ["empty"]
+    | T.null name = ["Empty"]
 checkSVarName name =
     ["Must start with `@'" | T.head name /= '@']
     <> checkIdChars (T.tail name)
@@ -284,7 +284,7 @@ checkSVarName name =
 -- | Symbols _may_ start by a backslash.
 checkSymbolName :: Text -> [String]
 checkSymbolName name
-    | Nothing <- mbParts = ["empty"]
+    | Nothing <- mbParts = ["Empty"]
     | Just ('\\', rest) <- mbParts = checkIdChars rest
     | otherwise = checkIdChars name
   where

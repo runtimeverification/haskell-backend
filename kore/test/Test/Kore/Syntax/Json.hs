@@ -248,7 +248,8 @@ eVarChecks :: TestTree
 eVarChecks =
     testGroup
         "Element variable lexical checks"
-        [ testProperty "A valid element variable is accepted" $
+        [ testProperty "A set variable name must not be empty" testNotEmpty
+        , testProperty "A valid element variable is accepted" $
             property $ do
                 Id valid <- forAll genId
                 diff (checkIdChars valid) (==) []
@@ -257,6 +258,9 @@ eVarChecks =
         , testProperty "A variable name must not contain non-alphanumeric characters" $
             withTests 1000 testEVarCharSet
         ]
+
+testNotEmpty =
+    withTests 1 . property $ diff (checkIdChars T.empty) (==) ["Empty"]
 
 testEVarInitial =
     property $
