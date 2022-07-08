@@ -7,7 +7,8 @@ module Test.Kore.Syntax.Json (
 
 import Control.Monad (forever)
 import Data.ByteString.Lazy qualified as BS
-import Data.Char (isPrint)
+import Data.Char (isAlpha, isAlphaNum, isPrint)
+import Data.List (isPrefixOf)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Hedgehog
@@ -16,8 +17,8 @@ import Hedgehog.Range qualified as Range
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Syntax.Json
 import Kore.Syntax.Json.Internal -- for testing and generating test data
-import Prelude.Kore hiding (Left, Right)
-import Test.Tasty (TestTree)
+import Prelude.Kore hiding (Left, Right, assert)
+import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog
 
 genKorePattern :: Gen KorePattern
@@ -230,3 +231,56 @@ orFailWith :: Show err => (a -> Either err b) -> String -> a -> b
 parse `orFailWith` name = either failed id . parse
   where
     failed err = error $ "Error in " <> name <> ": " <> show err
+
+----------------------------------------
+-- unit tests for specific properties
+
+test_Unit_tests_for_json_failure_modes :: [TestTree]
+test_Unit_tests_for_json_failure_modes =
+    [ eVarChecks
+    ]
+
+-- lexical check for identifiers
+eVarChecks :: TestTree
+eVarChecks =
+    testGroup
+        "Element variable lexical checks"
+        [ testProperty "A valid element variable is accepted" $
+            property $ do
+                Id valid <- forAll genId
+                diff (checkIdChars valid) (==) []
+        , testProperty "A variable name has to start by a character" $
+            withTests 1000 testEVarInitial
+        , testProperty "A variable name must not contain non-alphanumeric characters" $
+            withTests 1000 testEVarCharSet
+        ]
+
+testEVarInitial =
+    property $
+        do
+            Id valid <- forAll genId
+
+            notLetter <- forAll $ Gen.filter (not . isAlpha) Gen.ascii
+            let nonLetterStart = checkIdChars $ T.cons notLetter valid
+            length nonLetterStart === 1
+            assert ("Illegal initial character" `isPrefixOf` head nonLetterStart)
+
+            notPrintable <- forAll $ Gen.filter (not . isPrint) Gen.ascii
+            let nonPrintableStart = checkIdChars $ T.cons notPrintable valid
+            length nonPrintableStart === 1
+            assert ("Illegal initial character" `isPrefixOf` head nonLetterStart)
+
+testEVarCharSet =
+    property $
+        do
+            initial <- forAll Gen.alpha
+            notAlphaNum <- forAll $ Gen.filter (not . isAllowedChar) Gen.ascii
+            let nonAlphaNumChars = checkIdChars $ T.pack [initial, notAlphaNum]
+            length nonAlphaNumChars === 1
+            assert ("Contains illegal characters: " `isPrefixOf` head nonAlphaNumChars)
+  where
+    isAllowedChar c = isAlphaNum c || c `elem` ['_', '\'']
+
+-- error cases for json reader
+
+-- error cases for conversion
