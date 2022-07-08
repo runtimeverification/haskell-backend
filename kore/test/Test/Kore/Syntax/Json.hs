@@ -281,6 +281,15 @@ testEVarCharSet =
   where
     isAllowedChar c = isAlphaNum c || c `elem` ['_', '\'']
 
+testSVarInitial =
+    property $
+        do
+            wrongInitial <- forAll $ Gen.filter (/= '@') Gen.ascii
+            Id valid <- forAll genId
+            let withWrongInitial = checkSVarName $ T.cons wrongInitial valid
+            withWrongInitial === ["Must start with `@'"]
+
+
 -- error cases for json reader
 
 -- error cases for conversion
