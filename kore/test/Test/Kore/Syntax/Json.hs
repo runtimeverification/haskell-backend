@@ -320,7 +320,3 @@ testSVarSuffix =
             let withWrongSuffix = checkSVarName $ T.pack ['@', 'X', notAlphaNum]
             length withWrongSuffix === 1
             assert ("Contains illegal characters: " `isPrefixOf` head withWrongSuffix)
-
--- error cases for json reader
-
--- error cases for conversion
