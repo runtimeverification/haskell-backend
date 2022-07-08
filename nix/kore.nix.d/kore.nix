@@ -106,7 +106,6 @@
           ];
         buildable = true;
         modules = [
-          "KoreJson"
           "Changed"
           "Control/Monad/Counter"
           "Data/Graph/TopologicalSort"
@@ -431,6 +430,8 @@
           "Kore/Syntax/Implies"
           "Kore/Syntax/In"
           "Kore/Syntax/Inhabitant"
+          "Kore/Syntax/Json"
+          "Kore/Syntax/Json/Internal"
           "Kore/Syntax/Module"
           "Kore/Syntax/Mu"
           "Kore/Syntax/Next"
@@ -737,7 +738,6 @@
             "Test/Expect"
             "Test/Injection"
             "Test/Kore"
-            "Test/KoreJson"
             "Test/Kore/AST/Common"
             "Test/Kore/Attribute/Assoc"
             "Test/Kore/Attribute/Axiom/Concrete"
@@ -906,6 +906,7 @@
             "Test/Kore/Simplify/TermLike"
             "Test/Kore/Simplify/Top"
             "Test/Kore/Syntax/Id"
+            "Test/Kore/Syntax/Json"
             "Test/Kore/Syntax/Variable"
             "Test/Kore/TopBottom"
             "Test/Kore/Unification/SubstitutionNormalization"
