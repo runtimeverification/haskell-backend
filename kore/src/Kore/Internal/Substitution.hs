@@ -507,7 +507,7 @@ unsafeWrap =
             -- must be defined.
             -- TODO (thomas.tuegel): isBottom -> SideCondition.isDefined
             & assert (not $ isElementVariable var && isBottom termLike)
-            & withErrorContext "while wrapping substitution" (assign var termLike)
+            & withErrorContext "while wrapping substitution" (assign var termLike, unwrap $ fromMap subst)
       where
         Variable{variableName} = var
         occurs = TermLike.hasFreeVariable variableName

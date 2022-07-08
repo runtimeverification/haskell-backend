@@ -6,6 +6,10 @@ module Kore.Simplify.Overloading (
     matchOverloading,
     -- for testing purposes
     unifyOverloading,
+    unifyOverloadingCommonOverload,
+    unifyOverloadingInjVsVariable,
+    unifyOverloadingVsOverloaded,
+    unifyOverloadingVsOverloadedVariable,
     OverloadingData (..),
     UnifyOverloadingResult,
     MatchOverloadingResult,
