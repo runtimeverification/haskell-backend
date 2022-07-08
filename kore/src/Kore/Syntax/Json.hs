@@ -2,7 +2,7 @@
 
 module Kore.Syntax.Json (
     -- API
-    JsonError (..),
+    JsonParseError,
     encodePattern,
     encodeKoreJson,
     decodePattern,
@@ -24,13 +24,18 @@ import Prelude.Kore
 {- | read text into KorePattern, then check for consistency and
  construct a ParsedPattern
 -}
-decodePattern :: ByteString -> Either JsonError ParsedPattern
+decodePattern :: ByteString -> Either JsonParseError ParsedPattern
 decodePattern bs =
-    mapLeft ParseError (decodeKoreJson bs) >>= toParsedPattern
+    toParsedPattern <$> mapLeft JsonParseError (decodeKoreJson bs)
 
 -- | low-level: read text into KorePattern
 decodeKoreJson :: ByteString -> Either String KorePattern
 decodeKoreJson = Json.eitherDecode'
+
+-- | Errors relating to the json codec
+newtype JsonParseError
+    = JsonParseError String
+    deriving stock (Eq, Show)
 
 ------------------------------------------------------------
 -- writing

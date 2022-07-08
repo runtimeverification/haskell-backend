@@ -11,10 +11,11 @@ module Kore.Syntax.Json.Internal (
 import Data.Aeson as Json
 import Data.Aeson.Types qualified as Json
 import Data.Char (isAlpha, isDigit, isPrint)
-import Data.Either.Extra hiding (Left, Right)
+import Data.Foldable ()
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
-import Data.List (foldl1', nub)
+import Data.List (nub)
+import Data.List.NonEmpty qualified as NE
 import Data.Sup (Sup (..))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -31,7 +32,6 @@ import Kore.Syntax.Variable (
     VariableName (..),
  )
 import Prelude.Kore hiding (Left, Right)
-import Prelude.Kore qualified as Prelude (Either (..))
 
 {- | Json representation of Kore patterns as a Haskell type.
  Modeled after kore-syntax.md, merging some of the ML pattern
@@ -164,7 +164,7 @@ data KorePattern
       KJMultiOr
         { assoc :: LeftRight
         , sort :: Sort
-        , args :: [KorePattern]
+        , argss :: NE.NonEmpty KorePattern
         }
     | -- TODO textual parser also understands And/Implies/Iff
 
@@ -173,7 +173,7 @@ data KorePattern
         { assoc :: LeftRight
         , symbol :: Id -- may start by a '\\'
         , sorts :: [Sort]
-        , args :: [KorePattern]
+        , argss :: NE.NonEmpty KorePattern
         }
     deriving stock (Eq, Show, Generic)
 
@@ -369,138 +369,118 @@ data LeftRight
 ------------------------------------------------------------
 -- reading
 
--- | Errors relating to the json codec, re-exported from API
-data JsonError
-    = -- | Problem reported by json parser
-      ParseError String
-    | -- | MultiOr/MultiApp require a non-empty argument list
-      MissingArg String
-    deriving stock (Eq, Show)
-
 -- see Parser.y
-toParsedPattern :: KorePattern -> Either JsonError ParsedPattern
+toParsedPattern :: KorePattern -> ParsedPattern
 toParsedPattern = \case
     KJEVar n s ->
-        fmap (embedParsedPattern . VariableF . Const) $
+        (embedParsedPattern . VariableF . Const) $
             embedVar (SomeVariableNameElement . ElementVariableName) n s
     KJSVar n s ->
-        fmap (embedParsedPattern . VariableF . Const) $
+        (embedParsedPattern . VariableF . Const) $
             embedVar (SomeVariableNameSet . SetVariableName) n s
     KJApp n ss as ->
-        fmap (embedParsedPattern . ApplicationF) $
-            Kore.Application <$> toSymbol n ss <*> traverse toParsedPattern as
+        (embedParsedPattern . ApplicationF) $
+            Kore.Application (toSymbol n ss) (map toParsedPattern as)
     KJString t ->
-        pure . embedParsedPattern . StringLiteralF . Const $ Kore.StringLiteral t
+        embedParsedPattern . StringLiteralF . Const $
+            Kore.StringLiteral t
     KJTop s ->
-        fmap (embedParsedPattern . TopF) $
-            Kore.Top <$> (mkSort s)
+        (embedParsedPattern . TopF) $
+            Kore.Top (mkSort s)
     KJBottom s ->
-        fmap (embedParsedPattern . BottomF) $
-            Kore.Bottom <$> (mkSort s)
+        (embedParsedPattern . BottomF) $
+            Kore.Bottom (mkSort s)
     KJNot s a ->
-        fmap (embedParsedPattern . NotF) $
-            Kore.Not <$> mkSort s <*> toParsedPattern a
+        (embedParsedPattern . NotF) $
+            Kore.Not (mkSort s) (toParsedPattern a)
     KJAnd s a b ->
-        fmap (embedParsedPattern . AndF) $
-            Kore.And <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+        (embedParsedPattern . AndF) $
+            Kore.And (mkSort s) (toParsedPattern a) (toParsedPattern b)
     KJOr s a b ->
-        fmap (embedParsedPattern . OrF) $
-            Kore.Or <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+        (embedParsedPattern . OrF) $
+            Kore.Or (mkSort s) (toParsedPattern a) (toParsedPattern b)
     KJImplies s a b ->
-        fmap (embedParsedPattern . ImpliesF) $
-            Kore.Implies <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+        (embedParsedPattern . ImpliesF) $
+            Kore.Implies (mkSort s) (toParsedPattern a) (toParsedPattern b)
     KJIff s a b ->
-        fmap (embedParsedPattern . IffF) $
-            Kore.Iff <$> mkSort s <*> toParsedPattern a <*> toParsedPattern b
+        (embedParsedPattern . IffF) $
+            Kore.Iff (mkSort s) (toParsedPattern a) (toParsedPattern b)
     KJForall{sort, var, varSort, arg} ->
-        fmap (embedParsedPattern . ForallF) $
+        (embedParsedPattern . ForallF) $
             Kore.Forall
-                <$> mkSort sort
-                <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
-                <*> toParsedPattern arg
+                (mkSort sort)
+                (Variable (ElementVariableName (koreVar var)) $ mkSort varSort)
+                (toParsedPattern arg)
     KJExists{sort, var, varSort, arg} ->
-        fmap (embedParsedPattern . ExistsF) $
+        (embedParsedPattern . ExistsF) $
             Kore.Exists
-                <$> mkSort sort
-                <*> (Variable (ElementVariableName (koreVar var)) <$> mkSort varSort)
-                <*> toParsedPattern arg
+                (mkSort sort)
+                (Variable (ElementVariableName (koreVar var)) $ mkSort varSort)
+                (toParsedPattern arg)
     KJMu{var, varSort, arg} ->
-        fmap (embedParsedPattern . MuF) $
+        (embedParsedPattern . MuF) $
             Kore.Mu
-                <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
-                <*> toParsedPattern arg
+                (Variable (SetVariableName (koreVar var)) $ mkSort varSort)
+                (toParsedPattern arg)
     KJNu{var, varSort, arg} ->
-        fmap (embedParsedPattern . NuF) $
+        (embedParsedPattern . NuF) $
             Kore.Nu
-                <$> (Variable (SetVariableName (koreVar var)) <$> mkSort varSort)
-                <*> toParsedPattern arg
+                (Variable (SetVariableName (koreVar var)) $ mkSort varSort)
+                (toParsedPattern arg)
     KJCeil s s2 a ->
-        fmap (embedParsedPattern . CeilF) $
-            Kore.Ceil <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+        (embedParsedPattern . CeilF) $
+            Kore.Ceil (mkSort s) (mkSort s2) (toParsedPattern a)
     KJFloor s s2 a ->
-        fmap (embedParsedPattern . FloorF) $
-            Kore.Floor <$> mkSort s <*> mkSort s2 <*> toParsedPattern a
+        (embedParsedPattern . FloorF) $
+            Kore.Floor (mkSort s) (mkSort s2) (toParsedPattern a)
     KJEquals s s2 a b ->
-        fmap (embedParsedPattern . EqualsF) $
-            Kore.Equals <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+        (embedParsedPattern . EqualsF) $
+            Kore.Equals (mkSort s) (mkSort s2) (toParsedPattern a) (toParsedPattern b)
     KJIn s s2 a b ->
-        fmap (embedParsedPattern . InF) $
-            Kore.In <$> mkSort s <*> mkSort s2 <*> toParsedPattern a <*> toParsedPattern b
+        (embedParsedPattern . InF) $
+            Kore.In (mkSort s) (mkSort s2) (toParsedPattern a) (toParsedPattern b)
     KJNext{sort, dest} ->
-        fmap (embedParsedPattern . NextF) $
-            Kore.Next
-                <$> mkSort sort
-                <*> toParsedPattern dest
+        (embedParsedPattern . NextF) $
+            Kore.Next (mkSort sort) (toParsedPattern dest)
     KJRewrites{sort, source, dest} ->
-        fmap (embedParsedPattern . RewritesF) $
-            Kore.Rewrites
-                <$> mkSort sort
-                <*> toParsedPattern source
-                <*> toParsedPattern dest
+        (embedParsedPattern . RewritesF) $
+            Kore.Rewrites (mkSort sort) (toParsedPattern source) $ toParsedPattern dest
     KJDv{sort, value} ->
-        fmap (embedParsedPattern . DomainValueF) $
-            Kore.DomainValue
-                <$> mkSort sort
-                <*> toParsedPattern (KJString value)
-    KJMultiOr{assoc, sort, args}
-        | null args -> Prelude.Left $ MissingArg "MultiOr"
-        | otherwise ->
-            withAssoc assoc <$> mkOr sort <*> traverse toParsedPattern args
-    KJMultiApp{assoc, symbol, sorts, args}
-        | null args -> Prelude.Left $ MissingArg "MultiApp"
-        | otherwise ->
-            withAssoc assoc <$> mkF symbol sorts <*> traverse toParsedPattern args
+        (embedParsedPattern . DomainValueF) $
+            Kore.DomainValue (mkSort sort) (toParsedPattern (KJString value))
+    KJMultiOr{assoc, sort, argss} ->
+        withAssoc assoc (mkOr sort) $ NE.map toParsedPattern argss
+    KJMultiApp{assoc, symbol, sorts, argss} ->
+        withAssoc assoc (mkF symbol sorts) $ NE.map toParsedPattern argss
   where
     embedVar ::
         (VariableName -> SomeVariableName VariableName) ->
         Id ->
         Sort ->
-        Either JsonError (Variable (SomeVariableName VariableName))
+        Variable (SomeVariableName VariableName)
     embedVar cons n s =
-        Variable <$> mkVarName cons n <*> mkSort s
+        Variable (mkVarName cons n) (mkSort s)
 
     mkVarName ::
         (VariableName -> SomeVariableName VariableName) ->
         Id ->
-        Either JsonError (SomeVariableName VariableName)
-    mkVarName embed = pure . embed . koreVar
+        (SomeVariableName VariableName)
+    mkVarName embed = embed . koreVar
 
-    toSymbol :: Id -> [Sort] -> Either JsonError Kore.SymbolOrAlias
-    toSymbol n sorts = Kore.SymbolOrAlias (koreId n) <$> traverse mkSort sorts
+    toSymbol :: Id -> [Sort] -> Kore.SymbolOrAlias
+    toSymbol n sorts = Kore.SymbolOrAlias (koreId n) $ map mkSort sorts
 
-    withAssoc :: LeftRight -> (a -> a -> a) -> [a] -> a
-    withAssoc Left = foldl1'
+    withAssoc :: LeftRight -> (a -> a -> a) -> NE.NonEmpty a -> a
+    withAssoc Left = foldl1
     withAssoc Right = foldr1
 
-    mkOr :: Sort -> Either JsonError (ParsedPattern -> ParsedPattern -> ParsedPattern)
-    mkOr s = do
-        sort <- mkSort s
-        pure (\a b -> embedParsedPattern $ OrF $ Kore.Or sort a b)
+    mkOr :: Sort -> ParsedPattern -> ParsedPattern -> ParsedPattern
+    mkOr s a b =
+        embedParsedPattern . OrF $ Kore.Or (mkSort s) a b
 
-    mkF :: Id -> [Sort] -> Either JsonError (ParsedPattern -> ParsedPattern -> ParsedPattern)
-    mkF n sorts = do
-        sym <- toSymbol n sorts -- TODO should maybe check that length ss == 2?
-        pure (\a b -> embedParsedPattern $ ApplicationF $ Kore.Application sym [a, b])
+    mkF :: Id -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
+    mkF n sorts a b =
+        embedParsedPattern . ApplicationF $ Kore.Application (toSymbol n sorts) [a, b]
 
 koreId :: Id -> Kore.Id
 koreId (Id name) = Kore.Id name Kore.AstLocationNone
@@ -519,12 +499,11 @@ koreVar (Id name) =
         | otherwise =
             (baseName <> zeros, Just $ Element (read $ T.unpack actualNum))
 
-mkSort :: Sort -> Either JsonError Kore.Sort
+mkSort :: Sort -> Kore.Sort
 mkSort Sort{name, args} =
-    fmap (Kore.SortActualSort . Kore.SortActual (koreId name)) $
-        mapM mkSort args
+    (Kore.SortActualSort . Kore.SortActual (koreId name)) $ map mkSort args
 mkSort (SortVariable name) =
-    pure . Kore.SortVariableSort $ Kore.SortVariable (koreId name)
+    Kore.SortVariableSort $ Kore.SortVariable (koreId name)
 
 ------------------------------------------------------------
 -- writing helper

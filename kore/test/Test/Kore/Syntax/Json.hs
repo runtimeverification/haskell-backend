@@ -11,6 +11,7 @@ import Control.Monad (forever)
 import Data.ByteString.Lazy qualified as BS
 import Data.Char (isAlpha, isAlphaNum, isPrint)
 import Data.List (isPrefixOf)
+import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
 import Hedgehog
@@ -37,7 +38,7 @@ genKorePattern =
         [ do
             sorts <- between 1 10 genSort
             args <- exactly (length sorts - 1) genKorePattern
-            name <- genId
+            name <- (Gen.element [('\\' -:), id] <*> genId)
             pure KJApp{name, sorts, args}
         , KJNot <$> genSort <*> genKorePattern
         , KJAnd <$> genSort <*> genKorePattern <*> genKorePattern
@@ -63,12 +64,12 @@ genMultiKorePattern =
         [ KJMultiOr
             <$> Gen.element [Left, Right]
             <*> genSort
-            <*> between 3 12 (Gen.small genKorePattern)
+            <*> (NE.fromList <$> between 3 12 (Gen.small genAllKorePatterns))
         , KJMultiApp
             <$> Gen.element [Left, Right]
             <*> (Gen.element [('\\' -:), id] <*> genId)
             <*> exactly 2 genSort
-            <*> between 3 12 (Gen.small genKorePattern)
+            <*> (NE.fromList <$> between 3 12 (Gen.small genAllKorePatterns))
         ]
 
 (-:) :: Char -> Id -> Id
@@ -195,11 +196,9 @@ parsedRoundTrip =
 
         -- This round trip fails on "MultiOr" and "MultiApp"
         -- constructs, as they introduce ambiguity.
-        let convert :: KorePattern -> ParsedPattern
-            convert = toParsedPattern `orFailWith` "toParsedPattern"
-            parse :: ParsedPattern -> Either () KorePattern
+        let parse :: ParsedPattern -> Either () KorePattern
             parse = pure . fromPattern
-        tripping korePattern convert parse
+        tripping korePattern toParsedPattern parse
 
 korePatternRoundTrip :: Property
 korePatternRoundTrip =
@@ -208,8 +207,10 @@ korePatternRoundTrip =
         -- testing ParsedPattern -> KorePattern -> ParsedPattern
         -- after producing ParsedPattern from KorePattern
         -- (we do not allow "Inhabitant" in ParsedPattern)
-        let parsedP = toParsedPattern `orFailWith` "toParsedPattern" $ korePattern
-        tripping parsedP fromPattern toParsedPattern
+        let parsedP = toParsedPattern korePattern
+            parse :: KorePattern -> Either () ParsedPattern
+            parse = pure . toParsedPattern
+        tripping parsedP fromPattern parse
 
 fullRoundTrip :: Property
 fullRoundTrip =
