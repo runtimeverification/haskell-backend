@@ -530,18 +530,15 @@ mkSort (SortVariable name) =
 -- writing helper
 
 fromPattern :: Kore.Pattern VariableName ann -> KorePattern
-fromPattern pat =
-    -- forget the annotation and recurse over the term-like PatternF
-    let _ :< patF = Recursive.project pat
-     in fromPatternF patF
+fromPattern = cata fromPatternF
 
-fromPatternF :: Kore.PatternF VariableName (Kore.Pattern VariableName ann) -> KorePattern
-fromPatternF = \case
+fromPatternF :: CofreeF (Kore.PatternF VariableName) ann KorePattern -> KorePattern
+fromPatternF (_ :< patt) = case patt of
     AndF Kore.And{andSort, andFirst, andSecond} ->
         KJAnd
             { sort = fromSort andSort
-            , first = fromPattern andFirst
-            , second = fromPattern andSecond
+            , first = andFirst
+            , second = andSecond
             }
     ApplicationF
         ( Kore.Application
@@ -551,7 +548,7 @@ fromPatternF = \case
             KJApp
                 { name = fromKoreId symbolOrAliasConstructor
                 , sorts = map fromSort symbolOrAliasParams
-                , args = map fromPattern args
+                , args
                 }
     BottomF Kore.Bottom{bottomSort} ->
         KJBottom{sort = fromSort bottomSort}
@@ -559,96 +556,94 @@ fromPatternF = \case
         KJCeil
             { argSort = fromSort ceilOperandSort
             , resultSort = fromSort ceilResultSort
-            , arg = fromPattern ceilChild
+            , arg = ceilChild
             }
-    DomainValueF Kore.DomainValue{domainValueSort, domainValueChild}
-        | _ :< StringLiteralF (Const Kore.StringLiteral{getStringLiteral}) <-
-            -- expected to contain a string literal value
-            Recursive.project domainValueChild ->
-            KJDv
-                { sort = fromSort domainValueSort
-                , value = getStringLiteral
-                }
-        | otherwise -> error "Bad domain value"
+    DomainValueF Kore.DomainValue{domainValueSort, domainValueChild = KJString value} ->
+        KJDv
+            { sort = fromSort domainValueSort
+            , value
+            }
+    DomainValueF Kore.DomainValue{} ->
+        error "Bad domain value"
     EqualsF Kore.Equals{equalsOperandSort, equalsResultSort, equalsFirst, equalsSecond} ->
         KJEquals
             { argSort = fromSort equalsOperandSort
             , resultSort = fromSort equalsResultSort
-            , first = fromPattern equalsFirst
-            , second = fromPattern equalsSecond
+            , first = equalsFirst
+            , second = equalsSecond
             }
     ExistsF Kore.Exists{existsSort, existsVariable, existsChild} ->
         KJExists
             { sort = fromSort existsSort
             , var = fromKoreVariableName $ Kore.unElementVariableName $ Kore.variableName existsVariable
             , varSort = fromSort $ Kore.variableSort existsVariable
-            , arg = fromPattern existsChild
+            , arg = existsChild
             }
     FloorF Kore.Floor{floorOperandSort, floorResultSort, floorChild} ->
         KJFloor
             { argSort = fromSort floorOperandSort
             , resultSort = fromSort floorResultSort
-            , arg = fromPattern floorChild
+            , arg = floorChild
             }
     ForallF Kore.Forall{forallSort, forallVariable, forallChild} ->
         KJForall
             { sort = fromSort forallSort
             , var = fromKoreVariableName $ unElementVariableName $ variableName forallVariable
             , varSort = fromSort $ variableSort forallVariable
-            , arg = fromPattern forallChild
+            , arg = forallChild
             }
     IffF Kore.Iff{iffSort, iffFirst, iffSecond} ->
         KJIff
             { sort = fromSort iffSort
-            , first = fromPattern iffFirst
-            , second = fromPattern iffSecond
+            , first = iffFirst
+            , second = iffSecond
             }
     ImpliesF Kore.Implies{impliesSort, impliesFirst, impliesSecond} ->
         KJImplies
             { sort = fromSort impliesSort
-            , first = fromPattern impliesFirst
-            , second = fromPattern impliesSecond
+            , first = impliesFirst
+            , second = impliesSecond
             }
     InF Kore.In{inOperandSort, inResultSort, inContainedChild, inContainingChild} ->
         KJIn
             { argSort = fromSort inOperandSort
             , resultSort = fromSort inResultSort
-            , first = fromPattern inContainedChild
-            , second = fromPattern inContainingChild
+            , first = inContainedChild
+            , second = inContainingChild
             }
     MuF Kore.Mu{muVariable, muChild} ->
         KJMu
             { var = fromKoreVariableName $ unSetVariableName $ variableName muVariable
             , varSort = fromSort $ variableSort muVariable
-            , arg = fromPattern muChild
+            , arg = muChild
             }
     NextF Kore.Next{nextSort, nextChild} ->
         KJNext
             { sort = fromSort nextSort
-            , dest = fromPattern nextChild
+            , dest = nextChild
             }
     NotF Kore.Not{notSort, notChild} ->
         KJNot
             { sort = fromSort notSort
-            , arg = fromPattern notChild
+            , arg = notChild
             }
     NuF Kore.Nu{nuVariable, nuChild} ->
         KJNu
             { var = fromKoreVariableName $ unSetVariableName $ variableName nuVariable
             , varSort = fromSort $ variableSort nuVariable
-            , arg = fromPattern nuChild
+            , arg = nuChild
             }
     OrF Kore.Or{orSort, orFirst, orSecond} ->
         KJOr
             { sort = fromSort orSort
-            , first = fromPattern orFirst
-            , second = fromPattern orSecond
+            , first = orFirst
+            , second = orSecond
             }
     RewritesF Kore.Rewrites{rewritesSort, rewritesFirst, rewritesSecond} ->
         KJRewrites
             { sort = fromSort rewritesSort
-            , source = fromPattern rewritesFirst
-            , dest = fromPattern rewritesSecond
+            , source = rewritesFirst
+            , dest = rewritesSecond
             }
     TopF Kore.Top{topSort} ->
         KJTop{sort = fromSort topSort}
