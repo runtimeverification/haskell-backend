@@ -28,8 +28,10 @@
           inherit (haskell-nix) config;
         };
 
-      haskell-src = pkgs:
+      haskell-backend-src = { pkgs, ghc, postPatch ? "" }:
         pkgs.applyPatches {
+          name = "haskell-backend-src";
+          # make sure we remove all nix files and flake.lock, since any changes to these triggers re-compilation of kore
           src = pkgs.nix-gitignore.gitignoreSourcePure [
             "/nix"
             "*.nix"
@@ -40,63 +42,133 @@
           ] ./.;
           postPatch = ''
             substituteInPlace kore/src/Kore/VersionInfo.hs \
-              --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+              --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}-${ghc}"'
+            ${postPatch}
           '';
         };
 
-      rematerialize-kore = { project, pkgs }:
-        pkgs.writeShellScriptBin "rematerialize-kore-nix" ''
-          #!/bin/sh
-          ${project.stack-nix.passthru.generateMaterialized} ./nix/kore.nix.d
-        '';
+      projectOverlay = { pkgs, src, shell ? { }, compiler-nix-name ? "ghc8107"
+        , profiling ? false, profilingDetail ? "toplevel-functions"
+        , ghcOptions ? [ ] }:
+        let
+          self = pkgs.haskell-nix.stackProject' ({
+            inherit shell src compiler-nix-name;
+            modules = [{
+              enableLibraryProfiling = profiling;
+              packages.kore = {
+                enableLibraryProfiling = profiling;
+                enableProfiling = profiling;
+                inherit profilingDetail ghcOptions;
+              };
+            }];
+            materialized = ./nix + "/kore-${compiler-nix-name}.nix.d";
+          });
+        in self // {
+          rematerialize-kore = pkgs.writeShellScriptBin
+            "rematerialize-kore-nix-${compiler-nix-name}" ''
+              #!/bin/sh
+              ${self.stack-nix.passthru.generateMaterialized} ./nix/kore-${compiler-nix-name}.nix.d
+            '';
+        };
 
-      projectOverlay = { shell, pkgs, src }:
-        pkgs.haskell-nix.stackProject' ({
-          inherit shell src;
-          materialized = ./nix/kore.nix.d;
-          compiler-nix-name = "ghc8107";
-        });
+      binWithFlags = { system, bin, add-flags }:
+        let pkgs = nixpkgsFor' system;
+        in pkgs.symlinkJoin {
+          name = "${bin}-${add-flags}";
+          paths = [ bin ];
+          buildInputs = [ pkgs.makeWrapper ];
+          postBuild = ''
+            for i in "$out"/bin/*; do
+              wrapProgram "$i" --add-flags "${add-flags}"
+            done
+          '';
+        };
+
+      projectForGhc = { ghc, stack-yaml ? null, profiling ? false
+        , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
+        perSystem (system:
+          let
+            pkgs = nixpkgsFor system;
+            pkgs' = nixpkgsFor' system;
+          in projectOverlay {
+            inherit pkgs profiling ghcOptions;
+            src = haskell-backend-src {
+              inherit ghc;
+              pkgs = pkgs';
+              postPatch = if stack-yaml != null then
+                "cp ${stack-yaml} stack.yaml"
+              else
+                "";
+            };
+
+            compiler-nix-name = ghc;
+            shell = {
+              # withHoogle = true;
+
+              # exactDeps = true;
+
+              # We use the ones from Nixpkgs, since they are cached reliably.
+              # Eventually we will probably want to build these with haskell.nix.
+              nativeBuildInputs = [
+                pkgs'.cabal-install
+                pkgs'.hlint
+                pkgs'.haskellPackages.fourmolu
+                pkgs'.stack
+                pkgs'.nixfmt
+                pkgs'.haskellPackages.eventlog2html
+                pkgs'.haskellPackages.ghc-prof-flamegraph
+                pkgs'.haskellPackages.hs-speedscope
+              ] ++ (if system == "aarch64-darwin" then
+                [ pkgs'.llvm_12 ]
+              else
+                [ ]);
+            };
+          });
     in {
       prelude-kore = ./src/main/kore/prelude.kore;
-      project = perSystem (system:
-        let
-          pkgs = nixpkgsFor system;
-          pkgs' = nixpkgsFor' system;
-        in projectOverlay {
-          inherit pkgs;
-          src = haskell-src pkgs';
 
-          shell = {
-            withHoogle = true;
+      project = projectForGhc { ghc = "ghc8107"; };
+      projectGhc9 = projectForGhc {
+        ghc = "ghc923";
+        stack-yaml = "stack-nix-ghc9.yaml";
+      };
 
-            exactDeps = true;
+      projectGhc9ProfilingEventlog = projectForGhc {
+        ghc = "ghc923";
+        stack-yaml = "stack-nix-ghc9.yaml";
+        profiling = true;
+        ghcOptions =
+          [ "-eventlog" ];
+      };
 
-            # We use the ones from Nixpkgs, since they are cached reliably.
-            # Eventually we will probably want to build these with haskell.nix.
-            nativeBuildInputs = [
-              pkgs'.cabal-install
-              pkgs'.hlint
-              pkgs'.haskellPackages.fourmolu
-              pkgs'.stack
-              pkgs'.nixfmt
-            ] ++ (if system == "aarch64-darwin" then
-              [ pkgs'.llvm_12 ]
-            else
-              [ ]);
-          };
-        });
+      projectGhc9ProfilingEventlogInfoTable = projectForGhc {
+        ghc = "ghc923";
+        stack-yaml = "stack-nix-ghc9.yaml";
+        profiling = true;
+        ghcOptions =
+          [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
+      };
+
 
       flake = perSystem (system: self.project.${system}.flake { });
+      flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
+
       packages = perSystem (system:
         self.flake.${system}.packages // {
-          rematerialize = rematerialize-kore {
-            pkgs = nixpkgsFor' system;
-            project = self.project.${system};
-          };
+          update-cabal = self.project.${system}.rematerialize-kore;
+          update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
+
+          kore-exec-prof = self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec-prof-infotable = self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
         });
 
       apps = perSystem (system: self.flake.${system}.apps);
-      devShell = perSystem (system: self.flake.${system}.devShell);
+
+      devShells = perSystem (system: {
+        default = self.flake.${system}.devShell;
+        ghc9 = self.flakeGhc9.${system}.devShell;
+      });
+      devShell = perSystem (system: self.devShells.${system}.default);
 
       overlay = nixpkgs.lib.composeManyExtensions [
         haskell-nix.overlay
@@ -104,8 +176,7 @@
         (final: prev: {
           haskell-backend-stackProject = projectOverlay {
             pkgs = prev;
-            src = haskell-src prev;
-            shell = { };
+            src = haskell-backend-src { pkgs = prev; ghc = "ghc8107"; };
           };
         })
 

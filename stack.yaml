@@ -65,6 +65,8 @@ extra-deps:
 
   - compact-0.2.0.0
 
+  - decision-diagrams-0.2.0.0
+
   - git: https://github.com/ttuegel/pipes-ghc-events.git
     commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
     subdirs:

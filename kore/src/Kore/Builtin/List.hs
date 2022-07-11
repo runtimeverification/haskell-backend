@@ -23,6 +23,8 @@ module Kore.Builtin.List (
     asPattern,
     asInternal,
     internalize,
+    normalize,
+    isListSort,
 
     -- * Symbols
     lookupSymbolGet,
