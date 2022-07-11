@@ -372,7 +372,6 @@
 
         "KoreJSONdv": {
             "type": "object",
-            "additionalProperties": false,
             "properties": {
                 "sort": {
                     "$ref": "#/definitions/Sort"
