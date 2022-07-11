@@ -3,6 +3,10 @@
 
 {-# Options -Wno-partial-fields #-}
 
+{- |
+Copyright   : (c) Runtime Verification, 2019-2022
+License     : BSD-3-Clause
+-}
 module Kore.Syntax.Json.Internal (
     -- export everything for debugging and testing only
     module Kore.Syntax.Json.Internal,
