@@ -752,6 +752,8 @@ test-suite kore-test
     Test.Kore.Builtin.Set
     Test.Kore.Builtin.Signedness
     Test.Kore.Builtin.String
+    Test.Kore.Claim.Claim
+    Test.Kore.Claim.SomeClaim
     Test.Kore.Contains
     Test.Kore.Equation.Application
     Test.Kore.Equation.Common
@@ -786,11 +788,9 @@ test-suite kore-test
     Test.Kore.Parser
     Test.Kore.Parser.Lexer
     Test.Kore.Parser.Parser
-    Test.Kore.Reachability.Claim
     Test.Kore.Reachability.MockAllPath
     Test.Kore.Reachability.OnePathStrategy
     Test.Kore.Reachability.Prove
-    Test.Kore.Reachability.SomeClaim
     Test.Kore.Repl.Graph
     Test.Kore.Repl.Interpreter
     Test.Kore.Repl.Parser

@@ -162,6 +162,11 @@ getConfiguration = Lens.view (lensClaimPattern . field @"left")
 getDestination :: SomeClaim -> OrPattern RewritingVariableName
 getDestination = Lens.view (lensClaimPattern . field @"right")
 
+-- | A lens for operating on the ClaimPattern inside a SomeClaim.
+-- SomeClaim currently may not always contain a ClaimPattern. The
+-- current state of this lens is a temporary hack until we can
+-- refactor the SomeClaim structure to separate reachability claims
+-- and equational claims.
 lensClaimPattern ::
     Functor f =>
     (ClaimPattern -> f ClaimPattern) ->

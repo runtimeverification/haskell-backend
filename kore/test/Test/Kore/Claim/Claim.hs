@@ -1,4 +1,4 @@
-module Test.Kore.Reachability.Claim (
+module Test.Kore.Claim.Claim (
     test_checkImplication,
     test_simplifyRightHandSide,
 ) where

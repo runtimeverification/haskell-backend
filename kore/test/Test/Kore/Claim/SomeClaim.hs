@@ -1,4 +1,4 @@
-module Test.Kore.Reachability.SomeClaim (
+module Test.Kore.Claim.SomeClaim (
     test_extractClaim,
 ) where
 
