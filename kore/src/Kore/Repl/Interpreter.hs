@@ -120,7 +120,7 @@ import GHC.IO.Handle (
     hPutStr,
  )
 import GHC.Natural (
-    naturalToInt,
+    naturalToInteger,
  )
 import Kore.Attribute.Axiom (
     SourceLocation (..),
@@ -1198,7 +1198,7 @@ savePartialProof maybeNatural file = do
 
     maybeNode :: Maybe ReplNode
     maybeNode =
-        ReplNode . naturalToInt <$> maybeNatural
+        ReplNode . fromIntegral . naturalToInteger <$> maybeNatural
 
     removeIfRoot ::
         ReplNode ->

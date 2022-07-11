@@ -132,18 +132,100 @@ cabal build --enable-tests --enable-benchmarks --only-dependencies kore
 
 ### Developing with Nix
 
+To build and run nix based packages at RV, please follow these instructions to set up nix:
+
+_We are switching to using [nix flakes](https://nixos.wiki/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different._
+
+To set up nix flakes you will need to install `nix` 2.4 or higher.If you are on a standard Linux distribution, such as Ubuntu, first [install nix](https://nixos.org/download.html#download-nix)
+and then enable flakes by editing either `~/.config/nix/nix.conf` or `/etc/nix/nix.conf` and adding:
+
+```
+experimental-features = nix-command flakes
+```
+
+This is needed to expose the Nix 2.0 CLI and flakes support that are hidden behind feature-flags. (If you are on a different system like nixOS, see instructions for enabling flakes here: https://nixos.wiki/wiki/Flakes)
+
+By default, Nix will build any project and its transitive dependencies from source, which can take a very long time. We therefore need to set up some binary caches to speed up the build
+process. First, install cachix
+
+```
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+```
+
+and then add the `kore` cachix cache
+
+```
+cachix use kore
+```
+
+Next, we need to set up the cache for our haskell infrastructure, by adding the following sections to `/etc/nix/nix.conf` or, if you are a trusted user, `~/.config/nix/nix.conf` (if you don't know what a "trusted user" is, you probably want to do the former):
+
+```
+trusted-public-keys = ... hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+substituters = ... https://cache.iog.io
+```
+
+i.e. if the file was originally
+
+```
+substituters = https://cache.nixos.org
+trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+```
+
+it will now read
+
+```
+substituters = https://cache.nixos.org https://cache.iog.io
+trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+```
+
+
+### Nix dev shell
+
 We provide a `shell.nix` expression with a suitable development environment and
 a binary cache at [runtimeverification.cachix.org]. The development environment is intended to
 be used with `nix-shell` and `cabal`.
 
 When the `.cabal` package description file changes, run:
 
-```.sh
+
+```
+# Requires Nix with flakes enabled.
+nix run .#update-cabal
+```
+
+or
+
+```
 # Requires Nix to be installed.
 ./nix/rematerialize.sh
 ```
 
 This script is also run by an automatic workflow.
+
+### New GHC 9.2.3 dev shell
+
+In order to make use of the new profiling options in GHC 9.2, we've added a nix shell which builds kore with GHC 9.2.3, to open the shell, run
+
+```
+nix develop .#ghc9
+```
+
+Then, use stack to build against `stack-nix-ghc9.yaml`:
+
+```
+stack --stack-yaml stack-nix-ghc9.yaml build
+```
+
+If you modified the `kore.cabal` file and want to build with GHC 9, you will have to run
+
+```
+# Requires Nix with flakes enabled.
+nix run .#update-cabal-ghc9
+```
+
+
+### Integration tests
 
 We provide a `test.nix` for running integration tests:
 
@@ -152,6 +234,15 @@ nix-build test.nix  # run all integration tests
 nix-build test.nix --argstr test imp  # run the integration tests in test/imp
 nix-shell test.nix  # enter a shell where we can run tests manually
 ```
+
+You can also us a new nix flake shell feature to compile the K framework against your current version of haskell backend and bring K into scope of your current shell via
+
+```
+nix shell github:runtimeverification/k/<commit> --override-input haskell-backend $(pwd)
+```
+
+where `<commit>` can be empty or point to a specific version of the K framework github repository. Running this command will add all of the K binaries like `kompile` or `kast` into the `PATH` of your current shell (this is not permanent and will only persist in your current shell window until you close it).
+
 
 [docs]: https://github.com/runtimeverification/haskell-backend/tree/master/docs
 [git]: https://git-scm.com/
