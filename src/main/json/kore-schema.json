@@ -397,7 +397,7 @@
                 "sort": {
                     "$ref": "#/definitions/Sort"
                 },
-                "args": {
+                "argss": {
                     "type": "array",
                     "items": {
                         "$ref": "#"
@@ -408,7 +408,7 @@
             "required": [
                 "assoc",
                 "sort",
-                "args"
+                "argss"
             ]
         },
 
@@ -428,7 +428,7 @@
                         "$ref": "#/definitions/Sort"
                     }
                 },
-                "args": {
+                "argss": {
                     "type": "array",
                     "items": {
                         "$ref": "#"
@@ -440,7 +440,7 @@
                 "assoc",
                 "symbol",
                 "sorts",
-                "args"
+                "argss"
             ]
         },
 
