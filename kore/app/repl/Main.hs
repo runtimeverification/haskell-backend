@@ -189,9 +189,8 @@ main = do
             (Just envName)
             (parseKoreReplOptions startTime)
             parserInfoModifiers
-    case localOptions options of
-        Nothing -> pure ()
-        Just koreReplOptions -> mainWithOptions koreReplOptions
+    maybe (pure ()) mainWithOptions $
+        localOptions options
 
 mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
 mainWithOptions LocalOptions{execOptions, simplifierx} = do
