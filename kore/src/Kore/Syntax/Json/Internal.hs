@@ -10,7 +10,7 @@ module Kore.Syntax.Json.Internal (
 
 import Data.Aeson as Json
 import Data.Aeson.Types qualified as Json
-import Data.Char (isAlpha, isDigit, isPrint)
+import Data.Char (isAlpha, isDigit)
 import Data.Foldable ()
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
@@ -219,10 +219,6 @@ lexicalCheck p =
             reportErrors n "set variable" checkSVarName
         KJApp{name = Id n} ->
             reportErrors n "app symbol" checkSymbolName
-        -- KJString txt ->
-        --     reportErrors txt "string literal" checkStringChars
-        -- for the time being, use standard Text (supports std
-        -- Unicode) and do not check.
         KJForall{var = Id name} ->
             reportErrors name "quantifier variable" checkIdChars
         KJExists{var = Id name} ->
@@ -231,8 +227,12 @@ lexicalCheck p =
             reportErrors name "fixpoint expression variable" checkSVarName
         KJNu{var = Id name} ->
             reportErrors name "fixpoint expression variable" checkSVarName
-        KJDv{value = txt} ->
-            reportErrors txt "domain value string" checkStringChars
+        -- KJDv{value = txt} ->
+        --     reportErrors txt "domain value string" checkStringChars
+        -- KJString txt ->
+        --     reportErrors txt "string literal" checkStringChars
+        -- Input supports std Unicode (as per json spec). toJSON could
+        -- check that only allowed escape sequences will be generated.
         KJMultiApp{symbol = Id n} ->
             reportErrors n "multi-app symbol" checkSymbolName
         _ -> pure p
@@ -289,59 +289,6 @@ checkSymbolName name
     | otherwise = checkIdChars name
   where
     mbParts = T.uncons name
-
-{- | String literals may contain printable Ascii characters (0x20 -
- 0x7e) except " and \, escape sequences \t, \n, \f, \r, \", \\, or
- Unicode escape sequences with 2, 4 or 8 hex: \xHH, \uHHHH, \UHHHHHHHH
--}
-checkStringChars :: Text -> [String]
-checkStringChars txt =
-    [ "Contains non-printable characters: " <> (show . nub $ T.unpack nonPrintables)
-    | not $ T.null nonPrintables
-    ]
-        ++ ["Contains invalid escape sequences: " <> showList badEscapes "" | not $ null badEscapes]
-  where
-    nonPrintables = T.filter (not . isPrint) txt
-    badEscapes = reverse . fst $ T.foldl' collectEscapes ([], Normal) txt
-
--- Text fold function to collect invalid escape sequences in a string literal
-data CollectState
-    = Normal
-    | Escape
-    | UTF Int String
-    | Bad Int String
-    deriving stock (Show)
-
-collectEscapes :: ([String], CollectState) -> Char -> ([String], CollectState)
--- normal mode
-collectEscapes (acc, Normal) '\\' = (acc, Escape) -- enter escaped mode
-collectEscapes (acc, Normal) _ = (acc, Normal) -- could check if printable here
-
--- escaping mode
-collectEscapes (acc, Escape) 'x' = (acc, UTF 2 "x\\") -- enter UTF mode, expect 2 hex
-collectEscapes (acc, Escape) 'u' = (acc, UTF 4 "u\\") -- enter UTF mode, expect 4 hex
-collectEscapes (acc, Escape) 'U' = (acc, UTF 8 "U\\") -- enter UTF mode, expect 8 hex
-collectEscapes (acc, Escape) c
-    | c `elem` ['t', 'n', 'f', 'r', '\"', '\\'] -- good escape
-        =
-        (acc, Normal)
-    | otherwise -- bad escape
-        =
-        (['\\', c] : acc, Normal)
--- UTF escape mode (n = remaining hex digits expected)
-collectEscapes s@(acc, UTF n part) c
-    | n > 8 || n < 0 = error $ "Illegal collect state" <> show s
-    | n == 0 = collectEscapes (acc, Normal) c -- good UTF escape
-    | c `elem` hexDigits = (acc, UTF (n -1) (c : part))
-    | otherwise = (acc, Bad (n - 1) (c : part))
-  where
-    hexDigits = ['0' .. '9'] <> ['A' .. 'F'] <> ['a' .. 'f']
-
--- already bad, collect remaining expected hex digits no matter what they are)
-collectEscapes s@(acc, Bad n part) c
-    | n > 7 || n < 1 = error $ "Illegal collect state" <> show s
-    | n == 1 = (reverse part : acc, Normal)
-    | otherwise = (acc, Bad (n - 1) (c : part))
 
 ------------------------------------------------------------
 data Sort

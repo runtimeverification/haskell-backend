@@ -9,7 +9,7 @@ module Test.Kore.Syntax.Json (
 
 import Control.Monad (forever)
 import Data.ByteString.Lazy qualified as BS
-import Data.Char (isAlpha, isAlphaNum, isPrint)
+import Data.Char (isAlpha, isAlphaNum, isPrint, ord)
 import Data.List (isPrefixOf)
 import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
@@ -110,15 +110,18 @@ genPrintableAscii =
     allowed '\\' = False
     allowed c = isPrint c
 
+-- This generates the actual escaped character rather than the escape
+-- sequence (the json codec escapes it according to json rules (see
+-- https://www.rfc-editor.org/rfc/rfc8259.html#section-7) as \uHHHH or
+-- an ascii escape sequence. UTF-16 is not supported.
 genEscapeSequence :: Gen Text
 genEscapeSequence =
-    T.cons '\\'
-        <$> Gen.choice
-            [ T.singleton <$> Gen.element "tnfr\"\\"
-            , T.cons 'x' <$> Gen.text (Range.singleton 2) Gen.hexit
-            , T.cons 'u' <$> Gen.text (Range.singleton 4) Gen.hexit
-            , T.cons 'U' <$> Gen.text (Range.singleton 8) Gen.hexit
-            ]
+    Gen.choice
+        [ T.singleton <$> Gen.element "\t\n\f\r\"\\"
+        , T.singleton <$> Gen.filter in2Bytes Gen.unicode
+        ]
+  where
+    in2Bytes c = ord c > 0x7e && ord c < 0x7FFF
 
 genStringLiteral :: Gen Text
 genStringLiteral =
