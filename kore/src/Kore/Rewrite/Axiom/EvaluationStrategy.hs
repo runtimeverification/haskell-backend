@@ -28,7 +28,6 @@ import Data.EitherR (
  )
 import Data.Semigroup (
     Min (..),
-    Option (..),
  )
 import Data.Text qualified as Text
 import Kore.Attribute.Symbol qualified as Attribute
@@ -91,7 +90,7 @@ definitionEvaluation equations =
                         , remainders = OrPattern.bottom
                         }
             Left minError ->
-                case getMin <$> getOption minError of
+                case getMin <$> minError of
                     Just (Equation.WhileCheckRequires _) ->
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
@@ -105,7 +104,7 @@ attemptEquationAndAccumulateErrors ::
     ExceptRT
         (OrPattern RewritingVariableName)
         simplifier
-        (Option (Min (AttemptEquationError RewritingVariableName)))
+        (Maybe (Min (AttemptEquationError RewritingVariableName)))
 attemptEquationAndAccumulateErrors condition term equation =
     attemptEquation
   where
@@ -115,7 +114,7 @@ attemptEquationAndAccumulateErrors condition term equation =
                 condition
                 (TermLike.mapVariables (pure Target.unTarget) term)
                 equation
-                >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
+                >>= either (return . Left . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
 
 attemptEquations ::
