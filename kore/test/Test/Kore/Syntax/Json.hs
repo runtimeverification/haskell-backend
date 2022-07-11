@@ -84,7 +84,7 @@ genSort =
     Gen.recursive
         Gen.choice
         [SortVariable <$> genId]
-        [Sort <$> genId <*> upTo 10 genSort]
+        [SortApp <$> genId <*> upTo 10 genSort]
 
 genId :: Gen Id
 genId =

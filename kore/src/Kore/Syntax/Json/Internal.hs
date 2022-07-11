@@ -296,7 +296,7 @@ checkSymbolName name
 
 ------------------------------------------------------------
 data Sort
-    = Sort
+    = SortApp
         { name :: Id
         , args :: [Sort]
         }
@@ -451,7 +451,7 @@ koreVar (Id name) =
             (baseName <> zeros, Just $ Element (read $ T.unpack actualNum))
 
 mkSort :: Sort -> Kore.Sort
-mkSort Sort{name, args} =
+mkSort SortApp{name, args} =
     (Kore.SortActualSort . Kore.SortActual (koreId name)) $ map mkSort args
 mkSort (SortVariable name) =
     Kore.SortVariableSort $ Kore.SortVariable (koreId name)
@@ -592,7 +592,7 @@ fromPatternF (_ :< patt) = case patt of
     fromSort :: Kore.Sort -> Sort
     fromSort = \case
         Kore.SortActualSort Kore.SortActual{sortActualName, sortActualSorts} ->
-            Sort
+            SortApp
                 { name = fromKoreId sortActualName
                 , args = map fromSort sortActualSorts
                 }
