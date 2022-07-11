@@ -894,7 +894,7 @@ test-suite kore-test
     Test.Tasty.HUnit.Ext
     Test.Terse
   hs-source-dirs: test
-  build-tool-depends: tasty-discover:tasty-discover >=4.2
+  build-tool-depends: tasty-discover:tasty-discover >=4.2 && <5.0
   build-depends: kore
   build-depends: QuickCheck >=2.13
   build-depends: hedgehog >=1.0
