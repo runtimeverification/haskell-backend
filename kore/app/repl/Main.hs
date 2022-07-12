@@ -11,6 +11,7 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
+import Control.Monad.Extra (whenJust)
 import GlobalMain
 import Kore.BugReport
 import Kore.Exec (
@@ -189,8 +190,7 @@ main = do
             (Just envName)
             (parseKoreReplOptions startTime)
             parserInfoModifiers
-    maybe (pure ()) mainWithOptions $
-        localOptions options
+    whenJust (localOptions options) mainWithOptions
 
 mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
 mainWithOptions LocalOptions{execOptions, simplifierx} = do
