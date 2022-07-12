@@ -650,6 +650,7 @@ executable kore-repl
   build-depends: kore
   build-depends: clock >=0.8
   build-depends: exceptions >=0.10
+  build-depends: extra >= 1.7
   build-depends: optparse-applicative >=0.14
 
 executable kore-match-disjunction
