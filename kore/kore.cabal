@@ -650,6 +650,7 @@ executable kore-repl
   build-depends: kore
   build-depends: clock >=0.8
   build-depends: exceptions >=0.10
+  build-depends: extra >= 1.7
   build-depends: optparse-applicative >=0.14
 
 executable kore-match-disjunction
@@ -890,7 +891,7 @@ test-suite kore-test
     Test.Tasty.HUnit.Ext
     Test.Terse
   hs-source-dirs: test
-  build-tool-depends: tasty-discover:tasty-discover >=4.2
+  build-tool-depends: tasty-discover:tasty-discover >=4.2 && <5.0
   build-depends: kore
   build-depends: QuickCheck >=2.13
   build-depends: hedgehog >=1.0
