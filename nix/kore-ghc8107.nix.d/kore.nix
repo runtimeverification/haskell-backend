@@ -582,6 +582,7 @@
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
             (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
             (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
             ];
           buildable = true;
