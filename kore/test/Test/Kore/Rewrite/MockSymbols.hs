@@ -887,6 +887,8 @@ xRuleSet :: MockRewritingElementVariable
 xRuleSet = mkRuleElementVariable (testId "xSet") mempty setSort
 xConfigSet :: MockRewritingElementVariable
 xConfigSet = mkConfigElementVariable (testId "xSet") mempty setSort
+yConfigSet :: MockRewritingElementVariable
+yConfigSet = mkConfigElementVariable (testId "ySet") mempty setSort
 xEquationSet :: MockRewritingElementVariable
 xEquationSet = mkEquationElementVariable (testId "xSet") mempty setSort
 ySet :: MockElementVariable
@@ -984,6 +986,12 @@ eConfigSubSubsort =
 e2ConfigSubSubsort :: MockRewritingSetVariable
 e2ConfigSubSubsort =
     mkConfigSetVariable (testId "e2ConfigSubSubsort") mempty subSubsort
+setXConfigSetSort :: MockRewritingSetVariable
+setXConfigSetSort =
+    mkConfigSetVariable (testId "XSetSort") mempty setSort
+setYConfigSetSort :: MockRewritingSetVariable
+setYConfigSetSort =
+    mkConfigSetVariable (testId "YSetSort") mempty setSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =
