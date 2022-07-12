@@ -36,6 +36,7 @@
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
           (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+          (hsPkgs."aeson-pretty" or (errorHandler.buildDepError "aeson-pretty"))
           (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."async" or (errorHandler.buildDepError "async"))
           (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
@@ -429,6 +430,8 @@
           "Kore/Syntax/Implies"
           "Kore/Syntax/In"
           "Kore/Syntax/Inhabitant"
+          "Kore/Syntax/Json"
+          "Kore/Syntax/Json/Internal"
           "Kore/Syntax/Module"
           "Kore/Syntax/Mu"
           "Kore/Syntax/Next"
@@ -646,6 +649,7 @@
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
             (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
+            (hsPkgs."aeson-pretty" or (errorHandler.buildDepError "aeson-pretty"))
             (hsPkgs."array" or (errorHandler.buildDepError "array"))
             (hsPkgs."async" or (errorHandler.buildDepError "async"))
             (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
@@ -903,6 +907,7 @@
             "Test/Kore/Simplify/TermLike"
             "Test/Kore/Simplify/Top"
             "Test/Kore/Syntax/Id"
+            "Test/Kore/Syntax/Json"
             "Test/Kore/Syntax/Variable"
             "Test/Kore/TopBottom"
             "Test/Kore/Unification/SubstitutionNormalization"

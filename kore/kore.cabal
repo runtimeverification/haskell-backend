@@ -129,6 +129,7 @@ common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
+  build-depends: aeson-pretty == 0.8.9
   build-depends: array
   build-depends: async >=2.2
   build-depends: binary >=0.8.8.0
@@ -523,6 +524,8 @@ library
     Kore.Syntax.Implies
     Kore.Syntax.In
     Kore.Syntax.Inhabitant
+    Kore.Syntax.Json
+    Kore.Syntax.Json.Internal
     Kore.Syntax.Module
     Kore.Syntax.Mu
     Kore.Syntax.Next
@@ -866,6 +869,7 @@ test-suite kore-test
     Test.Kore.Simplify.TermLike
     Test.Kore.Simplify.Top
     Test.Kore.Syntax.Id
+    Test.Kore.Syntax.Json
     Test.Kore.Syntax.Variable
     Test.Kore.TopBottom
     Test.Kore.Unification.SubstitutionNormalization
