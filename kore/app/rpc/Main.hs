@@ -130,7 +130,7 @@ mainWithOptions :: GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
 mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
     ensureSmtPreludeExists koreSolverOptions
     exitWith
-        =<< ( withBugReport Main.exeName bugReportOption $ \tmpDir ->
+        =<< withBugReport Main.exeName bugReportOption ( \tmpDir ->
                 koreRpcServerRun localOptions
                     & handle handleSomeException
                     & runKoreLog
@@ -163,91 +163,3 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
                 Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
 
     pure ExitSuccess
-
--- exec ::
---     forall smt.
---     ( MonadIO smt
---     , MonadLog smt
---     , MonadSMT smt
---     , MonadMask smt
---     , MonadProf smt
---     ) =>
---     SimplifierXSwitch ->
---     Limit Natural ->
---     Limit Natural ->
---     -- | The main module
---     SerializedModule ->
---     ExecutionMode ->
---     -- | The input pattern
---     TermLike VariableName ->
---     smt (ExitCode, TermLike VariableName)
--- exec
---     simplifierx
---     depthLimit
---     breadthLimit
---     SerializedModule
---         { sortGraph
---         , overloadGraph
---         , metadataTools
---         , verifiedModule
---         , rewrites
---         , equations
---         }
---     strategy
---     (mkRewritingTerm -> initialTerm) =
---         evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
---             let Initialized{rewriteRules} = rewrites
---             finals <-
---                 getFinalConfigsOf $ do
---                     initialConfig <-
---                         Pattern.simplify
---                             (Pattern.fromTermLike initialTerm)
---                             >>= Logic.scatter
---                     let updateQueue = \as ->
---                             Strategy.unfoldDepthFirst as
---                                 >=> lift
---                                     . Strategy.applyBreadthLimit
---                                         breadthLimit
---                                         dropStrategy
---                         rewriteGroups = groupRewritesByPriority rewriteRules
---                         transit instr config =
---                             Strategy.transitionRule
---                                 ( transitionRule rewriteGroups strategy
---                                     & profTransitionRule
---                                     & trackExecDepth
---                                 )
---                                 instr
---                                 config
---                                 & runTransitionT
---                                 & fmap (map fst)
---                                 & lift
---                     Strategy.leavesM
---                         Leaf
---                         updateQueue
---                         (unfoldTransition transit)
---                         ( limitedExecutionStrategy depthLimit
---                         , (ExecDepth 0, Start initialConfig)
---                         )
---             let (depths, finalConfigs) = unzip finals
---             infoExecDepth (maximum (ExecDepth 0 : depths))
---             let finalConfigs' =
---                     MultiOr.make $
---                         mapMaybe extractProgramState finalConfigs
---             exitCode <- getExitCode verifiedModule finalConfigs'
---             let finalTerm =
---                     MultiOr.map getRewritingPattern finalConfigs'
---                         & OrPattern.toTermLike initialSort
---                         & sameTermLikeSort initialSort
---             return (exitCode, finalTerm)
---       where
---         dropStrategy = snd
---         getFinalConfigsOf act = observeAllT $ fmap snd act
---         verifiedModule' =
---             IndexedModule.mapAliasPatterns
---                 -- TODO (thomas.tuegel): Move this into Kore.Builtin
---                 (Builtin.internalize metadataTools)
---                 verifiedModule
---         initialSort = termLikeSort initialTerm
---         unfoldTransition transit (instrs, config) = do
---             when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
---             Strategy.unfoldTransition transit (instrs, config)
