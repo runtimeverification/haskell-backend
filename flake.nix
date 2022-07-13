@@ -7,9 +7,21 @@
       url = "github:Z3Prover/z3/z3-4.8.15";
       flake = false;
     };
+    mach-nix.url = "github:DavHau/mach-nix";
   };
-  outputs = { self, nixpkgs, haskell-nix, z3-src }:
+  outputs = { self, nixpkgs, haskell-nix, z3-src, mach-nix }:
     let
+      z3-overlay = (final: prev: {
+        z3 = prev.z3.overrideAttrs (old: {
+          src = z3-src;
+          version =
+            # hacky way of keeping the version number of this derivation consistent with
+            # the z3-src input.
+            let lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+            in builtins.replaceStrings [ "z3-" ] [ "" ]
+            lock.nodes.z3-src.original.ref;
+        });
+      });
       perSystem = nixpkgs.lib.genAttrs [
         "x86_64-linux"
         "aarch64-linux"
@@ -25,6 +37,7 @@
       nixpkgsFor' = system:
         import nixpkgs {
           inherit system;
+          overlays = [ z3-overlay ];
           inherit (haskell-nix) config;
         };
 
@@ -47,10 +60,19 @@
           '';
         };
 
-      projectOverlay = { pkgs, src, shell ? { }, compiler-nix-name ? "ghc8107"
-        , profiling ? false, profilingDetail ? "toplevel-functions"
-        , ghcOptions ? [ ] }:
+      projectOverlay = { pkgs, pkgs', src, shell ? { }
+        , compiler-nix-name ? "ghc8107", profiling ? false
+        , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
         let
+          add-z3 = exe: {
+            build-tools = with pkgs'; lib.mkForce [ makeWrapper ];
+            postInstall = ''
+              wrapProgram $out/bin/${exe} --set PATH ${
+                with pkgs';
+                lib.makeBinPath [ z3 ]
+              }
+            '';
+          };
           self = pkgs.haskell-nix.stackProject' ({
             inherit shell src compiler-nix-name;
             modules = [{
@@ -59,6 +81,13 @@
                 enableLibraryProfiling = profiling;
                 enableProfiling = profiling;
                 inherit profilingDetail ghcOptions;
+
+                # Wrap all the kore-* executables which use Z3 with
+                # the path to our pinned Z3 version
+                components.exes.kore-exec = add-z3 "kore-exec";
+                components.exes.kore-rpc = add-z3 "kore-rpc";
+                components.exes.kore-repl = add-z3 "kore-repl";
+                components.exes.kore-check-functions = add-z3 "kore-check-functions";
               };
             }];
             materialized = ./nix + "/kore-${compiler-nix-name}.nix.d";
@@ -91,7 +120,7 @@
             pkgs = nixpkgsFor system;
             pkgs' = nixpkgsFor' system;
           in projectOverlay {
-            inherit pkgs profiling ghcOptions;
+            inherit pkgs pkgs' profiling ghcOptions;
             src = haskell-backend-src {
               inherit ghc;
               pkgs = pkgs';
@@ -137,8 +166,7 @@
         ghc = "ghc923";
         stack-yaml = "stack-nix-ghc9.yaml";
         profiling = true;
-        ghcOptions =
-          [ "-eventlog" ];
+        ghcOptions = [ "-eventlog" ];
       };
 
       projectGhc9ProfilingEventlogInfoTable = projectForGhc {
@@ -149,17 +177,35 @@
           [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
       };
 
-
       flake = perSystem (system: self.project.${system}.flake { });
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
 
       packages = perSystem (system:
         self.flake.${system}.packages // {
+          "kore:exe:kore-exec" =
+            self.project.${system}.hsPkgs.kore.components.exes.kore-rpc;
+
           update-cabal = self.project.${system}.rematerialize-kore;
           update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
 
-          kore-exec-prof = self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-          kore-exec-prof-infotable = self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec-prof =
+            self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec-prof-infotable =
+            self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+
+          test-rpc = let pkgs = nixpkgsFor system;
+          in pkgs.callPackage ./test/rpc-server {
+            name = "haskell-backend-${self.rev or "dirty"}-json-rpc-tests";
+            inherit (pkgs) stdenv;
+            inherit (pkgs.lib) cleanSource;
+            kore-rpc =
+              self.project.${system}.hsPkgs.kore.components.exes.kore-rpc;
+            python = mach-nix.lib.${system}.mkPython {
+              requirements = ''
+                jsonrpcclient
+              '';
+            };
+          };
         });
 
       apps = perSystem (system: self.flake.${system}.apps);
@@ -176,21 +222,15 @@
         (final: prev: {
           haskell-backend-stackProject = projectOverlay {
             pkgs = prev;
-            src = haskell-backend-src { pkgs = prev; ghc = "ghc8107"; };
+            pkgs' = final;
+            src = haskell-backend-src {
+              pkgs = prev;
+              ghc = "ghc8107";
+            };
           };
         })
 
-        (final: prev: {
-          z3 = prev.z3.overrideAttrs (old: {
-            src = z3-src;
-            version =
-              # hacky way of keeping the version number of this derivation consistent with
-              # the z3-src input.
-              let lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-              in builtins.replaceStrings [ "z3-" ] [ "" ]
-              lock.nodes.z3-src.original.ref;
-          });
-        })
+        z3-overlay
       ];
     };
 }
