@@ -271,14 +271,16 @@ respond runSMT simplifierx serializedModule@Exec.SerializedModule{verifiedModule
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> SimplifierXSwitch -> Exec.SerializedModule -> IO ()
 runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simplifierx serializedModule = do
-    flip runLoggingT logFun $ do
-        let ss = serverSettings port "*"
-        jsonrpcTCPServer V2 False ss $ srv runSMT simplifierx serializedModule
+    flip runLoggingT logFun $
+        jsonrpcTCPServer V2 False srvSettings $
+            srv runSMT simplifierx serializedModule
     where
+        srvSettings = serverSettings port "*"
+
         someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
 
-    logFun loc src level msg =
-        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
+        logFun loc src level msg =
+            Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
 
         runSMT :: forall a. SMT.SMT a -> IO a
         runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
@@ -286,7 +288,6 @@ runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simp
 srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> JSONRPCT m ()
 srv runSMT simplifierx serializedModule = do
     reqQueue <- liftIO $ atomically newTChan
-
     let mainLoop tid =
             receiveBatchRequest >>= \case
                 Nothing -> do
@@ -297,7 +298,6 @@ srv runSMT simplifierx serializedModule = do
                 Just req -> do
                     liftIO $ atomically $ writeTChan reqQueue req
                     mainLoop tid
-
     spawnWorker reqQueue >>= mainLoop
   where
     isRequest = \case

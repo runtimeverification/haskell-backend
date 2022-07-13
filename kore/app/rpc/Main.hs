@@ -46,6 +46,8 @@ import Options.Applicative (
     help,
     metavar,
     str,
+    long,
+    option,
  )
 import Options.SMT (
     KoreSolverOptions (..),
@@ -87,9 +89,10 @@ parseKoreRpcServerOptions startTime =
         <*> parseKoreSolverOptions
         <*> parseKoreLogOptions Main.exeName startTime
         <*> parseBugReportOption
-        <*> argument
+        <*> option
             auto
             ( metavar "SERVER_PORT"
+                <> long "server-port"
                 <> help "Port for the RPC server to bind to"
             )
   where
