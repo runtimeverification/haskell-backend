@@ -336,10 +336,10 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate Mock.cf Mock.cg
+                            Predicate.makeEqualsPredicate Mock.cg Mock.cf
                         , substitution =
                             Substitution.unsafeWrap
-                                [(inject Mock.xConfig, Mock.constr10 Mock.cf)]
+                                [(inject Mock.xConfig, Mock.constr10 Mock.cg)]
                         }
                     ]
             actual <-
