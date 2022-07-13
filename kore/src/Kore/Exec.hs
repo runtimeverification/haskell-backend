@@ -297,13 +297,14 @@ exec
     serializedModule
     strategy
     trm = do
-        (exitCode, finalTrm, _) <- execDetailed
-            simplifierx
-            depthLimit
-            breadthLimit
-            serializedModule
-            strategy
-            trm
+        (exitCode, finalTrm, _) <-
+            execDetailed
+                simplifierx
+                depthLimit
+                breadthLimit
+                serializedModule
+                strategy
+                trm
         pure (exitCode, finalTrm)
 
 execDetailed ::

@@ -16,8 +16,8 @@ import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..), object, (.=))
 import Data.Conduit.Network (serverSettings)
+import Data.Limit (Limit (..))
 import Data.Text (Text)
-import Data.Limit (Limit(..))
 import Deriving.Aeson (
     CamelToKebab,
     CustomJSON (..),
@@ -26,7 +26,14 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.Builtin qualified as Builtin
+import Kore.Exec qualified as Exec
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Kore.Parser (parseKorePattern)
+import Kore.Rewrite (ExecutionMode (All), Natural)
+import Kore.Simplify.Simplify (SimplifierXSwitch)
+import Kore.Unparser (unparseToText)
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
@@ -46,15 +53,6 @@ import Network.JSONRPC (
  )
 import Prelude.Kore
 import SMT qualified
-import Log qualified
-import Kore.Log.JsonRpc(LogJsonRpcServer(..))
-import Kore.Parser (parseKorePattern)
-import Kore.Builtin qualified as Builtin
-import Kore.Validate.PatternVerifier qualified as PatternVerifier
-import Kore.Exec qualified as Exec
-import Kore.Simplify.Simplify (SimplifierXSwitch)
-import Kore.Rewrite(ExecutionMode(All), Natural)
-import Kore.Unparser(unparseToText)
 
 newtype Depth = Depth Natural
     deriving stock (Show, Eq)
@@ -149,7 +147,7 @@ instance ToJSON ReasonForHalting where
                 , "depth" .= depth
                 , "matches" .= matches
                 ]
-        HaltFinalState -> object [ "reason" .= ("final-state" :: Text) ]
+        HaltFinalState -> object ["reason" .= ("final-state" :: Text)]
 
 data StepState = StepState
     { state :: !Text
@@ -231,59 +229,58 @@ instance ToJSON (API 'Res) where
 respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> Respond (API 'Req) m (API 'Res)
 respond runSMT simplifierx serializedModule@Exec.SerializedModule{verifiedModule} = \case
     Execute ExecuteRequest{state, maxDepth} ->
-
         case parseKorePattern "[json-rpc]" state of
             Left _err -> pure $ Left couldNotParse
             Right patt ->
                 case PatternVerifier.runPatternVerifier context $ PatternVerifier.verifyStandalonePattern Nothing patt of
                     Left _err -> pure $ Left couldNotVerify
                     Right verifiedPattern -> do
-                        (_, finalPatt) <- liftIO (runSMT $ Exec.exec
-                            simplifierx
-                            (case maxDepth of
-                                Nothing -> Unlimited
-                                Just (Depth n) -> Limit n)
-                            Unlimited
-                            serializedModule
-                            All
-                            verifiedPattern)
+                        (_, finalPatt) <-
+                            liftIO
+                                ( runSMT $
+                                    Exec.exec
+                                        simplifierx
+                                        ( case maxDepth of
+                                            Nothing -> Unlimited
+                                            Just (Depth n) -> Limit n
+                                        )
+                                        Unlimited
+                                        serializedModule
+                                        All
+                                        verifiedPattern
+                                )
 
                         pure $ Right $ Execute $ ExecuteResult{state = unparseToText finalPatt, reason = HaltFinalState}
+      where
+        context =
+            PatternVerifier.verifiedModuleContext verifiedModule
+                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
-
-        where
-            context =
-                PatternVerifier.verifiedModuleContext verifiedModule
-                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-
-
-
-        -- pure $ Right $ Execute undefined
+    -- pure $ Right $ Execute undefined
     Step StepRequest{} -> pure $ Right $ Step $ StepResult []
     Implies _ -> pure $ Right $ Implies undefined
     Simplify _ -> pure $ Right $ Simplify undefined
     -- this case is only reachable if the cancel appeared as part of a batch request
     Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
-
-    where
-        couldNotParse = ErrorObj "Could not parse KORE pattern" (-32002) Null
-        couldNotVerify = ErrorObj "Could not verify KORE pattern" (-32003) Null
+  where
+    couldNotParse = ErrorObj "Could not parse KORE pattern" (-32002) Null
+    couldNotVerify = ErrorObj "Could not verify KORE pattern" (-32003) Null
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> SimplifierXSwitch -> Exec.SerializedModule -> IO ()
 runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simplifierx serializedModule = do
     flip runLoggingT logFun $
         jsonrpcTCPServer V2 False srvSettings $
             srv runSMT simplifierx serializedModule
-    where
-        srvSettings = serverSettings port "*"
+  where
+    srvSettings = serverSettings port "*"
 
-        someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
+    someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
 
-        logFun loc src level msg =
-            Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
+    logFun loc src level msg =
+        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
 
-        runSMT :: forall a. SMT.SMT a -> IO a
-        runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
+    runSMT :: forall a. SMT.SMT a -> IO a
+    runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
 
 srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> JSONRPCT m ()
 srv runSMT simplifierx serializedModule = do

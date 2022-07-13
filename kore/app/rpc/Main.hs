@@ -9,8 +9,6 @@ import Control.Monad.Catch (
 import Control.Monad.Reader (
     ReaderT (..),
  )
-
-
 import GlobalMain qualified
 import Kore.BugReport (
     BugReportOption,
@@ -30,7 +28,6 @@ import Kore.Log (
 import Kore.Log.ErrorException (
     handleSomeException,
  )
-
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -44,10 +41,10 @@ import Options.Applicative (
     fullDesc,
     header,
     help,
-    metavar,
-    str,
     long,
+    metavar,
     option,
+    str,
  )
 import Options.SMT (
     KoreSolverOptions (..),
