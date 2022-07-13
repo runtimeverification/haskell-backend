@@ -119,11 +119,11 @@
     "definitions": {
         "KoreJSONId": {
             "type": "string",
-            "pattern": "^[a-zA-Z][a-zA-Z0-9_']*$"
+            "pattern": "^[a-zA-Z][a-zA-Z0-9-']*$"
         },
         "KoreJSONSetId": {
             "type": "string",
-            "pattern": "^@[a-zA-Z][a-zA-Z0-9_']*$"
+            "pattern": "^@[a-zA-Z][a-zA-Z0-9-']*$"
         },
 
         "KoreJSONEVar": {
@@ -163,7 +163,7 @@
             "properties": {
                 "name": {
                     "type": "string",
-                    "pattern": "^\\\\?[a-zA-Z][a-zA-Z0-9_']*$"
+                    "pattern": "^\\\\?[a-zA-Z][a-zA-Z0-9-']*$"
                 },
                 "sorts": {
                     "type": "array",
@@ -419,7 +419,9 @@
                     "enum": [ "Left", "Right" ]
                 },
                 "symbol": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^\\\\?[a-zA-Z][a-zA-Z0-9-']*$"
+
                 },
                 "sorts": {
                     "type": "array",
@@ -469,7 +471,7 @@
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "$ref": "#/definitions/KoreJSONId"
                 },
                 "args": {
                     "type": "array",
@@ -479,15 +481,17 @@
                 }
             },
             "required": [
-                "args",
-                "name"
+                "name",
+                "args"
             ]
         },
 
         "SortVar": {
             "type": "object",
             "properties": {
-                "name": { "$ref": "#/definitions/KoreJSONId" }
+                "name": {
+                    "$ref": "#/definitions/KoreJSONId"
+                }
             },
             "required": [ "name" ]
         }

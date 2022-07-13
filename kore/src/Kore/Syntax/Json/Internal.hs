@@ -258,7 +258,7 @@ lexicalCheck p =
         errors = check text
 
 {- | Basic identifiers start with letters and may contain letters,
- digits, _ or '. Set variables start with '@' followed by a basic
+ digits, - or '. Set variables start with '@' followed by a basic
  identifier. Symbol variables _may_ start by \, followed by a basic
  identifier.
 -}
@@ -275,7 +275,7 @@ checkIdChars name
     ~illegalChars = T.filter (not . isIdChar) $ T.tail name
 
 isIdChar :: Char -> Bool
-isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
+isIdChar c = isAlpha c || isDigit c || c `elem` ['-', '\'']
 
 -- | Set variable names _have to_ start with `@`, followed by a valid identifier
 checkSVarName :: Text -> [String]

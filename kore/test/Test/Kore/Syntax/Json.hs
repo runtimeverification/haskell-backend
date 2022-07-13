@@ -99,7 +99,7 @@ genIdChar =
     Gen.frequency
         [ (10, Gen.alpha)
         , (3, Gen.digit)
-        , (1, Gen.element "_'")
+        , (1, Gen.element "-'")
         ]
 
 genPrintableAscii :: Gen Text
@@ -294,7 +294,7 @@ testEVarCharSet =
             assert ("Contains illegal characters: " `isPrefixOf` head nonAlphaNumChars)
 
 isAllowedChar :: Char -> Bool
-isAllowedChar c = isAlphaNum c || c `elem` ['_', '\'']
+isAllowedChar c = isAlphaNum c || c `elem` ['-', '\'']
 
 sVarChecks :: TestTree
 sVarChecks =
