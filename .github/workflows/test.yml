@@ -209,6 +209,8 @@ jobs:
   hlint:
     name: 'HLint'
     runs-on: ubuntu-latest
+    env:
+      hlint_version: "3.4.1"
     steps:
       - uses: actions/checkout@v2.3.4
         with:
@@ -217,7 +219,7 @@ jobs:
           submodules: recursive
 
       - name: Run hlint
-        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j
+        run: curl -sSL https://raw.github.com/ndmitchell/hlint/v${{ env.hlint_version }}/misc/run.sh | sh -s kore -j
 
   performance:
     needs: [nix-build]
@@ -264,4 +266,9 @@ jobs:
           ./scripts/join-statistics.sh master.json pull-request.json \
             | ./scripts/format-statistics.sh \
             > comment.md
-          gh pr comment ${{ github.event.pull_request.number }} -F comment.md
+          if [[ $(sed -E -e '1,2d ; /.*\| (0|-?0.00[0-9]*) \| (0|-?0.00[0-9]*) \|$/d' comment.md | wc -l) -ne 0 ]]; then\
+            gh pr comment ${{ github.event.pull_request.number }} -F comment.md; \
+          else \
+            echo "Produced statistics are boring, just printing them right here:"; \
+            cat comment.md; \
+          fi

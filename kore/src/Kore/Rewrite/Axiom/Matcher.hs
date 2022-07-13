@@ -789,7 +789,14 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                                         , elementsWithVariables = excessAbstract2
                                         }
                          in push (Pair frame1 normalized2')
-                _ -> empty
+                frames1
+                    -- Opaque parts are equivalent, rest is syntactically equal
+                    | null excessAbstract2
+                      , null excessConcrete2
+                      , frames2 <- opaque2
+                      , length frames1 == length frames2 ->
+                        traverse_ (push . uncurry Pair) (zip opaque1ACs opaque2ACs)
+                    | otherwise -> empty
             lift $ traverse_ pushValue concrete12
             lift $ traverse_ pushValue abstractMerge
     -- Case for AC iteration:
