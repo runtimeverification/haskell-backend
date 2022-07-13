@@ -33,7 +33,7 @@ genKorePattern =
         , KJString <$> genStringLiteral
         , KJTop <$> genSort
         , KJBottom <$> genSort
-        , KJDv <$> genSort <*> genStringLiteral
+        , KJDV <$> genSort <*> genStringLiteral
         ]
         [ do
             sorts <- between 1 10 genSort
@@ -83,7 +83,7 @@ genSort :: Gen Sort
 genSort =
     Gen.recursive
         Gen.choice
-        [SortVariable <$> genId]
+        [SortVar <$> genId]
         [SortApp <$> genId <*> upTo 10 genSort]
 
 genId :: Gen Id

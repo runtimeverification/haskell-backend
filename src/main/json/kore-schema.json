@@ -10,7 +10,7 @@
                       "Mu", "Nu",
                       "Ceil", "Floor", "Equals", "In",
                       "Next", "Rewrites",
-                      "dv",
+                      "DV",
                       "MultiOr", "MultiApp"
                     ]
         }
@@ -103,8 +103,8 @@
             "then": { "$ref": "#/definitions/KoreJSONRewrites" }
         },
         {
-            "if": {"properties": {"tag": { "const": "dv" } } },
-            "then": { "$ref": "#/definitions/KoreJSONdv" }
+            "if": {"properties": {"tag": { "const": "DV" } } },
+            "then": { "$ref": "#/definitions/KoreJSONDV" }
         },
         {
             "if": {"properties": {"tag": { "const": "MultiOr" } } },
@@ -295,7 +295,7 @@
                 "argSort": {
                     "$ref": "#/definitions/Sort"
                 },
-                "resultSort": {
+                "sort": {
                     "$ref": "#/definitions/Sort"
                 },
                 "arg": {
@@ -304,7 +304,7 @@
             },
             "required": [
                 "argSort",
-                "resultSort",
+                "sort",
                 "arg"
             ]
         },
@@ -316,7 +316,7 @@
                 "argSort": {
                     "$ref": "#/definitions/Sort"
                 },
-                "resultSort": {
+                "sort": {
                     "$ref": "#/definitions/Sort"
                 },
                 "first": {
@@ -328,7 +328,7 @@
             },
             "required": [
                 "argSort",
-                "resultSort",
+                "sort",
                 "first",
                 "second"
             ]
@@ -370,7 +370,7 @@
             ]
         },
 
-        "KoreJSONdv": {
+        "KoreJSONDV": {
             "type": "object",
             "properties": {
                 "sort": {
@@ -450,7 +450,7 @@
             "properties": {
                 "tag": {
                     "type": "string",
-                    "enum": [ "SortApp", "SortVariable" ]
+                    "enum": [ "SortApp", "SortVar" ]
                 }
             },
             "required": [ "tag" ],
@@ -461,7 +461,7 @@
                     "then": { "$ref": "#/definitions/SortApp" }
                 },
                 {
-                    "if": { "properties": { "tag": { "const": "SortVariable" } } },
+                    "if": { "properties": { "tag": { "const": "SortVar" } } },
                     "then": { "$ref": "#/definitions/SortVar" }
                 }
             ]
