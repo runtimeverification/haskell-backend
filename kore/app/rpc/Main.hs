@@ -130,7 +130,10 @@ mainWithOptions :: GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
 mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
     ensureSmtPreludeExists koreSolverOptions
     exitWith
-        =<< withBugReport Main.exeName bugReportOption ( \tmpDir ->
+        =<< withBugReport
+            Main.exeName
+            bugReportOption
+            ( \tmpDir ->
                 koreRpcServerRun localOptions
                     & handle handleSomeException
                     & runKoreLog
