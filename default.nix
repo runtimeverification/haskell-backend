@@ -48,8 +48,11 @@ in let
         enableExecutableProfiling = profiling;
         profilingDetail = "toplevel-functions";
 
-        # Add Z3 to PATH for unit tests.
         components.tests.kore-test.preCheck = ''
+        # provide parser test data for json golden tests
+          mkdir -p ../test/parser
+          cp -r ${./test/parser}/* ../test/parser
+        # Add Z3 to PATH for unit tests.
           export PATH="$PATH''${PATH:+:}${lib.getBin pkgs.z3}/bin"
         '';
       };
