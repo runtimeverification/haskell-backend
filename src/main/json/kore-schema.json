@@ -2,121 +2,148 @@
     "type": "object",
 
     "properties": {
-        "tag": {
+        "format": {
             "type": "string",
-            "enum": [ "EVar", "SVar", "App", "String",
-                      "Top", "Bottom", "Not", "And", "Or", "Implies", "Iff",
-                      "Forall", "Exists",
-                      "Mu", "Nu",
-                      "Ceil", "Floor", "Equals", "In",
-                      "Next", "Rewrites",
-                      "DV",
-                      "MultiOr", "MultiApp"
-                    ]
+            "enum": [ "KORE" ]
+        },
+        "version": {
+            "type": "string",
+            "enum": [ "1" ]
         }
     },
-    "required": ["tag"],
+    "required": [
+        "format",
+        "version"
+    ],
 
-    "allOf": [
+    "oneOf": [
         {
-            "if": {"properties": {"tag": { "const": "EVar" } } },
-            "then": { "$ref": "#/definitions/KoreJSONEVar" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "SVar" } } },
-            "then": { "$ref": "#/definitions/KoreJSONSVar" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "App" } } },
-            "then": { "$ref": "#/definitions/KoreJSONApp" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "String" } } },
-            "then": { "$ref": "#/definitions/KoreJSONString" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Top" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective0" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Bottom" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective0" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Not" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective1" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "And" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Or" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Implies" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Iff" } } },
-            "then": { "$ref": "#/definitions/KoreJSONConnective2" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Forall" } } },
-            "then": { "$ref": "#/definitions/KoreJSONQuantifier" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Exists" } } },
-            "then": { "$ref": "#/definitions/KoreJSONQuantifier" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Mu" } } },
-            "then": { "$ref": "#/definitions/KoreJSONFixpoint" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Nu" } } },
-            "then": { "$ref": "#/definitions/KoreJSONFixpoint" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Ceil" } } },
-            "then": { "$ref": "#/definitions/KoreJSONPredicate1" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Floor" } } },
-            "then": { "$ref": "#/definitions/KoreJSONPredicate1" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Equals" } } },
-            "then": { "$ref": "#/definitions/KoreJSONPredicate2" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "In" } } },
-            "then": { "$ref": "#/definitions/KoreJSONPredicate2" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Next" } } },
-            "then": { "$ref": "#/definitions/KoreJSONNext" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "Rewrites" } } },
-            "then": { "$ref": "#/definitions/KoreJSONRewrites" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "DV" } } },
-            "then": { "$ref": "#/definitions/KoreJSONDV" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "MultiOr" } } },
-            "then": { "$ref": "#/definitions/KoreJSONMultiOr" }
-        },
-        {
-            "if": {"properties": {"tag": { "const": "MultiApp" } } },
-            "then": { "$ref": "#/definitions/KoreJSONMultiApp" }
+            "properties": {
+                "term": { "$ref": "#/definitions/KorePattern" }
+            },
+            "required": [ "term" ]
         }
     ],
 
     "definitions": {
+        "KorePattern": {
+            "type": "object",
+
+            "properties": {
+                "tag": {
+                    "type": "string",
+                    "enum": [ "EVar", "SVar", "App", "String",
+                              "Top", "Bottom", "Not", "And", "Or", "Implies", "Iff",
+                              "Forall", "Exists",
+                              "Mu", "Nu",
+                              "Ceil", "Floor", "Equals", "In",
+                              "Next", "Rewrites",
+                              "DV",
+                              "MultiOr", "MultiApp"
+                            ]
+                }
+            },
+            "required": ["tag"],
+
+            "allOf": [
+                {
+                    "if": {"properties": {"tag": { "const": "EVar" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONEVar" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "SVar" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONSVar" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "App" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONApp" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "String" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONString" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Top" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective0" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Bottom" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective0" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Not" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective1" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "And" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective2" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Or" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective2" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Implies" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective2" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Iff" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONConnective2" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Forall" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONQuantifier" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Exists" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONQuantifier" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Mu" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONFixpoint" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Nu" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONFixpoint" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Ceil" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONPredicate1" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Floor" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONPredicate1" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Equals" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONPredicate2" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "In" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONPredicate2" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Next" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONNext" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "Rewrites" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONRewrites" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "DV" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONDV" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "MultiOr" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONMultiOr" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "MultiApp" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONMultiApp" }
+                }
+            ]
+        },
         "KoreJSONId": {
             "type": "string",
             "pattern": "^[a-zA-Z][a-zA-Z0-9-']*$"
@@ -174,7 +201,7 @@
                 "args": {
                     "type": "array",
                     "items": {
-                        "$ref": "#"
+                        "$ref": "#/definitions/KorePattern"
                     }
                 }
             },
@@ -216,7 +243,7 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "arg": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -232,10 +259,10 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "first": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 },
                 "second": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -258,7 +285,7 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "arg": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -279,7 +306,7 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "arg": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -299,7 +326,7 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "arg": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -320,10 +347,10 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "first": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 },
                 "second": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -341,7 +368,7 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "dest": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -357,10 +384,10 @@
                     "$ref": "#/definitions/Sort"
                 },
                 "source": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 },
                 "dest": {
-                    "$ref": "#"
+                    "$ref": "#/definitions/KorePattern"
                 }
             },
             "required": [
@@ -399,7 +426,7 @@
                 "argss": {
                     "type": "array",
                     "items": {
-                        "$ref": "#"
+                        "$ref": "#/definitions/KorePattern"
                     },
                     "minItems": 1
                 }
@@ -432,7 +459,7 @@
                 "argss": {
                     "type": "array",
                     "items": {
-                        "$ref": "#"
+                        "$ref": "#/definitions/KorePattern"
                     },
                     "minItems": 1
                 }
