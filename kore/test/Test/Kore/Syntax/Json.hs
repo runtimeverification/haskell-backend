@@ -5,6 +5,7 @@ module Test.Kore.Syntax.Json (
     -- Hedgehog things
     roundTripTests,
     showExamples,
+    writeExamples,
 ) where
 
 import Control.Monad (forever)
@@ -21,8 +22,11 @@ import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Syntax.Json
 import Kore.Syntax.Json.Internal -- for testing and generating test data
 import Prelude.Kore hiding (Left, Right, assert)
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((<.>), (</>))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog
+import Text.Printf (printf)
 
 genKorePattern :: Gen KorePattern
 genKorePattern =
@@ -149,14 +153,34 @@ between n m g
         pure []
 
 ----------------------------------------
--- helper for the repl
+-- helpers for the repl
 
-showExamples :: IO a
+showExamples :: IO ()
 showExamples =
     forever $ do
         korePattern <- Gen.sample genKorePattern
         BS.putStr $ encodeKoreJson korePattern
         void getLine
+
+writeExamples :: Bool -> FilePath -> FilePath -> Int -> IO ()
+writeExamples withMultiThings dir basename n
+    | n <= 0 =
+        error $ unwords ["Requested", show n, "<=0 examples, nothing to do."]
+    | n >= 100 =
+        error $ "Cowardly refusing to create more than 99 files."
+    | otherwise =
+        do
+            createDirectoryIfMissing False dir
+            mapM_ generateFile [1 .. n]
+  where
+    generateFile :: Int -> IO ()
+    generateFile i =
+        Gen.sample generator >>= BS.writeFile (file i) . encodeKoreJson
+
+    generator =
+        if withMultiThings then genAllKorePatterns else genKorePattern
+
+    file i = dir </> basename ++ printf "_%02d" i <.> "json"
 
 ----------------------------------------
 -- Tests
