@@ -37,7 +37,7 @@ test_normalize =
     , -- TODO(Ana): this test should work with x and y swapped
       test
         "unnormalized substitution, variable-only"
-        [(x, mkVar y), (y, a)]
+        [(y, a), (x, mkVar y)]
         Normalization
             { normalized =
                 mkUnwrappedSubstitution [(y, a), (x, a)]
@@ -154,7 +154,7 @@ test_normalize =
             Normalization
                 { normalized = []
                 , denormalized =
-                    mkUnwrappedSubstitution [(x, f (mkVar y)), (y, g (mkVar x))]
+                    mkUnwrappedSubstitution [(y, g (mkVar x)), (x, f (mkVar y))]
                 }
         , test
             "length 2, beside related substitution"
@@ -163,7 +163,7 @@ test_normalize =
                 { normalized =
                     mkUnwrappedSubstitution [(z, mkVar y)]
                 , denormalized =
-                    mkUnwrappedSubstitution [(x, f (mkVar y)), (y, g (mkVar x))]
+                    mkUnwrappedSubstitution [(y, g (mkVar x)), (x, f (mkVar y))]
                 }
         , test
             "length 2, beside unrelated substitution"
@@ -172,7 +172,7 @@ test_normalize =
                 { normalized =
                     mkUnwrappedSubstitution [(z, a)]
                 , denormalized =
-                    mkUnwrappedSubstitution [(x, f (mkVar y)), (y, g (mkVar x))]
+                    mkUnwrappedSubstitution [(y, g (mkVar x)), (x, f (mkVar y))]
                 }
         , test
             "length 2, with And"
@@ -181,8 +181,8 @@ test_normalize =
                 { normalized = []
                 , denormalized =
                     mkUnwrappedSubstitution
-                        [ (x, mkAnd (mkVar y) a)
-                        , (y, mkAnd (mkVar x) b)
+                        [ (y, mkAnd (mkVar x) b)
+                        , (x, mkAnd (mkVar y) a)
                         ]
                 }
         , test
@@ -239,7 +239,7 @@ test_normalize =
                 { normalized = []
                 , denormalized =
                     mkUnwrappedSubstitution
-                        [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+                        [(ys, g (mkVar xs)), (xs, f (mkVar ys))]
                 }
         , test
             "length 2, beside related substitution"
@@ -249,7 +249,7 @@ test_normalize =
                     mkUnwrappedSubstitution [(z, mkVar ys)]
                 , denormalized =
                     mkUnwrappedSubstitution
-                        [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+                        [(ys, g (mkVar xs)), (xs, f (mkVar ys))]
                 }
         , test
             "length 2, beside unrelated substitution"
@@ -259,7 +259,7 @@ test_normalize =
                     mkUnwrappedSubstitution [(z, a)]
                 , denormalized =
                     mkUnwrappedSubstitution
-                        [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+                        [(ys, g (mkVar xs)), (xs, f (mkVar ys))]
                 }
         , test
             "length 2, with And"
@@ -268,8 +268,8 @@ test_normalize =
                 { normalized = []
                 , denormalized =
                     mkUnwrappedSubstitution
-                        [ (xs, mkAnd (mkVar ys) a)
-                        , (ys, mkAnd (mkVar xs) b)
+                        [ (ys, mkAnd (mkVar xs) b)
+                        , (xs, mkAnd (mkVar ys) a)
                         ]
                 }
         , test
@@ -280,7 +280,7 @@ test_normalize =
                     mkUnwrappedSubstitution [(z, c)]
                 , denormalized =
                     mkUnwrappedSubstitution
-                        [(xs, f (mkVar xs)), (ys, g (mkVar ys))]
+                        [(ys, g (mkVar ys)), (xs, f (mkVar xs))]
                 }
         ]
     , test
