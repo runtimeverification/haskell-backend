@@ -1,9 +1,11 @@
 module Test.Kore.Syntax.Json.Roundtrips (
     test_ParserKoreFiles,
     makeGold,
+    patternToText,
 ) where
 
 import Control.Monad (filterM)
+import Data.Aeson qualified as Json
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Text (Text)
 import Data.Text.IO qualified as T
@@ -15,12 +17,14 @@ import Kore.Parser (
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Definition qualified as Kore
 import Kore.Syntax.Json
+import Kore.Syntax.Json.Internal (KorePattern, fromPattern)
 import Kore.Unparser (unparse)
 import Prelude.Kore
 import Pretty qualified
 import System.FilePath
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden
+import Test.Tasty.HUnit (testCase, (@?=))
 
 -- | extract a pattern from a textual kore file (containing a module)
 patternsFrom :: FilePath -> IO [ParsedPattern]
@@ -100,11 +104,37 @@ makeGold = do
         BS.writeFile target json
         putStrLn "...done"
 
+{- | parse json file to KorePattern, parse/convert textual to
+ KorePattern, compare
+-}
+comparePatternsFrom :: FilePath -> TestTree
+comparePatternsFrom jsonFile =
+    testCase ("Comparing results from " <> baseName) $
+        do
+            fromJson <- parseJson jsonFile
+            fromKore <- map fromPattern <$> patternsFrom koreFile
+            fromJson @?= fromKore
+  where
+    baseName = takeBaseName jsonFile
+    koreFile = koreLocation </> baseName <.> "kore"
+    parseJson =
+        fmap (either (error . show) id)
+            . Json.eitherDecodeFileStrict @[KorePattern]
+
 test_ParserKoreFiles :: IO TestTree
 test_ParserKoreFiles = do
     jsonFiles <- findByExtension [".json"] jsonLocation
     pure $
-        testGroup ("Golden JSON files from " <> jsonLocation) $
-            [ toJsonGolden json (koreLocation </> takeBaseName json <.> "kore")
-            | json <- jsonFiles
+        testGroup
+            "JSON <-> textual kore conversion tests"
+            [ testGroup
+                ("Encode to golden JSON files in " <> jsonLocation)
+                [ toJsonGolden json (koreLocation </> takeBaseName json <.> "kore")
+                | json <- jsonFiles
+                ]
+            , testGroup
+                ("Patterns from JSON files in " <> jsonLocation)
+                [ comparePatternsFrom json
+                | json <- jsonFiles
+                ]
             ]
