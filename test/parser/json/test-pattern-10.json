@@ -1,0 +1,27 @@
+{
+  "tag": "Equals",
+  "argSort": {
+    "tag": "SortVar",
+    "name": "S"
+  },
+  "sort": {
+    "tag": "SortVar",
+    "name": "S"
+  },
+  "first": {
+    "tag": "EVar",
+    "name": "X",
+    "sort": {
+      "tag": "SortVar",
+      "name": "S"
+    }
+  },
+  "second": {
+    "tag": "EVar",
+    "name": "X",
+    "sort": {
+      "tag": "SortVar",
+      "name": "S"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "tag": "App",
+  "name": "g",
+  "sorts": [],
+  "args": [
+    {
+      "tag": "EVar",
+      "name": "X",
+      "sort": {
+        "tag": "SortApp",
+        "name": "S",
+        "args": []
+      }
+    }
+  ]
+}

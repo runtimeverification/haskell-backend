@@ -1,0 +1,15 @@
+{
+  "tag": "Next",
+  "sort": {
+    "tag": "SortVar",
+    "name": "S"
+  },
+  "dest": {
+    "tag": "EVar",
+    "name": "X",
+    "sort": {
+      "tag": "SortVar",
+      "name": "S"
+    }
+  }
+}

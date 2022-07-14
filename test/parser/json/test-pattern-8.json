@@ -1,0 +1,20 @@
+{
+  "tag": "Exists",
+  "sort": {
+    "tag": "SortVar",
+    "name": "S"
+  },
+  "var": "X",
+  "varSort": {
+    "tag": "SortVar",
+    "name": "S"
+  },
+  "arg": {
+    "tag": "EVar",
+    "name": "X",
+    "sort": {
+      "tag": "SortVar",
+      "name": "S"
+    }
+  }
+}

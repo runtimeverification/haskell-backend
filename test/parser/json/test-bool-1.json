@@ -1,0 +1,18 @@
+{
+  "tag": "DV",
+  "sort": {
+    "tag": "SortApp",
+    "name": "Bool",
+    "args": []
+  },
+  "value": "true"
+}
+{
+  "tag": "DV",
+  "sort": {
+    "tag": "SortApp",
+    "name": "Bool",
+    "args": []
+  },
+  "value": "false"
+}

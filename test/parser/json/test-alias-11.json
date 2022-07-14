@@ -1,0 +1,23 @@
+{
+  "tag": "Rewrites",
+  "sort": {
+    "tag": "SortVar",
+    "name": "s"
+  },
+  "source": {
+    "tag": "EVar",
+    "name": "a",
+    "sort": {
+      "tag": "SortVar",
+      "name": "s"
+    }
+  },
+  "dest": {
+    "tag": "EVar",
+    "name": "b",
+    "sort": {
+      "tag": "SortVar",
+      "name": "s"
+    }
+  }
+}

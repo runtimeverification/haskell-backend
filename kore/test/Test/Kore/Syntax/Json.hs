@@ -6,6 +6,10 @@ module Test.Kore.Syntax.Json (
     roundTripTests,
     showExamples,
     writeExamples,
+    -- generators
+    genKorePattern,
+    genMultiKorePattern,
+    genAllKorePatterns,
 ) where
 
 import Control.Monad (forever)

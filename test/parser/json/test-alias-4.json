@@ -1,0 +1,11 @@
+{
+  "tag": "App",
+  "name": "g",
+  "sorts": [
+    {
+      "tag": "SortVar",
+      "name": "S"
+    }
+  ],
+  "args": []
+}
