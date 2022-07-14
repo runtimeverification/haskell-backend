@@ -908,6 +908,7 @@
             "Test/Kore/Simplify/Top"
             "Test/Kore/Syntax/Id"
             "Test/Kore/Syntax/Json"
+            "Test/Kore/Syntax/Json/Roundtrips"
             "Test/Kore/Syntax/Variable"
             "Test/Kore/TopBottom"
             "Test/Kore/Unification/SubstitutionNormalization"
