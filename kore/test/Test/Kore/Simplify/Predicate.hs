@@ -254,7 +254,7 @@ test_simplify =
                     )
                 )
             )
-            [[fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar t))]]
+            [[fromEquals_ (Mock.g (mkElemVar t)) (Mock.f Mock.a)]]
         , (test "invalid assignment")
             ((fromExists x) (fromEquals_ (mkElemVar x) (Mock.f $ mkElemVar x)))
             [
@@ -327,7 +327,7 @@ test_simplify =
             ]
         , (test "variable-variable assignment")
             (fromEquals_ (mkElemVar x) (mkElemVar y))
-            [[fromEquals_ (mkElemVar x) (mkElemVar y)]]
+            [[fromEquals_ (mkElemVar y) (mkElemVar x)]]
         ]
     , testGroup
         "\\in"
