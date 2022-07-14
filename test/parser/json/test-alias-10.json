@@ -1,11 +1,15 @@
 [
  {
-  "tag": "DV",
-  "sort": {
-    "tag": "SortApp",
-    "name": "Nat",
-    "args": []
-  },
-  "value": "f"
+  "format": "KORE",
+  "version": "1",
+  "term": {
+    "tag": "DV",
+    "sort": {
+      "tag": "SortApp",
+      "name": "Nat",
+      "args": []
+    },
+    "value": "f"
+  }
 } 
 ]

@@ -32,6 +32,9 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog
 import Text.Printf (printf)
 
+genKoreJson :: Gen KorePattern -> Gen KoreJson
+genKoreJson = fmap (KoreJson KORE KJ1)
+
 genKorePattern :: Gen KorePattern
 genKorePattern =
     Gen.recursive
@@ -162,8 +165,8 @@ between n m g
 showExamples :: IO ()
 showExamples =
     forever $ do
-        korePattern <- Gen.sample genKorePattern
-        BS.putStr $ encodeKoreJson korePattern
+        koreJson <- Gen.sample (genKoreJson genKorePattern)
+        BS.putStr $ encodeKoreJson koreJson
         void getLine
 
 writeExamples :: Bool -> FilePath -> FilePath -> Int -> IO ()
@@ -179,7 +182,8 @@ writeExamples withMultiThings dir basename n
   where
     generateFile :: Int -> IO ()
     generateFile i =
-        Gen.sample generator >>= BS.writeFile (file i) . encodeKoreJson
+        Gen.sample (genKoreJson generator)
+            >>= BS.writeFile (file i) . encodeKoreJson
 
     generator =
         if withMultiThings then genAllKorePatterns else genKorePattern
@@ -214,9 +218,9 @@ roundTripTestsWith n =
 jsonRoundTrip :: Property
 jsonRoundTrip =
     property $ do
-        korePattern <- forAll genAllKorePatterns
+        koreJson <- forAll $ genKoreJson genAllKorePatterns
         -- this is testing To/FromJSON instances and lexical checks
-        tripping korePattern encodeKoreJson decodeKoreJson
+        tripping koreJson encodeKoreJson decodeKoreJson
 
 parsedRoundTrip :: Property
 parsedRoundTrip =
@@ -246,14 +250,14 @@ korePatternRoundTrip =
 fullRoundTrip :: Property
 fullRoundTrip =
     property $ do
-        korePattern <- forAll genKorePattern
+        koreJson <- forAll $ genKoreJson genKorePattern
         -- testing Json -> parsedPattern -> Json
         -- after producing an initial json bytestring
 
         -- This round trip fails on "MultiOr" and "MultiApp"
         -- constructs, as they introduce ambiguity.
 
-        let json = encodeKoreJson korePattern
+        let json = encodeKoreJson koreJson
             convert :: BS.ByteString -> ParsedPattern
             convert = decodePattern `orFailWith` "decodePattern"
             parse :: ParsedPattern -> Either () BS.ByteString

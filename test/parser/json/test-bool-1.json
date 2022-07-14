@@ -1,20 +1,28 @@
 [
  {
-  "tag": "DV",
-  "sort": {
-    "tag": "SortApp",
-    "name": "Bool",
-    "args": []
-  },
-  "value": "true"
+  "format": "KORE",
+  "version": "1",
+  "term": {
+    "tag": "DV",
+    "sort": {
+      "tag": "SortApp",
+      "name": "Bool",
+      "args": []
+    },
+    "value": "true"
+  }
 },
 {
-  "tag": "DV",
-  "sort": {
-    "tag": "SortApp",
-    "name": "Bool",
-    "args": []
-  },
-  "value": "false"
+  "format": "KORE",
+  "version": "1",
+  "term": {
+    "tag": "DV",
+    "sort": {
+      "tag": "SortApp",
+      "name": "Bool",
+      "args": []
+    },
+    "value": "false"
+  }
 } 
 ]

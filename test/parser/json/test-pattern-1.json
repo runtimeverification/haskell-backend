@@ -1,9 +1,13 @@
 [
  {
-  "tag": "Top",
-  "sort": {
-    "tag": "SortVar",
-    "name": "S"
+  "format": "KORE",
+  "version": "1",
+  "term": {
+    "tag": "Top",
+    "sort": {
+      "tag": "SortVar",
+      "name": "S"
+    }
   }
 } 
 ]

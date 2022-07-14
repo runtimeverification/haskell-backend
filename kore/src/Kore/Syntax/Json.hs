@@ -30,10 +30,10 @@ import Prelude.Kore
 -}
 decodePattern :: ByteString -> Either JsonParseError ParsedPattern
 decodePattern bs =
-    toParsedPattern <$> mapLeft JsonParseError (decodeKoreJson bs)
+    toParsedPattern . term <$> mapLeft JsonParseError (decodeKoreJson bs)
 
--- | low-level: read text into KorePattern
-decodeKoreJson :: ByteString -> Either String KorePattern
+-- | low-level: read text into KorePattern (wrapped in KoreJson)
+decodeKoreJson :: ByteString -> Either String KoreJson
 decodeKoreJson = Json.eitherDecode'
 
 -- | Errors relating to the json codec
@@ -46,9 +46,11 @@ newtype JsonParseError
 
 -- | Write a Pattern to a json byte string.
 encodePattern :: Kore.Pattern VariableName ann -> ByteString
-encodePattern = encodeKoreJson . fromPattern
+encodePattern = encodeKoreJson . addHeader . fromPattern
+  where
+    addHeader = KoreJson KORE KJ1
 
-encodeKoreJson :: KorePattern -> ByteString
+encodeKoreJson :: KoreJson -> ByteString
 encodeKoreJson = Json.encodePretty' prettyJsonOpts
 
 prettyJsonOpts :: Json.Config
@@ -57,7 +59,10 @@ prettyJsonOpts =
         { confIndent = Spaces 2
         , confCompare =
             keyOrder -- retains the field order in all constructors
-                [ "tag"
+                [ "format"
+                , "version"
+                , "term"
+                , "tag"
                 , "assoc"
                 , "name"
                 , "symbol"

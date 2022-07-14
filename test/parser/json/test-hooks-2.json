@@ -1,8 +1,12 @@
 [
  {
-  "tag": "App",
-  "name": "g",
-  "sorts": [],
-  "args": []
+  "format": "KORE",
+  "version": "1",
+  "term": {
+    "tag": "App",
+    "name": "g",
+    "sorts": [],
+    "args": []
+  }
 } 
 ]

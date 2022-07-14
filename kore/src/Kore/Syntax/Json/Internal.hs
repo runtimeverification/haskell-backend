@@ -12,6 +12,7 @@ module Kore.Syntax.Json.Internal (
     module Kore.Syntax.Json.Internal,
 ) where
 
+import Control.Monad (guard)
 import Data.Aeson as Json
 import Data.Aeson.Types qualified as Json
 import Data.Char (isAlpha, isDigit)
@@ -37,9 +38,48 @@ import Kore.Syntax.Variable (
  )
 import Prelude.Kore hiding (Left, Right)
 
+------------------------------------------------------------
+
+-- | Top-level boilerplate to version the format
+data KoreJson = KoreJson
+    { format :: KORE
+    , version :: Version
+    , term :: KorePattern
+    }
+    deriving stock (Eq, Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
+
+data KORE
+    = KORE
+    deriving stock (Eq, Show, Generic)
+
+instance ToJSON KORE where
+    toJSON = const $ String "KORE"
+
+instance FromJSON KORE where
+    parseJSON =
+        withText "format tag" $
+            (\t -> guard (t == "KORE") >> pure KORE)
+
+{- | All supported version numbers as an enum
+ (KJ prefix is removed in the json encoding)
+-}
+data Version
+    = -- | Version 1
+      KJ1
+    deriving stock (Eq, Show, Generic)
+
+instance ToJSON Version where
+    toJSON = genericToJSON codecOptions
+
+instance FromJSON Version where
+    parseJSON v = genericParseJSON codecOptions v
+
+------------------------------------------------------------
+
 {- | Json representation of Kore patterns as a Haskell type.
  Modeled after kore-syntax.md, merging some of the ML pattern
- productions. Cursorily checked to be consistent with Parser.y
+ productions.
 -}
 data KorePattern
     = -- variable pattern

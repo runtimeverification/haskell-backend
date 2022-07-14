@@ -17,7 +17,7 @@ import Kore.Parser (
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Definition qualified as Kore
 import Kore.Syntax.Json
-import Kore.Syntax.Json.Internal (KorePattern, fromPattern)
+import Kore.Syntax.Json.Internal (KoreJson (..), fromPattern)
 import Kore.Unparser (unparse)
 import Prelude.Kore
 import Pretty qualified
@@ -118,8 +118,8 @@ comparePatternsFrom jsonFile =
     baseName = takeBaseName jsonFile
     koreFile = koreLocation </> baseName <.> "kore"
     parseJson =
-        fmap (either (error . show) id)
-            . Json.eitherDecodeFileStrict @[KorePattern]
+        fmap (either (error . show) (map term))
+            . Json.eitherDecodeFileStrict @[KoreJson]
 
 test_ParserKoreFiles :: IO TestTree
 test_ParserKoreFiles = do

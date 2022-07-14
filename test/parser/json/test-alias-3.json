@@ -1,27 +1,31 @@
 [
  {
-  "tag": "App",
-  "name": "g",
-  "sorts": [],
-  "args": [
-    {
-      "tag": "EVar",
-      "name": "Y",
-      "sort": {
-        "tag": "SortApp",
-        "name": "S",
-        "args": []
+  "format": "KORE",
+  "version": "1",
+  "term": {
+    "tag": "App",
+    "name": "g",
+    "sorts": [],
+    "args": [
+      {
+        "tag": "EVar",
+        "name": "Y",
+        "sort": {
+          "tag": "SortApp",
+          "name": "S",
+          "args": []
+        }
+      },
+      {
+        "tag": "EVar",
+        "name": "X",
+        "sort": {
+          "tag": "SortApp",
+          "name": "S",
+          "args": []
+        }
       }
-    },
-    {
-      "tag": "EVar",
-      "name": "X",
-      "sort": {
-        "tag": "SortApp",
-        "name": "S",
-        "args": []
-      }
-    }
-  ]
+    ]
+  }
 } 
 ]
