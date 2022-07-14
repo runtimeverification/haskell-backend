@@ -192,7 +192,7 @@ test_normalize =
                 { normalized =
                     mkUnwrappedSubstitution [(z, c)]
                 , denormalized =
-                    mkUnwrappedSubstitution [(x, f (mkVar x)), (y, g (mkVar y))]
+                    mkUnwrappedSubstitution [(y, g (mkVar y)), (x, f (mkVar x))]
                 }
         ]
     , testGroup
