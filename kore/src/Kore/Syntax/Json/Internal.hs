@@ -58,7 +58,8 @@ instance ToJSON KORE where
 
 instance FromJSON KORE where
     parseJSON =
-        withText "format tag"
+        withText
+            "format tag"
             (\t -> guard (t == "KORE") >> pure KORE)
 
 {- | All supported version numbers as an enum
