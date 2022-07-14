@@ -171,7 +171,7 @@ writeExamples withMultiThings dir basename n
     | n <= 0 =
         error $ unwords ["Requested", show n, "<=0 examples, nothing to do."]
     | n >= 100 =
-        error $ "Cowardly refusing to create more than 99 files."
+        error "Cowardly refusing to create more than 99 files."
     | otherwise =
         do
             createDirectoryIfMissing False dir

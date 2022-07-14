@@ -1,4 +1,5 @@
-{
+[
+ {
   "tag": "DV",
   "sort": {
     "tag": "SortApp",
@@ -6,4 +7,5 @@
     "args": []
   },
   "value": "untrue"
-}
+} 
+]

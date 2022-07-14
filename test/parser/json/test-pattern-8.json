@@ -1,4 +1,5 @@
-{
+[
+ {
   "tag": "Exists",
   "sort": {
     "tag": "SortVar",
@@ -17,4 +18,5 @@
       "name": "S"
     }
   }
-}
+} 
+]

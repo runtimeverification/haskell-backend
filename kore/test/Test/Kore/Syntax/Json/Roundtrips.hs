@@ -52,6 +52,15 @@ patternToText =
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         . unparse
 
+-- | render a list of json bytestrings into a json array
+jsonArray :: [BS.ByteString] -> BS.ByteString
+jsonArray bss =
+    BS.unwords
+        [ BS.pack "[\n"
+        , BS.intercalate ",\n" bss
+        , BS.pack "\n]"
+        ]
+
 ----------------------------------------
 
 {- | Constructs a golden test from textual kore to json
@@ -67,7 +76,7 @@ toJsonGolden jsonFile koreFile =
     testName = unwords ["Converting", takeFileName koreFile, "to JSON"]
     encodeFile = do
         ps <- patternsFrom koreFile
-        pure . BS.unlines $ map encodePattern ps
+        pure . jsonArray $ map encodePattern ps
 
 ----------------------------------------
 -- set up tests for all golden json files
@@ -86,7 +95,7 @@ makeGold = do
         putStr $ takeBaseName file
         ps <- patternsFrom file
         putStr "..."
-        let json = BS.unlines $ map encodePattern ps
+        let json = jsonArray $ map encodePattern ps
             target = jsonLocation </> takeBaseName file <.> "json"
         BS.writeFile target json
         putStrLn "...done"
