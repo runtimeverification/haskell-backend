@@ -21,6 +21,7 @@ import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
     CustomJSON (..),
+    ConstructorTagModifier,
     FieldLabelModifier,
     OmitNothingFields,
     StripPrefix,
@@ -139,7 +140,7 @@ data HaltReason = Branching
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] HaltReason
+        via CustomJSON '[OmitNothingFields, ConstructorTagModifier '[CamelToKebab]] HaltReason
 
 data ExecuteResult = ExecuteResult {
     reason :: HaltReason,
