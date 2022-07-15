@@ -224,6 +224,7 @@
           "Kore/Equation/Validate"
           "Kore/Error"
           "Kore/Exec"
+          "Kore/Exec/GraphTraversal"
           "Kore/IndexedModule/Error"
           "Kore/IndexedModule/IndexedModule"
           "Kore/IndexedModule/MetadataTools"
