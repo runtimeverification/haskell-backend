@@ -641,6 +641,7 @@ executable kore-parser
   main-is: Main.hs
   hs-source-dirs: app/parser
   build-depends: kore
+  build-depends: bytestring >=0.10
   build-depends: containers >=0.5
   build-depends: exceptions >=0.10
 
