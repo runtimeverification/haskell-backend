@@ -162,8 +162,8 @@ lhsClaimStateTransformer sort =
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
-The action may throw an exception if the proof fails; the exception is a single
-@'Pattern' 'VariableName'@, the first unprovable configuration.
+The action may throw an exception if the proof fails; the exception is a
+@'MultiAnd'@ of unprovable configuration.
 -}
 type VerifierT m = StateT StuckClaims (ExceptT StuckClaims m)
 
@@ -390,7 +390,7 @@ proveClaim
                 let maybeUnproven = extractUnproven proofState
                 for_ maybeUnproven $ \unproven -> lift $ do
                     infoUnprovenDepth proofDepth
-                    updateSuckClaimsState unproven maxCounterexamples
+                    updateStuckClaimsState unproven maxCounterexamples
                 pure proofDepth
                 & Logic.observeAllT
                 >>= checkLeftUnproven
@@ -407,6 +407,12 @@ proveClaim
 
         discardAppliedRules = map fst
 
+        transit ::
+            Strategy Prim ->
+            (ProofDepth, ClaimState SomeClaim) ->
+            LogicT
+                (VerifierT simplifier)
+                [(ProofDepth, ClaimState SomeClaim)]
         transit instr config =
             Strategy.transitionRule
                 ( transitionRule' stuckCheck claims axioms
@@ -586,16 +592,16 @@ throwStuckClaims maxCounterexamples rule prim state = do
         ClaimState.Stuck unproven -> do
             lift $ do
                 infoUnprovenDepth proofDepth'
-                updateSuckClaimsState unproven maxCounterexamples
+                updateStuckClaimsState unproven maxCounterexamples
                 return state'
         _ -> return state'
 
-updateSuckClaimsState ::
+updateStuckClaimsState ::
     Monad m =>
     SomeClaim ->
     Natural ->
     VerifierT m ()
-updateSuckClaimsState unproven maxCounterexamples = do
+updateStuckClaimsState unproven maxCounterexamples = do
     stuckClaims <- State.get
     let updatedStuck =
             MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
