@@ -6,11 +6,15 @@ License     : BSD-3-Clause
 -}
 module Kore.Syntax.Json (
     -- API
+    KoreJson,
     JsonParseError,
     encodePattern,
     encodeKoreJson,
     decodePattern,
     decodeKoreJson,
+    toParsedPattern,
+    term,
+    fromPattern
 ) where
 
 import Data.Aeson as Json
