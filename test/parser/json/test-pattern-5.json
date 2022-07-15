@@ -1,7 +1,7 @@
 [
  {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Not",
     "sort": {

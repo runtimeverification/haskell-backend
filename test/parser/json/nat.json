@@ -1,7 +1,7 @@
 [
  {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Exists",
     "sort": {
@@ -45,7 +45,7 @@
 },
 {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Exists",
     "sort": {
@@ -99,7 +99,7 @@
 },
 {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Exists",
     "sort": {
@@ -162,7 +162,7 @@
 },
 {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Or",
     "sort": {
@@ -210,7 +210,7 @@
 },
 {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Not",
     "sort": {
@@ -266,7 +266,7 @@
 },
 {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Implies",
     "sort": {
@@ -392,7 +392,7 @@
 },
 {
   "format": "KORE",
-  "version": "1",
+  "version": 1,
   "term": {
     "tag": "Implies",
     "sort": {

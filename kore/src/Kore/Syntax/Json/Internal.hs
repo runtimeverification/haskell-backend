@@ -12,7 +12,6 @@ module Kore.Syntax.Json.Internal (
     module Kore.Syntax.Json.Internal,
 ) where
 
-import Control.Monad (guard)
 import Data.Aeson as Json
 import Data.Aeson.Types qualified as Json
 import Data.Char (isAlpha, isDigit)
@@ -57,24 +56,30 @@ instance ToJSON KORE where
     toJSON = const $ String "KORE"
 
 instance FromJSON KORE where
-    parseJSON =
-        withText
-            "format tag"
-            (\t -> guard (t == "KORE") >> pure KORE)
+    parseJSON = withText "format tag" $ expect "KORE" KORE
 
 {- | All supported version numbers as an enum
- (KJ prefix is removed in the json encoding)
+ (json encoding turns this into an int)
 -}
 data Version
     = -- | Version 1
       KJ1
     deriving stock (Eq, Show, Generic)
 
+kj :: Num a => Int -> a
+kj = fromIntegral
+
 instance ToJSON Version where
-    toJSON = genericToJSON codecOptions
+    toJSON KJ1 = Number $ kj 1
 
 instance FromJSON Version where
-    parseJSON v = genericParseJSON codecOptions v
+    parseJSON =
+        withScientific "version" (expect (kj 1) KJ1)
+
+expect :: (Show a, Eq a) => a -> b -> a -> Json.Parser b
+expect expected parsed actual
+    | actual == expected = pure parsed
+    | otherwise = fail $ "expected " <> show expected
 
 ------------------------------------------------------------
 
