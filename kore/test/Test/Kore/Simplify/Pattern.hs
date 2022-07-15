@@ -303,7 +303,7 @@ test_Pattern_simplify_equalityterm =
                         [ (Condition.fromPredicate . Predicate.fromMultiAnd . MultiAnd.make)
                             [ definedF
                             , definedG
-                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate Mock.cg Mock.cf
                             , makeNotPredicate definedH
                             ]
                         , Condition.assign (inject Mock.xConfig) Mock.a
@@ -313,7 +313,7 @@ test_Pattern_simplify_equalityterm =
                             [ definedF
                             , definedG
                             , definedH
-                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate Mock.cg Mock.cf
                             , makeEqualsPredicate Mock.cf Mock.ch
                             ]
                         , Condition.assign (inject Mock.xConfig) Mock.a
