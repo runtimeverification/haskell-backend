@@ -1,17 +1,27 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Test.Kore.Syntax.Json (
     -- Tasty wrappers
     test_JsonRoundTrips,
     test_Unit_tests_for_json_failure_modes,
+    test_headerFailures,
     -- Hedgehog things
     roundTripTests,
     showExamples,
+    writeExamples,
+    -- generators
+    genKorePattern,
+    genMultiKorePattern,
+    genAllKorePatterns,
 ) where
 
 import Control.Monad (forever)
-import Data.ByteString.Lazy qualified as BS
+import Data.Bifunctor qualified as Bifunctor
+import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Char (isAlpha, isAlphaNum, isPrint, ord)
-import Data.List (isPrefixOf)
+import Data.List (isInfixOf, isPrefixOf)
 import Data.List.NonEmpty qualified as NE
+import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Hedgehog
@@ -21,8 +31,15 @@ import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Syntax.Json
 import Kore.Syntax.Json.Internal -- for testing and generating test data
 import Prelude.Kore hiding (Left, Right, assert)
+import Prelude.Kore qualified as Prelude
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((<.>), (</>))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog
+import Text.Printf (printf)
+
+genKoreJson :: Gen KorePattern -> Gen KoreJson
+genKoreJson = fmap (KoreJson KORE KJ1)
 
 genKorePattern :: Gen KorePattern
 genKorePattern =
@@ -33,7 +50,7 @@ genKorePattern =
         , KJString <$> genStringLiteral
         , KJTop <$> genSort
         , KJBottom <$> genSort
-        , KJDv <$> genSort <*> genStringLiteral
+        , KJDV <$> genSort <*> genStringLiteral
         ]
         [ do
             sorts <- between 1 10 genSort
@@ -83,7 +100,7 @@ genSort :: Gen Sort
 genSort =
     Gen.recursive
         Gen.choice
-        [SortVariable <$> genId]
+        [SortVar <$> genId]
         [SortApp <$> genId <*> upTo 10 genSort]
 
 genId :: Gen Id
@@ -99,7 +116,7 @@ genIdChar =
     Gen.frequency
         [ (10, Gen.alpha)
         , (3, Gen.digit)
-        , (1, Gen.element "_'")
+        , (1, Gen.element "-'")
         ]
 
 genPrintableAscii :: Gen Text
@@ -149,14 +166,35 @@ between n m g
         pure []
 
 ----------------------------------------
--- helper for the repl
+-- helpers for the repl
 
-showExamples :: IO a
+showExamples :: IO ()
 showExamples =
     forever $ do
-        korePattern <- Gen.sample genKorePattern
-        BS.putStr $ encodeKoreJson korePattern
+        koreJson <- Gen.sample (genKoreJson genKorePattern)
+        BS.putStr $ encodeKoreJson koreJson
         void getLine
+
+writeExamples :: Bool -> FilePath -> FilePath -> Int -> IO ()
+writeExamples withMultiThings dir basename n
+    | n <= 0 =
+        error $ unwords ["Requested", show n, "<=0 examples, nothing to do."]
+    | n >= 100 =
+        error "Cowardly refusing to create more than 99 files."
+    | otherwise =
+        do
+            createDirectoryIfMissing False dir
+            mapM_ generateFile [1 .. n]
+  where
+    generateFile :: Int -> IO ()
+    generateFile i =
+        Gen.sample (genKoreJson generator)
+            >>= BS.writeFile (file i) . encodeKoreJson
+
+    generator =
+        if withMultiThings then genAllKorePatterns else genKorePattern
+
+    file i = dir </> basename ++ printf "_%02d" i <.> "json"
 
 ----------------------------------------
 -- Tests
@@ -186,9 +224,9 @@ roundTripTestsWith n =
 jsonRoundTrip :: Property
 jsonRoundTrip =
     property $ do
-        korePattern <- forAll genAllKorePatterns
+        koreJson <- forAll $ genKoreJson genAllKorePatterns
         -- this is testing To/FromJSON instances and lexical checks
-        tripping korePattern encodeKoreJson decodeKoreJson
+        tripping koreJson encodeKoreJson decodeKoreJson
 
 parsedRoundTrip :: Property
 parsedRoundTrip =
@@ -218,14 +256,14 @@ korePatternRoundTrip =
 fullRoundTrip :: Property
 fullRoundTrip =
     property $ do
-        korePattern <- forAll genKorePattern
+        koreJson <- forAll $ genKoreJson genKorePattern
         -- testing Json -> parsedPattern -> Json
         -- after producing an initial json bytestring
 
         -- This round trip fails on "MultiOr" and "MultiApp"
         -- constructs, as they introduce ambiguity.
 
-        let json = encodeKoreJson korePattern
+        let json = encodeKoreJson koreJson
             convert :: BS.ByteString -> ParsedPattern
             convert = decodePattern `orFailWith` "decodePattern"
             parse :: ParsedPattern -> Either () BS.ByteString
@@ -294,7 +332,7 @@ testEVarCharSet =
             assert ("Contains illegal characters: " `isPrefixOf` head nonAlphaNumChars)
 
 isAllowedChar :: Char -> Bool
-isAllowedChar c = isAlphaNum c || c `elem` ['_', '\'']
+isAllowedChar c = isAlphaNum c || c `elem` ['-', '\'']
 
 sVarChecks :: TestTree
 sVarChecks =
@@ -329,3 +367,86 @@ testSVarSuffix =
             let withWrongSuffix = checkSVarName $ T.pack ['@', 'X', notAlphaNum]
             length withWrongSuffix === 1
             assert ("Contains illegal characters: " `isPrefixOf` head withWrongSuffix)
+
+----------------------------------------
+
+test_headerFailures :: TestTree
+test_headerFailures =
+    testGroup "Header (format and version) checks" $
+        map (uncurry testProperty) headerTests
+
+headerTests :: IsString name => [(name, Property)]
+headerTests =
+    map
+        (Bifunctor.second (withTests 1 . property))
+        [
+            ( "Correct test data parses"
+            , assert . isRight $
+                decodeKoreJson $ withHeader "KORE" "1" aString
+            )
+        ,
+            ( "Format string errors are reported"
+            , diffLeft "Error in $.format: expected \"KORE\"" $
+                decodeKoreJson $ withHeader "Gore" "1" aString
+            )
+        ,
+            ( "Version string errors are reported"
+            , diffLeft "Error in $.version: expected 1.0" $
+                decodeKoreJson $ withHeader "KORE" "2" aString
+            )
+        ,
+            ( "Payload errors are reported"
+            , expectLeft ("key \"tag\" not found" `isInfixOf`) $
+                decodeKoreJson $ withHeader "KORE" "1" rubbish
+            )
+        ,
+            ( "Format errors take precedence"
+            , diffLeft "Error in $.format: expected \"KORE\"" $
+                decodeKoreJson $ withHeader "Gore" "42" rubbish
+            )
+        ,
+            ( "Version errors take precedence"
+            , diffLeft "Error in $.version: expected 1.0" $
+                decodeKoreJson $ withHeader "KORE" "42" rubbish
+                -- NB if the payload is not an object, the version
+                -- error does _not_ take precedence!
+            )
+        ]
+  where
+    rubbish = "{ \"rubbish\": 42 }"
+
+diffLeft ::
+    (MonadTest m, Eq a, Eq b, Show a, Show b) =>
+    a ->
+    Either a b ->
+    m ()
+diffLeft expected result =
+    diff result (==) (Prelude.Left expected)
+
+expectLeft ::
+    (MonadTest m, MonadFail m, Show b) =>
+    (a -> Bool) ->
+    Either a b ->
+    m ()
+expectLeft predicate = \case
+    Prelude.Left a -> assert $ predicate a
+    Prelude.Right x -> fail $ "Unexpected " <> show x
+
+withHeader :: BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
+withHeader format version payload =
+    BS.unlines
+        [ "{"
+        , "  \"format\": \"" <> format <> "\","
+        , "  \"version\": " <> version <> ","
+        , "  \"term\": " <> payload
+        , "}"
+        ]
+
+aString :: BS.ByteString
+aString =
+    BS.unlines
+        [ "  {"
+        , "    \"tag\": \"String\","
+        , "    \"value\": \"parse me!\""
+        , "  }"
+        ]
