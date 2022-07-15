@@ -34,7 +34,6 @@ import Kore.Parser (
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.Json (encodePattern)
-
 import Kore.Unparser as Unparser
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,

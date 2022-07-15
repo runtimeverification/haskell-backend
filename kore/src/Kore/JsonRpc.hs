@@ -29,11 +29,10 @@ import GHC.Generics (Generic)
 import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
 import Kore.Internal.Pattern qualified as Pattern
-
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Rewrite (ExecutionMode (All), Natural)
 import Kore.Simplify.Simplify (SimplifierXSwitch)
-import Kore.Syntax.Json(KoreJson)
+import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
 import Kore.Unparser (unparseToText)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
@@ -118,7 +117,6 @@ instance FromRequest (API 'Req) where
 --         (ToJSON)
 --         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
-
 data ExecuteState = ExecuteState
     { state :: !KoreJson
     , depth :: !Depth
@@ -129,28 +127,27 @@ data ExecuteState = ExecuteState
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteState
 
-data HaltReason = Branching
-                | Stuck
-                | DepthBound
-                -- | HaltPatternMatch !Depth ![PatternMatch]
-                | FinalState
-                | CutPointRule
-                | TerminalRule
+data HaltReason
+    = Branching
+    | Stuck
+    | DepthBound
+    | -- | HaltPatternMatch !Depth ![PatternMatch]
+      FinalState
+    | CutPointRule
+    | TerminalRule
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] HaltReason
 
-data ExecuteResult = ExecuteResult {
-    reason :: HaltReason,
-    states :: [ExecuteState]
-}
- deriving stock (Generic, Show, Eq)
+data ExecuteResult = ExecuteResult
+    { reason :: HaltReason
+    , states :: [ExecuteState]
+    }
+    deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
-
-
 
 -- instance ToJSON ExecuteResult where
 --     toJSON = \case
@@ -170,8 +167,6 @@ data ExecuteResult = ExecuteResult {
 --         HaltFinalState state -> object ["reason" .= ("final-state" :: Text) "states" .= [state]]
 --         HaltCutPointRule state -> object ["reason" .= ("cut-point-rule" :: Text) "states" .= [state]]
 --         HaltTerminalRule state -> object ["reason" .= ("terminal-rule" :: Text) "states" .= [state]]
-
-
 
 -- newtype StepResult = StepResult
 --     { states :: [StepState]
@@ -205,8 +200,8 @@ data APIMethods = ExecuteM | StepM | ImpliesM | SimplifyM
 type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
     APIPayload 'ExecuteM 'Res = ExecuteResult
-    -- APIPayload 'StepM 'Req = StepRequest
-    -- APIPayload 'StepM 'Res = StepResult
+-- APIPayload 'StepM 'Req = StepRequest
+-- APIPayload 'StepM 'Res = StepResult
     APIPayload 'ImpliesM 'Req = ImpliesRequest
     APIPayload 'ImpliesM 'Res = ImpliesResult
     APIPayload 'SimplifyM 'Req = SimplifyRequest
@@ -235,8 +230,8 @@ respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Ex
 respond runSMT simplifierx serializedModule@Exec.SerializedModule{verifiedModule} = \case
     Execute ExecuteRequest{state, maxDepth} ->
         case PatternVerifier.runPatternVerifier context $
-                PatternVerifier.verifyStandalonePattern Nothing $
-                    PatternJson.toParsedPattern $ PatternJson.term state of
+            PatternVerifier.verifyStandalonePattern Nothing $
+                PatternJson.toParsedPattern $ PatternJson.term state of
             Left _err -> pure $ Left couldNotVerify
             Right verifiedPattern -> do
                 (_, finalPatt) <-
@@ -254,10 +249,14 @@ respond runSMT simplifierx serializedModule@Exec.SerializedModule{verifiedModule
                                 verifiedPattern
                         )
 
-                pure $ Right $ Execute $ ExecuteResult{
-                    states = [ExecuteState{state, depth = Depth 1, condition = Nothing}], -- dummy
-                    -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
-                    reason = FinalState}
+                pure $
+                    Right $
+                        Execute $
+                            ExecuteResult
+                                { states = [ExecuteState{state, depth = Depth 1, condition = Nothing}] -- dummy
+                                -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
+                                , reason = FinalState
+                                }
       where
         context =
             PatternVerifier.verifiedModuleContext verifiedModule

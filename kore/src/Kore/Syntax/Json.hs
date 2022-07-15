@@ -14,7 +14,7 @@ module Kore.Syntax.Json (
     decodeKoreJson,
     toParsedPattern,
     term,
-    fromPattern
+    fromPattern,
 ) where
 
 import Data.Aeson as Json
