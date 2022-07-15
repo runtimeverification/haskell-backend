@@ -560,6 +560,7 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             ];

@@ -40,6 +40,12 @@
           overlays = [ z3-overlay ];
           inherit (haskell-nix) config;
         };
+      mkPython = system:
+        mach-nix.lib.${system}.mkPython {
+          requirements = ''
+            jsonrpcclient
+          '';
+        };
 
       haskell-backend-src = { pkgs, ghc, postPatch ? "" }:
         pkgs.applyPatches {
@@ -87,7 +93,8 @@
                 components.exes.kore-exec = add-z3 "kore-exec";
                 components.exes.kore-rpc = add-z3 "kore-rpc";
                 components.exes.kore-repl = add-z3 "kore-repl";
-                components.exes.kore-check-functions = add-z3 "kore-check-functions";
+                components.exes.kore-check-functions =
+                  add-z3 "kore-check-functions";
               };
             }];
             materialized = ./nix + "/kore-${compiler-nix-name}.nix.d";
@@ -100,19 +107,6 @@
             '';
         };
 
-      binWithFlags = { system, bin, add-flags }:
-        let pkgs = nixpkgsFor' system;
-        in pkgs.symlinkJoin {
-          name = "${bin}-${add-flags}";
-          paths = [ bin ];
-          buildInputs = [ pkgs.makeWrapper ];
-          postBuild = ''
-            for i in "$out"/bin/*; do
-              wrapProgram "$i" --add-flags "${add-flags}"
-            done
-          '';
-        };
-
       projectForGhc = { ghc, stack-yaml ? null, profiling ? false
         , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
         perSystem (system:
@@ -121,6 +115,8 @@
             pkgs' = nixpkgsFor' system;
           in projectOverlay {
             inherit pkgs pkgs' profiling ghcOptions;
+            compiler-nix-name = ghc;
+
             src = haskell-backend-src {
               inherit ghc;
               pkgs = pkgs';
@@ -130,12 +126,7 @@
                 "";
             };
 
-            compiler-nix-name = ghc;
             shell = {
-              # withHoogle = true;
-
-              # exactDeps = true;
-
               # We use the ones from Nixpkgs, since they are cached reliably.
               # Eventually we will probably want to build these with haskell.nix.
               nativeBuildInputs = [
@@ -182,9 +173,6 @@
 
       packages = perSystem (system:
         self.flake.${system}.packages // {
-          "kore:exe:kore-exec" =
-            self.project.${system}.hsPkgs.kore.components.exes.kore-rpc;
-
           update-cabal = self.project.${system}.rematerialize-kore;
           update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
 
@@ -198,13 +186,9 @@
             name = "haskell-backend-${self.rev or "dirty"}-json-rpc-tests";
             inherit (pkgs) stdenv;
             inherit (pkgs.lib) cleanSource;
+            python = mkPython system;
             kore-rpc =
               self.project.${system}.hsPkgs.kore.components.exes.kore-rpc;
-            python = mach-nix.lib.${system}.mkPython {
-              requirements = ''
-                jsonrpcclient
-              '';
-            };
           };
         });
 
@@ -213,6 +197,14 @@
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
         ghc9 = self.flakeGhc9.${system}.devShell;
+
+        test-rpc = let pkgs = nixpkgsFor system;
+        in pkgs.mkShell {
+          buildInputs = [
+            (mkPython system)
+            self.project.${system}.hsPkgs.kore.components.exes.kore-rpc
+          ];
+        };
       });
       devShell = perSystem (system: self.devShells.${system}.default);
 
