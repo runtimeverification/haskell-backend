@@ -461,8 +461,7 @@ The queue updating function should be 'unfoldBreadthFirst' or
 -}
 leavesM ::
     forall m a.
-    Monad m =>
-    Alternative m =>
+    (Monad m, Alternative m) =>
     FinalNodeType ->
     -- | queue updating function
     ([a] -> Seq a -> m (Seq a)) ->
