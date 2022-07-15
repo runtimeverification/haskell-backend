@@ -20,8 +20,8 @@ import Data.Limit (Limit (..))
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
-    CustomJSON (..),
     ConstructorTagModifier,
+    CustomJSON (..),
     FieldLabelModifier,
     OmitNothingFields,
     StripPrefix,
