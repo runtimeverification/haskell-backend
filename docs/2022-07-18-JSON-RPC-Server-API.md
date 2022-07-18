@@ -13,8 +13,6 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
 
 # API
 
-The Request and response objects use
-
 ## Execute
 
 ### Request:
