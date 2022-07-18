@@ -26,16 +26,16 @@ import Control.Monad.Except (
     MonadError (..),
  )
 import Data.Aeson.Types (ToJSON)
-import Deriving.Aeson (
-    CustomJSON (..),
-    CamelToKebab,
-    FieldLabelModifier,
-    StripPrefix,
- )
 import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Deriving.Aeson (
+    CamelToKebab,
+    CustomJSON (..),
+    FieldLabelModifier,
+    StripPrefix,
+ )
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
