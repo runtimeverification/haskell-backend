@@ -319,6 +319,12 @@ exec
                                         breadthLimit
                                         dropStrategy
                         rewriteGroups = groupRewritesByPriority rewriteRules
+
+                        transit :: Strategy Prim
+                                -> (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                                -> LogicT
+                                       (Simplifier.SimplifierT smt)
+                                       [(ExecDepth, ProgramState (Pattern RewritingVariableName))]
                         transit instr config =
                             Strategy.transitionRule
                                 ( transitionRule rewriteGroups strategy
