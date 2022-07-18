@@ -528,6 +528,12 @@ fMapSymbol :: Symbol
 fMapSymbol =
     symbol fMapId [mapSort] testSort & function
 
+fMap ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
+fMap arg = Internal.mkApplySymbol fMapSymbol [arg]
+
 injective10Symbol :: Symbol
 injective10Symbol = symbol injective10Id [testSort] testSort & injective
 

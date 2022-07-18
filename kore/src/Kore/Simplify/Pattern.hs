@@ -9,6 +9,7 @@ module Kore.Simplify.Pattern (
     makeEvaluate,
 ) where
 
+import Kore.Unparser
 import Control.Monad (
     (>=>),
  )
@@ -116,8 +117,8 @@ makeEvaluate ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-makeEvaluate sideCondition =
-    loop . OrPattern.fromPattern
+makeEvaluate sideCondition p =
+    loop . OrPattern.fromPattern $ p
   where
     loop input = do
         output <-
@@ -130,7 +131,7 @@ makeEvaluate sideCondition =
     worker pattern' =
         OrPattern.observeAllT $ do
             withSimplifiedCondition <-
-                simplifyCondition sideCondition pattern'
+                simplifyCondition SideCondition.top pattern'
             let (term, simplifiedCondition) =
                     Conditional.splitTerm withSimplifiedCondition
                 term' = substitute (toMap $ substitution simplifiedCondition) term
@@ -143,4 +144,4 @@ makeEvaluate sideCondition =
                     >>= Logic.scatter
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
-            simplifyCondition sideCondition simplifiedPattern
+            simplifyCondition SideCondition.top simplifiedPattern

@@ -51,7 +51,7 @@ import Kore.Rewrite.RewritingVariable (
     mkRuleVariable,
  )
 import Kore.Simplify.Pattern qualified as Pattern (
-    makeEvaluate,
+    makeEvaluate, simplifyTopConfigurationDefined
  )
 import Kore.Simplify.Simplify
 import Kore.Unparser
@@ -79,7 +79,17 @@ type SideCondition' = SideCondition RewritingVariableName
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
-    [ testCase "owise condition - main case" $ do
+    [ testCase "TESTING" $ do
+        let testMap =
+                Mock.framedMap
+                    [ (Mock.f (mkElemVar Mock.xConfig), Mock.g (mkElemVar Mock.yConfig))
+                    , (Mock.plain00, Mock.plain10 (mkElemVar Mock.zConfig))
+                    ]
+                    [Mock.fMap (mkElemVar Mock.xMapConfig)]
+                & Pattern.fromTermLike
+        actual <- evaluateTopConfig testMap
+        traceM (unlines $ unparseToString <$> toList actual)
+    , testCase "owise condition - main case" $ do
         let expect = OrPattern.fromPatterns []
         actual <-
             evaluate
@@ -1196,12 +1206,32 @@ evaluate ::
     IO (OrPattern.OrPattern RewritingVariableName)
 evaluate = evaluateWithAxioms Map.empty
 
+evaluateTopConfig ::
+    Pattern.Pattern RewritingVariableName ->
+    IO (OrPattern.OrPattern RewritingVariableName)
+evaluateTopConfig = evaluateTopConfigWithAxioms Map.empty
+
 evaluateWithAxioms ::
     BuiltinAndAxiomSimplifierMap ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
 evaluateWithAxioms axioms =
     evaluateConditionalWithAxioms axioms SideCondition.top
+
+evaluateTopConfigWithAxioms ::
+    BuiltinAndAxiomSimplifierMap ->
+    Pattern.Pattern RewritingVariableName ->
+    IO (OrPattern.OrPattern RewritingVariableName)
+evaluateTopConfigWithAxioms axioms =
+    runSimplifierSMT env . Pattern.simplifyTopConfigurationDefined
+  where
+    env = Mock.env{simplifierAxioms}
+    simplifierAxioms :: BuiltinAndAxiomSimplifierMap
+    simplifierAxioms =
+        Map.unionWith
+            simplifierWithFallback
+            builtinAxioms
+            axioms
 
 evaluateConditionalWithAxioms ::
     BuiltinAndAxiomSimplifierMap ->
