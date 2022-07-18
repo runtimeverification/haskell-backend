@@ -327,7 +327,7 @@ withSolverHandleWithRestart action = do
 
     restartSolverAndRetry mvar = do
         logAction <- askLogAction
-        config@Config{executable = exe, arguments = args} <-
+        Config{executable = exe, arguments = args} <-
             askConfig
         newSolverHandle <-
             Trans.liftIO $

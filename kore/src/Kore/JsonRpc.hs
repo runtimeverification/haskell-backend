@@ -14,7 +14,7 @@ import Control.Monad (forever)
 import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
-import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..), object, (.=))
+import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.Limit (Limit (..))
 import Data.Text (Text)
@@ -24,20 +24,28 @@ import Deriving.Aeson (
     CustomJSON (..),
     FieldLabelModifier,
     OmitNothingFields,
-    StripPrefix,
  )
 import GHC.Generics (Generic)
 import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
-import Kore.Internal.Pattern qualified as Pattern
+-- import Kore.Internal.Pattern qualified as Pattern
+-- import Kore.Internal.OrPattern qualified as OrPattern
+-- import Kore.Reachability.Claim qualified as Claim
+-- import  Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Rewrite (ExecutionMode (All), Natural)
+-- import Kore.Rewrite.RewritingVariable as RewritingVariable
 import Kore.Simplify.Simplify (SimplifierXSwitch)
+-- import Kore.Simplify.Data (
+--     evalSimplifier,
+--  )
 import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
-import Kore.Unparser (unparseToText)
+-- import Kore.Unparser (unparseToText)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
+-- import Logic qualified
+
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
@@ -81,8 +89,8 @@ data ExecuteRequest = ExecuteRequest
 --         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepRequest
 
 data ImpliesRequest = ImpliesRequest
-    { antecedent :: !Text
-    , consequent :: !Text
+    { antecedent :: !KoreJson
+    , consequent :: !KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -90,7 +98,7 @@ data ImpliesRequest = ImpliesRequest
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesRequest
 
 newtype SimplifyRequest = SimplifyRequest
-    { state :: Text
+    { state :: KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -109,19 +117,11 @@ instance FromRequest (API 'Req) where
     parseParams "cancel" = Just $ const $ return Cancel
     parseParams _ = Nothing
 
--- data PatternMatch = PatternMatch
---     { pmPattern :: !Int
---     , pmSubstitution :: !Text
---     }
---     deriving stock (Generic, Show, Eq)
---     deriving
---         (ToJSON)
---         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
 
 data ExecuteState = ExecuteState
     { state :: !KoreJson
     , depth :: !Depth
-    , condition :: !(Maybe Text)
+    , condition :: !(Maybe Condition)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -132,8 +132,7 @@ data HaltReason
     = Branching
     | Stuck
     | DepthBound
-    | -- | HaltPatternMatch !Depth ![PatternMatch]
-      FinalState
+    | FinalState
     | CutPointRule
     | TerminalRule
     deriving stock (Generic, Show, Eq)
@@ -150,36 +149,18 @@ data ExecuteResult = ExecuteResult
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
--- instance ToJSON ExecuteResult where
---     toJSON = \case
---         HaltBranching states ->
---             object
---                 [ "reason" .= ("branching" :: Text)
---                 , "states" .= states
---                 ]
---         HaltStuck state -> object ["reason" .= ("stuck" :: Text), "states" .= [state]]
---         HaltDepthBound states -> object ["reason" .= ("depth-bound" :: Text), "states" .= states]
---         -- HaltPatternMatch depth matches ->
---         --     object
---         --         [ "reason" .= ("pattern-match" :: Text)
---         --         , "depth" .= depth
---         --         , "matches" .= matches
---         --         ]
---         HaltFinalState state -> object ["reason" .= ("final-state" :: Text) "states" .= [state]]
---         HaltCutPointRule state -> object ["reason" .= ("cut-point-rule" :: Text) "states" .= [state]]
---         HaltTerminalRule state -> object ["reason" .= ("terminal-rule" :: Text) "states" .= [state]]
-
--- newtype StepResult = StepResult
---     { states :: [StepState]
---     }
---     deriving stock (Generic, Show, Eq)
---     deriving
---         (ToJSON)
---         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepResult
+data Condition = Condition
+    { substitution :: !KoreJson
+    , predicate :: !KoreJson
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
 data ImpliesResult = ImpliesResult
     { satisfiable :: !Bool
-    , substitution :: !(Maybe Text)
+    , contition :: !(Maybe Condition)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -196,7 +177,9 @@ newtype SimplifyResult = SimplifyResult
 
 data ReqOrRes = Req | Res
 
-data APIMethods = ExecuteM | StepM | ImpliesM | SimplifyM
+data APIMethods = ExecuteM
+                | ImpliesM
+                | SimplifyM
 
 type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
@@ -228,14 +211,20 @@ instance ToJSON (API 'Res) where
         Simplify payload -> toJSON payload
 
 respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> Respond (API 'Req) m (API 'Res)
-respond runSMT simplifierx serializedModule@Exec.SerializedModule{verifiedModule} = \case
+respond runSMT simplifierx serializedModule@Exec.SerializedModule
+        { --sortGraph
+        -- , overloadGraph
+        -- , metadataTools
+          verifiedModule
+        -- , equations
+        } = \case
     Execute ExecuteRequest{state, maxDepth} ->
         case PatternVerifier.runPatternVerifier context $
             PatternVerifier.verifyStandalonePattern Nothing $
                 PatternJson.toParsedPattern $ PatternJson.term state of
-            Left _err -> pure $ Left couldNotVerify
+            Left err -> pure $ Left $ couldNotVerify $ toJSON err
             Right verifiedPattern -> do
-                (_, finalPatt) <-
+                (_, _finalPatt) <-
                     liftIO
                         ( runSMT $
                             Exec.exec
@@ -258,18 +247,52 @@ respond runSMT simplifierx serializedModule@Exec.SerializedModule{verifiedModule
                                 -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
                                 , reason = FinalState
                                 }
-      where
-        context =
-            PatternVerifier.verifiedModuleContext verifiedModule
-                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+        where
+            context =
+                PatternVerifier.verifiedModuleContext verifiedModule
+                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
     -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-    Implies _ -> pure $ Right $ Implies undefined
-    Simplify _ -> pure $ Right $ Simplify undefined
+    Implies ImpliesRequest{antecedent, consequent} ->
+        pure $ case PatternVerifier.runPatternVerifier context verify of
+            Left err -> Left $ couldNotVerify $ toJSON err
+            Right (_antVerified, _consVerified) -> Right $ Implies $ ImpliesResult True Nothing
+
+                -- let leftPatt = mkRewritingPattern $ Pattern.fromTermLike antVerified
+                --     (consWOExistentials, existentialVars) =
+                --         ClaimPattern.termToExistentials $
+                --             RewritingVariable.mkRewritingTerm consVerified
+                --     rightPatts = OrPattern.fromPattern $ Pattern.fromTermLike consWOExistentials
+                --     claim = ClaimPattern.mkClaimPattern leftPatt rightPatts existentialVars
+                -- liftIO $ (do
+                --     res <-
+                --         runSMT $
+                --             evalSimplifier simplifierx verifiedModule sortGraph overloadGraph metadataTools equations $
+                --                 Logic.observeAllT $
+                --                     Claim.checkImplicationWorker claim
+
+                --     pure $ Right $ Implies $ case res of
+                --         [Claim.Implied] -> ImpliesResult True Nothing
+                --         _ ->  ImpliesResult False Nothing)
+                --     `catch` \(err :: Error Claim.CheckImplicationError) ->
+                --         pure $ Left $ implicationError $ toJSON err
+        where
+            context =
+                PatternVerifier.verifiedModuleContext verifiedModule
+                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+
+            verify = do
+                antVerified <- PatternVerifier.verifyStandalonePattern Nothing $
+                    PatternJson.toParsedPattern $ PatternJson.term antecedent
+                consVerified <- PatternVerifier.verifyStandalonePattern Nothing $
+                    PatternJson.toParsedPattern $ PatternJson.term consequent
+                pure (antVerified, consVerified)
+    Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult {state}
     -- this case is only reachable if the cancel appeared as part of a batch request
     Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
   where
-    couldNotVerify = ErrorObj "Could not verify KORE pattern" (-32002) Null
+    couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
+    -- implicationError err = ErrorObj "Implication check error" (-32003) err
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> SimplifierXSwitch -> Exec.SerializedModule -> IO ()
 runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simplifierx serializedModule = do
