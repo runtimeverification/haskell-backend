@@ -29,36 +29,6 @@ def rpc_request_id1(name, params):
         ).encode()
 
 
-def execute(state, max_depth=None, halt_patterns=[]):
-    return json.dumps(
-            request(
-                "execute",
-                params={
-                    "state": state,
-                    "max-depth": max_depth,
-
-                })
-        ).encode()
-
-
-def step(state):
-    return json.dumps(request_uuid("step", params={"state": state})).encode()
-
-
-def implies(antecedent, consequent):
-    return json.dumps(
-            request_uuid(
-                "implies",
-                params={
-                    "antecedent": antecedent,
-                    "consequent": consequent
-                })
-        ).encode()
-
-def simplify(state):
-    return json.dumps(request_uuid("simplify", params={"state": state})).encode()
-
-
 def cancel():
     return json.dumps(notification("cancel")).encode()
 
@@ -84,21 +54,8 @@ def diff_strings(a, b):
     return ''.join(output)
 
 
-print("Running execute tests:")
-
-for name in os.listdir("./execute"):
-  print(f"Running test '{name}'...")
-  def_path = os.path.join("./execute", name, "definition.kore")
-  params_json_path = os.path.join("./execute", name, "params.json")
-  state_json_path = os.path.join("./execute", name, "state.json")
-  resp_golden_path = os.path.join("./execute", name, "response.golden")
-  with open(params_json_path, 'r') as params_json:
-    with open(state_json_path, 'r') as state_json:
-      params = json.loads(params_json.read())
-      state = json.loads(state_json.read())
-      params["state"] = state
-
-      with subprocess.Popen(f"kore-rpc {def_path} --module TEST --server-port {PORT}".split()) as process:
+def runTest(def_path, req, resp_golden_path):
+    with subprocess.Popen(f"kore-rpc {def_path} --module TEST --server-port {PORT}".split()) as process:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
           while True:
             try:
@@ -107,11 +64,7 @@ for name in os.listdir("./execute"):
               break
             except:
               pass
-          # print(rpc_request_id1("execute", params))
-          # print("-------------")
-          # print(execute(state, 1))
-          s.sendall(rpc_request_id1("execute", params))
-          # s.sendall(execute(state, 1))
+          s.sendall(req)
           resp = recv_all(s)
           print(resp)
           process.kill()
@@ -138,4 +91,36 @@ for name in os.listdir("./execute"):
             exit(1)
 
 
+print("Running execute tests:")
 
+for name in os.listdir("./execute"):
+  print(f"Running test '{name}'...")
+  def_path = os.path.join("./execute", name, "definition.kore")
+  params_json_path = os.path.join("./execute", name, "params.json")
+  state_json_path = os.path.join("./execute", name, "state.json")
+  resp_golden_path = os.path.join("./execute", name, "response.golden")
+  with open(params_json_path, 'r') as params_json:
+    with open(state_json_path, 'r') as state_json:
+      params = json.loads(params_json.read())
+      state = json.loads(state_json.read())
+      params["state"] = state
+      req = rpc_request_id1("execute", params)
+      runTest(def_path, req, resp_golden_path)
+
+# print("Running implies tests:")
+
+# implies_def_path = "./test-kompiled/definition.kore"
+
+# for name in os.listdir("./implies"):
+#   print(f"Running test '{name}'...")
+#   params_json_path = os.path.join("./implies", name, "antecedent.json")
+#   state_json_path = os.path.join("./implies", name, "consequent.json")
+#   resp_golden_path = os.path.join("./implies", name, "response.golden")
+#   with open(params_json_path, 'r') as antecedent_json:
+#     with open(state_json_path, 'r') as consequent_json:
+#       antecedent = json.loads(antecedent_json.read())
+#       consequent = json.loads(consequent_json.read())
+#       params["antecedent"] = antecedent
+#       params["consequent"] = consequent
+#       req = rpc_request_id1("implies", params)
+#       runTest(implies_def_path, req, resp_golden_path)
