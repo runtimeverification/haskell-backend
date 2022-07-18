@@ -37,9 +37,55 @@ import Kore.Syntax.Variable (
  )
 import Prelude.Kore hiding (Left, Right)
 
+------------------------------------------------------------
+
+-- | Top-level boilerplate to version the format
+data KoreJson = KoreJson
+    { format :: KORE
+    , version :: Version
+    , term :: KorePattern
+    }
+    deriving stock (Eq, Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
+
+data KORE
+    = KORE
+    deriving stock (Eq, Show, Generic)
+
+instance ToJSON KORE where
+    toJSON = const $ String "KORE"
+
+instance FromJSON KORE where
+    parseJSON = withText "format tag" $ expect "KORE" KORE
+
+{- | All supported version numbers as an enum
+ (json encoding turns this into an int)
+-}
+data Version
+    = -- | Version 1
+      KJ1
+    deriving stock (Eq, Show, Generic)
+
+kj :: Num a => Int -> a
+kj = fromIntegral
+
+instance ToJSON Version where
+    toJSON KJ1 = Number $ kj 1
+
+instance FromJSON Version where
+    parseJSON =
+        withScientific "version" (expect (kj 1) KJ1)
+
+expect :: (Show a, Eq a) => a -> b -> a -> Json.Parser b
+expect expected parsed actual
+    | actual == expected = pure parsed
+    | otherwise = fail $ "expected " <> show expected
+
+------------------------------------------------------------
+
 {- | Json representation of Kore patterns as a Haskell type.
  Modeled after kore-syntax.md, merging some of the ML pattern
- productions. Cursorily checked to be consistent with Parser.y
+ productions.
 -}
 data KorePattern
     = -- variable pattern
@@ -124,23 +170,23 @@ data KorePattern
     | -- ceil, floor, equals, in
       KJCeil
         { argSort :: Sort
-        , resultSort :: Sort
+        , sort :: Sort
         , arg :: KorePattern
         }
     | KJFloor
         { argSort :: Sort
-        , resultSort :: Sort
+        , sort :: Sort
         , arg :: KorePattern
         }
     | KJEquals
         { argSort :: Sort
-        , resultSort :: Sort
+        , sort :: Sort
         , first :: KorePattern
         , second :: KorePattern
         }
     | KJIn
         { argSort :: Sort
-        , resultSort :: Sort
+        , sort :: Sort
         , first :: KorePattern
         , second :: KorePattern
         }
@@ -158,7 +204,7 @@ data KorePattern
         , dest :: KorePattern
         }
     | -- | domain value, a string literal with a sort
-      KJDv
+      KJDV
         { sort :: Sort
         , value :: Text
         }
@@ -199,7 +245,6 @@ codecOptions =
         }
   where
     constructorTagModifier = \case
-        "KJDv" -> "dv"
         'K' : 'J' : rest -> rest
         other -> other
 
@@ -231,7 +276,7 @@ lexicalCheck p =
             reportErrors name "fixpoint expression variable" checkSVarName
         KJNu{var = Id name} ->
             reportErrors name "fixpoint expression variable" checkSVarName
-        -- KJDv{value = txt} ->
+        -- KJDV{value = txt} ->
         --     reportErrors txt "domain value string" checkStringChars
         -- KJString txt ->
         --     reportErrors txt "string literal" checkStringChars
@@ -258,7 +303,7 @@ lexicalCheck p =
         errors = check text
 
 {- | Basic identifiers start with letters and may contain letters,
- digits, _ or '. Set variables start with '@' followed by a basic
+ digits, - or '. Set variables start with '@' followed by a basic
  identifier. Symbol variables _may_ start by \, followed by a basic
  identifier.
 -}
@@ -275,7 +320,7 @@ checkIdChars name
     ~illegalChars = T.filter (not . isIdChar) $ T.tail name
 
 isIdChar :: Char -> Bool
-isIdChar c = isAlpha c || isDigit c || c `elem` ['_', '\'']
+isIdChar c = isAlpha c || isDigit c || c `elem` ['-', '\'']
 
 -- | Set variable names _have to_ start with `@`, followed by a valid identifier
 checkSVarName :: Text -> [String]
@@ -300,7 +345,7 @@ data Sort
         { name :: Id
         , args :: [Sort]
         }
-    | SortVariable
+    | SortVar
         { name :: Id
         }
     deriving stock (Eq, Show, Generic)
@@ -378,25 +423,25 @@ toParsedPattern = \case
             Kore.Nu
                 (Variable (SetVariableName (koreVar var)) $ mkSort varSort)
                 (toParsedPattern arg)
-    KJCeil s s2 a ->
+    KJCeil{argSort, sort, arg} ->
         (embedParsedPattern . CeilF) $
-            Kore.Ceil (mkSort s) (mkSort s2) (toParsedPattern a)
-    KJFloor s s2 a ->
+            Kore.Ceil (mkSort argSort) (mkSort sort) (toParsedPattern arg)
+    KJFloor{argSort, sort, arg} ->
         (embedParsedPattern . FloorF) $
-            Kore.Floor (mkSort s) (mkSort s2) (toParsedPattern a)
-    KJEquals s s2 a b ->
+            Kore.Floor (mkSort argSort) (mkSort sort) (toParsedPattern arg)
+    KJEquals{argSort, sort, first, second} ->
         (embedParsedPattern . EqualsF) $
-            Kore.Equals (mkSort s) (mkSort s2) (toParsedPattern a) (toParsedPattern b)
-    KJIn s s2 a b ->
+            Kore.Equals (mkSort argSort) (mkSort sort) (toParsedPattern first) (toParsedPattern second)
+    KJIn{argSort, sort, first, second} ->
         (embedParsedPattern . InF) $
-            Kore.In (mkSort s) (mkSort s2) (toParsedPattern a) (toParsedPattern b)
+            Kore.In (mkSort argSort) (mkSort sort) (toParsedPattern first) (toParsedPattern second)
     KJNext{sort, dest} ->
         (embedParsedPattern . NextF) $
             Kore.Next (mkSort sort) (toParsedPattern dest)
     KJRewrites{sort, source, dest} ->
         (embedParsedPattern . RewritesF) $
             Kore.Rewrites (mkSort sort) (toParsedPattern source) $ toParsedPattern dest
-    KJDv{sort, value} ->
+    KJDV{sort, value} ->
         (embedParsedPattern . DomainValueF) $
             Kore.DomainValue (mkSort sort) (toParsedPattern (KJString value))
     KJMultiOr{assoc, sort, argss} ->
@@ -453,7 +498,7 @@ koreVar (Id name) =
 mkSort :: Sort -> Kore.Sort
 mkSort SortApp{name, args} =
     (Kore.SortActualSort . Kore.SortActual (koreId name)) $ map mkSort args
-mkSort (SortVariable name) =
+mkSort (SortVar name) =
     Kore.SortVariableSort $ Kore.SortVariable (koreId name)
 
 ------------------------------------------------------------
@@ -485,11 +530,11 @@ fromPatternF (_ :< patt) = case patt of
     CeilF Kore.Ceil{ceilOperandSort, ceilResultSort, ceilChild} ->
         KJCeil
             { argSort = fromSort ceilOperandSort
-            , resultSort = fromSort ceilResultSort
+            , sort = fromSort ceilResultSort
             , arg = ceilChild
             }
     DomainValueF Kore.DomainValue{domainValueSort, domainValueChild = KJString value} ->
-        KJDv
+        KJDV
             { sort = fromSort domainValueSort
             , value
             }
@@ -498,7 +543,7 @@ fromPatternF (_ :< patt) = case patt of
     EqualsF Kore.Equals{equalsOperandSort, equalsResultSort, equalsFirst, equalsSecond} ->
         KJEquals
             { argSort = fromSort equalsOperandSort
-            , resultSort = fromSort equalsResultSort
+            , sort = fromSort equalsResultSort
             , first = equalsFirst
             , second = equalsSecond
             }
@@ -512,7 +557,7 @@ fromPatternF (_ :< patt) = case patt of
     FloorF Kore.Floor{floorOperandSort, floorResultSort, floorChild} ->
         KJFloor
             { argSort = fromSort floorOperandSort
-            , resultSort = fromSort floorResultSort
+            , sort = fromSort floorResultSort
             , arg = floorChild
             }
     ForallF Kore.Forall{forallSort, forallVariable, forallChild} ->
@@ -537,7 +582,7 @@ fromPatternF (_ :< patt) = case patt of
     InF Kore.In{inOperandSort, inResultSort, inContainedChild, inContainingChild} ->
         KJIn
             { argSort = fromSort inOperandSort
-            , resultSort = fromSort inResultSort
+            , sort = fromSort inResultSort
             , first = inContainedChild
             , second = inContainingChild
             }
@@ -597,7 +642,7 @@ fromPatternF (_ :< patt) = case patt of
                 , args = map fromSort sortActualSorts
                 }
         Kore.SortVariableSort Kore.SortVariable{getSortVariable} ->
-            SortVariable . Id $ Kore.getId getSortVariable
+            SortVar . Id $ Kore.getId getSortVariable
 
     fromKoreId :: Kore.Id -> Id
     fromKoreId =
