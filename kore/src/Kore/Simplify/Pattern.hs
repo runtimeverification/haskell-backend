@@ -9,7 +9,6 @@ module Kore.Simplify.Pattern (
     makeEvaluate,
 ) where
 
-import Kore.Unparser
 import Control.Monad (
     (>=>),
  )
@@ -50,6 +49,7 @@ import Kore.Simplify.Simplify (
     simplifyTerm,
  )
 import Kore.Substitute
+import Kore.Unparser
 import Logic qualified
 import Prelude.Kore
 

@@ -51,7 +51,8 @@ import Kore.Rewrite.RewritingVariable (
     mkRuleVariable,
  )
 import Kore.Simplify.Pattern qualified as Pattern (
-    makeEvaluate, simplifyTopConfigurationDefined
+    makeEvaluate,
+    simplifyTopConfigurationDefined,
  )
 import Kore.Simplify.Simplify
 import Kore.Unparser
@@ -86,7 +87,7 @@ test_simplificationIntegration =
                     , (Mock.plain00, Mock.plain10 (mkElemVar Mock.zConfig))
                     ]
                     [Mock.fMap (mkElemVar Mock.xMapConfig)]
-                & Pattern.fromTermLike
+                    & Pattern.fromTermLike
         actual <- evaluateTopConfig testMap
         traceM (unlines $ unparseToString <$> toList actual)
     , testCase "owise condition - main case" $ do
