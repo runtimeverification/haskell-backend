@@ -396,16 +396,7 @@ instance MonadLog AllPathIdentity where
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined
-    declare = undefined
-    declareFun = undefined
-    declareSort = undefined
-    declareDatatype = undefined
-    declareDatatypes = undefined
-    assert = undefined
-    check = undefined
-    ackCommand = undefined
-    loadFile = undefined
-    reinit = undefined
+    liftSMT = undefined
 
 instance MonadThrow AllPathIdentity where
     throwM _ = error "Unimplemented"

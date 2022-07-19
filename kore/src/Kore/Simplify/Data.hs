@@ -91,7 +91,7 @@ import Prelude.Kore
 import Pretty qualified
 import Prof
 import SMT (
-    SMT (..),
+    SMT,
  )
 
 -- * Simplifier
