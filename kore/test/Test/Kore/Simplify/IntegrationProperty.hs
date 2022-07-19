@@ -163,18 +163,18 @@ test_regressionGeneratedTerms =
 evaluateT ::
     MonadTrans t =>
     Pattern RewritingVariableName ->
-    t SMT.NoSMT (OrPattern RewritingVariableName)
+    t SMT.SMT (OrPattern RewritingVariableName)
 evaluateT = lift . evaluate
 
 evaluate ::
     Pattern RewritingVariableName ->
-    SMT.NoSMT (OrPattern RewritingVariableName)
+    SMT.SMT (OrPattern RewritingVariableName)
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms ::
     BuiltinAndAxiomSimplifierMap ->
     Pattern RewritingVariableName ->
-    SMT.NoSMT (OrPattern RewritingVariableName)
+    SMT.SMT (OrPattern RewritingVariableName)
 evaluateWithAxioms axioms =
     Simplification.runSimplifier env . Pattern.simplify
   where

@@ -517,7 +517,7 @@ match ::
 match termPair = runSimplifier Mock.env $ runExceptT matchResult
   where
     matchResult ::
-        MatchOverloadingResult (SimplifierT NoSMT) RewritingVariableName
+        MatchOverloadingResult (SimplifierT SMT) RewritingVariableName
     matchResult = matchOverloading termPair
 
 withMatching ::
