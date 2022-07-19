@@ -406,18 +406,9 @@ instance MonadCatch AllPathIdentity where
 
 instance MonadSimplify AllPathIdentity where
     liftSimplifier = undefined
-    askMetadataTools = undefined
-    simplifyPattern = undefined
-    simplifyTerm = undefined
     simplifyCondition = undefined
-    askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
-    askInjSimplifier = undefined
-    askOverloadSimplifier = undefined
-    getCache = undefined
-    putCache = undefined
-    askSimplifierXSwitch = undefined
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =

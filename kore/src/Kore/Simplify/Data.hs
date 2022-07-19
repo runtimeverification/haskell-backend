@@ -20,6 +20,16 @@ module Kore.Simplify.Data (
 
     -- * Re-exports
     MonadSimplify (..),
+    askMetadataTools,
+    simplifyPattern,
+    simplifyTerm,
+    askSimplifierAxioms,
+    askInjSimplifier,
+    askOverloadSimplifier,
+    getCache,
+    putCache,
+    askSimplifierXSwitch,
+    simplifyPatternScatter,
     InternalVariable,
     MonadProf,
 ) where

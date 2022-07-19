@@ -9,6 +9,15 @@ module Kore.Simplify.Simplify (
 
     InternalVariable,
     MonadSimplify (..),
+    askMetadataTools,
+    simplifyPattern,
+    simplifyTerm,
+    askSimplifierAxioms,
+    askInjSimplifier,
+    askOverloadSimplifier,
+    getCache,
+    putCache,
+    askSimplifierXSwitch,
     simplifyPatternScatter,
     TermSimplifier,
 
@@ -204,29 +213,64 @@ runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
     runReaderT (evalStateT simplifier initCache) env
 
-instance MonadSimplify Simplifier where
-    liftSimplifier = id
+-- | Retrieve the 'MetadataTools' for the Kore context.
+askMetadataTools :: MonadSimplify m => m (SmtMetadataTools Attribute.Symbol)
+askMetadataTools = liftSimplifier $ asks metadataTools
 
-    askMetadataTools = asks metadataTools
-    {-# INLINE askMetadataTools #-}
-
-    simplifyPattern sideCondition patt = do
+simplifyPattern ::
+    MonadSimplify m =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    m (OrPattern RewritingVariableName)
+simplifyPattern sideCondition patt =
+    liftSimplifier $ do
         simplify <- asks simplifierPattern
         simplify sideCondition patt
-    {-# INLINE simplifyPattern #-}
 
-    simplifyTerm sideCondition input = do
+simplifyTerm ::
+    MonadSimplify m =>
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    m (OrPattern RewritingVariableName)
+simplifyTerm sideCondition termLike =
+    liftSimplifier $ do
         simplify <- asks simplifierTerm
-        simplify sideCondition input
-    {-# INLINE simplifyTerm #-}
+        simplify sideCondition termLike
+
+askSimplifierAxioms ::
+    MonadSimplify m =>
+    m BuiltinAndAxiomSimplifierMap
+askSimplifierAxioms =
+    liftSimplifier $ asks simplifierAxioms
+
+-- | Retrieve the 'InjSimplifier' for the Kore context.
+askInjSimplifier ::
+    MonadSimplify m =>
+    m InjSimplifier
+askInjSimplifier =
+    liftSimplifier $ asks injSimplifier
+
+-- | Retrieve the 'OverloadSimplifier' for the Kore context.
+askOverloadSimplifier :: MonadSimplify m => m OverloadSimplifier
+askOverloadSimplifier =
+    liftSimplifier $ asks overloadSimplifier
+
+getCache :: MonadSimplify m => m SimplifierCache
+getCache = liftSimplifier get
+
+putCache :: MonadSimplify m => SimplifierCache -> m ()
+putCache = liftSimplifier . put
+
+askSimplifierXSwitch :: MonadSimplify m => m SimplifierXSwitch
+askSimplifierXSwitch = liftSimplifier $ asks simplifierXSwitch
+
+instance MonadSimplify Simplifier where
+    liftSimplifier = id
 
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
         simplify topCondition conditional
     {-# INLINE simplifyCondition #-}
-
-    askSimplifierAxioms = asks simplifierAxioms
-    {-# INLINE askSimplifierAxioms #-}
 
     localSimplifierAxioms locally =
         local $ \env@Env{simplifierAxioms} ->
@@ -235,21 +279,6 @@ instance MonadSimplify Simplifier where
 
     askMemo = asks memo
     {-# INLINE askMemo #-}
-
-    askInjSimplifier = asks injSimplifier
-    {-# INLINE askInjSimplifier #-}
-
-    askOverloadSimplifier = asks overloadSimplifier
-    {-# INLINE askOverloadSimplifier #-}
-
-    getCache = get
-    {-# INLINE getCache #-}
-
-    putCache = put
-    {-# INLINE putCache #-}
-
-    askSimplifierXSwitch = asks simplifierXSwitch
-    {-# INLINE askSimplifierXSwitch #-}
 
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
@@ -266,38 +295,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
         Simplifier a ->
         m a
     liftSimplifier = lift . liftSimplifier
-
-    -- | Retrieve the 'MetadataTools' for the Kore context.
-    askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
-    default askMetadataTools ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m (SmtMetadataTools Attribute.Symbol)
-    askMetadataTools = lift askMetadataTools
-    {-# INLINE askMetadataTools #-}
-
-    simplifyPattern ::
-        SideCondition RewritingVariableName ->
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    default simplifyPattern ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SideCondition RewritingVariableName ->
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyPattern sideCondition termLike =
-        lift (simplifyPattern sideCondition termLike)
-
-    simplifyTerm ::
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    default simplifyTerm ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyTerm sideCondition termLike =
-        lift (simplifyTerm sideCondition termLike)
 
     simplifyCondition ::
         SideCondition RewritingVariableName ->
@@ -318,13 +315,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
         scatter results
     {-# INLINE simplifyCondition #-}
 
-    askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
-    default askSimplifierAxioms ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m BuiltinAndAxiomSimplifierMap
-    askSimplifierAxioms = lift askSimplifierAxioms
-    {-# INLINE askSimplifierAxioms #-}
-
     localSimplifierAxioms ::
         (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap) ->
         m a ->
@@ -344,44 +334,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
         m (Memo.Self m)
     askMemo = Memo.liftSelf lift <$> lift askMemo
     {-# INLINE askMemo #-}
-
-    -- | Retrieve the 'InjSimplifier' for the Kore context.
-    askInjSimplifier :: m InjSimplifier
-    default askInjSimplifier ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m InjSimplifier
-    askInjSimplifier = lift askInjSimplifier
-    {-# INLINE askInjSimplifier #-}
-
-    -- | Retrieve the 'OverloadSimplifier' for the Kore context.
-    askOverloadSimplifier :: m OverloadSimplifier
-    default askOverloadSimplifier ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m OverloadSimplifier
-    askOverloadSimplifier = lift askOverloadSimplifier
-    {-# INLINE askOverloadSimplifier #-}
-
-    getCache :: m SimplifierCache
-    default getCache ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m SimplifierCache
-    getCache = lift getCache
-    {-# INLINE getCache #-}
-
-    putCache :: SimplifierCache -> m ()
-    default putCache ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SimplifierCache ->
-        m ()
-    putCache = lift . putCache
-    {-# INLINE putCache #-}
-
-    askSimplifierXSwitch :: m SimplifierXSwitch
-    default askSimplifierXSwitch ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m SimplifierXSwitch
-    askSimplifierXSwitch = lift askSimplifierXSwitch
-    {-# INLINE askSimplifierXSwitch #-}
 
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>

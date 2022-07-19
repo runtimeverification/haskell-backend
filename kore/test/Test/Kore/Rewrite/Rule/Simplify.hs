@@ -76,6 +76,7 @@ import Kore.Simplify.Data (
 import Kore.Simplify.Simplify (
     MonadSMT,
     MonadSimplify (..),
+    Simplifier,
     emptyConditionSimplifier,
  )
 import Kore.Syntax.Variable (
@@ -506,18 +507,17 @@ test_simplifyClaimRule =
       where
         run =
             runSimplifierSMT env
-                . flip
-                    runReaderT
-                    TestEnv
-                        { replacements
-                        , input
-                        , requires = aEqualsb
-                        }
-                . runTestSimplifierT
+        testEnv =
+            TestEnv
+                { replacements
+                , input
+                , requires = aEqualsb
+                }
         env =
             Mock.env
                 { simplifierCondition = emptyConditionSimplifier
                 , simplifierAxioms = mempty
+                , simplifierTerm = testSimplifyTerm testEnv
                 }
 
 data TestEnv = TestEnv
@@ -527,71 +527,64 @@ data TestEnv = TestEnv
     , requires :: !(Condition RewritingVariableName)
     }
 
-newtype TestSimplifierT m a = TestSimplifierT {runTestSimplifierT :: ReaderT TestEnv m a}
-    deriving newtype (Functor, Applicative, Monad)
-    deriving newtype (MonadReader TestEnv)
-    deriving newtype (MonadLog, MonadSMT)
+testSimplifyTerm ::
+    TestEnv ->
+    SideCondition.SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Simplifier (OrPattern.OrPattern RewritingVariableName)
+testSimplifyTerm testEnv sideCondition termLike = do
+    let rule = getOnePathClaim input
+        leftTerm =
+            Lens.view (field @"left") rule
+                & Pattern.term
+        expectSideCondition =
+            makeAndPredicate
+                (Condition.toPredicate requires)
+                (makeCeilPredicate leftTerm)
+                & liftPredicate
+                & SideCondition.fromPredicateWithReplacements
+        satisfied = sideCondition == expectSideCondition
+    return
+        . OrPattern.fromTermLike
+        . (if satisfied then applyReplacements replacements else id)
+        $ termLike
+  where
+    TestEnv{replacements, input, requires} = testEnv
+    applyReplacements ::
+        InternalVariable variable =>
+        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+        TermLike variable ->
+        TermLike variable
+    applyReplacements replacements zero =
+        foldl' applyReplacement zero $
+            fmap liftReplacement replacements
 
-instance MonadTrans TestSimplifierT where
-    lift = TestSimplifierT . lift
+    applyReplacement orig (ini, fin)
+        | orig == ini = fin
+        | otherwise = orig
 
-instance MFunctor TestSimplifierT where
-    hoist f = TestSimplifierT . hoist f . runTestSimplifierT
+    liftPredicate ::
+        InternalVariable variable =>
+        Predicate RewritingVariableName ->
+        Predicate variable
+    liftPredicate =
+        Predicate.mapVariables liftRewritingVariable
 
-instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
-    simplifyTerm sideCondition termLike = do
-        TestEnv{replacements, input, requires} <- Reader.ask
-        let rule = getOnePathClaim input
-            leftTerm =
-                Lens.view (field @"left") rule
-                    & Pattern.term
-            expectSideCondition =
-                makeAndPredicate
-                    (Condition.toPredicate requires)
-                    (makeCeilPredicate leftTerm)
-                    & liftPredicate
-                    & SideCondition.fromPredicateWithReplacements
-            satisfied = sideCondition == expectSideCondition
-        return
-            . OrPattern.fromTermLike
-            . (if satisfied then applyReplacements replacements else id)
-            $ termLike
-      where
-        applyReplacements ::
-            InternalVariable variable =>
-            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-            TermLike variable ->
-            TermLike variable
-        applyReplacements replacements zero =
-            foldl' applyReplacement zero $
-                fmap liftReplacement replacements
+    liftTermLike ::
+        InternalVariable variable =>
+        TermLike RewritingVariableName ->
+        TermLike variable
+    liftTermLike =
+        TermLike.mapVariables liftRewritingVariable
 
-        applyReplacement orig (ini, fin)
-            | orig == ini = fin
-            | otherwise = orig
+    liftReplacement ::
+        InternalVariable variable =>
+        (TermLike RewritingVariableName, TermLike RewritingVariableName) ->
+        (TermLike variable, TermLike variable)
+    liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
 
-        liftPredicate ::
-            InternalVariable variable =>
-            Predicate RewritingVariableName ->
-            Predicate variable
-        liftPredicate =
-            Predicate.mapVariables liftRewritingVariable
-
-        liftTermLike ::
-            InternalVariable variable =>
-            TermLike RewritingVariableName ->
-            TermLike variable
-        liftTermLike =
-            TermLike.mapVariables liftRewritingVariable
-
-        liftReplacement ::
-            InternalVariable variable =>
-            (TermLike RewritingVariableName, TermLike RewritingVariableName) ->
-            (TermLike variable, TermLike variable)
-        liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
-
-        liftRewritingVariable ::
-            InternalVariable variable =>
-            AdjSomeVariableName (RewritingVariableName -> variable)
-        liftRewritingVariable =
-            pure (.) <*> pure fromVariableName <*> getRewritingVariable
+    liftRewritingVariable ::
+        InternalVariable variable =>
+        AdjSomeVariableName (RewritingVariableName -> variable)
+    liftRewritingVariable =
+        pure (.) <*> pure fromVariableName <*> getRewritingVariable
