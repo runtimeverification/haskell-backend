@@ -1,7 +1,10 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Simplify.And (
     test_andSimplification,
 ) where
 
+import Data.List (sort)
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -92,41 +95,44 @@ test_andSimplification =
     , testGroup
         "And with normal patterns"
         [ testCase "And random terms" $ do
-            let expect =
+            let [plain0OfX', plain1OfX'] = sort [plain0OfX, plain1OfX]
+                expect =
                     Conditional
-                        { term = mkAnd plain0OfX plain1OfX
+                        { term = mkAnd plain0OfX' plain1OfX'
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
         , testCase "And function terms" $ do
-            let expect =
-                    makeEqualsPredicate fOfX gOfX
+            let [fOfX', gOfX'] = sort [fOfX, gOfX]
+                expect =
+                    makeEqualsPredicate fOfX' gOfX'
                         & Condition.fromPredicate
-                        & Pattern.withCondition fOfX
+                        & Pattern.withCondition fOfX'
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
         , testCase "And predicates" $ do
-            let expect =
+            let [fOfX', gOfX'] = sort [fOfX, gOfX]
+                expect =
                     Conditional
                         { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate fOfX)
-                                (makeCeilPredicate gOfX)
+                                (makeCeilPredicate fOfX')
+                                (makeCeilPredicate gOfX')
                         , substitution = mempty
                         }
             actual <-
                 evaluatePatterns
                     Conditional
                         { term = mkTop Mock.testSort
-                        , predicate = makeCeilPredicate fOfX
+                        , predicate = makeCeilPredicate fOfX'
                         , substitution = mempty
                         }
                     Conditional
                         { term = mkTop Mock.testSort
-                        , predicate = makeCeilPredicate gOfX
+                        , predicate = makeCeilPredicate gOfX'
                         , substitution = mempty
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -163,7 +169,7 @@ test_andSimplification =
         , testCase "And substitutions - multiple terms" $ do
             let expect =
                     Conditional
-                        { term = mkAnd (mkAnd Mock.a Mock.b) Mock.c
+                        { term = mkAnd (mkAnd Mock.c Mock.a) Mock.b
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
@@ -181,12 +187,13 @@ test_andSimplification =
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
         , testCase "And substitutions - separate predicate" $ do
-            let expect =
+            let [fOfX', gOfX'] = sort [fOfX, gOfX]
+                expect =
                     Conditional
                         { term = mkTop Mock.testSort
-                        , predicate = makeEqualsPredicate fOfX gOfX
+                        , predicate = makeEqualsPredicate fOfX' gOfX'
                         , substitution =
-                            Substitution.unsafeWrap [(inject Mock.yConfig, fOfX)]
+                            Substitution.unsafeWrap [(inject Mock.yConfig, fOfX')]
                         }
             actual <-
                 evaluatePatterns
@@ -299,22 +306,23 @@ test_andSimplification =
     , testGroup
         "constructor and"
         [ testCase "same constructors" $ do
-            let expect =
+            let [fOfX', gOfX'] = sort [fOfX, gOfX]
+                expect =
                     Conditional
-                        { term = Mock.constr10 fOfX
+                        { term = Mock.constr10 fOfX'
                         , predicate =
-                            makeEqualsPredicate fOfX gOfX
+                            makeEqualsPredicate fOfX' gOfX'
                         , substitution = mempty
                         }
             actual <-
                 evaluatePatterns
                     Conditional
-                        { term = Mock.constr10 fOfX
+                        { term = Mock.constr10 fOfX'
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     Conditional
-                        { term = Mock.constr10 gOfX
+                        { term = Mock.constr10 gOfX'
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
@@ -336,27 +344,28 @@ test_andSimplification =
         ]
     , -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
       testCase "And-Or distribution" $ do
-        let expect =
+        let [fOfX', gOfX'] = sort [fOfX, gOfX]
+            expect =
                 OrPattern.fromPatterns
-                    [ makeEqualsPredicate fOfX gOfX
+                    [ makeEqualsPredicate fOfX' gOfX'
                         & Condition.fromPredicate
-                        & Pattern.withCondition fOfX
+                        & Pattern.withCondition fOfX'
                     , Conditional
-                        { term = fOfX
-                        , predicate = makeCeilPredicate gOfX
+                        { term = fOfX'
+                        , predicate = makeCeilPredicate gOfX'
                         , substitution = mempty
                         }
                     , Conditional
-                        { term = gOfX
-                        , predicate = makeCeilPredicate fOfX
+                        { term = gOfX'
+                        , predicate = makeCeilPredicate fOfX'
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop Mock.testSort
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate fOfX)
-                                (makeCeilPredicate gOfX)
+                                (makeCeilPredicate fOfX')
+                                (makeCeilPredicate gOfX')
                         , substitution = mempty
                         }
                     ]
@@ -382,11 +391,11 @@ test_andSimplification =
     , testCase "Predicates are not duplicated" $ do
         let expect =
                 Conditional
-                    { term = Mock.constr10 fOfX
+                    { term = Mock.constr10 gOfX
                     , predicate =
                         makeAndPredicate
                             (makeCeilPredicate fOfX)
-                            (makeEqualsPredicate fOfX gOfX)
+                            (makeEqualsPredicate gOfX fOfX)
                     , substitution = mempty
                     }
         actual <-
