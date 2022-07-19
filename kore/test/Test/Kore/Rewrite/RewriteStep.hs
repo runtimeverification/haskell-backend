@@ -1302,8 +1302,8 @@ test_applyRewriteRulesParallel =
                         { term = Mock.cg
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate Mock.cf)
                                 (makeCeilPredicate Mock.cg)
+                                (makeCeilPredicate Mock.cf)
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
