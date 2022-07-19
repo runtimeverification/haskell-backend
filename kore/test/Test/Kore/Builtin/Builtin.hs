@@ -216,8 +216,7 @@ verifyPattern expectedSort termLike =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testConditionSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier :: ConditionSimplifier Simplifier
 testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
@@ -245,6 +244,8 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierCondition = testConditionSimplifier
+        , simplifierTerm = TermLike.simplify
+        , simplifierPattern = Pattern.makeEvaluate
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier

@@ -47,7 +47,7 @@ import Kore.Rewrite.Rule (
     extractRewriteAxioms,
  )
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify
+import Kore.Simplify.Simplify hiding (runSimplifier)
 import Kore.Syntax.Definition hiding (
     Symbol,
  )

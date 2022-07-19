@@ -102,6 +102,8 @@ import Kore.Simplify.Data (
     MonadSimplify,
  )
 import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
+import Kore.Simplify.TermLike qualified as TermLike
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify (
@@ -2308,6 +2310,8 @@ env =
     Env
         { metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         , simplifierCondition = predicateSimplifier
+        , simplifierTerm = TermLike.simplify
+        , simplifierPattern = Pattern.makeEvaluate
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         , injSimplifier

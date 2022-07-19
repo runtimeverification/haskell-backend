@@ -3,6 +3,10 @@ Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
 module Kore.Simplify.Simplify (
+    Simplifier,
+    runSimplifier,
+    Env (..),
+
     InternalVariable,
     MonadSimplify (..),
     simplifyPatternScatter,
@@ -51,6 +55,11 @@ module Kore.Simplify.Simplify (
     MonadLog,
 ) where
 
+import Control.Monad.Catch (
+    MonadCatch,
+    MonadMask,
+    MonadThrow,
+ )
 import Control.Monad qualified as Monad
 import Control.Monad.Counter
 import Control.Monad.Morph (
@@ -60,12 +69,12 @@ import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (
     RWST,
  )
-import Control.Monad.State.Strict qualified as Strict
+import Control.Monad.State.Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.Reader
+import Control.Monad.Reader
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
@@ -145,9 +154,100 @@ import Pretty (
     (<+>),
  )
 import Pretty qualified
+import Prof (
+    MonadProf
+ )
 import SMT (
     MonadSMT (..),
+    SMT,
  )
+
+data Env = Env
+    { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
+    , simplifierCondition :: !(ConditionSimplifier Simplifier)
+    , simplifierTerm ::
+        SideCondition RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        Simplifier (OrPattern RewritingVariableName)
+    , simplifierPattern ::
+        SideCondition RewritingVariableName ->
+        Pattern RewritingVariableName ->
+        Simplifier (OrPattern RewritingVariableName)
+    , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
+    , memo :: !(Memo.Self Simplifier)
+    , injSimplifier :: !InjSimplifier
+    , overloadSimplifier :: !OverloadSimplifier
+    , simplifierXSwitch :: !SimplifierXSwitch
+    }
+
+{- | @Simplifier@ represents a simplification action.
+
+A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
+
+A @Simplifier@ can write to the log through 'HasLog'.
+-}
+newtype Simplifier a
+    = Simplifier (StateT SimplifierCache (ReaderT Env SMT) a)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadSMT, MonadLog, MonadProf)
+    deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
+    deriving newtype (MonadReader Env)
+    deriving newtype (MonadState SimplifierCache)
+
+{- | Run a simplification, returning the result of only one branch.
+
+__Warning__: @runSimplifier@ calls 'error' if the 'Simplifier' does not contain
+exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
+that may branch.
+-}
+runSimplifier :: Env -> Simplifier a -> SMT a
+runSimplifier env (Simplifier simplifier) =
+    runReaderT (evalStateT simplifier initCache) env
+
+instance MonadSimplify Simplifier where
+    askMetadataTools = asks metadataTools
+    {-# INLINE askMetadataTools #-}
+
+    simplifyPattern sideCondition patt = do
+        simplify <- asks simplifierPattern
+        simplify sideCondition patt
+    {-# INLINE simplifyPattern #-}
+
+    simplifyTerm sideCondition input = do
+        simplify <- asks simplifierTerm
+        simplify sideCondition input
+    {-# INLINE simplifyTerm #-}
+
+    simplifyCondition topCondition conditional = do
+        ConditionSimplifier simplify <- asks simplifierCondition
+        simplify topCondition conditional
+    {-# INLINE simplifyCondition #-}
+
+    askSimplifierAxioms = asks simplifierAxioms
+    {-# INLINE askSimplifierAxioms #-}
+
+    localSimplifierAxioms locally =
+        local $ \env@Env{simplifierAxioms} ->
+            env{simplifierAxioms = locally simplifierAxioms}
+    {-# INLINE localSimplifierAxioms #-}
+
+    askMemo = asks memo
+    {-# INLINE askMemo #-}
+
+    askInjSimplifier = asks injSimplifier
+    {-# INLINE askInjSimplifier #-}
+
+    askOverloadSimplifier = asks overloadSimplifier
+    {-# INLINE askOverloadSimplifier #-}
+
+    getCache = get
+    {-# INLINE getCache #-}
+
+    putCache = put
+    {-# INLINE putCache #-}
+
+    askSimplifierXSwitch = asks simplifierXSwitch
+    {-# INLINE askSimplifierXSwitch #-}
 
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
@@ -292,7 +392,7 @@ instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
-instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+instance MonadSimplify m => MonadSimplify (StateT s m)
 
 instance MonadSimplify m => MonadSimplify (RWST r () s m)
 

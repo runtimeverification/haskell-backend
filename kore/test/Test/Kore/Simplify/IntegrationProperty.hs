@@ -54,7 +54,7 @@ import Kore.Simplify.Data qualified as Simplification
 import Kore.Simplify.Pattern qualified as Pattern (
     simplify,
  )
-import Kore.Simplify.Simplify
+import Kore.Simplify.Simplify hiding (runSimplifier)
 import Kore.Unparser
 import Prelude.Kore
 import SMT qualified

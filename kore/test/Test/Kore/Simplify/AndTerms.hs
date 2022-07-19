@@ -65,7 +65,7 @@ import Kore.Simplify.Equals (
     termEquals,
  )
 import Kore.Simplify.Not qualified as Not
-import Kore.Simplify.Simplify
+import Kore.Simplify.Simplify hiding (runSimplifier)
 import Kore.Syntax.Sentence (
     SentenceAlias,
  )
