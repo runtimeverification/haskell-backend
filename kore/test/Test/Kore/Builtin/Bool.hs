@@ -236,7 +236,7 @@ test_unifyBoolOr =
             & lift
             & run
 
-run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
+run :: MaybeT (UnifierT (SimplifierT SMT.SMT)) a -> IO [Maybe a]
 run =
     runNoSMT
         . runSimplifier testEnv
@@ -246,7 +246,7 @@ run =
 termSimplifier ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    UnifierT (SimplifierT SMT.NoSMT) (Pattern RewritingVariableName)
+    UnifierT (SimplifierT SMT.SMT) (Pattern RewritingVariableName)
 termSimplifier = \term1 term2 ->
     runMaybeT (worker term1 term2 <|> worker term2 term1)
         >>= maybe (fallback term1 term2) return
