@@ -19,7 +19,7 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
-import Data.Bifunctor(Bifunctor (..))
+import Data.Bifunctor (Bifunctor (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
