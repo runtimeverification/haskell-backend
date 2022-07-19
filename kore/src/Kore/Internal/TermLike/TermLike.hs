@@ -28,6 +28,7 @@ module Kore.Internal.TermLike.TermLike (
 
 import Control.Comonad.Trans.Cofree (
     tailF,
+    CofreeT(CofreeT),
  )
 import Control.Lens (
     Lens',
@@ -35,6 +36,8 @@ import Control.Lens (
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
 import Control.Monad.Reader qualified as Reader
+import Data.Bifunctor qualified as Bifunctor
+import Data.ByteString.Short qualified as ByteString
 import Data.Functor.Const (
     Const (..),
  )
@@ -49,6 +52,7 @@ import Data.Functor.Identity (
  )
 import Data.Generics.Product
 import Data.Generics.Product qualified as Lens.Product
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (
     Map,
  )
@@ -57,6 +61,7 @@ import Data.Set (
     Set,
  )
 import Data.Set qualified as Set
+import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
 import GHC.Stack qualified as GHC
 import Generics.SOP qualified as SOP
@@ -75,15 +80,20 @@ import Kore.Attribute.Pattern.Functional qualified as Attribute
 import Kore.Attribute.Pattern.Simplified qualified as Attribute
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Synthetic
+import Kore.Builtin.Encoding qualified as Encoding
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
  )
+import Kore.Builtin.Endianness.Endianness qualified as Endianness
 import Kore.Builtin.Signedness.Signedness (
     Signedness,
  )
+import Kore.Builtin.Signedness.Signedness qualified as Signedness
 import Kore.Debug
 import Kore.Internal.Alias
+import Kore.Internal.Alias qualified as Alias
 import Kore.Internal.Inj
+import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
@@ -104,6 +114,7 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
 import Kore.Internal.Symbol (
     Symbol,
  )
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
@@ -126,6 +137,8 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
+import Kore.Syntax.Pattern qualified as Pattern
+import Kore.Syntax.PatternF qualified as PatternF
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
@@ -1249,3 +1262,103 @@ depth :: TermLike variable -> Int
 depth = Recursive.fold levelDepth
   where
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
+
+
+instance Ord variable => From (TermLike variable) (Pattern.Pattern variable (TermAttributes variable)) where
+    from = uninternalize
+
+uninternalize :: forall variable. Ord variable => TermLike variable -> Pattern.Pattern variable (TermAttributes variable)
+uninternalize = Pattern.Pattern . Recursive.cata go
+    where
+        go :: CofreeF (TermLikeF variable) (TermAttributes variable) (Cofree (PatternF.PatternF variable) (TermAttributes variable)) -> Cofree (PatternF.PatternF variable) (TermAttributes variable)
+        go (attr :< trmLikePat) = case trmLikePat of
+            AndF and' -> wrap $ PatternF.AndF and'
+            ApplySymbolF application -> wrap $ PatternF.ApplicationF $ 
+                Bifunctor.bimap Symbol.toSymbolOrAlias id application
+            ApplyAliasF application -> wrap $ PatternF.ApplicationF $ 
+                Bifunctor.bimap Alias.toSymbolOrAlias id application
+            BottomF bottom -> wrap $ PatternF.BottomF bottom
+            CeilF ceil -> wrap $ PatternF.CeilF ceil
+            DomainValueF domainValue -> wrap $ PatternF.DomainValueF domainValue
+            EqualsF equals -> wrap $ PatternF.EqualsF equals
+            ExistsF exists -> wrap $ PatternF.ExistsF exists
+            FloorF floor' -> wrap $ PatternF.FloorF floor'
+            ForallF forall' -> wrap $ PatternF.ForallF forall'
+            IffF iff -> wrap $ PatternF.IffF iff
+            ImpliesF implies -> wrap $ PatternF.ImpliesF implies
+            InF in' -> wrap $ PatternF.InF in'
+            MuF mu -> wrap $ PatternF.MuF mu
+            NextF next -> wrap $ PatternF.NextF next
+            NotF not' -> wrap $ PatternF.NotF not'
+            NuF nu -> wrap $ PatternF.NuF nu
+            OrF or' -> wrap $ PatternF.OrF or'
+            RewritesF rewrites -> wrap $ PatternF.RewritesF rewrites
+            TopF top -> wrap $ PatternF.TopF top
+            InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant
+            StringLiteralF stringLiteral -> wrap $ PatternF.StringLiteralF stringLiteral
+            InternalBoolF (Const (InternalBool boolSort boolValue)) -> wrap $ 
+                mkInternalDV boolSort $ if boolValue then "true" else "false"
+            InternalBytesF (Const (InternalBytes bytesSort bytesValue)) -> wrap $ 
+                mkInternalDV bytesSort $ Encoding.decode8Bit $ ByteString.fromShort bytesValue
+            InternalIntF (Const (InternalInt intSort intValue)) -> wrap $ 
+                mkInternalDV intSort $ Text.pack $ show intValue
+            InternalStringF (Const (InternalString stringSort stringValue)) -> wrap $ 
+                mkInternalDV stringSort stringValue
+            InternalListF internalList -> mkInternalList internalList
+            InternalMapF internalMap -> mkInternalAc internalMap
+            InternalSetF internalSet -> mkInternalAc internalSet
+            VariableF variable -> wrap $ PatternF.VariableF variable
+            EndiannessF (Const endianness) -> wrap $ PatternF.ApplicationF $ 
+                Bifunctor.bimap Symbol.toSymbolOrAlias id $ Endianness.toApplication endianness
+            SignednessF (Const signedness) -> wrap $ PatternF.ApplicationF $ 
+                Bifunctor.bimap Symbol.toSymbolOrAlias id $ Signedness.toApplication signedness
+            InjF inj -> wrap $ PatternF.ApplicationF $ 
+                Bifunctor.bimap Symbol.toSymbolOrAlias id $ Inj.toApplication inj
+
+            where
+                wrap x = CofreeT $ Identity $ attr :< x
+                mkInternalDV sort strVal =
+                    PatternF.DomainValueF $ DomainValue sort $ wrap $
+                        PatternF.StringLiteralF $ Const $ StringLiteral strVal
+                
+
+                mkTrm unitSymbol concatSymbol = mkAux
+                    where
+                        mkAux = \case
+                            [] -> 
+                                wrap $ PatternF.ApplicationF $ 
+                                    Application (Symbol.toSymbolOrAlias unitSymbol) []
+                            [x] -> x
+                            (x:xs) -> 
+                                wrap $ PatternF.ApplicationF $ 
+                                    Application (Symbol.toSymbolOrAlias concatSymbol) [x , mkAux xs]
+
+                mkInternalList InternalList{internalListUnit, internalListConcat, internalListElement, internalListChild} = 
+                    mkTrm internalListUnit internalListConcat mkChildren
+                    where
+                        mkChildren = 
+                            map (\e -> wrap $ PatternF.ApplicationF $ 
+                                    Application (Symbol.toSymbolOrAlias internalListElement) [e]) $ 
+                                toList internalListChild
+
+                                    
+                mkInternalAc :: forall normalized. AcWrapper normalized =>
+                    InternalAc Key normalized (Cofree (PatternF.PatternF variable) (TermAttributes variable)) -> 
+                    Cofree (PatternF.PatternF variable) (TermAttributes variable)
+                mkInternalAc InternalAc{builtinAcUnit, builtinAcConcat, builtinAcChild, builtinAcElement} = 
+                    mkTrm builtinAcUnit builtinAcConcat mkChildren
+                    where
+                        NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
+
+                        mkChildren =
+                                map (\e -> wrap $ PatternF.ApplicationF $ 
+                                    Application (Symbol.toSymbolOrAlias builtinAcElement) $ elementToApplicationArgs e) elementsWithVariables
+                             ++ map (\(k, v) -> wrap $ PatternF.ApplicationF $ 
+                                        Application (Symbol.toSymbolOrAlias builtinAcElement) $
+                                            uninternalizeKey k :
+                                            concreteElementToApplicationArgs v
+                                    ) 
+                                    (HashMap.toList concreteElements)
+                             ++ opaque
+
+                uninternalizeKey = Pattern.getPattern . uninternalize . from

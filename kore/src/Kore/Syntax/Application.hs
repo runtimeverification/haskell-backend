@@ -19,6 +19,7 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
+import Data.Bifunctor(Bifunctor (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
@@ -69,6 +70,9 @@ data Application head child = Application
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Bifunctor Application where
+    bimap f g (Application alias children) = Application (f alias) (fmap g children)
 
 instance (Debug head, Debug child) => Debug (Application head child)
 

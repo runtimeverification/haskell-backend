@@ -98,6 +98,10 @@ class AcWrapper (normalized :: Type -> Type -> Type) where
         (key, Value normalized child) ->
         Pretty.Doc ann
 
+    elementToApplicationArgs :: Element normalized child -> [child]
+
+    concreteElementToApplicationArgs :: Value normalized child -> [child]
+
 instance
     (AcWrapper normalized, From key child) =>
     From (key, Value normalized child) (Element normalized child)
