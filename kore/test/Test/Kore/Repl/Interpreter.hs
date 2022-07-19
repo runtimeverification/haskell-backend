@@ -747,7 +747,7 @@ runWithState command axioms claims claim stateTransformer = do
     ((c, s), logEntries) <-
         runLogger $
             replInterpreter0
-                @(SimplifierT NoSMT)
+                @(SimplifierT SMT)
                 (modifyAuxOutput output)
                 (modifyKoreOutput output)
                 command
@@ -833,7 +833,7 @@ mkState startTime axioms claims claim =
 
 mkConfig ::
     MVar (Log.LogAction IO Log.ActualEntry) ->
-    Config (SimplifierT NoSMT)
+    Config (SimplifierT SMT)
 mkConfig logger =
     Config
         { stepper = stepper0
@@ -849,7 +849,7 @@ mkConfig logger =
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        SimplifierT NoSMT ExecutionGraph
+        SimplifierT SMT ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
         proveClaimStep Nothing EnabledStuckCheck claims' axioms' graph node
 

@@ -118,7 +118,7 @@ import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Logic qualified
 import Prelude.Kore
 import SMT (
-    NoSMT,
+    SMT,
  )
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.External
@@ -150,7 +150,7 @@ testSymbolWithoutSolver ::
     , expanded ~ OrPattern RewritingVariableName
     ) =>
     -- | evaluator function for the builtin
-    (p -> NoSMT expanded) ->
+    (p -> SMT expanded) ->
     -- | test name
     String ->
     -- | symbol being tested
@@ -308,7 +308,7 @@ evaluateExpectTopK termLike = do
 
 evaluateToList ::
     TermLike RewritingVariableName ->
-    NoSMT [Pattern RewritingVariableName]
+    SMT [Pattern RewritingVariableName]
 evaluateToList =
     fmap toList
         . runSimplifier testEnv
@@ -319,7 +319,7 @@ runStep ::
     Pattern RewritingVariableName ->
     -- | axiom
     RewriteRule RewritingVariableName ->
-    NoSMT (OrPattern RewritingVariableName)
+    SMT (OrPattern RewritingVariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return $ Step.gatherResults results
@@ -329,7 +329,7 @@ runStepResult ::
     Pattern RewritingVariableName ->
     -- | axiom
     RewriteRule RewritingVariableName ->
-    NoSMT (Step.Results (RulePattern RewritingVariableName))
+    SMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         [axiom]

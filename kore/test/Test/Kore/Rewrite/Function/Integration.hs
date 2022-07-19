@@ -2057,7 +2057,7 @@ testEnv =
         , simplifierXSwitch = DisabledSimplifierX
         }
 
-testEnvUnification :: Env (SimplifierT NoSMT)
+testEnvUnification :: Env (SimplifierT SMT)
 testEnvUnification =
     testEnv
         { simplifierAxioms =
