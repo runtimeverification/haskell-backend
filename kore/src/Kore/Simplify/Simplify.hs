@@ -205,6 +205,8 @@ runSimplifier env (Simplifier simplifier) =
     runReaderT (evalStateT simplifier initCache) env
 
 instance MonadSimplify Simplifier where
+    liftSimplifier = id
+
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
@@ -253,6 +255,18 @@ type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
 class (MonadLog m, MonadSMT m) => MonadSimplify m where
+
+    -- | Lift a Simplifier action.
+    liftSimplifier :: Simplifier a -> m a
+    default liftSimplifier ::
+        ( MonadTrans t
+        , MonadSimplify n
+        , m ~ t n
+        ) =>
+        Simplifier a ->
+        m a
+    liftSimplifier = lift . liftSimplifier
+
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools ::

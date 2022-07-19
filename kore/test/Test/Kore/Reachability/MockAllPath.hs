@@ -405,6 +405,7 @@ instance MonadCatch AllPathIdentity where
     catch action _handler = action
 
 instance MonadSimplify AllPathIdentity where
+    liftSimplifier = undefined
     askMetadataTools = undefined
     simplifyPattern = undefined
     simplifyTerm = undefined
