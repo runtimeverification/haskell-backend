@@ -163,7 +163,7 @@ data Condition = Condition
 
 data ImpliesResult = ImpliesResult
     { satisfiable :: !Bool
-    , contition :: !(Maybe Condition)
+    , condition :: !(Maybe Condition)
     }
     deriving stock (Generic, Show, Eq)
     deriving
