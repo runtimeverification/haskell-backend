@@ -137,7 +137,9 @@ mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServer
                         koreLogOptions
             )
 
-koreRpcServerRun :: GlobalMain.LocalOptions KoreRpcServerOptions -> GlobalMain.Main ExitCode
+koreRpcServerRun :: 
+    GlobalMain.LocalOptions KoreRpcServerOptions -> 
+    GlobalMain.Main ExitCode
 koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
     GlobalMain.SerializedDefinition{serializedModule, lemmas} <-
         GlobalMain.deserializeDefinition 
