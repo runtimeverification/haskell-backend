@@ -2038,7 +2038,7 @@ testInjSimplifier =
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
-testEnv :: MonadSimplify simplifier => Env simplifier
+testEnv :: Env
 testEnv =
     Env
         { metadataTools = testMetadataTools
@@ -2057,7 +2057,7 @@ testEnv =
         , simplifierXSwitch = DisabledSimplifierX
         }
 
-testEnvUnification :: Env (SimplifierT SMT)
+testEnvUnification :: Env
 testEnvUnification =
     testEnv
         { simplifierAxioms =

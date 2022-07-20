@@ -455,7 +455,7 @@ testProcessedAxiomPatterns =
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
 
-testEnv :: Env (SimplifierT SMT)
+testEnv :: Env
 testEnv =
     Mock.env
         { metadataTools = testMetadataTools
