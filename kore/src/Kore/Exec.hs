@@ -36,9 +36,6 @@ import Control.Monad (
     filterM,
     (>=>),
  )
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
@@ -197,9 +194,6 @@ import Kore.Unparser (
     unparseToText,
     unparseToText2,
  )
-import Log (
-    MonadLog,
- )
 import Log qualified
 import Logic (
     LogicT,
@@ -209,7 +203,6 @@ import Logic qualified
 import Prelude.Kore
 import Prof
 import SMT (
-    MonadSMT,
     SMT,
  )
 import System.Exit (
@@ -239,16 +232,9 @@ data SerializedModule = SerializedModule
     deriving anyclass (NFData)
 
 makeSerializedModule ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     VerifiedModule StepperAttributes ->
-    smt SerializedModule
+    SMT SerializedModule
 makeSerializedModule simplifierx verifiedModule =
     evalSimplifier simplifierx (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
         rewrites <- initializeAndSimplify verifiedModule
@@ -274,13 +260,6 @@ makeSerializedModule simplifierx verifiedModule =
 
 -- | Symbolic execution
 exec ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
@@ -289,42 +268,8 @@ exec ::
     ExecutionMode ->
     -- | The input pattern
     TermLike VariableName ->
-    smt (ExitCode, TermLike VariableName)
+    SMT (ExitCode, TermLike VariableName)
 exec
-    simplifierx
-    depthLimit
-    breadthLimit
-    serializedModule
-    strategy
-    trm = do
-        (exitCode, finalTrm, _) <-
-            execDetailed
-                simplifierx
-                depthLimit
-                breadthLimit
-                serializedModule
-                strategy
-                trm
-        pure (exitCode, finalTrm)
-
-execDetailed ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
-    Limit Natural ->
-    Limit Natural ->
-    -- | The main module
-    SerializedModule ->
-    ExecutionMode ->
-    -- | The input pattern
-    TermLike VariableName ->
-    smt (ExitCode, TermLike VariableName, [(ExecDepth, ProgramState (Pattern RewritingVariableName))])
-execDetailed
     simplifierx
     depthLimit
     breadthLimit
@@ -381,7 +326,7 @@ execDetailed
                     MultiOr.map getRewritingPattern finalConfigs'
                         & OrPattern.toTermLike initialSort
                         & sameTermLikeSort initialSort
-            return (exitCode, finalTerm, finals)
+            return (exitCode, finalTerm)
       where
         dropStrategy = snd
         getFinalConfigsOf act = observeAllT $ fmap snd act
@@ -471,12 +416,6 @@ getExitCode
 
 -- | Symbolic search
 search ::
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
@@ -488,7 +427,7 @@ search ::
     Pattern VariableName ->
     -- | The bound on the number of search matches and the search type
     Search.Config ->
-    smt (TermLike VariableName)
+    SMT (TermLike VariableName)
 search
     simplifierx
     depthLimit
@@ -550,13 +489,6 @@ search
 
 -- | Proving a spec given as a module containing rules to be proven
 prove ::
-    forall smt.
-    ( MonadLog smt
-    , MonadMask smt
-    , MonadIO smt
-    , MonadSMT smt
-    , MonadProf smt
-    ) =>
     Maybe MinDepth ->
     StuckCheck ->
     SimplifierXSwitch ->
@@ -571,7 +503,7 @@ prove ::
     VerifiedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
     Maybe (VerifiedModule StepperAttributes) ->
-    smt ProveClaimsResult
+    SMT ProveClaimsResult
 prove
     maybeMinDepth
     stuckCheck
@@ -675,12 +607,6 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
@@ -689,7 +615,7 @@ boundedModelCheck ::
     -- | The spec module
     VerifiedModule StepperAttributes ->
     Strategy.GraphSearchOrder ->
-    smt
+    SMT
         ( Bounded.CheckResult
             (TermLike VariableName)
             (ImplicationRule VariableName)
@@ -719,17 +645,11 @@ boundedModelCheck
                 (head claims, depthLimit)
 
 matchDisjunction ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    smt (TermLike VariableName)
+    SMT (TermLike VariableName)
 matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
     evalSimplifierProofs simplifierx mainModule $ do
         results <-
@@ -764,16 +684,10 @@ See 'checkEquation',
 'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
-    smt ()
+    SMT ()
 checkFunctions simplifierx verifiedModule =
     evalSimplifierProofs simplifierx verifiedModule $ do
         -- check if RHS is function pattern

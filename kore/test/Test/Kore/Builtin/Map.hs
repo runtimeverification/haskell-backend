@@ -103,7 +103,7 @@ import Prelude.Kore hiding (
     concatMap,
  )
 import SMT (
-    NoSMT,
+    SMT,
  )
 import Test.Expect
 import Test.Kore (
@@ -1142,7 +1142,7 @@ unifiesWith ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Pattern RewritingVariableName ->
-    PropertyT NoSMT ()
+    PropertyT SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -1152,7 +1152,7 @@ unifiesWithMulti ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    PropertyT NoSMT ()
+    PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults

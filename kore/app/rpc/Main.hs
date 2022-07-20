@@ -70,7 +70,6 @@ data KoreRpcServerOptions = KoreRpcServerOptions
     , koreLogOptions :: !KoreLogOptions
     , bugReportOption :: !BugReportOption
     , port :: !Int
-    -- , version :: _ ??
     }
 
 -- | Command Line Argument Parser
@@ -123,9 +122,6 @@ main = do
             parserInfoModifiers
     for_ (GlobalMain.localOptions options) mainWithOptions
 
--- main :: IO ()
--- main = runServer 31337
-
 mainWithOptions :: GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
 mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
     ensureSmtPreludeExists koreSolverOptions
@@ -143,10 +139,12 @@ mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServer
 
 koreRpcServerRun :: GlobalMain.LocalOptions KoreRpcServerOptions -> GlobalMain.Main ExitCode
 koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
-    let KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
-        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions
     GlobalMain.SerializedDefinition{serializedModule, lemmas} <-
-        GlobalMain.deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
+        GlobalMain.deserializeDefinition 
+            simplifierx 
+            koreSolverOptions 
+            definitionFileName 
+            mainModuleName
     let SerializedModule{metadataTools} = serializedModule
     let smtConfig =
             SMT.defaultConfig
@@ -156,13 +154,19 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
                 , SMT.prelude = prelude
                 }
 
+    -- launch the SMT solver, initialize it and then pass the SolverSetup object to the rpc server
     GlobalMain.clockSomethingIO "Executing" $
         bracket
             (SMT.newSolver smtConfig)
             SMT.stopSolver
             $ \mvar -> do
-                let solverSetup = SMT.SolverSetup{userInit = declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
-                runReaderT (SMT.getSMT SMT.initSolver) solverSetup
+                let solverSetup = SMT.SolverSetup{userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
+                SMT.initSolver solverSetup
+                -- wrap the call to runServer in the logger monad
                 Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
 
     pure ExitSuccess
+
+    where
+        KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
+        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions

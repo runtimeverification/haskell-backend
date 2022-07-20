@@ -108,7 +108,7 @@ simplifyWithSideCondition
                 . TermLike.simplify sideCondition
                 . mkRewritingTerm
 
-newtype TestSimplifier a = TestSimplifier {getTestSimplifier :: SimplifierT NoSMT a}
+newtype TestSimplifier a = TestSimplifier {getTestSimplifier :: Simplifier a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadLog, MonadSMT, MonadThrow)
 

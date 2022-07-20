@@ -15,7 +15,6 @@ import Log (
  )
 import Prelude.Kore
 import SMT (
-    NoSMT,
     SMT,
  )
 import SMT qualified
@@ -34,12 +33,12 @@ testPropertyWithSolver str =
 testPropertyWithoutSolver ::
     HasCallStack =>
     String ->
-    PropertyT NoSMT () ->
+    PropertyT SMT () ->
     TestTree
 testPropertyWithoutSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runNoSMT
 
-testCaseWithoutSMT :: String -> NoSMT () -> TestTree
+testCaseWithoutSMT :: String -> SMT () -> TestTree
 testCaseWithoutSMT str = testCase str . runNoSMT
 
 assertEqual' ::
@@ -61,5 +60,5 @@ runSMT = runSMTWithConfig SMT.defaultConfig
 runSMTWithConfig :: SMT.Config -> SMT () -> SMT a -> IO a
 runSMTWithConfig config userInit = flip runLoggerT mempty . SMT.runSMT config userInit
 
-runNoSMT :: NoSMT a -> IO a
+runNoSMT :: SMT a -> IO a
 runNoSMT = flip runLoggerT mempty . SMT.runNoSMT

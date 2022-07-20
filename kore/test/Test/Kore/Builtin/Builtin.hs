@@ -27,9 +27,6 @@ module Test.Kore.Builtin.Builtin (
 ) where
 
 import Control.Monad ((>=>))
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Map.Strict (
     Map,
@@ -118,7 +115,7 @@ import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Logic qualified
 import Prelude.Kore
 import SMT (
-    NoSMT,
+    SMT,
  )
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.External
@@ -150,7 +147,7 @@ testSymbolWithoutSolver ::
     , expanded ~ OrPattern RewritingVariableName
     ) =>
     -- | evaluator function for the builtin
-    (p -> NoSMT expanded) ->
+    (p -> SMT expanded) ->
     -- | test name
     String ->
     -- | symbol being tested
@@ -243,7 +240,7 @@ testOverloadSimplifier =
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
-testEnv :: MonadSimplify simplifier => Env simplifier
+testEnv :: Env
 testEnv =
     Env
         { metadataTools = testMetadataTools
@@ -264,17 +261,15 @@ simplify =
         . (simplifyTerm SideCondition.top >=> Logic.scatter)
 
 evaluateTerm ::
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    smt (OrPattern RewritingVariableName)
+    SMT (OrPattern RewritingVariableName)
 evaluateTerm termLike =
     runSimplifier testEnv $
         Pattern.simplify (Pattern.fromTermLike termLike)
 
 evaluatePredicate ::
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     Predicate RewritingVariableName ->
-    smt (OrPattern RewritingVariableName)
+    SMT (OrPattern RewritingVariableName)
 evaluatePredicate predicate =
     runSimplifier testEnv $
         Pattern.simplify
@@ -285,30 +280,27 @@ evaluatePredicate predicate =
 
 evaluateTermT ::
     MonadTrans t =>
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    t smt (OrPattern RewritingVariableName)
+    t SMT (OrPattern RewritingVariableName)
 evaluateTermT = lift . evaluateTerm
 
 evaluatePredicateT ::
     MonadTrans t =>
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     Predicate RewritingVariableName ->
-    t smt (OrPattern RewritingVariableName)
+    t SMT (OrPattern RewritingVariableName)
 evaluatePredicateT = lift . evaluatePredicate
 
 evaluateExpectTopK ::
     HasCallStack =>
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    Hedgehog.PropertyT smt ()
+    Hedgehog.PropertyT SMT ()
 evaluateExpectTopK termLike = do
     actual <- evaluateTermT termLike
     OrPattern.topOf kSort Hedgehog.=== actual
 
 evaluateToList ::
     TermLike RewritingVariableName ->
-    NoSMT [Pattern RewritingVariableName]
+    SMT [Pattern RewritingVariableName]
 evaluateToList =
     fmap toList
         . runSimplifier testEnv
@@ -319,7 +311,7 @@ runStep ::
     Pattern RewritingVariableName ->
     -- | axiom
     RewriteRule RewritingVariableName ->
-    NoSMT (OrPattern RewritingVariableName)
+    SMT (OrPattern RewritingVariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return $ Step.gatherResults results
@@ -329,7 +321,7 @@ runStepResult ::
     Pattern RewritingVariableName ->
     -- | axiom
     RewriteRule RewritingVariableName ->
-    NoSMT (Step.Results (RulePattern RewritingVariableName))
+    SMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         [axiom]

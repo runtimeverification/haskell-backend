@@ -5,9 +5,6 @@ module Test.Kore.Rewrite (
 
 import Control.Exception qualified as Exception
 import Control.Lens qualified as Lens
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import Data.Generics.Product
 import Data.Generics.Wrapped (
     _Unwrapped,
@@ -391,9 +388,7 @@ runStepWorker ::
         ~ Strategy.ExecutionGraph
             (ProgramState (Pattern RewritingVariableName))
             (RewriteRule RewritingVariableName) =>
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
-    (Env simplifier -> simplifier result -> IO result) ->
+    (Env -> Simplifier result -> IO result) ->
     -- | depth limit
     Limit Natural ->
     -- | breadth limit

@@ -318,7 +318,7 @@ runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simp
         Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
 
     runSMT :: forall a. SMT.SMT a -> IO a
-    runSMT m = flip Log.runLoggerT logAction $ flip runReaderT solverSetup $ SMT.getSMT m
+    runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup
 
 srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> JSONRPCT m ()
 srv runSMT simplifierx serializedModule = do
