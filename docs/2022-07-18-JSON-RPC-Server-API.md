@@ -217,17 +217,17 @@ Same as for execute
 
 ## Cancel
 
-Request:
+### Request:
 
 ```json
 {"jsonrpc": "2.0", "method": "cancel"}
 ```
 
-Response:
+### Response:
 
 none
 
-Response from cancelled call:
+### Response from cancelled call:
 
 ```json
 {
