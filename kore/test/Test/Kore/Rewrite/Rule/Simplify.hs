@@ -6,15 +6,6 @@ module Test.Kore.Rewrite.Rule.Simplify (
 ) where
 
 import Control.Lens qualified as Lens
-import Control.Monad.Morph (
-    MFunctor (..),
- )
-import Control.Monad.Reader (
-    MonadReader,
-    ReaderT,
-    runReaderT,
- )
-import Control.Monad.Reader qualified as Reader
 import Data.Bifunctor qualified as Bifunctor
 import Data.Generics.Product (
     field,
@@ -74,7 +65,6 @@ import Kore.Simplify.Data (
     Env (..),
  )
 import Kore.Simplify.Simplify (
-    MonadSMT,
     MonadSimplify (..),
     Simplifier,
     emptyConditionSimplifier,
@@ -83,7 +73,6 @@ import Kore.Syntax.Variable (
     VariableName,
     fromVariableName,
  )
-import Log
 import Prelude.Kore
 import Test.Kore.Builtin.Bool qualified as Test.Bool
 import Test.Kore.Builtin.Builtin qualified as Builtin
@@ -546,16 +535,15 @@ testSimplifyTerm testEnv sideCondition termLike = do
         satisfied = sideCondition == expectSideCondition
     return
         . OrPattern.fromTermLike
-        . (if satisfied then applyReplacements replacements else id)
+        . (if satisfied then applyReplacements else id)
         $ termLike
   where
     TestEnv{replacements, input, requires} = testEnv
     applyReplacements ::
         InternalVariable variable =>
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         TermLike variable ->
         TermLike variable
-    applyReplacements replacements zero =
+    applyReplacements zero =
         foldl' applyReplacement zero $
             fmap liftReplacement replacements
 
