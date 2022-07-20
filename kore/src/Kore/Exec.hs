@@ -175,13 +175,13 @@ import Kore.Rewrite.Transition (
     scatter,
  )
 import Kore.Simplify.Data (
+    Simplifier,
     evalSimplifier,
     evalSimplifierProofs,
  )
 import Kore.Simplify.Data qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    MonadSimplify,
     SimplifierXSwitch,
  )
 import Kore.Syntax.Module (
@@ -373,13 +373,11 @@ profTransitionRule rule prim proofState =
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode ::
-    forall simplifier.
-    (MonadIO simplifier, MonadSimplify simplifier) =>
     -- | The main module
     VerifiedModuleSyntax StepperAttributes ->
     -- | The final configuration(s) of execution
     OrPattern.OrPattern RewritingVariableName ->
-    simplifier ExitCode
+    Simplifier ExitCode
 getExitCode
     indexedModule
     configs =
@@ -408,8 +406,8 @@ getExitCode
                 . noLocationId
 
         takeExitCode ::
-            (([Sort] -> Symbol) -> simplifier ExitCode) ->
-            simplifier ExitCode
+            (([Sort] -> Symbol) -> Simplifier ExitCode) ->
+            Simplifier ExitCode
         takeExitCode act =
             resolve "LblgetExitCode"
                 & maybe (pure ExitSuccess) act
@@ -710,10 +708,9 @@ checkFunctions simplifierx verifiedModule =
 https://github.com/runtimeverification/haskell-backend/issues/2472#issue-833143685
 -}
 bothMatch ::
-    MonadSimplify m =>
     Equation VariableName ->
     Equation VariableName ->
-    m Bool
+    Simplifier Bool
 bothMatch eq1 eq2 =
     let pre1 = Equation.requires eq1
         pre2 = Equation.requires eq2
@@ -757,28 +754,24 @@ makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern{attributes}
 
 simplifySomeClaim ::
-    MonadSimplify simplifier =>
     SomeClaim ->
-    simplifier SomeClaim
+    Simplifier SomeClaim
 simplifySomeClaim rule = do
     let claim = Lens.view lensClaimPattern rule
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
 
 initializeAndSimplify ::
-    MonadSimplify simplifier =>
     VerifiedModule StepperAttributes ->
-    simplifier Initialized
+    Simplifier Initialized
 initializeAndSimplify verifiedModule =
     initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    (RewriteRule RewritingVariableName -> LogicT simplifier (RewriteRule RewritingVariableName)) ->
+    (RewriteRule RewritingVariableName -> LogicT Simplifier (RewriteRule RewritingVariableName)) ->
     VerifiedModule StepperAttributes ->
-    simplifier Initialized
+    Simplifier Initialized
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
@@ -788,7 +781,7 @@ initialize simplificationProcedure verifiedModule = do
   where
     initializeRule ::
         RewriteRule RewritingVariableName ->
-        LogicT simplifier (RewriteRule RewritingVariableName)
+        LogicT Simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
         simplRule <- simplificationProcedure rule
         when
@@ -810,19 +803,17 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes ->
     Maybe (VerifiedModule StepperAttributes) ->
-    simplifier InitializedProver
+    Simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized{rewriteRules} = initialized
         changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
-        simplifyToList :: SomeClaim -> simplifier [SomeClaim]
+        simplifyToList :: SomeClaim -> Simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             let result = toList simplified
@@ -858,7 +849,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
 
     logChangedClaim ::
         MaybeChanged SomeClaim ->
-        simplifier ()
+        Simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
     logChangedClaim (Unchanged _) = return ()
