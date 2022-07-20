@@ -8,7 +8,7 @@
   , config
   , ... }:
   {
-    flags = { release = false; threaded = true; };
+    flags = { threaded = true; };
     package = {
       specVersion = "2.2";
       identifier = { name = "kore"; version = "0.60.0.0"; };
