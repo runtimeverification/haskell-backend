@@ -56,6 +56,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
@@ -71,10 +72,8 @@ import Prelude.Kore
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
     simplifyRuleLhs ::
-        forall simplifier.
-        MonadSimplify simplifier =>
         rule ->
-        simplifier (MultiAnd rule)
+        Simplifier (MultiAnd rule)
 
 instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
     simplifyRuleLhs rule@RulePattern{left = And_ _ _ (ElemVar_ _)} = return $ MultiAnd.make [rule]

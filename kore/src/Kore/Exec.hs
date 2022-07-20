@@ -182,6 +182,7 @@ import Kore.Simplify.Data qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    liftSimplifier,
     SimplifierXSwitch,
  )
 import Kore.Syntax.Module (
@@ -770,7 +771,7 @@ initializeAndSimplify ::
     VerifiedModule StepperAttributes ->
     simplifier Initialized
 initializeAndSimplify verifiedModule =
-    initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
+    initialize (liftSimplifier . simplifyRuleLhs >=> Logic.scatter) verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::
@@ -824,7 +825,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
         simplifyToList :: SomeClaim -> simplifier [SomeClaim]
         simplifyToList rule = do
-            simplified <- simplifyRuleLhs rule
+            simplified <- liftSimplifier $ simplifyRuleLhs rule
             let result = toList simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
