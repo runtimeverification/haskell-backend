@@ -27,9 +27,6 @@ module Test.Kore.Builtin.Builtin (
 ) where
 
 import Control.Monad ((>=>))
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Map.Strict (
     Map,
@@ -243,7 +240,7 @@ testOverloadSimplifier =
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
-testEnv :: MonadSimplify simplifier => Env simplifier
+testEnv :: Env
 testEnv =
     Env
         { metadataTools = testMetadataTools
@@ -264,17 +261,15 @@ simplify =
         . (simplifyTerm SideCondition.top >=> Logic.scatter)
 
 evaluateTerm ::
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    smt (OrPattern RewritingVariableName)
+    SMT (OrPattern RewritingVariableName)
 evaluateTerm termLike =
     runSimplifier testEnv $
         Pattern.simplify (Pattern.fromTermLike termLike)
 
 evaluatePredicate ::
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     Predicate RewritingVariableName ->
-    smt (OrPattern RewritingVariableName)
+    SMT (OrPattern RewritingVariableName)
 evaluatePredicate predicate =
     runSimplifier testEnv $
         Pattern.simplify
@@ -285,23 +280,20 @@ evaluatePredicate predicate =
 
 evaluateTermT ::
     MonadTrans t =>
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    t smt (OrPattern RewritingVariableName)
+    t SMT (OrPattern RewritingVariableName)
 evaluateTermT = lift . evaluateTerm
 
 evaluatePredicateT ::
     MonadTrans t =>
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     Predicate RewritingVariableName ->
-    t smt (OrPattern RewritingVariableName)
+    t SMT (OrPattern RewritingVariableName)
 evaluatePredicateT = lift . evaluatePredicate
 
 evaluateExpectTopK ::
     HasCallStack =>
-    (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt) =>
     TermLike RewritingVariableName ->
-    Hedgehog.PropertyT smt ()
+    Hedgehog.PropertyT SMT ()
 evaluateExpectTopK termLike = do
     actual <- evaluateTermT termLike
     OrPattern.topOf kSort Hedgehog.=== actual
