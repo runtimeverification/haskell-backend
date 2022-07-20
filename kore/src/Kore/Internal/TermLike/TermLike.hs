@@ -36,7 +36,7 @@ import Control.Lens (
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
 import Control.Monad.Reader qualified as Reader
-import Data.Bifunctor qualified as Bifunctor
+import Data.Bifunctor (first)
 import Data.ByteString.Short qualified as ByteString
 import Data.Functor.Const (
     Const (..),
@@ -1275,11 +1275,11 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         ApplySymbolF application ->
             wrap $
                 PatternF.ApplicationF $
-                    Bifunctor.bimap Symbol.toSymbolOrAlias id application
+                    first Symbol.toSymbolOrAlias application
         ApplyAliasF application ->
             wrap $
                 PatternF.ApplicationF $
-                    Bifunctor.bimap Alias.toSymbolOrAlias id application
+                    first Alias.toSymbolOrAlias application
         BottomF bottom -> wrap $ PatternF.BottomF bottom
         CeilF ceil -> wrap $ PatternF.CeilF ceil
         DomainValueF domainValue -> wrap $ PatternF.DomainValueF domainValue
@@ -1318,15 +1318,15 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         EndiannessF (Const endianness) ->
             wrap $
                 PatternF.ApplicationF $
-                    Bifunctor.bimap Symbol.toSymbolOrAlias id $ Endianness.toApplication endianness
+                    first Symbol.toSymbolOrAlias $ Endianness.toApplication endianness
         SignednessF (Const signedness) ->
             wrap $
                 PatternF.ApplicationF $
-                    Bifunctor.bimap Symbol.toSymbolOrAlias id $ Signedness.toApplication signedness
+                    first Symbol.toSymbolOrAlias $ Signedness.toApplication signedness
         InjF inj ->
             wrap $
                 PatternF.ApplicationF $
-                    Bifunctor.bimap Symbol.toSymbolOrAlias id $ Inj.toApplication inj
+                    first Symbol.toSymbolOrAlias $ Inj.toApplication inj
       where
         wrap x = CofreeT $ Identity $ attr :< x
         mkInternalDV sort strVal =
@@ -1372,10 +1372,9 @@ uninternalize = Pattern.Pattern . Recursive.cata go
 
             mkChildren =
                 map
-                    ( \e ->
-                        wrap $
-                            PatternF.ApplicationF $
-                                Application (Symbol.toSymbolOrAlias builtinAcElement) $ elementToApplicationArgs e
+                    ( wrap .
+                        PatternF.ApplicationF .
+                            Application (Symbol.toSymbolOrAlias builtinAcElement) . elementToApplicationArgs
                     )
                     elementsWithVariables
                     ++ map
