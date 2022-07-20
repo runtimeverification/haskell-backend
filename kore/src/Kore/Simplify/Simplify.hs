@@ -11,7 +11,6 @@ module Kore.Simplify.Simplify (
     -- * Condition simplifiers
     ConditionSimplifier (..),
     emptyConditionSimplifier,
-    liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
     SimplifierCache (attemptedEquationsCache),
@@ -270,12 +269,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askSimplifierXSwitch = lift askSimplifierXSwitch
     {-# INLINE askSimplifierXSwitch #-}
 
-    simplifyPatternId ::
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyPatternId = pure . fromPattern
-    {-# INLINE simplifyPatternId #-}
-
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
@@ -323,7 +316,7 @@ simplifyPatternScatter sideCondition patt = do
     simplifierX <- askSimplifierXSwitch
     Logic.scatter
         =<< case simplifierX of
-            EnabledSimplifierX -> simplifyPatternId patt
+            EnabledSimplifierX -> pure (fromPattern patt)
             DisabledSimplifierX -> simplifyPattern sideCondition patt
 -- * Predicate simplifiers
 
@@ -343,16 +336,6 @@ emptyConditionSimplifier :: ConditionSimplifier monad
 emptyConditionSimplifier =
     ConditionSimplifier (\_ predicate -> return predicate)
 
-liftConditionSimplifier ::
-    (Monad monad, MonadTrans trans, Monad (trans monad)) =>
-    ConditionSimplifier monad ->
-    ConditionSimplifier (trans monad)
-liftConditionSimplifier (ConditionSimplifier simplifier) =
-    ConditionSimplifier $ \sideCondition predicate -> do
-        results <-
-            lift . lift $
-                observeAllT $ simplifier sideCondition predicate
-        scatter results
 -- * Builtin and axiom simplifiers
 
 {- | Used for keeping track of already attempted equations which failed to
