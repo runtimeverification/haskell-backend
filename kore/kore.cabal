@@ -19,11 +19,6 @@ source-repository head
   type: git
   location: https://github.com/runtimeverification/haskell-backend
 
-flag release
-  description: Build a faster runtime, at the expense of a slower build.
-  manual: True
-  default: False
-
 flag threaded
   description: Use the threaded runtime. Recommended to disable for profiling.
   manual: True
@@ -586,8 +581,6 @@ library
   hs-source-dirs:
     src
     app/share
-  if !flag(release)
-    ghc-options: -fno-specialise
 
 executable kore-exec
   import: haskell
