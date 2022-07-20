@@ -90,8 +90,7 @@ transitionLeaves ::
     -- | transition function
     (a -> m (TransitionResult a)) ->
     -- again, m is probably only for logging
-
-    -- |
+    -- | max-counterexamples, included in the internal logic
     Natural ->
     -- | initial node
     a ->
