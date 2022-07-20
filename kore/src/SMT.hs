@@ -10,7 +10,7 @@ module SMT (
     runNoSMT,
     runSMT,
     Solver,
-    SolverSetup(..),
+    SolverSetup (..),
     newSolver,
     initSolver,
     runWithSolver,

@@ -137,15 +137,15 @@ mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServer
                         koreLogOptions
             )
 
-koreRpcServerRun :: 
-    GlobalMain.LocalOptions KoreRpcServerOptions -> 
+koreRpcServerRun ::
+    GlobalMain.LocalOptions KoreRpcServerOptions ->
     GlobalMain.Main ExitCode
 koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
     GlobalMain.SerializedDefinition{serializedModule, lemmas} <-
-        GlobalMain.deserializeDefinition 
-            simplifierx 
-            koreSolverOptions 
-            definitionFileName 
+        GlobalMain.deserializeDefinition
+            simplifierx
+            koreSolverOptions
+            definitionFileName
             mainModuleName
     let SerializedModule{metadataTools} = serializedModule
     let smtConfig =
@@ -168,7 +168,6 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
                 Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
 
     pure ExitSuccess
-
-    where
-        KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
-        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions
+  where
+    KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions

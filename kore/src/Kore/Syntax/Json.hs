@@ -6,7 +6,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Syntax.Json (
     -- API
-    KoreJson(..),
+    KoreJson (..),
     KorePattern,
     JsonParseError,
     encodePattern,
