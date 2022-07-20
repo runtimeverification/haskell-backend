@@ -55,7 +55,6 @@ import Kore.Rewrite.RulePattern qualified as RulePattern (
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    MonadSimplify,
     Simplifier,
     liftSimplifier,
  )
@@ -71,9 +70,7 @@ import Prelude.Kore
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
-    simplifyRuleLhs ::
-        rule ->
-        Simplifier (MultiAnd rule)
+    simplifyRuleLhs :: rule -> Simplifier (MultiAnd rule)
 
 instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
     simplifyRuleLhs rule@RulePattern{left = And_ _ _ (ElemVar_ _)} = return $ MultiAnd.make [rule]
@@ -127,10 +124,8 @@ instance SimplifyRuleLHS SomeClaim where
         (fmap . MultiAnd.map) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     ClaimPattern ->
-    simplifier (MultiAnd ClaimPattern)
+    Simplifier (MultiAnd ClaimPattern)
 simplifyClaimRule claimPattern = fmap MultiAnd.make $
     Logic.observeAllT $ do
         let lhs = Pattern.requireDefined $ ClaimPattern.left claimPattern
@@ -146,7 +141,7 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
   where
     filterWithSolver ::
         Pattern RewritingVariableName ->
-        LogicT simplifier (Pattern RewritingVariableName)
+        LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
         r <- liftSimplifier $
             SMT.Evaluator.evalConditional conditional Nothing
@@ -160,9 +155,8 @@ The original rule is returned unless the simplification result matches certain
 narrowly-defined criteria.
 -}
 simplifyRulePattern ::
-    MonadSimplify simplifier =>
     RulePattern RewritingVariableName ->
-    simplifier (RulePattern RewritingVariableName)
+    Simplifier (RulePattern RewritingVariableName)
 simplifyRulePattern rule = do
     let RulePattern{left} = rule
     simplifiedLeft <- simplifyPattern' left
@@ -205,9 +199,8 @@ The original rule is returned unless the simplification result matches certain
 narrowly-defined criteria.
 -}
 simplifyClaimPattern ::
-    MonadSimplify simplifier =>
     ClaimPattern ->
-    simplifier ClaimPattern
+    Simplifier ClaimPattern
 simplifyClaimPattern claim = do
     let ClaimPattern{left} = claim
     simplifiedLeft <- simplifyPattern' (Pattern.term left)
@@ -234,9 +227,8 @@ simplifyClaimPattern claim = do
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern' ::
-    MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
-    simplifier (OrPattern.OrPattern RewritingVariableName)
+    Simplifier (OrPattern.OrPattern RewritingVariableName)
 simplifyPattern' termLike =
     Simplifier.localSimplifierAxioms (const mempty) $
         Simplifier.simplifyPattern
