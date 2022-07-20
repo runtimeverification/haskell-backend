@@ -203,7 +203,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
     transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
         if isBottom filteredConfigs
             then pure Bottom
             else prim <$> asum (pure <$> toList filteredConfigs)

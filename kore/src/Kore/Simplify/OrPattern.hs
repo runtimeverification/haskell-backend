@@ -52,6 +52,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    liftSimplifier,
     simplifyCondition,
  )
 import Kore.TopBottom (
@@ -119,7 +120,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                 & Condition.fromPredicate
                 & simplifyCondition SideCondition.top
                 & OrCondition.observeAllT
-        filteredConditions <- SMT.Evaluator.filterMultiOr implicationNegation
+        filteredConditions <- liftSimplifier $ SMT.Evaluator.filterMultiOr implicationNegation
         if isTop filteredConditions
             then return (Just False)
             else
@@ -132,7 +133,8 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)
                 & OrCondition.observeAllT
-        filteredConditions <- SMT.Evaluator.filterMultiOr simplifiedConditions
+        filteredConditions <- liftSimplifier $
+            SMT.Evaluator.filterMultiOr simplifiedConditions
         if isBottom filteredConditions
             then return (Just False)
             else

@@ -74,7 +74,7 @@ checkImplicationIsTop lhs rhs =
                         }
             orResult <-
                 Pattern.simplifyTopConfiguration result
-            orFinalResult <- SMT.Evaluator.filterMultiOr orResult
+            orFinalResult <- liftSimplifier $ SMT.Evaluator.filterMultiOr orResult
             return (isBottom orFinalResult)
         _ ->
             (error . show . Pretty.vsep)

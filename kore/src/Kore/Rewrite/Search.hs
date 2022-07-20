@@ -151,7 +151,7 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [from @(Map.Map _ _) @(Substitution _) substitution]
-            lift (SMT.evalConditional merged Nothing) >>= \case
+            liftSimplifier (SMT.evalConditional merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition

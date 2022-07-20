@@ -83,6 +83,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
@@ -385,13 +386,14 @@ checkRequires sideCondition predicate requires =
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
-    filterBranch condition =
-        SMT.evalConditional
-            condition
-            (Just sideCondition)
-            >>= \case
-                Just False -> empty
-                _ -> return condition
+    filterBranch condition = do
+        r <- liftSimplifier $
+            SMT.evalConditional
+                condition
+                (Just sideCondition)
+        case r of
+            Just False -> empty
+            _ -> return condition
 
     assertBottom negatedImplication
         | isBottom negatedImplication = done
