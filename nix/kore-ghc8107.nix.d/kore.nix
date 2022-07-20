@@ -115,6 +115,7 @@
           "ErrorContext"
           "From"
           "GlobalMain"
+          "GraphTraversal"
           "Injection"
           "Kore/AST/ApplicativeKore"
           "Kore/AST/AstWithLocation"
