@@ -2303,7 +2303,7 @@ overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
-env :: MonadSimplify simplifier => Env simplifier
+env :: Env
 env =
     Env
         { metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools

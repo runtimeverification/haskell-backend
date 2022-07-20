@@ -33,7 +33,6 @@ import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
-    MonadSimplify,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Unification.Procedure
@@ -132,7 +131,7 @@ dv2 =
             , domainValueChild = mkStringLiteral "dv2"
             }
 
-testEnv :: MonadSimplify simplifier => Env simplifier
+testEnv :: Env
 testEnv = Mock.env
 
 unificationProblem ::
