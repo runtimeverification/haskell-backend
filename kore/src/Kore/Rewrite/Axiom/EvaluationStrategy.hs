@@ -179,13 +179,11 @@ builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
 evaluateBuiltin ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | Map from axiom IDs to axiom evaluators
     BuiltinAndAxiomSimplifier ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     patt

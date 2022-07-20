@@ -19,9 +19,6 @@ import Control.Error (
     maybeT,
     throwE,
  )
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Internal.MultiOr qualified as MultiOr (
@@ -72,16 +69,13 @@ import Pretty qualified
 --   memoize :: Evaluator.Self state -> Memo.Self state -> Evaluator.Self state
 -- to add memoization to a function evaluator.
 evaluateApplication ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
     -- | The predicate from the configuration
     SideCondition RewritingVariableName ->
     -- | Aggregated children predicate and substitution.
     Condition RewritingVariableName ->
     -- | The pattern to be evaluated
     Application Symbol (TermLike RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 evaluateApplication
     sideCondition
     childrenCondition
@@ -102,7 +96,7 @@ evaluateApplication
                 lift $ errorBottomTotalFunction termLike
             return results
       where
-        finishT :: ExceptT r simplifier r -> simplifier r
+        finishT :: ExceptT r Simplifier r -> Simplifier r
         finishT = exceptT return return
 
         Application{applicationSymbolOrAlias = symbol} = application
@@ -223,7 +217,7 @@ maybeEvaluatePattern
             BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
             lift $ do
                 merged <- do
-                    result <- evaluator termLike sideCondition
+                    result <- liftSimplifier $ evaluator termLike sideCondition
                     flattened <- case result of
                         AttemptedAxiom.Applied
                             AttemptedAxiomResults

@@ -474,11 +474,9 @@ newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Rename me!
     BuiltinAndAxiomSimplifier
     { runBuiltinAndAxiomSimplifier ::
-        forall simplifier.
-        MonadSimplify simplifier =>
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
-        simplifier (AttemptedAxiom RewritingVariableName)
+        Simplifier (AttemptedAxiom RewritingVariableName)
     }
 
 {- |A type to abstract away the mapping from symbol identifiers to
@@ -585,25 +583,21 @@ data NonSimplifiability
     | Conditional
 
 applyFirstSimplifierThatWorks ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     [BuiltinAndAxiomSimplifier] ->
     AcceptsMultipleResults ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorks evaluators multipleResults =
     applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
 
 applyFirstSimplifierThatWorksWorker ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     [BuiltinAndAxiomSimplifier] ->
     AcceptsMultipleResults ->
     NonSimplifiability ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return NotApplicable
 applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
