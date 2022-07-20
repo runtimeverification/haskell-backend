@@ -133,8 +133,9 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)
                 & OrCondition.observeAllT
-        filteredConditions <- liftSimplifier $
-            SMT.Evaluator.filterMultiOr simplifiedConditions
+        filteredConditions <-
+            liftSimplifier $
+                SMT.Evaluator.filterMultiOr simplifiedConditions
         if isBottom filteredConditions
             then return (Just False)
             else

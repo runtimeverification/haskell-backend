@@ -102,16 +102,16 @@ import Kore.Simplify.Data (
     MonadSimplify,
  )
 import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
-import Kore.Simplify.TermLike qualified as TermLike
-import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
     SimplifierXSwitch (..),
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable

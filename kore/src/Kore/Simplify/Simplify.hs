@@ -6,7 +6,6 @@ module Kore.Simplify.Simplify (
     Simplifier,
     runSimplifier,
     Env (..),
-
     InternalVariable,
     MonadSimplify (..),
     askMetadataTools,
@@ -64,12 +63,12 @@ module Kore.Simplify.Simplify (
     MonadLog,
 ) where
 
+import Control.Monad qualified as Monad
 import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
     MonadThrow,
  )
-import Control.Monad qualified as Monad
 import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
@@ -78,12 +77,12 @@ import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (
     RWST,
  )
+import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
-import Control.Monad.Reader
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
@@ -164,7 +163,7 @@ import Pretty (
  )
 import Pretty qualified
 import Prof (
-    MonadProf
+    MonadProf,
  )
 import SMT (
     MonadSMT (..),
@@ -284,7 +283,6 @@ type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
 class (MonadLog m, MonadSMT m) => MonadSimplify m where
-
     -- | Lift a Simplifier action.
     liftSimplifier :: Simplifier a -> m a
     default liftSimplifier ::

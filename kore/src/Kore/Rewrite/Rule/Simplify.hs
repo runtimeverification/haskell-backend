@@ -143,8 +143,9 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         Pattern RewritingVariableName ->
         LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
-        r <- liftSimplifier $
-            SMT.Evaluator.evalConditional conditional Nothing
+        r <-
+            liftSimplifier $
+                SMT.Evaluator.evalConditional conditional Nothing
         case r of
             Just False -> empty
             _ -> return conditional

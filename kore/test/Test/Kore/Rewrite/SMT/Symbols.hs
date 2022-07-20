@@ -68,8 +68,8 @@ import Kore.Sort (
 import Kore.Syntax.Variable
 import Prelude.Kore
 import SMT (
-    SMT,
     SExpr (..),
+    SMT,
  )
 import SMT qualified
 import Test.Kore (

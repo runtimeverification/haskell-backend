@@ -27,7 +27,6 @@ import Kore.Rewrite.RewritingVariable (
     mkElementConfigVariable,
     mkRewritingTerm,
  )
-
 import Kore.Simplify.TermLike qualified as TermLike
 import Prelude.Kore
 import Pretty qualified
@@ -173,7 +172,7 @@ simplify =
 testEnv :: Env
 testEnv =
     -- Throw an error if any pattern/term would be simplified.
-    Mock.env {
-        simplifierTerm = \_ _ -> error "TermLike.testEnv: simplifierTerm",
-        simplifierPattern = \_ _ -> error "TermLike.testEnv: simplifierPattern"
-    }
+    Mock.env
+        { simplifierTerm = \_ _ -> error "TermLike.testEnv: simplifierTerm"
+        , simplifierPattern = \_ _ -> error "TermLike.testEnv: simplifierPattern"
+        }

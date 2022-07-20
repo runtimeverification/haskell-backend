@@ -387,10 +387,11 @@ checkRequires sideCondition predicate requires =
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
     filterBranch condition = do
-        r <- liftSimplifier $
-            SMT.evalConditional
-                condition
-                (Just sideCondition)
+        r <-
+            liftSimplifier $
+                SMT.evalConditional
+                    condition
+                    (Just sideCondition)
         case r of
             Just False -> empty
             _ -> return condition

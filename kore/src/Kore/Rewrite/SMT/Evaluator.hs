@@ -79,9 +79,9 @@ import Pretty (
  )
 import Pretty qualified
 import SMT (
-    SMT,
     Result (..),
     SExpr (..),
+    SMT,
  )
 import SMT qualified
 import SMT.SimpleSMT qualified as SimpleSMT
