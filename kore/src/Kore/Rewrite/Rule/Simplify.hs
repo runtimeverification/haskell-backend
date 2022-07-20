@@ -5,7 +5,6 @@ License     : BSD-3-Clause
 module Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
     simplifyClaimPattern,
-    simplifyRewriteRule,
     simplifyRulePattern,
 ) where
 
@@ -152,17 +151,6 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         SMT.Evaluator.evalConditional conditional Nothing >>= \case
             Just False -> empty
             _ -> return conditional
-
-{- | Simplify a 'Rule' using only matching logic rules.
-
-See also: 'simplifyRulePattern'
--}
-simplifyRewriteRule ::
-    MonadSimplify simplifier =>
-    RewriteRule RewritingVariableName ->
-    simplifier (RewriteRule RewritingVariableName)
-simplifyRewriteRule (RewriteRule rule) =
-    RewriteRule <$> simplifyRulePattern rule
 
 {- | Simplify a 'RulePattern' using only matching logic rules.
 
