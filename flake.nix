@@ -127,14 +127,12 @@
             };
 
             shell = {
-              tools = {
-                fourmolu = "0.7.0.0";
-              };
               # We use the ones from Nixpkgs, since they are cached reliably.
               # Eventually we will probably want to build these with haskell.nix.
               nativeBuildInputs = [
                 pkgs'.cabal-install
                 pkgs'.hlint
+                pkgs'.haskellPackages.fourmolu
                 pkgs'.stack
                 pkgs'.nixfmt
                 pkgs'.haskellPackages.eventlog2html
