@@ -225,6 +225,10 @@ Request:
 
 Response:
 
+none
+
+Response from cancelled call:
+
 ```json
 {
   "jsonrpc": "2.0",
