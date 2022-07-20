@@ -56,7 +56,6 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     Simplifier,
-    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute (
@@ -78,7 +77,7 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
-        fullySimplified <- liftSimplifier $ SMT.Evaluator.filterMultiOr simplifiedTerms
+        fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
         let rules = map (setRuleLeft rule) (toList fullySimplified)
         return (MultiAnd.make rules)
       where
@@ -143,9 +142,7 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         Pattern RewritingVariableName ->
         LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
-        r <-
-            liftSimplifier $
-                SMT.Evaluator.evalConditional conditional Nothing
+        r <- lift $ SMT.Evaluator.evalConditional conditional Nothing
         case r of
             Just False -> empty
             _ -> return conditional
