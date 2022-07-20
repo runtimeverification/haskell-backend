@@ -175,10 +175,12 @@ simpleTransition ::
     Monad m =>
     -- | primitive strategy rule
     (instr -> config -> TransitionT rule m config) ->
+    -- | converter
+    ([config] -> TransitionResult config) ->
     -- final transition function
     ([instr], config) ->
     m (TransitionResult ([instr], config))
-simpleTransition applyPrim = transit
+simpleTransition applyPrim mapToResult = transit
   where
     tt :: [instr] -> config -> m [([instr], config)]
     tt [] _config = pure []
@@ -187,9 +189,9 @@ simpleTransition applyPrim = transit
 
     transit :: ([instr], config) -> m (TransitionResult ([instr], config))
     transit x = do
-        results <- uncurry tt x
-        pure $ case results of
-            -- FIXME how to distinguish final from stuck here?
-            [] -> Stuck x
-            [one] -> StraightLine one
-            (r : rs) -> Branch (r NE.:| rs)
+        mapToResult <$> uncurry tt x
+        -- pure $ case results of
+        --     -- FIXME how to distinguish final from stuck here?
+        --     [] -> Stuck x
+        --     [one] -> StraightLine one
+        --     (r : rs) -> Branch (r NE.:| rs)
