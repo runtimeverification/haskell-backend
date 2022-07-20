@@ -1372,9 +1372,10 @@ uninternalize = Pattern.Pattern . Recursive.cata go
 
             mkChildren =
                 map
-                    ( wrap .
-                        PatternF.ApplicationF .
-                            Application (Symbol.toSymbolOrAlias builtinAcElement) . elementToApplicationArgs
+                    ( wrap
+                        . PatternF.ApplicationF
+                        . Application (Symbol.toSymbolOrAlias builtinAcElement)
+                        . elementToApplicationArgs
                     )
                     elementsWithVariables
                     ++ map
