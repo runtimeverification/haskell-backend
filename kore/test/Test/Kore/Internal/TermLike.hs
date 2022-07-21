@@ -16,7 +16,6 @@ module Test.Kore.Internal.TermLike (
     module Kore.Internal.TermLike,
 ) where
 
-
 import Control.Exception (
     ErrorCall (..),
  )
@@ -45,22 +44,23 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Sup
 import Hedgehog (
-    PropertyT, forAll, (===), discard
-    )
-
+    PropertyT,
+    discard,
+    forAll,
+    (===),
+ )
 import Hedgehog qualified
 import Hedgehog.Gen qualified as Gen
+import Kore.Attribute.Null qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariable,
  )
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
 import Kore.Attribute.Synthetic (
     resynthesize,
  )
-import Kore.Attribute.Null qualified as Attribute
-import Kore.Attribute.Sort qualified as Attribute
-import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
-
 import Kore.Builtin qualified as Builtin
 import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
@@ -68,56 +68,51 @@ import Kore.Internal.ApplicationSorts
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.From qualified as From
 import Kore.Internal.InternalInt
-import Kore.Internal.Pattern qualified as Internal.Pattern
 import Kore.Internal.OrPattern (OrPattern, toTermLike)
+import Kore.Internal.Pattern qualified as Internal.Pattern
 import Kore.Internal.Substitution (
     orientSubstitution,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
-    mkRewritingPattern,
-    mkRewritingTerm
- )
 import Kore.Rewrite.Axiom.EvaluationStrategy (
     simplifierWithFallback,
  )
-import Kore.Simplify.Simplify qualified as Simplify
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    mkRewritingPattern,
+    mkRewritingTerm,
+ )
 import Kore.Simplify.Data qualified as Simplify
 import Kore.Simplify.Pattern qualified as Simplify (
     simplify,
  )
+import Kore.Simplify.Simplify qualified as Simplify
 import Kore.Substitute
+import Kore.Syntax.Module (ModuleName (..))
 import Kore.Syntax.Pattern qualified as Syntax.Pattern
-
-
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Syntax.Module (ModuleName(..)) 
-import Kore.Syntax.Sentence (SentenceSort(..), SentenceSymbol(..))
+import Kore.Syntax.Sentence (SentenceSort (..), SentenceSymbol (..))
 import Kore.Syntax.Sentence qualified
-import Kore.Unparser(unparseToString)
+import Kore.Unparser (unparseToString)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
 import Prelude.Kore
 import SMT qualified
+import Test.ConsistentKore (runKoreGen)
+import Test.ConsistentKore qualified as ConsistentKore
 import Test.Kore hiding (
     symbolGen,
  )
-import Test.ConsistentKore (runKoreGen)
-import Test.ConsistentKore qualified as ConsistentKore
 import Test.Kore.Internal.Symbol
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
-import Test.Tasty
-import Test.Tasty.HUnit.Ext
-import Test.Terse
-import Test.Tasty.Hedgehog as Hedgehog
 import Test.SMT (
     testPropertyWithoutSolver,
  )
+import Test.Tasty
+import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog as Hedgehog
+import Test.Terse
 
 type TestTerm = TermLike VariableName
 type ElementVariable' = ElementVariable VariableName
@@ -576,7 +571,6 @@ test_renaming =
                 doesNotCapture (inject Mock.setY) renamed
             ]
 
-
 evaluateWithAxioms ::
     Simplify.BuiltinAndAxiomSimplifierMap ->
     Internal.Pattern.Pattern RewritingVariableName ->
@@ -592,8 +586,6 @@ evaluateWithAxioms axioms =
             Mock.builtinSimplifiers
             axioms
 
-
-
 test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = testPropertyWithoutSolver "conver a valid pattern to a Syntax.Pattern and back" $ do
     trmLike <- forAll (runKoreGen Mock.generatorSetup ConsistentKore.termLikeGen)
@@ -601,66 +593,76 @@ test_toSyntaxPattern = testPropertyWithoutSolver "conver a valid pattern to a Sy
         initialSort = termLikeSort trmLike
 
     case PatternVerifier.runPatternVerifier context $
-            PatternVerifier.verifyStandalonePattern Nothing patt of
-        Left Kore.Error.Error{errorError} -> fail $ 
-            unparseToString patt <> "\n\n" <>
-            show errorError
+        PatternVerifier.verifyStandalonePattern Nothing patt of
+        Left Kore.Error.Error{errorError} ->
+            fail $
+                unparseToString patt <> "\n\n"
+                    <> show errorError
         Right trmLike2 -> do
             let patt' = Internal.Pattern.fromTermAndPredicate trmLike2 From.fromTop_
-            simplified <- toTermLike initialSort <$>
-                catch
-                    (lift $ evaluateWithAxioms Map.empty $ mkRewritingPattern patt')
-                    (exceptionHandler patt')
-            
+            simplified <-
+                toTermLike initialSort
+                    <$> catch
+                        (lift $ evaluateWithAxioms Map.empty $ mkRewritingPattern patt')
+                        (exceptionHandler patt')
+
             (mkRewritingTerm trmLike) === simplified
+  where
+    -- Discard exceptions that are normal for randomly generated patterns.
+    exceptionHandler ::
+        MonadThrow m =>
+        Internal.Pattern.Pattern VariableName ->
+        ErrorCall ->
+        PropertyT m a
+    exceptionHandler term err@(ErrorCallWithLocation message _location)
+        | "Unification case that should be handled somewhere else"
+            `isInfixOf` message =
+            discard
+        | otherwise = do
+            traceM ("Error for input: " ++ unparseToString term)
+            throwM err
 
-    where
-        -- Discard exceptions that are normal for randomly generated patterns.
-        exceptionHandler ::
-            MonadThrow m =>
-            Internal.Pattern.Pattern VariableName ->
-            ErrorCall ->
-            PropertyT m a
-        exceptionHandler term err@(ErrorCallWithLocation message _location)
-            | "Unification case that should be handled somewhere else"
-                `isInfixOf` message =
-                discard
-            | otherwise = do
-                traceM ("Error for input: " ++ unparseToString term)
-                throwM err
-
-        context =
-            PatternVerifier.verifiedModuleContext 
-                IndexedModule.IndexedModuleSyntax{
-                    indexedModuleName = ModuleName "dummy",
-                    indexedModuleAliasSentences = mempty,
-                    indexedModuleSymbolSentences = 
-                        Map.fromList [
-                            (symbolConstructor, (symbolAttributes, 
-                                SentenceSymbol
-                                { sentenceSymbolSymbol = Kore.Syntax.Sentence.Symbol
-                                        { symbolConstructor
-                                        , symbolParams = []
-                                        }
-                                , sentenceSymbolSorts = applicationSortsOperands
-                                , sentenceSymbolResultSort = applicationSortsResult
-                                , sentenceSymbolAttributes = Default.def
-                                }))
-                            
-                            | Symbol { symbolConstructor
+    context =
+        PatternVerifier.verifiedModuleContext
+            IndexedModule.IndexedModuleSyntax
+                { indexedModuleName = ModuleName "dummy"
+                , indexedModuleAliasSentences = mempty
+                , indexedModuleSymbolSentences =
+                    Map.fromList
+                        [ ( symbolConstructor
+                          ,
+                              ( symbolAttributes
+                              , SentenceSymbol
+                                    { sentenceSymbolSymbol =
+                                        Kore.Syntax.Sentence.Symbol
+                                            { symbolConstructor
+                                            , symbolParams = []
+                                            }
+                                    , sentenceSymbolSorts = applicationSortsOperands
+                                    , sentenceSymbolResultSort = applicationSortsResult
+                                    , sentenceSymbolAttributes = Default.def
+                                    }
+                              )
+                          )
+                        | Symbol
+                            { symbolConstructor
                             , symbolAttributes
-                            , symbolSorts = ApplicationSorts
-                                { applicationSortsOperands
-                                , applicationSortsResult
-                                }
-                            } <- allSymbols ],
-                    indexedModuleSortDescriptions = 
-                        Map.fromList [ (sortActualName, (attr {Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def)) |
-                            (SortActualSort (SortActual {sortActualName}), attr) <- Mock.sortAttributesMapping],
-                    indexedModuleImportsSyntax = mempty,
-                    indexedModuleHookedIdentifiers = mempty
+                            , symbolSorts =
+                                ApplicationSorts
+                                    { applicationSortsOperands
+                                    , applicationSortsResult
+                                    }
+                            } <-
+                            allSymbols
+                        ]
+                , indexedModuleSortDescriptions =
+                    Map.fromList
+                        [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                        | (SortActualSort (SortActual{sortActualName}), attr) <- Mock.sortAttributesMapping
+                        ]
+                , indexedModuleImportsSyntax = mempty
+                , indexedModuleHookedIdentifiers = mempty
                 }
-                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
-
-        ConsistentKore.Setup{allSymbols} = Mock.generatorSetup
+    ConsistentKore.Setup{allSymbols} = Mock.generatorSetup

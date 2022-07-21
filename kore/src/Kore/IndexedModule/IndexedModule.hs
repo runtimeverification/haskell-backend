@@ -19,13 +19,12 @@ module Kore.IndexedModule.IndexedModule (
         indexedModuleImports,
         indexedModuleHooks
     ),
-    IndexedModuleSyntax (..
-        -- indexedModuleName,
-        -- indexedModuleAliasSentences,
-        -- indexedModuleSymbolSentences,
-        -- indexedModuleSortDescriptions,
-        -- indexedModuleImportsSyntax
-    ),
+    IndexedModuleSyntax (..),
+    -- indexedModuleName,
+    -- indexedModuleAliasSentences,
+    -- indexedModuleSymbolSentences,
+    -- indexedModuleSortDescriptions,
+    -- indexedModuleImportsSyntax
     IndexModuleError,
     KoreImplicitIndexedModule,
     KoreIndexedModule,
