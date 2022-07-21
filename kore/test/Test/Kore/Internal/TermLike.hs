@@ -33,22 +33,21 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Sup
 import Hedgehog (
-    forAll, (===)
-    )
-
+    forAll,
+    (===),
+ )
 import Hedgehog qualified
 import Hedgehog.Gen qualified as Gen
+import Kore.Attribute.Null qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariable,
  )
+import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
 import Kore.Attribute.Synthetic (
     resynthesize,
  )
-import Kore.Attribute.Null qualified as Attribute
-import Kore.Attribute.Sort qualified as Attribute
-import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
-
 import Kore.Builtin qualified as Builtin
 import Kore.Error qualified
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
@@ -59,27 +58,27 @@ import Kore.Internal.Substitution (
  )
 import Kore.Internal.TermLike
 import Kore.Substitute
+import Kore.Syntax.Module (ModuleName (..))
 import Kore.Syntax.Pattern qualified as Pattern
-import Kore.Syntax.Module (ModuleName(..)) 
-import Kore.Syntax.Sentence (SentenceSort(..), SentenceSymbol(..))
+import Kore.Syntax.Sentence (SentenceSort (..), SentenceSymbol (..))
 import Kore.Syntax.Sentence qualified
-import Kore.Unparser(unparseToString)
+import Kore.Unparser (unparseToString)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
 import Prelude.Kore
+import Test.ConsistentKore (runKoreGen)
+import Test.ConsistentKore qualified as ConsistentKore
 import Test.Kore hiding (
     symbolGen,
  )
-import Test.ConsistentKore (runKoreGen)
-import Test.ConsistentKore qualified as ConsistentKore
 import Test.Kore.Internal.Symbol
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import Test.Terse
 import Test.Tasty.Hedgehog as Hedgehog
+import Test.Terse
 
 type TestTerm = TermLike VariableName
 type ElementVariable' = ElementVariable VariableName
@@ -538,53 +537,60 @@ test_renaming =
                 doesNotCapture (inject Mock.setY) renamed
             ]
 
-
 test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = Hedgehog.testProperty "conver a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
-        trmLike <- forAll (runKoreGen Mock.generatorSetup ConsistentKore.termLikeGen)
-        let patt = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
+    trmLike <- forAll (runKoreGen Mock.generatorSetup ConsistentKore.termLikeGen)
+    let patt = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
-
-        case PatternVerifier.runPatternVerifier context $
-                PatternVerifier.verifyStandalonePattern Nothing patt of
-            Left Kore.Error.Error{errorError} -> fail $ 
-                unparseToString patt <> "\n\n" <>
-                show errorError
-            Right trmLike2 -> patt === fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
-
-    where
-            context =
-                PatternVerifier.verifiedModuleContext 
-                    IndexedModule.IndexedModuleSyntax{
-                        indexedModuleName = ModuleName "dummy",
-                        indexedModuleAliasSentences = mempty,
-                        indexedModuleSymbolSentences = 
-                            Map.fromList [
-                                (symbolConstructor, (symbolAttributes, 
-                                    SentenceSymbol
-                                    { sentenceSymbolSymbol = Kore.Syntax.Sentence.Symbol
+    case PatternVerifier.runPatternVerifier context $
+        PatternVerifier.verifyStandalonePattern Nothing patt of
+        Left Kore.Error.Error{errorError} ->
+            fail $
+                unparseToString patt <> "\n\n"
+                    <> show errorError
+        Right trmLike2 -> patt === fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
+  where
+    context =
+        PatternVerifier.verifiedModuleContext
+            IndexedModule.IndexedModuleSyntax
+                { indexedModuleName = ModuleName "dummy"
+                , indexedModuleAliasSentences = mempty
+                , indexedModuleSymbolSentences =
+                    Map.fromList
+                        [ ( symbolConstructor
+                          ,
+                              ( symbolAttributes
+                              , SentenceSymbol
+                                    { sentenceSymbolSymbol =
+                                        Kore.Syntax.Sentence.Symbol
                                             { symbolConstructor
                                             , symbolParams = []
                                             }
                                     , sentenceSymbolSorts = applicationSortsOperands
                                     , sentenceSymbolResultSort = applicationSortsResult
                                     , sentenceSymbolAttributes = Default.def
-                                    }))
-                                
-                                | Symbol { symbolConstructor
-                                , symbolAttributes
-                                , symbolSorts = ApplicationSorts
+                                    }
+                              )
+                          )
+                        | Symbol
+                            { symbolConstructor
+                            , symbolAttributes
+                            , symbolSorts =
+                                ApplicationSorts
                                     { applicationSortsOperands
                                     , applicationSortsResult
                                     }
-                                } <- allSymbols ],
-                        indexedModuleSortDescriptions = 
-                            Map.fromList [ (sortActualName, (attr {Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def)) |
-                                (SortActualSort (SortActual {sortActualName}), attr) <- Mock.sortAttributesMapping],
-                        indexedModuleImportsSyntax = mempty,
-                        indexedModuleHookedIdentifiers = mempty
-                    }
-                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+                            } <-
+                            allSymbols
+                        ]
+                , indexedModuleSortDescriptions =
+                    Map.fromList
+                        [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                        | (SortActualSort (SortActual{sortActualName}), attr) <- Mock.sortAttributesMapping
+                        ]
+                , indexedModuleImportsSyntax = mempty
+                , indexedModuleHookedIdentifiers = mempty
+                }
+            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
-
-            ConsistentKore.Setup{allSymbols} = Mock.generatorSetup
+    ConsistentKore.Setup{allSymbols} = Mock.generatorSetup
