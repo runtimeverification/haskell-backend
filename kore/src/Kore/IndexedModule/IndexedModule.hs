@@ -20,11 +20,6 @@ module Kore.IndexedModule.IndexedModule (
         indexedModuleHooks
     ),
     IndexedModuleSyntax (..),
-    -- indexedModuleName,
-    -- indexedModuleAliasSentences,
-    -- indexedModuleSymbolSentences,
-    -- indexedModuleSortDescriptions,
-    -- indexedModuleImportsSyntax
     IndexModuleError,
     KoreImplicitIndexedModule,
     KoreIndexedModule,
