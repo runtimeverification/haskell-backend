@@ -17,6 +17,7 @@ import Kore.Rewrite.Strategy (
     runTransitionT,
     unfoldSearchOrder,
  )
+import Kore.Reachability.Prim (Prim)
 import Prelude.Kore
 
 data TransitionResult a
@@ -81,15 +82,17 @@ extractState = \case
     Terminal a -> Just a
     Cut a _ -> Just a
 
+type Step = [Prim]
+
 ----------------------------------------
 transitionLeaves ::
-    forall m a.
+    forall m c .
     (Monad m) =>
     -- | Stop critera, in terms of 'TransitionResult's. The algorithm
     -- will _always_ stop on 'Stuck' and 'Final', so [isTerminal,
     -- isCut, isBranch] could be used here. Could simplify this to
     -- FinalNodeType
-    [TransitionResult a -> Bool] ->
+    [TransitionResult ([Step], c) -> Bool] ->
     -- queue updating parameters,
     -- we construct enqueue :: [a] -> Seq a -> m (Either LimitExceeded (Seq a)) from it
     -- m is probably only there for logging purposes
@@ -99,14 +102,14 @@ transitionLeaves ::
     -- | breadth limit, essentially a natural number
     Limit Natural ->
     -- | transition function
-    (a -> m (TransitionResult a)) ->
+    (([Step], c) -> m (TransitionResult ([Step], c))) ->
     -- again, m is probably only for logging
 
     -- | max-counterexamples, included in the internal logic
     Natural ->
     -- | initial node
-    a ->
-    m (TraversalResult a)
+    ([Step], c) ->
+    m (TraversalResult c)
 transitionLeaves
     stopCriteria
     direction
@@ -114,11 +117,12 @@ transitionLeaves
     transit
     maxCounterExamples
     start =
-        evalStateT (worker $ Seq.singleton start) []
+        evalStateT (worker (Seq.singleton start) >>= checkLeftUnproven) []
+
       where
         enqueue' = unfoldSearchOrder direction
 
-        enqueue :: [a] -> Seq a -> m (Either (LimitExceeded a) (Seq a))
+        enqueue :: [([Step], c)] -> Seq ([Step], c) -> m (Either (LimitExceeded ([Step], c)) (Seq ([Step], c)))
         enqueue as q = do
             newQ <- enqueue' as q
             pure $
@@ -126,15 +130,15 @@ transitionLeaves
                     then Left (LimitExceeded newQ)
                     else Right newQ
 
-        exceedsLimit :: Seq a -> Bool
+        exceedsLimit :: Seq ([Step], c) -> Bool
         exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
 
-        shouldStop :: TransitionResult a -> Bool
+        shouldStop :: TransitionResult ([Step], c) -> Bool
         shouldStop result = any ($ result) stopCriteria
 
         maxStuck = fromIntegral maxCounterExamples
 
-        worker :: Seq a -> StateT [TransitionResult a] m (TraversalResult a)
+        worker :: Seq ([Step], c) -> StateT [TransitionResult ([Step], c)] m (TraversalResult ([Step], c))
         worker Seq.Empty = Ended <$> get
         worker (a :<| as) = do
             result <- lift $ step a as
@@ -154,21 +158,32 @@ transitionLeaves
                 Abort results queue -> do
                     pure $ Aborted (Seq.length queue) results -- FIXME ??? results ???
         step ::
-            a ->
-            Seq a ->
-            m (StepResult a)
+            ([Step], c) ->
+            Seq ([Step], c) ->
+            m (StepResult ([Step], c))
         step a q = do
             next <- transit a
             if (isStuck next || isFinal next || shouldStop next)
                 then pure (Output next q)
-                else
-                    either (\(LimitExceeded longQ) -> Abort [next] longQ) Continue
-                        <$> enqueue (extractNext next) q
+                else either (\(LimitExceeded longQ) -> Abort [next] longQ) Continue
+                         <$> enqueue (extractNext next) q
+
+        checkLeftUnproven ::
+            TraversalResult ([Step], c) ->
+            StateT [TransitionResult ([Step], c)] m (TraversalResult c)
+        checkLeftUnproven result = do
+            stuck <- gets (map (fmap snd) . filter isStuck)
+            pure $
+                if null stuck
+                    then fmap snd result
+                    else GotStuck 0 stuck
+
 
 data StepResult a
     = Continue (Seq a)
     | Output (TransitionResult a) (Seq a)
     | Abort [TransitionResult a] (Seq a)
+    deriving stock (Eq, Show, GHC.Generic)
 
 data TraversalResult a
     = -- | remaining queue length and all stuck states
@@ -177,25 +192,39 @@ data TraversalResult a
       Aborted Int [TransitionResult a]
     | -- queue ran empty, results returned
       Ended [TransitionResult a]
+    deriving stock (Eq, Show, GHC.Generic)
+
+instance Functor TraversalResult where
+    fmap f = \case
+        GotStuck n rs -> GotStuck n (ffmap f rs)
+        Aborted n rs -> GotStuck n (ffmap f rs)
+        Ended rs -> Ended (ffmap f rs)
+      where
+        ffmap = map . fmap
 
 ----------------------------------------
 -- constructing transition functions (for caller)
 
 simpleTransition ::
-    forall instr config m rule.
+    forall config m rule.
     Monad m =>
     -- | primitive strategy rule
-    (instr -> config -> TransitionT rule m config) ->
+    (Prim -> config -> TransitionT rule m config) ->
     -- | converter to interpret the config (claim state or program state)
     (config -> [config] -> TransitionResult config) ->
     -- final transition function
-    ([instr], config) ->
-    m (TransitionResult ([instr], config))
+    ([Step], config) ->
+    m (TransitionResult ([Step], config))
 simpleTransition applyPrim mapToResult = uncurry tt
   where
-    tt :: [instr] -> config -> m (TransitionResult ([instr], config))
+    tt :: [Step] -> config -> m (TransitionResult ([Step], config))
     tt [] config =
-        pure . fmap ([],) . (mapToResult config) $ [config]
-    tt (i : is) config =
-        (fmap (is,) . mapToResult config . map fst)
-            <$> runTransitionT (applyPrim i config)
+        pure $ Final ([], config)
+    tt ([] : iss) config =
+        tt iss config
+    tt (is : iss) config =
+        (fmap (iss,) . mapToResult config . map fst)
+            <$> runTransitionT (applyGroup is config)
+
+    applyGroup :: Step -> config -> TransitionT rule m config
+    applyGroup is c = foldM (flip applyPrim) c is
