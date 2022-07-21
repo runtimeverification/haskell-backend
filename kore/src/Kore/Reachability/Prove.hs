@@ -347,7 +347,8 @@ proveClaim
                            adding an additional CheckImplication step at the end.
                         -}
                         & (`snoc` reachabilityCheckOnly)
-            proofDepths <-
+            -- OLD, somehow needed to disambiguate some types
+            _proofDepths <-
                 Strategy.leavesM
                     finalNodeType
                     updateQueue
@@ -357,6 +358,65 @@ proveClaim
                     & throwUnproven
                     & handle handleLimitExceeded
                     & (\s -> evalStateT s mempty)
+
+            -- NEW
+            let strategyToList :: Show prim => Strategy prim -> [prim]
+                strategyToList (Strategy.Seq a b) = strategyToList a <> strategyToList b
+                strategyToList (Strategy.Apply p) = [p]
+                strategyToList Strategy.Continue = []
+                strategyToList other = error $ "strategyToList: " <> show other
+
+                limitedStrategyList =
+                    ( map strategyToList $
+                        Limit.takeWithin depthLimit $
+                            toList pickStrategy
+                    )
+                        `snoc` (strategyToList reachabilityCheckOnly)
+
+                stopOnBranches = \case
+                    Strategy.Leaf -> const False
+                    Strategy.LeafOrBranching -> X.isBranch
+
+                transition ::
+                    ([X.Step], (ProofDepth, ClaimState SomeClaim)) ->
+                    ExceptT
+                        StuckClaims
+                        simplifier
+                        ( X.TransitionResult
+                            ([X.Step], (ProofDepth, ClaimState SomeClaim))
+                        )
+                transition =
+                    ( X.simpleTransition
+                        ( trackProofDepth $
+                            transitionRule' stuckCheck claims axioms
+                        )
+                        toTransitionResultWithDepth
+                    )
+
+            traversalResult <-
+                X.transitionLeaves
+                    [stopOnBranches finalNodeType, X.isTerminal, X.isCut] -- future work
+                    searchOrder
+                    breadthLimit
+                    transition
+                    maxCounterexamples
+                    (limitedStrategyList, (ProofDepth 0, startGoal))
+            -- traceM $ show traversalResult
+
+            let mkStuckClaims =
+                    MultiAnd.make
+                        . map StuckClaim
+                        . mapMaybe (X.extractState >=> extractStuck . snd)
+            proofDepths <-
+                case traversalResult of
+                    X.GotStuck _n rs -> do
+                        -- assert (length rs == fromIntegral maxCounterexamples)
+                        Monad.Except.throwError $ mkStuckClaims rs
+                    X.Aborted _n rs ->
+                        Monad.Except.throwError $ mkStuckClaims rs
+                    X.Ended results ->
+                        pure (mapMaybe (fmap fst . X.extractState) results)
+
             let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
             infoProvenDepth maxProofDepth
             warnProvenClaimZeroDepth maxProofDepth goal
@@ -504,7 +564,30 @@ toTransitionResult prior = \case
     [c@ClaimState.Stuck{}] -> X.Stuck c
     [ClaimState.Proven] -> X.Final prior
     cs@(c : cs')
-        | noneStuck cs -> X.Branch (c :| cs')
+        | noneStuck cs -> X.Branch prior (c :| cs')
+        | otherwise ->
+            -- FIXME Is it possible to get one stuck and one non-stuck?
+            error $ "toTransitionResult: " <> show (prior, cs)
+  where
+    noneStuck :: [ClaimState c] -> Bool
+    noneStuck = null . mapMaybe ClaimState.extractStuck
+
+-- could be solved with Data.Tuple.Extra.secondM if there wasn't the prior state
+toTransitionResultWithDepth ::
+    Show c =>
+    -- | prior state, needed for [] and Proven cases
+    (ProofDepth, ClaimState c) ->
+    [(ProofDepth, ClaimState c)] ->
+    X.TransitionResult (ProofDepth, ClaimState c)
+toTransitionResultWithDepth prior = \case
+    [] -> X.Stuck prior
+    [c@(_, ClaimState.Claimed{})] -> X.StraightLine c
+    [c@(_, ClaimState.Rewritten{})] -> X.StraightLine c
+    [c@(_, ClaimState.Remaining{})] -> X.StraightLine c
+    [c@(_, ClaimState.Stuck{})] -> X.Stuck c
+    [(_, ClaimState.Proven)] -> X.Final prior
+    cs@(c : cs')
+        | noneStuck (map snd cs) -> X.Branch prior (c :| cs')
         | otherwise ->
             -- FIXME Is it possible to get one stuck and one non-stuck?
             error $ "toTransitionResult: " <> show (prior, cs)

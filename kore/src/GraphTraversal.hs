@@ -10,6 +10,7 @@ import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import GHC.Generics qualified as GHC
 import GHC.Natural
+import Kore.Reachability.Prim (Prim)
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
     LimitExceeded (..),
@@ -17,14 +18,13 @@ import Kore.Rewrite.Strategy (
     runTransitionT,
     unfoldSearchOrder,
  )
-import Kore.Reachability.Prim (Prim)
 import Prelude.Kore
 
 data TransitionResult a
     = -- | straight-line execution
       StraightLine a
-    | -- | branch point
-      Branch (NonEmpty a)
+    | -- | branch point (1st arg), branching into 2nd arg elements
+      Branch a (NonEmpty a)
     | -- | no next state but not final (e.g., not goal state, or side
       -- conditions do not hold)
       Stuck a
@@ -43,7 +43,7 @@ data TransitionResult a
 instance Functor TransitionResult where
     fmap f = \case
         StraightLine a -> StraightLine $ f a
-        Branch as -> Branch $ NE.map f as
+        Branch a as -> Branch (f a) $ NE.map f as
         Stuck a -> Stuck $ f a
         Final a -> Final $ f a
         Terminal a -> Terminal $ f a
@@ -57,7 +57,7 @@ isStuck (Stuck _) = True
 isStuck _ = False
 isFinal (Final _) = True
 isFinal _ = False
-isBranch (Branch _) = True
+isBranch (Branch _ _) = True
 isBranch _ = False
 isTerminal (Terminal _) = True
 isTerminal _ = False
@@ -67,7 +67,7 @@ isCut _ = False
 extractNext :: TransitionResult a -> [a]
 extractNext = \case
     StraightLine a -> [a]
-    Branch as -> NE.toList as
+    Branch _ as -> NE.toList as
     Stuck _ -> []
     Final _ -> []
     Terminal _ -> []
@@ -76,7 +76,7 @@ extractNext = \case
 extractState :: TransitionResult a -> Maybe a
 extractState = \case
     StraightLine _ -> Nothing
-    Branch _ -> Nothing
+    Branch a _ -> Just a
     Stuck a -> Just a
     Final a -> Just a
     Terminal a -> Just a
@@ -86,7 +86,7 @@ type Step = [Prim]
 
 ----------------------------------------
 transitionLeaves ::
-    forall m c .
+    forall m c.
     (Monad m) =>
     -- | Stop critera, in terms of 'TransitionResult's. The algorithm
     -- will _always_ stop on 'Stuck' and 'Final', so [isTerminal,
@@ -118,7 +118,6 @@ transitionLeaves
     maxCounterExamples
     start =
         evalStateT (worker (Seq.singleton start) >>= checkLeftUnproven) []
-
       where
         enqueue' = unfoldSearchOrder direction
 
@@ -165,8 +164,9 @@ transitionLeaves
             next <- transit a
             if (isStuck next || isFinal next || shouldStop next)
                 then pure (Output next q)
-                else either (\(LimitExceeded longQ) -> Abort [next] longQ) Continue
-                         <$> enqueue (extractNext next) q
+                else
+                    either (\(LimitExceeded longQ) -> Abort [next] longQ) Continue
+                        <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
             TraversalResult ([Step], c) ->
@@ -177,7 +177,6 @@ transitionLeaves
                 if null stuck
                     then fmap snd result
                     else GotStuck 0 stuck
-
 
 data StepResult a
     = Continue (Seq a)
