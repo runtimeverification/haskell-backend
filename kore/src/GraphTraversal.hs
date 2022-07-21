@@ -8,6 +8,7 @@ import Data.Limit
 import Data.List.NonEmpty qualified as NE
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
+import GHC.Generics qualified as GHC
 import GHC.Natural
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -36,6 +37,16 @@ data TransitionResult a
     | -- | config matches a cut pattern ( aka: is LHS of a "cut" rule)
       -- The respective RHS (or RHSs) are returned (if any)
       Cut a [a]
+    deriving stock (Eq, Show, GHC.Generic)
+
+instance Functor TransitionResult where
+    fmap f = \case
+        StraightLine a -> StraightLine $ f a
+        Branch as -> Branch $ NE.map f as
+        Stuck a -> Stuck $ f a
+        Final a -> Final $ f a
+        Terminal a -> Terminal $ f a
+        Cut a as -> Cut (f a) (map f as)
 
 -- Graph traversal would always stop at Terminal/Cut, and _may_ stop
 -- at Branch, depending on configuration.
@@ -90,6 +101,7 @@ transitionLeaves ::
     -- | transition function
     (a -> m (TransitionResult a)) ->
     -- again, m is probably only for logging
+
     -- | max-counterexamples, included in the internal logic
     Natural ->
     -- | initial node
@@ -169,29 +181,21 @@ data TraversalResult a
 ----------------------------------------
 -- constructing transition functions (for caller)
 
--- transition without terminal or cut rules
 simpleTransition ::
     forall instr config m rule.
     Monad m =>
     -- | primitive strategy rule
     (instr -> config -> TransitionT rule m config) ->
-    -- | converter
+    -- | converter to interpret the config (claim state or program state)
     ([config] -> TransitionResult config) ->
     -- final transition function
     ([instr], config) ->
     m (TransitionResult ([instr], config))
-simpleTransition applyPrim mapToResult = transit
+simpleTransition applyPrim mapToResult = uncurry tt
   where
-    tt :: [instr] -> config -> m [([instr], config)]
-    tt [] _config = pure []
+    tt :: [instr] -> config -> m (TransitionResult ([instr], config))
+    tt [] config =
+        pure . fmap ([],) . mapToResult $ [config]
     tt (i : is) config =
-        map ((is,) . fst) <$> runTransitionT (applyPrim i config)
-
-    transit :: ([instr], config) -> m (TransitionResult ([instr], config))
-    transit x = do
-        mapToResult <$> uncurry tt x
-        -- pure $ case results of
-        --     -- FIXME how to distinguish final from stuck here?
-        --     [] -> Stuck x
-        --     [one] -> StraightLine one
-        --     (r : rs) -> Branch (r NE.:| rs)
+        (fmap (is,) . mapToResult . map fst)
+            <$> runTransitionT (applyPrim i config)

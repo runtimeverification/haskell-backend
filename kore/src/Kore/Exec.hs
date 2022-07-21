@@ -303,7 +303,7 @@ exec
                             Strategy Prim ->
                             (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
                             LogicT
-                                (Simplifier.SimplifierT smt)
+                                Simplifier.Simplifier
                                 [(ExecDepth, ProgramState (Pattern RewritingVariableName))]
                         transit instr config =
                             Strategy.transitionRule
