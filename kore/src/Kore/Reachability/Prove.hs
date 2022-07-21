@@ -348,16 +348,16 @@ proveClaim
                         -}
                         & (`snoc` reachabilityCheckOnly)
             -- OLD, somehow needed to disambiguate some types
-            _proofDepths <-
-                Strategy.leavesM
-                    finalNodeType
-                    updateQueue
-                    (Strategy.unfoldTransition transit)
-                    (limitedStrategy, (ProofDepth 0, startGoal))
-                    & fmap discardStrategy
-                    & throwUnproven
-                    & handle handleLimitExceeded
-                    & (\s -> evalStateT s mempty)
+            -- _proofDepths <-
+            --     Strategy.leavesM
+            --         finalNodeType
+            --         updateQueue
+            --         (Strategy.unfoldTransition transit)
+            --         (limitedStrategy, (ProofDepth 0, startGoal))
+            --         & fmap discardStrategy
+            --         & throwUnproven
+            --         & handle handleLimitExceeded
+            --         & (\s -> evalStateT s mempty)
 
             -- NEW
             let strategyToList :: Show prim => Strategy prim -> [prim]
@@ -434,15 +434,15 @@ proveClaim
                 stuckClaims = mapMaybe extractStuckClaim states
             Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
 
-        updateQueue = \as ->
-            Strategy.unfoldSearchOrder searchOrder as
-                >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
-                >=> ( \queue ->
-                        infoExecBreadth (ExecBreadth $ genericLength queue)
-                            >> return queue
-                    )
-          where
-            genericLength = fromIntegral . length
+        -- updateQueue = \as ->
+        --     Strategy.unfoldSearchOrder searchOrder as
+        --         >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
+        --         >=> ( \queue ->
+        --                 infoExecBreadth (ExecBreadth $ genericLength queue)
+        --                     >> return queue
+        --             )
+        --   where
+        --     genericLength = fromIntegral . length
 
         throwUnproven ::
             LogicT (VerifierT simplifier) (ProofDepth, CommonClaimState) ->
