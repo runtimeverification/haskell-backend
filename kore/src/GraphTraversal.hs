@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 module GraphTraversal (
     module GraphTraversal,
 ) where
@@ -30,6 +32,9 @@ data TransitionResult a
       Stuck a
     | -- | final state (e.g., goal state reached, side conditions hold)
       Final a
+    | -- | not stuck, but also not final (maximum depth reached before
+      -- finishing the proof)
+      Stopped a
     | -- Future work:
 
       -- | config matches a terminal pattern (or: is RHS of a
@@ -46,17 +51,20 @@ instance Functor TransitionResult where
         Branch a as -> Branch (f a) $ NE.map f as
         Stuck a -> Stuck $ f a
         Final a -> Final $ f a
+        Stopped a -> Stopped $ f a
         Terminal a -> Terminal $ f a
         Cut a as -> Cut (f a) (map f as)
 
 -- Graph traversal would always stop at Terminal/Cut, and _may_ stop
 -- at Branch, depending on configuration.
 
-isStuck, isFinal, isTerminal, isCut, isBranch :: TransitionResult a -> Bool
+isStuck, isFinal, isStopped, isTerminal, isCut, isBranch :: TransitionResult a -> Bool
 isStuck (Stuck _) = True
 isStuck _ = False
 isFinal (Final _) = True
 isFinal _ = False
+isStopped (Stopped _) = True
+isStopped _ = False
 isBranch (Branch _ _) = True
 isBranch _ = False
 isTerminal (Terminal _) = True
@@ -70,6 +78,7 @@ extractNext = \case
     Branch _ as -> NE.toList as
     Stuck _ -> []
     Final _ -> []
+    Stopped _ -> []
     Terminal _ -> []
     Cut _ as -> as
 
@@ -79,6 +88,7 @@ extractState = \case
     Branch a _ -> Just a
     Stuck a -> Just a
     Final a -> Just a
+    Stopped a -> Just a
     Terminal a -> Just a
     Cut a _ -> Just a
 
@@ -162,7 +172,7 @@ transitionLeaves
             m (StepResult ([Step], c))
         step a q = do
             next <- transit a
-            if (isStuck next || isFinal next || shouldStop next)
+            if (isStuck next || isFinal next || isStopped next || shouldStop next)
                 then pure (Output next q)
                 else
                     either (\(LimitExceeded longQ) -> Abort [next] longQ) Continue
@@ -171,12 +181,17 @@ transitionLeaves
         checkLeftUnproven ::
             TraversalResult ([Step], c) ->
             StateT [TransitionResult ([Step], c)] m (TraversalResult c)
-        checkLeftUnproven result = do
-            stuck <- gets (map (fmap snd) . filter isStuck)
-            pure $
-                if null stuck
-                    then fmap snd result
-                    else GotStuck 0 stuck
+        checkLeftUnproven = \case
+            result@Ended{} -> do
+                stuck <- gets (map (fmap snd) . filter isStuck)
+                -- some states may be unfinished but not stuck  (Stopped)
+                unproven <- gets (map (fmap snd) . filter isStopped)
+                pure $
+                    if
+                            | (not $ null stuck) -> GotStuck 0 stuck
+                            | not $ null unproven -> Aborted 0 unproven -- ???
+                            | otherwise -> fmap snd result
+            other -> pure (fmap snd other)
 
 data StepResult a
     = Continue (Seq a)
@@ -218,7 +233,7 @@ simpleTransition applyPrim mapToResult = uncurry tt
   where
     tt :: [Step] -> config -> m (TransitionResult ([Step], config))
     tt [] config =
-        pure $ Final ([], config)
+        pure $ fmap ([],) $ mapToResult config []
     tt ([] : iss) config =
         tt iss config
     tt (is : iss) config =

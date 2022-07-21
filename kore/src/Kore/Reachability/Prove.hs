@@ -406,11 +406,10 @@ proveClaim
             let mkStuckClaims =
                     MultiAnd.make
                         . map StuckClaim
-                        . mapMaybe (X.extractState >=> extractStuck . snd)
+                        . mapMaybe (X.extractState >=> extractUnproven . snd)
             proofDepths <-
                 case traversalResult of
                     X.GotStuck _n rs -> do
-                        -- assert (length rs == fromIntegral maxCounterexamples)
                         Monad.Except.throwError $ mkStuckClaims rs
                     X.Aborted _n rs ->
                         Monad.Except.throwError $ mkStuckClaims rs
@@ -580,7 +579,10 @@ toTransitionResultWithDepth ::
     [(ProofDepth, ClaimState c)] ->
     X.TransitionResult (ProofDepth, ClaimState c)
 toTransitionResultWithDepth prior = \case
-    [] -> X.Stuck prior
+    []
+        | isJust (extractStuck $ snd prior) -> X.Stuck prior
+        | isJust (extractUnproven $ snd prior) -> X.Stopped prior
+        | otherwise -> X.Final prior -- FIXME ???
     [c@(_, ClaimState.Claimed{})] -> X.StraightLine c
     [c@(_, ClaimState.Rewritten{})] -> X.StraightLine c
     [c@(_, ClaimState.Remaining{})] -> X.StraightLine c
