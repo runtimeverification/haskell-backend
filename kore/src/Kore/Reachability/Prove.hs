@@ -56,8 +56,11 @@ import Data.List.Extra (
 import Data.Text (
     Text,
  )
+
+-- FIXME temporary
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
+import GraphTraversal qualified as X
 import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Debug
 import Kore.Internal.Conditional (
@@ -485,6 +488,29 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
                 (Lens.over lensClaimPattern mkGoal <$> state)
         | otherwise =
             transitionRule' stuckCheck claims axioms prim state
+
+-- | result interpretation for GraphTraversal.simpleTransition
+toTransitionResult ::
+    Show c =>
+    -- | prior state, needed for [] and Proven cases
+    ClaimState c ->
+    [ClaimState c] ->
+    X.TransitionResult (ClaimState c)
+toTransitionResult prior = \case
+    [] -> X.Stuck prior
+    [c@ClaimState.Claimed{}] -> X.StraightLine c
+    [c@ClaimState.Rewritten{}] -> X.StraightLine c
+    [c@ClaimState.Remaining{}] -> X.StraightLine c
+    [c@ClaimState.Stuck{}] -> X.Stuck c
+    [ClaimState.Proven] -> X.Final prior
+    cs@(c : cs')
+        | noneStuck cs -> X.Branch (c :| cs')
+        | otherwise ->
+            -- FIXME Is it possible to get one stuck and one non-stuck?
+            error $ "toTransitionResult: " <> show (prior, cs)
+  where
+    noneStuck :: [ClaimState c] -> Bool
+    noneStuck = null . mapMaybe ClaimState.extractStuck
 
 transitionRule' ::
     MonadSimplify simplifier =>

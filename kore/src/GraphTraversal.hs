@@ -187,7 +187,7 @@ simpleTransition ::
     -- | primitive strategy rule
     (instr -> config -> TransitionT rule m config) ->
     -- | converter to interpret the config (claim state or program state)
-    ([config] -> TransitionResult config) ->
+    (config -> [config] -> TransitionResult config) ->
     -- final transition function
     ([instr], config) ->
     m (TransitionResult ([instr], config))
@@ -195,7 +195,7 @@ simpleTransition applyPrim mapToResult = uncurry tt
   where
     tt :: [instr] -> config -> m (TransitionResult ([instr], config))
     tt [] config =
-        pure . fmap ([],) . mapToResult $ [config]
+        pure . fmap ([],) . (mapToResult config) $ [config]
     tt (i : is) config =
-        (fmap (is,) . mapToResult . map fst)
+        (fmap (is,) . mapToResult config . map fst)
             <$> runTransitionT (applyPrim i config)
