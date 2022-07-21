@@ -127,7 +127,10 @@ transitionLeaves
     transit
     maxCounterExamples
     start =
-        evalStateT (worker (Seq.singleton start) >>= checkLeftUnproven) []
+        enqueue [start] Seq.empty
+            >>= either
+                (pure . const (Aborted 0 [Stopped $ snd start]))
+                (\q -> evalStateT (worker q >>= checkLeftUnproven) [])
       where
         enqueue' = unfoldSearchOrder direction
 
