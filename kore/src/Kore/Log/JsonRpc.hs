@@ -14,6 +14,7 @@ import Control.Monad.Logger (
     defaultLogStr,
     fromLogStr,
  )
+import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Log
 import Prelude.Kore
@@ -40,4 +41,4 @@ instance Entry LogJsonRpcServer where
         LevelError -> Error
         _ -> Debug
     helpDoc _ = "log JSON RPC Server messages"
-    oneLineDoc LogJsonRpcServer{msg} = pretty $ Text.decodeUtf8 $ fromLogStr msg
+    oneLineDoc LogJsonRpcServer{msg} = pretty $ Text.replace "\n" " " $ Text.decodeUtf8 $ fromLogStr msg

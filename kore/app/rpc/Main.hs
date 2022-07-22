@@ -148,22 +148,20 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
             definitionFileName
             mainModuleName
     let SerializedModule{metadataTools} = serializedModule
-    let smtConfig =
-            SMT.defaultConfig
-                { SMT.timeOut = timeOut
-                , SMT.rLimit = rLimit
-                , SMT.resetInterval = resetInterval
-                , SMT.prelude = prelude
-                }
+    
+    -- initialize an SMT solver with user declared lemmas
+    let setupSolver smtSolverRef = do
+            let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
+            let solverSetup = SMT.SolverSetup{userInit, refSolverHandle = smtSolverRef, config = smtConfig}
+            SMT.initSolver solverSetup
+            return solverSetup
 
-    -- launch the SMT solver, initialize it and then pass the SolverSetup object to the rpc server
+    -- launch the SMT solver, initialize it and then pass the SolverSetup object to the RPC server
     GlobalMain.clockSomethingIO "Executing" $
         bracket
-            (SMT.newSolver smtConfig)
-            SMT.stopSolver
-            $ \mvar -> do
-                let solverSetup = SMT.SolverSetup{userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas, refSolverHandle = mvar, config = smtConfig}
-                SMT.initSolver solverSetup
+            (SMT.newSolver smtConfig >>= setupSolver)
+            (SMT.stopSolver . SMT.refSolverHandle)
+            $ \solverSetup -> do
                 -- wrap the call to runServer in the logger monad
                 Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
 
@@ -171,3 +169,10 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
   where
     KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
     KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions
+    smtConfig =
+        SMT.defaultConfig
+            { SMT.timeOut = timeOut
+            , SMT.rLimit = rLimit
+            , SMT.resetInterval = resetInterval
+            , SMT.prelude = prelude
+            }
