@@ -367,10 +367,7 @@ proveClaim
                 strategyToList other = error $ "strategyToList: " <> show other
 
                 limitedStrategyList =
-                    ( map strategyToList $
-                        Limit.takeWithin depthLimit $
-                            toList pickStrategy
-                    )
+                    map strategyToList (Limit.takeWithin depthLimit $ toList pickStrategy)
                         `snoc` (strategyToList reachabilityCheckOnly)
 
                 stopOnBranches = \case
