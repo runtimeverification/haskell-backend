@@ -76,7 +76,7 @@ data KoreParserOptions = KoreParserOptions
     , -- | Option to print pattern
       willPrintPattern :: !Bool
     , -- | Option to print pattern
-      willPrintPatternJSON :: !Bool
+      willPrintPatternJson :: !Bool
     , -- | Option to verify definition
       willVerify :: !Bool
     , -- | Option to print in applicative Kore syntax

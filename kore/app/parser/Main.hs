@@ -110,9 +110,9 @@ main = handleTop $ do
             for_ patternFileNames $ \patternFileName -> do
                 parsedPattern <- mainPatternParse patternFileName
                 verifyPattern indexedModule parsedPattern
-                let KoreParserOptions{willPrintPattern, willPrintPatternJSON} = koreParserOptions
+                let KoreParserOptions{willPrintPattern, willPrintPatternJson} = koreParserOptions
                 when willPrintPattern $ putDebug parsedPattern
-                when willPrintPatternJSON $ liftIO $ ByteString.putStrLn $ encodePattern parsedPattern
+                when willPrintPatternJson $ liftIO $ ByteString.putStrLn $ encodePattern parsedPattern
 
 {- | IO action that parses a kore definition from a filename and prints timing
  information.
