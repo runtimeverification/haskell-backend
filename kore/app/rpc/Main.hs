@@ -148,7 +148,7 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
             definitionFileName
             mainModuleName
     let SerializedModule{metadataTools} = serializedModule
-    
+
     -- initialize an SMT solver with user declared lemmas
     let setupSolver smtSolverRef = do
             let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
