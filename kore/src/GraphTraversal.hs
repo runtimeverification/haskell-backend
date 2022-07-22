@@ -204,7 +204,7 @@ transitionLeaves
                 then pure (Output next q)
                 else
                     let abort (LimitExceeded queue) = Abort [next] queue
-                    in either abort Continue <$> enqueue (extractNext next) q
+                     in either abort Continue <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
             TraversalResult ([Step], c) ->

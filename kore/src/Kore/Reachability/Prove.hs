@@ -416,8 +416,8 @@ proveClaim
                 case traversalResult of
                     X.GotStuck _n rs ->
                         throwStuckClaims $
-                            mapMaybe (X.extractState >=> extractUnproven . snd) rs
                             -- return _given_ states (considered stuck) when GotStuck
+                            mapMaybe (X.extractState >=> extractUnproven . snd) rs
                     X.Aborted _n rs ->
                         throwStuckClaims $
                             -- return _next_ states when Aborted
