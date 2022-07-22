@@ -538,7 +538,7 @@ test_renaming =
             ]
 
 test_toSyntaxPattern :: TestTree
-test_toSyntaxPattern = Hedgehog.testProperty "conver a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
+test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
     trmLike <- forAll (runKoreGen Mock.generatorSetup ConsistentKore.termLikeGen)
     let patt = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
@@ -548,7 +548,7 @@ test_toSyntaxPattern = Hedgehog.testProperty "conver a valid pattern to a Syntax
             fail $
                 unparseToString patt <> "\n\n"
                     <> show errorError
-        Right trmLike2 -> patt === fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
+        Right trmLike2 -> patt === fmap (const Attribute.Null) (from trmLike2 :: Pattern.Pattern VariableName (TermAttributes VariableName))
   where
     context =
         PatternVerifier.verifiedModuleContext
