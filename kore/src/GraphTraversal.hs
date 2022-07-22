@@ -1,5 +1,10 @@
 {-# LANGUAGE MultiWayIf #-}
 
+{- |
+Copyright   : (c) Runtime Verification, 2018-2022
+License     : BSD-3-Clause
+Maintainer  : jost.berthold@runtimeverification.com
+-}
 module GraphTraversal (
     module GraphTraversal,
 ) where
@@ -192,8 +197,9 @@ transitionLeaves
                                     pure $
                                         GotStuck (Seq.length nextQ) stuck
                                 else worker nextQ
-                Abort results queue -> do
-                    pure $ Aborted (Seq.length queue) results
+                Abort lastState queue -> do
+                    pure $ Aborted (Seq.length queue) [lastState]
+        -- TODO could add current state to return value ^^^^^^^
         step ::
             ([Step], c) ->
             Seq ([Step], c) ->
@@ -203,7 +209,7 @@ transitionLeaves
             if (isStuck next || isFinal next || isStopped next || shouldStop next)
                 then pure (Output next q)
                 else
-                    let abort (LimitExceeded queue) = Abort [next] queue
+                    let abort (LimitExceeded queue) = Abort next queue
                      in either abort Continue <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
@@ -224,29 +230,33 @@ transitionLeaves
 data StepResult a
     = Continue (Seq a)
     | Output (TransitionResult a) (Seq a)
-    | Abort [TransitionResult a] (Seq a)
+    | Abort (TransitionResult a) (Seq a)
     deriving stock (Eq, Show, GHC.Generic)
 
 data TraversalResult a
-    = -- | remaining queue length and all stuck states
+    = -- | remaining queue length and stuck or stopped (unproven)
+      -- states (always at most maxCounterExamples many)
       GotStuck Int [TransitionResult a]
-    | -- | remaining queue length (limit exceeded) and results so far
+    | -- | queue length (exceeding the limit) and result(s) of the
+      -- last step that led to stopping
       Aborted Int [TransitionResult a]
-    | -- queue ran empty, results returned
+    | -- | queue empty, results returned
       Ended [TransitionResult a]
     deriving stock (Eq, Show, GHC.Generic)
 
 instance Pretty a => Pretty (TraversalResult a) where
     pretty = \case
         GotStuck n as ->
-            Pretty.hang 4 $
-                Pretty.vsep $ ("Got stuck with queue of " <> Pretty.pretty n) : map Pretty.pretty as
+            Pretty.hang 4 . Pretty.vsep $
+                ("Got stuck with queue of " <> Pretty.pretty n) :
+                map Pretty.pretty as
         Aborted n as ->
-            Pretty.hang 4 $
-                Pretty.vsep $ ("Aborted with queue of " <> Pretty.pretty n) : map Pretty.pretty as
+            Pretty.hang 4 . Pretty.vsep $
+                ("Aborted with queue of " <> Pretty.pretty n) :
+                map Pretty.pretty as
         Ended as ->
-            Pretty.hang 4 $
-                Pretty.vsep $ "Ended" : map Pretty.pretty as
+            Pretty.hang 4 . Pretty.vsep $
+                "Ended" : map Pretty.pretty as
 
 instance Functor TraversalResult where
     fmap f = \case
@@ -265,6 +275,7 @@ simpleTransition ::
     -- | primitive strategy rule
     (Prim -> config -> TransitionT rule m config) ->
     -- | converter to interpret the config (claim state or program state)
+    -- TODO should also consider the applied rule(s) (for Terminal/Cut)
     (config -> [config] -> TransitionResult config) ->
     -- final transition function
     ([Step], config) ->
