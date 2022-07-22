@@ -21,6 +21,7 @@ import Kore.Rewrite.Strategy (
     unfoldSearchOrder,
  )
 import Prelude.Kore
+import Pretty
 
 data TransitionResult a
     = -- | straight-line execution
@@ -54,6 +55,30 @@ instance Functor TransitionResult where
         Stopped a -> Stopped $ f a
         Terminal a -> Terminal $ f a
         Cut a as -> Cut (f a) (map f as)
+
+instance Pretty a => Pretty (TransitionResult a) where
+    pretty = \case
+        StraightLine a -> single "StraightLine" a
+        Branch a as -> multi "Branch" "node" a "successors" (NE.toList as)
+        Stuck a -> single "Stuck" a
+        Final a -> single "Final" a
+        Stopped a -> single "Stopped" a
+        Terminal a -> single "Terminal" a
+        Cut a as -> multi "Cut" "node" a "successors" as
+      where
+        single :: Doc x -> a -> Doc x
+        single lbl a =
+            Pretty.vsep [lbl, Pretty.indent 4 $ Pretty.pretty a]
+
+        multi :: Doc x -> Doc x -> a -> Doc x -> [a] -> Doc x
+        multi lbl lbl1 a lbl2 as =
+            Pretty.vsep $
+                [ lbl
+                , Pretty.indent 2 $ "- " <> lbl1
+                , Pretty.indent 4 $ Pretty.pretty a
+                , Pretty.indent 2 $ "- " <> lbl2
+                ]
+                    <> map (Pretty.indent 4 . Pretty.pretty) as
 
 -- Graph traversal would always stop at Terminal/Cut, and _may_ stop
 -- at Branch, depending on configuration.
@@ -210,6 +235,18 @@ data TraversalResult a
     | -- queue ran empty, results returned
       Ended [TransitionResult a]
     deriving stock (Eq, Show, GHC.Generic)
+
+instance Pretty a => Pretty (TraversalResult a) where
+    pretty = \case
+        GotStuck n as ->
+            Pretty.hang 4 $
+                Pretty.vsep $ ("Got stuck with queue of " <> Pretty.pretty n) : map Pretty.pretty as
+        Aborted n as ->
+            Pretty.hang 4 $
+                Pretty.vsep $ ("Aborted with queue of " <> Pretty.pretty n) : map Pretty.pretty as
+        Ended as ->
+            Pretty.hang 4 $
+                Pretty.vsep $ "Ended" : map Pretty.pretty as
 
 instance Functor TraversalResult where
     fmap f = \case
