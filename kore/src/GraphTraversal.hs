@@ -193,7 +193,7 @@ transitionLeaves
                                         GotStuck (Seq.length nextQ) stuck
                                 else worker nextQ
                 Abort results queue -> do
-                    pure $ Aborted (Seq.length queue) results -- FIXME ??? results ???
+                    pure $ Aborted (Seq.length queue) results
         step ::
             ([Step], c) ->
             Seq ([Step], c) ->
@@ -203,8 +203,8 @@ transitionLeaves
             if (isStuck next || isFinal next || isStopped next || shouldStop next)
                 then pure (Output next q)
                 else
-                    either (\(LimitExceeded longQ) -> Abort [next] longQ) Continue
-                        <$> enqueue (extractNext next) q
+                    let abort (LimitExceeded queue) = Abort [next] queue
+                    in either abort Continue <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
             TraversalResult ([Step], c) ->
@@ -217,7 +217,7 @@ transitionLeaves
                 pure $
                     if
                             | (not $ null stuck) -> GotStuck 0 stuck
-                            | not $ null unproven -> Aborted 0 unproven -- ???
+                            | not $ null unproven -> GotStuck 0 unproven
                             | otherwise -> fmap snd result
             other -> pure (fmap snd other)
 
@@ -251,7 +251,7 @@ instance Pretty a => Pretty (TraversalResult a) where
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (ffmap f rs)
-        Aborted n rs -> GotStuck n (ffmap f rs)
+        Aborted n rs -> Aborted n (ffmap f rs)
         Ended rs -> Ended (ffmap f rs)
       where
         ffmap = map . fmap

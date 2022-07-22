@@ -398,18 +398,30 @@ proveClaim
                     transition
                     maxCounterexamples
                     (limitedStrategyList, (ProofDepth 0, startGoal))
-            -- traceM $ show traversalResult
 
-            let mkStuckClaims =
-                    MultiAnd.make
-                        . map StuckClaim
-                        . mapMaybe (X.extractState >=> extractUnproven . snd)
+            -- traceM
+            --     . Pretty.renderString
+            --     . Pretty.layoutPretty Pretty.defaultLayoutOptions
+            --     $ Pretty.pretty traversalResult
+
+            let throwStuckClaims =
+                    Monad.Except.throwError . MultiAnd.make . map StuckClaim
             proofDepths <-
+                -- Semantics of TraversalResult (failure cases):
+                -- - When `GotStuck` is returned, the returned results
+                --   are considered stuck and thrown as an exception;
+                -- - when `Aborted` is returned, the returned results
+                --   are _analysed_ and their _next_ states (to
+                --   enqueue) are considered stuck and thrown.
                 case traversalResult of
-                    X.GotStuck _n rs -> do
-                        Monad.Except.throwError $ mkStuckClaims rs
+                    X.GotStuck _n rs ->
+                        throwStuckClaims $
+                            mapMaybe (X.extractState >=> extractUnproven . snd) rs
+                            -- return _given_ states (considered stuck) when GotStuck
                     X.Aborted _n rs ->
-                        Monad.Except.throwError $ mkStuckClaims rs
+                        throwStuckClaims $
+                            -- return _next_ states when Aborted
+                            concatMap (mapMaybe (extractUnproven . snd) . X.extractNext) rs
                     X.Ended results ->
                         pure (mapMaybe (fmap fst . X.extractState) results)
 
