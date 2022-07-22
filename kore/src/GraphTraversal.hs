@@ -155,7 +155,7 @@ transitionLeaves
         enqueue [start] Seq.empty
             >>= either
                 (pure . const (GotStuck 0 [Stopped $ snd start]))
-                (\q -> evalStateT (worker q >>= checkLeftUnproven) [])
+                (\q -> checkLeftUnproven <$> evalStateT (worker q) [])
       where
         enqueue' = unfoldSearchOrder direction
 
@@ -176,7 +176,7 @@ transitionLeaves
         maxStuck = fromIntegral maxCounterExamples
 
         worker :: Seq ([Step], c) -> StateT [TransitionResult ([Step], c)] m (TraversalResult ([Step], c))
-        worker Seq.Empty = Ended <$> get
+        worker Seq.Empty = Ended . reverse <$> get
         worker (a :<| as) = do
             result <- lift $ step a as
             case result of
@@ -207,19 +207,19 @@ transitionLeaves
                      in either abort Continue <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
-            TraversalResult ([Step], c) ->
-            StateT [TransitionResult ([Step], c)] m (TraversalResult c)
+            TraversalResult ([Step], c) -> TraversalResult c
         checkLeftUnproven = \case
-            result@Ended{} -> do
-                stuck <- gets (map (fmap snd) . filter isStuck)
-                -- some states may be unfinished but not stuck  (Stopped)
-                unproven <- gets (map (fmap snd) . filter isStopped)
-                pure $
-                    if
+            result@(Ended results) ->
+                let -- we collect a maximum of 'maxCounterExamples' Stuck states
+                    stuck = map (fmap snd) $ filter isStuck results
+                    -- Other states may be unfinished but not stuck (Stopped)
+                    -- Only provide the requested amount of states (maxCounterExamples)
+                    unproven = take maxStuck . map (fmap snd) $ filter isStopped results
+                 in if
                             | (not $ null stuck) -> GotStuck 0 stuck
                             | not $ null unproven -> GotStuck 0 unproven
                             | otherwise -> fmap snd result
-            other -> pure (fmap snd other)
+            other -> fmap snd other
 
 data StepResult a
     = Continue (Seq a)
