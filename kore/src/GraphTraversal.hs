@@ -154,7 +154,7 @@ transitionLeaves
     start =
         enqueue [start] Seq.empty
             >>= either
-                (pure . const (Aborted 0 [Stopped $ snd start]))
+                (pure . const (GotStuck 0 [Stopped $ snd start]))
                 (\q -> evalStateT (worker q >>= checkLeftUnproven) [])
       where
         enqueue' = unfoldSearchOrder direction
