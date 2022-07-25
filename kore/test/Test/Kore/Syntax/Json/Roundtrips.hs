@@ -17,7 +17,6 @@ import Kore.Parser (
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Definition qualified as Kore
 import Kore.Syntax.Json
-import Kore.Syntax.Json.Internal (KoreJson (..), fromPattern)
 import Kore.Unparser (unparse)
 import Prelude.Kore
 import Pretty qualified
