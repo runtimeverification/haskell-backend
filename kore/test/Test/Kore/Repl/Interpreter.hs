@@ -747,7 +747,6 @@ runWithState command axioms claims claim stateTransformer = do
     ((c, s), logEntries) <-
         runLogger $
             replInterpreter0
-                @Simplifier
                 (modifyAuxOutput output)
                 (modifyKoreOutput output)
                 command
@@ -833,7 +832,7 @@ mkState startTime axioms claims claim =
 
 mkConfig ::
     MVar (Log.LogAction IO Log.ActualEntry) ->
-    Config Simplifier
+    Config
 mkConfig logger =
     Config
         { stepper = stepper0
