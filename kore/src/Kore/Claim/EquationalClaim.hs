@@ -83,7 +83,6 @@ equationalClaimSort (EquationalClaim patt _)
             & error
 
 instance Claim EquationalClaim where
-    -- | Empty because equational claims are not subject to rewriting.
     data Rule EquationalClaim
 
     firstStep _ = equationalFirstStep
