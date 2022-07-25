@@ -95,7 +95,7 @@ import Kore.Reachability.ClaimState (
     extractUnproven,
  )
 import Kore.Reachability.ClaimState qualified as ClaimState
-import Kore.Reachability.Prim qualified as Prim (
+import Kore.Reachability.Prim as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
@@ -330,12 +330,11 @@ proveClaim
         traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
             let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
 
-                pickStrategy =
-                    maybe strategy strategyWithMinDepth maybeMinDepth
-
                 limitedStrategyList =
-                    map strategyToList (Limit.takeWithin depthLimit $ toList pickStrategy)
-                        `snoc` (strategyToList reachabilityCheckOnly)
+                    Limit.takeWithin
+                        depthLimit
+                        (maybe infinite withMinDepth maybeMinDepth)
+                        `snoc` [Begin, CheckImplication] -- last step of limited step
 
                 stopOnBranches = \case
                     Strategy.Leaf -> const False
@@ -373,11 +372,26 @@ proveClaim
                     infoProvenDepth maxProofDepth
                     warnProvenClaimZeroDepth maxProofDepth goal
       where
-        -- TODO remove use of "Strategy", use stream/list directly
-        strategyToList :: Show prim => Strategy prim -> [prim]
-        strategyToList (Strategy.Seq a b) = strategyToList a <> strategyToList b
-        strategyToList (Strategy.Apply p) = [p]
-        strategyToList Strategy.Continue = []
+        -------------------------------
+        -- brought in from Claim.hs to remove Strategy type
+        infinite :: [X.Step]
+        ~infinite = stepNoClaims : repeat stepWithClaims
+
+        withMinDepth :: MinDepth -> [X.Step]
+        withMinDepth d =
+            noCheckSteps <> repeat stepWithClaims
+          where
+            noCheckSteps =
+                [Begin, Simplify, ApplyAxioms, Simplify] :
+                replicate
+                    (getMinDepth d - 1)
+                    [Begin, Simplify, ApplyAxioms, ApplyClaims, Simplify]
+
+        stepNoClaims =
+            [Begin, Simplify, CheckImplication, ApplyAxioms, Simplify]
+        stepWithClaims =
+            [Begin, Simplify, CheckImplication, ApplyClaims, ApplyAxioms, Simplify]
+        -------------------------------
 
         transition ::
             ([X.Step], (ProofDepth, ClaimState SomeClaim)) ->
