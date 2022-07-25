@@ -75,6 +75,8 @@ data KoreParserOptions = KoreParserOptions
       willPrintDefinition :: !Bool
     , -- | Option to print pattern
       willPrintPattern :: !Bool
+    , -- | Option to print pattern
+      willPrintPatternJson :: !Bool
     , -- | Option to verify definition
       willVerify :: !Bool
     , -- | Option to print in applicative Kore syntax
@@ -120,6 +122,12 @@ parseKoreParserOptions =
             False
             False
             "Print the parsed pattern. [default: disabled]"
+        <*> enableDisableFlag
+            "print-pattern-json"
+            True
+            False
+            False
+            "Print the parsed pattern in JSON format. [default: disabled]"
         <*> enableDisableFlag
             "verify"
             True
