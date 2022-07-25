@@ -1269,11 +1269,11 @@ instance Ord variable => From (TermLike variable) (Pattern.Pattern variable (Ter
 uninternalize :: forall variable. Ord variable => TermLike variable -> Pattern.Pattern variable (TermAttributes variable)
 uninternalize = Pattern.Pattern . Recursive.cata go
   where
-    go :: 
-        CofreeF 
-            (TermLikeF variable) 
+    go ::
+        CofreeF
+            (TermLikeF variable)
             (TermAttributes variable)
-            (Cofree (PatternF.PatternF variable) (TermAttributes variable)) -> 
+            (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
         Cofree (PatternF.PatternF variable) (TermAttributes variable)
     go (attr :< trmLikePat) = case trmLikePat of
         AndF and' -> wrap $ PatternF.AndF and'
