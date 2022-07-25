@@ -362,9 +362,9 @@ exec
                         toTransitionResult prior [] =
                             case snd prior of
                                 Start _ -> X.Stuck prior -- ???
-                                Rewritten _ -> X.Final prior
+                                Rewritten _ -> X.Stopped prior
                                 Remaining _ -> X.Final prior
-                                Kore.Rewrite.Bottom -> error "what now?"
+                                Kore.Rewrite.Bottom -> X.Stopped prior -- should not happen
                         toTransitionResult prior [next] =
                             case snd next of
                                 Start _ -> X.StraightLine next -- should not happen!
@@ -384,10 +384,13 @@ exec
                             (execStrategy, (ExecDepth 0, Start initialConfig))
                     case result of
                         X.Ended results -> pure $ mapMaybe X.extractState results
-                        X.GotStuck _ results -> pure $ mapMaybe X.extractState results
-                        X.Aborted _ results -> do
-                            forM_ depthLimit warnDepthLimitExceeded -- FIXME debug this!
+                        X.GotStuck n results -> do
+                            when (n == 0 && any (not . X.isStuck) results) $
+                                forM_ depthLimit warnDepthLimitExceeded
                             pure $ mapMaybe X.extractState results
+                        X.Aborted n results -> do
+                            when (n == 0) $ forM_ depthLimit warnDepthLimitExceeded
+                            pure $ concatMap X.extractNext results
 
             let (depths, finalConfigs) = unzip finals
             infoExecDepth (maximum (ExecDepth 0 : depths))
