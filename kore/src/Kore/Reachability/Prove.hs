@@ -352,28 +352,26 @@ proveClaim
 
             let throwStuckClaims =
                     Monad.Except.throwError . MultiAnd.make . map StuckClaim
-            proofDepths <-
-                -- Semantics of TraversalResult (failure cases):
-                -- - When `GotStuck` is returned, the returned results
-                --   are considered stuck and thrown as an exception;
-                -- - when `Aborted` is returned, the returned results
-                --   are _analysed_ and their _next_ states (to
-                --   enqueue) are considered stuck and thrown.
-                case traversalResult of
-                    X.GotStuck _n rs ->
-                        throwStuckClaims $
-                            -- return _given_ states (considered stuck) when GotStuck
-                            mapMaybe (X.extractState >=> extractUnproven . snd) rs
-                    X.Aborted _n rs ->
-                        throwStuckClaims $
-                            -- return _next_ states when Aborted
-                            concatMap (mapMaybe (extractUnproven . snd) . X.extractNext) rs
-                    X.Ended results ->
-                        pure (mapMaybe (fmap fst . X.extractState) results)
-
-            let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
-            infoProvenDepth maxProofDepth
-            warnProvenClaimZeroDepth maxProofDepth goal
+            -- Semantics of TraversalResult (failure cases):
+            -- - When `GotStuck` is returned, the returned results
+            --   are considered stuck and thrown as an exception;
+            -- - when `Aborted` is returned, the returned results
+            --   are _analysed_ and their _next_ states (to
+            --   enqueue) are considered stuck and thrown.
+            case traversalResult of
+                X.GotStuck _n rs ->
+                    throwStuckClaims $
+                        -- return _given_ states (considered stuck) when GotStuck
+                        mapMaybe (X.extractState >=> extractUnproven . snd) rs
+                X.Aborted _n rs ->
+                    throwStuckClaims $
+                        -- return _next_ states when Aborted
+                        concatMap (mapMaybe (extractUnproven . snd) . X.extractNext) rs
+                X.Ended results -> do
+                    let depths = mapMaybe (fmap fst . X.extractState) results
+                        maxProofDepth = sconcat (ProofDepth 0 :| depths)
+                    infoProvenDepth maxProofDepth
+                    warnProvenClaimZeroDepth maxProofDepth goal
       where
         -- TODO remove use of "Strategy", use stream/list directly
         strategyToList :: Show prim => Strategy prim -> [prim]
