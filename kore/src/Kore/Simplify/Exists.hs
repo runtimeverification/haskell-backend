@@ -307,7 +307,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
         orPattern <- do
             simplifierX <- askSimplifierXSwitch
             case simplifierX of
-                EnabledSimplifierX -> pure (OrPattern.fromPattern substituted)
+                EnabledSimplifierX -> simplifyPatternId substituted
                 DisabledSimplifierX -> simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
   where
