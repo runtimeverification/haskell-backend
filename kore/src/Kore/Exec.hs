@@ -40,8 +40,9 @@ import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
  )
-import Data.Limit (
+import Data.Limit as Limit (
     Limit (..),
+    takeWithin,
  )
 import Data.List (
     tails,
@@ -51,6 +52,9 @@ import Data.Map.Strict (
  )
 import Data.Map.Strict qualified as Map
 import GHC.Generics qualified as GHC
+
+-- temporary
+import GraphTraversal qualified as X
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
@@ -281,48 +285,110 @@ exec
         , rewrites
         , equations
         }
-    strategy
+    execMode
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             let Initialized{rewriteRules} = rewrites
             finals <-
-                getFinalConfigsOf $ do
-                    initialConfig <-
-                        Pattern.simplify
-                            (Pattern.fromTermLike initialTerm)
-                            >>= Logic.scatter
-                    let updateQueue = \as ->
-                            Strategy.unfoldDepthFirst as
-                                >=> lift
-                                    . Strategy.applyBreadthLimit
-                                        breadthLimit
-                                        dropStrategy
-                        rewriteGroups = groupRewritesByPriority rewriteRules
+                -- getFinalConfigsOf $ do
+                -- initialConfig <-
+                --     Pattern.simplify
+                --         (Pattern.fromTermLike initialTerm)
+                --         >>= Logic.scatter
+                -- let updateQueue = \as ->
+                --         Strategy.unfoldDepthFirst as
+                --             >=> lift
+                --                 . Strategy.applyBreadthLimit
+                --                     breadthLimit
+                --                     dropStrategy
+                --     rewriteGroups = groupRewritesByPriority rewriteRules
+
+                --     transit ::
+                --         Strategy Prim ->
+                --         (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+                --         LogicT
+                --             Simplifier.Simplifier
+                --             [(ExecDepth, ProgramState (Pattern RewritingVariableName))]
+                --     transit instr config =
+                --         Strategy.transitionRule
+                --             ( transitionRule rewriteGroups strategy
+                --                 & profTransitionRule
+                --                 & trackExecDepth
+                --             )
+                --             instr
+                --             config
+                --             & runTransitionT
+                --             & fmap (map fst)
+                --             & lift
+                -- Strategy.leavesM
+                --     Leaf
+                --     updateQueue
+                --     (unfoldTransition transit)
+                --     ( limitedExecutionStrategy depthLimit
+                --     , (ExecDepth 0, Start initialConfig)
+                --     )
+                ---------------------
+                do
+                    -- FIXME wrong, and maybe not even required?
+                    -- (step 1 simplifies first thing)
+                    let initialConfig = Pattern.fromTermLike initialTerm
+                    let rewriteGroups = groupRewritesByPriority rewriteRules
+
+                        execStrategy :: [X.Step Prim]
+                        execStrategy =
+                            Limit.takeWithin depthLimit $
+                                [Begin, Simplify, Rewrite, Simplify] :
+                                repeat [Begin, Rewrite, Simplify]
 
                         transit ::
-                            Strategy Prim ->
-                            (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
-                            LogicT
-                                Simplifier.Simplifier
-                                [(ExecDepth, ProgramState (Pattern RewritingVariableName))]
-                        transit instr config =
-                            Strategy.transitionRule
-                                ( transitionRule rewriteGroups strategy
-                                    & profTransitionRule
-                                    & trackExecDepth
+                            ( [X.Step Prim]
+                            , (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                            ) ->
+                            Simplifier.Simplifier
+                                ( X.TransitionResult
+                                    ([X.Step Prim], (ExecDepth, ProgramState (Pattern RewritingVariableName)))
                                 )
-                                instr
-                                config
-                                & runTransitionT
-                                & fmap (map fst)
-                                & lift
-                    Strategy.leavesM
-                        Leaf
-                        updateQueue
-                        (unfoldTransition transit)
-                        ( limitedExecutionStrategy depthLimit
-                        , (ExecDepth 0, Start initialConfig)
-                        )
+                        transit =
+                            X.simpleTransition
+                                ( trackExecDepth . profTransitionRule $
+                                    transitionRule rewriteGroups execMode
+                                )
+                                toTransitionResult
+
+                        toTransitionResult ::
+                            (ExecDepth, ProgramState p) ->
+                            [(ExecDepth, ProgramState p)] ->
+                            (X.TransitionResult (ExecDepth, ProgramState p))
+                        toTransitionResult prior [] =
+                            case snd prior of
+                                Start _ -> X.Stuck prior -- ???
+                                Rewritten _ -> X.Final prior
+                                Remaining _ -> X.Final prior
+                                Kore.Rewrite.Bottom -> error "what now?"
+                        toTransitionResult prior [next] =
+                            case snd next of
+                                Start _ -> X.StraightLine next -- should not happen!
+                                Rewritten _ -> X.StraightLine next
+                                Remaining _ -> X.Stuck prior -- ???
+                                Kore.Rewrite.Bottom -> X.Stuck prior
+                        toTransitionResult prior (s : ss) =
+                            X.Branch prior (s :| ss)
+
+                    result <-
+                        X.transitionLeaves
+                            [X.isTerminal, X.isCut] -- future work
+                            Strategy.DepthFirst
+                            breadthLimit
+                            transit
+                            123 -- FIXME!
+                            (execStrategy, (ExecDepth 0, Start initialConfig))
+                    case result of
+                        X.Ended results -> pure $ mapMaybe X.extractState results
+                        X.GotStuck _ results -> pure $ mapMaybe X.extractState results
+                        X.Aborted _ results -> do
+                            forM_ depthLimit warnDepthLimitExceeded -- FIXME debug this!
+                            pure $ mapMaybe X.extractState results
+
             let (depths, finalConfigs) = unzip finals
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
@@ -343,9 +409,10 @@ exec
                 (Builtin.internalize metadataTools)
                 verifiedModule
         initialSort = termLikeSort initialTerm
-        unfoldTransition transit (instrs, config) = do
-            when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
-            Strategy.unfoldTransition transit (instrs, config)
+
+-- unfoldTransition transit (instrs, config) = do
+--     when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
+--     Strategy.unfoldTransition transit (instrs, config)
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
