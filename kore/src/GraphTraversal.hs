@@ -25,6 +25,7 @@ import Kore.Rewrite.Strategy (
     runTransitionT,
     unfoldSearchOrder,
  )
+import Kore.Simplify.Data (Simplifier)
 import Prelude.Kore
 import Pretty
 
@@ -126,8 +127,7 @@ type Step = [Prim]
 
 ----------------------------------------
 transitionLeaves ::
-    forall m c.
-    (Monad m) =>
+    forall c.
     -- | Stop critera, in terms of 'TransitionResult's. The algorithm
     -- will _always_ stop on 'Stuck' and 'Final', so [isTerminal,
     -- isCut, isBranch] could be used here. Could simplify this to
@@ -142,14 +142,14 @@ transitionLeaves ::
     -- | breadth limit, essentially a natural number
     Limit Natural ->
     -- | transition function
-    (([Step], c) -> m (TransitionResult ([Step], c))) ->
+    (([Step], c) -> Simplifier (TransitionResult ([Step], c))) ->
     -- again, m is probably only for logging
 
     -- | max-counterexamples, included in the internal logic
     Natural ->
     -- | initial node
     ([Step], c) ->
-    m (TraversalResult c)
+    Simplifier (TraversalResult c)
 transitionLeaves
     stopCriteria
     direction
@@ -164,7 +164,7 @@ transitionLeaves
       where
         enqueue' = unfoldSearchOrder direction
 
-        enqueue :: [([Step], c)] -> Seq ([Step], c) -> m (Either (LimitExceeded ([Step], c)) (Seq ([Step], c)))
+        enqueue :: [([Step], c)] -> Seq ([Step], c) -> Simplifier (Either (LimitExceeded ([Step], c)) (Seq ([Step], c)))
         enqueue as q = do
             newQ <- enqueue' as q
             pure $
@@ -180,7 +180,7 @@ transitionLeaves
 
         maxStuck = fromIntegral maxCounterExamples
 
-        worker :: Seq ([Step], c) -> StateT [TransitionResult ([Step], c)] m (TraversalResult ([Step], c))
+        worker :: Seq ([Step], c) -> StateT [TransitionResult ([Step], c)] Simplifier (TraversalResult ([Step], c))
         worker Seq.Empty = Ended . reverse <$> get
         worker (a :<| as) = do
             result <- lift $ step a as
@@ -203,7 +203,7 @@ transitionLeaves
         step ::
             ([Step], c) ->
             Seq ([Step], c) ->
-            m (StepResult ([Step], c))
+            Simplifier (StepResult ([Step], c))
         step a q = do
             next <- transit a
             if (isStuck next || isFinal next || isStopped next || shouldStop next)
