@@ -380,7 +380,6 @@ proveClaim
         strategyToList (Strategy.Seq a b) = strategyToList a <> strategyToList b
         strategyToList (Strategy.Apply p) = [p]
         strategyToList Strategy.Continue = []
-        strategyToList other = error $ "strategyToList: " <> show other
 
         transition ::
             ([X.Step], (ProofDepth, ClaimState SomeClaim)) ->
