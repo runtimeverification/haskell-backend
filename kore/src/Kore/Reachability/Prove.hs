@@ -285,19 +285,25 @@ proveClaimsWorker
         verifyWorker ::
             (SomeClaim, Limit Natural) ->
             VerifierT (StateT ProvenClaims simplifier) ()
-        verifyWorker unprovenClaim@(claim, _) = do
-            debugBeginClaim claim
-            proveClaim
-                maybeMinDepth
-                stuckCheck
-                breadthLimit
-                searchOrder
-                maxCounterexamples
-                finalNodeType
-                claims
-                axioms
-                unprovenClaim
-            addProvenClaim claim
+        verifyWorker unprovenClaim@(claim, _) =
+            traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
+                debugBeginClaim claim
+                result <-
+                    proveClaim
+                        maybeMinDepth
+                        stuckCheck
+                        breadthLimit
+                        searchOrder
+                        maxCounterexamples
+                        finalNodeType
+                        claims
+                        axioms
+                        unprovenClaim
+                either
+                    -- throw stuck claims, ending the traversal
+                    Monad.Except.throwError
+                    (const $ addProvenClaim claim)
+                    result
 
         addProvenClaim claim =
             State.modify' (mappend (MultiAnd.singleton claim))
@@ -316,7 +322,7 @@ proveClaim ::
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
-    VerifierT simplifier ()
+    simplifier (Either StuckClaims ())
 proveClaim
     maybeMinDepth
     stuckCheck
@@ -326,51 +332,50 @@ proveClaim
     finalNodeType
     (AllClaims claims)
     (Axioms axioms)
-    (goal, depthLimit) =
-        traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
-            let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
+    (goal, depthLimit) = do
+        let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
 
-                limitedStrategyList =
-                    Limit.takeWithin
-                        depthLimit
-                        (maybe infinite withMinDepth maybeMinDepth)
-                        `snoc` [Begin, CheckImplication] -- last step of limited step
+            limitedStrategyList =
+                Limit.takeWithin
+                    depthLimit
+                    (maybe infinite withMinDepth maybeMinDepth)
+                    `snoc` [Begin, CheckImplication] -- last step of limited step
+            stopOnBranches = \case
+                Strategy.Leaf -> const False
+                Strategy.LeafOrBranching -> X.isBranch
 
-                stopOnBranches = \case
-                    Strategy.Leaf -> const False
-                    Strategy.LeafOrBranching -> X.isBranch
+        traversalResult <-
+            X.transitionLeaves
+                [stopOnBranches finalNodeType, X.isTerminal, X.isCut] -- future work
+                searchOrder
+                breadthLimit
+                transition
+                maxCounterexamples
+                (limitedStrategyList, (ProofDepth 0, startGoal))
 
-            traversalResult <-
-                X.transitionLeaves
-                    [stopOnBranches finalNodeType, X.isTerminal, X.isCut] -- future work
-                    searchOrder
-                    breadthLimit
-                    transition
-                    maxCounterexamples
-                    (limitedStrategyList, (ProofDepth 0, startGoal))
-
-            let throwStuckClaims =
-                    Monad.Except.throwError . MultiAnd.make . map StuckClaim
-            -- Semantics of TraversalResult (failure cases):
-            -- - When `GotStuck` is returned, the returned results
-            --   are considered stuck and thrown as an exception;
-            -- - when `Aborted` is returned, the returned results
-            --   are _analysed_ and their _next_ states (to
-            --   enqueue) are considered stuck and thrown.
-            case traversalResult of
-                X.GotStuck _n rs ->
-                    throwStuckClaims $
-                        -- return _given_ states (considered stuck) when GotStuck
-                        mapMaybe (X.extractState >=> extractUnproven . snd) rs
-                X.Aborted _n rs ->
-                    throwStuckClaims $
-                        -- return _next_ states when Aborted
-                        concatMap (mapMaybe (extractUnproven . snd) . X.extractNext) rs
-                X.Ended results -> do
-                    let depths = mapMaybe (fmap fst . X.extractState) results
-                        maxProofDepth = sconcat (ProofDepth 0 :| depths)
-                    infoProvenDepth maxProofDepth
-                    warnProvenClaimZeroDepth maxProofDepth goal
+        let returnStuckClaims =
+                pure . Left . MultiAnd.make . map StuckClaim
+        -- Semantics of TraversalResult (failure cases):
+        -- - When `GotStuck` is returned, the returned results
+        --   are considered stuck and thrown as an exception;
+        -- - when `Aborted` is returned, the returned results
+        --   are _analysed_ and their _next_ states (to
+        --   enqueue) are considered stuck and thrown.
+        case traversalResult of
+            X.GotStuck _n rs ->
+                returnStuckClaims $
+                    -- return _given_ states (considered stuck) when GotStuck
+                    mapMaybe (X.extractState >=> extractUnproven . snd) rs
+            X.Aborted _n rs ->
+                returnStuckClaims $
+                    -- return _next_ states when Aborted
+                    concatMap (mapMaybe (extractUnproven . snd) . X.extractNext) rs
+            X.Ended results -> do
+                let depths = mapMaybe (fmap fst . X.extractState) results
+                    maxProofDepth = sconcat (ProofDepth 0 :| depths)
+                infoProvenDepth maxProofDepth
+                warnProvenClaimZeroDepth maxProofDepth goal
+                pure $ Right ()
       where
         -------------------------------
         -- brought in from Claim.hs to remove Strategy type
@@ -395,19 +400,11 @@ proveClaim
 
         transition ::
             ([X.Step], (ProofDepth, ClaimState SomeClaim)) ->
-            ExceptT
-                StuckClaims
-                simplifier
-                ( X.TransitionResult
-                    ([X.Step], (ProofDepth, ClaimState SomeClaim))
-                )
+            simplifier (X.TransitionResult ([X.Step], (ProofDepth, ClaimState SomeClaim)))
         transition =
-            ( X.simpleTransition
-                ( trackProofDepth $
-                    transitionRule' stuckCheck claims axioms
-                )
+            X.simpleTransition
+                (trackProofDepth $ transitionRule' stuckCheck claims axioms)
                 toTransitionResultWithDepth
-            )
 
         -- result interpretation for GraphTraversal.simpleTransition
         toTransitionResultWithDepth ::
