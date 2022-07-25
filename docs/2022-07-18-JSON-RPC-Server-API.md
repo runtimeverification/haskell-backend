@@ -239,3 +239,45 @@ none
   }
 }
 ```
+
+
+# API Error codes
+
+The server uses the JSON RPC spec way of returning errors. Namely, the returned object will be of the form
+
+```json
+{
+  "jsonrpc": "2.0", 
+  "id": 1,
+  "error": {
+    "code": -32002,
+    "message": "Could not verify KORE pattern",
+    "data": {}
+  }
+}
+```
+
+The kore-rpc specific error messages will use error codes in the range -32000 to -32099 and are listed for individual calles above as well as collected below for convenience.
+
+## -32001 Cancel request unsupported in batch mode
+
+Due tot he way that cancel is implemented, we do not allow a cancel message within batch mode. This message should never occur if batch mode is not used.
+
+## -32002 Could not verify KORE pattern
+
+This error wraps the internal error thrown when validating the received pattern agains the loaded definition file.
+
+```json
+{
+  "jsonrpc": "2.0", 
+  "id": 1,
+  "error": {
+    "code": -32002,
+    "message": "Could not verify KORE pattern",
+    "data": {
+      "context": ["\\top (<unknown location>)","sort 'IntSort' (<unknown location>)","(<unknown location>)"],
+      "error": "Sort 'IntSort' not defined."
+    }
+  }
+}
+```
