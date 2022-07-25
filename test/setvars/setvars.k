@@ -14,7 +14,7 @@ module SETVARS
   rule h(@X:Int) => @X +Int 1 [simplification]
 
   syntax KItem ::= i(Int)
-  rule i(@X:Int) => @X +Int 1 [simplification,anywhere]
+  rule i(@X:Int) => @X +Int 1 [simplification]
 
   syntax Int ::= j(Int, Int) [function, functional]
 
@@ -26,6 +26,6 @@ module SETVARS
     #Ceil(@I1:Int /Int @I2:Int)
   =>
     {(@I2 =/=Int 0) #Equals true} #And #Ceil(@I1) #And #Ceil(@I2)
-  [anywhere]
+  [simplification]
 */
 endmodule
