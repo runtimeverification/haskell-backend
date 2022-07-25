@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Simplify.Application (
     test_applicationSimplification,
 ) where
@@ -6,6 +8,7 @@ import Control.Lens qualified as Lens
 import Data.Generics.Product (
     field,
  )
+import Data.List (sort)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import Data.Sup
@@ -141,21 +144,22 @@ test_applicationSimplification =
             --    = sigma(a, b)
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
-            let expect =
+            let [fOfA', fOfB', gOfA', gOfB'] = sort [fOfA, fOfB, gOfA, gOfB]
+                expect =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
                                 makeAndPredicate
                                     ( makeEqualsPredicate
-                                        fOfA
-                                        fOfB
+                                        fOfA'
+                                        fOfB'
                                     )
-                                    (makeEqualsPredicate gOfA gOfB)
+                                    (makeEqualsPredicate gOfA' gOfB')
                             , substitution =
                                 Substitution.unsafeWrap
-                                    [ (inject Mock.xConfig, fOfA)
-                                    , (inject Mock.yConfig, gOfA)
+                                    [ (inject Mock.xConfig, fOfA')
+                                    , (inject Mock.yConfig, gOfA')
                                     ]
                             }
                         ]
@@ -167,21 +171,21 @@ test_applicationSimplification =
                         [
                             [ Conditional
                                 { term = Mock.a
-                                , predicate = makeEqualsPredicate fOfA fOfB
+                                , predicate = makeEqualsPredicate fOfA' fOfB'
                                 , substitution =
                                     Substitution.wrap $
                                         Substitution.mkUnwrappedSubstitution
-                                            [(inject Mock.xConfig, fOfA)]
+                                            [(inject Mock.xConfig, fOfA')]
                                 }
                             ]
                         ,
                             [ Conditional
                                 { term = Mock.b
-                                , predicate = makeEqualsPredicate gOfA gOfB
+                                , predicate = makeEqualsPredicate gOfA' gOfB'
                                 , substitution =
                                     Substitution.wrap $
                                         Substitution.mkUnwrappedSubstitution
-                                            [(inject Mock.yConfig, gOfA)]
+                                            [(inject Mock.yConfig, gOfA')]
                                 }
                             ]
                         ]
@@ -194,7 +198,8 @@ test_applicationSimplification =
             --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
             --        [x=f(a), y=g(a), z=f(b)]
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
-            let z' =
+            let [fOfA', fOfB', gOfA', gOfB'] = sort [fOfA, fOfB, gOfA, gOfB]
+                z' =
                     Lens.set
                         ( field @"variableName"
                             . Lens.mapped
@@ -206,20 +211,20 @@ test_applicationSimplification =
                 expects =
                     OrPattern.fromPatterns
                         [ Conditional
-                            { term = fOfA
+                            { term = fOfA'
                             , predicate =
                                 (Predicate.fromMultiAnd . MultiAnd.make)
-                                    [ makeEqualsPredicate fOfA fOfB
-                                    , makeEqualsPredicate fOfA gOfA
-                                    , makeEqualsPredicate gOfA gOfB
+                                    [ makeEqualsPredicate fOfA' fOfB'
+                                    , makeEqualsPredicate fOfA' gOfA'
+                                    , makeEqualsPredicate gOfA' gOfB'
                                     ]
                             , substitution =
                                 Substitution.unsafeWrap $
                                     List.sortOn
                                         fst
-                                        [ (inject z', gOfB)
-                                        , (inject Mock.xConfig, fOfA)
-                                        , (inject Mock.yConfig, gOfA)
+                                        [ (inject z', gOfB')
+                                        , (inject Mock.xConfig, fOfA')
+                                        , (inject Mock.yConfig, gOfA')
                                         ]
                             }
                         ]
@@ -231,12 +236,12 @@ test_applicationSimplification =
                                 { results =
                                     OrPattern.fromPatterns
                                         [ Conditional
-                                            { term = fOfA
-                                            , predicate = makeEqualsPredicate fOfA gOfA
+                                            { term = fOfA'
+                                            , predicate = makeEqualsPredicate fOfA' gOfA'
                                             , substitution =
                                                 Substitution.wrap $
                                                     Substitution.mkUnwrappedSubstitution
-                                                        [(inject z', gOfB)]
+                                                        [(inject z', gOfB')]
                                             }
                                         ]
                                 , remainders = OrPattern.fromPatterns []
@@ -255,21 +260,21 @@ test_applicationSimplification =
                             [
                                 [ Conditional
                                     { term = Mock.a
-                                    , predicate = makeEqualsPredicate fOfA fOfB
+                                    , predicate = makeEqualsPredicate fOfA' fOfB'
                                     , substitution =
                                         Substitution.wrap $
                                             Substitution.mkUnwrappedSubstitution
-                                                [(inject Mock.xConfig, fOfA)]
+                                                [(inject Mock.xConfig, fOfA')]
                                     }
                                 ]
                             ,
                                 [ Conditional
                                     { term = Mock.b
-                                    , predicate = makeEqualsPredicate gOfA gOfB
+                                    , predicate = makeEqualsPredicate gOfA' gOfB'
                                     , substitution =
                                         Substitution.wrap $
                                             Substitution.mkUnwrappedSubstitution
-                                                [(inject Mock.yConfig, gOfA)]
+                                                [(inject Mock.yConfig, gOfA')]
                                     }
                                 ]
                             ]
