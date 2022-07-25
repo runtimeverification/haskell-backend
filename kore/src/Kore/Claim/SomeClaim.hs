@@ -162,7 +162,6 @@ getConfiguration = Lens.view (lensClaimPattern . field @"left")
 getDestination :: SomeClaim -> OrPattern RewritingVariableName
 getDestination = Lens.view (lensClaimPattern . field @"right")
 
-<<<<<<< HEAD
 -- | A lens for operating on the ClaimPattern inside a SomeClaim.
 -- SomeClaim currently may not always contain a ClaimPattern. The
 -- current state of this lens is a temporary hack until we can
@@ -209,13 +208,6 @@ for displaying claims, mainly) should probably be added as a superclass on
 
 With all of that, this lens should be able to be deleted entirely, replaced
 by the generalized 'Claim' class and 'SomeClaim'.
-=======
-{- | A lens for operating on the ClaimPattern inside a SomeClaim.
- SomeClaim currently may not always contain a ClaimPattern. The
- current state of this lens is a temporary hack until we can
- refactor the SomeClaim structure to separate reachability claims
- and equational claims.
->>>>>>> dfe113d4239145c12a9df42eb8c31f6be351e149
 -}
 lensClaimPattern ::
     Functor f =>
