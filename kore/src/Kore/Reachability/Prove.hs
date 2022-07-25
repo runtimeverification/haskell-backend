@@ -118,6 +118,7 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
+import Kore.Simplify.Data (Simplifier)
 import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Kore.Unparser
@@ -190,10 +191,6 @@ data ProveClaimsResult = ProveClaimsResult
     }
 
 proveClaims ::
-    forall simplifier.
-    MonadMask simplifier =>
-    MonadSimplify simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
@@ -206,7 +203,7 @@ proveClaims ::
     -- | List of claims, together with a maximum number of verification steps
     -- for each.
     ToProve SomeClaim ->
-    simplifier ProveClaimsResult
+    Simplifier ProveClaimsResult
 proveClaims
     maybeMinDepth
     stuckCheck
@@ -254,10 +251,6 @@ proveClaims
                     else Left claim
 
 proveClaimsWorker ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
@@ -269,7 +262,7 @@ proveClaimsWorker ::
     -- | List of claims, together with a maximum number of verification steps
     -- for each.
     ToProve SomeClaim ->
-    VerifierT (StateT ProvenClaims simplifier) ()
+    VerifierT (StateT ProvenClaims Simplifier) ()
 proveClaimsWorker
     maybeMinDepth
     stuckCheck
@@ -284,21 +277,22 @@ proveClaimsWorker
       where
         verifyWorker ::
             (SomeClaim, Limit Natural) ->
-            VerifierT (StateT ProvenClaims simplifier) ()
+            VerifierT (StateT ProvenClaims Simplifier) ()
         verifyWorker unprovenClaim@(claim, _) =
             traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
                 debugBeginClaim claim
                 result <-
-                    proveClaim
-                        maybeMinDepth
-                        stuckCheck
-                        breadthLimit
-                        searchOrder
-                        maxCounterexamples
-                        finalNodeType
-                        claims
-                        axioms
-                        unprovenClaim
+                    lift . lift $
+                        proveClaim
+                            maybeMinDepth
+                            stuckCheck
+                            breadthLimit
+                            searchOrder
+                            maxCounterexamples
+                            finalNodeType
+                            claims
+                            axioms
+                            unprovenClaim
                 either
                     -- throw stuck claims, ending the traversal
                     Monad.Except.throwError
@@ -309,10 +303,6 @@ proveClaimsWorker
             State.modify' (mappend (MultiAnd.singleton claim))
 
 proveClaim ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
@@ -322,7 +312,7 @@ proveClaim ::
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
-    simplifier (Either StuckClaims ())
+    Simplifier (Either StuckClaims ())
 proveClaim
     maybeMinDepth
     stuckCheck
@@ -400,7 +390,7 @@ proveClaim
 
         transition ::
             ([X.Step], (ProofDepth, ClaimState SomeClaim)) ->
-            simplifier (X.TransitionResult ([X.Step], (ProofDepth, ClaimState SomeClaim)))
+            Simplifier (X.TransitionResult ([X.Step], (ProofDepth, ClaimState SomeClaim)))
         transition =
             X.simpleTransition
                 (trackProofDepth $ transitionRule' stuckCheck claims axioms)
