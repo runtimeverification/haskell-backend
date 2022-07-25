@@ -42,6 +42,14 @@ import Prelude.Kore
  to hold the claim itself. Before simplification, there must be exactly
  one pattern in the OrPattern.
 -}
+
+{-
+The above invariant is necessary due to the current inflexibility of the
+simplifiers in the 'Claim' class. Everything is assumed to always return
+an OrPattern and there's no way to indicate that we have a regular
+Pattern before simplification, but an OrPattern after. We do expect
+equational claims to be able to branch, so the OrPattern is relevant.
+-}
 data EquationalClaim = EquationalClaim
     { getEquationalClaim :: OrPattern RewritingVariableName
     , attributes :: Attribute.Axiom TermLike.Symbol RewritingVariableName
@@ -75,6 +83,7 @@ equationalClaimSort (EquationalClaim patt _)
             & error
 
 instance Claim EquationalClaim where
+    -- | Empty because equational claims are not subject to rewriting.
     data Rule EquationalClaim
 
     firstStep _ = equationalFirstStep
@@ -130,18 +139,6 @@ instance From EquationalClaim Attribute.RuleIndex where
 
 instance From EquationalClaim Attribute.Trusted where
     from = Attribute.trusted . attributes
-
-{-
-instance UnifyingRule FunctionalClaim where
-    type UnifyingRuleVariable FunctionalClaim = RewritingVariableName
-
-    matchingPattern (FunctionalClaim claim) = matchingPattern claim
-
-    precondition (FunctionalClaim claim) = precondition claim
-
-    refreshRule stale (FunctionalClaim claim) =
-        AllPathClaim <$> refreshRule stale claim
--}
 
 instance From EquationalClaim (AxiomPattern VariableName) where
     from = AxiomPattern . equationalClaimToTerm

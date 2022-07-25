@@ -167,6 +167,48 @@ getDestination = Lens.view (lensClaimPattern . field @"right")
 -- current state of this lens is a temporary hack until we can
 -- refactor the SomeClaim structure to separate reachability claims
 -- and equational claims.
+
+{-
+The 'Equational' case of this lens is by far the biggest problem with
+getting equational claims to work properly.
+
+There's been an assumption within the codebase that whenever we have
+an instance 'Claim claim', we have (morally) that 'claim ~ ClaimPattern'.
+This has generally been true, but it isn't a rule of the 'Claim' class and
+'Equational' claims are _not_ represented by 'ClaimPattern's. Indeed,
+'SomeClaim' is usually used directly instead of 'Claim claim', which is
+a bad sign in terms of generality.
+
+This lens is used all over the place. Simplification generally tries to
+take apart reachability claims with this lens and apply functions to the
+'ClaimPattern' directly. This bakes the assumption into places it shouldn't
+be, such as 'Kore.Exec.simplifySomeClaim'. It's also ocassionally used
+just to extract sort information, such as 'app/kore/exec/Main.koreProve'
+(see line 803).
+
+I've tried leaving this lens and adjusting the use sites to make everything
+work without a major refactor but it became too pervasive. I also speculated
+that it might be possible to use a partial 'EquationalClaim' <-> 'ClaimPattern'
+conversion to trick the existing code into working, but it sounds brittle
+and Ana and I decided against spending additional effort on that at this
+time.
+
+Thus, the refactor here will end up being fairly involved. The 'Claim' class
+should get new functions for simplifying claims "using only mathcing logic
+rules." Likely also useful would be functions for extracting sort information
+from a claim, like @Claim claim => claim -> Sort@. To prevent similar information
+leaks to the one that causes this problem, 'SomeClaim' should be replaced
+with the existential
+data SomeClaim where
+    MkSomeClaim :: Claim claim => claim -> SomeClaim
+
+Necessary information for reporting stuck claims back to the user (functionality
+for displaying claims, mainly) should probably be added as a superclass on
+'Claim' or as a secondary constraint in 'MkSomeClaim'.
+
+With all of that, this lens should be able to be deleted entirely, replaced
+by the generalized 'Claim' class and 'SomeClaim'.
+-}
 lensClaimPattern ::
     Functor f =>
     (ClaimPattern -> f ClaimPattern) ->

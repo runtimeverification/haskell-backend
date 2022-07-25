@@ -168,6 +168,21 @@ import Pretty (
  )
 import Pretty qualified
 
+{-
+The Claim class itself is the source of some of the complication
+with EquationalClaims. The 'Claim' class is tightly tied to the concept
+of a _rewriting_ claim, which is simply too specific to cover other types
+of claims that the backend might want to handle.
+
+I recommend separating the concerns of the 'Claim' class into the concerns
+of a general 'Claim' and the concerns of a 'RewritingClaim'. I think general
+claims really only need functionality for initial simplification, (incremental)
+proving, and displaying stuck claims back to the user.
+
+As a result, the 'equationalX' strategies below should be able to be removed.
+They are temporary hacks that were needed to get simplification of EquationalClaims
+working with the existing infrastructure.
+-}
 class Claim claim where
     -- | @Rule claim@ is the type of rule to take a single step toward @claim@.
     data Rule claim
