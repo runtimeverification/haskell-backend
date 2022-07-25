@@ -9,6 +9,7 @@ module GraphTraversal (
     module GraphTraversal,
 ) where
 
+import Control.Monad (foldM)
 import Control.Monad.Logic
 import Control.Monad.Trans.State
 import Data.Limit
@@ -123,16 +124,16 @@ extractState = \case
     Terminal a -> Just a
     Cut a _ -> Just a
 
-type Step = [Prim]
+type Step prim = [prim]
 
 ----------------------------------------
 transitionLeaves ::
-    forall c.
+    forall c prim.
     -- | Stop critera, in terms of 'TransitionResult's. The algorithm
     -- will _always_ stop on 'Stuck' and 'Final', so [isTerminal,
     -- isCut, isBranch] could be used here. Could simplify this to
     -- FinalNodeType
-    [TransitionResult ([Step], c) -> Bool] ->
+    [TransitionResult ([Step prim], c) -> Bool] ->
     -- queue updating parameters,
     -- we construct enqueue :: [a] -> Seq a -> m (Either LimitExceeded (Seq a)) from it
     -- m is probably only there for logging purposes
@@ -142,13 +143,13 @@ transitionLeaves ::
     -- | breadth limit, essentially a natural number
     Limit Natural ->
     -- | transition function
-    (([Step], c) -> Simplifier (TransitionResult ([Step], c))) ->
+    (([Step prim], c) -> Simplifier (TransitionResult ([Step prim], c))) ->
     -- again, m is probably only for logging
 
     -- | max-counterexamples, included in the internal logic
     Natural ->
     -- | initial node
-    ([Step], c) ->
+    ([Step prim], c) ->
     Simplifier (TraversalResult c)
 transitionLeaves
     stopCriteria
@@ -164,7 +165,10 @@ transitionLeaves
       where
         enqueue' = unfoldSearchOrder direction
 
-        enqueue :: [([Step], c)] -> Seq ([Step], c) -> Simplifier (Either (LimitExceeded ([Step], c)) (Seq ([Step], c)))
+        enqueue ::
+            [([Step prim], c)] ->
+            Seq ([Step prim], c) ->
+            Simplifier (Either (LimitExceeded ([Step prim], c)) (Seq ([Step prim], c)))
         enqueue as q = do
             newQ <- enqueue' as q
             pure $
@@ -172,15 +176,20 @@ transitionLeaves
                     then Left (LimitExceeded newQ)
                     else Right newQ
 
-        exceedsLimit :: Seq ([Step], c) -> Bool
+        exceedsLimit :: Seq ([Step prim], c) -> Bool
         exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
 
-        shouldStop :: TransitionResult ([Step], c) -> Bool
+        shouldStop :: TransitionResult ([Step prim], c) -> Bool
         shouldStop result = any ($ result) stopCriteria
 
         maxStuck = fromIntegral maxCounterExamples
 
-        worker :: Seq ([Step], c) -> StateT [TransitionResult ([Step], c)] Simplifier (TraversalResult ([Step], c))
+        worker ::
+            Seq ([Step prim], c) ->
+            StateT
+                [TransitionResult ([Step prim], c)]
+                Simplifier
+                (TraversalResult ([Step prim], c))
         worker Seq.Empty = Ended . reverse <$> get
         worker (a :<| as) = do
             result <- lift $ step a as
@@ -201,9 +210,9 @@ transitionLeaves
                     pure $ Aborted (Seq.length queue) [lastState]
         -- TODO could add current state to return value ^^^^^^^
         step ::
-            ([Step], c) ->
-            Seq ([Step], c) ->
-            Simplifier (StepResult ([Step], c))
+            ([Step prim], c) ->
+            Seq ([Step prim], c) ->
+            Simplifier (StepResult ([Step prim], c))
         step a q = do
             next <- transit a
             if (isStuck next || isFinal next || isStopped next || shouldStop next)
@@ -213,7 +222,7 @@ transitionLeaves
                      in either abort Continue <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
-            TraversalResult ([Step], c) -> TraversalResult c
+            TraversalResult ([Step prim], c) -> TraversalResult c
         checkLeftUnproven = \case
             result@(Ended results) ->
                 let -- we collect a maximum of 'maxCounterExamples' Stuck states
@@ -270,19 +279,19 @@ instance Functor TraversalResult where
 -- constructing transition functions (for caller)
 
 simpleTransition ::
-    forall config m rule.
+    forall config m prim rule.
     Monad m =>
     -- | primitive strategy rule
-    (Prim -> config -> TransitionT rule m config) ->
+    (prim -> config -> TransitionT rule m config) ->
     -- | converter to interpret the config (claim state or program state)
     -- TODO should also consider the applied rule(s) (for Terminal/Cut)
     (config -> [config] -> TransitionResult config) ->
     -- final transition function
-    ([Step], config) ->
-    m (TransitionResult ([Step], config))
+    ([Step prim], config) ->
+    m (TransitionResult ([Step prim], config))
 simpleTransition applyPrim mapToResult = uncurry tt
   where
-    tt :: [Step] -> config -> m (TransitionResult ([Step], config))
+    tt :: [Step prim] -> config -> m (TransitionResult ([Step prim], config))
     tt [] config =
         pure $ fmap ([],) $ mapToResult config []
     tt ([] : iss) config =
@@ -291,5 +300,5 @@ simpleTransition applyPrim mapToResult = uncurry tt
         (fmap (iss,) . mapToResult config . map fst)
             <$> runTransitionT (applyGroup is config)
 
-    applyGroup :: Step -> config -> TransitionT rule m config
+    applyGroup :: Step prim -> config -> TransitionT rule m config
     applyGroup is c = foldM (flip applyPrim) c is

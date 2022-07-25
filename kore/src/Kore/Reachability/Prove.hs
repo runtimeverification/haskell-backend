@@ -369,10 +369,10 @@ proveClaim
       where
         -------------------------------
         -- brought in from Claim.hs to remove Strategy type
-        infinite :: [X.Step]
+        infinite :: [X.Step Prim]
         ~infinite = stepNoClaims : repeat stepWithClaims
 
-        withMinDepth :: MinDepth -> [X.Step]
+        withMinDepth :: MinDepth -> [X.Step Prim]
         withMinDepth d =
             noCheckSteps <> repeat stepWithClaims
           where
@@ -389,8 +389,8 @@ proveClaim
         -------------------------------
 
         transition ::
-            ([X.Step], (ProofDepth, ClaimState SomeClaim)) ->
-            Simplifier (X.TransitionResult ([X.Step], (ProofDepth, ClaimState SomeClaim)))
+            ([X.Step Prim], (ProofDepth, ClaimState SomeClaim)) ->
+            Simplifier (X.TransitionResult ([X.Step Prim], (ProofDepth, ClaimState SomeClaim)))
         transition =
             X.simpleTransition
                 (trackProofDepth $ transitionRule' stuckCheck claims axioms)
