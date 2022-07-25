@@ -7,6 +7,7 @@ module Test.Kore.Builtin.AssocComm.CeilSimplifier (
     test_Builtin_Set,
 ) where
 
+import Data.List (sort)
 import Hedgehog hiding (
     test,
  )
@@ -154,17 +155,18 @@ hprop_Builtin_Set :: Property
                 , makeCeilPredicate opaqueMap1
                 ]
            in test "symbolic keys are not in the frame" original expect
-        , let original =
-                Mock.framedMap [] [opaqueMap1, opaqueMap2, opaqueMap3]
+        , let [opaqueMap1', opaqueMap2', opaqueMap3'] = sort [opaqueMap1, opaqueMap2, opaqueMap3]
+              original =
+                Mock.framedMap [] [opaqueMap1', opaqueMap2', opaqueMap3']
               expect =
                 map
                     makeCeilPredicate
-                    [ Mock.framedMap [] [opaqueMap1, opaqueMap2]
-                    , Mock.framedMap [] [opaqueMap1, opaqueMap3]
-                    , Mock.framedMap [] [opaqueMap2, opaqueMap3]
-                    , opaqueMap1
-                    , opaqueMap2
-                    , opaqueMap3
+                    [ Mock.framedMap [] [opaqueMap1', opaqueMap2']
+                    , Mock.framedMap [] [opaqueMap1', opaqueMap3']
+                    , Mock.framedMap [] [opaqueMap2', opaqueMap3']
+                    , opaqueMap1'
+                    , opaqueMap2'
+                    , opaqueMap3'
                     ]
            in test "frames are disjoint" original expect
         ]
@@ -199,17 +201,18 @@ hprop_Builtin_Set :: Property
               expect =
                 map makeCeilPredicate [original, sKey1, opaqueSet1]
            in test "symbolic keys are not in the frame" original expect
-        , let original =
-                Mock.framedSet [] [opaqueSet1, opaqueSet2, opaqueSet3]
+        , let [opaqueSet1', opaqueSet2', opaqueSet3'] = sort [opaqueSet1, opaqueSet2, opaqueSet3]
+              original =
+                Mock.framedSet [] [opaqueSet1', opaqueSet2', opaqueSet3']
               expect =
                 map
                     makeCeilPredicate
-                    [ Mock.framedSet [] [opaqueSet1, opaqueSet2]
-                    , Mock.framedSet [] [opaqueSet1, opaqueSet3]
-                    , Mock.framedSet [] [opaqueSet2, opaqueSet3]
-                    , opaqueSet1
-                    , opaqueSet2
-                    , opaqueSet3
+                    [ Mock.framedSet [] [opaqueSet1', opaqueSet2']
+                    , Mock.framedSet [] [opaqueSet1', opaqueSet3']
+                    , Mock.framedSet [] [opaqueSet2', opaqueSet3']
+                    , opaqueSet1'
+                    , opaqueSet2'
+                    , opaqueSet3'
                     ]
            in test "frames are disjoint" original expect
         ]
@@ -226,7 +229,7 @@ hprop_Builtin_Set :: Property
             assertEqual "" (MultiAnd.make expect) actual
 
 propertyBuiltinAssocComm ::
-    Show element =>
+    (Show element, Ord element) =>
     Gen [element] ->
     Gen [TermLike RewritingVariableName] ->
     (element -> TermLike RewritingVariableName) ->
@@ -250,12 +253,14 @@ propertyBuiltinAssocComm
         Hedgehog.property $ do
             opaques <- forAll genOpaques
             elements <- forAll genElements
-            let original = mkAssocComm elements opaques
-                keys = elementKey <$> elements
+            let elements' = sort elements
+                opaques' = sort opaques
+                original = mkAssocComm elements' opaques'
+                keys = elementKey <$> elements'
             actualPredicates <- (liftIO . makeEvaluate) original
-            let expectDefinedElements = elements >>= defineElement
+            let expectDefinedElements = elements' >>= defineElement
 
-                expectDefinedOpaques = makeCeilPredicate <$> opaques
+                expectDefinedOpaques = makeCeilPredicate <$> opaques'
 
                 expectDistinctKeys =
                     [ uncurry makeNotEqualsPredicate $ minMax key1 key2
@@ -267,13 +272,13 @@ propertyBuiltinAssocComm
 
                 expectNoElementInOpaque =
                     [ mkNotMember element opaque'
-                    | element <- elements
-                    , opaque' <- opaques
+                    | element <- elements'
+                    , opaque' <- opaques'
                     ]
 
                 expectDistinctOpaques =
                     [ makeCeilPredicate $ mkAssocComm [] [opaque1, opaque2]
-                    | (opaque1, opaque2) <- zipWithTails (,) opaques
+                    | (opaque1, opaque2) <- zipWithTails (,) opaques'
                     ]
                 expectPredicates =
                     (MultiAnd.make . concat)
