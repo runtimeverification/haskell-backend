@@ -146,7 +146,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Data (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Syntax.Definition (
     Definition (..),
@@ -507,14 +507,12 @@ getRuleFor maybeNode = do
 
 -- | Lifting function that takes logging into account.
 liftSimplifierWithLogger ::
-    forall a t m.
-    MonadState ReplState (t m) =>
-    MonadSimplify m =>
-    MonadIO m =>
+    forall a t.
+    MonadState ReplState (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
     MVar (Log.LogAction IO Log.ActualEntry) ->
-    m a ->
-    t m a
+    Simplifier a ->
+    t Simplifier a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState{koreLogOptions} <- get
     let Log.KoreLogOptions
@@ -542,7 +540,7 @@ liftSimplifierWithLogger mLogger simplifier = do
   where
     logTypeToLogger ::
         Log.KoreLogType ->
-        t m (Log.LogAction IO Text, Maybe Handle)
+        t Simplifier (Log.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
             Log.LogStdErr -> pure (Log.logTextStderr, Nothing)
@@ -554,12 +552,10 @@ liftSimplifierWithLogger mLogger simplifier = do
  (claim, axioms, claims, current node and execution graph).
 -}
 runStepper ::
-    MonadState ReplState (t m) =>
-    MonadReader (Config m) (t m) =>
+    MonadState ReplState (t Simplifier) =>
+    MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MonadSimplify m =>
-    MonadIO m =>
-    t m StepResult
+    t Simplifier StepResult
 runStepper = do
     ReplState{claims, axioms, node} <- get
     (graph', res) <- runStepper' claims axioms node
@@ -574,15 +570,13 @@ runStepper = do
  starting at the selected node.
 -}
 runStepper' ::
-    MonadState ReplState (t m) =>
-    MonadReader (Config m) (t m) =>
+    MonadState ReplState (t Simplifier) =>
+    MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MonadSimplify m =>
-    MonadIO m =>
     [SomeClaim] ->
     [Axiom] ->
     ReplNode ->
-    t m (ExecutionGraph, StepResult)
+    t Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node =
     runStepperWorker claims axioms node
         & (fmap . fmap) processResult
@@ -597,14 +591,12 @@ runStepper' claims axioms node =
         BranchResult $ fmap ReplNode nextNodes
 
 tryApplyAxiomOrClaim ::
-    MonadState ReplState (t m) =>
-    MonadReader (Config m) (t m) =>
+    MonadState ReplState (t Simplifier) =>
+    MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MonadSimplify m =>
-    MonadIO m =>
     Either Axiom SomeClaim ->
     ReplNode ->
-    t m (ExecutionGraph, TryApplyRuleResult)
+    t Simplifier (ExecutionGraph, TryApplyRuleResult)
 tryApplyAxiomOrClaim axiomOrClaim node =
     runStepperWorker
         (either mempty pure axiomOrClaim)
@@ -624,15 +616,13 @@ tryApplyAxiomOrClaim axiomOrClaim node =
 type SuccessorNodes = [(CommonClaimState, Graph.Node)]
 
 runStepperWorker ::
-    MonadState ReplState (t m) =>
-    MonadReader (Config m) (t m) =>
+    MonadState ReplState (t Simplifier) =>
+    MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MonadSimplify m =>
-    MonadIO m =>
     [SomeClaim] ->
     [Axiom] ->
     ReplNode ->
-    t m (ExecutionGraph, SuccessorNodes)
+    t Simplifier (ExecutionGraph, SuccessorNodes)
 runStepperWorker claims axioms node = do
     stepper <- asks stepper
     mvar <- asks logger
@@ -645,15 +635,13 @@ runStepperWorker claims axioms node = do
     return (gr, succesorNodes)
 
 runUnifier ::
-    MonadState ReplState (t m) =>
-    MonadReader (Config m) (t m) =>
+    MonadState ReplState (t Simplifier) =>
+    MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MonadSimplify m =>
-    MonadIO m =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    t m (Maybe (NonEmpty (Condition RewritingVariableName)))
+    t Simplifier (Maybe (NonEmpty (Condition RewritingVariableName)))
 runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger

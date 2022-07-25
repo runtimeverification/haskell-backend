@@ -220,7 +220,7 @@ A sort is either a _sort variable_ or a _sort constructor_ applied to a list of 
 
 ### Attributes
 
-Attributes are hints to the backend, ofter collected by the frontend.
+Attributes are hints to the backend, often collected by the frontend.
 Some attributes express syntactic information,
 while others express semantic information.
 All semantic information contained in attributes should correspond to axioms declared explicitly.
@@ -259,7 +259,7 @@ Sentences always appear inside modules, defined below.
   ::= "sort" <sort-identifier> "{" <sort-variables> "}" "[" <attributes> "]"
 
 <sentence-hooked-sort>
-  ::= "hooked-sort" <sort-id> "{" <sort-variables> "}" "[" <attributes> "]"
+  ::= "hooked-sort" <sort-identifier> "{" <sort-variables> "}" "[" <attributes> "]"
 
 <sentence-symbol>
   ::= "symbol" <symbol> "(" <sorts> ")" ":" <sort> "[" <attributes> "]"
@@ -278,7 +278,7 @@ Sentences always appear inside modules, defined below.
 
 <alias> ::= <symbol-or-alias>
 <symbol> ::= <symbol-or-alias>
-<symbol-or-alias> ::= <symbol-id> "{" <sort-variables> "}"
+<symbol-or-alias> ::= <symbol-identifier> "{" <sort-variables> "}"
 ```
 
 ### Definition, modules

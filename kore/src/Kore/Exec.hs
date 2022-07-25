@@ -36,9 +36,6 @@ import Control.Monad (
     filterM,
     (>=>),
  )
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
@@ -178,13 +175,13 @@ import Kore.Rewrite.Transition (
     scatter,
  )
 import Kore.Simplify.Data (
+    Simplifier,
     evalSimplifier,
     evalSimplifierProofs,
  )
 import Kore.Simplify.Data qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    MonadSimplify,
     SimplifierXSwitch,
  )
 import Kore.Syntax.Module (
@@ -197,9 +194,6 @@ import Kore.Unparser (
     unparseToText,
     unparseToText2,
  )
-import Log (
-    MonadLog,
- )
 import Log qualified
 import Logic (
     LogicT,
@@ -209,7 +203,6 @@ import Logic qualified
 import Prelude.Kore
 import Prof
 import SMT (
-    MonadSMT,
     SMT,
  )
 import System.Exit (
@@ -239,16 +232,9 @@ data SerializedModule = SerializedModule
     deriving anyclass (NFData)
 
 makeSerializedModule ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     VerifiedModule StepperAttributes ->
-    smt SerializedModule
+    SMT SerializedModule
 makeSerializedModule simplifierx verifiedModule =
     evalSimplifier simplifierx (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
         rewrites <- initializeAndSimplify verifiedModule
@@ -274,13 +260,6 @@ makeSerializedModule simplifierx verifiedModule =
 
 -- | Symbolic execution
 exec ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
@@ -289,7 +268,7 @@ exec ::
     ExecutionMode ->
     -- | The input pattern
     TermLike VariableName ->
-    smt (ExitCode, TermLike VariableName)
+    SMT (ExitCode, TermLike VariableName)
 exec
     simplifierx
     depthLimit
@@ -394,13 +373,11 @@ profTransitionRule rule prim proofState =
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode ::
-    forall simplifier.
-    (MonadIO simplifier, MonadSimplify simplifier) =>
     -- | The main module
     VerifiedModuleSyntax StepperAttributes ->
     -- | The final configuration(s) of execution
     OrPattern.OrPattern RewritingVariableName ->
-    simplifier ExitCode
+    Simplifier ExitCode
 getExitCode
     indexedModule
     configs =
@@ -429,20 +406,14 @@ getExitCode
                 . noLocationId
 
         takeExitCode ::
-            (([Sort] -> Symbol) -> simplifier ExitCode) ->
-            simplifier ExitCode
+            (([Sort] -> Symbol) -> Simplifier ExitCode) ->
+            Simplifier ExitCode
         takeExitCode act =
             resolve "LblgetExitCode"
                 & maybe (pure ExitSuccess) act
 
 -- | Symbolic search
 search ::
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
@@ -454,7 +425,7 @@ search ::
     Pattern VariableName ->
     -- | The bound on the number of search matches and the search type
     Search.Config ->
-    smt (TermLike VariableName)
+    SMT (TermLike VariableName)
 search
     simplifierx
     depthLimit
@@ -516,13 +487,6 @@ search
 
 -- | Proving a spec given as a module containing rules to be proven
 prove ::
-    forall smt.
-    ( MonadLog smt
-    , MonadMask smt
-    , MonadIO smt
-    , MonadSMT smt
-    , MonadProf smt
-    ) =>
     Maybe MinDepth ->
     StuckCheck ->
     SimplifierXSwitch ->
@@ -537,7 +501,7 @@ prove ::
     VerifiedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
     Maybe (VerifiedModule StepperAttributes) ->
-    smt ProveClaimsResult
+    SMT ProveClaimsResult
 prove
     maybeMinDepth
     stuckCheck
@@ -641,12 +605,6 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
@@ -655,7 +613,7 @@ boundedModelCheck ::
     -- | The spec module
     VerifiedModule StepperAttributes ->
     Strategy.GraphSearchOrder ->
-    smt
+    SMT
         ( Bounded.CheckResult
             (TermLike VariableName)
             (ImplicationRule VariableName)
@@ -685,17 +643,11 @@ boundedModelCheck
                 (head claims, depthLimit)
 
 matchDisjunction ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    smt (TermLike VariableName)
+    SMT (TermLike VariableName)
 matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
     evalSimplifierProofs simplifierx mainModule $ do
         results <-
@@ -730,16 +682,10 @@ See 'checkEquation',
 'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
     SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
-    smt ()
+    SMT ()
 checkFunctions simplifierx verifiedModule =
     evalSimplifierProofs simplifierx verifiedModule $ do
         -- check if RHS is function pattern
@@ -762,10 +708,9 @@ checkFunctions simplifierx verifiedModule =
 https://github.com/runtimeverification/haskell-backend/issues/2472#issue-833143685
 -}
 bothMatch ::
-    MonadSimplify m =>
     Equation VariableName ->
     Equation VariableName ->
-    m Bool
+    Simplifier Bool
 bothMatch eq1 eq2 =
     let pre1 = Equation.requires eq1
         pre2 = Equation.requires eq2
@@ -809,28 +754,24 @@ makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern{attributes}
 
 simplifySomeClaim ::
-    MonadSimplify simplifier =>
     SomeClaim ->
-    simplifier SomeClaim
+    Simplifier SomeClaim
 simplifySomeClaim rule = do
     let claim = Lens.view lensClaimPattern rule
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
 
 initializeAndSimplify ::
-    MonadSimplify simplifier =>
     VerifiedModule StepperAttributes ->
-    simplifier Initialized
+    Simplifier Initialized
 initializeAndSimplify verifiedModule =
     initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    (RewriteRule RewritingVariableName -> LogicT simplifier (RewriteRule RewritingVariableName)) ->
+    (RewriteRule RewritingVariableName -> LogicT Simplifier (RewriteRule RewritingVariableName)) ->
     VerifiedModule StepperAttributes ->
-    simplifier Initialized
+    Simplifier Initialized
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
@@ -840,7 +781,7 @@ initialize simplificationProcedure verifiedModule = do
   where
     initializeRule ::
         RewriteRule RewritingVariableName ->
-        LogicT simplifier (RewriteRule RewritingVariableName)
+        LogicT Simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
         simplRule <- simplificationProcedure rule
         when
@@ -862,19 +803,17 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes ->
     Maybe (VerifiedModule StepperAttributes) ->
-    simplifier InitializedProver
+    Simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized{rewriteRules} = initialized
         changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
-        simplifyToList :: SomeClaim -> simplifier [SomeClaim]
+        simplifyToList :: SomeClaim -> Simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             let result = toList simplified
@@ -910,7 +849,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
 
     logChangedClaim ::
         MaybeChanged SomeClaim ->
-        simplifier ()
+        Simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
     logChangedClaim (Unchanged _) = return ()

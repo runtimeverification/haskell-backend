@@ -1355,7 +1355,7 @@ match ::
 match first second =
     runSimplifier Mock.env matchResult
   where
-    matchResult :: SimplifierT SMT MatchResult
+    matchResult :: Simplifier MatchResult
     matchResult = matchIncremental SideCondition.top first second
 
 withMatch ::
