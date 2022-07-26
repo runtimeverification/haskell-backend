@@ -1,9 +1,12 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Simplify.Pattern (
     test_Pattern_simplify,
     test_Pattern_simplifyAndRemoveTopExists,
     test_Pattern_simplify_equalityterm,
 ) where
 
+import Data.List (sort)
 import Data.Maybe (fromJust)
 import Data.Set qualified as Set
 import Kore.Internal.Condition qualified as Condition
@@ -76,14 +79,15 @@ test_Pattern_simplify =
                 )
         assertEqual "" (OrPattern.fromPattern expect) actual
     , testCase "Simplifies multiple Implies" $ do
-        let expect =
+        let [fOfX', fOfY', gOfX'] = sort [fOfX, fOfY, gOfX]
+            expect =
                 Pattern.fromTermAndPredicate
-                    (Mock.constr10 fOfX)
+                    (Mock.constr10 fOfX')
                     ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate fOfX
-                        , makeCeilPredicate fOfY
-                        , makeCeilPredicate gOfX
-                        , makeEqualsPredicate fOfX gOfX
+                        [ makeCeilPredicate fOfX'
+                        , makeCeilPredicate fOfY'
+                        , makeCeilPredicate gOfX'
+                        , makeEqualsPredicate fOfX' gOfX'
                         ]
                     )
                     & OrPattern.fromPattern
@@ -91,17 +95,17 @@ test_Pattern_simplify =
             simplify $
                 Pattern.fromTermAndPredicate
                     ( mkAnd
-                        (Mock.constr10 fOfX)
-                        (Mock.constr10 gOfX)
+                        (Mock.constr10 fOfX')
+                        (Mock.constr10 gOfX')
                     )
                     ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate fOfX
+                        [ makeCeilPredicate fOfX'
                         , makeImpliesPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
+                            (makeCeilPredicate fOfX')
+                            (makeCeilPredicate gOfX')
                         , makeImpliesPredicate
-                            (makeCeilPredicate gOfX)
-                            (makeCeilPredicate fOfY)
+                            (makeCeilPredicate gOfX')
+                            (makeCeilPredicate fOfY')
                         ]
                     )
         Pattern.assertEquivalentPatterns expect actual
@@ -146,13 +150,14 @@ test_Pattern_simplify =
                     )
         assertEqual "" mempty actual
     , testCase "Simplifies Implies - Positive" $ do
-        let expect =
+        let [fOfX', fOfY', gOfX'] = sort [fOfX, fOfY, gOfX]
+            expect =
                 Pattern.fromTermAndPredicate
-                    (Mock.constr10 fOfX)
+                    (Mock.constr10 fOfX')
                     ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate fOfX
-                        , makeCeilPredicate gOfX
-                        , makeEqualsPredicate fOfX gOfX
+                        [ makeCeilPredicate fOfX'
+                        , makeCeilPredicate gOfX'
+                        , makeEqualsPredicate fOfX' gOfX'
                         ]
                     )
                     & OrPattern.fromPattern
@@ -160,38 +165,39 @@ test_Pattern_simplify =
             simplify $
                 Pattern.fromTermAndPredicate
                     ( mkAnd
-                        (Mock.constr10 fOfX)
-                        (Mock.constr10 gOfX)
+                        (Mock.constr10 fOfX')
+                        (Mock.constr10 gOfX')
                     )
                     ( makeAndPredicate
-                        (makeCeilPredicate fOfX)
+                        (makeCeilPredicate fOfX')
                         ( makeImpliesPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
+                            (makeCeilPredicate fOfX')
+                            (makeCeilPredicate gOfX')
                         )
                     )
         Pattern.assertEquivalentPatterns expect actual
     , testCase "Simplifies Implies - Negative" $ do
-        let expect =
+        let [fOfX', gOfX'] = sort [fOfX, gOfX]
+            expect =
                 Pattern.fromTermAndPredicate
-                    (Mock.constr10 fOfX)
+                    (Mock.constr10 fOfX')
                     ( (Predicate.fromMultiAnd . MultiAnd.make)
-                        [ makeEqualsPredicate fOfX gOfX
-                        , makeNotPredicate $ makeCeilPredicate fOfX
+                        [ makeEqualsPredicate fOfX' gOfX'
+                        , makeNotPredicate $ makeCeilPredicate fOfX'
                         ]
                     )
         actual <-
             simplify $
                 Pattern.fromTermAndPredicate
                     ( mkAnd
-                        (Mock.constr10 fOfX)
-                        (Mock.constr10 gOfX)
+                        (Mock.constr10 fOfX')
+                        (Mock.constr10 gOfX')
                     )
                     ( makeAndPredicate
-                        (makeNotPredicate $ makeCeilPredicate fOfX)
+                        (makeNotPredicate $ makeCeilPredicate fOfX')
                         ( makeImpliesPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
+                            (makeCeilPredicate fOfX')
+                            (makeCeilPredicate gOfX')
                         )
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
@@ -214,13 +220,14 @@ test_Pattern_simplify =
 test_Pattern_simplify_equalityterm :: [TestTree]
 test_Pattern_simplify_equalityterm =
     [ testCase "f vs g or h" $ do
-        let expected =
+        let [cf, cg] :: [TermLike RewritingVariableName] = sort [Mock.cf, Mock.cg]
+            expected =
                 (OrPattern.fromOrCondition Mock.testSort . MultiOr.make)
                     [ Condition.fromPredicate
                         ( Predicate.fromMultiAnd . MultiAnd.make $
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.cg
-                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate cf cg
                             , makeNotPredicate (makeCeilPredicate Mock.ch)
                             ]
                         )
@@ -229,7 +236,7 @@ test_Pattern_simplify_equalityterm =
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.cg
                             , makeCeilPredicate Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate cf cg
                             , makeEqualsPredicate Mock.cf Mock.ch
                             ]
                         )
@@ -247,7 +254,7 @@ test_Pattern_simplify_equalityterm =
                             , makeCeilPredicate Mock.ch
                             , makeCeilPredicate Mock.cg
                             , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeEqualsPredicate cf cg
                             ]
                         )
                     , Condition.fromPredicate
