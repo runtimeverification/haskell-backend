@@ -43,6 +43,8 @@ cabal build kore
 ```
 
 If using `cabal`, version 3.0 or later is recommended.
+You may pass `--fast` to `stack build` or `-O0` to `cabal build` in order to
+disable compiler optimizations and make build faster at the cost of slower runtime.
 
 Using [make]:
 
