@@ -13,8 +13,8 @@ module SETVARS
   syntax Int ::= h(Int) [function]
   rule h(@X:Int) => @X +Int 1 [simplification]
 
-  syntax KItem ::= i(Int)
-  rule i(@X:Int) => @X +Int 1 [simplification]
+//  syntax KItem ::= i(Int)
+//  rule i(@X:Int) => @X +Int 1 [anywhere] // This is not yet supported
 
   syntax Int ::= j(Int, Int) [function, functional]
 
