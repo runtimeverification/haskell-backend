@@ -286,6 +286,7 @@
           "Kore/Log/ErrorRewritesInstantiation"
           "Kore/Log/ErrorVerify"
           "Kore/Log/InfoAttemptUnification"
+          "Kore/Log/JsonRpc"
           "Kore/Log/InfoExecBreadth"
           "Kore/Log/InfoExecDepth"
           "Kore/Log/InfoProofDepth"
@@ -525,6 +526,12 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
+            (hsPkgs."directory" or (errorHandler.buildDepError "directory"))
+            (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
+            (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
+            (hsPkgs."optparse-applicative" or (errorHandler.buildDepError "optparse-applicative"))
+            (hsPkgs."time" or (errorHandler.buildDepError "time"))
             ];
           buildable = true;
           hsSourceDirs = [ "app/rpc" ];
@@ -553,6 +560,7 @@
           depends = [
             (hsPkgs."base" or (errorHandler.buildDepError "base"))
             (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+            (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
             (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
             (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
             ];

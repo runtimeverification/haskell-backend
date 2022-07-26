@@ -4,24 +4,52 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (runServer) where
 
+import Colog (
+    cmap,
+ )
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception, catch, mask)
 import Control.Monad (forever)
-import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT, runStderrLoggingT)
+import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
-import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..), object, (.=))
+import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
+import Data.Limit (Limit (..))
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
+    ConstructorTagModifier,
     CustomJSON (..),
     FieldLabelModifier,
     OmitNothingFields,
-    StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.Builtin qualified as Builtin
+import Kore.Exec qualified as Exec
+
+-- import Kore.Internal.Pattern qualified as Pattern
+-- import Kore.Internal.OrPattern qualified as OrPattern
+-- import Kore.Reachability.Claim qualified as Claim
+-- import  Kore.Rewrite.ClaimPattern qualified as ClaimPattern
+import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Kore.Rewrite (ExecutionMode (All), Natural)
+
+-- import Kore.Rewrite.RewritingVariable as RewritingVariable
+import Kore.Simplify.Simplify (SimplifierXSwitch)
+
+-- import Kore.Simplify.Data (
+--     evalSimplifier,
+--  )
+import Kore.Syntax.Json (KoreJson)
+import Kore.Syntax.Json qualified as PatternJson
+
+-- import Kore.Unparser (unparseToText)
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
+import Log qualified
+
+-- import Logic qualified
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
@@ -39,32 +67,34 @@ import Network.JSONRPC (
     sendBatchResponse,
  )
 import Prelude.Kore
+import SMT qualified
 
-newtype Depth = Depth Int
+newtype Depth = Depth Natural
     deriving stock (Show, Eq)
     deriving newtype (FromJSON, ToJSON)
 
 data ExecuteRequest = ExecuteRequest
-    { state :: !Text
+    { state :: !KoreJson
     , maxDepth :: !(Maybe Depth)
-    , haltPatterns :: ![Text]
+    , cutPointRules :: !(Maybe [Text])
+    , terminalRules :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteRequest
 
-newtype StepRequest = StepRequest
-    { state :: Text
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepRequest
+-- newtype StepRequest = StepRequest
+--     { state :: KoreJson
+--     }
+--     deriving stock (Generic, Show, Eq)
+--     deriving
+--         (FromJSON)
+--         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepRequest
 
 data ImpliesRequest = ImpliesRequest
-    { antecedent :: !Text
-    , consequent :: !Text
+    { antecedent :: !KoreJson
+    , consequent :: !KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -72,7 +102,7 @@ data ImpliesRequest = ImpliesRequest
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesRequest
 
 newtype SimplifyRequest = SimplifyRequest
-    { state :: Text
+    { state :: KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -85,71 +115,55 @@ instance Exception ReqException
 
 instance FromRequest (API 'Req) where
     parseParams "execute" = Just $ fmap (Execute <$>) parseJSON
-    parseParams "step" = Just $ fmap (Step <$>) parseJSON
+    -- parseParams "step" = Just $ fmap (Step <$>) parseJSON
     parseParams "implies" = Just $ fmap (Implies <$>) parseJSON
     parseParams "simplify" = Just $ fmap (Simplify <$>) parseJSON
     parseParams "cancel" = Just $ const $ return Cancel
     parseParams _ = Nothing
 
-data PatternMatch = PatternMatch
-    { pmPattern :: !Int
-    , pmSubstitution :: !Text
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[StripPrefix "pm", CamelToKebab]] PatternMatch
-
-data ReasonForHalting
-    = HaltBranching !Depth
-    | HaltStuck !Depth
-    | HaltDepthBound
-    | HaltPatternMatch !Depth ![PatternMatch]
-    deriving stock (Show, Eq)
-
-instance ToJSON ReasonForHalting where
-    toJSON = \case
-        HaltBranching depth -> object ["reason" .= ("branching" :: Text), "depth" .= depth]
-        HaltStuck depth -> object ["reason" .= ("stuck" :: Text), "depth" .= depth]
-        HaltDepthBound -> object ["reason" .= ("depth-bound" :: Text)]
-        HaltPatternMatch depth matches ->
-            object
-                [ "reason" .= ("pattern-match" :: Text)
-                , "depth" .= depth
-                , "matches" .= matches
-                ]
-
-data StepState = StepState
-    { state :: !Text
+data ExecuteState = ExecuteState
+    { state :: !KoreJson
     , depth :: !Depth
-    , condition :: !Text
+    , condition :: !(Maybe Condition)
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepState
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteState
+
+data HaltReason
+    = Branching
+    | Stuck
+    | DepthBound
+    | FinalState
+    | CutPointRule
+    | TerminalRule
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON '[OmitNothingFields, ConstructorTagModifier '[CamelToKebab]] HaltReason
 
 data ExecuteResult = ExecuteResult
-    { state :: !Text
-    , patterns :: ![Text]
-    , reason :: !ReasonForHalting
+    { reason :: HaltReason
+    , states :: [ExecuteState]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
-newtype StepResult = StepResult
-    { states :: [StepState]
+data Condition = Condition
+    { substitution :: !KoreJson
+    , predicate :: !KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
 data ImpliesResult = ImpliesResult
     { satisfiable :: !Bool
-    , substitution :: !(Maybe Text)
+    , condition :: !(Maybe Condition)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -157,7 +171,7 @@ data ImpliesResult = ImpliesResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
 
 newtype SimplifyResult = SimplifyResult
-    { state :: Text
+    { state :: KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -166,13 +180,16 @@ newtype SimplifyResult = SimplifyResult
 
 data ReqOrRes = Req | Res
 
-data APIMethods = ExecuteM | StepM | ImpliesM | SimplifyM
+data APIMethods
+    = ExecuteM
+    | ImpliesM
+    | SimplifyM
 
 type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
     APIPayload 'ExecuteM 'Res = ExecuteResult
-    APIPayload 'StepM 'Req = StepRequest
-    APIPayload 'StepM 'Res = StepResult
+-- APIPayload 'StepM 'Req = StepRequest
+-- APIPayload 'StepM 'Res = StepResult
     APIPayload 'ImpliesM 'Req = ImpliesRequest
     APIPayload 'ImpliesM 'Res = ImpliesResult
     APIPayload 'SimplifyM 'Req = SimplifyRequest
@@ -180,7 +197,7 @@ type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
 
 data API (r :: ReqOrRes) where
     Execute :: APIPayload 'ExecuteM r -> API r
-    Step :: APIPayload 'StepM r -> API r
+    -- Step :: APIPayload 'StepM r -> API r
     Implies :: APIPayload 'ImpliesM r -> API r
     Simplify :: APIPayload 'SimplifyM r -> API r
     Cancel :: API 'Req
@@ -193,29 +210,119 @@ deriving stock instance Eq (API 'Res)
 instance ToJSON (API 'Res) where
     toJSON = \case
         Execute payload -> toJSON payload
-        Step payload -> toJSON payload
+        -- Step payload -> toJSON payload
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
 
-respond :: MonadIO m => Respond (API 'Req) m (API 'Res)
-respond = \case
-    Execute _ -> pure $ Right $ Execute undefined
-    Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-    Implies _ -> pure $ Right $ Implies undefined
-    Simplify _ -> pure $ Right $ Simplify undefined
-    -- this case is only reachable if the cancel appeared as part of a batch request
-    Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
+respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> Respond (API 'Req) m (API 'Res)
+respond
+    runSMT
+    simplifierx
+    serializedModule@Exec.SerializedModule
+        { --sortGraph
+        -- , overloadGraph
+        -- , metadataTools
+        verifiedModule
+        -- , equations
+        } = \case
+        Execute ExecuteRequest{state, maxDepth} ->
+            case PatternVerifier.runPatternVerifier context $
+                PatternVerifier.verifyStandalonePattern Nothing $
+                    PatternJson.toParsedPattern $ PatternJson.term state of
+                Left err -> pure $ Left $ couldNotVerify $ toJSON err
+                Right verifiedPattern -> do
+                    (_, _finalPatt) <-
+                        liftIO
+                            ( runSMT $
+                                Exec.exec
+                                    simplifierx
+                                    ( case maxDepth of
+                                        Nothing -> Unlimited
+                                        Just (Depth n) -> Limit n
+                                    )
+                                    Unlimited
+                                    serializedModule
+                                    All
+                                    verifiedPattern
+                            )
 
-runServer :: Int -> IO ()
-runServer port = do
-    runStderrLoggingT $ do
-        let ss = serverSettings port "*"
-        jsonrpcTCPServer V2 False ss srv
+                    pure $
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { states = [ExecuteState{state, depth = Depth 1, condition = Nothing}] -- dummy
+                                    -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
+                                    , reason = FinalState
+                                    }
+          where
+            context =
+                PatternVerifier.verifiedModuleContext verifiedModule
+                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
-srv :: MonadLoggerIO m => JSONRPCT m ()
-srv = do
+        -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
+        Implies ImpliesRequest{antecedent, consequent} ->
+            pure $ case PatternVerifier.runPatternVerifier context verify of
+                Left err -> Left $ couldNotVerify $ toJSON err
+                Right (_antVerified, _consVerified) -> Right $ Implies $ ImpliesResult True Nothing
+          where
+            -- let leftPatt = mkRewritingPattern $ Pattern.fromTermLike antVerified
+            --     (consWOExistentials, existentialVars) =
+            --         ClaimPattern.termToExistentials $
+            --             RewritingVariable.mkRewritingTerm consVerified
+            --     rightPatts = OrPattern.fromPattern $ Pattern.fromTermLike consWOExistentials
+            --     claim = ClaimPattern.mkClaimPattern leftPatt rightPatts existentialVars
+            -- liftIO $ (do
+            --     res <-
+            --         runSMT $
+            --             evalSimplifier simplifierx verifiedModule sortGraph overloadGraph metadataTools equations $
+            --                 Logic.observeAllT $
+            --                     Claim.checkImplicationWorker claim
+
+            --     pure $ Right $ Implies $ case res of
+            --         [Claim.Implied] -> ImpliesResult True Nothing
+            --         _ ->  ImpliesResult False Nothing)
+            --     `catch` \(err :: Error Claim.CheckImplicationError) ->
+            --         pure $ Left $ implicationError $ toJSON err
+
+            context =
+                PatternVerifier.verifiedModuleContext verifiedModule
+                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+
+            verify = do
+                antVerified <-
+                    PatternVerifier.verifyStandalonePattern Nothing $
+                        PatternJson.toParsedPattern $ PatternJson.term antecedent
+                consVerified <-
+                    PatternVerifier.verifyStandalonePattern Nothing $
+                        PatternJson.toParsedPattern $ PatternJson.term consequent
+                pure (antVerified, consVerified)
+        Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
+        -- this case is only reachable if the cancel appeared as part of a batch request
+        Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
+      where
+        couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
+
+-- implicationError err = ErrorObj "Implication check error" (-32003) err
+
+runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> SimplifierXSwitch -> Exec.SerializedModule -> IO ()
+runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simplifierx serializedModule = do
+    flip runLoggingT logFun $
+        jsonrpcTCPServer V2 False srvSettings $
+            srv runSMT simplifierx serializedModule
+  where
+    srvSettings = serverSettings port "*"
+
+    someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
+
+    logFun loc src level msg =
+        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
+
+    runSMT :: forall a. SMT.SMT a -> IO a
+    runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup
+
+srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> JSONRPCT m ()
+srv runSMT simplifierx serializedModule = do
     reqQueue <- liftIO $ atomically newTChan
-
     let mainLoop tid =
             receiveBatchRequest >>= \case
                 Nothing -> do
@@ -226,7 +333,6 @@ srv = do
                 Just req -> do
                     liftIO $ atomically $ writeTChan reqQueue req
                     mainLoop tid
-
     spawnWorker reqQueue >>= mainLoop
   where
     isRequest = \case
@@ -256,10 +362,10 @@ srv = do
 
             processReq = \case
                 SingleRequest req -> do
-                    rM <- buildResponse respond req
+                    rM <- buildResponse (respond runSMT simplifierx serializedModule) req
                     mapM_ (sendResponses . SingleResponse) rM
                 BatchRequest reqs -> do
-                    rs <- catMaybes <$> forM reqs (buildResponse respond)
+                    rs <- catMaybes <$> forM reqs (buildResponse (respond runSMT simplifierx serializedModule))
                     sendResponses $ BatchResponse rs
 
         liftIO $
