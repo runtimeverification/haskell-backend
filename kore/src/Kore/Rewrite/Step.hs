@@ -164,11 +164,19 @@ unifyRule sideCondition initial rule = do
     let ruleLeft = matchingPattern rule
     --------------------
     -- attempt to fail fast when patterns "obviously" do not match
-    let topTerms = (,) <$> mainCell initialTerm <*> mainCell ruleLeft
-    traceM (pretty "Top terms: " topTerms)
-    whenJust topTerms $
-        (traceM "trying top terms" >>) .
-        void . evalEnvUnifierT Not.notSimplifier . uncurry (unificationProcedure sideCondition')
+    let initTop = mainCell initialTerm
+        ruleTop = mainCell ruleLeft
+        topTerms = (,) <$> initTop <*> ruleTop
+    traceM $
+        if isJust topTerms
+            then (pretty "should try top terms" topTerms)
+            else "WARNING unable to select top terms"
+    whenJust topTerms $ \terms -> do
+        traceM "trying top terms"
+        void $
+            evalEnvUnifierT Not.notSimplifier $
+                uncurry (unificationProcedure sideCondition') terms
+        traceM "top terms were unified"
     --------------------
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
@@ -190,11 +198,12 @@ unifyRule sideCondition initial rule = do
     mainCell t = foldM (flip (uncurry goCell)) t mainCellPath
 
     mainCellPath :: [(Text, Int)] -- Cell coordinates: label name and argument number (starting from 1)
-    mainCellPath = [ (config "generatedTop", 1)
-                   , (config "kevm", 1)
-                   , (config "k", 1)
-                   , ("kseq",1)
-                   ]
+    mainCellPath =
+        [ (config "generatedTop", 1)
+        , (config "kevm", 1)
+        , (config "k", 1)
+        , ("kseq", 1)
+        ]
 
     config :: Text -> Text
     config name = "Lbl'-LT-'" <> name <> "'-GT-'"
@@ -204,25 +213,27 @@ unifyRule sideCondition initial rule = do
         case term of
             TermLike.App_ symbol args
                 | targetName == getName symbol && length args >= argNum ->
-                      Just $ args!!(argNum - 1)
+                    Just $ args !! (argNum - 1)
                 | targetName == getName symbol ->
-                      trace ("Insufficient argument count " <> show (length args) <> " < " <> show argNum)
-                      Nothing
+                    trace
+                        ("Insufficient argument count " <> show (length args) <> " < " <> show argNum)
+                        Nothing
                 | otherwise ->
-                      trace ("Wrong application symbol " <> show (getName symbol))
-                      Nothing
+                    trace
+                        ("Wrong application symbol " <> show (getName symbol))
+                        Nothing
             _otherwise ->
                 trace ("Wrong node, not an Application") Nothing
-        where
-          getName :: TermLike.Symbol -> Text
-          getName = TermLike.getId . TermLike.symbolConstructor
+      where
+        getName :: TermLike.Symbol -> Text
+        getName = TermLike.getId . TermLike.symbolConstructor
 
     pretty title =
         Pretty.renderString
-        . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        . (title <+>)
-        . Pretty.hang 2
-        . Pretty.pretty
+            . Pretty.layoutPretty Pretty.defaultLayoutOptions
+            . (title <+>)
+            . Pretty.hang 2
+            . Pretty.pretty
     (<+>) = (Pretty.<+>)
 
 -- | The 'Set' of variables that would be introduced by narrowing.
