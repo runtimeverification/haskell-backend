@@ -172,7 +172,6 @@ import Kore.Rewrite.Search (
     searchGraph,
  )
 import Kore.Rewrite.Search qualified as Search
-import Kore.Rewrite.Strategy (FinalNodeType (Leaf))
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
@@ -404,8 +403,6 @@ exec
                         & sameTermLikeSort initialSort
             return (exitCode, finalTerm)
       where
-        dropStrategy = snd
-        getFinalConfigsOf act = observeAllT $ fmap snd act
         verifiedModule' =
             IndexedModule.mapAliasPatterns
                 -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -571,7 +568,7 @@ prove ::
     Limit Natural ->
     Limit Natural ->
     Natural ->
-    FinalNodeType ->
+    Strategy.FinalNodeType ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module

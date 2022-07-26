@@ -10,7 +10,6 @@ module GraphTraversal (
 ) where
 
 import Control.Monad (foldM)
-import Control.Monad.Logic
 import Control.Monad.Trans.State
 import Data.Limit
 import Data.List.NonEmpty qualified as NE
@@ -18,7 +17,6 @@ import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import GHC.Generics qualified as GHC
 import GHC.Natural
-import Kore.Reachability.Prim (Prim)
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
     LimitExceeded (..),
