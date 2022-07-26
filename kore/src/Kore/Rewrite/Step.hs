@@ -29,11 +29,14 @@ module Kore.Rewrite.Step (
     Step.results,
 ) where
 
+import Control.Monad (foldM)
+import Control.Monad.Extra (whenJust)
 import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.SourceLocation (
     SourceLocation,
@@ -160,15 +163,12 @@ unifyRule sideCondition initial rule = do
     -- configuration.
     let ruleLeft = matchingPattern rule
     --------------------
-    traceM (pretty ("trying rule" <+> Pretty.pretty (location rule) <+> "on") initial)
     -- attempt to fail fast when patterns "obviously" do not match
-    let termTop = mainCell initialTerm
-        ruleTop = mainCell ruleLeft
-    _ <- evalEnvUnifierT Not.notSimplifier $
-             unificationProcedure
-                 sideCondition'
-                 termTop
-                 ruleTop
+    let topTerms = (,) <$> mainCell initialTerm <*> mainCell ruleLeft
+    traceM (pretty "Top terms: " topTerms)
+    whenJust topTerms $
+        (traceM "trying top terms" >>) .
+        void . evalEnvUnifierT Not.notSimplifier . uncurry (unificationProcedure sideCondition')
     --------------------
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
@@ -184,9 +184,39 @@ unifyRule sideCondition initial rule = do
   where
     location = from @_ @SourceLocation
 
-    mainCell :: TermLike RewritingVariableName -> TermLike RewritingVariableName
-    mainCell t =
-        trace (pretty "Requested main cell of" t) t -- FIXME
+    --------------------
+    -- fail-fast helpers
+    mainCell :: TermLike RewritingVariableName -> Maybe (TermLike RewritingVariableName)
+    mainCell t = foldM (flip (uncurry goCell)) t mainCellPath
+
+    mainCellPath :: [(Text, Int)] -- Cell coordinates: label name and argument number (starting from 1)
+    mainCellPath = [ (config "generatedTop", 1)
+                   , (config "kevm", 1)
+                   , (config "k", 1)
+                   , ("kseq",1)
+                   ]
+
+    config :: Text -> Text
+    config name = "Lbl'-LT-'" <> name <> "'-GT-'"
+
+    goCell :: Text -> Int -> TermLike RewritingVariableName -> Maybe (TermLike RewritingVariableName)
+    goCell targetName argNum term =
+        case term of
+            TermLike.App_ symbol args
+                | targetName == getName symbol && length args >= argNum ->
+                      Just $ args!!(argNum - 1)
+                | targetName == getName symbol ->
+                      trace ("Insufficient argument count " <> show (length args) <> " < " <> show argNum)
+                      Nothing
+                | otherwise ->
+                      trace ("Wrong application symbol " <> show (getName symbol))
+                      Nothing
+            _otherwise ->
+                trace ("Wrong node, not an Application") Nothing
+        where
+          getName :: TermLike.Symbol -> Text
+          getName = TermLike.getId . TermLike.symbolConstructor
+
     pretty title =
         Pretty.renderString
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
