@@ -2412,49 +2412,48 @@ builtinSimplifiers =
             )
         ]
 
-
 verifiedModuleContext :: PatternVerifier.Context
 verifiedModuleContext =
-        PatternVerifier.verifiedModuleContext
-            IndexedModule.IndexedModuleSyntax
-                { indexedModuleName = ModuleName "MOCK"
-                , indexedModuleAliasSentences = mempty
-                , indexedModuleSymbolSentences =
-                    Map.fromList
-                        [ ( symbolConstructor
-                          ,
-                              ( symbolAttributes
-                              , SentenceSymbol
-                                    { sentenceSymbolSymbol =
-                                        Kore.Syntax.Sentence.Symbol
-                                            { symbolConstructor
-                                            , symbolParams = []
-                                            }
-                                    , sentenceSymbolSorts = applicationSortsOperands
-                                    , sentenceSymbolResultSort = applicationSortsResult
-                                    , sentenceSymbolAttributes = Default.def
-                                    }
-                              )
+    PatternVerifier.verifiedModuleContext
+        IndexedModule.IndexedModuleSyntax
+            { indexedModuleName = ModuleName "MOCK"
+            , indexedModuleAliasSentences = mempty
+            , indexedModuleSymbolSentences =
+                Map.fromList
+                    [ ( symbolConstructor
+                      ,
+                          ( symbolAttributes
+                          , SentenceSymbol
+                                { sentenceSymbolSymbol =
+                                    Kore.Syntax.Sentence.Symbol
+                                        { symbolConstructor
+                                        , symbolParams = []
+                                        }
+                                , sentenceSymbolSorts = applicationSortsOperands
+                                , sentenceSymbolResultSort = applicationSortsResult
+                                , sentenceSymbolAttributes = Default.def
+                                }
                           )
-                        | Symbol
-                            { symbolConstructor
-                            , symbolAttributes
-                            , symbolSorts =
-                                ApplicationSorts
-                                    { applicationSortsOperands
-                                    , applicationSortsResult
-                                    }
-                            } <-
-                            allSymbols
-                        ]
-                , indexedModuleSortDescriptions =
-                    Map.fromList
-                        [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
-                        | (SortActualSort (SortActual{sortActualName}), attr) <- sortAttributesMapping
-                        ]
-                , indexedModuleImportsSyntax = mempty
-                , indexedModuleHookedIdentifiers = mempty
-                }
-            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-    where
-        ConsistentKore.Setup{allSymbols} = generatorSetup
+                      )
+                    | Symbol
+                        { symbolConstructor
+                        , symbolAttributes
+                        , symbolSorts =
+                            ApplicationSorts
+                                { applicationSortsOperands
+                                , applicationSortsResult
+                                }
+                        } <-
+                        allSymbols
+                    ]
+            , indexedModuleSortDescriptions =
+                Map.fromList
+                    [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                    | (SortActualSort (SortActual{sortActualName}), attr) <- sortAttributesMapping
+                    ]
+            , indexedModuleImportsSyntax = mempty
+            , indexedModuleHookedIdentifiers = mempty
+            }
+        & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+  where
+    ConsistentKore.Setup{allSymbols} = generatorSetup

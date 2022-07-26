@@ -1263,13 +1263,15 @@ depth = Recursive.fold levelDepth
   where
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
 
-instance 
-    Ord variable => 
-    From (TermLike variable) (Pattern.Pattern variable (TermAttributes variable)) where
+instance
+    Ord variable =>
+    From (TermLike variable) (Pattern.Pattern variable (TermAttributes variable))
+    where
     from = uninternalize
 
 uninternalize ::
-    forall variable. Ord variable =>
+    forall variable.
+    Ord variable =>
     TermLike variable ->
     Pattern.Pattern variable (TermAttributes variable)
 uninternalize = Pattern.Pattern . Recursive.cata go
@@ -1310,13 +1312,13 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant
         StringLiteralF stringLiteral -> wrap $ PatternF.StringLiteralF stringLiteral
         InternalBoolF (Const (InternalBool boolSort boolValue)) ->
-            uninternalizeInternalValue boolSort $ 
+            uninternalizeInternalValue boolSort $
                 if boolValue then "true" else "false"
         InternalBytesF (Const (InternalBytes bytesSort bytesValue)) ->
-            uninternalizeInternalValue bytesSort $ 
+            uninternalizeInternalValue bytesSort $
                 Encoding.decode8Bit $ ByteString.fromShort bytesValue
         InternalIntF (Const (InternalInt intSort intValue)) ->
-            uninternalizeInternalValue intSort $ 
+            uninternalizeInternalValue intSort $
                 Text.pack $ show intValue
         InternalStringF (Const (InternalString stringSort stringValue)) ->
             uninternalizeInternalValue stringSort stringValue
@@ -1338,27 +1340,25 @@ uninternalize = Pattern.Pattern . Recursive.cata go
                     first Symbol.toSymbolOrAlias $ Inj.toApplication inj
       where
         wrap x = CofreeT $ Identity $ attr :< x
-        uninternalizeInternalValue sort strVal = wrap $ 
-            PatternF.DomainValueF $
-                DomainValue sort $
-                    wrap $
-                        PatternF.StringLiteralF $ Const $ StringLiteral strVal
+        uninternalizeInternalValue sort strVal =
+            wrap $
+                PatternF.DomainValueF $
+                    DomainValue sort $
+                        wrap $
+                            PatternF.StringLiteralF $ Const $ StringLiteral strVal
+                            -- The uninternalized lists and ac types are all of the following form:
 
+                            --   This child will be an application of internalElement symbol to its arguments
 
-        -- The uninternalized lists and ac types are all of the following form:
-        -- * If the structure has no elements, we simply return the application of the unit symbol with no arguments
-        -- * If the structure has exactly one child, we just return the child. 
-        --   This child will be an application of internalElement symbol to its arguments
-        -- * For multiple children we will get a right associative tree of Applications, namely
         --   ApplicationF (Application concatSymbol [
-        --       x1, 
+        --       x1,
         --       ApplicationF (Application concatSymbol [
-        --           x2, 
+        --           x2,
         --           ...ApplicationF (Application concatSymbol [xn-1, xn]...
         --         ])
         --    ])
         foldApplication unitSymbol concatSymbol = foldAux
-            where
+          where
             foldAux = \case
                 [] ->
                     wrap $
@@ -1372,11 +1372,12 @@ uninternalize = Pattern.Pattern . Recursive.cata go
 
         uninternalizeInternalList InternalList{internalListUnit, internalListConcat, internalListElement, internalListChild} =
             foldApplication internalListUnit internalListConcat children
-            where
-                uniternalizeListElement e = wrap $
+          where
+            uniternalizeListElement e =
+                wrap $
                     PatternF.ApplicationF $
                         Application (Symbol.toSymbolOrAlias internalListElement) [e]
-                children = map uniternalizeListElement $ toList internalListChild
+            children = map uniternalizeListElement $ toList internalListChild
 
         uninternalizeInternalAc ::
             forall normalized.
@@ -1385,30 +1386,30 @@ uninternalize = Pattern.Pattern . Recursive.cata go
             Cofree (PatternF.PatternF variable) (TermAttributes variable)
         uninternalizeInternalAc InternalAc{builtinAcUnit, builtinAcConcat, builtinAcElement, builtinAcChild} =
             foldApplication builtinAcUnit builtinAcConcat children
-            where
-                NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
+          where
+            NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
 
-                uninternalizeAcElement = 
-                    wrap
-                        . PatternF.ApplicationF
-                        . Application (Symbol.toSymbolOrAlias builtinAcElement)
+            uninternalizeAcElement =
+                wrap
+                    . PatternF.ApplicationF
+                    . Application (Symbol.toSymbolOrAlias builtinAcElement)
 
-                uninternalizedElementsWithVariables = 
-                    map
-                        ( uninternalizeAcElement
-                            . elementToApplicationArgs
-                        )
-                        elementsWithVariables
+            uninternalizedElementsWithVariables =
+                map
+                    ( uninternalizeAcElement
+                        . elementToApplicationArgs
+                    )
+                    elementsWithVariables
 
-                uninternalizedConcreteElements = 
-                    map
-                        ( \(k, v) ->
-                            uninternalizeAcElement $
-                                uninternalizeKey k : concreteElementToApplicationArgs v
-                        ) $
-                        HashMap.toList concreteElements
+            uninternalizedConcreteElements =
+                map
+                    ( \(k, v) ->
+                        uninternalizeAcElement $
+                            uninternalizeKey k : concreteElementToApplicationArgs v
+                    )
+                    $ HashMap.toList concreteElements
 
-                uninternalizeKey = Pattern.getPattern . uninternalize . from
+            uninternalizeKey = Pattern.getPattern . uninternalize . from
 
-                children = 
-                    uninternalizedElementsWithVariables ++ uninternalizedConcreteElements ++ opaque
+            children =
+                uninternalizedElementsWithVariables ++ uninternalizedConcreteElements ++ opaque
