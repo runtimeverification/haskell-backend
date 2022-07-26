@@ -178,7 +178,8 @@ unifyRule sideCondition initial rule = do
                      unificationProcedure sideCondition' iTop rTop
         pure $ trace "top terms unified" ()
     --------------------
-    unification <-
+
+    unification <- trace "continuing with actual unification" $
         unificationProcedure sideCondition' initialTerm ruleLeft
             & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
