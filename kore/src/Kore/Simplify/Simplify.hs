@@ -11,7 +11,6 @@ module Kore.Simplify.Simplify (
     -- * Condition simplifiers
     ConditionSimplifier (..),
     emptyConditionSimplifier,
-    liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
     SimplifierCache (attemptedEquationsCache),
@@ -54,13 +53,9 @@ module Kore.Simplify.Simplify (
 
 import Control.Monad qualified as Monad
 import Control.Monad.Counter
-import Control.Monad.Morph (
-    MFunctor,
- )
+import Control.Monad.Morph (MFunctor)
 import Control.Monad.Morph qualified as Monad.Morph
-import Control.Monad.RWS.Strict (
-    RWST,
- )
+import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.State.Strict qualified as Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
@@ -71,41 +66,25 @@ import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict qualified as Map
-import Data.Text (
-    Text,
- )
+import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
 import Kore.Equation.Equation (Equation)
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.Conditional (
-    Conditional,
- )
+import Kore.Internal.Conditional (Conditional)
 import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
+import Kore.Internal.OrCondition (OrCondition)
 import Kore.Internal.OrCondition qualified as OrCondition
-import Kore.Internal.OrPattern (
-    OrPattern,
-    fromPattern,
- )
+import Kore.Internal.OrPattern (OrPattern, fromPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
-    toRepresentation,
- )
+import Kore.Internal.SideCondition (SideCondition, toRepresentation)
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
@@ -117,38 +96,22 @@ import Kore.Internal.TermLike (
     TermLikeF (..),
     pattern App_,
  )
-import Kore.Internal.Variable (
-    InternalVariable,
- )
-import Kore.Log.WarnFunctionWithoutEvaluators (
-    warnFunctionWithoutEvaluators,
- )
-import Kore.Rewrite.Axiom.Identifier (
-    AxiomIdentifier (..),
- )
+import Kore.Internal.Variable (InternalVariable)
+import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier (..))
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Simplify.InjSimplifier (
-    InjSimplifier,
- )
-import Kore.Simplify.OverloadSimplifier (
-    OverloadSimplifier (..),
- )
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Simplify.InjSimplifier (InjSimplifier)
+import Kore.Simplify.OverloadSimplifier (OverloadSimplifier (..))
 import Kore.Syntax.Application
 import Kore.Unparser
 import Log
 import Logic
 import Prelude.Kore
-import Pretty (
-    (<+>),
- )
+import Pretty ((<+>))
 import Pretty qualified
-import SMT (
-    MonadSMT (..),
- )
+import SMT (MonadSMT (..))
 
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
@@ -343,16 +306,6 @@ emptyConditionSimplifier :: ConditionSimplifier monad
 emptyConditionSimplifier =
     ConditionSimplifier (\_ predicate -> return predicate)
 
-liftConditionSimplifier ::
-    (Monad monad, MonadTrans trans, Monad (trans monad)) =>
-    ConditionSimplifier monad ->
-    ConditionSimplifier (trans monad)
-liftConditionSimplifier (ConditionSimplifier simplifier) =
-    ConditionSimplifier $ \sideCondition predicate -> do
-        results <-
-            lift . lift $
-                observeAllT $ simplifier sideCondition predicate
-        scatter results
 -- * Builtin and axiom simplifiers
 
 {- | Used for keeping track of already attempted equations which failed to
