@@ -159,6 +159,17 @@ unifyRule sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
+    --------------------
+    traceM (pretty ("trying rule" <+> Pretty.pretty (location rule) <+> "on") initial)
+    -- attempt to fail fast when patterns "obviously" do not match
+    let termTop = mainCell initialTerm
+        ruleTop = mainCell ruleLeft
+    _ <- evalEnvUnifierT Not.notSimplifier $
+             unificationProcedure
+                 sideCondition'
+                 termTop
+                 ruleTop
+    --------------------
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
             & evalEnvUnifierT Not.notSimplifier
@@ -172,6 +183,17 @@ unifyRule sideCondition initial rule = do
     return (rule `Conditional.withCondition` unification')
   where
     location = from @_ @SourceLocation
+
+    mainCell :: TermLike RewritingVariableName -> TermLike RewritingVariableName
+    mainCell t =
+        trace (pretty "Requested main cell of" t) t -- FIXME
+    pretty title =
+        Pretty.renderString
+        . Pretty.layoutPretty Pretty.defaultLayoutOptions
+        . (title <+>)
+        . Pretty.hang 2
+        . Pretty.pretty
+    (<+>) = (Pretty.<+>)
 
 -- | The 'Set' of variables that would be introduced by narrowing.
 
