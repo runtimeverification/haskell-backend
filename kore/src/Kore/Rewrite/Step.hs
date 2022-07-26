@@ -176,8 +176,7 @@ unifyRule sideCondition initial rule = do
         _ <- Logic.once $ trace "trying top terms"
                  evalEnvUnifierT Not.notSimplifier $
                      unificationProcedure sideCondition' iTop rTop
-        pure ()
-    -- traceM "top terms were unified"
+        pure $ trace "top terms unified" ()
     --------------------
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
