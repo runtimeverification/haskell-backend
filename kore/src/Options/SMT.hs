@@ -77,7 +77,7 @@ parseKoreSolverOptions =
                 <> help "Timeout for calls to the SMT solver, in milliseconds"
                 <> value defaultTimeOut
             )
-    
+
     parseRetryLimit =
         option
             readRetryLimit

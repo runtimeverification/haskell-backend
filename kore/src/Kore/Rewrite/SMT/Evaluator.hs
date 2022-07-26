@@ -190,8 +190,8 @@ decidePredicate sideCondition predicates =
         -- Use the same timeout for the first retry, since sometimes z3
         -- decides it doesn't want to work today and all we need is to
         -- retry it once.
-        let timeoutScales = takeWithin limit [1..]
-        let retryActions = map retryOnceWithScaledTimeout timeoutScales 
+        let timeoutScales = takeWithin limit [1 ..]
+        let retryActions = map retryOnceWithScaledTimeout timeoutScales
         let combineRetries r1 r2 = r1 >>= whenUnknown r2
         -- This works even if 'retryActions' is infinite, because the second
         -- argument to 'whenUnknown' will be the 'combineRetries' of all of
@@ -200,13 +200,13 @@ decidePredicate sideCondition predicates =
         foldr combineRetries (pure Unknown) retryActions
 
     retryOnceWithScaledTimeout :: Integer -> MaybeT simplifier Result
-    retryOnceWithScaledTimeout scale = 
+    retryOnceWithScaledTimeout scale =
         -- scale the timeout _inside_ 'retryOnce' so that we override the
         -- call to 'SMT.reinit'.
         retryOnce $ SMT.localTimeOut (scaleTimeOut scale) query
 
     scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
-    scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n*r)) 
+    scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
 
     retryOnce actionToRetry = do
         SMT.reinit

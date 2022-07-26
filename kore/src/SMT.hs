@@ -620,23 +620,28 @@ reinitSMT =
         Nothing -> return ()
         Just solverSetup -> reinitSMT' solverSetup
 
--- | Run a solver action with an adjusted timeout,
--- and reset the timeout when it's done.
+{- | Run a solver action with an adjusted timeout,
+ and reset the timeout when it's done.
+-}
 localTimeOut :: MonadSMT m => (TimeOut -> TimeOut) -> m a -> m a
 localTimeOut adjust isolated = do
     originalTimeOut <- liftSMT extractTimeOut
     setTimeOut $ adjust originalTimeOut
     isolated <* setTimeOut originalTimeOut
-    where
-        extractTimeOut = SMT $ pure . \case
-            Nothing -> TimeOut Unlimited
-            Just setup -> timeOut $ config setup
+  where
+    extractTimeOut =
+        SMT $
+            pure . \case
+                Nothing -> TimeOut Unlimited
+                Just setup -> timeOut $ config setup
 
 -- | Get the retry limit for SMT queries.
 askRetryLimitSMT :: SMT RetryLimit
-askRetryLimitSMT = SMT $ pure . \case
-    Nothing -> RetryLimit (Limit 0)
-    Just setup -> retryLimit $ config setup
+askRetryLimitSMT =
+    SMT $
+        pure . \case
+            Nothing -> RetryLimit (Limit 0)
+            Just setup -> retryLimit $ config setup
 
 -- --------------------------------
 -- Internal
