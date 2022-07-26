@@ -714,9 +714,9 @@ test_uninternalize =
     asPatternMapElement k v =
         Pattern.asPattern $
             Attribute.Null
-                :<  PatternF.ApplicationF (
-                        Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v]
-                     )
+                :< PatternF.ApplicationF
+                    ( Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v]
+                    )
 
 test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
