@@ -5,6 +5,7 @@ import Control.Monad.Catch (
     SomeException,
     handle,
  )
+import Data.ByteString.Lazy.Char8 qualified as ByteString
 import Data.Map.Strict qualified as Map
 import GlobalMain
 import Kore.AST.ApplicativeKore
@@ -32,6 +33,7 @@ import Kore.Parser (
     parseKorePattern,
  )
 import Kore.Syntax.Definition
+import Kore.Syntax.Json (encodePattern)
 import Kore.Unparser as Unparser
 import Kore.Validate.DefinitionVerifier (
     verifyAndIndexDefinition,
@@ -108,8 +110,9 @@ main = handleTop $ do
             for_ patternFileNames $ \patternFileName -> do
                 parsedPattern <- mainPatternParse patternFileName
                 verifyPattern indexedModule parsedPattern
-                let KoreParserOptions{willPrintPattern} = koreParserOptions
+                let KoreParserOptions{willPrintPattern, willPrintPatternJson} = koreParserOptions
                 when willPrintPattern $ putDebug parsedPattern
+                when willPrintPatternJson $ liftIO $ ByteString.putStrLn $ encodePattern parsedPattern
 
 {- | IO action that parses a kore definition from a filename and prints timing
  information.
