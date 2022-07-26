@@ -45,10 +45,10 @@ data TransitionResult a
 
       -- | config matches a terminal pattern (or: is RHS of a
       -- "terminal" rule) Needs to return that RHS
-      Terminal a
+      Terminal a -- TODO(JB) obsolete, can use `Stopped`
     | -- | config matches a cut pattern ( aka: is LHS of a "cut" rule)
       -- The respective RHS (or RHSs) are returned (if any)
-      Cut a [a]
+      Cut a [a] -- TODO(JB) Could use `Stopped` if "next states" were added there
     deriving stock (Eq, Show, GHC.Generic)
 
 instance Functor TransitionResult where
@@ -235,17 +235,27 @@ transitionLeaves
             other -> fmap snd other
 
 data StepResult a
-    = Continue (Seq a)
-    | Output (TransitionResult a) (Seq a)
-    | Abort (TransitionResult a) (Seq a)
+    = -- | Traversal continues with given queue.
+      Continue (Seq a)
+    | -- | Traversal produced a result and continues with given queue.
+      -- Typically a final or stuck state (or a "stop" state), and the
+      -- queue is the remaining work.
+      Output (TransitionResult a) (Seq a)
+    | -- | Traversal exceeded the breadth limit and should not
+      -- continue. The last state and the current queue are provided
+      -- for analysis.
+      Abort (TransitionResult a) (Seq a)
     deriving stock (Eq, Show, GHC.Generic)
 
+-- TODO(JB) extract and return states instead of TransitionResults
 data TraversalResult a
     = -- | remaining queue length and stuck or stopped (unproven)
-      -- states (always at most maxCounterExamples many)
+      -- results (always at most maxCounterExamples many). Caller
+      -- should extract current states from returned results.
       GotStuck Int [TransitionResult a]
     | -- | queue length (exceeding the limit) and result(s) of the
-      -- last step that led to stopping
+      -- last step that led to stopping. Caller should extract
+      -- following states from the result.
       Aborted Int [TransitionResult a]
     | -- | queue empty, results returned
       Ended [TransitionResult a]
@@ -282,8 +292,8 @@ simpleTransition ::
     -- | primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
     -- | converter to interpret the config (claim state or program state)
-    -- TODO should also consider the applied rule(s) (for Terminal/Cut)
     (config -> [config] -> TransitionResult config) ->
+    -- TODO(JB) should also consider the applied rule(s) (for Terminal/Cut)
     -- final transition function
     ([Step prim], config) ->
     m (TransitionResult ([Step prim], config))
