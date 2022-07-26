@@ -67,8 +67,8 @@ import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
-import Generics.SOP qualified as SOP
 import GHC.Generics qualified as GHC
+import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
