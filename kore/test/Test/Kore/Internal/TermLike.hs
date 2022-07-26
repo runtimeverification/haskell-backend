@@ -714,7 +714,7 @@ test_uninternalize =
     asPatternMapElement k v =
         Pattern.asPattern $
             Attribute.Null
-                :< ( PatternF.ApplicationF $
+                :< ( PatternF.ApplicationF
                         Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v]
                    )
 
