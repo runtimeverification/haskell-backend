@@ -150,7 +150,7 @@ test_Pattern_simplify =
                     )
         assertEqual "" mempty actual
     , testCase "Simplifies Implies - Positive" $ do
-        let [fOfX', fOfY', gOfX'] = sort [fOfX, fOfY, gOfX]
+        let [fOfX', gOfX'] = sort [fOfX, gOfX]
             expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX')
