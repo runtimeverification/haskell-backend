@@ -72,7 +72,8 @@ data Application head child = Application
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Bifunctor Application where
-    bimap f g (Application alias children) = Application (f alias) (fmap g children)
+    bimap f g (Application alias children) =
+        Application (f alias) (fmap g children)
 
 instance (Debug head, Debug child) => Debug (Application head child)
 

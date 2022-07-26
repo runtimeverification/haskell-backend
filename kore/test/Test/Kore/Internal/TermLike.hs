@@ -7,6 +7,7 @@ module Test.Kore.Internal.TermLike (
     test_renaming,
     test_orientSubstitution,
     test_toSyntaxPattern,
+    test_uninternalize,
     --
     termLikeGen,
     termLikeChildGen,
@@ -19,8 +20,8 @@ module Test.Kore.Internal.TermLike (
 import Control.Lens qualified as Lens
 import Control.Monad.Reader as Reader
 import Data.Bifunctor qualified as Bifunctor
-import Data.Default qualified as Default
 import Data.Functor.Identity (
+    Identity(..),
     runIdentity,
  )
 import Data.Generics.Product (
@@ -43,25 +44,20 @@ import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariable,
  )
-import Kore.Attribute.Sort qualified as Attribute
-import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
 import Kore.Attribute.Synthetic (
     resynthesize,
  )
-import Kore.Builtin qualified as Builtin
 import Kore.Error qualified
-import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalInt
 import Kore.Internal.Substitution (
     orientSubstitution,
  )
+import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike
 import Kore.Substitute
-import Kore.Syntax.Module (ModuleName (..))
 import Kore.Syntax.Pattern qualified as Pattern
-import Kore.Syntax.Sentence (SentenceSort (..), SentenceSymbol (..))
-import Kore.Syntax.Sentence qualified
+import Kore.Syntax.PatternF qualified as PatternF
 import Kore.Unparser (unparseToString)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Kore.Variables.Fresh (
@@ -537,60 +533,167 @@ test_renaming =
                 doesNotCapture (inject Mock.setY) renamed
             ]
 
+test_uninternalize :: [TestTree]
+test_uninternalize = 
+    [   testCase
+            "uninternalize"
+            ( do
+                assertEqual
+                    "InternalBool"
+                    (toPattern $ Mock.builtinBool True)
+                    $ asPattern $ PatternF.DomainValueF $
+                        DomainValue Mock.boolSort $
+                            asPattern $
+                                PatternF.StringLiteralF $ PatternF.Const $ StringLiteral "true"
+
+                assertEqual
+                    "InternalInt"
+                    (toPattern $ Mock.builtinInt 42)
+                    $ asPattern $ PatternF.DomainValueF $
+                        DomainValue Mock.intSort $
+                            asPattern $
+                                PatternF.StringLiteralF $ PatternF.Const $ StringLiteral "42"
+                
+                assertEqual
+                    "InternalString"
+                    (toPattern $ Mock.builtinString "hello")
+                    $ asPattern $ PatternF.DomainValueF $
+                        DomainValue Mock.stringSort $
+                            asPattern $
+                                PatternF.StringLiteralF $ PatternF.Const $ StringLiteral "hello"
+            ),
+        
+        testCase
+            "uninternalize InternalList"
+            ( do
+                assertEqual
+                    "empty list"
+                    (toPattern $ Mock.builtinList [])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.unitListSymbol) []
+
+                assertEqual
+                    "singleton list"
+                    (toPattern $ Mock.builtinList [mkElemVar Mock.x])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.elementListSymbol) 
+                            [toPattern $ mkElemVar Mock.x]
+
+                assertEqual
+                    "two element list"
+                    (toPattern $ Mock.builtinList [mkElemVar Mock.x, mkElemVar Mock.y])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.concatListSymbol) [
+                            asPattern $ PatternF.ApplicationF $ 
+                                Application (Symbol.toSymbolOrAlias Mock.elementListSymbol) 
+                                    [toPattern $ mkElemVar Mock.x],
+                            asPattern $ PatternF.ApplicationF $ 
+                                Application (Symbol.toSymbolOrAlias Mock.elementListSymbol) 
+                                    [toPattern $ mkElemVar Mock.y]
+                        ]
+            ),
+        testCase
+            "uninternalize InternalSet"
+            ( do
+                assertEqual
+                    "empty set"
+                    (toPattern $ Mock.builtinSet [])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.unitSetSymbol) []
+
+                assertEqual
+                    "singleton set"
+                    (toPattern $ Mock.builtinSet [mkElemVar Mock.x])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.elementSetSymbol) 
+                            [toPattern $ mkElemVar Mock.x]
+
+                assertEqual
+                    "two element set"
+                    (toPattern $ Mock.builtinSet [mkElemVar Mock.x, mkElemVar Mock.y])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.concatSetSymbol) [
+                            asPattern $ PatternF.ApplicationF $ 
+                                Application (Symbol.toSymbolOrAlias Mock.elementSetSymbol) 
+                                    [toPattern $ mkElemVar Mock.x],
+                            asPattern $ PatternF.ApplicationF $ 
+                                Application (Symbol.toSymbolOrAlias Mock.elementSetSymbol) 
+                                    [toPattern $ mkElemVar Mock.y]
+                        ]
+            ),
+        testCase
+            "uninternalize InternalMap"
+            ( do
+                assertEqual
+                    "empty map"
+                    (toPattern $ Mock.builtinMap [])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.unitMapSymbol) []
+
+                assertEqual
+                    "singleton map"
+                    (toPattern $ Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.x)])
+                    $ asPatternMapElement (toPattern $ mkElemVar Mock.x) 
+                        (toPattern $ mkElemVar Mock.x)
+
+                assertEqual
+                    "two element map"
+                    (toPattern $ Mock.builtinMap
+                        [(mkElemVar Mock.x, mkElemVar Mock.x), (mkElemVar Mock.y, mkElemVar Mock.y)])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.concatMapSymbol) [
+                            asPatternMapElement 
+                                (toPattern $ mkElemVar Mock.x) 
+                                (toPattern $ mkElemVar Mock.x),
+                            asPatternMapElement 
+                                (toPattern $ mkElemVar Mock.y) 
+                                (toPattern $ mkElemVar Mock.y)
+                        ]
+                assertEqual
+                    "three element map"
+                    (toPattern $ Mock.builtinMap
+                        [
+                            (mkElemVar Mock.x, mkElemVar Mock.x), 
+                            (mkElemVar Mock.y, mkElemVar Mock.y), 
+                            (mkElemVar Mock.z, mkElemVar Mock.z)])
+                    $ asPattern $ PatternF.ApplicationF $
+                        Application (Symbol.toSymbolOrAlias Mock.concatMapSymbol) [
+                            asPatternMapElement 
+                                (toPattern $ mkElemVar Mock.x) 
+                                (toPattern $ mkElemVar Mock.x),
+                            asPattern $ PatternF.ApplicationF $ Application (Symbol.toSymbolOrAlias Mock.concatMapSymbol) [
+                                asPatternMapElement 
+                                    (toPattern $ mkElemVar Mock.y) 
+                                    (toPattern $ mkElemVar Mock.y),
+                                asPatternMapElement 
+                                    (toPattern $ mkElemVar Mock.z) 
+                                    (toPattern $ mkElemVar Mock.z)
+                            ]
+                        ]
+            )
+    ]
+
+    where
+        toPattern :: TermLike VariableName -> Pattern.Pattern VariableName Attribute.Null
+        toPattern trmLike = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
+        
+        asPattern pattF = Pattern.asPattern $ Attribute.Null :< pattF
+
+        asPatternMapElement k v = 
+            Pattern.asPattern $ Attribute.Null :< 
+                (PatternF.ApplicationF
+                        $ Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v])
+
+
 test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
     trmLike <- forAll (runKoreGen Mock.generatorSetup ConsistentKore.termLikeGen)
     let patt = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
-    case PatternVerifier.runPatternVerifier context $
+    case PatternVerifier.runPatternVerifier Mock.verifiedModuleContext $
         PatternVerifier.verifyStandalonePattern Nothing patt of
         Left Kore.Error.Error{errorError} ->
             fail $
                 unparseToString patt <> "\n\n"
                     <> show errorError
         Right trmLike2 -> patt === fmap (const Attribute.Null) (from trmLike2 :: Pattern.Pattern VariableName (TermAttributes VariableName))
-  where
-    context =
-        PatternVerifier.verifiedModuleContext
-            IndexedModule.IndexedModuleSyntax
-                { indexedModuleName = ModuleName "dummy"
-                , indexedModuleAliasSentences = mempty
-                , indexedModuleSymbolSentences =
-                    Map.fromList
-                        [ ( symbolConstructor
-                          ,
-                              ( symbolAttributes
-                              , SentenceSymbol
-                                    { sentenceSymbolSymbol =
-                                        Kore.Syntax.Sentence.Symbol
-                                            { symbolConstructor
-                                            , symbolParams = []
-                                            }
-                                    , sentenceSymbolSorts = applicationSortsOperands
-                                    , sentenceSymbolResultSort = applicationSortsResult
-                                    , sentenceSymbolAttributes = Default.def
-                                    }
-                              )
-                          )
-                        | Symbol
-                            { symbolConstructor
-                            , symbolAttributes
-                            , symbolSorts =
-                                ApplicationSorts
-                                    { applicationSortsOperands
-                                    , applicationSortsResult
-                                    }
-                            } <-
-                            allSymbols
-                        ]
-                , indexedModuleSortDescriptions =
-                    Map.fromList
-                        [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
-                        | (SortActualSort (SortActual{sortActualName}), attr) <- Mock.sortAttributesMapping
-                        ]
-                , indexedModuleImportsSyntax = mempty
-                , indexedModuleHookedIdentifiers = mempty
-                }
-            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-
-    ConsistentKore.Setup{allSymbols} = Mock.generatorSetup

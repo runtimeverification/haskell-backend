@@ -47,12 +47,14 @@ import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
 import Kore.Attribute.Sort.Element qualified as Attribute
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
 import Kore.Attribute.Sort.Unit qualified as Attribute
 import Kore.Attribute.Subsort
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic (
     synthesize,
  )
+import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Bool qualified as Builtin.Bool
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Builtin.Int
@@ -61,6 +63,7 @@ import Kore.Builtin.List qualified as List
 import Kore.Builtin.Map qualified as Map
 import Kore.Builtin.Set qualified as Set
 import Kore.Builtin.String qualified as Builtin.String
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -112,7 +115,11 @@ import Kore.Simplify.Simplify (
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Sort
 import Kore.Syntax.Application
+import Kore.Syntax.Module (ModuleName (..))
+import Kore.Syntax.Sentence (SentenceSort (..), SentenceSymbol (..))
+import Kore.Syntax.Sentence qualified
 import Kore.Syntax.Variable
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Prelude.Kore
 import SMT.AST qualified as SMT
 import SMT.SimpleSMT qualified as SMT
@@ -2404,3 +2411,50 @@ builtinSimplifiers =
                 (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
             )
         ]
+
+
+verifiedModuleContext :: PatternVerifier.Context
+verifiedModuleContext =
+        PatternVerifier.verifiedModuleContext
+            IndexedModule.IndexedModuleSyntax
+                { indexedModuleName = ModuleName "MOCK"
+                , indexedModuleAliasSentences = mempty
+                , indexedModuleSymbolSentences =
+                    Map.fromList
+                        [ ( symbolConstructor
+                          ,
+                              ( symbolAttributes
+                              , SentenceSymbol
+                                    { sentenceSymbolSymbol =
+                                        Kore.Syntax.Sentence.Symbol
+                                            { symbolConstructor
+                                            , symbolParams = []
+                                            }
+                                    , sentenceSymbolSorts = applicationSortsOperands
+                                    , sentenceSymbolResultSort = applicationSortsResult
+                                    , sentenceSymbolAttributes = Default.def
+                                    }
+                              )
+                          )
+                        | Symbol
+                            { symbolConstructor
+                            , symbolAttributes
+                            , symbolSorts =
+                                ApplicationSorts
+                                    { applicationSortsOperands
+                                    , applicationSortsResult
+                                    }
+                            } <-
+                            allSymbols
+                        ]
+                , indexedModuleSortDescriptions =
+                    Map.fromList
+                        [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                        | (SortActualSort (SortActual{sortActualName}), attr) <- sortAttributesMapping
+                        ]
+                , indexedModuleImportsSyntax = mempty
+                , indexedModuleHookedIdentifiers = mempty
+                }
+            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+    where
+        ConsistentKore.Setup{allSymbols} = generatorSetup
