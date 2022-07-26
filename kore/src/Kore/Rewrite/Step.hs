@@ -171,11 +171,10 @@ unifyRule sideCondition initial rule = do
         if isJust topTerms
             then (pretty "should try top terms" topTerms)
             else "WARNING unable to select top terms"
-    whenJust topTerms $ \terms -> do
+    whenJust topTerms $ \(iTop, rTop) -> do
         traceM "trying top terms"
-        void $
-            evalEnvUnifierT Not.notSimplifier $
-                uncurry (unificationProcedure sideCondition') terms
+        _ <- Logic.once . evalEnvUnifierT Not.notSimplifier $
+                     unificationProcedure sideCondition' iTop rTop
         traceM "top terms were unified"
     --------------------
     unification <-
