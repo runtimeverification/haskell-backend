@@ -715,7 +715,9 @@ test_uninternalize =
         Pattern.asPattern $
             Attribute.Null
                 :< ( PatternF.ApplicationF
-                        Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v]
+                        Application
+                        (Symbol.toSymbolOrAlias Mock.elementMapSymbol)
+                        [k, v]
                    )
 
 test_toSyntaxPattern :: TestTree

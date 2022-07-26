@@ -1347,16 +1347,15 @@ uninternalize = Pattern.Pattern . Recursive.cata go
                         wrap $
                             PatternF.StringLiteralF $ Const $ StringLiteral strVal
 
-        
         -- The uninternalized lists and ac types are all of the following form:
         -- If the structure has no elements, we simply get the application of the unit symbol with no arguments
-        -- If the structure has exactly one child, we just get the child. 
+        -- If the structure has exactly one child, we just get the child.
         -- This child will be an application of internalElement symbol to its arguments
         -- For multiple children we will get a right associative tree of Applications, namely
         --   ApplicationF (Application concatSymbol [
-        --       x1, 
+        --       x1,
         --       ApplicationF (Application concatSymbol [
-        --           x2, 
+        --           x2,
         --           ...ApplicationF (Application concatSymbol [xn-1, x_n]...
         --         ])
         --    ])
