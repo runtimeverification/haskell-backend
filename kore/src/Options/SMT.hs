@@ -52,6 +52,7 @@ import System.FilePath (
 -- | Command line options for the SMT solver.
 data KoreSolverOptions = KoreSolverOptions
     { timeOut :: !TimeOut
+    , retryLimit :: !RetryLimit
     , rLimit :: !RLimit
     , resetInterval :: !ResetInterval
     , prelude :: !Prelude
@@ -62,6 +63,7 @@ parseKoreSolverOptions :: Parser KoreSolverOptions
 parseKoreSolverOptions =
     KoreSolverOptions
         <$> parseTimeOut
+        <*> parseRetryLimit
         <*> parseRLimit
         <*> parseResetInterval
         <*> parsePrelude
@@ -74,6 +76,15 @@ parseKoreSolverOptions =
                 <> long "smt-timeout"
                 <> help "Timeout for calls to the SMT solver, in milliseconds"
                 <> value defaultTimeOut
+            )
+    
+    parseRetryLimit =
+        option
+            readRetryLimit
+            ( metavar "SMT_RETRY_LIMIT"
+                <> long "smt-retry-limit"
+                <> help "Limit how many times an SMT query can be retried (with scaling timeouts)"
+                <> value defaultRetryLimit
             )
 
     parseRLimit =
@@ -106,12 +117,14 @@ parseKoreSolverOptions =
 
     SMT.Config
         { timeOut = defaultTimeOut
+        , retryLimit = defaultRetryLimit
         , rLimit = defaultRLimit
         , resetInterval = defaultResetInterval
         } =
             SMT.defaultConfig
 
     readTimeOut = readPositiveIntegral (SMT.TimeOut . Limit) "smt-timeout"
+    readRetryLimit = readPositiveIntegral (SMT.RetryLimit . Limit) "smt-retry-limit"
     readRLimit = readPositiveIntegral (SMT.RLimit . Limit) "smt-rlimit"
     readResetInterval =
         readPositiveIntegral SMT.ResetInterval "smt-reset-interval"
@@ -120,6 +133,7 @@ unparseKoreSolverOptions :: KoreSolverOptions -> [String]
 unparseKoreSolverOptions
     KoreSolverOptions
         { timeOut = TimeOut unwrappedTimeOut
+        , retryLimit = RetryLimit unwrappedRetryLimit
         , rLimit = RLimit unwrappedRLimit
         , resetInterval
         , prelude = Prelude unwrappedPrelude
@@ -128,6 +142,8 @@ unparseKoreSolverOptions
         catMaybes
             [ (\limit -> unwords ["--smt-timeout", show limit])
                 <$> maybeLimit Nothing Just unwrappedTimeOut
+            , (\limit -> unwords ["--smt-retry-limit", show limit])
+                <$> maybeLimit Nothing Just unwrappedRetryLimit
             , (\limit -> unwords ["--smt-rlimit", show limit])
                 <$> maybeLimit Nothing Just unwrappedRLimit
             , pure $

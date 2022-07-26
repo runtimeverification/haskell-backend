@@ -22,6 +22,7 @@ import Control.Lens qualified as Lens
 import Control.Monad.Counter qualified as Counter
 import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product.Fields
+import Data.Limit
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -171,6 +172,7 @@ decidePredicate sideCondition predicates =
 
     whenUnknown f Unknown = f
     whenUnknown _ result = return result
+
     query :: MaybeT simplifier Result
     query =
         SMT.withSolver . evalTranslator $ do
@@ -182,9 +184,33 @@ decidePredicate sideCondition predicates =
             traverse_ SMT.assert predicates'
             SMT.check
 
+    retry :: MaybeT simplifier Result
     retry = do
+        SMT.RetryLimit limit <- SMT.askRetryLimit
+        -- Use the same timeout for the first retry, since sometimes z3
+        -- decides it doesn't want to work today and all we need is to
+        -- retry it once.
+        let timeoutScales = takeWithin limit [1..]
+        let retryActions = map retryOnceWithScaledTimeout timeoutScales 
+        let combineRetries r1 r2 = r1 >>= whenUnknown r2
+        -- This works even if 'retryActions' is infinite, because the second
+        -- argument to 'whenUnknown' will be the 'combineRetries' of all of
+        -- the tail of the list. As soon as a result is not 'Unknown', the
+        -- rest of the fold is discarded.
+        foldr combineRetries (pure Unknown) retryActions
+
+    retryOnceWithScaledTimeout :: Integer -> MaybeT simplifier Result
+    retryOnceWithScaledTimeout scale = 
+        -- scale the timeout _inside_ 'retryOnce' so that we override the
+        -- call to 'SMT.reinit'.
+        retryOnce $ SMT.localTimeOut (scaleTimeOut scale) query
+
+    scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+    scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n*r)) 
+
+    retryOnce actionToRetry = do
         SMT.reinit
-        result <- query
+        result <- actionToRetry
         debugRetrySolverQuery predicates
         return result
 

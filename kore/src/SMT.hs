@@ -26,9 +26,12 @@ module SMT (
     ackCommand,
     loadFile,
     reinit,
+    askRetryLimit,
+    localTimeOut,
     Config (..),
     defaultConfig,
     TimeOut (..),
+    RetryLimit (..),
     RLimit (..),
     ResetInterval (..),
     Prelude (..),
@@ -216,6 +219,11 @@ reinit :: MonadSMT m => m ()
 reinit = liftSMT reinitSMT
 {-# INLINE reinit #-}
 
+-- | Get the retry limit from the SMT
+askRetryLimit :: MonadSMT m => m RetryLimit
+askRetryLimit = liftSMT askRetryLimitSMT
+{-# INLINE askRetryLimit #-}
+
 -- * Implementation
 
 data SolverSetup = SolverSetup
@@ -376,6 +384,10 @@ instance MonadSMT m => MonadSMT (RWST r () s m)
 newtype TimeOut = TimeOut {getTimeOut :: Limit Integer}
     deriving stock (Eq, Ord, Read, Show)
 
+-- | Retry-limit for SMT queries.
+newtype RetryLimit = RetryLimit {getRetryLimit :: Limit Integer}
+    deriving stock (Eq, Ord, Read, Show)
+
 -- | Resource-limit for SMT queries.
 newtype RLimit = RLimit {getRLimit :: Limit Integer}
     deriving stock (Eq, Ord, Read, Show)
@@ -399,6 +411,8 @@ data Config = Config
       logFile :: !(Maybe FilePath)
     , -- | query time limit
       timeOut :: !TimeOut
+    , -- | query retry limit
+      retryLimit :: !RetryLimit
     , -- | query resource limit
       rLimit :: !RLimit
     , -- | reset solver after this number of queries
@@ -417,6 +431,7 @@ defaultConfig =
         , prelude = Prelude Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
+        , retryLimit = RetryLimit (Limit 1)
         , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
         }
@@ -604,6 +619,24 @@ reinitSMT =
     SMT $ \case
         Nothing -> return ()
         Just solverSetup -> reinitSMT' solverSetup
+
+-- | Run a solver action with an adjusted timeout,
+-- and reset the timeout when it's done.
+localTimeOut :: MonadSMT m => (TimeOut -> TimeOut) -> m a -> m a
+localTimeOut adjust isolated = do
+    originalTimeOut <- liftSMT extractTimeOut
+    setTimeOut $ adjust originalTimeOut
+    isolated <* setTimeOut originalTimeOut
+    where
+        extractTimeOut = SMT $ pure . \case
+            Nothing -> TimeOut Unlimited
+            Just setup -> timeOut $ config setup
+
+-- | Get the retry limit for SMT queries.
+askRetryLimitSMT :: SMT RetryLimit
+askRetryLimitSMT = SMT $ pure . \case
+    Nothing -> RetryLimit (Limit 0)
+    Just setup -> retryLimit $ config setup
 
 -- --------------------------------
 -- Internal
