@@ -14,6 +14,6 @@ module TEST
 
   rule begin X => end fun(X)
 
-  rule [ceil-fun]: #Ceil(fun(X:Int)) => #True requires isFun(X) [anywhere, simplification]
+  rule [ceil-fun]: #Ceil(fun(X:Int)) => #True requires isFun(X) [simplification]
 
 endmodule

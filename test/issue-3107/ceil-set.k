@@ -14,6 +14,6 @@ module CEIL-SET
     rule <k> eval ( S ) => evalResult ( S ) </k>
 
     rule [setCeil]: #Ceil(@S1:Set @S2:Set) => {intersectSet(@S1, @S2) #Equals .Set} #And #Ceil(@S1) #And #Ceil(@S2)
-      [anywhere, simplification]
+      [simplification]
 
 endmodule
