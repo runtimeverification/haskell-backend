@@ -129,8 +129,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
-                            (Mock.f Mock.a)
                             (Mock.g Mock.b)
+                            (Mock.f Mock.a)
                     , substitution =
                         Substitution.unsafeWrap
                             [ (inject Mock.xConfig, Mock.a)
@@ -265,8 +265,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
-                            (Mock.f Mock.a)
                             (Mock.g Mock.a)
+                            (Mock.f Mock.a)
                     , substitution =
                         Substitution.unsafeWrap
                             [ (inject Mock.xConfig, Mock.a)
