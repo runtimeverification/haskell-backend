@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Reachability.Prove (
     test_proveClaims,
     test_transitionRule,
@@ -9,6 +11,7 @@ import Data.Default (
 import Data.Limit (
     Limit (..),
  )
+import Data.List (sort)
 import Data.Sequence qualified as Seq
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Internal.Condition qualified as Condition
@@ -216,7 +219,8 @@ test_proveClaims =
             , mkTest "AllPath" simpleAllPathClaim
             ]
     , testGroup "returns first stuck claim after disjunction" $
-        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+        let [a, b, c, d] :: [TermLike VariableName] = sort [Mock.a, Mock.b, Mock.c, Mock.d]
+            axioms = [simpleAxiom a (mkOr b c)]
             mkTest name mkSimpleClaim =
                 testCase name $ do
                     actual <-
@@ -224,16 +228,17 @@ test_proveClaims =
                             Unlimited
                             (Limit 1)
                             axioms
-                            [mkSimpleClaim Mock.a Mock.d]
+                            [mkSimpleClaim a d]
                             []
-                    let stuck = mkSimpleClaim Mock.b Mock.d
+                    let stuck = mkSimpleClaim b d
                         expect = MultiAnd.singleton (StuckClaim stuck)
                     assertEqual "" expect actual
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
     , testGroup "returns first two stuck claims after disjunction" $
-        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c `mkOr` Mock.d)]
+        let [a, b, c, d, e] :: [TermLike VariableName] = sort [Mock.a, Mock.b, Mock.c, Mock.d, Mock.e]
+            axioms = [simpleAxiom a (mkOr b c `mkOr` d)]
             mkTest name mkSimpleClaim =
                 testCase name $ do
                     actual <-
@@ -242,11 +247,11 @@ test_proveClaims =
                             (Limit 1)
                             2
                             axioms
-                            [mkSimpleClaim Mock.a Mock.e]
+                            [mkSimpleClaim a e]
                             []
                     let stuck =
-                            [ mkSimpleClaim Mock.b Mock.e
-                            , mkSimpleClaim Mock.c Mock.e
+                            [ mkSimpleClaim b e
+                            , mkSimpleClaim c e
                             ]
                         expect = MultiAnd.make (fmap StuckClaim stuck)
                     assertEqual "" expect actual
