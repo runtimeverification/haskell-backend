@@ -1,8 +1,11 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Unification.UnifierT (
     test_mergeAndNormalizeSubstitutions,
     test_simplifyCondition,
 ) where
 
+import Data.List (sort)
 import Data.Map.Strict qualified as Map
 import Kore.Equation qualified as Equation
 import Kore.Internal.Condition (
@@ -259,37 +262,39 @@ test_mergeAndNormalizeSubstitutions =
       -- [x=y] + [y=constructor(x)]  === error
       $
         do
-            let expect =
+            let [x, y] = sort [Mock.xConfig, Mock.yConfig]
+                expect =
                     [ Predicate.makeEqualsPredicate
-                        (mkElemVar Mock.xConfig)
+                        (mkElemVar x)
                         ( mkAnd
-                            (Mock.constr10 (mkElemVar Mock.xConfig))
-                            (mkElemVar Mock.yConfig)
+                            (Mock.constr10 (mkElemVar x))
+                            (mkElemVar y)
                         )
                         & Condition.fromPredicate
                     ]
             actual <-
                 merge
                     [
-                        ( inject Mock.xConfig
-                        , mkElemVar Mock.yConfig
+                        ( inject x
+                        , mkElemVar y
                         )
                     ]
                     [
-                        ( inject Mock.xConfig
-                        , Mock.constr10 (mkElemVar Mock.xConfig)
+                        ( inject x
+                        , Mock.constr10 (mkElemVar x)
                         )
                     ]
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     , testCase "Non-ctor circular dependency" $ do
-        let denormCondition =
+        let [x, y] = sort [Mock.xConfig, Mock.yConfig]
+            denormCondition =
                 Predicate.makeEqualsPredicate
-                    (mkElemVar Mock.yConfig)
-                    (Mock.f (mkElemVar Mock.yConfig))
+                    (mkElemVar y)
+                    (Mock.f (mkElemVar y))
                     & Condition.fromPredicate
             substCondition =
-                Substitution.assign (inject Mock.xConfig) (mkElemVar Mock.yConfig)
+                Substitution.assign (inject x) (mkElemVar y)
                     & Condition.fromSingleSubstitution
         let expect =
                 denormCondition <> substCondition
@@ -297,13 +302,13 @@ test_mergeAndNormalizeSubstitutions =
         actual <-
             merge
                 [
-                    ( inject Mock.xConfig
-                    , mkElemVar Mock.yConfig
+                    ( inject x
+                    , mkElemVar y
                     )
                 ]
                 [
-                    ( inject Mock.yConfig
-                    , Mock.f (mkElemVar Mock.xConfig)
+                    ( inject y
+                    , Mock.f (mkElemVar x)
                     )
                 ]
         assertEqual "" expect actual
