@@ -164,22 +164,22 @@ unifyRule sideCondition initial rule = do
     let ruleLeft = matchingPattern rule
     --------------------
     -- attempt to fail fast when patterns "obviously" do not match
-    let initTop = mainCell initialTerm
-        ruleTop = mainCell ruleLeft
-        topTerms = (,) <$> initTop <*> ruleTop
-    traceM $
-        if isJust topTerms
-            then (pretty "should try top terms" topTerms)
-            else "WARNING unable to select top terms"
+    let topTerms =
+            (,)
+                <$> mainCell initialTerm
+                <*> mainCell ruleLeft
+    -- traceM $
+    --     if isJust topTerms
+    --         then (pretty "should try top terms" topTerms)
+    --         else "WARNING unable to select top terms"
     whenJust topTerms $ \(iTop, rTop) -> do
-
-        _ <- Logic.once $ trace "trying top terms"
-                 evalEnvUnifierT Not.notSimplifier $
-                     unificationProcedure sideCondition' iTop rTop
-        pure $ trace "top terms unified" ()
-    --------------------
-
-    unification <- trace "continuing with actual unification" $
+        _ <-
+            Logic.once $ -- trace "trying top terms"
+                evalEnvUnifierT Not.notSimplifier $
+                    unificationProcedure sideCondition' iTop rTop
+        pure () --  $ trace "top terms unified" ()
+        --------------------
+    unification <- -- trace "continuing with actual unification" $
         unificationProcedure sideCondition' initialTerm ruleLeft
             & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
@@ -196,48 +196,48 @@ unifyRule sideCondition initial rule = do
     --------------------
     -- fail-fast helpers
     mainCell :: TermLike RewritingVariableName -> Maybe (TermLike RewritingVariableName)
-    mainCell t = foldM (flip (uncurry goCell)) t mainCellPath
+    mainCell t = foldM goCell t =<< mainCellPath
 
-    mainCellPath :: [(Text, Int)] -- Cell coordinates: label name and argument number (starting from 1)
-    -- this could be given as an option to kore-exec
-    -- (unless provided by the front-end)
+    -- Cell coordinates: label name and argument number (1-based).
+    -- Should be an option to kore-exec (or provided by front-end)
+    mainCellPath :: Maybe [(Text, Int)]
     mainCellPath =
-        [ (config "generatedTop", 1)
-        , (config "kevm", 1)
-        , (config "k", 1)
-        , ("kseq", 1)
-        ]
+        Just
+            [ (config "generatedTop", 1)
+            , (config "kevm", 1)
+            , (config "k", 1)
+            , ("kseq", 1)
+            ]
 
     config :: Text -> Text
     config name = "Lbl'-LT-'" <> name <> "'-GT-'"
 
-    goCell :: Text -> Int -> TermLike RewritingVariableName -> Maybe (TermLike RewritingVariableName)
-    goCell targetName argNum term =
+    goCell ::
+        TermLike RewritingVariableName ->
+        (Text, Int) ->
+        Maybe (TermLike RewritingVariableName)
+    goCell term (targetName, argNum) =
         case term of
             TermLike.App_ symbol args
                 | targetName == getName symbol && length args >= argNum ->
                     Just $ args !! (argNum - 1)
                 | targetName == getName symbol ->
-                    trace
-                        ("Insufficient argument count " <> show (length args) <> " < " <> show argNum)
-                        Nothing
+                    Nothing
                 | otherwise ->
-                    trace
-                        ("Wrong application symbol " <> show (getName symbol))
-                        Nothing
+                    Nothing
             _otherwise ->
-                trace ("Wrong node, not an Application") Nothing
+                Nothing
       where
         getName :: TermLike.Symbol -> Text
         getName = TermLike.getId . TermLike.symbolConstructor
 
-    pretty title =
-        Pretty.renderString
-            . Pretty.layoutPretty Pretty.defaultLayoutOptions
-            . (title <+>)
-            . Pretty.hang 2
-            . Pretty.pretty
-    (<+>) = (Pretty.<+>)
+-- pretty title =
+--     Pretty.renderString
+--         . Pretty.layoutPretty Pretty.defaultLayoutOptions
+--         . (title <+>)
+--         . Pretty.hang 2
+--         . Pretty.pretty
+-- (<+>) = (Pretty.<+>)
 
 -- | The 'Set' of variables that would be introduced by narrowing.
 
