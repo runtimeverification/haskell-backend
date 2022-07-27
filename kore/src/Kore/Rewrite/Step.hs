@@ -199,6 +199,8 @@ unifyRule sideCondition initial rule = do
     mainCell t = foldM (flip (uncurry goCell)) t mainCellPath
 
     mainCellPath :: [(Text, Int)] -- Cell coordinates: label name and argument number (starting from 1)
+    -- this could be given as an option to kore-exec
+    -- (unless provided by the front-end)
     mainCellPath =
         [ (config "generatedTop", 1)
         , (config "kevm", 1)
