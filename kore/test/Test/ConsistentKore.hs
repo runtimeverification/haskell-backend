@@ -3,6 +3,7 @@ module Test.ConsistentKore (
     Setup (..),
     runKoreGen,
     patternGen,
+    termLikeGen,
 ) where
 
 import Control.Arrow qualified as Arrow
