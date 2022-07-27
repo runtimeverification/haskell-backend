@@ -92,7 +92,7 @@ import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify hiding (simplifyPattern)
+import Kore.Simplify.Simplify hiding (runSimplifier, simplifyPattern)
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Syntax.Definition (
@@ -245,6 +245,8 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierCondition = testConditionSimplifier
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier

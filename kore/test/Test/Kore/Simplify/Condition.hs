@@ -43,7 +43,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Condition qualified as Condition
-import Kore.Simplify.Simplify
+import Kore.Simplify.Simplify hiding (runSimplifier)
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.TopBottom
 import Prelude.Kore

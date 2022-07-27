@@ -79,7 +79,8 @@ import Kore.Simplify.InjSimplifier (
     InjSimplifier,
     mkInjSimplifier,
  )
-import Kore.Simplify.Simplify
+import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify hiding (runSimplifier)
 import Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
@@ -2043,6 +2044,8 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierCondition = testConditionSimplifier
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
         , simplifierAxioms =
             mconcat
                 [ testEvaluators
