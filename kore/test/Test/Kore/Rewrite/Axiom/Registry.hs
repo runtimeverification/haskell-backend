@@ -47,7 +47,7 @@ import Kore.Rewrite.Rule (
     extractRewriteAxioms,
  )
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify hiding (runSimplifier)
+import Kore.Simplify.Simplify
 import Kore.Syntax.Definition hiding (
     Symbol,
  )
@@ -506,7 +506,7 @@ test_functionRegistry =
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = [mkApplySymbol sHead []]
         simplified <-
-            runSimplifier testEnv $
+            testRunSimplifier testEnv $
                 Pattern.simplify $
                     makePattern $ mkApplySymbol gHead []
         let actual = Pattern.term <$> toList simplified
@@ -514,7 +514,7 @@ test_functionRegistry =
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = [mkApplySymbol tHead []]
         simplified <-
-            runSimplifier testEnv $
+            testRunSimplifier testEnv $
                 Pattern.simplify $
                     makePattern $ mkApplySymbol pHead []
         let actual = Pattern.term <$> toList simplified

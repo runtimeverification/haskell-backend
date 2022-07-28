@@ -65,7 +65,7 @@ import Kore.Simplify.Equals (
     termEquals,
  )
 import Kore.Simplify.Not qualified as Not
-import Kore.Simplify.Simplify hiding (runSimplifier)
+import Kore.Simplify.Simplify
 import Kore.Syntax.Sentence (
     SentenceAlias,
  )
@@ -1556,7 +1556,7 @@ unify ::
     TermLike RewritingVariableName ->
     IO [Pattern RewritingVariableName]
 unify first second =
-    runSimplifier mockEnv unification
+    testRunSimplifier mockEnv unification
   where
     mockEnv = Mock.env
     unification =
@@ -1571,7 +1571,7 @@ simplify ::
     TermLike RewritingVariableName ->
     IO [Pattern RewritingVariableName]
 simplify first second =
-    runSimplifierBranch mockEnv $
+    testRunSimplifierBranch mockEnv $
         termAnd Not.notSimplifier (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env
@@ -1583,7 +1583,7 @@ simplifyEquals ::
     IO (Maybe [Condition RewritingVariableName])
 simplifyEquals simplifierAxioms first second =
     (fmap . fmap) toList $
-        runSimplifier mockEnv $
+        testRunSimplifier mockEnv $
             runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env{simplifierAxioms}

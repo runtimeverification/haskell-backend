@@ -317,7 +317,7 @@ makeEvaluate termLike = do
     return actualPredicates
   where
     makeEvaluate' =
-        runSimplifier mockEnv
+        testRunSimplifier mockEnv
             . Ceil.makeEvaluate SideCondition.top
             . Pattern.fromTermLike
     mockEnv = Mock.env{simplifierAxioms = mempty}

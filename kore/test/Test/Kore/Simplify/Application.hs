@@ -34,7 +34,7 @@ import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
  )
 import Kore.Simplify.Application
-import Kore.Simplify.Simplify hiding (runSimplifier)
+import Kore.Simplify.Simplify
 import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
  )
@@ -337,6 +337,6 @@ evaluate ::
     BuiltinAndAxiomSimplifierMap ->
     Application Symbol (OrPattern RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
-evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
+evaluate simplifierAxioms = testRunSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env{simplifierAxioms}

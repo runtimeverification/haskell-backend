@@ -50,7 +50,7 @@ import Kore.Rewrite.Rule.Simplify
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (..),
  )
 import Kore.Simplify.Simplify (
@@ -70,8 +70,8 @@ import Test.Kore.Rewrite.Rule.Common (
  )
 import Test.Kore.Rewrite.Rule.Common qualified as Common
 import Test.Kore.Simplify (
-    runSimplifier,
     runSimplifierSMT,
+    testRunSimplifier,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -258,7 +258,7 @@ runSimplifyRule ::
     IO [rule]
 runSimplifyRule rule =
     fmap toList $
-        runSimplifier Mock.env $
+        testRunSimplifier Mock.env $
             simplifyRuleLhs rule
 
 runSimplifyRuleSMT ::

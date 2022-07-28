@@ -37,7 +37,7 @@ import Kore.Simplify.Ceil qualified as Ceil (
     makeEvaluate,
     simplify,
  )
-import Kore.Simplify.Simplify hiding (runSimplifier)
+import Kore.Simplify.Simplify
 import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
  )
@@ -468,7 +468,7 @@ evaluate ::
     Ceil Sort (OrPattern RewritingVariableName) ->
     IO (OrCondition RewritingVariableName)
 evaluate ceil =
-    runSimplifier mockEnv $
+    testRunSimplifier mockEnv $
         Ceil.simplify SideCondition.top ceil
   where
     mockEnv = Mock.env
@@ -483,7 +483,7 @@ makeEvaluateWithAxioms ::
     Pattern RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 makeEvaluateWithAxioms axiomIdToSimplifier child =
-    runSimplifier mockEnv $
+    testRunSimplifier mockEnv $
         Ceil.makeEvaluate SideCondition.top child
   where
     mockEnv = Mock.env{simplifierAxioms = axiomIdToSimplifier}

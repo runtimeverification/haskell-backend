@@ -99,12 +99,12 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.Condition qualified as Simplifier.Condition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (Env),
     MonadSimplify,
  )
-import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
+import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern

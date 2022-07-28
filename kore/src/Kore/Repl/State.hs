@@ -145,7 +145,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Simplifier,
  )
 import Kore.Syntax.Definition (

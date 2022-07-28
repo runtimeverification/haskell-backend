@@ -37,7 +37,7 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     MonadSimplify (..),
  )
 import Kore.TopBottom (

@@ -6,7 +6,7 @@ module Kore.Simplify.Simplify (
     Env (..),
     Simplifier,
     runSimplifier,
-
+    runSimplifierBranch,
     InternalVariable,
     MonadSimplify (..),
     askMetadataTools,
@@ -69,8 +69,8 @@ import Control.Monad.Catch
 import Control.Monad.Counter
 import Control.Monad.Morph (MFunctor)
 import Control.Monad.Morph qualified as Monad.Morph
-import Control.Monad.Reader
 import Control.Monad.RWS.Strict (RWST)
+import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
@@ -138,12 +138,14 @@ import SMT (
 data Env = Env
     { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
     , simplifierCondition :: !(ConditionSimplifier Simplifier)
-    , simplifierPattern :: SideCondition RewritingVariableName ->
-                           Pattern RewritingVariableName ->
-                           Simplifier (OrPattern RewritingVariableName)
-    , simplifierTerm :: SideCondition RewritingVariableName ->
-                        TermLike RewritingVariableName ->
-                        Simplifier (OrPattern RewritingVariableName)
+    , simplifierPattern ::
+        SideCondition RewritingVariableName ->
+        Pattern RewritingVariableName ->
+        Simplifier (OrPattern RewritingVariableName)
+    , simplifierTerm ::
+        SideCondition RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        Simplifier (OrPattern RewritingVariableName)
     , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
     , memo :: !(Memo.Self Simplifier)
     , injSimplifier :: !InjSimplifier
@@ -175,6 +177,14 @@ runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
     runReaderT (evalStateT simplifier initCache) env
 
+-- | Run a simplification, returning the results along all branches.
+runSimplifierBranch ::
+    Env ->
+    -- | simplifier computation
+    LogicT Simplifier a ->
+    SMT [a]
+runSimplifierBranch env = runSimplifier env . observeAllT
+
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
@@ -182,7 +192,8 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     liftSimplifier :: Simplifier a -> m a
     default liftSimplifier ::
         (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        Simplifier a -> m a
+        Simplifier a ->
+        m a
     liftSimplifier = lift . liftSimplifier
     {-# INLINE liftSimplifier #-}
 

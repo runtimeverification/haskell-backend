@@ -62,7 +62,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import Kore.Simplify.Data qualified as Kore
+import Kore.Simplify.API qualified as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
  )

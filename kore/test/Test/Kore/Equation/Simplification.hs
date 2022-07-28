@@ -18,7 +18,7 @@ import Test.Kore.Equation.Common (
  )
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
-    runSimplifier,
+    testRunSimplifier,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -101,4 +101,4 @@ simplify ::
     IO (MultiAnd (Equation RewritingVariableName))
 simplify equation =
     simplifyEquation equation
-        & runSimplifier Mock.env
+        & testRunSimplifier Mock.env

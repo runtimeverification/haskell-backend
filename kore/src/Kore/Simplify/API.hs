@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Module      : Kore.Simplify.Data
+Module      : Kore.Simplify.API
 Description : Data structures used for term simplification.
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -9,16 +9,16 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Simplify.Data (
-    Simplifier,
-    TermSimplifier,
-    Env (..),
-    runSimplifier,
-    runSimplifierBranch,
+module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
 
     -- * Re-exports
+    Env (..),
+    Simplifier,
+    runSimplifier,
+    runSimplifierBranch,
+    TermSimplifier,
     MonadSimplify (..),
     askMetadataTools,
     simplifyPattern,
@@ -85,7 +85,6 @@ import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Syntax.Variable (
     VariableName,
  )
-import Logic
 import Prelude.Kore
 import Pretty qualified
 import Prof
@@ -107,14 +106,6 @@ traceProfSimplify (Pattern.toTermLike -> termLike) =
             . Pretty.layoutOneLine
             . Pretty.pretty
             <$> matchAxiomIdentifier termLike
-
--- | Run a simplification, returning the results along all branches.
-runSimplifierBranch ::
-    Env ->
-    -- | simplifier computation
-    LogicT Simplifier a ->
-    SMT [a]
-runSimplifierBranch env = runSimplifier env . observeAllT
 
 mkSimplifierEnv ::
     SimplifierXSwitch ->

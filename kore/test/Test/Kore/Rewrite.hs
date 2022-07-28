@@ -368,7 +368,7 @@ runStep ::
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]
-runStep = runStepWorker runSimplifier
+runStep = runStepWorker testRunSimplifier
 
 runStepSMT ::
     -- | depth limit
