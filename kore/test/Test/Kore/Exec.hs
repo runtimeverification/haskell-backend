@@ -37,8 +37,8 @@ import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Int
 import Kore.Equation.Equation (
-    Equation (..),
     mkEquation,
+    mkEquation',
     toTermLike,
  )
 import Kore.Error qualified
@@ -452,15 +452,15 @@ test_checkFunctions =
                 }
             []
     mySentenceAxiom name pr =
-        Equation
-            { left = myF
-            , requires = pr
-            , argument = Nothing
-            , antiLeft = Nothing
-            , right = applyToNoArgs mySort name
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
+        ( mkEquation'
+            pr
+            Nothing
+            Nothing
+            myF
+            (applyToNoArgs mySort name)
+            makeTruePredicate
+            def
+        )
             & toTermLike mySort
             & mkAxiom []
     -- f() = name assuming pr

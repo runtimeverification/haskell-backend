@@ -139,16 +139,15 @@ matchEquation attributes termLike
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 argument' <- makePredicate argument & Bifunctor.first ArgumentError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Just argument'
-                        , antiLeft = Nothing
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
+                pure $
+                    mkEquation'
+                        requires'
+                        (Just argument')
+                        Nothing
+                        left
+                        right
+                        ensures'
+                        attributes
 
     -- function rule with priority
     match
@@ -175,16 +174,15 @@ matchEquation attributes termLike
                 argument' <- makePredicate argument & Bifunctor.first ArgumentError
                 antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Just argument'
-                        , antiLeft = Just antiLeft'
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
+                pure $
+                    mkEquation'
+                        requires'
+                        (Just argument')
+                        (Just antiLeft')
+                        left
+                        right
+                        ensures'
+                        attributes
     match
         ( TermLike.Implies_
                 _
@@ -199,38 +197,35 @@ matchEquation attributes termLike
             do
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Nothing
-                        , antiLeft = Nothing
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
+                pure $
+                    mkEquation'
+                        requires'
+                        Nothing
+                        Nothing
+                        left
+                        right
+                        ensures'
+                        attributes
     match (TermLike.Equals_ _ _ left right) =
-        pure
-            Equation
-                { requires = Predicate.makeTruePredicate
-                , argument = Nothing
-                , antiLeft = Nothing
-                , left
-                , right
-                , ensures = Predicate.makeTruePredicate
-                , attributes
-                }
+        pure $
+            mkEquation'
+                Predicate.makeTruePredicate
+                Nothing
+                Nothing
+                left
+                right
+                Predicate.makeTruePredicate
+                attributes
     match left@(TermLike.Ceil_ _ sort _) =
-        pure
-            Equation
-                { requires = Predicate.makeTruePredicate
-                , argument = Nothing
-                , antiLeft = Nothing
-                , left
-                , right = TermLike.mkTop sort
-                , ensures = Predicate.makeTruePredicate
-                , attributes
-                }
+        pure $
+            mkEquation'
+                Predicate.makeTruePredicate
+                Nothing
+                Nothing
+                left
+                (TermLike.mkTop sort)
+                Predicate.makeTruePredicate
+                attributes
     match termLike' = Left (NotEquation termLike')
 
     -- If the ensures and requires are the same, then the ensures is redundant.

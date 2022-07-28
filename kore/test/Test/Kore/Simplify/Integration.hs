@@ -20,6 +20,7 @@ import Kore.Builtin.Set qualified as Set
 import Kore.Equation (
     Equation (..),
     mkEquation,
+    mkEquation',
  )
 import Kore.Equation qualified as Equation
 import Kore.Internal.Condition qualified as Condition
@@ -1279,15 +1280,14 @@ axiom ::
     Predicate RewritingVariableName ->
     Equation RewritingVariableName
 axiom left right requires =
-    Equation
-        { left
-        , requires
-        , argument = Nothing
-        , antiLeft = Nothing
-        , right
-        , ensures = Predicate.makeTruePredicate
-        , attributes = Default.def
-        }
+    mkEquation'
+        requires
+        Nothing
+        Nothing
+        left
+        right
+        Predicate.makeTruePredicate
+        Default.def
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

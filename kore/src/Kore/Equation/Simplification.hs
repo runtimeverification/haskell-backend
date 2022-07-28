@@ -68,7 +68,7 @@ simplifyEquation ::
     MonadSimplify simplifier =>
     Equation RewritingVariableName ->
     simplifier (MultiAnd (Equation RewritingVariableName))
-simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
+simplifyEquation equation@(Equation _ _ _ _ _ _ _ _) =
     do
         simplifiedCond <-
             Simplifier.simplifyCondition
@@ -82,16 +82,15 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             antiLeft' = substitute subst <$> antiLeft
             right' = substitute subst right
             ensures' = substitute subst ensures
-        return
-            Equation
-                { left = TermLike.forgetSimplified left'
-                , requires = Predicate.forgetSimplified requires'
-                , argument = Nothing
-                , antiLeft = Predicate.forgetSimplified <$> antiLeft'
-                , right = TermLike.forgetSimplified right'
-                , ensures = Predicate.forgetSimplified ensures'
-                , attributes = attributes
-                }
+        return $
+            mkEquation'
+                (Predicate.forgetSimplified requires')
+                (Nothing)
+                (Predicate.forgetSimplified <$> antiLeft')
+                (TermLike.forgetSimplified left')
+                (TermLike.forgetSimplified right')
+                (Predicate.forgetSimplified ensures')
+                (attributes)
         & Logic.observeAllT
         & returnOriginalIfAborted
         & fmap MultiAnd.make

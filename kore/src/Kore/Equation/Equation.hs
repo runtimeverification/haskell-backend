@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Equation.Equation (
     Equation (..),
     mkEquation,
+    mkEquation',
     toTermLike,
     mapVariables,
     refreshVariables,
@@ -14,6 +15,8 @@ module Kore.Equation.Equation (
 ) where
 
 import Control.Lens qualified as Lens
+import Control.Monad.Reader (ReaderT (..))
+import Data.Coerce (coerce)
 import Data.Default qualified as Default
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Wrapped (
@@ -70,7 +73,7 @@ import Pretty (
     Pretty (..),
  )
 import Pretty qualified
-import SQL qualified
+import SQL
 
 {- | A type for representing equational rules, which in K can appear as
 _function definition_ rules or as _simplification_ rules.
@@ -126,13 +129,52 @@ data Equation variable = Equation
     , right :: !(TermLike variable)
     , ensures :: !(Predicate variable)
     , attributes :: !(Attribute.Axiom Symbol variable)
+    , equationHash :: !Int
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+{-# INLINE mkEquation' #-}
+mkEquation' ::
+    Hashable variable =>
+    (Predicate variable) ->
+    (Maybe (Predicate variable)) ->
+    (Maybe (Predicate variable)) ->
+    (TermLike variable) ->
+    (TermLike variable) ->
+    (Predicate variable) ->
+    (Attribute.Axiom Symbol variable) ->
+    Equation variable
+mkEquation' a b c d e f g =
+    Equation
+        a
+        b
+        c
+        d
+        e
+        f
+        g
+        (hash $ EquationNoHash a b c d e f g)
+
+data EquationNoHash variable = EquationNoHash
+    { requires' :: !(Predicate variable)
+    , argument' :: !(Maybe (Predicate variable))
+    , antiLeft' :: !(Maybe (Predicate variable))
+    , left' :: !(TermLike variable)
+    , right' :: !(TermLike variable)
+    , ensures' :: !(Predicate variable)
+    , attributes' :: !(Attribute.Axiom Symbol variable)
+    }
+    deriving stock (GHC.Generic)
     deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Hashable (Equation equation) where
+    hashWithSalt _ = equationHash
+    {-# INLINE hashWithSalt #-}
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation ::
@@ -144,18 +186,18 @@ mkEquation ::
 mkEquation left right =
     assert
         (TermLike.termLikeSort left == TermLike.termLikeSort right)
-        Equation
-            { left
-            , requires = Predicate.makeTruePredicate
-            , argument = Nothing
-            , antiLeft = Nothing
-            , right
-            , ensures = Predicate.makeTruePredicate
-            , attributes = Default.def
-            }
+        ( mkEquation'
+            Predicate.makeTruePredicate
+            Nothing
+            Nothing
+            left
+            right
+            Predicate.makeTruePredicate
+            Default.def
+        )
 
 instance InternalVariable variable => Pretty (Equation variable) where
-    pretty equation@(Equation _ _ _ _ _ _ _) =
+    pretty equation@(Equation _ _ _ _ _ _ _ _) =
         Pretty.vsep
             [ "requires:"
             , Pretty.indent 4 (pretty requires)
@@ -184,7 +226,23 @@ instance TopBottom (Equation variable) where
     isTop _ = False
     isBottom _ = False
 
-instance SQL.Table (Equation VariableName)
+instance SQL.Table (EquationNoHash VariableName)
+
+instance SQL.Table (Equation VariableName) where
+    createTable = const $ SQL.createTable $ Proxy @(Equation VariableName)
+    insertRow eq = coerce $ SQL.insertRow $ withoutHash eq
+    selectRow eq = coerce $ SQL.selectRow $ withoutHash eq
+
+withoutHash :: Equation v -> EquationNoHash v
+withoutHash eq =
+    EquationNoHash
+        (requires eq)
+        (argument eq)
+        (antiLeft eq)
+        (left eq)
+        (right eq)
+        (ensures eq)
+        (attributes eq)
 
 instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
@@ -196,15 +254,14 @@ instance InternalVariable variable => Substitute (Equation variable) where
     type VariableNameType (Equation variable) = variable
 
     substitute assignments equation =
-        Equation
-            { requires = substitute assignments (requires equation)
-            , argument = substitute assignments <$> argument equation
-            , antiLeft = substitute assignments <$> antiLeft equation
-            , left = substitute assignments (left equation)
-            , right = substitute assignments (right equation)
-            , ensures = substitute assignments (ensures equation)
-            , attributes = attributes equation
-            }
+        mkEquation'
+            (substitute assignments (requires equation))
+            (substitute assignments <$> argument equation)
+            (substitute assignments <$> antiLeft equation)
+            (substitute assignments (left equation))
+            (substitute assignments (right equation))
+            (substitute assignments (ensures equation))
+            (attributes equation)
 
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
@@ -277,7 +334,7 @@ instance
     InternalVariable variable =>
     HasFreeVariables (Equation variable) variable
     where
-    freeVariables rule@(Equation _ _ _ _ _ _ _) = case rule of
+    freeVariables rule@(Equation _ _ _ _ _ _ _ _) = case rule of
         Equation{left, argument, antiLeft, requires, right, ensures} ->
             freeVariables left
                 <> freeVariables requires
@@ -294,7 +351,7 @@ mapVariables ::
     AdjSomeVariableName (variable1 -> variable2) ->
     Equation variable1 ->
     Equation variable2
-mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
+mapVariables mapping equation@(Equation _ _ _ _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
         , argument = mapPredicateVariables <$> argument
@@ -325,7 +382,7 @@ refreshVariables ::
     (Renaming variable, Equation variable)
 refreshVariables
     (FreeVariables.toNames -> avoid)
-    equation@(Equation _ _ _ _ _ _ _) =
+    equation@(Equation _ _ _ _ _ _ _ _) =
         let rename' :: Map (SomeVariableName variable) (SomeVariable variable)
             rename' =
                 FreeVariables.toSet originalFreeVariables
