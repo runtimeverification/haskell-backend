@@ -519,7 +519,7 @@ test_difference_symbolic =
                 SideCondition.top
                 (Application differenceSetSymbol args)
                 & runMaybeT
-                & runSimplifier testEnv
+                & testRunSimplifier testEnv
         assertEqual "" expect actual
 
 test_toList :: TestTree
@@ -2035,7 +2035,7 @@ unifiedBy ::
 unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
     testCase testName $ do
         actuals <-
-            runSimplifier testEnv $
+            testRunSimplifier testEnv $
                 runUnifierT Not.notSimplifier $
                     termUnification Not.notSimplifier termLike1 termLike2
         liftIO $ do

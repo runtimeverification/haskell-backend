@@ -175,12 +175,12 @@ import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
  )
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Simplifier,
     evalSimplifier,
     evalSimplifierProofs,
  )
-import Kore.Simplify.Data qualified as Simplifier
+import Kore.Simplify.API qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     SimplifierXSwitch,

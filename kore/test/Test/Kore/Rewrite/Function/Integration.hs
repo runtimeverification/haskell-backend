@@ -79,6 +79,7 @@ import Kore.Simplify.InjSimplifier (
     InjSimplifier,
     mkInjSimplifier,
  )
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify
 import Kore.Simplify.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
@@ -1068,18 +1069,18 @@ equalsUnification comment term results =
 
 simplify ::
     TermLike RewritingVariableName -> IO (OrPattern RewritingVariableName)
-simplify = runSimplifier testEnv . TermLike.simplify SideCondition.top
+simplify = testRunSimplifier testEnv . TermLike.simplify SideCondition.top
 
 simplifyUnification ::
     TermLike RewritingVariableName -> IO (OrPattern RewritingVariableName)
-simplifyUnification = runSimplifier testEnvUnification . TermLike.simplify SideCondition.top
+simplifyUnification = testRunSimplifier testEnvUnification . TermLike.simplify SideCondition.top
 
 evaluate ::
     BuiltinAndAxiomSimplifierMap ->
     TermLike RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 evaluate functionIdToEvaluator termLike =
-    runSimplifier Mock.env{simplifierAxioms = functionIdToEvaluator} $
+    testRunSimplifier Mock.env{simplifierAxioms = functionIdToEvaluator} $
         TermLike.simplify SideCondition.top termLike
 
 evaluateWith ::
@@ -1095,7 +1096,7 @@ evaluateWithUnification ::
     TermLike RewritingVariableName ->
     IO CommonAttemptedAxiom
 evaluateWithUnification simplifier patt =
-    runSimplifier testEnvUnification $
+    testRunSimplifier testEnvUnification $
         runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
@@ -2043,6 +2044,8 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierCondition = testConditionSimplifier
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
         , simplifierAxioms =
             mconcat
                 [ testEvaluators

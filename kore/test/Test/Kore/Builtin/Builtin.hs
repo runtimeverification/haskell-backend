@@ -85,9 +85,9 @@ import Kore.Rewrite.RulePattern (
     RulePattern,
  )
 import Kore.Rewrite.Step qualified as Step
+import Kore.Simplify.API hiding (simplifyPattern)
 import Kore.Simplify.AndTerms (termUnification)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
-import Kore.Simplify.Data hiding (simplifyPattern)
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.OverloadSimplifier
@@ -245,6 +245,8 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierCondition = testConditionSimplifier
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier

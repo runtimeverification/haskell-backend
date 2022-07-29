@@ -514,7 +514,7 @@ type TestMatchResult =
 match ::
     Pair (TermLike RewritingVariableName) ->
     IO TestMatchResult
-match termPair = runSimplifier Mock.env $ runExceptT matchResult
+match termPair = testRunSimplifier Mock.env $ runExceptT matchResult
   where
     matchResult :: MatchOverloadingResult Simplifier RewritingVariableName
     matchResult = matchOverloading termPair
@@ -550,7 +550,7 @@ unify ::
     Pair (TermLike RewritingVariableName) ->
     IO UnificationResult
 unify termPair =
-    runSimplifier Mock.env $ return unifyResult
+    testRunSimplifier Mock.env $ return unifyResult
   where
     unifyResult :: Maybe MatchResult
     unifyResult = matchResult <$> unifyOverloading Mock.overloadSimplifier termPair

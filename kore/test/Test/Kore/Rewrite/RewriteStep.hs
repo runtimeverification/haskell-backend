@@ -146,7 +146,7 @@ unifyRule ::
 unifyRule initial rule =
     Step.unifyRule SideCondition.top initial rule
         & Logic.observeAllT
-        & runSimplifier Mock.env
+        & testRunSimplifier Mock.env
 
 claimPatternFromPatterns ::
     Pattern RewritingVariableName ->

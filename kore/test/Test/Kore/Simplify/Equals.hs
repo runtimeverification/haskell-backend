@@ -1030,7 +1030,7 @@ evaluateOr ::
     Equals Sort (OrPattern RewritingVariableName) ->
     IO (OrCondition RewritingVariableName)
 evaluateOr =
-    runSimplifier mockEnv
+    testRunSimplifier mockEnv
         . simplify SideCondition.top
         . fmap simplifiedOrPattern
   where
@@ -1041,7 +1041,7 @@ evaluate ::
     Pattern RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 evaluate first second =
-    runSimplifier mockEnv $
+    testRunSimplifier mockEnv $
         makeEvaluate
             (simplifiedPattern first)
             (simplifiedPattern second)
@@ -1054,7 +1054,7 @@ evaluateTermsGeneric ::
     TermLike RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 evaluateTermsGeneric first second =
-    runSimplifier mockEnv $
+    testRunSimplifier mockEnv $
         makeEvaluateTermsToPredicate
             (simplifiedTerm first)
             (simplifiedTerm second)

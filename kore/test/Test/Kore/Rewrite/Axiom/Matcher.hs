@@ -1353,7 +1353,7 @@ match ::
     TermLike RewritingVariableName ->
     IO MatchResult
 match first second =
-    runSimplifier Mock.env matchResult
+    testRunSimplifier Mock.env matchResult
   where
     matchResult :: Simplifier MatchResult
     matchResult = matchIncremental SideCondition.top first second
