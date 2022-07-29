@@ -8,7 +8,7 @@
   , config
   , ... }:
   {
-    flags = { release = false; threaded = true; };
+    flags = { threaded = true; };
     package = {
       specVersion = "2.2";
       identifier = { name = "kore"; version = "0.60.0.0"; };
@@ -916,6 +916,7 @@
             "Test/Kore/Simplify/Top"
             "Test/Kore/Syntax/Id"
             "Test/Kore/Syntax/Json"
+            "Test/Kore/Syntax/Json/Roundtrips"
             "Test/Kore/Syntax/Variable"
             "Test/Kore/TopBottom"
             "Test/Kore/Unification/SubstitutionNormalization"
