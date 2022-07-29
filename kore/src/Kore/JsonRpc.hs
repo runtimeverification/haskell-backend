@@ -39,7 +39,7 @@ import Kore.Rewrite (ExecutionMode (All), Natural)
 -- import Kore.Rewrite.RewritingVariable as RewritingVariable
 import Kore.Simplify.Simplify (SimplifierXSwitch)
 
--- import Kore.Simplify.Data (
+-- import Kore.Simplify.API (
 --     evalSimplifier,
 --  )
 import Kore.Syntax.Json (KoreJson)

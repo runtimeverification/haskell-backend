@@ -111,7 +111,7 @@ evaluateApplication ::
     Application Symbol (TermLike RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
 evaluateApplication predicate =
-    Test.runSimplifier env
+    Test.testRunSimplifier env
         . Kore.evaluateApplication SideCondition.top predicate
 
 simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap

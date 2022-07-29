@@ -397,13 +397,13 @@ bottomLike =
 simplify ::
     Pattern RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
-simplify = runSimplifier Mock.env . Pattern.simplify
+simplify = testRunSimplifier Mock.env . Pattern.simplify
 
 simplifyAndRemoveTopExists ::
     Pattern RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 simplifyAndRemoveTopExists =
-    runSimplifier Mock.env
+    testRunSimplifier Mock.env
         . Pattern.simplifyTopConfiguration
 
 assertBidirectionalEqualityResult ::

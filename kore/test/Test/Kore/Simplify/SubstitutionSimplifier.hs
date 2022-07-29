@@ -32,7 +32,7 @@ import Kore.Unification.UnifierT (
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
-    runSimplifier,
+    testRunSimplifier,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -236,7 +236,7 @@ test_SubstitutionSimplifier =
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Simplification.substitutionSimplifier
                     actual <-
-                        runSimplifier Mock.env $
+                        testRunSimplifier Mock.env $
                             simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions actual
@@ -253,7 +253,7 @@ test_SubstitutionSimplifier =
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Unification.substitutionSimplifier Not.notSimplifier
                     actual <-
-                        runSimplifier Mock.env . runUnifierT Not.notSimplifier $
+                        testRunSimplifier Mock.env . runUnifierT Not.notSimplifier $
                             simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions <$> actual

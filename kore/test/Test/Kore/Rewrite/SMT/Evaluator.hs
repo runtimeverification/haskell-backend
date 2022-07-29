@@ -32,7 +32,7 @@ import Kore.Rewrite.RewritingVariable (
     configElementVariableFromId,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
-import Kore.Simplify.Data qualified as Kore
+import Kore.Simplify.API qualified as Kore
 import Prelude.Kore
 import Test.Kore
 import Test.Kore.Builtin.Bool qualified as Builtin.Bool

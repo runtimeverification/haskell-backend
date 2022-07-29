@@ -50,7 +50,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
  )
-import Kore.Simplify.Data qualified as Simplification
+import Kore.Simplify.API qualified as Simplification
 import Kore.Simplify.Pattern qualified as Pattern (
     simplify,
  )
@@ -126,7 +126,7 @@ test_regressionGeneratedTerms =
         simplified <-
             Pattern.simplify
                 (Pattern.fromTermLike term)
-                & runSimplifier Mock.env
+                & testRunSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     , -- See https://github.com/runtimeverification/haskell-backend/pull/2819#issuecomment-929492780
       testCase "Don't forget simplified of sub-term predicates" $ do
@@ -156,7 +156,7 @@ test_regressionGeneratedTerms =
         simplified <-
             Pattern.simplify
                 patt
-                & runSimplifier Mock.env
+                & testRunSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     ]
 

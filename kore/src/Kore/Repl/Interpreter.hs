@@ -181,7 +181,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Rewrite.RulePattern qualified as RulePattern
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Simplifier,
  )
 import Kore.Syntax.Application
