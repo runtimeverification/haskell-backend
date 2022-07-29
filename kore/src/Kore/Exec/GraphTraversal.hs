@@ -33,7 +33,7 @@ import Kore.Rewrite.Transition (
     TransitionT (..),
     runTransitionT,
  )
-import Kore.Simplify.Data (Simplifier)
+import Kore.Simplify.API (Simplifier)
 import Prelude.Kore
 import Pretty
 

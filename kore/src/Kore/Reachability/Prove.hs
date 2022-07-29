@@ -114,8 +114,7 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Data (Simplifier)
-import Kore.Simplify.Simplify
+import Kore.Simplify.API
 import Kore.TopBottom
 import Kore.Unparser
 import Log (
