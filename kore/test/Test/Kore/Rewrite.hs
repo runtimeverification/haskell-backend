@@ -317,21 +317,14 @@ test_executionStrategy =
     hasRewrite :: Strategy Prim -> Bool
     hasRewrite = \case
         Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
-        Strategy.And s1 s2 -> hasRewrite s1 || hasRewrite s2
-        Strategy.Or s1 s2 -> hasRewrite s1 || hasRewrite s2
         Strategy.Apply p -> p == Rewrite
-        Strategy.Stuck -> False
         Strategy.Continue -> False
 
     isLastSimplify :: Strategy Prim -> Bool
     isLastSimplify = \case
         Strategy.Seq s Strategy.Continue -> isLastSimplify s
-        Strategy.Seq s Strategy.Stuck -> isLastSimplify s
         Strategy.Seq _ s -> isLastSimplify s
-        Strategy.And s1 s2 -> isLastSimplify s1 && isLastSimplify s2
-        Strategy.Or s1 s2 -> isLastSimplify s1 && isLastSimplify s2
         Strategy.Apply p -> p == Simplify
-        Strategy.Stuck -> False
         Strategy.Continue -> False
 
 simpleRewrite ::
