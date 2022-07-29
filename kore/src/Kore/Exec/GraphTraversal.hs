@@ -126,6 +126,48 @@ data TState instr config = TState
     }
 
 ----------------------------------------
+
+{- | Perform a traversal of a graph of configurations, with rewrites,
+   simplifications, and (maybe) checks as the transitions.
+
+  The transition function operates on a traversal state @'TState'@
+  which holds a @currentState@ configuration as well as
+  @nextSteps@, "instructions" to indicate what kind of transition to
+  perform next, and in "steps" that consist of one or more of these
+  instructions.
+
+  Transition yields a @'TransitionResult'@ which indicates what to do
+  next. The reached configuration could be @'Final'@ or @'Stuck'@, or
+  traversal should be @'Stopped'@. Otherwise, traversal continues,
+  either simply @'Continuing'@ with a next state, or @'Branch'@ing
+  (i.e., continuing on several branches).
+
+  These alternatives are the different constructors of
+  @'TransitionResult'@.
+
+  The return type @'TraversalResult'@ describes the outcome of the
+  whole traversal.
+
+  A traversal ends normally with @'Ended'@ when all branches of the
+  traversal found @'Final'@ configurations within the provided
+  instruction steps.
+
+  When any @'Stuck'@ configurations were found, the traversal result
+  will be @'GotStuck'@, including those stuck configurations and the
+  remaining queue length (@> 0@ in case traversal was stopped
+  prematurely after having found the maximum of counterexamples given
+  as a parameter).
+
+  When any transition produced @'Stopped'@, or when stopping at branch
+  points was requested, the result will include non-final states. In
+  this case, the result will be @'GotStuck'@ with these non-final
+  states.
+
+  Note that the transition function can modify the provided
+  instructions during the traversal. Usually the @nextSteps@ in
+  traversal state @'TState'@ would be consumed one @'Step'@ at a time
+  but this is not required.
+-}
 graphTraversal ::
     forall config instr.
     -- | Whether to stop on branches or not. This could be handled in
