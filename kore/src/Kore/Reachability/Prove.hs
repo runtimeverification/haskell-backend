@@ -333,7 +333,8 @@ proveClaim
                 breadthLimit
                 transition
                 (Limit.Limit maxCounterexamples)
-                (limitedStrategyList, (ProofDepth 0, startGoal))
+                limitedStrategyList
+                (ProofDepth 0, startGoal)
 
         let returnUnprovenClaims =
                 pure
@@ -376,8 +377,11 @@ proveClaim
         -------------------------------
 
         transition ::
-            ([GraphTraversal.Step Prim], (ProofDepth, ClaimState SomeClaim)) ->
-            Simplifier (GraphTraversal.TransitionResult ([GraphTraversal.Step Prim], (ProofDepth, ClaimState SomeClaim)))
+            (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim)) ->
+            Simplifier
+                ( GraphTraversal.TransitionResult
+                    (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim))
+                )
         transition =
             GraphTraversal.simpleTransition
                 (trackProofDepth $ transitionRule' stuckCheck claims axioms)

@@ -298,12 +298,15 @@ exec
                                 repeat [Begin, Rewrite, Simplify]
 
                         transit ::
-                            ( [GraphTraversal.Step Prim]
-                            , (ExecDepth, ProgramState (Pattern RewritingVariableName))
-                            ) ->
+                            GraphTraversal.TState
+                                Prim
+                                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
                             Simplifier.Simplifier
                                 ( GraphTraversal.TransitionResult
-                                    ([GraphTraversal.Step Prim], (ExecDepth, ProgramState (Pattern RewritingVariableName)))
+                                    ( GraphTraversal.TState
+                                        Prim
+                                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                                    )
                                 )
                         transit =
                             GraphTraversal.simpleTransition
@@ -343,7 +346,8 @@ exec
                             breadthLimit
                             transit
                             Limit.Unlimited
-                            (execStrategy, (ExecDepth 0, Start initialConfig))
+                            execStrategy
+                            (ExecDepth 0, Start initialConfig)
                     case result of
                         GraphTraversal.Ended results -> pure results
                         GraphTraversal.GotStuck n results -> do

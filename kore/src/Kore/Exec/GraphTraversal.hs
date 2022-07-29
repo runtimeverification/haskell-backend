@@ -9,6 +9,7 @@ module Kore.Exec.GraphTraversal (
     graphTraversal,
     simpleTransition,
     Step,
+    TState (..),
     TransitionResult (..),
     TraversalResult (..),
     transitionWithRule,
@@ -114,6 +115,16 @@ extractState = \case
 -}
 type Step instr = [instr]
 
+{- | The traversal state, including subsequent steps to take in the
+   traversal.
+-}
+data TState instr config = TState
+    { -- | remaining steps available for the traversal
+      nextSteps :: [Step instr]
+    , -- | current configuration (i.e., claim or program state)
+      currentState :: config
+    }
+
 ----------------------------------------
 graphTraversal ::
     forall config instr.
@@ -130,13 +141,15 @@ graphTraversal ::
     -- | breadth limit, essentially a natural number
     Limit Natural ->
     -- | transition function
-    ( ([Step instr], config) ->
-      Simplifier (TransitionResult ([Step instr], config))
+    ( TState instr config ->
+      Simplifier (TransitionResult (TState instr config))
     ) ->
     -- | max-counterexamples, included in the internal logic
     Limit Natural ->
-    -- | initial node
-    ([Step instr], config) ->
+    -- | steps to execute
+    [Step instr] ->
+    -- | initial state
+    config ->
     Simplifier (TraversalResult config)
 graphTraversal
     stopOn
@@ -144,21 +157,22 @@ graphTraversal
     breadthLimit
     transit
     maxCounterExamples
+    steps
     start =
-        enqueue [start] Seq.empty
+        enqueue [TState steps start] Seq.empty
             >>= either
-                (pure . const (GotStuck 0 [snd start]))
+                (pure . const (GotStuck 0 [start]))
                 (\q -> evalStateT (worker q >>= checkLeftUnproven) [])
       where
         enqueue' = unfoldSearchOrder direction
 
         enqueue ::
-            [([Step instr], config)] ->
-            Seq ([Step instr], config) ->
+            [TState instr config] ->
+            Seq (TState instr config) ->
             Simplifier
                 ( Either
-                    (LimitExceeded ([Step instr], config))
-                    (Seq ([Step instr], config))
+                    (LimitExceeded (TState instr config))
+                    (Seq (TState instr config))
                 )
         enqueue as q = do
             newQ <- enqueue' as q
@@ -167,22 +181,22 @@ graphTraversal
                     then Left (LimitExceeded newQ)
                     else Right newQ
 
-        exceedsLimit :: Seq ([Step instr], config) -> Bool
+        exceedsLimit :: Seq a -> Bool
         exceedsLimit =
             not . withinLimit breadthLimit . fromIntegral . Seq.length
 
-        shouldStop :: TransitionResult ([Step instr], config) -> Bool
+        shouldStop :: TransitionResult (TState instr config) -> Bool
         shouldStop =
             case stopOn of
                 Leaf -> const False
                 LeafOrBranching -> isBranch
 
         worker ::
-            Seq ([Step instr], config) ->
+            Seq (TState instr config) ->
             StateT
-                [TransitionResult ([Step instr], config)]
+                [TransitionResult (TState instr config)]
                 Simplifier
-                (TraversalResult ([Step instr], config))
+                (TraversalResult (TState instr config))
         worker Seq.Empty = Ended . reverse <$> gets (mapMaybe extractState)
         worker (a :<| as) = do
             result <- lift $ step a as
@@ -203,9 +217,9 @@ graphTraversal
                     pure $ Aborted (Seq.length queue) (extractNext lastState)
 
         step ::
-            ([Step instr], config) ->
-            Seq ([Step instr], config) ->
-            Simplifier (StepResult ([Step instr], config))
+            (TState instr config) ->
+            Seq (TState instr config) ->
+            Simplifier (StepResult (TState instr config))
         step a q = do
             next <- transit a
             if (isStuck next || isFinal next || isStopped next || shouldStop next)
@@ -215,20 +229,20 @@ graphTraversal
                      in either abort Continue <$> enqueue (extractNext next) q
 
         checkLeftUnproven ::
-            TraversalResult ([Step instr], config) ->
+            TraversalResult (TState instr config) ->
             StateT
-                [TransitionResult ([Step instr], config)]
+                [TransitionResult (TState instr config)]
                 Simplifier
                 (TraversalResult config)
         checkLeftUnproven = \case
             result@(Ended{}) -> do
                 collected <- gets reverse
                 -- we collect a maximum of 'maxCounterExamples' Stuck states
-                let stuck = map (fmap snd) $ filter isStuck collected
+                let stuck = map (fmap currentState) $ filter isStuck collected
                 -- Other states may be unfinished but not stuck (Stopped)
                 -- Only provide the requested amount of states (maxCounterExamples)
                 let unproven =
-                        takeWithin maxCounterExamples . map (fmap snd) $
+                        takeWithin maxCounterExamples . map (fmap currentState) $
                             filter isStopped collected
                 pure $
                     if
@@ -236,8 +250,8 @@ graphTraversal
                                 GotStuck 0 (mapMaybe extractState stuck)
                             | not $ null unproven ->
                                 GotStuck 0 (concatMap extractNext unproven)
-                            | otherwise -> fmap snd result
-            other -> pure $ fmap snd other
+                            | otherwise -> fmap currentState result
+            other -> pure $ fmap currentState other
 
 data StepResult a
     = -- | Traversal continues with given queue.
@@ -297,18 +311,28 @@ simpleTransition ::
     (instr -> config -> TransitionT rule m config) ->
     -- | interprets the config (claim or program state) and rules
     (config -> [config] -> TransitionResult config) ->
-    ([Step instr], config) ->
-    m (TransitionResult ([Step instr], config))
-simpleTransition apply mapToResult = uncurry tt
+    TState instr config ->
+    m (TransitionResult (TState instr config))
+simpleTransition apply mapToResult = tt
   where
-    tt :: [Step instr] -> config -> m (TransitionResult ([Step instr], config))
-    tt [] config =
-        pure $ fmap ([],) $ mapToResult config []
-    tt ([] : iss) config =
-        tt iss config
-    tt (is : iss) config =
-        (fmap (iss,) . mapToResult config . map fst)
-            <$> runTransitionT (foldM (flip apply) config is)
+    tt :: TState instr config -> m (TransitionResult (TState instr config))
+    tt TState{nextSteps, currentState = config} =
+        case nextSteps of
+            [] ->
+                pure $ fmap (TState []) $ mapToResult config []
+            [] : iss ->
+                tt $ TState iss config
+            is : iss ->
+                (fmap (TState iss) . mapToResult config . map fst)
+                    <$> runTransitionT (foldM (flip apply) config is)
+
+{- | Construct a transit function for the traversal from its primitive
+ steps @prim@ and an interpretation of resulting next states _and
+ applied rules_ to yield a @TransitionResult@.
+
+ The rule can be considered to implement e.g. stopping when a
+ particular rule (such as unrolling a loop) has been applied.
+-}
 
 {- | Construct a transit function for the traversal from its primitive
  steps @prim@ and an interpretation of resulting next states _and
@@ -324,15 +348,17 @@ transitionWithRule ::
     (instr -> config -> TransitionT rule m config) ->
     -- | interprets the config (claim or program state) and rules
     (config -> [(config, Seq rule)] -> TransitionResult config) ->
-    ([Step instr], config) ->
-    m (TransitionResult ([Step instr], config))
-transitionWithRule apply mapToResult = uncurry tt
+    TState instr config ->
+    m (TransitionResult (TState instr config))
+transitionWithRule apply mapToResult = tt
   where
-    tt :: [Step instr] -> config -> m (TransitionResult ([Step instr], config))
-    tt [] config =
-        pure $ fmap ([],) $ mapToResult config []
-    tt ([] : iss) config =
-        tt iss config
-    tt (is : iss) config =
-        (fmap (iss,) . mapToResult config)
-            <$> runTransitionT (foldM (flip apply) config is)
+    tt :: TState instr config -> m (TransitionResult (TState instr config))
+    tt TState{nextSteps, currentState = config} =
+        case nextSteps of
+            [] ->
+                pure $ fmap (TState []) $ mapToResult config []
+            [] : iss ->
+                tt $ TState iss config
+            is : iss ->
+                (fmap (TState iss) . mapToResult config)
+                    <$> runTransitionT (foldM (flip apply) config is)
