@@ -279,76 +279,22 @@ exec
         , overloadGraph
         , metadataTools
         , verifiedModule
-        , rewrites
+        , rewrites = Initialized{rewriteRules}
         , equations
         }
     execMode
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
-            let Initialized{rewriteRules} = rewrites
             finals <-
-                do
-                    let initialConfig = Pattern.fromTermLike initialTerm
-                    let rewriteGroups = groupRewritesByPriority rewriteRules
-
-                        execStrategy :: [GraphTraversal.Step Prim]
-                        execStrategy =
-                            Limit.takeWithin depthLimit $
-                                [Begin, Simplify, Rewrite, Simplify] :
-                                repeat [Begin, Rewrite, Simplify]
-
-                        transit ::
-                            GraphTraversal.TState
-                                Prim
-                                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
-                            Simplifier.Simplifier
-                                ( GraphTraversal.TransitionResult
-                                    ( GraphTraversal.TState
-                                        Prim
-                                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
-                                    )
-                                )
-                        transit =
-                            GraphTraversal.simpleTransition
-                                ( trackExecDepth . profTransitionRule $
-                                    transitionRule rewriteGroups execMode
-                                )
-                                toTransitionResult
-
-                        toTransitionResult ::
-                            (ExecDepth, ProgramState p) ->
-                            [(ExecDepth, ProgramState p)] ->
-                            ( GraphTraversal.TransitionResult
-                                (ExecDepth, ProgramState p)
-                            )
-                        toTransitionResult prior [] =
-                            case snd prior of
-                                Start _ -> GraphTraversal.Stopped [prior]
-                                Rewritten _ -> GraphTraversal.Stopped [prior]
-                                Remaining _ -> GraphTraversal.Stuck prior
-                                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
-                        toTransitionResult _prior [next] =
-                            case snd next of
-                                Start _ -> GraphTraversal.Continuing next
-                                Rewritten _ -> GraphTraversal.Continuing next
-                                Remaining _ -> GraphTraversal.Stuck next
-                                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
-                        toTransitionResult prior (s : ss) =
-                            GraphTraversal.Branch prior (s :| ss)
-
-                        notStuck :: ProgramState a -> Bool
-                        notStuck = isJust . extractProgramState
-
-                    result <-
-                        GraphTraversal.graphTraversal
-                            Strategy.Leaf
-                            Strategy.DepthFirst
-                            breadthLimit
-                            transit
-                            Limit.Unlimited
-                            execStrategy
-                            (ExecDepth 0, Start initialConfig)
-                    case result of
+                GraphTraversal.graphTraversal
+                    Strategy.Leaf
+                    Strategy.DepthFirst
+                    breadthLimit
+                    transit
+                    Limit.Unlimited
+                    execStrategy
+                    (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
+                    >>= \case
                         GraphTraversal.Ended results -> pure results
                         GraphTraversal.GotStuck n results -> do
                             when (n == 0 && any (notStuck . snd) results) $
@@ -375,6 +321,54 @@ exec
                 (Builtin.internalize metadataTools)
                 verifiedModule
         initialSort = termLikeSort initialTerm
+
+        execStrategy :: [GraphTraversal.Step Prim]
+        execStrategy =
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify] :
+                repeat [Begin, Rewrite, Simplify]
+
+        transit ::
+            GraphTraversal.TState
+                Prim
+                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+            Simplifier.Simplifier
+                ( GraphTraversal.TransitionResult
+                    ( GraphTraversal.TState
+                        Prim
+                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                    )
+                )
+        transit =
+            GraphTraversal.simpleTransition
+                ( trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) execMode
+                )
+                toTransitionResult
+
+        toTransitionResult ::
+            (ExecDepth, ProgramState p) ->
+            [(ExecDepth, ProgramState p)] ->
+            ( GraphTraversal.TransitionResult
+                (ExecDepth, ProgramState p)
+            )
+        toTransitionResult prior [] =
+            case snd prior of
+                Start _ -> GraphTraversal.Stopped [prior]
+                Rewritten _ -> GraphTraversal.Stopped [prior]
+                Remaining _ -> GraphTraversal.Stuck prior
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+        toTransitionResult _prior [next] =
+            case snd next of
+                Start _ -> GraphTraversal.Continuing next
+                Rewritten _ -> GraphTraversal.Continuing next
+                Remaining _ -> GraphTraversal.Stuck next
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+        toTransitionResult prior (s : ss) =
+            GraphTraversal.Branch prior (s :| ss)
+
+        notStuck :: ProgramState a -> Bool
+        notStuck = isJust . extractProgramState
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
