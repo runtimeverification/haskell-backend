@@ -104,6 +104,7 @@
             "rematerialize-kore-nix-${compiler-nix-name}" ''
               #!/bin/sh
               ${self.stack-nix.passthru.generateMaterialized} ./nix/kore-${compiler-nix-name}.nix.d
+              ${pkgs.nixfmt}/bin/nixfmt ./nix/kore-${compiler-nix-name}.nix.d/*.nix
             '';
         };
 
