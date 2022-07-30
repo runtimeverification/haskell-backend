@@ -23,13 +23,9 @@ import Control.DeepSeq (
     deepseq,
  )
 import Control.Lens qualified as Lens
-import Control.Monad (
-    (>=>),
- )
 import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
-    handle,
     handleAll,
     throwM,
  )
@@ -40,7 +36,6 @@ import Control.Monad.Except (
 import Control.Monad.Except qualified as Monad.Except
 import Control.Monad.State.Strict (
     StateT,
-    evalStateT,
     runStateT,
  )
 import Control.Monad.State.Strict qualified as State
@@ -60,6 +55,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Debug
+import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Conditional (
     Conditional (..),
  )
@@ -85,7 +81,6 @@ import Kore.Log.DebugTransition (
     debugBeforeTransition,
     debugFinalTransition,
  )
-import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
@@ -97,7 +92,7 @@ import Kore.Reachability.ClaimState (
     extractUnproven,
  )
 import Kore.Reachability.ClaimState qualified as ClaimState
-import Kore.Reachability.Prim qualified as Prim (
+import Kore.Reachability.Prim as Prim (
     Prim (..),
  )
 import Kore.Reachability.SomeClaim
@@ -115,21 +110,16 @@ import Kore.Rewrite.Strategy (
     Strategy,
     executionHistoryStep,
  )
-import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Simplify
+import Kore.Simplify.API
 import Kore.TopBottom
 import Kore.Unparser
 import Log (
     MonadLog (..),
  )
-import Logic (
-    LogicT,
- )
-import Logic qualified
 import Numeric.Natural (
     Natural,
  )
@@ -162,10 +152,10 @@ lhsClaimStateTransformer sort =
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
-The action may throw an exception if the proof fails; the exception is a single
-@'Pattern' 'VariableName'@, the first unprovable configuration.
+The action may throw an exception if the proof fails; the exception is a
+@'MultiAnd'@ of unprovable configuration.
 -}
-type VerifierT m = StateT StuckClaims (ExceptT StuckClaims m)
+type VerifierT m = ExceptT StuckClaims m
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
@@ -196,10 +186,6 @@ data ProveClaimsResult = ProveClaimsResult
     }
 
 proveClaims ::
-    forall simplifier.
-    MonadMask simplifier =>
-    MonadSimplify simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
@@ -212,7 +198,7 @@ proveClaims ::
     -- | List of claims, together with a maximum number of verification steps
     -- for each.
     ToProve SomeClaim ->
-    simplifier ProveClaimsResult
+    Simplifier ProveClaimsResult
 proveClaims
     maybeMinDepth
     stuckCheck
@@ -260,10 +246,6 @@ proveClaims
                     else Left claim
 
 proveClaimsWorker ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
@@ -275,7 +257,7 @@ proveClaimsWorker ::
     -- | List of claims, together with a maximum number of verification steps
     -- for each.
     ToProve SomeClaim ->
-    ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
+    VerifierT (StateT ProvenClaims Simplifier) ()
 proveClaimsWorker
     maybeMinDepth
     stuckCheck
@@ -290,29 +272,32 @@ proveClaimsWorker
       where
         verifyWorker ::
             (SomeClaim, Limit Natural) ->
-            ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
-        verifyWorker unprovenClaim@(claim, _) = do
-            debugBeginClaim claim
-            proveClaim
-                maybeMinDepth
-                stuckCheck
-                breadthLimit
-                searchOrder
-                maxCounterexamples
-                finalNodeType
-                claims
-                axioms
-                unprovenClaim
-            addProvenClaim claim
+            VerifierT (StateT ProvenClaims Simplifier) ()
+        verifyWorker unprovenClaim@(claim, _) =
+            traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
+                debugBeginClaim claim
+                result <-
+                    lift . lift $
+                        proveClaim
+                            maybeMinDepth
+                            stuckCheck
+                            breadthLimit
+                            searchOrder
+                            maxCounterexamples
+                            finalNodeType
+                            claims
+                            axioms
+                            unprovenClaim
+                either
+                    -- throw stuck claims, ending the traversal
+                    Monad.Except.throwError
+                    (const $ addProvenClaim claim)
+                    result
 
         addProvenClaim claim =
             State.modify' (mappend (MultiAnd.singleton claim))
 
 proveClaim ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     Limit Natural ->
@@ -322,7 +307,7 @@ proveClaim ::
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
-    ExceptT StuckClaims simplifier ()
+    Simplifier (Either StuckClaims ())
 proveClaim
     maybeMinDepth
     stuckCheck
@@ -332,93 +317,102 @@ proveClaim
     finalNodeType
     (AllClaims claims)
     (Axioms axioms)
-    (goal, depthLimit) =
-        traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
-            let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
-                limitedStrategy =
-                    pickStrategy
-                        & toList
-                        & Limit.takeWithin depthLimit
-                        {- With a non-Unlimited 'depthLimit', ensure that we
-                           discharge proofs which hold at the depth bound by
-                           adding an additional CheckImplication step at the end.
-                        -}
-                        & (`snoc` reachabilityCheckOnly)
-            proofDepths <-
-                Strategy.leavesM
-                    finalNodeType
-                    updateQueue
-                    (Strategy.unfoldTransition transit)
-                    (limitedStrategy, (ProofDepth 0, startGoal))
-                    & fmap discardStrategy
-                    & throwUnproven
-                    & handle handleLimitExceeded
-                    & (\s -> evalStateT s mempty)
-            let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
-            infoProvenDepth maxProofDepth
-            warnProvenClaimZeroDepth maxProofDepth goal
+    (goal, depthLimit) = do
+        let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
+
+            limitedStrategyList =
+                Limit.takeWithin
+                    depthLimit
+                    (maybe infinite withMinDepth maybeMinDepth)
+                    `snoc` [Begin, CheckImplication] -- last step of limited ste
+        traversalResult <-
+            GraphTraversal.graphTraversal
+                finalNodeType
+                searchOrder
+                breadthLimit
+                transition
+                (Limit.Limit maxCounterexamples)
+                limitedStrategyList
+                (ProofDepth 0, startGoal)
+
+        let returnUnprovenClaims =
+                pure
+                    . Left
+                    . MultiAnd.make
+                    . map StuckClaim
+                    . mapMaybe (extractUnproven . snd)
+
+        case traversalResult of
+            GraphTraversal.GotStuck _n rs ->
+                returnUnprovenClaims rs
+            GraphTraversal.Aborted _n rs ->
+                returnUnprovenClaims rs
+            GraphTraversal.Ended results -> do
+                let depths = map fst results
+                    maxProofDepth = sconcat (ProofDepth 0 :| depths)
+                infoProvenDepth maxProofDepth
+                warnProvenClaimZeroDepth maxProofDepth goal
+                pure $ Right ()
       where
-        pickStrategy =
-            maybe strategy strategyWithMinDepth maybeMinDepth
+        -------------------------------
+        -- brought in from Claim.hs to remove Strategy type
+        infinite :: [GraphTraversal.Step Prim]
+        ~infinite = stepNoClaims : repeat stepWithClaims
 
-        discardStrategy = snd
-
-        handleLimitExceeded ::
-            Strategy.LimitExceeded (ProofDepth, CommonClaimState) ->
-            VerifierT simplifier a
-        handleLimitExceeded (Strategy.LimitExceeded states) = do
-            let extractStuckClaim = fmap StuckClaim . extractUnproven . snd
-                stuckClaims = mapMaybe extractStuckClaim states
-            Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
-
-        updateQueue = \as ->
-            Strategy.unfoldSearchOrder searchOrder as
-                >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
-                >=> ( \queue ->
-                        infoExecBreadth (ExecBreadth $ genericLength queue)
-                            >> return queue
-                    )
+        withMinDepth :: MinDepth -> [GraphTraversal.Step Prim]
+        withMinDepth d =
+            noCheckSteps <> repeat stepWithClaims
           where
-            genericLength = fromIntegral . length
+            noCheckSteps =
+                [Begin, Simplify, ApplyAxioms, Simplify] :
+                replicate
+                    (getMinDepth d - 1)
+                    [Begin, Simplify, ApplyAxioms, ApplyClaims, Simplify]
 
-        throwUnproven ::
-            LogicT (VerifierT simplifier) (ProofDepth, CommonClaimState) ->
-            VerifierT simplifier [ProofDepth]
-        throwUnproven acts =
-            do
-                (proofDepth, proofState) <- acts
-                let maybeUnproven = extractUnproven proofState
-                for_ maybeUnproven $ \unproven -> lift $ do
-                    infoUnprovenDepth proofDepth
-                    updateSuckClaimsState unproven maxCounterexamples
-                pure proofDepth
-                & Logic.observeAllT
-                >>= checkLeftUnproven
+        stepNoClaims =
+            [Begin, Simplify, CheckImplication, ApplyAxioms, Simplify]
+        stepWithClaims =
+            [Begin, Simplify, CheckImplication, ApplyClaims, ApplyAxioms, Simplify]
+        -------------------------------
 
-        checkLeftUnproven ::
-            [ProofDepth] ->
-            VerifierT simplifier [ProofDepth]
-        checkLeftUnproven depths =
-            do
-                stuck <- State.get
-                if (null stuck)
-                    then pure depths
-                    else Monad.Except.throwError stuck
-
-        discardAppliedRules = map fst
-
-        transit instr config =
-            Strategy.transitionRule
-                ( transitionRule' stuckCheck claims axioms
-                    & trackProofDepth
-                    & throwStuckClaims maxCounterexamples
+        transition ::
+            (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim)) ->
+            Simplifier
+                ( GraphTraversal.TransitionResult
+                    (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim))
                 )
-                instr
-                config
-                & runTransitionT
-                & fmap discardAppliedRules
-                & traceProf ":transit"
-                & lift
+        transition =
+            GraphTraversal.simpleTransition
+                (trackProofDepth $ transitionRule' stuckCheck claims axioms)
+                toTransitionResultWithDepth
+
+        -- result interpretation for GraphTraversal.simpleTransition
+        toTransitionResultWithDepth ::
+            Show c =>
+            -- | prior state, needed for [] and Proven cases
+            (ProofDepth, ClaimState c) ->
+            [(ProofDepth, ClaimState c)] ->
+            GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
+        toTransitionResultWithDepth prior = \case
+            []
+                | isJust (extractStuck $ snd prior) -> GraphTraversal.Stuck prior
+                | isJust (extractUnproven $ snd prior) -> GraphTraversal.Stopped [prior]
+                | otherwise -> GraphTraversal.Final prior
+            [c@(_, ClaimState.Claimed{})] -> GraphTraversal.Continuing c
+            [c@(_, ClaimState.Rewritten{})] -> GraphTraversal.Continuing c
+            [c@(_, ClaimState.Remaining{})] -> GraphTraversal.Continuing c
+            [c@(_, ClaimState.Stuck{})] -> GraphTraversal.Stuck c
+            [(_, ClaimState.Proven)] -> GraphTraversal.Final prior
+            cs@(c : cs')
+                | noneStuck (map snd cs) -> GraphTraversal.Branch prior (c :| cs')
+                | otherwise ->
+                    -- NB we cannot get stuck and unstuck states from
+                    -- the same step: CheckImplication yields `Stuck`
+                    -- before branching can happen (ApplyAxioms)
+                    error $ "toTransitionResult: " <> show (prior, cs)
+              where
+                noneStuck :: [ClaimState c] -> Bool
+                noneStuck = null . mapMaybe ClaimState.extractStuck
 
 {- | Attempts to perform a single proof step, starting at the configuration
  in the execution graph designated by the provided node. Re-constructs the
@@ -566,42 +560,6 @@ checkStuckConfiguration rule prim proofState = do
     isNot_Ceil_ :: Predicate variable -> Bool
     isNot_Ceil_ (PredicateNot (PredicateCeil _)) = True
     isNot_Ceil_ _ = False
-
--- | Terminate the prover after 'maxCounterexamples' stuck steps.
-throwStuckClaims ::
-    forall m rule.
-    MonadLog m =>
-    Natural ->
-    TransitionRule
-        (VerifierT m)
-        rule
-        (ProofDepth, ClaimState SomeClaim) ->
-    TransitionRule
-        (VerifierT m)
-        rule
-        (ProofDepth, ClaimState SomeClaim)
-throwStuckClaims maxCounterexamples rule prim state = do
-    state'@(proofDepth', proofState') <- rule prim state
-    case proofState' of
-        ClaimState.Stuck unproven -> do
-            lift $ do
-                infoUnprovenDepth proofDepth'
-                updateSuckClaimsState unproven maxCounterexamples
-                return state'
-        _ -> return state'
-
-updateSuckClaimsState ::
-    Monad m =>
-    SomeClaim ->
-    Natural ->
-    VerifierT m ()
-updateSuckClaimsState unproven maxCounterexamples = do
-    stuckClaims <- State.get
-    let updatedStuck =
-            MultiAnd.singleton (StuckClaim unproven) <> stuckClaims
-    when (MultiAnd.size updatedStuck >= maxCounterexamples) $ do
-        Monad.Except.throwError updatedStuck
-    State.put updatedStuck
 
 -- | Modify a 'TransitionRule' to track the depth of a proof.
 trackProofDepth ::

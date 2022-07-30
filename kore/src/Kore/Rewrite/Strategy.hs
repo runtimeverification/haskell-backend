@@ -13,18 +13,9 @@ import Kore.Rewrite.Strategy qualified as Strategy
 module Kore.Rewrite.Strategy (
     -- * Strategies
     Strategy (..),
-    and,
-    all,
-    or,
-    try,
-    first,
-    any,
-    many,
-    some,
     apply,
     seq,
     sequence,
-    stuck,
     continue,
 
     -- * Running strategies
@@ -93,14 +84,8 @@ import GHC.Generics qualified as GHC
 import Kore.Rewrite.Transition
 import Numeric.Natural
 import Prelude.Kore hiding (
-    all,
-    and,
-    any,
-    many,
-    or,
     seq,
     sequence,
-    some,
  )
 
 {- | An execution strategy.
@@ -108,25 +93,11 @@ import Prelude.Kore hiding (
     @Strategy prim@ represents a strategy for execution by applying rewrite
     axioms of type @prim@.
 -}
-
--- TODO (thomas.tuegel): This could be implemented as an algebra so that a
--- strategy is a free monad over the primitive rule type and the result of
--- execution is not a generic tree, but a cofree comonad with exactly the
--- branching structure described by the strategy algebra.
 data Strategy prim where
-    -- The recursive arguments of these constructors are /intentionally/ lazy to
-    -- allow strategies to loop.
-
     -- | Apply two strategies in sequence.
     Seq :: Strategy prim -> Strategy prim -> Strategy prim
-    -- | Apply both strategies to the same configuration, i.e. in parallel.
-    And :: Strategy prim -> Strategy prim -> Strategy prim
-    -- | Apply the second strategy if the first fails to produce children.
-    Or :: Strategy prim -> Strategy prim -> Strategy prim
     -- | Apply the rewrite rule, then advance to the next strategy.
     Apply :: !prim -> Strategy prim
-    -- | @Stuck@ produces no children.
-    Stuck :: Strategy prim
     -- | @Continue@ produces one child identical to its parent.
     Continue :: Strategy prim
     deriving stock (Eq, Show, Functor)
@@ -148,86 +119,12 @@ sequence [] === continue
 sequence :: [Strategy prim] -> Strategy prim
 sequence = foldr seq continue
 
--- | Apply both strategies to the same configuration, i.e. in parallel.
-and :: Strategy prim -> Strategy prim -> Strategy prim
-and = And
-
-{- | Apply all of the strategies in parallel.
-
-@
-all [] === stuck
-@
--}
-all :: [Strategy prim] -> Strategy prim
-all = foldr and stuck
-
-{- | Apply the second strategy if the first fails immediately.
-
-A strategy is considered successful if it produces any children.
--}
-or :: Strategy prim -> Strategy prim -> Strategy prim
-or = Or
-
-{- | Apply the given strategies in order until one succeeds.
-
-A strategy is considered successful if it produces any children.
-
-@
-any [] === stuck
-@
--}
-first :: [Strategy prim] -> Strategy prim
-first = foldr or stuck
-
-any :: [Strategy prim] -> Strategy prim
-any = first
-
--- | Attempt the given strategy once.
-try :: Strategy prim -> Strategy prim
-try strategy = or strategy continue
-
--- | Apply the strategy zero or more times.
-many :: Strategy prim -> Strategy prim
-many strategy = many0
-  where
-    many0 = or (seq strategy many0) continue
-
--- | Apply the strategy one or more times.
-some :: Strategy prim -> Strategy prim
-some strategy = seq strategy (many strategy)
-
 -- | Apply the rewrite rule, then advance to the next strategy.
 apply ::
     -- | rule
     prim ->
     Strategy prim
 apply = Apply
-
-{- | Produce no children; the end of all strategies.
-
-@stuck@ does not necessarily indicate unsuccessful termination, but it
-is not generally possible to determine if one branch of execution is
-successful without looking at all the branches.
-
-@stuck@ is the annihilator of 'seq':
-@
-seq stuck a === stuck
-seq a stuck === stuck
-@
-
-@stuck@ is the identity of 'and':
-@
-and stuck a === a
-and a stuck === a
-@
-
-@stuck@ is the left-identity of 'or':
-@
-or stuck a === a
-@
--}
-stuck :: Strategy prim
-stuck = Stuck
 
 {- | Produce one child identical to its parent.
 
@@ -461,8 +358,7 @@ The queue updating function should be 'unfoldBreadthFirst' or
 -}
 leavesM ::
     forall m a.
-    Monad m =>
-    Alternative m =>
+    (Monad m, Alternative m) =>
     FinalNodeType ->
     -- | queue updating function
     ([a] -> Seq a -> m (Seq a)) ->
@@ -563,7 +459,6 @@ unfoldTransition transit (instrs, config) =
 
 -- | Transition rule for running a 'Strategy'.
 transitionRule ::
-    Monad m =>
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
     (Strategy prim -> config -> TransitionT rule m config)
@@ -572,32 +467,14 @@ transitionRule applyPrim = transitionRule0
     transitionRule0 =
         \case
             Seq instr1 instr2 -> transitionSeq instr1 instr2
-            And instr1 instr2 -> transitionAnd instr1 instr2
-            Or instr1 instr2 -> transitionOr instr1 instr2
             Apply prim -> transitionApply prim
             Continue -> transitionContinue
-            Stuck -> transitionStuck
-
-    -- End execution.
-    transitionStuck _ = empty
 
     transitionContinue result = return result
 
     -- Apply the instructions in sequence.
     transitionSeq instr1 instr2 =
         transitionRule0 instr1 >=> transitionRule0 instr2
-
-    -- Attempt both instructions, i.e. create a branch for each.
-    transitionAnd instr1 instr2 config =
-        transitionRule0 instr1 config <|> transitionRule0 instr2 config
-
-    -- Attempt the first instruction. Fall back to the second if it is
-    -- unsuccessful.
-    transitionOr instr1 instr2 config = do
-        results <- tryTransitionT (transitionRule0 instr1 config)
-        case results of
-            [] -> transitionRule0 instr2 config
-            _ -> scatter results
 
     -- Apply a primitive rule. Throw an exception if the rule is not successful.
     transitionApply = applyPrim
