@@ -19,7 +19,11 @@ import Control.Error (
     maybeT,
     throwE,
  )
+import Control.Monad qualified as Monad
+import Data.Map.Strict qualified as Map
+import Data.Text (Text)
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
@@ -42,11 +46,14 @@ import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
+import Kore.Internal.Symbol (isDeclaredFunction)
 import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
+import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
+import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -59,6 +66,7 @@ import Kore.TopBottom
 import Kore.Unparser
 import Logic qualified
 import Prelude.Kore
+import Pretty ((<+>))
 import Pretty qualified
 
 -- | Evaluates functions on an application pattern.
@@ -190,6 +198,72 @@ evaluatePattern
             defaultValue
             sideCondition
             & maybeT (defaultValue Nothing) return
+
+lookupAxiomSimplifier ::
+    MonadSimplify simplifier =>
+    TermLike RewritingVariableName ->
+    MaybeT simplifier BuiltinAndAxiomSimplifier
+lookupAxiomSimplifier termLike = do
+    simplifierMap <- lift askSimplifierAxioms
+    let missing = do
+            -- TODO (thomas.tuegel): Factor out a second function evaluator and
+            -- remove this check. At startup, the definition's rules are
+            -- simplified using Matching Logic only (no function
+            -- evaluation). During this stage, all the hooks are expected to be
+            -- missing, so that is not an error. If any function evaluators are
+            -- present, we assume that startup is finished, but we should really
+            -- have a separate evaluator for startup.
+            Monad.guard (not $ null simplifierMap)
+            case termLike of
+                App_ symbol _
+                    | isDeclaredFunction symbol -> do
+                        let hooked = criticalMissingHook symbol
+                            unhooked = warnFunctionWithoutEvaluators symbol
+                        maybe unhooked hooked $ getHook symbol
+                _ -> return ()
+            empty
+    maybe missing return $ do
+        axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
+        let exact = Map.lookup axiomIdentifier simplifierMap
+        case axiomIdentifier of
+            Axiom.Identifier.Application _ -> exact
+            Axiom.Identifier.Variable -> exact
+            Axiom.Identifier.DV -> exact
+            Axiom.Identifier.Ceil _ ->
+                let inexact = Map.lookup (Axiom.Identifier.Ceil Axiom.Identifier.Variable) simplifierMap
+                 in combineEvaluators [exact, inexact]
+            Axiom.Identifier.Exists _ ->
+                let inexact = Map.lookup (Axiom.Identifier.Exists Axiom.Identifier.Variable) simplifierMap
+                 in combineEvaluators [exact, inexact]
+            Axiom.Identifier.Equals id1 id2 ->
+                let inexact1 = Map.lookup (Axiom.Identifier.Equals Axiom.Identifier.Variable id2) simplifierMap
+                    inexact2 = Map.lookup (Axiom.Identifier.Equals id1 Axiom.Identifier.Variable) simplifierMap
+                    inexact12 = Map.lookup (Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable) simplifierMap
+                 in combineEvaluators [exact, inexact1, inexact2, inexact12]
+  where
+    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
+    combineEvaluators maybeEvaluators =
+        case catMaybes maybeEvaluators of
+            [] -> Nothing
+            [a] -> Just a
+            as -> Just $ firstFullEvaluation as
+
+criticalMissingHook :: Symbol -> Text -> a
+criticalMissingHook symbol hookName =
+    (error . show . Pretty.vsep)
+        [ "Error: missing hook"
+        , "Symbol"
+        , Pretty.indent 4 (unparse symbol)
+        , "declared with attribute"
+        , Pretty.indent 4 (unparse attribute)
+        , "We don't recognize that hook and it was not given any rules."
+        , "Please open a feature request at"
+        , Pretty.indent 4 "https://github.com/runtimeverification/haskell-backend/issues"
+        , "and include the text of this message."
+        , "Workaround: Give rules for" <+> unparse symbol
+        ]
+  where
+    attribute = Attribute.hookAttribute hookName
 
 {- | Evaluates axioms on patterns.
 

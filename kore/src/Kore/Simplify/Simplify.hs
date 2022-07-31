@@ -33,7 +33,6 @@ module Kore.Simplify.Simplify (
     lookupCache,
     BuiltinAndAxiomSimplifier (..),
     BuiltinAndAxiomSimplifierMap,
-    lookupAxiomSimplifier,
     AttemptedAxiom (..),
     isApplicable,
     isNotApplicable,
@@ -60,7 +59,6 @@ module Kore.Simplify.Simplify (
     MonadLog,
 ) where
 
-import Control.Monad qualified as Monad
 import Control.Monad.Catch
 import Control.Monad.Counter
 import Control.Monad.Morph (MFunctor)
@@ -76,7 +74,6 @@ import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict qualified as Map
-import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol qualified as Attribute
@@ -104,12 +101,9 @@ import Kore.Internal.TermLike (
     TermAttributes,
     TermLike,
     TermLikeF (..),
-    pattern App_,
  )
 import Kore.Internal.Variable (InternalVariable)
-import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
 import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier (..))
-import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Simplify.InjSimplifier (InjSimplifier)
@@ -119,7 +113,6 @@ import Kore.Unparser
 import Log
 import Logic
 import Prelude.Kore
-import Pretty ((<+>))
 import Pretty qualified
 import Prof (
     MonadProf,
@@ -430,55 +423,6 @@ their corresponding evaluators.
 type BuiltinAndAxiomSimplifierMap =
     Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 
-lookupAxiomSimplifier ::
-    MonadSimplify simplifier =>
-    TermLike RewritingVariableName ->
-    MaybeT simplifier BuiltinAndAxiomSimplifier
-lookupAxiomSimplifier termLike = do
-    simplifierMap <- lift askSimplifierAxioms
-    let missing = do
-            -- TODO (thomas.tuegel): Factor out a second function evaluator and
-            -- remove this check. At startup, the definition's rules are
-            -- simplified using Matching Logic only (no function
-            -- evaluation). During this stage, all the hooks are expected to be
-            -- missing, so that is not an error. If any function evaluators are
-            -- present, we assume that startup is finished, but we should really
-            -- have a separate evaluator for startup.
-            Monad.guard (not $ null simplifierMap)
-            case termLike of
-                App_ symbol _
-                    | isDeclaredFunction symbol -> do
-                        let hooked = criticalMissingHook symbol
-                            unhooked = warnFunctionWithoutEvaluators symbol
-                        maybe unhooked hooked $ getHook symbol
-                _ -> return ()
-            empty
-    maybe missing return $ do
-        axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
-        let exact = Map.lookup axiomIdentifier simplifierMap
-        case axiomIdentifier of
-            Axiom.Identifier.Application _ -> exact
-            Variable -> exact
-            DV -> exact
-            Ceil _ ->
-                let inexact = Map.lookup (Ceil Variable) simplifierMap
-                 in combineEvaluators [exact, inexact]
-            Exists _ ->
-                let inexact = Map.lookup (Exists Variable) simplifierMap
-                 in combineEvaluators [exact, inexact]
-            Equals id1 id2 ->
-                let inexact1 = Map.lookup (Equals Variable id2) simplifierMap
-                    inexact2 = Map.lookup (Equals id1 Variable) simplifierMap
-                    inexact12 = Map.lookup (Equals Variable Variable) simplifierMap
-                 in combineEvaluators [exact, inexact1, inexact2, inexact12]
-  where
-    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
-    combineEvaluators maybeEvaluators =
-        case catMaybes maybeEvaluators of
-            [] -> Nothing
-            [a] -> Just a
-            as -> Just $ firstFullEvaluation as
-
 -- |Describes whether simplifiers are allowed to return multiple results or not.
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
     deriving stock (Eq, Ord, Show)
@@ -598,23 +542,6 @@ applyFirstSimplifierThatWorksWorker
                 nonSimplifiability'
                 patt
                 sideCondition
-
-criticalMissingHook :: Symbol -> Text -> a
-criticalMissingHook symbol hookName =
-    (error . show . Pretty.vsep)
-        [ "Error: missing hook"
-        , "Symbol"
-        , Pretty.indent 4 (unparse symbol)
-        , "declared with attribute"
-        , Pretty.indent 4 (unparse attribute)
-        , "We don't recognize that hook and it was not given any rules."
-        , "Please open a feature request at"
-        , Pretty.indent 4 "https://github.com/runtimeverification/haskell-backend/issues"
-        , "and include the text of this message."
-        , "Workaround: Give rules for" <+> unparse symbol
-        ]
-  where
-    attribute = Attribute.hookAttribute hookName
 
 -- | A type holding the result of applying an axiom to a pattern.
 data AttemptedAxiomResults variable = AttemptedAxiomResults
