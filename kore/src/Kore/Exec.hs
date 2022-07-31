@@ -779,7 +779,7 @@ initializeAndSimplify ::
     VerifiedModule StepperAttributes ->
     Simplifier Initialized
 initializeAndSimplify verifiedModule =
-    initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
+    initialize (lift . simplifyRuleLhs >=> Logic.scatter) verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::
