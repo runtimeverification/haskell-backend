@@ -16,7 +16,6 @@ module Test.Kore.Builtin.Krypto (
 
 import Control.Lens qualified as Lens
 import Data.Generics.Sum.Constructors
-import Data.Map.Strict qualified as Map
 import Data.Proxy
 import Data.Text (
     Text,
@@ -289,7 +288,7 @@ evaluate ::
     IO (Pattern RewritingVariableName)
 evaluate builtin termLike = do
     evaluator <-
-        Map.lookup builtin Krypto.builtinFunctions
+        Krypto.builtinFunctions builtin
             & expectConstructor @"Just"
     attempt <-
         runBuiltinAndAxiomSimplifier evaluator termLike SideCondition.top

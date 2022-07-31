@@ -17,6 +17,8 @@ module Kore.Simplify.Simplify (
     askOverloadSimplifier,
     getCache,
     putCache,
+    askHookedSymbols,
+    mkHookedSymbols,
     simplifyPatternScatter,
     TermSimplifier,
 
@@ -73,13 +75,17 @@ import Control.Monad.Trans.Maybe
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
 import Kore.Equation.Equation (Equation)
+import Kore.IndexedModule.IndexedModule (VerifiedModuleSyntax)
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (Conditional)
@@ -108,6 +114,7 @@ import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Simplify.InjSimplifier (InjSimplifier)
 import Kore.Simplify.OverloadSimplifier (OverloadSimplifier (..))
+import Kore.Syntax (Id)
 import Kore.Syntax.Application
 import Kore.Unparser
 import Log
@@ -135,10 +142,13 @@ data Env = Env
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (OrPattern RewritingVariableName)
-    , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
+    , -- | A map with the user defined evaluators.
+      -- Builtin evaluators are not stored in this map.
+      simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
     , memo :: !(Memo.Self Simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
+    , hookedSymbols :: !(Map Id Text)
     }
 
 {- | @Simplifier@ represents a simplification action.
@@ -264,6 +274,27 @@ getCache = liftSimplifier get
 
 putCache :: MonadSimplify m => SimplifierCache -> m ()
 putCache = liftSimplifier . put
+
+askHookedSymbols :: MonadSimplify m => m (Map Id Text)
+askHookedSymbols = liftSimplifier $ asks hookedSymbols
+
+mkHookedSymbols ::
+    VerifiedModuleSyntax Attribute.StepperAttributes ->
+    Map Id Text
+mkHookedSymbols im =
+    Map.union
+        (Map.mapMaybe getHook $ IndexedModule.hookedObjectSymbolSentences im)
+        ( Map.unions
+            (importHookedSymbols <$> IndexedModule.indexedModuleImportsSyntax im)
+        )
+  where
+    getHook :: (Attribute.Symbol, a) -> Maybe Text
+    getHook (attrs, _) = Attribute.getHook $ Attribute.hook attrs
+
+    importHookedSymbols ::
+        (a, b, VerifiedModuleSyntax Attribute.StepperAttributes) ->
+        Map Id Text
+    importHookedSymbols (_, _, im') = mkHookedSymbols im'
 
 instance MonadSimplify Simplifier where
     liftSimplifier = id

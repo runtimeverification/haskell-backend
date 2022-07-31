@@ -25,6 +25,7 @@ import Data.Text (Text)
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
+import Kore.Builtin (koreEvaluators)
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
@@ -53,6 +54,7 @@ import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
 import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
+import Kore.Rewrite.Axiom.EvaluationStrategy (simplifierWithFallback)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -205,6 +207,7 @@ lookupAxiomSimplifier ::
     MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do
     simplifierMap <- lift askSimplifierAxioms
+    hookedSymbols <- lift askHookedSymbols
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
             -- remove this check. At startup, the definition's rules are
@@ -226,7 +229,11 @@ lookupAxiomSimplifier termLike = do
         axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
         let exact = Map.lookup axiomIdentifier simplifierMap
         case axiomIdentifier of
-            Axiom.Identifier.Application _ -> exact
+            Axiom.Identifier.Application appId ->
+                let builtintEvaluator = do
+                        name <- Map.lookup appId hookedSymbols
+                        koreEvaluators name
+                 in combineEvaluatorsWithFallBack (builtintEvaluator, exact)
             Axiom.Identifier.Variable -> exact
             Axiom.Identifier.DV -> exact
             Axiom.Identifier.Ceil _ ->
@@ -241,12 +248,23 @@ lookupAxiomSimplifier termLike = do
                     inexact12 = Map.lookup (Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable) simplifierMap
                  in combineEvaluators [exact, inexact1, inexact2, inexact12]
   where
+    getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
+
+    combineEvaluators :: [Maybe BuiltinAndAxiomSimplifier] -> Maybe BuiltinAndAxiomSimplifier
     combineEvaluators maybeEvaluators =
         case catMaybes maybeEvaluators of
             [] -> Nothing
             [a] -> Just a
             as -> Just $ firstFullEvaluation as
+
+    combineEvaluatorsWithFallBack ::
+        (Maybe BuiltinAndAxiomSimplifier, Maybe BuiltinAndAxiomSimplifier) ->
+        Maybe BuiltinAndAxiomSimplifier
+    combineEvaluatorsWithFallBack = \case
+        (Nothing, eval2) -> eval2
+        (eval1, Nothing) -> eval1
+        (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
