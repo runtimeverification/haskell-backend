@@ -66,12 +66,9 @@ import Kore.Sort (
     Sort (..),
  )
 import Kore.Syntax.Variable
-import Log (
-    MonadLog (..),
- )
 import Prelude.Kore
 import SMT (
-    MonadSMT,
+    SMT,
     SExpr (..),
  )
 import SMT qualified
@@ -208,11 +205,9 @@ test_sortDeclaration =
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
 
     encodeAndAssertPredicate ::
-        MonadSMT m =>
-        MonadLog m =>
         Predicate VariableName ->
         SmtMetadataTools Attribute.Symbol ->
-        m ()
+        SMT ()
     encodeAndAssertPredicate predicate tools = do
         encoded <-
             encodePredicate
@@ -221,11 +216,9 @@ test_sortDeclaration =
         SMT.assert encoded
 
     encodePredicate ::
-        MonadSMT m =>
-        MonadLog m =>
         SmtMetadataTools Attribute.Symbol ->
         Predicate VariableName ->
-        m SExpr
+        SMT SExpr
     encodePredicate tools predicate = do
         expr <-
             runMaybeT $
@@ -261,10 +254,9 @@ test_sortDeclaration =
     x = mkElementVariable (testId "x") sSort
 
     declareSymbolsAndSorts ::
-        SMT.MonadSMT m =>
         SmtMetadataTools Attribute.Symbol ->
         VerifiedModule Attribute.Symbol ->
-        m ()
+        SMT ()
     declareSymbolsAndSorts _tools m =
         declareSortsSymbols
             (Representation.build m (Attribute.Constructors.indexBySort m))

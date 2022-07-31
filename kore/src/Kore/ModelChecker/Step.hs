@@ -52,6 +52,7 @@ import Kore.Simplify.Pattern qualified as Pattern (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    liftSimplifier,
  )
 import Kore.TopBottom
 import Prelude.Kore
@@ -155,7 +156,7 @@ transitionRule
                 configs <-
                     lift . lift $
                         Pattern.simplifyTopConfiguration config
-                filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
                 if null filteredConfigs
                     then return Proven
                     else
