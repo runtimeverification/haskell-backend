@@ -170,12 +170,10 @@ type TransitionRule monad rule state =
 
 -- | Transition rule for primitive strategies in 'Prim'.
 transitionRule ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     [[RewriteRule RewritingVariableName]] ->
     ExecutionMode ->
     TransitionRule
-        simplifier
+        Simplifier
         (RewriteRule RewritingVariableName)
         (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
