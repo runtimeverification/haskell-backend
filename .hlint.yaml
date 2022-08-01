@@ -157,6 +157,7 @@
     within:
       - GlobalMain
       - Kore.Log.InfoExecDepth
+      - Kore.Log.WarnUnexploredBranches
 
 - ignore: {name: "Redundant compare", within: [Kore.Syntax.Id]}
 
