@@ -97,13 +97,12 @@ definitionEvaluation equations =
                     _ -> return NotApplicable
 
 attemptEquationAndAccumulateErrors ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     TermLike (Target RewritingVariableName) ->
     Equation RewritingVariableName ->
     ExceptRT
         (OrPattern RewritingVariableName)
-        simplifier
+        Simplifier
         (Maybe (Min (AttemptEquationError RewritingVariableName)))
 attemptEquationAndAccumulateErrors condition term equation =
     attemptEquation
@@ -118,11 +117,10 @@ attemptEquationAndAccumulateErrors condition term equation =
     apply = Equation.applyEquation condition equation
 
 attemptEquations ::
-    MonadSimplify simplifier =>
     Monoid error =>
-    (Equation variable -> ExceptRT result simplifier error) ->
+    (Equation variable -> ExceptRT result Simplifier error) ->
     [Equation variable] ->
-    simplifier (Either error result)
+    Simplifier (Either error result)
 attemptEquations accumulator equations =
     foldlM
         (\err equation -> mappend err <$> accumulator equation)

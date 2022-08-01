@@ -82,7 +82,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
@@ -101,13 +101,11 @@ equation is actually used; @attemptEquation@ will only log when an equation is
 applicable.
 -}
 attemptEquation ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
-    simplifier (AttemptEquationResult RewritingVariableName)
+    Simplifier (AttemptEquationResult RewritingVariableName)
 attemptEquation sideCondition termLike equation = do
     result <- runMaybeT alreadyAttempted
     case result of
@@ -161,7 +159,7 @@ attemptEquation sideCondition termLike equation = do
         [MatchResult RewritingVariableName] ->
         ExceptT
             (AttemptEquationError RewritingVariableName)
-            simplifier
+            Simplifier
             (Equation RewritingVariableName, Predicate RewritingVariableName)
     applyAndSelectMatchResult [] =
         throwE (WhileMatch matchError)
@@ -173,8 +171,8 @@ attemptEquation sideCondition termLike equation = do
     takeFirstSuccess first second = catchError first (const second)
 
     whileDebugAttemptEquation' ::
-        simplifier (AttemptEquationResult RewritingVariableName) ->
-        simplifier (AttemptEquationResult RewritingVariableName)
+        Simplifier (AttemptEquationResult RewritingVariableName) ->
+        Simplifier (AttemptEquationResult RewritingVariableName)
     whileDebugAttemptEquation' action =
         whileDebugAttemptEquation termLike equationRenamed $ do
             result <- action
@@ -232,7 +230,6 @@ attemptEquation sideCondition termLike equation = do
 -}
 applySubstitutionAndSimplify ::
     HasCallStack =>
-    MonadSimplify simplifier =>
     Maybe (Predicate RewritingVariableName) ->
     Maybe (Predicate RewritingVariableName) ->
     Map
@@ -240,7 +237,7 @@ applySubstitutionAndSimplify ::
         (TermLike RewritingVariableName) ->
     ExceptT
         (MatchError RewritingVariableName)
-        simplifier
+        Simplifier
         [MatchResult RewritingVariableName]
 applySubstitutionAndSimplify
     argument
@@ -257,12 +254,10 @@ applySubstitutionAndSimplify
                 & (fmap . fmap) toMatchResult
 
 applyEquation ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Equation RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 applyEquation _ equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
@@ -356,14 +351,12 @@ Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
 'SideCondition'.
 -}
 checkRequires ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     -- | requires from matching
     Predicate RewritingVariableName ->
     -- | requires from 'Equation'
     Predicate RewritingVariableName ->
-    ExceptT (CheckRequiresError RewritingVariableName) simplifier ()
+    ExceptT (CheckRequiresError RewritingVariableName) Simplifier ()
 checkRequires sideCondition predicate requires =
     do
         let requires' = makeAndPredicate predicate requires

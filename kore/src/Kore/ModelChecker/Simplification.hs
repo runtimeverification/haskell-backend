@@ -48,10 +48,9 @@ import Prelude.Kore
 import Pretty qualified
 
 checkImplicationIsTop ::
-    MonadSimplify m =>
     Pattern RewritingVariableName ->
     TermLike RewritingVariableName ->
-    m Bool
+    Simplifier Bool
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         (forallQuantifiers, Implies_ _ implicationLHS implicationRHS) -> do
