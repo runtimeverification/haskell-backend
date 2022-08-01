@@ -152,10 +152,11 @@ lhsClaimStateTransformer sort =
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
-The action may throw an exception if the proof fails; the exception is a
-@'MultiAnd'@ of unprovable configuration.
+The action may throw an exception if the proof fails; the exception is
+a @'MultiAnd'@ of unprovable configuration and a count of unexplored
+branches.
 -}
-type VerifierT m = ExceptT StuckClaims m
+type VerifierT m = ExceptT (StuckClaims, Natural) m
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
@@ -183,6 +184,8 @@ data ProveClaimsResult = ProveClaimsResult
       stuckClaims :: !StuckClaims
     , -- | The conjunction of all claims which were proven.
       provenClaims :: !ProvenClaims
+    , -- | A count of non-final states that were not explored further
+      unexplored :: Natural
     }
 
 proveClaims ::
@@ -224,10 +227,12 @@ proveClaims
                     unproven
                     & runExceptT
                     & flip runStateT (MultiAnd.make stillProven)
+            let (stuckClaims, unexplored) = fromLeft (MultiAnd.top, 0) result
             pure
                 ProveClaimsResult
-                    { stuckClaims = fromLeft MultiAnd.top result
+                    { stuckClaims
                     , provenClaims
+                    , unexplored
                     }
       where
         unproven :: ToProve SomeClaim
@@ -307,7 +312,7 @@ proveClaim ::
     AllClaims SomeClaim ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
-    Simplifier (Either StuckClaims ())
+    Simplifier (Either (StuckClaims, Natural) ())
 proveClaim
     maybeMinDepth
     stuckCheck
@@ -335,18 +340,19 @@ proveClaim
                 limitedStrategyList
                 (ProofDepth 0, startGoal)
 
-        let returnUnprovenClaims =
+        let returnUnprovenClaims n =
                 pure
                     . Left
+                    . (,fromIntegral n)
                     . MultiAnd.make
                     . map StuckClaim
                     . mapMaybe (extractUnproven . snd)
 
         case traversalResult of
-            GraphTraversal.GotStuck _n rs ->
-                returnUnprovenClaims rs
-            GraphTraversal.Aborted _n rs ->
-                returnUnprovenClaims rs
+            GraphTraversal.GotStuck n rs ->
+                returnUnprovenClaims n rs
+            GraphTraversal.Aborted n rs ->
+                returnUnprovenClaims n rs
             GraphTraversal.Ended results -> do
                 let depths = map fst results
                     maxProofDepth = sconcat (ProofDepth 0 :| depths)

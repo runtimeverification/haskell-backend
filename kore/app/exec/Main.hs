@@ -75,6 +75,9 @@ import Kore.Log.WarnBoundedModelChecker (
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
+import Kore.Log.WarnUnexploredBranches (
+    warnUnexploredBranches,
+ )
 import Kore.ModelChecker.Bounded qualified as Bounded (
     CheckResult (..),
  )
@@ -784,15 +787,13 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
             specModule
             maybeAlreadyProvenModule
 
-    let ProveClaimsResult{stuckClaims, provenClaims} = proveResult
-    let (exitCode, final) =
-            case foldFirst stuckClaims of
-                Nothing -> success -- stuckClaims is empty
-                Just claim ->
-                    stuckPatterns
-                        & OrPattern.toTermLike (getClaimPatternSort $ claimPattern claim)
-                        & failure
+    let ProveClaimsResult{stuckClaims, provenClaims, unexplored} = proveResult
+    let (exitCode, final)
+            | null stuckClaims = success
+            | otherwise = failure $ OrPattern.toTermLike stuckSort stuckPatterns
           where
+            stuckSort =
+                getClaimPatternSort . claimPattern . head $ toList stuckClaims
             stuckPatterns =
                 OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
             getStuckConfig =
@@ -803,6 +804,8 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
                     & Lens.view lensClaimPattern
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
+    when (unexplored /= 0) $
+        warnUnexploredBranches unexplored
     return (kFileLocations definition, exitCode)
   where
     failure pat = (ExitFailure 1, pat)
