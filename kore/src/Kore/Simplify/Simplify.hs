@@ -748,25 +748,21 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier ::
-    ( forall simplifier.
-      MonadSimplify simplifier =>
-      SideCondition RewritingVariableName ->
+    ( SideCondition RewritingVariableName ->
       CofreeF
         (Application Symbol)
         (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
-      simplifier (AttemptedAxiom RewritingVariableName)
+      Simplifier (AttemptedAxiom RewritingVariableName)
     ) ->
     BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper ::
-        forall simplifier.
-        MonadSimplify simplifier =>
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
-        simplifier (AttemptedAxiom RewritingVariableName)
+        Simplifier (AttemptedAxiom RewritingVariableName)
     helper termLike sideCondition =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) ->

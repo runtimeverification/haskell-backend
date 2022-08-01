@@ -272,22 +272,22 @@ expectEmptySet cxt _set = do
 as a function result.
 -}
 returnConcreteSet ::
-    (MonadSimplify m, InternalVariable variable) =>
+    (InternalVariable variable) =>
     Sort ->
     HashMap Key (SetValue (TermLike variable)) ->
-    m (Pattern variable)
+    Simplifier (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 
 evalElement :: Builtin.Function
 evalElement _ resultSort [_elem] =
     case retractKey _elem of
         Just concrete ->
-            TermLike.assertConstructorLikeKeys [_elem] $
+            lift . TermLike.assertConstructorLikeKeys [_elem] $
                 returnConcreteSet
                     resultSort
                     (HashMap.singleton concrete SetValue)
         Nothing ->
-            (Ac.returnAc resultSort . wrapAc)
+            (lift . Ac.returnAc resultSort . wrapAc)
                 NormalizedAc
                     { elementsWithVariables =
                         [SetElement _elem]
@@ -335,7 +335,7 @@ evalIn _ _ _ = Builtin.wrongArity Set.inKey
 evalUnit :: Builtin.Function
 evalUnit _ resultSort =
     \case
-        [] -> returnConcreteSet resultSort HashMap.empty
+        [] -> lift $ returnConcreteSet resultSort HashMap.empty
         _ -> Builtin.wrongArity Set.unitKey
 
 evalConcat :: Builtin.Function
@@ -347,12 +347,11 @@ evalConcat _ resultSort [set1, set2] =
 evalConcat _ _ _ = Builtin.wrongArity Set.concatKey
 
 evalDifference ::
-    forall variable simplifier.
+    forall variable.
     InternalVariable variable =>
-    MonadSimplify simplifier =>
     SideCondition variable ->
     TermLike.Application TermLike.Symbol (TermLike variable) ->
-    MaybeT simplifier (Pattern variable)
+    MaybeT Simplifier (Pattern variable)
 evalDifference
     sideCondition
     ( TermLike.Application
@@ -368,7 +367,7 @@ evalDifference
                 bothConcrete = do
                     _set1 <- expectConcreteBuiltinSet ctx _set1
                     _set2 <- expectConcreteBuiltinSet ctx _set2
-                    returnConcreteSet resultSort (HashMap.difference _set1 _set2)
+                    lift $ returnConcreteSet resultSort (HashMap.difference _set1 _set2)
                 symbolic = do
                     _set1 <- expectBuiltinSet ctx _set1
                     _set2 <- expectBuiltinSet ctx _set2
@@ -419,8 +418,8 @@ evalDifference
                                 , opaque =
                                     HashSet.difference opaque1 opaque1 & HashSet.toList
                                 }
-                    pat1 <- Ac.returnAc resultSort (NormalizedSet set1')
-                    pat2 <- Ac.returnAc resultSort (NormalizedSet set2')
+                    pat1 <- lift $ Ac.returnAc resultSort (NormalizedSet set1')
+                    pat2 <- lift $ Ac.returnAc resultSort (NormalizedSet set2')
                     let pat
                             | (not . nullAc) set1'
                               , (not . nullAc) set2' =
@@ -443,6 +442,7 @@ evalToList _ resultSort [_set] = do
         & Seq.fromList
         & fmap (from @Key)
         & List.returnList resultSort
+        & lift
 evalToList _ _ _ = Builtin.wrongArity Set.toListKey
 
 evalSize :: Builtin.Function
@@ -458,7 +458,7 @@ evalIntersection :: Builtin.Function
 evalIntersection _ resultSort [_set1, _set2] = do
     _set1 <- expectConcreteBuiltinSet ctx _set1
     _set2 <- expectConcreteBuiltinSet ctx _set2
-    returnConcreteSet resultSort (HashMap.intersection _set1 _set2)
+    lift $ returnConcreteSet resultSort (HashMap.intersection _set1 _set2)
   where
     ctx = Set.intersectionKey
 evalIntersection _ _ _ = Builtin.wrongArity Set.intersectionKey
@@ -470,7 +470,7 @@ evalList2set _ resultSort [_list] = do
             fmap (\x -> (x, SetValue)) _list
                 & toList
                 & HashMap.fromList
-    returnConcreteSet resultSort _set
+    lift $ returnConcreteSet resultSort _set
 evalList2set _ _ _ = Builtin.wrongArity Set.list2setKey
 
 evalInclusion :: Builtin.Function
