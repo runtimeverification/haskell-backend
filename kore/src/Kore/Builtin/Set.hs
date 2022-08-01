@@ -225,12 +225,11 @@ symbolVerifiers =
 Returns the @NormalizedSet@ otherwise.
 -}
 expectBuiltinSet ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (Ac.TermNormalizedAc NormalizedSet variable)
+    MaybeT Simplifier (Ac.TermNormalizedAc NormalizedSet variable)
 expectBuiltinSet _ (InternalSet_ internalSet) =
     return (builtinAcChild internalSet)
 expectBuiltinSet _ _ = empty
@@ -241,12 +240,11 @@ which consists only of concrete elements.
 Returns the @Set@ of concrete elements otherwise.
 -}
 expectConcreteBuiltinSet ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (HashMap Key (SetValue (TermLike variable)))
+    MaybeT Simplifier (HashMap Key (SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
     case unwrapAc _set of
@@ -258,12 +256,11 @@ expectConcreteBuiltinSet ctx _set = do
         _ -> empty
 
 expectEmptySet ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m ()
+    MaybeT Simplifier ()
 expectEmptySet cxt _set = do
     _set <- expectConcreteBuiltinSet cxt _set
     Monad.guard (HashMap.null _set)

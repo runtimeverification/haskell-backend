@@ -266,12 +266,11 @@ which consists only of concrete elements.
 Returns the @Map@ of concrete elements otherwise.
 -}
 expectConcreteBuiltinMap ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (HashMap Key (MapValue (TermLike variable)))
+    MaybeT Simplifier (HashMap Key (MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
     case unwrapAc _map of
