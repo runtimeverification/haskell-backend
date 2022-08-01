@@ -145,6 +145,9 @@ import Kore.Log.WarnSymbolSMTRepresentation (
 import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
  )
+import Kore.Log.WarnUnexploredBranches (
+    WarnUnexploredBranches,
+ )
 import Kore.Log.WarnUnsimplified (
     WarnUnsimplifiedCondition,
     WarnUnsimplifiedPredicate,
@@ -213,6 +216,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
+            , mk $ Proxy @WarnUnexploredBranches
             , mk $ Proxy @DebugRetrySolverQuery
             , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
