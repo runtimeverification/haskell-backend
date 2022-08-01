@@ -106,6 +106,7 @@ newSetCeilSimplifier =
                 mkNotMember
             )
             ceil
+
 -- {-# SPECIALIZE newSetCeilSimplifier ::
 --     CeilSimplifier
 --         Simplifier
@@ -144,6 +145,7 @@ newMapCeilSimplifier =
                 mkNotMember
             )
             ceil
+
 -- {-# SPECIALIZE newMapCeilSimplifier ::
 --     CeilSimplifier
 --         Simplifier
@@ -230,6 +232,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
         worker multiAnd termLike = do
             evaluated <- makeEvaluateTermCeil sideCondition termLike
             return (multiAnd <> MultiAnd.singleton evaluated)
+
 -- {-# SPECIALIZE newBuiltinAssocCommCeilSimplifier ::
 --     forall normalized.
 --     Ord (Element normalized (TermLike RewritingVariableName)) =>
@@ -346,6 +349,7 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
             & Predicate.markSimplifiedMaybeConditional Nothing
             & OrCondition.fromPredicate
             & MultiAnd.singleton
+
 -- {-# SPECIALIZE definePairWiseElements ::
 --     forall normalized.
 --     Ord (Element normalized (TermLike RewritingVariableName)) =>
