@@ -788,20 +788,20 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
             maybeAlreadyProvenModule
 
     let ProveClaimsResult{stuckClaims, provenClaims, unexplored} = proveResult
-    let (exitCode, final)
-            | null stuckClaims = success
-            | otherwise = failure $ OrPattern.toTermLike stuckSort stuckPatterns
-          where
-            stuckSort =
-                getClaimPatternSort . claimPattern . head $ toList stuckClaims
-            stuckPatterns =
-                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
-            getStuckConfig =
-                getRewritingPattern . getConfiguration . getStuckClaim
-            claimPattern claim =
-                claim
-                    & getStuckClaim
-                    & Lens.view lensClaimPattern
+    let (exitCode, final) =
+            case foldFirst stuckClaims of
+                Nothing -> success -- stuckClaims is empty
+                Just claim ->
+                    stuckPatterns
+                        & OrPattern.toTermLike (getClaimPatternSort $ claimPattern claim)
+                        & failure
+                  where
+                    stuckPatterns =
+                        OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
+                    getStuckConfig =
+                        getRewritingPattern . getConfiguration . getStuckClaim
+                    claimPattern = Lens.view lensClaimPattern . getStuckClaim
+
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     when (unexplored /= 0) $
