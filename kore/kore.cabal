@@ -313,6 +313,7 @@ library
     Kore.Equation.Validate
     Kore.Error
     Kore.Exec
+    Kore.Exec.GraphTraversal
     Kore.IndexedModule.Error
     Kore.IndexedModule.IndexedModule
     Kore.IndexedModule.MetadataTools
@@ -457,12 +458,12 @@ library
     Kore.Simplify.And
     Kore.Simplify.AndPredicates
     Kore.Simplify.AndTerms
+    Kore.Simplify.API
     Kore.Simplify.Application
     Kore.Simplify.Bottom
     Kore.Simplify.Ceil
     Kore.Simplify.CeilSimplifier
     Kore.Simplify.Condition
-    Kore.Simplify.Data
     Kore.Simplify.DomainValue
     Kore.Simplify.Equals
     Kore.Simplify.Exists

@@ -98,7 +98,7 @@ simplifyWithSideCondition ::
 simplifyWithSideCondition
     (SideCondition.mapVariables (pure mkConfigVariable) -> sideCondition) =
         fmap (OrPattern.map getRewritingPattern)
-            <$> runSimplifier Mock.env
+            <$> testRunSimplifier Mock.env
                 . TermLike.simplify sideCondition
                 . mkRewritingTerm
 
@@ -166,5 +166,5 @@ simplify ::
     TermLike RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 simplify =
-    runSimplifier Mock.env
+    testRunSimplifier Mock.env
         . TermLike.simplify SideCondition.top

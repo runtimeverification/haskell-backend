@@ -37,7 +37,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     runSimplifier,
  )
 import Kore.Simplify.Simplify (

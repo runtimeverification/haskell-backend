@@ -40,8 +40,9 @@ import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Coerce (
     coerce,
  )
-import Data.Limit (
+import Data.Limit as Limit (
     Limit (..),
+    takeWithin,
  )
 import Data.List (
     tails,
@@ -69,6 +70,7 @@ import Kore.Equation qualified as Equation (
     argument,
     requires,
  )
+import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
@@ -168,18 +170,17 @@ import Kore.Rewrite.Search (
     searchGraph,
  )
 import Kore.Rewrite.Search qualified as Search
-import Kore.Rewrite.Strategy (FinalNodeType (Leaf))
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
  )
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Simplifier,
     evalSimplifier,
     evalSimplifierProofs,
  )
-import Kore.Simplify.Data qualified as Simplifier
+import Kore.Simplify.API qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     SimplifierXSwitch,
@@ -278,44 +279,30 @@ exec
         , overloadGraph
         , metadataTools
         , verifiedModule
-        , rewrites
+        , rewrites = Initialized{rewriteRules}
         , equations
         }
-    strategy
+    execMode
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
-            let Initialized{rewriteRules} = rewrites
             finals <-
-                getFinalConfigsOf $ do
-                    initialConfig <-
-                        Pattern.simplify
-                            (Pattern.fromTermLike initialTerm)
-                            >>= Logic.scatter
-                    let updateQueue = \as ->
-                            Strategy.unfoldDepthFirst as
-                                >=> lift
-                                    . Strategy.applyBreadthLimit
-                                        breadthLimit
-                                        dropStrategy
-                        rewriteGroups = groupRewritesByPriority rewriteRules
-                        transit instr config =
-                            Strategy.transitionRule
-                                ( transitionRule rewriteGroups strategy
-                                    & profTransitionRule
-                                    & trackExecDepth
-                                )
-                                instr
-                                config
-                                & runTransitionT
-                                & fmap (map fst)
-                                & lift
-                    Strategy.leavesM
-                        Leaf
-                        updateQueue
-                        (unfoldTransition transit)
-                        ( limitedExecutionStrategy depthLimit
-                        , (ExecDepth 0, Start initialConfig)
-                        )
+                GraphTraversal.graphTraversal
+                    Strategy.Leaf
+                    Strategy.DepthFirst
+                    breadthLimit
+                    transit
+                    Limit.Unlimited
+                    execStrategy
+                    (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
+                    >>= \case
+                        GraphTraversal.Ended results -> pure results
+                        GraphTraversal.GotStuck n results -> do
+                            when (n == 0 && any (notStuck . snd) results) $
+                                forM_ depthLimit warnDepthLimitExceeded
+                            pure results
+                        GraphTraversal.Aborted _ results -> do
+                            pure results
+
             let (depths, finalConfigs) = unzip finals
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
@@ -328,17 +315,60 @@ exec
                         & sameTermLikeSort initialSort
             return (exitCode, finalTerm)
       where
-        dropStrategy = snd
-        getFinalConfigsOf act = observeAllT $ fmap snd act
         verifiedModule' =
             IndexedModule.mapAliasPatterns
                 -- TODO (thomas.tuegel): Move this into Kore.Builtin
                 (Builtin.internalize metadataTools)
                 verifiedModule
         initialSort = termLikeSort initialTerm
-        unfoldTransition transit (instrs, config) = do
-            when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
-            Strategy.unfoldTransition transit (instrs, config)
+
+        execStrategy :: [GraphTraversal.Step Prim]
+        execStrategy =
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify] :
+                repeat [Begin, Rewrite, Simplify]
+
+        transit ::
+            GraphTraversal.TState
+                Prim
+                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+            Simplifier.Simplifier
+                ( GraphTraversal.TransitionResult
+                    ( GraphTraversal.TState
+                        Prim
+                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                    )
+                )
+        transit =
+            GraphTraversal.simpleTransition
+                ( trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) execMode
+                )
+                toTransitionResult
+
+        toTransitionResult ::
+            (ExecDepth, ProgramState p) ->
+            [(ExecDepth, ProgramState p)] ->
+            ( GraphTraversal.TransitionResult
+                (ExecDepth, ProgramState p)
+            )
+        toTransitionResult prior [] =
+            case snd prior of
+                Start _ -> GraphTraversal.Stopped [prior]
+                Rewritten _ -> GraphTraversal.Stopped [prior]
+                Remaining _ -> GraphTraversal.Stuck prior
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+        toTransitionResult _prior [next] =
+            case snd next of
+                Start _ -> GraphTraversal.Continuing next
+                Rewritten _ -> GraphTraversal.Continuing next
+                Remaining _ -> GraphTraversal.Stuck next
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+        toTransitionResult prior (s : ss) =
+            GraphTraversal.Branch prior (s :| ss)
+
+        notStuck :: ProgramState a -> Bool
+        notStuck = isJust . extractProgramState
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
@@ -494,7 +524,7 @@ prove ::
     Limit Natural ->
     Limit Natural ->
     Natural ->
-    FinalNodeType ->
+    Strategy.FinalNodeType ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module

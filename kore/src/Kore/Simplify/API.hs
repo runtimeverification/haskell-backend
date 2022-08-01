@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Module      : Kore.Simplify.Data
+Module      : Kore.Simplify.API
 Description : Data structures used for term simplification.
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -9,28 +9,31 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Simplify.Data (
-    Simplifier,
-    TermSimplifier,
-    Env (..),
-    runSimplifier,
-    runSimplifierBranch,
+module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
 
     -- * Re-exports
+    Env (..),
+    Simplifier,
+    runSimplifier,
+    runSimplifierBranch,
+    TermSimplifier,
     MonadSimplify (..),
+    askMetadataTools,
+    simplifyPattern,
+    simplifyTerm,
+    askSimplifierAxioms,
+    askInjSimplifier,
+    askOverloadSimplifier,
+    getCache,
+    putCache,
+    askSimplifierXSwitch,
     InternalVariable,
     MonadProf,
 ) where
 
-import Control.Monad.Catch (
-    MonadCatch,
-    MonadMask,
-    MonadThrow,
- )
 import Control.Monad.Reader
-import Control.Monad.State.Strict
 import Data.Map.Strict (
     Map,
  )
@@ -82,39 +85,12 @@ import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Syntax.Variable (
     VariableName,
  )
-import Logic
 import Prelude.Kore
 import Pretty qualified
 import Prof
 import SMT (
     SMT,
  )
-
--- * Simplifier
-
-data Env = Env
-    { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
-    , simplifierCondition :: !(ConditionSimplifier Simplifier)
-    , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
-    , memo :: !(Memo.Self Simplifier)
-    , injSimplifier :: !InjSimplifier
-    , overloadSimplifier :: !OverloadSimplifier
-    , simplifierXSwitch :: !SimplifierXSwitch
-    }
-
-{- | @Simplifier@ represents a simplification action.
-
-A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
-
-A @Simplifier@ can write to the log through 'HasLog'.
--}
-newtype Simplifier a
-    = Simplifier (StateT SimplifierCache (ReaderT Env SMT) a)
-    deriving newtype (Functor, Applicative, Monad)
-    deriving newtype (MonadSMT, MonadLog, MonadProf)
-    deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
-    deriving newtype (MonadReader Env)
-    deriving newtype (MonadState SimplifierCache)
 
 traceProfSimplify ::
     MonadProf prof =>
@@ -130,66 +106,6 @@ traceProfSimplify (Pattern.toTermLike -> termLike) =
             . Pretty.layoutOneLine
             . Pretty.pretty
             <$> matchAxiomIdentifier termLike
-
-instance MonadSimplify Simplifier where
-    askMetadataTools = asks metadataTools
-    {-# INLINE askMetadataTools #-}
-
-    simplifyPattern sideCondition patt =
-        traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
-    {-# INLINE simplifyPattern #-}
-
-    simplifyTerm = TermLike.simplify
-    {-# INLINE simplifyTerm #-}
-
-    simplifyCondition topCondition conditional = do
-        ConditionSimplifier simplify <- asks simplifierCondition
-        simplify topCondition conditional
-    {-# INLINE simplifyCondition #-}
-
-    askSimplifierAxioms = asks simplifierAxioms
-    {-# INLINE askSimplifierAxioms #-}
-
-    localSimplifierAxioms locally =
-        local $ \env@Env{simplifierAxioms} ->
-            env{simplifierAxioms = locally simplifierAxioms}
-    {-# INLINE localSimplifierAxioms #-}
-
-    askMemo = asks memo
-    {-# INLINE askMemo #-}
-
-    askInjSimplifier = asks injSimplifier
-    {-# INLINE askInjSimplifier #-}
-
-    askOverloadSimplifier = asks overloadSimplifier
-    {-# INLINE askOverloadSimplifier #-}
-
-    getCache = get
-    {-# INLINE getCache #-}
-
-    putCache = put
-    {-# INLINE putCache #-}
-
-    askSimplifierXSwitch = asks simplifierXSwitch
-    {-# INLINE askSimplifierXSwitch #-}
-
--- | Run a simplification, returning the results along all branches.
-runSimplifierBranch ::
-    Env ->
-    -- | simplifier computation
-    LogicT Simplifier a ->
-    SMT [a]
-runSimplifierBranch env = runSimplifier env . observeAllT
-
-{- | Run a simplification, returning the result of only one branch.
-
-__Warning__: @runSimplifier@ calls 'error' if the 'Simplifier' does not contain
-exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
-that may branch.
--}
-runSimplifier :: Env -> Simplifier a -> SMT a
-runSimplifier env (Simplifier simplifier) =
-    runReaderT (evalStateT simplifier initCache) env
 
 mkSimplifierEnv ::
     SimplifierXSwitch ->
@@ -207,6 +123,8 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
         Env
             { metadataTools = metadataTools
             , simplifierCondition
+            , simplifierPattern
+            , simplifierTerm
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
             , injSimplifier
@@ -222,6 +140,12 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
     simplifierCondition =
         {-# SCC "evalSimplifier/simplifierCondition" #-}
         Condition.create substitutionSimplifier
+    simplifierPattern sideCondition patt =
+        {-# SCC "evalSimplifier/simplifierPattern" #-}
+        traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
+    simplifierTerm =
+        {-# SCC "evalSimplifier/simplifierTerm" #-}
+        TermLike.simplify
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
@@ -259,6 +183,8 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
             Env
                 { metadataTools
                 , simplifierCondition
+                , simplifierPattern
+                , simplifierTerm
                 , simplifierAxioms
                 , memo
                 , injSimplifier

@@ -2,6 +2,8 @@ module Test.Kore.Exec (
     test_exec,
     test_execPriority,
     test_execBottom,
+    test_execBranch,
+    test_execBranch1Stuck,
     test_searchPriority,
     test_searchExceedingBreadthLimit,
     test_execGetExitCode,
@@ -55,7 +57,6 @@ import Kore.Internal.Predicate (
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
  )
@@ -117,6 +118,78 @@ import Test.SMT (
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
+test_execBranch :: TestTree
+test_execBranch = testCase "execBranch" $ actual >>= assertEqual "" (ExitSuccess, expected)
+  where
+    actual =
+        execTest
+            Unlimited
+            Unlimited
+            verifiedModule
+            All
+            inputPattern
+            & runNoSMT
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+    inputPattern = applyToNoArgs mySort "a" -- rewrites to b or c
+    expected =
+        mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "c")
+
+test_execBranch1Stuck :: TestTree
+test_execBranch1Stuck =
+    testCase "execBranch1Stuck" $
+        actual >>= assertEqual "" (ExitSuccess, expected)
+  where
+    actual =
+        execTest
+            Unlimited
+            Unlimited
+            verifiedModule
+            All
+            inputPattern
+            & runNoSMT
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , asSentence $ constructorDecl "d"
+                    , asSentence $ constructorDecl "e"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , functionalAxiom "d"
+                    , functionalAxiom "d"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    , simpleRewriteAxiom "c" "d"
+                    , simpleRewriteAxiom "d" "e"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+    inputPattern = applyToNoArgs mySort "a" -- rewrites to b or d
+    expected =
+        mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "e")
+
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
   where
@@ -159,10 +232,11 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
     do
-        (_, entries) <- actual
+        (output, entries) <- actual
         let actualDepthWarnings =
                 catMaybes $ fromEntry @WarnDepthLimitExceeded <$> entries
             expectedWarning = WarnDepthLimitExceeded 1
+        assertEqual "output" expected output
         assertEqual "" [expectedWarning] actualDepthWarnings
   where
     actual =
@@ -173,6 +247,7 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
             Any
             inputPattern
             & runTestLoggerT . SMT.runNoSMT
+    expected = (ExitSuccess, applyToNoArgs mySort "b")
     verifiedModule =
         verifiedMyModule
             Module
@@ -855,7 +930,7 @@ rewriteAxiomPriority ::
 rewriteAxiomPriority lhsName rhsName priority antiLeft =
     ( Syntax.SentenceAxiomSentence
         . withPriority priority
-        . TermLike.mkAxiom_
+        . mkAxiom_
     )
         $ rewriteRuleToTerm $
             RewriteRule

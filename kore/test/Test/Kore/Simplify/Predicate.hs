@@ -570,7 +570,7 @@ simplifyExpect replacements input expect = do
         expect' = mkDisjunctiveNormalForm expect
     actual <-
         simplify sideCondition input
-            & Test.runSimplifier Mock.env
+            & Test.testRunSimplifier Mock.env
     let message =
             (show . Pretty.vsep)
                 [ "Expected:"

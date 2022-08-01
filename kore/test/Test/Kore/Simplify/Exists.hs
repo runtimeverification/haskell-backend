@@ -408,7 +408,7 @@ testSort = Mock.testSort
 simplify ::
     Exists Sort RewritingVariableName (OrPattern RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
-simplify = runSimplifier Mock.env . Exists.simplify SideCondition.top
+simplify = testRunSimplifier Mock.env . Exists.simplify SideCondition.top
 
 makeEvaluate ::
     ElementVariable RewritingVariableName ->
@@ -422,5 +422,5 @@ makeEvaluate variable child = do
     return (result, resultSimplifierX)
   where
     runSimplifierWithEnv env =
-        runSimplifier env $
+        testRunSimplifier env $
             Exists.makeEvaluate SideCondition.top [variable] child

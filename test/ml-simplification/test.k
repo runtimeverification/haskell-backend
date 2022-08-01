@@ -3,7 +3,7 @@ module TEST
     imports BOOL
 
     rule {I +Int J #Equals I +Int K} => #Bottom
-        requires notBool J ==Int K [anywhere, simplification]
+        requires notBool J ==Int K [simplification]
 
     syntax Test ::= runTest( K ) | doneTest( K )
 

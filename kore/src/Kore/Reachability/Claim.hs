@@ -137,7 +137,7 @@ import Kore.Rewrite.Strategy (
  )
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     MonadSimplify,
  )
 import Kore.Simplify.Exists qualified as Exists
