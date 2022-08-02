@@ -104,14 +104,13 @@ solutions returned is limited by 'bound'.
 See also: 'Kore.Rewrite.Strategy.runStrategy', 'matchWith'
 -}
 searchGraph ::
-    MonadSimplify m =>
     -- | Search options
     Config ->
     -- | Matching criterion
-    (config -> MaybeT m substitution) ->
+    (config -> MaybeT Simplifier substitution) ->
     -- | Execution tree
     Strategy.ExecutionGraph config rule ->
-    m [substitution]
+    Simplifier [substitution]
 searchGraph Config{searchType, bound} match executionGraph = do
     let selectedConfigs = pick executionGraph
     matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
@@ -125,23 +124,21 @@ searchGraph Config{searchType, bound} match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith ::
-    forall m.
-    MonadSimplify m =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    MaybeT m (OrCondition RewritingVariableName)
+    MaybeT Simplifier (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
     matchResults <- MaybeT $ matchIncremental sideCondition t1 t2
     let mergeAndEvaluate ::
             MatchResult RewritingVariableName ->
-            m (OrCondition RewritingVariableName)
+            Simplifier (OrCondition RewritingVariableName)
         mergeAndEvaluate predSubst = do
             results <- Logic.observeAllT $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches ::
             MatchResult RewritingVariableName ->
-            LogicT m (Condition RewritingVariableName)
+            LogicT Simplifier (Condition RewritingVariableName)
         mergeAndEvaluateBranches (predicate, substitution) = do
             merged <-
                 mergePredicatesAndSubstitutions

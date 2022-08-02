@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
+    mapNotSimplifier,
 ) where
 
 import Kore.Internal.OrPattern (
@@ -26,3 +27,9 @@ newtype NotSimplifier simplifier = NotSimplifier
         Not Sort (OrPattern RewritingVariableName) ->
         simplifier (OrPattern RewritingVariableName)
     }
+
+mapNotSimplifier ::
+    (forall a. simplifier a -> simplifier' a) ->
+    NotSimplifier simplifier -> NotSimplifier simplifier'
+mapNotSimplifier f NotSimplifier{runNotSimplifier} =
+    NotSimplifier {runNotSimplifier = \sd n -> f (runNotSimplifier sd n)}
