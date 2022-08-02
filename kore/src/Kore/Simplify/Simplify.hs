@@ -231,8 +231,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askMemo = Memo.liftSelf lift <$> lift askMemo
     {-# INLINE askMemo #-}
 
-
-
 -- | Retrieve the 'MetadataTools' for the Kore context.
 askMetadataTools :: MonadSimplify m => m (SmtMetadataTools Attribute.Symbol)
 askMetadataTools = liftSimplifier $ asks metadataTools
@@ -273,7 +271,6 @@ getCache = liftSimplifier get
 
 putCache :: MonadSimplify m => SimplifierCache -> m ()
 putCache = liftSimplifier . put
-
 
 instance MonadSimplify Simplifier where
     liftSimplifier = id

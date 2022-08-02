@@ -37,7 +37,6 @@ import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Rewrite (ExecutionMode (All), Natural)
 
 -- import Kore.Rewrite.RewritingVariable as RewritingVariable
-
 -- import Kore.Simplify.API (
 --     evalSimplifier,
 --  )

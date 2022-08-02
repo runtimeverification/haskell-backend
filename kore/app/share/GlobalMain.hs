@@ -369,7 +369,6 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
-
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->

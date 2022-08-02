@@ -19,7 +19,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Exists qualified as Exists
-
 import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
