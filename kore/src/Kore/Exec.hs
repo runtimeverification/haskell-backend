@@ -182,9 +182,6 @@ import Kore.Simplify.API (
  )
 import Kore.Simplify.API qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify (
-    SimplifierXSwitch,
- )
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -233,11 +230,10 @@ data SerializedModule = SerializedModule
     deriving anyclass (NFData)
 
 makeSerializedModule ::
-    SimplifierXSwitch ->
     VerifiedModule StepperAttributes ->
     SMT SerializedModule
-makeSerializedModule simplifierx verifiedModule =
-    evalSimplifier simplifierx (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
+makeSerializedModule verifiedModule =
+    evalSimplifier (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
         rewrites <- initializeAndSimplify verifiedModule
         return
             SerializedModule
@@ -261,7 +257,6 @@ makeSerializedModule simplifierx verifiedModule =
 
 -- | Symbolic execution
 exec ::
-    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -271,7 +266,6 @@ exec ::
     TermLike VariableName ->
     SMT (ExitCode, TermLike VariableName)
 exec
-    simplifierx
     depthLimit
     breadthLimit
     SerializedModule
@@ -284,7 +278,7 @@ exec
         }
     execMode
     (mkRewritingTerm -> initialTerm) =
-        evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
+        evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             finals <-
                 GraphTraversal.graphTraversal
                     Strategy.Leaf
@@ -444,7 +438,6 @@ getExitCode
 
 -- | Symbolic search
 search ::
-    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -457,7 +450,6 @@ search ::
     Search.Config ->
     SMT (TermLike VariableName)
 search
-    simplifierx
     depthLimit
     breadthLimit
     SerializedModule
@@ -471,7 +463,7 @@ search
     (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig =
-        evalSimplifier simplifierx verifiedModule sortGraph overloadGraph metadataTools equations $ do
+        evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations $ do
             let Initialized{rewriteRules} = rewrites
             simplifiedPatterns <-
                 Pattern.simplify $
@@ -519,7 +511,6 @@ search
 prove ::
     Maybe MinDepth ->
     StuckCheck ->
-    SimplifierXSwitch ->
     Strategy.GraphSearchOrder ->
     Limit Natural ->
     Limit Natural ->
@@ -535,7 +526,6 @@ prove ::
 prove
     maybeMinDepth
     stuckCheck
-    simplifierx
     searchOrder
     breadthLimit
     depthLimit
@@ -544,7 +534,7 @@ prove
     definitionModule
     specModule
     trustedModule =
-        evalSimplifierProofs simplifierx definitionModule $ do
+        evalSimplifierProofs definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -577,7 +567,6 @@ prove
 proveWithRepl ::
     Maybe MinDepth ->
     StuckCheck ->
-    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
@@ -600,7 +589,6 @@ proveWithRepl ::
 proveWithRepl
     minDepth
     stuckCheck
-    simplifierx
     definitionModule
     specModule
     trustedModule
@@ -612,7 +600,7 @@ proveWithRepl
     mainModuleName
     logOptions
     kFileLocations =
-        evalSimplifierProofs simplifierx definitionModule $ do
+        evalSimplifierProofs definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -635,7 +623,6 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck ::
-    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -649,13 +636,12 @@ boundedModelCheck ::
             (ImplicationRule VariableName)
         )
 boundedModelCheck
-    simplifierx
     breadthLimit
     depthLimit
     definitionModule
     specModule
     searchOrder =
-        evalSimplifierProofs simplifierx definitionModule $ do
+        evalSimplifierProofs definitionModule $ do
             initialized <- initializeAndSimplify definitionModule
             let Initialized{rewriteRules} = initialized
                 specClaims = extractImplicationClaims specModule
@@ -673,13 +659,12 @@ boundedModelCheck
                 (head claims, depthLimit)
 
 matchDisjunction ::
-    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
     SMT (TermLike VariableName)
-matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
-    evalSimplifierProofs simplifierx mainModule $ do
+matchDisjunction mainModule matchPattern disjunctionPattern =
+    evalSimplifierProofs mainModule $ do
         results <-
             traverse (runMaybeT . match matchPattern) disjunctionPattern
                 <&> catMaybes
@@ -712,12 +697,11 @@ See 'checkEquation',
 'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
-    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     SMT ()
-checkFunctions simplifierx verifiedModule =
-    evalSimplifierProofs simplifierx verifiedModule $ do
+checkFunctions verifiedModule =
+    evalSimplifierProofs verifiedModule $ do
         -- check if RHS is function pattern
         equations >>= filter (not . isFunctionPattern . right)
             & mapM_ errorEquationRightFunction

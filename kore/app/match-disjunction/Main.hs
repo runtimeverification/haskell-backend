@@ -144,7 +144,7 @@ mainWithOptions localOptions@LocalOptions{execOptions} = do
     KoreMatchDisjunctionOptions{koreLogOptions} = execOptions
 
 koreMatchDisjunction :: LocalOptions KoreMatchDisjunctionOptions -> Main ExitCode
-koreMatchDisjunction LocalOptions{execOptions, simplifierx} = do
+koreMatchDisjunction LocalOptions{execOptions} = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     matchPattern <- mainParseMatchPattern (indexedModuleSyntax mainModule) matchFileName
@@ -154,7 +154,6 @@ koreMatchDisjunction LocalOptions{execOptions, simplifierx} = do
         clockSomethingIO "Executing" $
             runNoSMT $
                 matchDisjunction
-                    simplifierx
                     mainModule
                     matchPattern
                     disjunctionPattern

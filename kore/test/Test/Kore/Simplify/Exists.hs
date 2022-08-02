@@ -19,9 +19,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Exists qualified as Exists
-import Kore.Simplify.Simplify (
-    SimplifierXSwitch (..),
- )
 import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
@@ -162,20 +159,18 @@ test_makeEvaluate =
         "Exists - Predicates"
         [ testCase "Top" $ do
             let expect = OrPattern.fromPatterns [Pattern.topOf Mock.testSort]
-            (actual, actualSimplifierX) <-
+            actual <-
                 makeEvaluate
                     Mock.xConfig
                     (Pattern.topOf Mock.testSort :: Pattern RewritingVariableName)
             assertEqual "" expect actual
-            assertEqual "" expect actualSimplifierX
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
-            (actual, actualSimplifierX) <-
+            actual <-
                 makeEvaluate
                     Mock.xConfig
                     (Pattern.bottomOf Mock.testSort :: Pattern RewritingVariableName)
             assertEqual "" expect actual
-            assertEqual "" expect actualSimplifierX
         ]
     , testCase "exists applies substitution if possible" $ do
         -- exists x . (t(x) and p(x) and [x = alpha, others])
@@ -193,7 +188,7 @@ test_makeEvaluate =
                                 [(inject Mock.yConfig, fOfA)]
                         }
                     ]
-        (actuals, actualsSimplifierX) <-
+        actuals <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -207,7 +202,6 @@ test_makeEvaluate =
                             ]
                     }
         Pattern.assertEquivalentPatterns expects actuals
-        Pattern.assertEquivalentPatterns expects actualsSimplifierX
     , testCase "exists disappears if variable not used" $ do
         -- exists x . (t and p and s)
         --    = t and p and s
@@ -220,7 +214,7 @@ test_makeEvaluate =
                         , substitution = mempty
                         }
                     ]
-        (actual, actualSimplifierX) <-
+        actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -229,7 +223,6 @@ test_makeEvaluate =
                     , substitution = mempty
                     }
         assertEqual "exists with substitution" expect actual
-        assertEqual "exists with substitution (simplifierX)" expect actualSimplifierX
     , testCase "exists applied on term if not used elsewhere" $ do
         -- exists x . (t(x) and p and s)
         --    = (exists x . t(x)) and p and s
@@ -242,7 +235,7 @@ test_makeEvaluate =
                         , substitution = mempty
                         }
                     ]
-        (actual, actualSimplifierX) <-
+        actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -251,7 +244,6 @@ test_makeEvaluate =
                     , substitution = mempty
                     }
         assertEqual "exists on term" expect actual
-        assertEqual "exists on term (simplifierX)" expect actualSimplifierX
     , testCase "exists applied on predicate if not used elsewhere" $ do
         -- exists x . (t and p(x) and s)
         --    = t and (exists x . p(x)) and s
@@ -267,7 +259,7 @@ test_makeEvaluate =
                         , substitution = mempty
                         }
                     ]
-        (actual, actualSimplifierX) <-
+        actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -276,7 +268,6 @@ test_makeEvaluate =
                     , substitution = mempty
                     }
         assertEqual "exists on predicate" expect actual
-        assertEqual "exists on predicate (simplifierX)" expect actualSimplifierX
     , testCase "exists moves substitution above" $
         -- error for exists x . (t(x) and p(x) and s)
         assertErrorIO (const (return ())) $
@@ -294,7 +285,7 @@ test_makeEvaluate =
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
         let expect = OrPattern.fromPatterns [Pattern.topOf Mock.testSort]
-        (actual, actualSimplifierX) <-
+        actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -306,7 +297,6 @@ test_makeEvaluate =
                                 [(inject Mock.xConfig, gOfA)]
                     }
         assertEqual "exists reevaluates" expect actual
-        assertEqual "exists reevaluates (simplifierX)" expect actualSimplifierX
     , testCase "exists matches equality if result is top" $ do
         -- exists x . (f(x) = f(a))
         --    = top.s
@@ -321,7 +311,7 @@ test_makeEvaluate =
                                     [(inject Mock.yConfig, fOfA)]
                         }
                     ]
-        (actual, actualSimplifierX) <-
+        actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -333,7 +323,6 @@ test_makeEvaluate =
                                 [(inject Mock.yConfig, fOfA)]
                     }
         assertEqual "exists matching" expect actual
-        assertEqual "exists matching (simplifierX)" expect actualSimplifierX
     , testCase "exists does not match equality if free var in subst" $ do
         -- exists x . (f(x) = f(a)) and (y=f(x))
         --    = exists x . (f(x) = f(a)) and (y=f(x))
@@ -357,7 +346,7 @@ test_makeEvaluate =
                                     [(inject Mock.zConfig, fOfA)]
                         }
                     ]
-        (actual, actualSimplifierX) <-
+        actual <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -370,7 +359,6 @@ test_makeEvaluate =
                             ]
                     }
         assertEqual "exists matching" expect actual
-        assertEqual "exists matching (simplifierX)" expect actualSimplifierX
     , testCase "exists does not match equality if free var in term" $
         -- error for exists x . (f(x) = f(a)) and (y=f(x))
         assertErrorIO (const (return ())) $
@@ -413,13 +401,8 @@ simplify = testRunSimplifier Mock.env . Exists.simplify SideCondition.top
 makeEvaluate ::
     ElementVariable RewritingVariableName ->
     Pattern RewritingVariableName ->
-    IO (OrPattern RewritingVariableName, OrPattern RewritingVariableName)
-makeEvaluate variable child = do
-    result <-
-        runSimplifierWithEnv Mock.env
-    resultSimplifierX <-
-        runSimplifierWithEnv Mock.env{simplifierXSwitch = EnabledSimplifierX}
-    return (result, resultSimplifierX)
+    IO (OrPattern RewritingVariableName)
+makeEvaluate variable child = runSimplifierWithEnv Mock.env
   where
     runSimplifierWithEnv env =
         testRunSimplifier env $

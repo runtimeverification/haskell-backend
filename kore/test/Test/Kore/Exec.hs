@@ -72,7 +72,6 @@ import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
 import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -87,7 +86,6 @@ import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
-import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
@@ -269,14 +267,14 @@ test_matchDisjunction =
     [ testCase "match disjunction" $
         do
             let actual =
-                    matchDisjunctionTest verifiedModule initial [final1, final2]
+                    matchDisjunction verifiedModule initial [final1, final2]
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2, next1, next2]
@@ -286,7 +284,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 2" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [final1, final2, next1, next2]
@@ -296,7 +294,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 3" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2]
@@ -306,7 +304,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 4" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [next1, next2]
@@ -316,7 +314,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 5" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [next1, next2]
@@ -326,7 +324,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 6" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2, initial, next1, next2]
@@ -336,7 +334,7 @@ test_matchDisjunction =
     , testCase "match disjunction - top" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [final1, final2, initial, next1, next2]
@@ -393,7 +391,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -412,7 +410,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isLeft actual
@@ -429,7 +427,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -448,7 +446,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -468,7 +466,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isLeft actual
@@ -488,7 +486,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -1108,9 +1106,8 @@ execTest ::
     TermLike VariableName ->
     SMT (ExitCode, TermLike VariableName)
 execTest depthLimit breadthLimit verifiedModule strategy initial = do
-    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    serializedModule <- makeSerializedModule verifiedModule
     exec
-        DisabledSimplifierX
         depthLimit
         breadthLimit
         serializedModule
@@ -1126,24 +1123,11 @@ searchTest ::
     Search.Config ->
     SMT (TermLike VariableName)
 searchTest depthLimit breadthLimit verifiedModule initial currentSearchPattern config = do
-    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    serializedModule <- makeSerializedModule verifiedModule
     search
-        DisabledSimplifierX
         depthLimit
         breadthLimit
         serializedModule
         initial
         currentSearchPattern
         config
-
-matchDisjunctionTest ::
-    VerifiedModule Attribute.Symbol ->
-    Pattern RewritingVariableName ->
-    [Pattern RewritingVariableName] ->
-    SMT (TermLike VariableName)
-matchDisjunctionTest = matchDisjunction DisabledSimplifierX
-
-checkFunctionsTest ::
-    VerifiedModule Attribute.StepperAttributes ->
-    SMT ()
-checkFunctionsTest = checkFunctions DisabledSimplifierX

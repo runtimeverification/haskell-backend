@@ -2057,7 +2057,6 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier
-        , simplifierXSwitch = DisabledSimplifierX
         }
 
 testEnvUnification :: Env

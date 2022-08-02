@@ -133,7 +133,6 @@ import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
-import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -319,9 +318,8 @@ data MainOptions a = MainOptions
     , localOptions :: !(Maybe (LocalOptions a))
     }
 
-data LocalOptions a = LocalOptions
-    { execOptions :: !a
-    , simplifierx :: !SimplifierXSwitch
+newtype LocalOptions a = LocalOptions
+    { execOptions :: a
     }
 
 {- |
@@ -371,15 +369,6 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
-parseSimplifierX :: Parser SimplifierXSwitch
-parseSimplifierX =
-    flag
-        DisabledSimplifierX
-        EnabledSimplifierX
-        ( long "simplifierx"
-            <> help "Enable the experimental simplifier"
-        )
-
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->
@@ -418,7 +407,6 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
     parseLocalOptions =
         LocalOptions
             <$> parser
-            <*> parseSimplifierX
     parseMainOptions =
         MainOptions
             <$> globalCommandLineParser
@@ -595,13 +583,11 @@ and either deserialize it, or else treat it as a text KORE definition and manual
 construct the needed SerializedDefinition object from it.
 -}
 deserializeDefinition ::
-    SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
     Main SerializedDefinition
 deserializeDefinition
-    simplifierx
     solverOptions
     definitionFilePath
     mainModuleName =
@@ -613,7 +599,6 @@ deserializeDefinition
                     return serializedDefinition
                 Nothing ->
                     makeSerializedDefinition
-                        simplifierx
                         solverOptions
                         definitionFilePath
                         mainModuleName
@@ -646,19 +631,18 @@ deserializeDefinition
                 )
 
 makeSerializedDefinition ::
-    SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
     Main SerializedDefinition
-makeSerializedDefinition simplifierx solverOptions definitionFileName mainModuleName = do
+makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     let metadataTools = MetadataTools.build mainModule
     let lemmas = getSMTLemmas mainModule
     serializedModule <-
         execute solverOptions metadataTools lemmas $
-            makeSerializedModule simplifierx mainModule
+            makeSerializedModule mainModule
     let locations = kFileLocations definition
     let serializedDefinition =
             SerializedDefinition

@@ -136,11 +136,11 @@ mainWithOptions localOptions@LocalOptions{execOptions} =
         >>= exitWith
 
 koreCheckFunctions :: LocalOptions KoreCheckerOptions -> FilePath -> IO ExitCode
-koreCheckFunctions LocalOptions{execOptions, simplifierx} tmpDir =
+koreCheckFunctions LocalOptions{execOptions} tmpDir =
     do
         definitions <- loadDefinitions [fileName]
         loadedModule <- loadModule mainModuleName definitions
-        checkFunctions simplifierx loadedModule
+        checkFunctions loadedModule
             & SMT.runSMT defaultConfig (pure ())
         return ExitSuccess
         & handle handleSomeException

@@ -111,7 +111,6 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
-    SimplifierXSwitch (..),
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
@@ -2323,7 +2322,6 @@ env =
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
-        , simplifierXSwitch = DisabledSimplifierX
         }
 
 generatorSetup :: ConsistentKore.Setup
