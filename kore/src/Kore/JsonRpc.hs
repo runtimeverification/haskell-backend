@@ -37,9 +37,7 @@ import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Rewrite (ExecutionMode (All), Natural)
 
 -- import Kore.Rewrite.RewritingVariable as RewritingVariable
-import Kore.Simplify.Simplify (SimplifierXSwitch)
-
--- import Kore.Simplify.Data (
+-- import Kore.Simplify.API (
 --     evalSimplifier,
 --  )
 import Kore.Syntax.Json (KoreJson)
@@ -214,10 +212,9 @@ instance ToJSON (API 'Res) where
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
 
-respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> Respond (API 'Req) m (API 'Res)
+respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> Respond (API 'Req) m (API 'Res)
 respond
     runSMT
-    simplifierx
     serializedModule@Exec.SerializedModule
         { --sortGraph
         -- , overloadGraph
@@ -235,7 +232,6 @@ respond
                         liftIO
                             ( runSMT $
                                 Exec.exec
-                                    simplifierx
                                     ( case maxDepth of
                                         Nothing -> Unlimited
                                         Just (Depth n) -> Limit n
@@ -274,7 +270,7 @@ respond
             -- liftIO $ (do
             --     res <-
             --         runSMT $
-            --             evalSimplifier simplifierx verifiedModule sortGraph overloadGraph metadataTools equations $
+            --             evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations $
             --                 Logic.observeAllT $
             --                     Claim.checkImplicationWorker claim
 
@@ -304,11 +300,11 @@ respond
 
 -- implicationError err = ErrorObj "Implication check error" (-32003) err
 
-runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> SimplifierXSwitch -> Exec.SerializedModule -> IO ()
-runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simplifierx serializedModule = do
+runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
+runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} serializedModule = do
     flip runLoggingT logFun $
         jsonrpcTCPServer V2 False srvSettings $
-            srv runSMT simplifierx serializedModule
+            srv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
 
@@ -320,8 +316,8 @@ runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} simp
     runSMT :: forall a. SMT.SMT a -> IO a
     runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup
 
-srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> SimplifierXSwitch -> Exec.SerializedModule -> JSONRPCT m ()
-srv runSMT simplifierx serializedModule = do
+srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> JSONRPCT m ()
+srv runSMT serializedModule = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             receiveBatchRequest >>= \case
@@ -362,10 +358,10 @@ srv runSMT simplifierx serializedModule = do
 
             processReq = \case
                 SingleRequest req -> do
-                    rM <- buildResponse (respond runSMT simplifierx serializedModule) req
+                    rM <- buildResponse (respond runSMT serializedModule) req
                     mapM_ (sendResponses . SingleResponse) rM
                 BatchRequest reqs -> do
-                    rs <- catMaybes <$> forM reqs (buildResponse (respond runSMT simplifierx serializedModule))
+                    rs <- catMaybes <$> forM reqs (buildResponse (respond runSMT serializedModule))
                     sendResponses $ BatchResponse rs
 
         liftIO $

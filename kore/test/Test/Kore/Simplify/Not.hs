@@ -176,7 +176,7 @@ simplifyEvaluated ::
     OrPattern.OrPattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated =
-    runSimplifier mockEnv . mkNotSimplified
+    testRunSimplifier mockEnv . mkNotSimplified
   where
     mockEnv = Mock.env
     mkNotSimplified notChild =

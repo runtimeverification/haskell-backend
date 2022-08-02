@@ -565,7 +565,7 @@ test_applySubstitutionAndSimplify =
                 Nothing
                 mempty
                 & runExceptT
-                & runSimplifier env
+                & testRunSimplifier env
         assertEqual "" expected actual
     ]
   where

@@ -37,7 +37,7 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     MonadSimplify (..),
  )
 import Kore.TopBottom (
@@ -405,18 +405,10 @@ instance MonadCatch AllPathIdentity where
     catch action _handler = action
 
 instance MonadSimplify AllPathIdentity where
-    askMetadataTools = undefined
-    simplifyPattern = undefined
-    simplifyTerm = undefined
+    liftSimplifier = undefined
     simplifyCondition = undefined
-    askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
-    askInjSimplifier = undefined
-    askOverloadSimplifier = undefined
-    getCache = undefined
-    putCache = undefined
-    askSimplifierXSwitch = undefined
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =

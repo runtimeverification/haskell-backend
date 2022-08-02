@@ -467,7 +467,7 @@ evaluate ::
 evaluate And{andFirst, andSecond} =
     MultiAnd.make [andFirst, andSecond]
         & simplify Mock.testSort Not.notSimplifier SideCondition.top
-        & runSimplifier Mock.env
+        & testRunSimplifier Mock.env
 
 evaluatePatterns ::
     Pattern RewritingVariableName ->
@@ -476,5 +476,5 @@ evaluatePatterns ::
 evaluatePatterns first second =
     MultiAnd.make [first, second]
         & makeEvaluate Mock.testSort Not.notSimplifier SideCondition.top
-        & runSimplifierBranch Mock.env
+        & testRunSimplifierBranch Mock.env
         & fmap OrPattern.fromPatterns

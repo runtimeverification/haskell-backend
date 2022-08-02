@@ -49,6 +49,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify as Simplifier (
     MonadSimplify (..),
+    askOverloadSimplifier,
  )
 import Pair
 import Prelude.Kore hiding (

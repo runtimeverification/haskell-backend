@@ -99,20 +99,21 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.Condition qualified as Simplifier.Condition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (Env),
     MonadSimplify,
  )
-import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
+import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
-    SimplifierXSwitch (..),
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Module (ModuleName (..))
@@ -2315,11 +2316,12 @@ env =
     Env
         { metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         , simplifierCondition = predicateSimplifier
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
-        , simplifierXSwitch = DisabledSimplifierX
         }
 
 generatorSetup :: ConsistentKore.Setup

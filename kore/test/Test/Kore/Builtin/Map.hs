@@ -125,7 +125,7 @@ import Test.Kore.Builtin.Set qualified as Test.Set
 import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
-    runSimplifier,
+    testRunSimplifier,
  )
 import Test.SMT
 import Test.Tasty
@@ -1438,7 +1438,7 @@ test_inKeys =
                 boolSort
                 [termKey, termMap]
                 & runMaybeT
-                & runSimplifier testEnv
+                & testRunSimplifier testEnv
         case output of
             Nothing -> return Nothing
             Just result -> do
