@@ -434,7 +434,7 @@ newtype Translator variable m a = Translator
     }
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (Alternative)
-    deriving newtype (MonadCounter, MonadLog)
+    deriving newtype (MonadIO, MonadCounter, MonadLog)
     deriving newtype (MonadReader TranslatorEnv)
     deriving newtype (MonadState (TranslatorState variable))
 

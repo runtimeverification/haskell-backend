@@ -126,8 +126,11 @@ unifyRules ::
     simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
     Logic.observeAllT $ do
+        liftIO . traceMarkerIO $ "unify:Rules:"
         rule <- Logic.scatter rules
+        liftIO . traceMarkerIO $ "unify:Rule:"
         unifyRule sideCondition initial rule
+    <* (liftIO $ traceMarkerIO "unify:EndRules")
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -155,6 +158,7 @@ unifyRule ::
     LogicT simplifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     debugAttemptedRewriteRule initial (location rule)
+    marker "Init"
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition' =
             sideCondition
@@ -162,6 +166,7 @@ unifyRule sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
+    marker "Start"
     --------------------
     -- attempt to fail fast when patterns "obviously" do not match
     let topTerms =
@@ -179,19 +184,27 @@ unifyRule sideCondition initial rule = do
                     unificationProcedure sideCondition' iTop rTop
         pure () --  $ trace "top terms unified" ()
         --------------------
+    marker "Actual"
     unification <- -- trace "continuing with actual unification" $
         unificationProcedure sideCondition' initialTerm ruleLeft
             & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
+    marker "Side"
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         Simplifier.simplifyCondition
             sideCondition'
             (unification <> requires')
+    marker "End"
     return (rule `Conditional.withCondition` unification')
   where
     location = from @_ @SourceLocation
+
+    --------------------
+    -- event log tracing
+    marker tag = liftIO . traceMarkerIO $ concat ["unify:",tag,":",loc]
+    loc = Pretty.renderString . Pretty.layoutCompact . Pretty.pretty $ location rule
 
     --------------------
     -- fail-fast helpers

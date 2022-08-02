@@ -55,6 +55,8 @@ instance MonadTrans UnifierT where
 
 deriving newtype instance MonadLog m => MonadLog (UnifierT m)
 
+deriving newtype instance MonadIO m => MonadIO (UnifierT m)
+
 deriving newtype instance Monad m => MonadLogic (UnifierT m)
 
 deriving newtype instance
