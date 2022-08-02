@@ -312,6 +312,7 @@
         "Kore/Log/WarnStuckClaimState"
         "Kore/Log/WarnSymbolSMTRepresentation"
         "Kore/Log/WarnTrivialClaim"
+        "Kore/Log/WarnUnexploredBranches"
         "Kore/Log/WarnUnsimplified"
         "Kore/ModelChecker/Bounded"
         "Kore/ModelChecker/Simplification"

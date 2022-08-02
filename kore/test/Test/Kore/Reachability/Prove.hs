@@ -771,6 +771,30 @@ test_proveClaims =
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
+    , testGroup "warns about unexplored branch when one of several stuck claims returned" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <-
+                        Test.Kore.Reachability.Prove.proveClaims
+                            Unlimited
+                            Unlimited
+                            1
+                            axioms
+                            [mkSimpleClaim Mock.a Mock.d]
+                            []
+                    let stuck = mkSimpleClaim Mock.b Mock.d
+                        expect =
+                            ProveClaimsResult
+                                { stuckClaims = MultiAnd.singleton (StuckClaim stuck)
+                                , provenClaims = MultiAnd.top
+                                , unexplored = 1
+                                }
+                    assertEqual "count" (unexplored expect) (unexplored actual)
+                    assertEqual "claim" (stuckClaims expect) (stuckClaims actual)
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
     ]
 
 test_transitionRule :: TestTree
