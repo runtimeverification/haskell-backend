@@ -30,6 +30,7 @@ newtype NotSimplifier simplifier = NotSimplifier
 
 mapNotSimplifier ::
     (forall a. simplifier a -> simplifier' a) ->
-    NotSimplifier simplifier -> NotSimplifier simplifier'
+    NotSimplifier simplifier ->
+    NotSimplifier simplifier'
 mapNotSimplifier f NotSimplifier{runNotSimplifier} =
-    NotSimplifier {runNotSimplifier = \sd n -> f (runNotSimplifier sd n)}
+    NotSimplifier{runNotSimplifier = \sd n -> f (runNotSimplifier sd n)}
