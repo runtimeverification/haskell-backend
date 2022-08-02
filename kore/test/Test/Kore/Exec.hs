@@ -268,14 +268,14 @@ test_matchDisjunction =
     [ testCase "match disjunction" $
         do
             let actual =
-                    matchDisjunctionTest verifiedModule initial [final1, final2]
+                    matchDisjunction verifiedModule initial [final1, final2]
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2, next1, next2]
@@ -285,7 +285,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 2" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [final1, final2, next1, next2]
@@ -295,7 +295,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 3" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2]
@@ -305,7 +305,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 4" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [next1, next2]
@@ -315,7 +315,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 5" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [next1, next2]
@@ -325,7 +325,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 6" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2, initial, next1, next2]
@@ -335,7 +335,7 @@ test_matchDisjunction =
     , testCase "match disjunction - top" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [final1, final2, initial, next1, next2]
@@ -392,7 +392,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -411,7 +411,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isLeft actual
@@ -428,7 +428,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
@@ -447,7 +447,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -467,7 +467,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isLeft actual
@@ -487,7 +487,7 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
+                checkFunctions verifiedModule
                     & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
@@ -1132,15 +1132,3 @@ searchTest depthLimit breadthLimit verifiedModule initial currentSearchPattern c
         initial
         currentSearchPattern
         config
-
-matchDisjunctionTest ::
-    VerifiedModule Attribute.Symbol ->
-    Pattern RewritingVariableName ->
-    [Pattern RewritingVariableName] ->
-    SMT (TermLike VariableName)
-matchDisjunctionTest = matchDisjunction
-
-checkFunctionsTest ::
-    VerifiedModule Attribute.StepperAttributes ->
-    SMT ()
-checkFunctionsTest = checkFunctions
