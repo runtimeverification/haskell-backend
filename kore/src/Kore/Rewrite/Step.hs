@@ -125,13 +125,14 @@ unifyRules ::
     [rule] ->
     simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
-    Logic.observeAllT $
-        do
+    Logic.observeAllT
+        ( do
             liftIO . traceMarkerIO $ "unify:Rules:"
             rule <- Logic.scatter rules
             liftIO . traceMarkerIO $ "unify:Rule:"
             unifyRule sideCondition initial rule
-            <* (liftIO $ traceMarkerIO "unify:EndRules")
+        )
+        <* (liftIO $ traceMarkerIO "unify:EndRules")
 
 {- | Attempt to unify a rule with the initial configuration.
 
