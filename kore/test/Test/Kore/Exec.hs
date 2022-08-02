@@ -72,7 +72,6 @@ import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
 import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
