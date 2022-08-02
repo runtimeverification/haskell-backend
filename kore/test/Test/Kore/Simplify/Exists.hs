@@ -38,7 +38,7 @@ import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ [plain10, plain11] `simplifiesTo` [plain10', plain11'] $
+    [ [plain11, plain10] `simplifiesTo` [plain11', plain10'] $
         "\\or distribution"
     , [Pattern.topOf Mock.testSort] `simplifiesTo` [Pattern.topOf Mock.testSort] $
         "\\top"
@@ -65,12 +65,12 @@ test_simplify =
         (Pattern.topOf Mock.testSort)
             { Conditional.predicate =
                 Predicate.makeEqualsPredicate
-                    ( Mock.functional20
-                        (mkElemVar Mock.yConfig)
-                        (mkElemVar Mock.zConfig)
-                    )
                     ( Mock.sigma
                         (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.zConfig)
+                    )
+                    ( Mock.functional20
+                        (mkElemVar Mock.yConfig)
                         (mkElemVar Mock.zConfig)
                     )
             }
