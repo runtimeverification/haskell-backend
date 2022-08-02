@@ -584,7 +584,7 @@ main = do
 dispatch the requested command.
 -}
 mainWithOptions :: LocalOptions KoreExecOptions -> IO ()
-mainWithOptions LocalOptions{execOptions, simplifierx} = do
+mainWithOptions LocalOptions{execOptions} = do
     let KoreExecOptions{koreSolverOptions, bugReportOption, outputFileName} =
             execOptions
     ensureSmtPreludeExists koreSolverOptions
@@ -596,7 +596,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch LocalOptions{execOptions = execOptions', simplifierx}
+                mainDispatch LocalOptions{execOptions = execOptions'}
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog
@@ -666,12 +666,12 @@ koreSearch ::
     LocalOptions KoreExecOptions ->
     KoreSearchOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
+koreSearch LocalOptions{execOptions} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     SerializedDefinition{serializedModule, lemmas, locations} <-
-        deserializeDefinition simplifierx koreSolverOptions definitionFileName mainModuleName
+        deserializeDefinition koreSolverOptions definitionFileName mainModuleName
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions{searchFileName} = searchOptions
     target <- mainParseSearchPattern verifiedModule searchFileName
@@ -680,7 +680,6 @@ koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     final <-
         execute koreSolverOptions metadataTools lemmas $
             search
-                simplifierx
                 depthLimit
                 breadthLimit
                 serializedModule
@@ -695,13 +694,12 @@ koreSearch LocalOptions{execOptions, simplifierx} searchOptions = do
     KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
 koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun LocalOptions{execOptions, simplifierx} = do
+koreRun LocalOptions{execOptions} = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
     SerializedDefinition{serializedModule, lemmas, locations} <-
         deserializeDefinition
-            simplifierx
             koreSolverOptions
             definitionFileName
             mainModuleName
@@ -711,7 +709,6 @@ koreRun LocalOptions{execOptions, simplifierx} = do
     (exitCode, final) <-
         execute koreSolverOptions metadataTools lemmas $
             exec
-                simplifierx
                 depthLimit
                 breadthLimit
                 serializedModule
@@ -730,10 +727,9 @@ koreRun LocalOptions{execOptions, simplifierx} = do
 koreSerialize ::
     LocalOptions KoreExecOptions ->
     Main (KFileLocations, ExitCode)
-koreSerialize LocalOptions{execOptions, simplifierx} = do
+koreSerialize LocalOptions{execOptions} = do
     serializedDefinition@SerializedDefinition{locations} <-
         makeSerializedDefinition
-            simplifierx
             koreSolverOptions
             definitionFileName
             mainModuleName
@@ -758,7 +754,7 @@ koreProve ::
     LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
+koreProve LocalOptions{execOptions} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -777,7 +773,6 @@ koreProve LocalOptions{execOptions, simplifierx} proveOptions = do
         prove
             minDepth
             stuckCheck
-            simplifierx
             graphSearch
             breadthLimit
             depthLimit
@@ -871,7 +866,7 @@ koreBmc ::
     LocalOptions KoreExecOptions ->
     KoreProveOptions ->
     Main (KFileLocations, ExitCode)
-koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
+koreBmc LocalOptions{execOptions} proveOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
         KoreProveOptions{specFileName} = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
@@ -885,7 +880,6 @@ koreBmc LocalOptions{execOptions, simplifierx} proveOptions = do
             KoreProveOptions{graphSearch} = proveOptions
         checkResult <-
             boundedModelCheck
-                simplifierx
                 breadthLimit
                 depthLimit
                 mainModule

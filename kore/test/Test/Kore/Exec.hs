@@ -87,7 +87,6 @@ import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
-import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
@@ -1108,9 +1107,8 @@ execTest ::
     TermLike VariableName ->
     SMT (ExitCode, TermLike VariableName)
 execTest depthLimit breadthLimit verifiedModule strategy initial = do
-    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    serializedModule <- makeSerializedModule verifiedModule
     exec
-        DisabledSimplifierX
         depthLimit
         breadthLimit
         serializedModule
@@ -1126,9 +1124,8 @@ searchTest ::
     Search.Config ->
     SMT (TermLike VariableName)
 searchTest depthLimit breadthLimit verifiedModule initial currentSearchPattern config = do
-    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    serializedModule <- makeSerializedModule verifiedModule
     search
-        DisabledSimplifierX
         depthLimit
         breadthLimit
         serializedModule
@@ -1141,9 +1138,9 @@ matchDisjunctionTest ::
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
     SMT (TermLike VariableName)
-matchDisjunctionTest = matchDisjunction DisabledSimplifierX
+matchDisjunctionTest = matchDisjunction
 
 checkFunctionsTest ::
     VerifiedModule Attribute.StepperAttributes ->
     SMT ()
-checkFunctionsTest = checkFunctions DisabledSimplifierX
+checkFunctionsTest = checkFunctions

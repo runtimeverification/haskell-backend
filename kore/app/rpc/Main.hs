@@ -140,10 +140,9 @@ mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServer
 koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->
     GlobalMain.Main ExitCode
-koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
+koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
     GlobalMain.SerializedDefinition{serializedModule, lemmas} <-
         GlobalMain.deserializeDefinition
-            simplifierx
             koreSolverOptions
             definitionFileName
             mainModuleName
@@ -163,7 +162,7 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions, simplifierx} = do
             (SMT.stopSolver . SMT.refSolverHandle)
             $ \solverSetup -> do
                 -- wrap the call to runServer in the logger monad
-                Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv simplifierx serializedModule
+                Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv serializedModule
 
     pure ExitSuccess
   where
