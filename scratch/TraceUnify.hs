@@ -1,12 +1,12 @@
-{-# Language DuplicateRecordFields #-}
-{-# Language ImportQualifiedPost #-}
-{-# Language ScopedTypeVariables #-}
-{-# Language NamedFieldPuns #-}
-{-# Language OverloadedStrings #-}
-{-# Language RankNTypes #-}
-{-# Language RecordWildCards #-}
-{-# Language TupleSections #-}
-{-# Language TypeApplications #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 
 module TraceUnify where
 
@@ -17,10 +17,9 @@ import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.RTS.Events
-import System.IO
 import System.Environment
+import System.IO
 import Text.Printf
-
 
 main :: IO ()
 main = do
@@ -35,37 +34,35 @@ main = do
         writeFile (file <> ".dot") contents
         putStrLn "Done"
 
-
 logStats :: FilePath -> IO [String]
-logStats  file = do
+logStats file = do
     timingMap <- collectTimings . getMarkers <$> readLog file
     let statMap = mapStatistics timingMap
     pure $ map (uncurry printForDot) $ Map.assocs statMap
 
-
 logStats_ :: FilePath -> IO [String]
-logStats_  file = do
+logStats_ file = do
     statMap <- collectStats . getMarkers <$> readLog file
     pure $ map (uncurry printForDot) $ Map.assocs statMap
 
 readLog :: FilePath -> IO [Event]
 readLog file =
-    readEventLogFromFile file >>=
-    either error (pure . events . dat)
+    readEventLogFromFile file
+        >>= either error (pure . events . dat)
 
 getMarkers :: [Event] -> [(Timestamp, UnifyTag)]
 getMarkers = mapMaybe getMarker
-    where
-      getMarker Event{..}
-          | UserMarker{markername} <- evSpec = fmap (evTime,) $ readTag markername
-          | otherwise = Nothing
+  where
+    getMarker Event{..}
+        | UserMarker{markername} <- evSpec = fmap (evTime,) $ readTag markername
+        | otherwise = Nothing
 
 readTag :: Text -> Maybe UnifyTag
 readTag t
     | ("unify" : tag : rest) <- parts =
-          Just $ read (Text.unpack tag) -- FIXME catch exceptions?
+        Just $ read (Text.unpack tag) -- FIXME catch exceptions?
     | otherwise =
-          error $ "cannot read " <> show t -- Nothing
+        error $ "cannot read " <> show t -- Nothing
   where
     parts = Text.splitOn ":" t
 
@@ -104,22 +101,22 @@ None
 -}
 
 data UnifyTag
-    = Rules
-      -- ^ starting to unify term with a set of rules
-    | Rule
-      -- ^ starting work on one rule (Logic.scatter)
-    | Init
-      -- ^ starting work on one rule (worker function)
-    | Start
-      -- ^ starting fast check for one rule
-    | Actual
-      -- ^ starting unification for one rule
-    | Side
-      -- ^ checking side conditions for one rule
-    | End
-      -- ^ successful unification using one rule
-    | EndRules
-      -- ^ ending term unification
+    = -- | starting to unify term with a set of rules
+      Rules
+    | -- | starting work on one rule (Logic.scatter)
+      Rule
+    | -- | starting work on one rule (worker function)
+      Init
+    | -- | starting fast check for one rule
+      Start
+    | -- | starting unification for one rule
+      Actual
+    | -- | checking side conditions for one rule
+      Side
+    | -- | successful unification using one rule
+      End
+    | -- | ending term unification
+      EndRules
     deriving (Eq, Enum, Show, Read)
 
 data UnifyState
@@ -162,8 +159,12 @@ transition RuleSuccess Rule = InRule
 transition RuleSuccess EndRules = Ended
 --------------------
 transition otherState otherTag =
-    error $ "Transition from " <> show otherState <>
-            " with " <> show otherTag <> " not defined"
+    error $
+        "Transition from " <> show otherState
+            <> " with "
+            <> show otherTag
+            <> " not defined"
+
 -- transition _ _ = Error
 -- transition Error _ = Error
 
@@ -187,27 +188,26 @@ collectTimings =
         State (Map (UnifyState, UnifyState) [Double]) (Double, UnifyState)
     collect (t1, prior) (t2, next) = do
         when (not (prior == Ended && next == Started)) $
-            modify  $ Map.insertWith (++) (prior, next) [t2 - t1]
+            modify $ Map.insertWith (++) (prior, next) [t2 - t1]
         pure (t2, next)
 
 fold1M :: Monad m => (a -> a -> m a) -> [a] -> m a
 fold1M f [] = error "foldM1: empty"
-fold1M f (x:xs) = foldM f x xs
+fold1M f (x : xs) = foldM f x xs
 
 -- compute a sequence of states with _microsec_ timestamps from the
 -- sequence of _nanosec_ timestamps and transition tags
 mkStates ::
     UnifyState -> [(Timestamp, UnifyTag)] -> [(Double, UnifyState)]
 mkStates start [] = []
-mkStates start ((t1, next):rest) =
+mkStates start ((t1, next) : rest) =
     scanl mkState (fromIntegral t1 / 1000, transition start next) rest
   where
     mkState ::
         (Double, UnifyState) -> (Timestamp, UnifyTag) -> (Double, UnifyState)
     mkState (_, prior) (time, tag) = (fromIntegral time / 1000, transition prior tag)
 
-data Stats a =
-    Stats
+data Stats a = Stats
     { count :: Int
     , average :: a
     , stddev :: a
@@ -218,8 +218,7 @@ data Stats a =
     deriving (Eq, Show)
 
 -- helper structure to compute statistics in one pass
-data Stats' a =
-    Stats'
+data Stats' a = Stats'
     { count :: !Int
     , total :: !a
     , squares :: !a
@@ -230,16 +229,16 @@ data Stats' a =
 addStats' :: (Ord a, Num a) => Stats' a -> a -> Stats' a
 addStats' Stats'{..} x =
     Stats'
-    { count = count + 1
-    , total = total + x
-    , squares = squares + x * x
-    , maxVal = max maxVal x
-    , minVal = min minVal x
-    }
+        { count = count + 1
+        , total = total + x
+        , squares = squares + x * x
+        , maxVal = max maxVal x
+        , minVal = min minVal x
+        }
 
 singleStats' :: Num a => a -> Stats' a
 singleStats' x =
-    Stats' { count = 1, total = x, squares = x * x, maxVal = x, minVal = x }
+    Stats'{count = 1, total = x, squares = x * x, maxVal = x, minVal = x}
 
 finaliseStats :: (Num a, Floating a) => Stats' a -> Stats a
 finaliseStats Stats'{..} = Stats{..}
@@ -252,10 +251,10 @@ collectStats ::
     Map (UnifyState, UnifyState) (Stats Double)
 collectStats =
     Map.map finaliseStats
-    . snd
-    . flip runState Map.empty
-    . fold1M collect
-    . mkStates None
+        . snd
+        . flip runState Map.empty
+        . fold1M collect
+        . mkStates None
   where
     collect ::
         (Double, UnifyState) ->
@@ -280,10 +279,10 @@ collectStats =
 
 -}
 
-mkStats :: forall a . (Ord a, Num a, Floating a) => [a] -> Stats a
+mkStats :: forall a. (Ord a, Num a, Floating a) => [a] -> Stats a
 mkStats [] = error "mkStats: empty"
-mkStats (x:xs) =
-    Stats{ count, average, stddev, total = valSum, maxVal, minVal}
+mkStats (x : xs) =
+    Stats{count, average, stddev, total = valSum, maxVal, minVal}
   where
     go :: (Int, a, a, a, a) -> a -> (Int, a, a, a, a) -- basically Stats'
     go (count, acc, squareAcc, accMax, accMin) xx =
@@ -302,13 +301,18 @@ printForDot :: (UnifyState, UnifyState) -> Stats Double -> String
 printForDot (s1, s2) Stats{count, average, stddev, total, maxVal, minVal} =
     printf
         "%s -> %s [penwidth=%.1f, label=\"%.2fμs (+-%.2f), total #%d (%s), range %.2f to %.2f\" ]"
-        (show s1) (show s2)
+        (show s1)
+        (show s2)
         (max 0.1 $ log @Double $ fromIntegral count / 100)
-        average stddev count (humanReadable total) minVal maxVal
-
+        average
+        stddev
+        count
+        (humanReadable total)
+        minVal
+        maxVal
   where
     humanReadable :: Double -> String
     humanReadable x
-        | x > 10^5 = printf "%.2fs" $ x / 10^6
-        | x > 10^2 = printf "%.3fms" $ x / 10^3
+        | x > 10 ^ 5 = printf "%.2fs" $ x / 10 ^ 6
+        | x > 10 ^ 2 = printf "%.3fms" $ x / 10 ^ 3
         | otherwise = printf "%.1fμs" x

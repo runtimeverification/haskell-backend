@@ -125,12 +125,13 @@ unifyRules ::
     [rule] ->
     simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
-    Logic.observeAllT $ do
-        liftIO . traceMarkerIO $ "unify:Rules:"
-        rule <- Logic.scatter rules
-        liftIO . traceMarkerIO $ "unify:Rule:"
-        unifyRule sideCondition initial rule
-    <* (liftIO $ traceMarkerIO "unify:EndRules")
+    Logic.observeAllT $
+        do
+            liftIO . traceMarkerIO $ "unify:Rules:"
+            rule <- Logic.scatter rules
+            liftIO . traceMarkerIO $ "unify:Rule:"
+            unifyRule sideCondition initial rule
+            <* (liftIO $ traceMarkerIO "unify:EndRules")
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -203,7 +204,7 @@ unifyRule sideCondition initial rule = do
 
     --------------------
     -- event log tracing
-    marker tag = liftIO . traceMarkerIO $ concat ["unify:",tag,":",loc]
+    marker tag = liftIO . traceMarkerIO $ concat ["unify:", tag, ":", loc]
     loc = Pretty.renderString . Pretty.layoutCompact . Pretty.pretty $ location rule
 
     --------------------
