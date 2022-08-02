@@ -11,9 +11,11 @@
 module TraceUnify where
 
 import Control.Monad.State
+import Data.List (sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.RTS.Events
@@ -48,7 +50,7 @@ logStats_ file = do
 readLog :: FilePath -> IO [Event]
 readLog file =
     readEventLogFromFile file
-        >>= either error (pure . events . dat)
+        >>= either error (pure . sortBy (comparing evTime) . events . dat)
 
 getMarkers :: [Event] -> [(Timestamp, UnifyTag)]
 getMarkers = mapMaybe getMarker
