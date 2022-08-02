@@ -401,7 +401,7 @@ simplify = testRunSimplifier Mock.env . Exists.simplify SideCondition.top
 makeEvaluate ::
     ElementVariable RewritingVariableName ->
     Pattern RewritingVariableName ->
-    IO (OrPattern RewritingVariableName, OrPattern RewritingVariableName)
+    IO (OrPattern RewritingVariableName)
 makeEvaluate variable child = runSimplifierWithEnv Mock.env
   where
     runSimplifierWithEnv env =
