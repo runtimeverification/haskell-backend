@@ -402,10 +402,7 @@ makeEvaluate ::
     ElementVariable RewritingVariableName ->
     Pattern RewritingVariableName ->
     IO (OrPattern RewritingVariableName, OrPattern RewritingVariableName)
-makeEvaluate variable child = do
-    result <-
-        runSimplifierWithEnv Mock.env
-    return result
+makeEvaluate variable child = runSimplifierWithEnv Mock.env
   where
     runSimplifierWithEnv env =
         testRunSimplifier env $
