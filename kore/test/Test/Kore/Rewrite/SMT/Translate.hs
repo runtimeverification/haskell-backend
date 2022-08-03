@@ -108,14 +108,14 @@ test_translatePredicateWith =
                      )
     , testCase "exists n. exists m. ⌈n < m⌉" $
         translatingPred (pexists n $ pexists m $ pceil (n `pleq` m))
-            `yields` exists 0 (exists 1 $ fun 2 [var 0, var 1])
+            `yields` exists 0 (exists 1 $ fun 2 [var 1, var 0])
     , testCase "(exists n. exists m. ⌈n < m⌉) and (exists m. exists n. ⌈n < m⌉)" $
         translatingPred
             ( pexists n (pexists m $ pceil (n `pleq` m))
                 `pand` pexists m (pexists n $ pceil (n `pleq` m))
             )
-            `yields` ( exists 0 (exists 1 $ fun 2 [var 0, var 1])
-                        `and` exists 3 (exists 4 $ fun 2 [var 4, var 3])
+            `yields` ( exists 0 (exists 1 $ fun 2 [var 1, var 0])
+                        `and` exists 3 (exists 4 $ fun 2 [var 3, var 4])
                      )
     , testCase
         "(exists n. exists m. ⌈n < m⌉) and\
@@ -124,8 +124,8 @@ test_translatePredicateWith =
             ( pexists n (pexists m $ pceil (n `pleq` m))
                 `pand` pexists m (pexists k (pexists n $ pceil (n `pleq` m)))
             )
-            `yields` ( exists 0 (exists 1 $ fun 2 [var 0, var 1])
-                        `and` exists 3 (existsb 4 $ exists 5 $ fun 2 [var 5, var 3])
+            `yields` ( exists 0 (exists 1 $ fun 2 [var 1, var 0])
+                        `and` exists 3 (existsb 4 $ exists 5 $ fun 2 [var 3, var 5])
                      )
     , testCase
         "(exists n. exists m. ⌈n < m⌉) and\
@@ -134,8 +134,8 @@ test_translatePredicateWith =
             ( pexists n (pexists m $ pceil (n `pleq` m))
                 `pand` pexists m (pexists x (pexists n $ pceil (n `pleq` m)))
             )
-            `yields` ( exists 0 (exists 1 $ fun 2 [var 0, var 1])
-                        `and` exists 3 (existst 4 $ exists 5 $ fun 2 [var 5, var 3])
+            `yields` ( exists 0 (exists 1 $ fun 2 [var 1, var 0])
+                        `and` exists 3 (existst 4 $ exists 5 $ fun 2 [var 3, var 5])
                      )
     , testCase "X:Int = X:Int /Int Y:Int" $
         yields
