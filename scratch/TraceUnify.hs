@@ -1,3 +1,4 @@
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -18,6 +19,7 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromJust, mapMaybe)
 import Data.Ord (comparing)
+import Data.Proxy
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -35,20 +37,22 @@ main = do
     forM_ args $ \file -> do
         putStr $ file <> "..."
         hFlush stdout
-        lines <- logStats file
+        lines <- logStats (Proxy :: Proxy UnifyTag) file
         let contents = printf "digraph \"%s\" {\n%s\n}\n" file (unlines lines)
         writeFile (file <> ".dot") contents
         putStrLn "Done"
 
-logStats :: FilePath -> IO [String]
-logStats file = do
-    timingMap <- collectTimings . getMarkers <$> readLog file
+logStats ::
+    forall tag. TimingStateMachine tag => Proxy tag -> FilePath -> IO [String]
+logStats _ file = do
+    timingMap <- collectTimings @UnifyTag . getMarkers <$> readLog file
     let statMap = mapStatistics timingMap
     pure $ map (uncurry printForDot) $ Map.assocs statMap
 
-logStats_ :: FilePath -> IO [String]
-logStats_ file = do
-    statMap <- collectStats . getMarkers <$> readLog file
+logStats_ ::
+    forall tag. TimingStateMachine tag => Proxy tag -> FilePath -> IO [String]
+logStats_ _ file = do
+    statMap <- collectStats @tag . getMarkers <$> readLog file
     pure $ map (uncurry printForDot) $ Map.assocs statMap
 
 readLog :: FilePath -> IO [Event]
@@ -56,7 +60,8 @@ readLog file =
     readEventLogFromFile file
         >>= either error (pure . sortBy (comparing evTime) . events . dat)
 
-getMarkers :: [Event] -> [(Timestamp, UnifyTag)]
+getMarkers ::
+    forall tag. TimingStateMachine tag => [Event] -> [(Timestamp, tag)]
 getMarkers = mapMaybe getMarker
   where
     getMarker Event{..}
@@ -64,45 +69,65 @@ getMarkers = mapMaybe getMarker
             fmap (evTime,) $ readTag markername
         | otherwise =
             Nothing
-    readTag :: Text -> Maybe UnifyTag
-    readTag t
-        | ("unify" : tag : rest) <- Text.splitOn ":" t =
-            decodeTag tag
-        | otherwise =
-            Nothing
 
+label :: TimingStateMachine tag => tag -> tag -> Maybe Text
+label prior next = Map.lookup (prior, next) transitionLabels
 
+------------------------------------------------------------
+
+{- | Type class for a timing state machine based on GHC marker events.
+  Minimal definition: @'transitionLabels'@
+-}
+class (Show tag, Ord tag) => TimingStateMachine tag where
+    -- | Specifies the allowed transitions. Transitions with empty
+    -- label will be omitted from the output.
+    transitionLabels :: Map (tag, tag) Text
+
+    -- | Tag decoder for reading from the event log. The signature is
+    -- simple to keep it flexible and not impose format constraints.
+    -- By default, it will look up text in the @'tagMap'@ provided.
+    readTag :: Text -> Maybe tag
+    readTag = flip Map.lookup tagMap
+
+    -- | Helper for decoding tags. Defaults to all tags used in the
+    -- transition label map.
+    tagMap :: Map Text tag
+    tagMap =
+        Map.fromList
+            [ (Text.pack $ show tag, tag)
+            | let keys = Map.keys transitionLabels
+            , tag <- uncurry (<>) $ unzip keys
+            ]
+
+------------------------------------------------------------
 {-
-
 UnifyRules markers as a state machine:
 
-
-Rules --> Rule     EndRules
-         /  |          A
-        /   |          |
-       /    |          |
-      /     V          |
-     /     Init        |
-    /       |         /|
-   /        |        / |
-   |        |       /  |
-   |        V      /   |
-   +----- Start---/    |
-   |        |         /|
-   |        |        / |
-   |        |       /  |
-   |        V      /   |
-   +----- Actual--/    |
-   |        |          |
-   |        |         /|
-   |        |        / |
-   |        V       /  |
-   +----- Side ----/   |
-   |        |          /
-   |        |         /
-    \       |        /
-     \      V       /
-      \--- End ----/
+Rules --> Rule
+        /  |
+       /   |
+      /    V
+     /    Init
+    /      |
+   /       |
+   |       |
+   |       V
+   +---- Start------
+   |       |        \
+   |       |        |
+   |       |        |
+   |       V        |
+   +---- Actual---- |
+   |       |       \|
+   |       |        |
+   |       |        |
+   |       V        |
+   +---- Side ----- |
+   |       |       \|
+   |       |        |
+   |       |        |
+   \       V        V
+    ---- End --> EndRules
 -}
 
 data UnifyTag
@@ -124,47 +149,48 @@ data UnifyTag
       EndRules
     deriving (Eq, Ord, Enum, Bounded, Show)
 
-decodeTag :: Text -> Maybe UnifyTag
-decodeTag = flip Map.lookup tags
+instance TimingStateMachine UnifyTag where
+    readTag t
+        | "unify" : tag : rest <- Text.splitOn ":" t =
+            Map.lookup tag tagMap
+        | otherwise =
+            Nothing
 
--- keep this top-level to cache it
-tags :: Map Text UnifyTag
-tags = Map.fromList [(Text.pack $ show tag, tag) | tag <- [minBound .. maxBound]]
+    transitionLabels =
+        Map.fromList
+            [ Rules --> Rule $ "Starting"
+            , Rule --> Init $ "InRule"
+            , Init --> Start $ "Init"
+            , Start --> Actual $ "FastCheckPassed"
+            , Start --> Rule $ "FailedFast"
+            , Start --> EndRules $ "FailedFast"
+            , Actual --> Side $ "Unified"
+            , Actual --> Rule $ "UnifyFailed"
+            , Actual --> EndRules $ "UnifyFailed"
+            , Side --> End $ "SideChecked"
+            , Side --> Rule $ "SideFailed"
+            , Side --> EndRules $ "SideFailed"
+            , End --> Rule $ "Success"
+            , End --> EndRules $ "Success"
+            , EndRules --> Rules $ Text.empty -- technical edge, filtered out
+            ]
+      where
+        (-->) :: tag -> tag -> Text -> ((tag, tag), Text)
+        t1 --> t2 = ((t1, t2),)
 
-label :: UnifyTag -> UnifyTag -> Maybe Text
-label prior next = Map.lookup (prior, next) transitionLabels
-
-transitionLabels :: Map (UnifyTag, UnifyTag) Text
-transitionLabels = Map.fromList
-    [ Rules --> Rule $ "Starting"
-    , Rule --> Init $ "InRule"
---    , Rule --> EndRules "Ended" -- ???
-    , Init --> Start $ "Init"
-    , Start --> Actual $ "FastCheckPassed"
-    , Start --> Rule $ "FailedFast"
-    , Start --> EndRules $ "FailedFast"
-    , Actual --> Side $ "Unified"
-    , Actual --> Rule $ "UnifyFailed"
-    , Actual --> EndRules $ "UnifyFailed"
-    , Side --> End $ "SideChecked"
-    , Side --> Rule $ "SideFailed"
-    , Side --> EndRules $ "SideFailed"
-    , End --> Rule $ "Success"
-    , End --> EndRules $ "Success"
-    , EndRules --> Rules $ Text.empty -- technical edge, should be filtered out
-    ]
-  where
-    (-->) :: UnifyTag -> UnifyTag -> Text -> ((UnifyTag, UnifyTag), Text)
-    t1 --> t2 = ((t1, t2),)
+------------------------------------------------------------
 
 {- Collect timings for all state transitions in the machine above from
- the trace event sequence. 'UnifyTag's are unique transition signals
- so timings are stored in a 'Map (UnifyState, UnifyState) [Int]'.
- Time precision is _nanoseconds_ (same as in the GHC events).
+ the trace event sequence. 'UnifyTag's are trace markers indicating
+ transition into the next state. Timings are stored in a 'Map
+ (tag,tag) [Int]'.  Time unit is _microseconds_ (GHC events use
+ nanoseconds).
 -}
 collectTimings ::
-    [(Timestamp, UnifyTag)] ->
-    Map (UnifyTag, UnifyTag) [Double]
+    forall tag.
+    TimingStateMachine tag =>
+    [(Timestamp, tag)] ->
+    Map (tag, tag) [Double]
 collectTimings =
     snd
         . flip runState Map.empty
@@ -172,9 +198,9 @@ collectTimings =
         . map (first ((/ 1000) . fromIntegral)) -- microsecond timestamps
   where
     collect ::
-        (Double, UnifyTag) ->
-        (Double, UnifyTag) ->
-        State (Map (UnifyTag, UnifyTag) [Double]) (Double, UnifyTag)
+        (Double, tag) ->
+        (Double, tag) ->
+        State (Map (tag, tag) [Double]) (Double, tag)
     collect (t1, prior) (t2, next) = do
         case label prior next of
             Nothing ->
@@ -182,8 +208,8 @@ collectTimings =
             Just l
                 | Text.null l -> pure (t2, next) -- omit
                 | otherwise -> do
-                      modify $ Map.insertWith (++) (prior, next) [t2 - t1]
-                      pure (t2, next)
+                    modify $ Map.insertWith (++) (prior, next) [t2 - t1]
+                    pure (t2, next)
 
 fold1M :: Monad m => (a -> a -> m a) -> [a] -> m a
 fold1M f [] = error "foldM1: empty"
@@ -229,19 +255,21 @@ finaliseStats Stats'{..} = Stats{..}
     stddev = sqrt $ squares / fromIntegral count - average * average
 
 collectStats ::
-    [(Timestamp, UnifyTag)] ->
-    Map (UnifyTag, UnifyTag) (Stats Double)
+    forall tag.
+    TimingStateMachine tag =>
+    [(Timestamp, tag)] ->
+    Map (tag, tag) (Stats Double)
 collectStats =
     Map.map finaliseStats
         . snd
         . flip runState Map.empty
         . fold1M collect
-        . map (first ( (/ 1000) . fromIntegral)) -- microseconds
+        . map (first ((/ 1000) . fromIntegral)) -- microseconds
   where
     collect ::
-        (Double, UnifyTag) ->
-        (Double, UnifyTag) ->
-        State (Map (UnifyTag, UnifyTag) (Stats' Double)) (Double, UnifyTag)
+        (Double, tag) ->
+        (Double, tag) ->
+        State (Map (tag, tag) (Stats' Double)) (Double, tag)
     collect (t1, prior) (t2, next) =
         case label prior next of
             Nothing ->
@@ -249,8 +277,8 @@ collectStats =
             Just l
                 | Text.null l -> pure (t2, next) -- omit
                 | otherwise -> do
-                      modify $ Map.alter (add $ t2 - t1) (prior, next)
-                      pure (t2, next)
+                    modify $ Map.alter (add $ t2 - t1) (prior, next)
+                    pure (t2, next)
 
     add :: Double -> Maybe (Stats' Double) -> Maybe (Stats' Double)
     add x Nothing = Just $ singleStats' x
@@ -280,11 +308,12 @@ mkStats (x : xs) =
     stddev = sqrt $ squareSum / fromIntegral count - average * average
 
 mapStatistics ::
-    Map (UnifyTag, UnifyTag) [Double] ->
-    Map (UnifyTag, UnifyTag) (Stats Double)
+    Map (tag, tag) [Double] ->
+    Map (tag, tag) (Stats Double)
 mapStatistics = Map.map mkStats
 
-printForDot :: (UnifyTag, UnifyTag) -> Stats Double -> String
+printForDot ::
+    forall tag. TimingStateMachine tag => (tag, tag) -> Stats Double -> String
 printForDot (t1, t2) Stats{count, average, stddev, total, maxVal, minVal} =
     printf
         "%s -> %s [penwidth=%.1f, label=\"%s. %.2fμs (+-%.2f), total #%d (%s)\" ]"
