@@ -12,11 +12,14 @@
 module TraceUnify where
 
 import Control.Monad.State
+import Data.Bifunctor (first)
 import Data.List (sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromJust, mapMaybe)
 import Data.Ord (comparing)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.RTS.Events
@@ -68,38 +71,38 @@ getMarkers = mapMaybe getMarker
         | otherwise =
             Nothing
 
+
 {-
 
 UnifyRules markers as a state machine:
 
-None
-  --Rules-->
-   Started --Rule--> InRule --EndRules --> Ended
-                    /  |                    A
-                 e / Init                   |
-                l /    |                 End|Rules
-               u /     V                    |
-              R /   RuleInit                |
-               /       |                   /|
-              /      Start                / |
-              |        |                 /  |
-              |        V                /   |
-              +--- FastCheck ----------/    |
-              |        |                   /|
-              |       Actual              / |
-              |        |                 /  |
-              |        V                /   |
-              +----- Unify-------------/    |
-              |        |                    |
-              |       Side                 /|
-              |        |                  / |
-              |        V                 /  |
-              +--- CheckSide -----------/   |
-              |        |                   /
-              |       End                 /
-               \       |                 /
-                \      V                /
-                  RuleSuccess----------/
+
+Rules --> Rule     EndRules
+         /  |          A
+        /   |          |
+       /    |          |
+      /     V          |
+     /     Init        |
+    /       |         /|
+   /        |        / |
+   |        |       /  |
+   |        V      /   |
+   +----- Start---/    |
+   |        |         /|
+   |        |        / |
+   |        |       /  |
+   |        V      /   |
+   +----- Actual--/    |
+   |        |          |
+   |        |         /|
+   |        |        / |
+   |        V       /  |
+   +----- Side ----/   |
+   |        |          /
+   |        |         /
+    \       |        /
+     \      V       /
+      \--- End ----/
 -}
 
 data UnifyTag
@@ -119,7 +122,7 @@ data UnifyTag
       End
     | -- | ending term unification
       EndRules
-    deriving (Eq, Enum, Bounded, Show)
+    deriving (Eq, Ord, Enum, Bounded, Show)
 
 decodeTag :: Text -> Maybe UnifyTag
 decodeTag = flip Map.lookup tags
@@ -128,54 +131,31 @@ decodeTag = flip Map.lookup tags
 tags :: Map Text UnifyTag
 tags = Map.fromList [(Text.pack $ show tag, tag) | tag <- [minBound .. maxBound]]
 
-data UnifyState
-    = None
-    | Started
-    | InRule
-    | RuleInit
-    | FastCheck
-    | Unify
-    | CheckSide
-    | RuleSuccess
-    | Ended
-    | Error
-    deriving (Eq, Ord, Enum, Show, Read)
+label :: UnifyTag -> UnifyTag -> Maybe Text
+label prior next = Map.lookup (prior, next) transitionLabels
 
-transition :: UnifyState -> UnifyTag -> UnifyState
-transition None Rules = Started
-transition Ended Rules = Started -- technical¸ filtered out later
---------------------
-transition Started Rule = InRule
---------------------
-transition InRule Init = RuleInit
-transition InRule EndRules = Ended
---------------------
-transition RuleInit Start = FastCheck
---------------------
-transition FastCheck Actual = Unify
-transition FastCheck Rule = InRule
-transition FastCheck EndRules = Ended
---------------------
-transition Unify Side = CheckSide
-transition Unify Rule = InRule
-transition Unify EndRules = Ended
---------------------
-transition CheckSide End = RuleSuccess
-transition CheckSide Rule = InRule
-transition CheckSide EndRules = Ended
---------------------
-transition RuleSuccess Rule = InRule
-transition RuleSuccess EndRules = Ended
---------------------
-transition otherState otherTag =
-    error $
-        "Transition from " <> show otherState
-            <> " with "
-            <> show otherTag
-            <> " not defined"
-
--- transition _ _ = Error
--- transition Error _ = Error
+transitionLabels :: Map (UnifyTag, UnifyTag) Text
+transitionLabels = Map.fromList
+    [ Rules --> Rule $ "Starting"
+    , Rule --> Init $ "InRule"
+--    , Rule --> EndRules "Ended" -- ???
+    , Init --> Start $ "Init"
+    , Start --> Actual $ "FastCheckPassed"
+    , Start --> Rule $ "FailedFast"
+    , Start --> EndRules $ "FailedFast"
+    , Actual --> Side $ "Unified"
+    , Actual --> Rule $ "UnifyFailed"
+    , Actual --> EndRules $ "UnifyFailed"
+    , Side --> End $ "SideChecked"
+    , Side --> Rule $ "SideFailed"
+    , Side --> EndRules $ "SideFailed"
+    , End --> Rule $ "Success"
+    , End --> EndRules $ "Success"
+    , EndRules --> Rules $ Text.empty -- technical edge, should be filtered out
+    ]
+  where
+    (-->) :: UnifyTag -> UnifyTag -> Text -> ((UnifyTag, UnifyTag), Text)
+    t1 --> t2 = ((t1, t2),)
 
 {- Collect timings for all state transitions in the machine above from
  the trace event sequence. 'UnifyTag's are unique transition signals
@@ -184,37 +164,30 @@ transition otherState otherTag =
 -}
 collectTimings ::
     [(Timestamp, UnifyTag)] ->
-    Map (UnifyState, UnifyState) [Double]
+    Map (UnifyTag, UnifyTag) [Double]
 collectTimings =
     snd
         . flip runState Map.empty
         . fold1M collect
-        . mkStates None
+        . map (first ((/ 1000) . fromIntegral)) -- microsecond timestamps
   where
     collect ::
-        (Double, UnifyState) ->
-        (Double, UnifyState) ->
-        State (Map (UnifyState, UnifyState) [Double]) (Double, UnifyState)
+        (Double, UnifyTag) ->
+        (Double, UnifyTag) ->
+        State (Map (UnifyTag, UnifyTag) [Double]) (Double, UnifyTag)
     collect (t1, prior) (t2, next) = do
-        when (not (prior == Ended && next == Started)) $
-            modify $ Map.insertWith (++) (prior, next) [t2 - t1]
-        pure (t2, next)
+        case label prior next of
+            Nothing ->
+                error $ "Undefined transition " <> show prior <> " --> " <> show next
+            Just l
+                | Text.null l -> pure (t2, next) -- omit
+                | otherwise -> do
+                      modify $ Map.insertWith (++) (prior, next) [t2 - t1]
+                      pure (t2, next)
 
 fold1M :: Monad m => (a -> a -> m a) -> [a] -> m a
 fold1M f [] = error "foldM1: empty"
 fold1M f (x : xs) = foldM f x xs
-
--- compute a sequence of states with _microsec_ timestamps from the
--- sequence of _nanosec_ timestamps and transition tags
-mkStates ::
-    UnifyState -> [(Timestamp, UnifyTag)] -> [(Double, UnifyState)]
-mkStates start [] = []
-mkStates start ((t1, next) : rest) =
-    scanl mkState (fromIntegral t1 / 1000, transition start next) rest
-  where
-    mkState ::
-        (Double, UnifyState) -> (Timestamp, UnifyTag) -> (Double, UnifyState)
-    mkState (_, prior) (time, tag) = (fromIntegral time / 1000, transition prior tag)
 
 data Stats a = Stats
     { count :: Int
@@ -257,22 +230,27 @@ finaliseStats Stats'{..} = Stats{..}
 
 collectStats ::
     [(Timestamp, UnifyTag)] ->
-    Map (UnifyState, UnifyState) (Stats Double)
+    Map (UnifyTag, UnifyTag) (Stats Double)
 collectStats =
     Map.map finaliseStats
         . snd
         . flip runState Map.empty
         . fold1M collect
-        . mkStates None
+        . map (first ( (/ 1000) . fromIntegral)) -- microseconds
   where
     collect ::
-        (Double, UnifyState) ->
-        (Double, UnifyState) ->
-        State (Map (UnifyState, UnifyState) (Stats' Double)) (Double, UnifyState)
-    collect (t1, prior) (t2, next) = do
-        when (not (prior == Ended && next == Started)) $
-            modify $ Map.alter (add $ t2 - t1) (prior, next)
-        pure (t2, next)
+        (Double, UnifyTag) ->
+        (Double, UnifyTag) ->
+        State (Map (UnifyTag, UnifyTag) (Stats' Double)) (Double, UnifyTag)
+    collect (t1, prior) (t2, next) =
+        case label prior next of
+            Nothing ->
+                error $ "Undefined transition " <> show prior <> " --> " <> show next
+            Just l
+                | Text.null l -> pure (t2, next) -- omit
+                | otherwise -> do
+                      modify $ Map.alter (add $ t2 - t1) (prior, next)
+                      pure (t2, next)
 
     add :: Double -> Maybe (Stats' Double) -> Maybe (Stats' Double)
     add x Nothing = Just $ singleStats' x
@@ -302,23 +280,22 @@ mkStats (x : xs) =
     stddev = sqrt $ squareSum / fromIntegral count - average * average
 
 mapStatistics ::
-    Map (UnifyState, UnifyState) [Double] ->
-    Map (UnifyState, UnifyState) (Stats Double)
+    Map (UnifyTag, UnifyTag) [Double] ->
+    Map (UnifyTag, UnifyTag) (Stats Double)
 mapStatistics = Map.map mkStats
 
-printForDot :: (UnifyState, UnifyState) -> Stats Double -> String
-printForDot (s1, s2) Stats{count, average, stddev, total, maxVal, minVal} =
+printForDot :: (UnifyTag, UnifyTag) -> Stats Double -> String
+printForDot (t1, t2) Stats{count, average, stddev, total, maxVal, minVal} =
     printf
-        "%s -> %s [penwidth=%.1f, label=\"%.2fμs (+-%.2f), total #%d (%s), range %.2f to %.2f\" ]"
-        (show s1)
-        (show s2)
-        (max 0.1 $ log @Double $ fromIntegral count / 100)
+        "%s -> %s [penwidth=%.1f, label=\"%s. %.2fμs (+-%.2f), total #%d (%s)\" ]"
+        (show t1)
+        (show t2)
+        (max 0.1 $ log @Double $ fromIntegral count / 50)
+        (fromJust $ label t1 t2) -- safe, transitions have been checked before
         average
         stddev
         count
         (humanReadable total)
-        minVal
-        maxVal
   where
     humanReadable :: Double -> String
     humanReadable x
