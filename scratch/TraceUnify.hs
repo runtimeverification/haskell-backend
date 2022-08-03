@@ -111,23 +111,23 @@ Rules --> Rule
     /      |
    /       |
    |       |
-   |       V
-   +---- Start------
+   |\      V
+   | ---FastCheck---
    |       |        \
    |       |        |
    |       |        |
-   |       V        |
-   +---- Actual---- |
+   |\      V        |
+   | ----Unify----- |
    |       |       \|
    |       |        |
    |       |        |
-   |       V        |
-   +---- Side ----- |
+   |\      V        |
+   | --CheckSide--- |
    |       |       \|
    |       |        |
    |       |        |
    \       V        V
-    ---- End --> EndRules
+    ---Success--> EndRules
 -}
 
 data UnifyTag
@@ -138,13 +138,13 @@ data UnifyTag
     | -- | starting work on one rule (worker function)
       Init
     | -- | starting fast check for one rule
-      Start
+      FastCheck
     | -- | starting unification for one rule
-      Actual
+      Unify
     | -- | checking side conditions for one rule
-      Side
+      CheckSide
     | -- | successful unification using one rule
-      End
+      Success
     | -- | ending term unification
       EndRules
     deriving (Eq, Ord, Enum, Bounded, Show)
@@ -160,18 +160,18 @@ instance TimingStateMachine UnifyTag where
         Map.fromList
             [ Rules --> Rule $ "Starting"
             , Rule --> Init $ "InRule"
-            , Init --> Start $ "Init"
-            , Start --> Actual $ "FastCheckPassed"
-            , Start --> Rule $ "FailedFast"
-            , Start --> EndRules $ "FailedFast"
-            , Actual --> Side $ "Unified"
-            , Actual --> Rule $ "UnifyFailed"
-            , Actual --> EndRules $ "UnifyFailed"
-            , Side --> End $ "SideChecked"
-            , Side --> Rule $ "SideFailed"
-            , Side --> EndRules $ "SideFailed"
-            , End --> Rule $ "Success"
-            , End --> EndRules $ "Success"
+            , Init --> FastCheck $ "Init"
+            , FastCheck --> Unify $ "FastCheckPassed"
+            , FastCheck --> Rule $ "FailedFast"
+            , FastCheck --> EndRules $ "FailedFast"
+            , Unify --> CheckSide $ "Unified"
+            , Unify --> Rule $ "UnifyFailed"
+            , Unify --> EndRules $ "UnifyFailed"
+            , CheckSide --> Success $ "SideChecked"
+            , CheckSide --> Rule $ "SideFailed"
+            , CheckSide --> EndRules $ "SideFailed"
+            , Success --> Rule $ "Success"
+            , Success --> EndRules $ "Success"
             , EndRules --> Rules $ Text.empty -- technical edge, filtered out
             ]
       where
