@@ -556,9 +556,9 @@ test_unifyIntEq :: [TestTree]
 test_unifyIntEq =
     [ testCase "\\equals(false, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal False
-            term2 = eqInt (mkElemVar x) (mkElemVar y)
+            term2 = eqInt (mkElemVar y) (mkElemVar x) 
             expect =
-                makeEqualsPredicate (mkElemVar x) (mkElemVar y)
+                makeEqualsPredicate (mkElemVar y) (mkElemVar x)
                     & makeNotPredicate
                     & Condition.fromPredicate
                     & Pattern.fromCondition boolSort
@@ -623,13 +623,13 @@ test_unifyIntEq =
     , testCase "\\equals(X +Int 1 ==Int Y +Int 1, false)" $ do
         let term1 =
                 eqInt
-                    (addInt (mkElemVar x) (asInternal 1))
                     (addInt (mkElemVar y) (asInternal 1))
+                    (addInt (mkElemVar x) (asInternal 1))
             term2 = Test.Bool.asInternal False
             expect =
                 makeEqualsPredicate
-                    (addInt (mkElemVar x) (asInternal 1))
                     (addInt (mkElemVar y) (asInternal 1))
+                    (addInt (mkElemVar x) (asInternal 1))
                     & makeNotPredicate
                     & Condition.fromPredicate
                     & Pattern.fromCondition boolSort
