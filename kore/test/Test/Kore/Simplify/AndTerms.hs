@@ -76,6 +76,7 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Data.List (sort)
 
 test_andTermsSimplification :: [TestTree]
 test_andTermsSimplification =
@@ -136,19 +137,18 @@ test_andTermsSimplification =
     , testGroup
         "injective head and"
         [ testCase "same head, different child" $ do
-            let expect =
+            let [f,g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
+                expect =
                     Conditional
-                        { term = Mock.injective10 fOfA
+                        { term = Mock.injective10 f
                         , predicate =
-                            makeEqualsPredicate
-                                fOfA
-                                gOfA
+                            makeEqualsPredicate f g
                         , substitution = mempty
                         }
             actual <-
                 simplifyUnify
-                    (Mock.injective10 fOfA)
-                    (Mock.injective10 gOfA)
+                    (Mock.injective10 f)
+                    (Mock.injective10 g)
             assertEqual "" ([expect], [expect]) actual
         , testCase "same head, same child" $ do
             let expected = Pattern.fromTermLike (Mock.injective10 fOfA)
@@ -183,19 +183,20 @@ test_andTermsSimplification =
     , testGroup
         "sort injection and"
         [ testCase "same head, different child" $ do
-            let expect =
+            let [cfs, cgs] :: [TermLike RewritingVariableName] = sort [Mock.cfSort0, Mock.cgSort0]
+                expect =
                     Conditional
-                        { term = Mock.sortInjection10 Mock.cfSort0
+                        { term = Mock.sortInjection10 cfs
                         , predicate =
                             makeEqualsPredicate
-                                Mock.cfSort0
-                                Mock.cgSort0
+                                cfs
+                                cgs
                         , substitution = mempty
                         }
             actual <-
                 simplifyUnify
-                    (Mock.sortInjection10 Mock.cfSort0)
-                    (Mock.sortInjection10 Mock.cgSort0)
+                    (Mock.sortInjection10 cfs)
+                    (Mock.sortInjection10 cgs)
             assertEqual "" ([expect], [expect]) actual
         , testCase "same head, same child" $ do
             let expect =
@@ -451,21 +452,19 @@ test_andTermsSimplification =
     , testGroup
         "constructor and"
         [ testCase "same head" $ do
-            let expect =
+            let [cf', cg'] :: [TermLike RewritingVariableName] = sort [Mock.cf, Mock.cg]
+                expect =
                     let expected =
                             Conditional
-                                { term = Mock.constr10 Mock.cf
-                                , predicate =
-                                    makeEqualsPredicate
-                                        Mock.cf
-                                        Mock.cg
+                                { term = Mock.constr10 cf'
+                                , predicate = makeEqualsPredicate cf' cg'
                                 , substitution = mempty
                                 }
                      in ([expected], [expected])
             actual <-
                 simplifyUnify
-                    (Mock.constr10 Mock.cf)
-                    (Mock.constr10 Mock.cg)
+                    (Mock.constr10 cf')
+                    (Mock.constr10 cg')
             assertEqual "" expect actual
         , testCase "same head same child" $ do
             let expect =
@@ -532,11 +531,12 @@ test_andTermsSimplification =
             actual <- simplifyUnify fOfA fOfA
             assertEqual "" expect actual
         , testCase "not equal values" $ do
-            let expect =
-                    makeEqualsPredicate fOfA gOfA
+            let [f,g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
+                expect =
+                    makeEqualsPredicate f g
                         & Condition.fromPredicate
-                        & Pattern.withCondition fOfA
-            (actualAnd, actualUnify) <- simplifyUnify fOfA gOfA
+                        & Pattern.withCondition f
+            (actualAnd, actualUnify) <- simplifyUnify f g
             assertEqual "" [expect] actualAnd
             assertEqual "" [expect] actualUnify
         ]
@@ -1161,11 +1161,12 @@ test_andTermsSimplification =
             actual <- simplifyUnify alias2App (mkTop $ termLikeSort alias2App)
             assertEqual "" expect actual
         , testCase "alias1() vs injHead" $ do
-            let expect =
+            let [f, g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
+                expect =
                     Conditional
-                        { term = Mock.injective10 fOfA
+                        { term = Mock.injective10 f
                         , predicate =
-                            makeEqualsPredicate fOfA gOfA
+                            makeEqualsPredicate f g
                         , substitution = mempty
                         }
                 x = mkVariable "x"
@@ -1383,10 +1384,11 @@ test_equalsTermsSimplification =
                     )
             assertEqual "" (Just [expect]) actual
         , testCase "key not in singleton Map" $ do
-            let expect =
+            let [x, y] = sort [Mock.xConfig, Mock.yConfig]
+                expect =
                     makeEqualsPredicate
-                        (mkElemVar Mock.xConfig)
-                        (mkElemVar Mock.yConfig)
+                        (mkElemVar x)
+                        (mkElemVar y)
                         & makeNotPredicate
                         & Condition.fromPredicate
             actual <-
@@ -1394,27 +1396,28 @@ test_equalsTermsSimplification =
                     mempty
                     (Mock.builtinBool False)
                     ( Mock.inKeysMap
-                        (mkElemVar Mock.xConfig)
+                        (mkElemVar x)
                         ( Mock.builtinMap
-                            [(mkElemVar Mock.yConfig, Mock.a)]
+                            [(mkElemVar y, Mock.a)]
                         )
                     )
             assertEqual "" (Just [expect]) actual
         , testCase "key not in two-element Map" $ do
-            let expect =
+            let [x, y, z] = sort [Mock.xConfig, Mock.yConfig, Mock.zConfig]
+                expect =
                     [ makeNotPredicate $
                         makeEqualsPredicate
-                            (mkElemVar Mock.xConfig)
-                            (mkElemVar Mock.yConfig)
+                            (mkElemVar x)
+                            (mkElemVar y)
                     , makeNotPredicate $
                         makeEqualsPredicate
-                            (mkElemVar Mock.xConfig)
-                            (mkElemVar Mock.zConfig)
+                            (mkElemVar x)
+                            (mkElemVar z)
                     , -- Definedness condition
                       makeNotPredicate $
                         makeEqualsPredicate
-                            (mkElemVar Mock.yConfig)
-                            (mkElemVar Mock.zConfig)
+                            (mkElemVar y)
+                            (mkElemVar z)
                     ]
                         & MultiAnd.make
             actual <-
@@ -1422,10 +1425,10 @@ test_equalsTermsSimplification =
                     mempty
                     (Mock.builtinBool False)
                     ( Mock.inKeysMap
-                        (mkElemVar Mock.xConfig)
+                        (mkElemVar x)
                         ( Mock.builtinMap
-                            [ (mkElemVar Mock.yConfig, Mock.a)
-                            , (mkElemVar Mock.zConfig, Mock.a)
+                            [ (mkElemVar y, Mock.a)
+                            , (mkElemVar z, Mock.a)
                             ]
                         )
                     )
@@ -1467,8 +1470,7 @@ test_functionAnd :: [TestTree]
 test_functionAnd =
     [ testCase "simplifies result" $ do
         let f = TermLike.markSimplified . Mock.f
-            x = mkElemVar Mock.xConfig
-            y = mkElemVar Mock.yConfig
+            [x, y] = sort [mkElemVar Mock.xConfig, mkElemVar Mock.yConfig]
             expect =
                 Pattern.withCondition (f x) $
                     Condition.fromPredicate $
