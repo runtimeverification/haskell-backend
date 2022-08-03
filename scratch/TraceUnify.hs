@@ -316,7 +316,10 @@ printForDot ::
     forall tag. TimingStateMachine tag => (tag, tag) -> Stats Double -> String
 printForDot (t1, t2) Stats{count, average, stddev, total, maxVal, minVal} =
     printf
-        "%s -> %s [penwidth=%.1f, label=\"%s. %.2fμs (+-%.2f), total #%d (%s)\" ]"
+        "%s -> %s\n\
+        \  [ penwidth=%.1f,\n\
+        \    label=\"%s. %.2fμs (+-%.2f), total #%d (%s)\",\n\
+        \    fontsize=10 ]"
         (show t1)
         (show t2)
         (max 0.1 $ log @Double $ fromIntegral count / 50)
