@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -56,17 +57,16 @@ getMarkers :: [Event] -> [(Timestamp, UnifyTag)]
 getMarkers = mapMaybe getMarker
   where
     getMarker Event{..}
-        | UserMarker{markername} <- evSpec = fmap (evTime,) $ readTag markername
-        | otherwise = Nothing
-
-readTag :: Text -> Maybe UnifyTag
-readTag t
-    | ("unify" : tag : rest) <- parts =
-        Just $ read (Text.unpack tag) -- FIXME catch exceptions?
-    | otherwise =
-        error $ "cannot read " <> show t -- Nothing
-  where
-    parts = Text.splitOn ":" t
+        | UserMarker{markername} <- evSpec =
+            fmap (evTime,) $ readTag markername
+        | otherwise =
+            Nothing
+    readTag :: Text -> Maybe UnifyTag
+    readTag t
+        | ("unify" : tag : rest) <- Text.splitOn ":" t =
+            decodeTag tag
+        | otherwise =
+            Nothing
 
 {-
 
@@ -119,7 +119,14 @@ data UnifyTag
       End
     | -- | ending term unification
       EndRules
-    deriving (Eq, Enum, Show, Read)
+    deriving (Eq, Enum, Bounded, Show)
+
+decodeTag :: Text -> Maybe UnifyTag
+decodeTag = flip Map.lookup tags
+
+-- keep this top-level to cache it
+tags :: Map Text UnifyTag
+tags = Map.fromList [(Text.pack $ show tag, tag) | tag <- [minBound .. maxBound]]
 
 data UnifyState
     = None
@@ -221,11 +228,11 @@ data Stats a = Stats
 
 -- helper structure to compute statistics in one pass
 data Stats' a = Stats'
-    { count :: !Int
-    , total :: !a
-    , squares :: !a
-    , maxVal :: !a
-    , minVal :: !a
+    { count :: Int
+    , total :: a
+    , squares :: a
+    , maxVal :: a
+    , minVal :: a
     }
 
 addStats' :: (Ord a, Num a) => Stats' a -> a -> Stats' a
