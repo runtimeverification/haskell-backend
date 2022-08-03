@@ -17,7 +17,6 @@ module Kore.Simplify.Simplify (
     askOverloadSimplifier,
     getCache,
     putCache,
-    askSimplifierXSwitch,
     simplifyPatternScatter,
     TermSimplifier,
 
@@ -56,9 +55,6 @@ module Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     makeEvaluateCeil,
 
-    -- * Experimental simplifier,
-    SimplifierXSwitch (..),
-
     -- * Re-exports
     MonadSMT,
     MonadLog,
@@ -93,7 +89,7 @@ import Kore.Internal.Conditional (Conditional)
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (OrCondition)
 import Kore.Internal.OrCondition qualified as OrCondition
-import Kore.Internal.OrPattern (OrPattern, fromPattern)
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
@@ -150,7 +146,6 @@ data Env = Env
     , memo :: !(Memo.Self Simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
-    , simplifierXSwitch :: !SimplifierXSwitch
     }
 
 {- | @Simplifier@ represents a simplification action.
@@ -236,12 +231,6 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
     askMemo = Memo.liftSelf lift <$> lift askMemo
     {-# INLINE askMemo #-}
 
-    simplifyPatternId ::
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyPatternId = pure . fromPattern
-    {-# INLINE simplifyPatternId #-}
-
 -- | Retrieve the 'MetadataTools' for the Kore context.
 askMetadataTools :: MonadSimplify m => m (SmtMetadataTools Attribute.Symbol)
 askMetadataTools = liftSimplifier $ asks metadataTools
@@ -282,9 +271,6 @@ getCache = liftSimplifier get
 
 putCache :: MonadSimplify m => SimplifierCache -> m ()
 putCache = liftSimplifier . put
-
-askSimplifierXSwitch :: MonadSimplify m => m SimplifierXSwitch
-askSimplifierXSwitch = liftSimplifier $ asks simplifierXSwitch
 
 instance MonadSimplify Simplifier where
     liftSimplifier = id
@@ -330,12 +316,6 @@ instance MonadSimplify m => MonadSimplify (StateT s m)
 
 instance MonadSimplify m => MonadSimplify (RWST r () s m)
 
--- * Experimental simplifier
-data SimplifierXSwitch
-    = EnabledSimplifierX
-    | DisabledSimplifierX
-    deriving stock (Show, Eq)
-
 -- * Term simplifiers
 
 -- TODO (thomas.tuegel): Factor out these types.
@@ -346,12 +326,9 @@ simplifyPatternScatter ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-simplifyPatternScatter sideCondition patt = do
-    simplifierX <- askSimplifierXSwitch
+simplifyPatternScatter sideCondition patt =
     Logic.scatter
-        =<< case simplifierX of
-            EnabledSimplifierX -> simplifyPatternId patt
-            DisabledSimplifierX -> simplifyPattern sideCondition patt
+        =<< simplifyPattern sideCondition patt
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies

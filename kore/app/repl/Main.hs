@@ -193,7 +193,7 @@ main = do
     whenJust (localOptions options) mainWithOptions
 
 mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
-mainWithOptions LocalOptions{execOptions, simplifierx} = do
+mainWithOptions LocalOptions{execOptions} = do
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
@@ -247,7 +247,6 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                             $ proveWithRepl
                                 replMinDepth
                                 replStuckCheck
-                                simplifierx
                                 validatedDefinition
                                 specDefIndexedModule
                                 Nothing
