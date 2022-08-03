@@ -777,7 +777,8 @@ test_proveClaims =
             , mkTest "AllPath" simpleAllPathClaim
             ]
     , testGroup "warns about unexplored branch when one of several stuck claims returned" $
-        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+        let [a, b, c, d] :: [TermLike VariableName] = sort [Mock.a, Mock.b, Mock.c, Mock.d]
+            axioms = [simpleAxiom a (mkOr b c)]
             mkTest name mkSimpleClaim =
                 testCase name $ do
                     actual <-
@@ -787,9 +788,9 @@ test_proveClaims =
                             1
                             Leaf
                             axioms
-                            [mkSimpleClaim Mock.a Mock.d]
+                            [mkSimpleClaim a d]
                             []
-                    let stuck = mkSimpleClaim Mock.b Mock.d
+                    let stuck = mkSimpleClaim b d
                         expect =
                             ProveClaimsResult
                                 { stuckClaims = MultiAnd.singleton (StuckClaim stuck)
