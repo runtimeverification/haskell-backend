@@ -469,9 +469,9 @@ test_unifyStringEq :: [TestTree]
 test_unifyStringEq =
     [ testCase "\\equals(false, X ==String Y)" $ do
         let term1 = Test.Bool.asInternal False
-            term2 = eqString (mkElemVar x) (mkElemVar y)
+            term2 = eqString (mkElemVar y) (mkElemVar x)
             expect =
-                makeEqualsPredicate (mkElemVar x) (mkElemVar y)
+                makeEqualsPredicate (mkElemVar y) (mkElemVar x)
                     & makeNotPredicate
                     & Condition.fromPredicate
                     & Pattern.fromCondition boolSort
