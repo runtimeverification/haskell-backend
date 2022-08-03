@@ -556,7 +556,7 @@ test_unifyIntEq :: [TestTree]
 test_unifyIntEq =
     [ testCase "\\equals(false, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal False
-            term2 = eqInt (mkElemVar y) (mkElemVar x) 
+            term2 = eqInt (mkElemVar y) (mkElemVar x)
             expect =
                 makeEqualsPredicate (mkElemVar y) (mkElemVar x)
                     & makeNotPredicate

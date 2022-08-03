@@ -10,6 +10,7 @@ import Control.Error (
     MaybeT (..),
  )
 import Data.HashMap.Strict qualified as HashMap
+import Data.List (sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (
     fromJust,
@@ -76,7 +77,6 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import Data.List (sort)
 
 test_andTermsSimplification :: [TestTree]
 test_andTermsSimplification =
@@ -137,7 +137,7 @@ test_andTermsSimplification =
     , testGroup
         "injective head and"
         [ testCase "same head, different child" $ do
-            let [f,g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
+            let [f, g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
                 expect =
                     Conditional
                         { term = Mock.injective10 f
@@ -531,7 +531,7 @@ test_andTermsSimplification =
             actual <- simplifyUnify fOfA fOfA
             assertEqual "" expect actual
         , testCase "not equal values" $ do
-            let [f,g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
+            let [f, g] :: [TermLike RewritingVariableName] = sort [fOfA, gOfA]
                 expect =
                     makeEqualsPredicate f g
                         & Condition.fromPredicate
