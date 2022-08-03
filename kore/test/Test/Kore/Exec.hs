@@ -146,7 +146,7 @@ test_execBranch = testCase "execBranch" $ actual >>= assertEqual "" (ExitSuccess
                 }
     inputPattern = applyToNoArgs mySort "a" -- rewrites to b or c
     expected =
-        mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "c")
+        mkOr (applyToNoArgs mySort "c") (applyToNoArgs mySort "b")
 
 test_execBranch1Stuck :: TestTree
 test_execBranch1Stuck =
@@ -186,7 +186,7 @@ test_execBranch1Stuck =
                 }
     inputPattern = applyToNoArgs mySort "a" -- rewrites to b or d
     expected =
-        mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "e")
+        mkOr (applyToNoArgs mySort "e") (applyToNoArgs mySort "b")
 
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
