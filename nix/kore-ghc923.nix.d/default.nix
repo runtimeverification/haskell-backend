@@ -11,11 +11,13 @@
       "direct-sqlite" = (((hackage.direct-sqlite)."2.3.26").revisions).default;
       "witherable" = (((hackage.witherable)."0.4.2").revisions).default;
       "witherable-class" = (((hackage.witherable-class)."0").revisions).default;
-      "ghc-events" = (((hackage.ghc-events)."0.17.0.3").revisions).default;
       "tasty-test-reporter" =
         (((hackage.tasty-test-reporter)."0.1.1.4").revisions).default;
       "junit-xml" = (((hackage.junit-xml)."0.1.0.0").revisions).default;
       "compact" = (((hackage.compact)."0.2.0.0").revisions).default;
+      "decision-diagrams" =
+        (((hackage.decision-diagrams)."0.2.0.0").revisions).default;
+      "ghc-events" = (((hackage.ghc-events)."0.17.0.3").revisions).default;
       "json-rpc" =
         (((hackage.json-rpc)."1.0.4").revisions)."e6805381c86fdfc782102b1aa7e3708e89492f986c8e553d953b0fa21f790a0c";
       kore = ./kore.nix;
