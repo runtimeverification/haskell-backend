@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Internal.SideCondition (
     TestSideCondition,
     module Kore.Internal.SideCondition,
@@ -8,6 +10,7 @@ module Test.Kore.Internal.SideCondition (
 ) where
 
 import Data.HashSet qualified as HashSet
+import Data.List (sort)
 import Data.Maybe (
     fromJust,
  )
@@ -501,31 +504,34 @@ test_generateNormalizedAcs =
             expected = mempty
         testCollection collection expected
     , testCase "2-element: generates itself" $ do
-        let collection =
+        let [x, y] = sort [Mock.x, Mock.y]
+            collection =
                 Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (mkElemVar Mock.y, Mock.b)
+                    [ (mkElemVar x, Mock.a)
+                    , (mkElemVar y, Mock.b)
                     ]
                     []
             expected = [collection]
         testCollection collection expected
     , testCase "3-element symbolic: all unique pair-wise subcollections" $ do
-        let collection =
+        let [a, b, c] :: [TermLike VariableName] = sort [Mock.a, Mock.b, Mock.c]
+            [x, y, z] = sort [Mock.x, Mock.y, Mock.z]
+            collection =
                 Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (mkElemVar Mock.y, Mock.b)
-                    , (mkElemVar Mock.z, Mock.c)
+                    [ (mkElemVar x, a)
+                    , (mkElemVar y, b)
+                    , (mkElemVar z, c)
                     ]
                     []
             expected =
                 [ Collection
-                    [(mkElemVar Mock.x, Mock.a), (mkElemVar Mock.y, Mock.b)]
+                    [(mkElemVar x, a), (mkElemVar y, b)]
                     []
                 , Collection
-                    [(mkElemVar Mock.y, Mock.b), (mkElemVar Mock.z, Mock.c)]
+                    [(mkElemVar y, b), (mkElemVar z, c)]
                     []
                 , Collection
-                    [(mkElemVar Mock.x, Mock.a), (mkElemVar Mock.z, Mock.c)]
+                    [(mkElemVar x, a), (mkElemVar z, c)]
                     []
                 ]
         testCollection collection expected
@@ -557,29 +563,31 @@ test_generateNormalizedAcs =
         "2-concrete, 2-symbolic: generates all, including mixed,\
         \ unique pair-wise subcollections"
         $ do
-            let collection =
+            let [a, b, c, d] :: [TermLike VariableName] = sort [Mock.a, Mock.b, Mock.c, Mock.d]
+                [x, y] = sort [Mock.x, Mock.y]
+                collection =
                     Collection
-                        [ (Mock.a, Mock.a)
-                        , (mkElemVar Mock.x, Mock.b)
-                        , (Mock.b, Mock.c)
-                        , (mkElemVar Mock.y, Mock.d)
+                        [ (a, a)
+                        , (mkElemVar x, b)
+                        , (b, c)
+                        , (mkElemVar y, d)
                         ]
                         []
                 expected =
                     [ Collection
-                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        [(a, a), (mkElemVar x, b)]
                         []
                     , Collection
-                        [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.d)]
+                        [(a, a), (mkElemVar y, d)]
                         []
                     , Collection
-                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        [(mkElemVar x, b), (b, c)]
                         []
                     , Collection
-                        [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.d)]
+                        [(mkElemVar x, b), (mkElemVar y, d)]
                         []
                     , Collection
-                        [(Mock.b, Mock.c), (mkElemVar Mock.y, Mock.d)]
+                        [(b, c), (mkElemVar y, d)]
                         []
                     ]
             -- Not present in `expected because it's always defined:
@@ -624,31 +632,33 @@ test_generateNormalizedAcs =
         "2-symbolic 1-concrete 1-opaque map: all unique pairs\
         \ and every element-opaque pair"
         $ do
-            let collection =
+            let [a, b, c] :: [TermLike VariableName] = sort [Mock.a, Mock.b, Mock.c]
+                [x, y] = sort [Mock.x, Mock.y]
+                collection =
                     Collection
-                        [ (Mock.a, Mock.a)
-                        , (mkElemVar Mock.x, Mock.b)
-                        , (mkElemVar Mock.y, Mock.c)
+                        [ (a, a)
+                        , (mkElemVar x, b)
+                        , (mkElemVar y, c)
                         ]
                         [0]
                 expected =
                     [ Collection
-                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        [(a, a), (mkElemVar x, b)]
                         []
                     , Collection
-                        [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.c)]
+                        [(a, a), (mkElemVar y, c)]
                         []
                     , Collection
-                        [(Mock.a, Mock.a)]
+                        [(a, a)]
                         [0]
                     , Collection
-                        [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.c)]
+                        [(mkElemVar x, b), (mkElemVar y, c)]
                         []
                     , Collection
-                        [(mkElemVar Mock.x, Mock.b)]
+                        [(mkElemVar x, b)]
                         [0]
                     , Collection
-                        [(mkElemVar Mock.y, Mock.c)]
+                        [(mkElemVar y, c)]
                         [0]
                     ]
             testCollection collection expected
