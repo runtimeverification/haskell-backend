@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Rewrite.RewriteStep (
     test_applyInitialConditions,
     test_renameRuleVariables,
@@ -12,6 +14,7 @@ import Control.Exception qualified as Exception
 import Data.Default as Default (
     def,
  )
+import Data.List (sort)
 import Data.Maybe (
     fromJust,
  )
@@ -382,31 +385,33 @@ test_applyRewriteRule_ =
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
     , testCase "substitution with symbol matching" $ do
-        let expect =
+        let [y, z] = sort [Mock.yConfig, Mock.zConfig]
+            expect =
                 [OrPattern.fromPatterns [initial{term = fz, substitution}]]
               where
                 substitution =
                     Substitution.wrap $
                         Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.yConfig, mkElemVar Mock.zConfig)]
-            fy = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
-            fz = Mock.functionalConstr10 (mkElemVar Mock.zConfig)
+                            [(inject y, mkElemVar z)]
+            fy = Mock.functionalConstr10 (mkElemVar y)
+            fz = Mock.functionalConstr10 (mkElemVar z)
             initial = Pattern.fromTermLike (Mock.sigma fy fz)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
     , testCase "merge multiple variables" $ do
-        let expect =
+        let [x, y] = sort [Mock.xConfig, Mock.yConfig]
+            expect =
                 [OrPattern.fromPatterns [initial{term = yy, substitution}]]
               where
                 substitution =
                     Substitution.wrap $
                         Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, mkElemVar Mock.yConfig)]
-            xy = Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig)
-            yx = Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.xConfig)
-            yy = Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.yConfig)
+                            [(inject x, mkElemVar y)]
+            xy = Mock.sigma (mkElemVar x) (mkElemVar y)
+            yx = Mock.sigma (mkElemVar y) (mkElemVar x)
+            yy = Mock.sigma (mkElemVar y) (mkElemVar y)
             initial = Pattern.fromTermLike (Mock.sigma xy yx)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaXXYY
         actualClaim <- applyClaim initial claimSigmaXXYY
@@ -709,7 +714,8 @@ test_applyRewriteRule_ =
       -- vs
       -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
       testCase "unify all children" $ do
-        let expect =
+        let [x, y, z] = sort [Mock.xConfig, Mock.yConfig, Mock.zConfig]
+            expect =
                 [ OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.sigma zz zz
@@ -717,16 +723,16 @@ test_applyRewriteRule_ =
                         , substitution =
                             Substitution.wrap $
                                 Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.xConfig, zz)
-                                    , (inject Mock.yConfig, mkElemVar Mock.zConfig)
+                                    [ (inject x, zz)
+                                    , (inject y, mkElemVar z)
                                     ]
                         }
                     ]
                 ]
-            xx = Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
-            yy = Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.yConfig)
-            zz = Mock.sigma (mkElemVar Mock.zConfig) (mkElemVar Mock.zConfig)
-            yz = Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.zConfig)
+            xx = Mock.sigma (mkElemVar x) (mkElemVar x)
+            yy = Mock.sigma (mkElemVar y) (mkElemVar y)
+            zz = Mock.sigma (mkElemVar z) (mkElemVar z)
+            yz = Mock.sigma (mkElemVar y) (mkElemVar z)
             initial = pure $ Mock.sigma xx (Mock.sigma yz yy)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
         actualClaim <- applyClaim initial claimSigmaId
