@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Simplify.Integration (
     test_simplificationIntegration,
     test_simplificationIntegrationUnification,
@@ -10,7 +12,7 @@ module Test.Kore.Simplify.Integration (
 import Control.Lens qualified as Lens
 import Data.Default qualified as Default
 import Data.Generics.Product
-import Data.Map.Strict (Map)
+import Data.List (sort)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Kore.Builtin.Bool qualified as Bool
@@ -357,8 +359,8 @@ test_simplificationIntegration =
         do
             let requirement = \var ->
                     makeEqualsPredicate
-                        (Mock.f (mkElemVar var))
                         (Mock.g Mock.b)
+                        (Mock.f (mkElemVar var))
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -396,8 +398,8 @@ test_simplificationIntegration =
         do
             let requirement = \var ->
                     makeEqualsPredicate
-                        (Mock.f (mkElemVar var))
                         (Mock.g Mock.b)
+                        (Mock.f (mkElemVar var))
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -434,8 +436,8 @@ test_simplificationIntegration =
     , testCase "simplification with top predicate (nu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
                     (Mock.g Mock.b)
+                    (Mock.f (mkSetVar var))
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -472,8 +474,8 @@ test_simplificationIntegration =
     , testCase "simplification with top predicate (mu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
                     (Mock.g Mock.b)
+                    (Mock.f (mkSetVar var))
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -661,10 +663,11 @@ test_simplificationIntegration =
                     }
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Preserves predicate sort" $ do
-        let patt =
+        let [cf, cg] :: [TermLike RewritingVariableName] = sort [Mock.cf, Mock.cg]
+            patt =
                 Conditional
                     { term = mkTop Mock.listSort
-                    , predicate = makeInPredicate Mock.cf Mock.cg
+                    , predicate = makeInPredicate cf cg
                     , substitution = mempty
                     }
             expected =
@@ -672,8 +675,8 @@ test_simplificationIntegration =
                     { term = mkTop Mock.listSort
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                            (makeCeilPredicate cf)
+                            (makeEqualsPredicate cf cg)
                     , substitution = mempty
                     }
         actual <- evaluate patt
@@ -843,8 +846,8 @@ test_simplificationIntegrationUnification =
         do
             let requirement = \var ->
                     makeEqualsPredicate
-                        (Mock.f (mkElemVar var))
                         (Mock.g Mock.b)
+                        (Mock.f (mkElemVar var))
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -883,8 +886,8 @@ test_simplificationIntegrationUnification =
         do
             let requirement = \var ->
                     makeEqualsPredicate
-                        (Mock.f (mkElemVar var))
                         (Mock.g Mock.b)
+                        (Mock.f (mkElemVar var))
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -922,8 +925,8 @@ test_simplificationIntegrationUnification =
     , testCase "simplification with top predicate (nu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
                     (Mock.g Mock.b)
+                    (Mock.f (mkSetVar var))
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -961,8 +964,8 @@ test_simplificationIntegrationUnification =
     , testCase "simplification with top predicate (mu variable capture)" $ do
         let requirement = \var ->
                 makeEqualsPredicate
-                    (Mock.f (mkSetVar var))
                     (Mock.g Mock.b)
+                    (Mock.f (mkSetVar var))
             expect =
                 OrPattern.fromPatterns
                     [ Conditional
