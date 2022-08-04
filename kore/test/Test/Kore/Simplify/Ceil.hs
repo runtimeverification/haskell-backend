@@ -1,7 +1,10 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Simplify.Ceil (
     test_ceilSimplification,
 ) where
 
+import Data.List (sort)
 import Data.Map.Strict qualified as Map
 import Data.Sup qualified as Sup
 import Kore.Internal.Condition as Condition
@@ -330,16 +333,17 @@ test_ceilSimplification =
         --     = top and
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
-        let expected =
+        let [a, cf, fa, ga, fb] = sort [Mock.a, Mock.cf, fOfA, gOfA, fOfB]
+            expected =
                 OrCondition.fromConditions
                     [ Conditional
                         { term = ()
                         , predicate =
                             makeAndPredicate
-                                (makeEqualsPredicate Mock.a Mock.cf)
-                                (makeEqualsPredicate fOfA gOfA)
+                                (makeEqualsPredicate a cf)
+                                (makeEqualsPredicate fa ga)
                         , substitution =
-                            Substitution.unsafeWrap [(inject Mock.xConfig, fOfB)]
+                            Substitution.unsafeWrap [(inject Mock.xConfig, fb)]
                         }
                     ]
         actual <-
@@ -351,18 +355,18 @@ test_ceilSimplification =
                     ( appliedMockEvaluator
                         Conditional
                             { term = mkTop Mock.testSort
-                            , predicate = makeEqualsPredicate Mock.a Mock.cf
+                            , predicate = makeEqualsPredicate a cf
                             , substitution = mempty
                             }
                     )
                 )
                 Conditional
-                    { term = Mock.functional20 fOfA fOfB
-                    , predicate = makeEqualsPredicate fOfA gOfA
+                    { term = Mock.functional20 fa fb
+                    , predicate = makeEqualsPredicate fa ga
                     , substitution =
                         Substitution.wrap $
                             Substitution.mkUnwrappedSubstitution
-                                [(inject Mock.xConfig, fOfB)]
+                                [(inject Mock.xConfig, fb)]
                     }
         assertEqual
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
