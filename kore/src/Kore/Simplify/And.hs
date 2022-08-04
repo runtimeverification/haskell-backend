@@ -152,6 +152,7 @@ makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
     normalized <-
         from @_ @(Condition _) substitutions
             & Substitution.normalize sideCondition
+            & mapLogicT liftSimplifier
     let substitution = Pattern.substitution normalized
         predicates :: MultiAnd (Predicate RewritingVariableName)
         predicates =
