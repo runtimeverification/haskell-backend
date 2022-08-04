@@ -1,7 +1,11 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+
 module Test.Kore.Rewrite.Remainder (
     test_existentiallyQuantifyTarget,
 ) where
 
+import Data.List (sort)
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -10,6 +14,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Remainder qualified as Remainder
 import Kore.Rewrite.RewritingVariable
 import Prelude.Kore
+import Test.Kore.Rewrite.MockSymbols (MockElementVariable)
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
 import Test.Terse
@@ -22,19 +27,21 @@ test_existentiallyQuantifyTarget =
     becomes original expect =
         equals (Remainder.existentiallyQuantifyRuleVariables original) expect
 
+[x, y, z] :: [MockElementVariable] = sort [Mock.x, Mock.y, Mock.z]
+
 target :: Predicate RewritingVariableName
 target =
     Predicate.makeEqualsPredicate
-        (mkElemVar $ mkElementConfigVariable Mock.x)
+        (mkElemVar $ mkElementConfigVariable x)
         ( Mock.sigma
-            (mkElemVar $ mkElementRuleVariable Mock.y)
-            (mkElemVar $ mkElementRuleVariable Mock.z)
+            (mkElemVar $ mkElementRuleVariable y)
+            (mkElemVar $ mkElementRuleVariable z)
         )
 
 quantified :: Predicate RewritingVariableName
 quantified =
     Predicate.makeMultipleExists
-        [ mkElementRuleVariable Mock.y
-        , mkElementRuleVariable Mock.z
+        [ mkElementRuleVariable y
+        , mkElementRuleVariable z
         ]
         target
