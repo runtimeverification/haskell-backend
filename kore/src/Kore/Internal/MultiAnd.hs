@@ -25,11 +25,12 @@ module Kore.Internal.MultiAnd (
 ) where
 
 import Data.Functor.Foldable qualified as Recursive
-import Data.Set(Set)
-import qualified Data.Set as Set
 import Data.List (genericLength)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Traversable qualified as Traversable
 import Debug
+
 -- import GHC.Exts qualified as GHC
 import GHC.Generics qualified as GHC
 import GHC.Natural (Natural)
@@ -73,21 +74,20 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
 
-data MultiAnd child = MultiAndTop
-                    | MultiAndBottom child
-                    | MultiAnd (Set child)
+data MultiAnd child
+    = MultiAndTop
+    | MultiAndBottom child
+    | MultiAnd (Set child)
     deriving stock (Eq, Ord, Show, Foldable)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-
 
 instance Hashable child => Hashable (MultiAnd child) where
     hashWithSalt salt = \case
         MultiAndTop -> salt `hashWithSalt` (0 :: Int)
         MultiAndBottom child -> salt `hashWithSalt` (1 :: Int) `hashWithSalt` child
         MultiAnd children -> salt `hashWithSalt` (1 :: Int) `hashWithSalt` (Set.toList children)
-
 
 instance TopBottom (MultiAnd child) where
     isTop MultiAndTop = True
@@ -129,11 +129,9 @@ instance
 top :: MultiAnd term
 top = MultiAndTop
 
-
 {- |Does a very simple attempt to check whether a pattern
 is top or bottom.
 -}
-
 patternToMaybeBool ::
     TopBottom term =>
     term ->
@@ -142,7 +140,6 @@ patternToMaybeBool patt
     | isTop patt = Just True
     | isBottom patt = Just False
     | otherwise = Nothing
-
 
 -- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
@@ -171,11 +168,11 @@ a logical sense.
 make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
 make = {-# SCC multiAnd_make #-} foldAndPatterns . Set.fromList
 
-
 {- | 'foldAndPatterns' simplifies a set of children according to the `patternToMaybeBool`
 function which evaluates to true/false/unknown.
 -}
-foldAndPatterns :: (Ord child, TopBottom child) =>
+foldAndPatterns ::
+    (Ord child, TopBottom child) =>
     Set child ->
     MultiAnd child
 foldAndPatterns patts = Set.foldr go mempty patts
@@ -223,7 +220,7 @@ distributeAnd ::
     MultiAnd (MultiOr term) ->
     MultiOr (MultiAnd term)
 distributeAnd multiAnd =
-   {-# SCC multiAnd_distributeAnd #-} MultiOr.observeAll $ traverse Logic.scatter multiAnd
+    {-# SCC multiAnd_distributeAnd #-} MultiOr.observeAll $ traverse Logic.scatter multiAnd
 {-# INLINE distributeAnd #-}
 
 traverseOr ::
