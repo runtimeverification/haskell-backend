@@ -7,6 +7,7 @@ packages:
   - kore
 extra-deps:
   - ghc-trace-events-0.1.2.1
+  - decision-diagrams-0.2.0.0
   - monoidal-containers-0.6.0.1
   - newtype-0.2.2.0
   - sqlite-simple-0.4.18.0
