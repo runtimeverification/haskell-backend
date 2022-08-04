@@ -170,12 +170,10 @@ type TransitionRule monad rule state =
 
 -- | Transition rule for primitive strategies in 'Prim'.
 transitionRule ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     [[RewriteRule RewritingVariableName]] ->
     ExecutionMode ->
     TransitionRule
-        simplifier
+        Simplifier
         (RewriteRule RewritingVariableName)
         (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
@@ -203,7 +201,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
     transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
         if isBottom filteredConfigs
             then pure Bottom
             else prim <$> asum (pure <$> toList filteredConfigs)

@@ -42,7 +42,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Simplify.AndPredicates qualified as AndPredicates
 import Kore.Simplify.Ceil qualified as Ceil
 import Kore.Simplify.Simplify (
-    MonadSimplify (..),
+    Simplifier,
  )
 import Prelude.Kore
 
@@ -125,11 +125,9 @@ substitutionConditions subst =
         Predicate.makeEqualsPredicate (mkVar x) t
 
 ceilChildOfApplicationOrTop ::
-    forall m.
-    MonadSimplify m =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
-    m (Condition RewritingVariableName)
+    Simplifier (Condition RewritingVariableName)
 ceilChildOfApplicationOrTop sideCondition patt =
     case patt of
         App_ _ children -> do
