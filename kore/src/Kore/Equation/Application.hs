@@ -129,9 +129,9 @@ attemptEquation sideCondition termLike equation = do
             & noteT matchError
 
     matchAndApplyResults left' = do
-            matchResult <- match left' termLike & whileMatch
-            applyMatchResult equationRenamed matchResult
-                & whileApplyMatchResult
+        matchResult <- match left' termLike & whileMatch
+        applyMatchResult equationRenamed matchResult
+            & whileApplyMatchResult
 
     whileDebugAttemptEquation' ::
         Simplifier (AttemptEquationResult RewritingVariableName) ->
