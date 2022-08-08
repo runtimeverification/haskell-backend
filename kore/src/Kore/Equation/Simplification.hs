@@ -7,11 +7,6 @@ module Kore.Equation.Simplification (
     simplifyExtractedEquations,
 ) where
 
-import Control.Monad qualified as Monad
-import Control.Monad.Trans.Except (
-    runExceptT,
-    throwE,
- )
 import Data.Map.Strict (
     Map,
  )
@@ -36,9 +31,10 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
-import Kore.TopBottom
 import Logic qualified
 import Prelude.Kore
+
+import Kore.Internal.Predicate (makeAndPredicate)
 
 {- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.
 
@@ -71,13 +67,11 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         simplifiedCond <-
             Simplifier.simplifyCondition
                 SideCondition.top
-                (fromPredicate argument')
+                (fromPredicate $ makeAndPredicate argument' antiLeft')
         let Conditional{substitution, predicate} = simplifiedCond
-        lift $ Monad.unless (isTop predicate) (throwE equation)
-        let subst = Substitution.toMap substitution
+            subst = Substitution.toMap substitution
             left' = substitute subst left
-            requires' = substitute subst requires
-            antiLeft' = substitute subst <$> antiLeft
+            requires' = makeAndPredicate (substitute subst requires) predicate
             right' = substitute subst right
             ensures' = substitute subst ensures
         return
@@ -85,19 +79,18 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
                 { left = TermLike.forgetSimplified left'
                 , requires = Predicate.forgetSimplified requires'
                 , argument = Nothing
-                , antiLeft = Predicate.forgetSimplified <$> antiLeft'
+                , antiLeft = Nothing
                 , right = TermLike.forgetSimplified right'
                 , ensures = Predicate.forgetSimplified ensures'
                 , attributes = attributes
                 }
         & Logic.observeAllT
-        & returnOriginalIfAborted
         & fmap MultiAnd.make
   where
     argument' =
         fromMaybe Predicate.makeTruePredicate argument
-    returnOriginalIfAborted =
-        fmap (either (: []) id) . runExceptT
+    antiLeft' =
+        fromMaybe Predicate.makeTruePredicate antiLeft
     Equation
         { requires
         , argument
