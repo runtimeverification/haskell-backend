@@ -40,6 +40,7 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import Kore.Internal.MultiOr (
     MultiOr,
+    patternToMaybeBool
  )
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.TermLike (
@@ -129,17 +130,7 @@ instance
 top :: MultiAnd term
 top = MultiAndTop
 
-{- |Does a very simple attempt to check whether a pattern
-is top or bottom.
--}
-patternToMaybeBool ::
-    TopBottom term =>
-    term ->
-    Maybe Bool
-patternToMaybeBool patt
-    | isTop patt = Just True
-    | isBottom patt = Just False
-    | otherwise = Nothing
+
 
 -- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
