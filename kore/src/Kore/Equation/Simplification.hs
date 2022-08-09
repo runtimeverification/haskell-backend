@@ -19,6 +19,7 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.Predicate (makeAndPredicate)
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
@@ -33,8 +34,6 @@ import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Logic qualified
 import Prelude.Kore
-
-import Kore.Internal.Predicate (makeAndPredicate)
 
 {- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.
 
