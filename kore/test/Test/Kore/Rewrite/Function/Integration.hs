@@ -2037,8 +2037,6 @@ testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
 
--- TODO(Ana): if needed, create copy with experimental simplifier
--- enabled
 testEnv :: Env
 testEnv =
     Env

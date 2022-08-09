@@ -8,6 +8,9 @@ module Test.Kore.Simplify.Integration (
 ) where
 
 import Control.Lens qualified as Lens
+import Kore.Rewrite.SMT.Declaration (
+    declareSortsSymbols,
+ )
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Map.Strict qualified as Map
@@ -74,6 +77,12 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
+import Test.SMT qualified as Test
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    mkEquationVariable,
+ )
 
 type SideCondition' = SideCondition RewritingVariableName
 
@@ -210,30 +219,28 @@ test_simplificationIntegration =
             expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
-                            ,
-                                [ mkEquation
-                                    ( Mock.function20MapTest
-                                        ( Mock.concatMap
-                                            ( Mock.elementMap
-                                                (mkElemVar Mock.x)
-                                                (mkElemVar Mock.y)
-                                            )
-                                            (mkElemVar Mock.m)
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application
+                            Mock.function20MapTestId
+                        ,
+                            [ mkEquation
+                                ( Mock.function20MapTest
+                                    ( Mock.concatMap
+                                        ( Mock.elementMap
+                                            (mkElemVar Mock.x)
+                                            (mkElemVar Mock.y)
                                         )
-                                        (mkElemVar Mock.x)
+                                        (mkElemVar Mock.m)
                                     )
-                                    (mkElemVar Mock.y)
-                                    & Equation.mapVariables
-                                        (pure mkRuleVariable)
-                                ]
-                            )
-                        ]
-                    )
+                                    (mkElemVar Mock.x)
+                                )
+                                (mkElemVar Mock.y)
+                                & Equation.mapVariables
+                                    (pure mkRuleVariable)
+                            ]
+                        )
+                    ]
                 )
                 initial
         assertEqual "" expect actual
@@ -247,19 +254,17 @@ test_simplificationIntegration =
                     Mock.functionalConstr11 $ Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                            ,
-                                [ axiom
-                                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                    (Mock.g Mock.a)
-                                    (requirement Mock.xConfig)
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                        ,
+                            [ axiom
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                                (Mock.g Mock.a)
+                                (requirement Mock.xConfig)
+                            ]
+                        )
+                    ]
                 )
                 ( SideCondition.fromConditionWithReplacements
                     . from @(Predicate _)
@@ -282,25 +287,23 @@ test_simplificationIntegration =
                     ]
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functional10Id
-                            ,
-                                [ conditionalEqualityPattern
-                                    (Mock.functional10 (mkElemVar Mock.xConfig))
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functional10Id
+                        ,
+                            [ conditionalEqualityPattern
+                                (Mock.functional10 (mkElemVar Mock.xConfig))
+                                (makeEqualsPredicate Mock.cf Mock.a)
+                                (mkElemVar Mock.xConfig)
+                            , conditionalEqualityPattern
+                                (Mock.functional10 (mkElemVar Mock.xConfig))
+                                ( makeNotPredicate
                                     (makeEqualsPredicate Mock.cf Mock.a)
-                                    (mkElemVar Mock.xConfig)
-                                , conditionalEqualityPattern
-                                    (Mock.functional10 (mkElemVar Mock.xConfig))
-                                    ( makeNotPredicate
-                                        (makeEqualsPredicate Mock.cf Mock.a)
-                                    )
-                                    (mkElemVar Mock.xConfig)
-                                ]
-                            )
-                        ]
-                    )
+                                )
+                                (mkElemVar Mock.xConfig)
+                            ]
+                        )
+                    ]
                 )
                 Conditional
                     { term = Mock.functional10 (mkElemVar Mock.xConfig)
@@ -375,19 +378,17 @@ test_simplificationIntegration =
                         ]
             actual <-
                 evaluateWithAxioms
-                    ( mkEvaluatorRegistry
-                        ( Map.fromList
-                            [
-                                ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                                ,
-                                    [ axiom
-                                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                        (Mock.g Mock.a)
-                                        (requirement Mock.xConfig)
-                                    ]
-                                )
-                            ]
-                        )
+                    ( Map.fromList
+                        [
+                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                            ,
+                                [ axiom
+                                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                                    (Mock.g Mock.a)
+                                    (requirement Mock.xConfig)
+                                ]
+                            )
+                        ]
                     )
                     Conditional
                         { term = mkExists Mock.xConfig (mkElemVar Mock.xConfig)
@@ -414,19 +415,17 @@ test_simplificationIntegration =
                         ]
             actual <-
                 evaluateWithAxioms
-                    ( mkEvaluatorRegistry
-                        ( Map.fromList
-                            [
-                                ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                                ,
-                                    [ axiom
-                                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                        (Mock.g Mock.a)
-                                        (requirement Mock.xConfig)
-                                    ]
-                                )
-                            ]
-                        )
+                    ( Map.fromList
+                        [
+                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                            ,
+                                [ axiom
+                                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                                    (Mock.g Mock.a)
+                                    (requirement Mock.xConfig)
+                                ]
+                            )
+                        ]
                     )
                     Conditional
                         { term = mkForall Mock.xConfig (mkElemVar Mock.xConfig)
@@ -452,19 +451,17 @@ test_simplificationIntegration =
                     ]
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                            ,
-                                [ axiom
-                                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                    (Mock.g Mock.a)
-                                    (requirement Mock.setXConfig)
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                        ,
+                            [ axiom
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                                (Mock.g Mock.a)
+                                (requirement Mock.setXConfig)
+                            ]
+                        )
+                    ]
                 )
                 Conditional
                     { term = mkNu Mock.setXConfig (mkSetVar Mock.setXConfig)
@@ -490,19 +487,17 @@ test_simplificationIntegration =
                     ]
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                            ,
-                                [ axiom
-                                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                                    (Mock.g Mock.a)
-                                    (requirement Mock.setXConfig)
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                        ,
+                            [ axiom
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                                (Mock.g Mock.a)
+                                (requirement Mock.setXConfig)
+                            ]
+                        )
+                    ]
                 )
                 Conditional
                     { term = mkMu Mock.setXConfig (mkSetVar Mock.setXConfig)
@@ -691,19 +686,17 @@ test_simplificationIntegration =
             expected = OrPattern.topOf Mock.testSort
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.functional10Id) AxiomIdentifier.Variable
-                            ,
-                                [ axiom
-                                    (mkEquals Mock.boolSort (Mock.functional10 (mkElemVar Mock.xRule)) (mkElemVar Mock.yRule))
-                                    (mkTop Mock.testSort)
-                                    makeTruePredicate
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.functional10Id) AxiomIdentifier.Variable
+                        ,
+                            [ axiom
+                                (mkEquals Mock.boolSort (Mock.functional10 (mkElemVar Mock.xRule)) (mkElemVar Mock.yRule))
+                                (mkTop Mock.testSort)
+                                makeTruePredicate
+                            ]
+                        )
+                    ]
                 )
                 patt
         assertEqual "" expected actual
@@ -717,19 +710,17 @@ test_simplificationIntegration =
             expected = OrPattern.topOf Mock.testSort
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.fBoolId) AxiomIdentifier.DV
-                            ,
-                                [ axiom
-                                    (mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True))
-                                    (mkTop Mock.testSort)
-                                    makeTruePredicate
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.fBoolId) AxiomIdentifier.DV
+                        ,
+                            [ axiom
+                                (mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True))
+                                (mkTop Mock.testSort)
+                                makeTruePredicate
+                            ]
+                        )
+                    ]
                 )
                 patt
         assertEqual "" expected actual
@@ -744,31 +735,29 @@ test_simplificationIntegrationUnification =
             expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
-                            ,
-                                [ functionAxiomUnification_
-                                    Mock.function20MapTestSymbol
-                                    [ Mock.concatMap
-                                        ( Mock.elementMap
-                                            (mkElemVar Mock.xConfig)
-                                            (mkElemVar Mock.yConfig)
-                                        )
-                                        (mkElemVar Mock.mConfig)
-                                    , mkElemVar Mock.xConfig
-                                    ]
-                                    (mkElemVar Mock.yConfig)
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application
+                            Mock.function20MapTestId
+                        ,
+                            [ functionAxiomUnification_
+                                Mock.function20MapTestSymbol
+                                [ Mock.concatMap
+                                    ( Mock.elementMap
+                                        (mkElemVar Mock.xConfig)
+                                        (mkElemVar Mock.yConfig)
+                                    )
+                                    (mkElemVar Mock.mConfig)
+                                , mkElemVar Mock.xConfig
                                 ]
-                            )
-                        ]
-                    )
+                                (mkElemVar Mock.yConfig)
+                            ]
+                        )
+                    ]
                 )
                 initial
         assertEqual "" expect actual
-    , testCase "function application with top predicate" $ do
+    , testCase "TESTING function application with top predicate" $ do
         let requirement = \var ->
                 makeEqualsPredicate
                     (Mock.f (mkElemVar var))
@@ -778,20 +767,18 @@ test_simplificationIntegrationUnification =
                     Mock.functionalConstr11 $ Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                            ,
-                                [ functionAxiomUnification
-                                    Mock.functionalConstr10Symbol
-                                    [mkElemVar Mock.xConfig]
-                                    (Mock.g Mock.a)
-                                    (requirement Mock.xConfig)
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                        ,
+                            [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.xConfig]
+                                (Mock.g Mock.a)
+                                (requirement Mock.xConfig)
+                            ]
+                        )
+                    ]
                 )
                 ( SideCondition.fromConditionWithReplacements
                     . from @(Predicate _)
@@ -814,27 +801,25 @@ test_simplificationIntegrationUnification =
                     ]
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functional10Id
-                            ,
-                                [ functionAxiomUnification
-                                    Mock.functional10Symbol
-                                    [mkElemVar Mock.xConfig]
-                                    (mkElemVar Mock.xConfig)
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functional10Id
+                        ,
+                            [ functionAxiomUnification
+                                Mock.functional10Symbol
+                                [mkElemVar Mock.xConfig]
+                                (mkElemVar Mock.xConfig)
+                                (makeEqualsPredicate Mock.cf Mock.a)
+                            , functionAxiomUnification
+                                Mock.functional10Symbol
+                                [mkElemVar Mock.xConfig]
+                                (mkElemVar Mock.xConfig)
+                                ( makeNotPredicate
                                     (makeEqualsPredicate Mock.cf Mock.a)
-                                , functionAxiomUnification
-                                    Mock.functional10Symbol
-                                    [mkElemVar Mock.xConfig]
-                                    (mkElemVar Mock.xConfig)
-                                    ( makeNotPredicate
-                                        (makeEqualsPredicate Mock.cf Mock.a)
-                                    )
-                                ]
-                            )
-                        ]
-                    )
+                                )
+                            ]
+                        )
+                    ]
                 )
                 Conditional
                     { term = Mock.functional10 (mkElemVar Mock.xConfig)
@@ -861,20 +846,18 @@ test_simplificationIntegrationUnification =
                         ]
             actual <-
                 evaluateWithAxioms
-                    ( mkEvaluatorRegistry
-                        ( Map.fromList
-                            [
-                                ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                                ,
-                                    [ functionAxiomUnification
-                                        Mock.functionalConstr10Symbol
-                                        [mkElemVar Mock.xConfig]
-                                        (Mock.g Mock.a)
-                                        (requirement Mock.xConfig)
-                                    ]
-                                )
-                            ]
-                        )
+                    ( Map.fromList
+                        [
+                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                            ,
+                                [ functionAxiomUnification
+                                    Mock.functionalConstr10Symbol
+                                    [mkElemVar Mock.xConfig]
+                                    (Mock.g Mock.a)
+                                    (requirement Mock.xConfig)
+                                ]
+                            )
+                        ]
                     )
                     Conditional
                         { term = mkExists Mock.xConfig (mkElemVar Mock.xConfig)
@@ -901,20 +884,18 @@ test_simplificationIntegrationUnification =
                         ]
             actual <-
                 evaluateWithAxioms
-                    ( mkEvaluatorRegistry
-                        ( Map.fromList
-                            [
-                                ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                                ,
-                                    [ functionAxiomUnification
-                                        Mock.functionalConstr10Symbol
-                                        [mkElemVar Mock.xConfig]
-                                        (Mock.g Mock.a)
-                                        (requirement Mock.xConfig)
-                                    ]
-                                )
-                            ]
-                        )
+                    ( Map.fromList
+                        [
+                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                            ,
+                                [ functionAxiomUnification
+                                    Mock.functionalConstr10Symbol
+                                    [mkElemVar Mock.xConfig]
+                                    (Mock.g Mock.a)
+                                    (requirement Mock.xConfig)
+                                ]
+                            )
+                        ]
                     )
                     Conditional
                         { term = mkForall Mock.xConfig (mkElemVar Mock.xConfig)
@@ -940,20 +921,18 @@ test_simplificationIntegrationUnification =
                     ]
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                            ,
-                                [ functionAxiomUnification
-                                    Mock.functionalConstr10Symbol
-                                    [mkElemVar Mock.xConfig]
-                                    (Mock.g Mock.a)
-                                    (requirement Mock.setXConfig)
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                        ,
+                            [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.xConfig]
+                                (Mock.g Mock.a)
+                                (requirement Mock.setXConfig)
+                            ]
+                        )
+                    ]
                 )
                 Conditional
                     { term = mkNu Mock.setXConfig (mkSetVar Mock.setXConfig)
@@ -979,20 +958,18 @@ test_simplificationIntegrationUnification =
                     ]
         actual <-
             evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.functionalConstr10Id
-                            ,
-                                [ functionAxiomUnification
-                                    Mock.functionalConstr10Symbol
-                                    [mkElemVar Mock.xConfig]
-                                    (Mock.g Mock.a)
-                                    (requirement Mock.setXConfig)
-                                ]
-                            )
-                        ]
-                    )
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                        ,
+                            [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.xConfig]
+                                (Mock.g Mock.a)
+                                (requirement Mock.setXConfig)
+                            ]
+                        )
+                    ]
                 )
                 Conditional
                     { term = mkMu Mock.setXConfig (mkSetVar Mock.setXConfig)
@@ -1170,23 +1147,22 @@ test_simplifySideCondition =
                     )
                     & OrPattern.fromPattern
             axioms =
-                mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.fId
-                            ,
-                                [ functionAxiomUnification
-                                    Mock.fSymbol
-                                    [Mock.a]
-                                    Mock.b
-                                    ( makeEqualsPredicate
-                                        (Mock.g Mock.a)
-                                        (Mock.g Mock.b)
-                                    )
-                                ]
-                            )
-                        ]
-                    )
+                Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.fId
+                        ,
+                            [ functionAxiomUnification
+                                Mock.fSymbol
+                                 [Mock.a]
+                                  Mock.b
+                                  ( makeEqualsPredicate
+                                      (Mock.g Mock.a)
+                                      (Mock.g Mock.b)
+                                  )
+                            ]
+                        )
+                    ]
+
         actual <- evaluateWithAxioms axioms configuration
         assertEqual "" expected actual
     ]
@@ -1197,27 +1173,33 @@ evaluate ::
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms ::
-    BuiltinAndAxiomSimplifierMap ->
+    Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
 evaluateWithAxioms axioms =
     evaluateConditionalWithAxioms axioms SideCondition.top
 
 evaluateConditionalWithAxioms ::
-    BuiltinAndAxiomSimplifierMap ->
+    Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     SideCondition' ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
-evaluateConditionalWithAxioms axioms sideCondition =
-    runSimplifierSMT env . Pattern.makeEvaluate sideCondition
+evaluateConditionalWithAxioms axioms sideCondition patt =
+    Test.runSMT userInit $ do
+        newEnv <- runSimplifier Mock.env initialize
+        runSimplifier newEnv . Pattern.makeEvaluate sideCondition $ patt
   where
-    env = Mock.env{simplifierAxioms}
-    simplifierAxioms :: BuiltinAndAxiomSimplifierMap
-    simplifierAxioms =
-        Map.unionWith
-            simplifierWithFallback
-            builtinAxioms
-            axioms
+    userInit = declareSortsSymbols Mock.smtDeclarations
+    initialize :: Simplifier Env
+    initialize = do
+        processedEquations <- Equation.simplifyExtractedEquations axioms
+        let simplifierAxioms :: BuiltinAndAxiomSimplifierMap
+            simplifierAxioms =
+                    Map.unionWith
+                        simplifierWithFallback
+                        builtinAxioms
+                        (mkEvaluatorRegistry processedEquations)
+        return Mock.env { simplifierAxioms }
 
 -- | A selection of builtin axioms used in the tests above.
 builtinAxioms :: BuiltinAndAxiomSimplifierMap
