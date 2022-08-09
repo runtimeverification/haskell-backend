@@ -30,8 +30,6 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Traversable qualified as Traversable
 import Debug
-
--- import GHC.Exts qualified as GHC
 import GHC.Generics qualified as GHC
 import GHC.Natural (Natural)
 import Generics.SOP qualified as SOP
@@ -155,7 +153,7 @@ a logical sense.
 
 -- | 'make' constructs a simplified/normalized 'MultiAnd'.
 make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
-make = {-# SCC multiAnd_make #-} foldAndPatterns . Set.fromList
+make = foldAndPatterns . Set.fromList
 
 {- | 'foldAndPatterns' simplifies a set of children according to the `patternToMaybeBool`
 function which evaluates to true/false/unknown.
@@ -190,7 +188,7 @@ map ::
     (child1 -> child2) ->
     MultiAnd child1 ->
     MultiAnd child2
-map f = {-# SCC multiAnd_map #-} make . fmap f . toList
+map f = make . fmap f . toList
 {-# INLINE map #-}
 
 traverse ::
@@ -200,7 +198,7 @@ traverse ::
     (child1 -> f child2) ->
     MultiAnd child1 ->
     f (MultiAnd child2)
-traverse f = {-# SCC multiAnd_traverse #-} fmap make . Traversable.traverse f . toList
+traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}
 
 distributeAnd ::
@@ -209,7 +207,7 @@ distributeAnd ::
     MultiAnd (MultiOr term) ->
     MultiOr (MultiAnd term)
 distributeAnd multiAnd =
-    {-# SCC multiAnd_distributeAnd #-} MultiOr.observeAll $ traverse Logic.scatter multiAnd
+    MultiOr.observeAll $ traverse Logic.scatter multiAnd
 {-# INLINE distributeAnd #-}
 
 traverseOr ::
@@ -219,7 +217,7 @@ traverseOr ::
     (child1 -> f (MultiOr child2)) ->
     MultiAnd child1 ->
     f (MultiOr (MultiAnd child2))
-traverseOr f = {-# SCC multiAnd_traverseOr #-} fmap distributeAnd . traverse f
+traverseOr f = fmap distributeAnd . traverse f
 {-# INLINE traverseOr #-}
 
 traverseOrAnd ::
@@ -229,5 +227,5 @@ traverseOrAnd ::
     (child1 -> f (MultiOr (MultiAnd child2))) ->
     MultiOr (MultiAnd child1) ->
     f (MultiOr (MultiAnd child2))
-traverseOrAnd f = {-# SCC multiAnd_traverseOrAnd #-} MultiOr.traverseOr (fmap (MultiOr.map fold) . traverseOr f)
+traverseOrAnd f = MultiOr.traverseOr (fmap (MultiOr.map fold) . traverseOr f)
 {-# INLINE traverseOrAnd #-}
