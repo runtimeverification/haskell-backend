@@ -123,9 +123,14 @@ unifyRules ::
     [rule] ->
     simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
-    Logic.observeAllT $ do
-        rule <- Logic.scatter rules
-        unifyRule sideCondition initial rule
+    Logic.observeAllT
+        ( do
+            marker "Rules" ""
+            rule <- Logic.scatter rules
+            marker "Rule" ""
+            unifyRule sideCondition initial rule
+        )
+        <* marker "EndRules" ""
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -153,6 +158,7 @@ unifyRule ::
     LogicT simplifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     debugAttemptedRewriteRule initial (location rule)
+    ruleMarker "Init"
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition' =
             sideCondition
@@ -160,19 +166,36 @@ unifyRule sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
+    ruleMarker "FastCheck"
+    -- fast check omitted here
+    ruleMarker "Unify"
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
             & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
+    ruleMarker "CheckSide"
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         Simplifier.simplifyCondition
             sideCondition'
             (unification <> requires')
+    ruleMarker "Success"
     return (rule `Conditional.withCondition` unification')
   where
     location = from @_ @SourceLocation
+
+    locString =
+        Pretty.renderString
+            . Pretty.layoutCompact
+            . Pretty.pretty
+            $ location rule
+
+    ruleMarker tag = marker tag locString
+
+marker :: MonadIO m => String -> String -> m ()
+marker tag extra =
+    liftIO . traceMarkerIO $ concat ["unify:", tag, ":", extra]
 
 -- | The 'Set' of variables that would be introduced by narrowing.
 

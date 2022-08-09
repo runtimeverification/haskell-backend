@@ -183,7 +183,7 @@ runSimplifierBranch env = runSimplifier env . observeAllT
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
-class (MonadLog m, MonadSMT m) => MonadSimplify m where
+class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
     liftSimplifier :: Simplifier a -> m a
     default liftSimplifier ::
         (MonadTrans t, MonadSimplify n, m ~ t n) =>
