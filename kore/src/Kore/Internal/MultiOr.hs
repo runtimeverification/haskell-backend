@@ -26,6 +26,7 @@ module Kore.Internal.MultiOr (
     traverse,
     traverseOr,
     patternToMaybeBool,
+
     -- * Re-exports
     Alternative (..),
 ) where
@@ -79,7 +80,6 @@ data MultiOr child
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-
 
 instance Hashable child => Hashable (MultiOr child) where
     hashWithSalt salt = \case
@@ -165,7 +165,6 @@ singleton term
     | isTop term = MultiOrTop term
     | otherwise = MultiOr $ Set.singleton term
 
-
 -- What are the semantics of distributeApplication?
 -- from the previous implementation i presume the following:
 -- x ( ..., _|_, ... ) ~ _|_
@@ -184,10 +183,10 @@ distributeApplication
         , applicationChildren
         } =
         foldr
-            (\mor mapp -> case (mor, mapp) of
+            ( \mor mapp -> case (mor, mapp) of
                 (MultiOrBottom, _) -> MultiOrBottom
                 (_, MultiOrBottom) -> MultiOrBottom
-                _ -> make [ applyTo child app | child <- toList mor, app <- toList mapp ]
+                _ -> make [applyTo child app | child <- toList mor, app <- toList mapp]
             )
             (singleton application)
             applicationChildren
@@ -207,11 +206,10 @@ flatten = \case
     MultiOrBottom -> MultiOrBottom
     MultiOrTop (MultiOrTop child) -> MultiOrTop child
     MultiOrTop MultiOrBottom -> error "flatten: MultiOrTop MultiOrBottom is undefined!"
-    MultiOrTop (MultiOr children) ->  case toList children of
+    MultiOrTop (MultiOr children) -> case toList children of
         [] -> error "flatten: invalid MultiOr children"
-        child:_ -> MultiOrTop child
+        child : _ -> MultiOrTop child
     MultiOr ors -> mergeAll ors
-
 
 {- |Does a very simple attempt to check whether a pattern
 is top or bottom.
@@ -224,7 +222,6 @@ patternToMaybeBool patt
     | isTop patt = Just True
     | isBottom patt = Just False
     | otherwise = Nothing
-
 
 {- | 'foldAndPatterns' simplifies a set of children according to the `patternToMaybeBool`
 function which evaluates to true/false/unknown.
@@ -264,8 +261,6 @@ mergeAll ::
     f (MultiOr term) ->
     MultiOr term
 mergeAll = foldl' (<>) mempty
-
-
 
 gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act

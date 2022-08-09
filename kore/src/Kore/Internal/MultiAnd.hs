@@ -40,7 +40,7 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import Kore.Internal.MultiOr (
     MultiOr,
-    patternToMaybeBool
+    patternToMaybeBool,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.TermLike (
@@ -129,8 +129,6 @@ instance
 
 top :: MultiAnd term
 top = MultiAndTop
-
-
 
 -- | 'make' constructs a normalized 'MultiAnd'.
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
