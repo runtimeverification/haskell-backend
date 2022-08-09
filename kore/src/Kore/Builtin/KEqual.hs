@@ -145,15 +145,15 @@ builtinFunctions =
         ]
 
 evalKEq ::
-    forall variable simplifier.
-    (InternalVariable variable, MonadSimplify simplifier) =>
+    forall variable.
+    (InternalVariable variable) =>
     Bool ->
     SideCondition variable ->
     CofreeF
         (Application Symbol)
         (TermAttributes variable)
         (TermLike variable) ->
-    simplifier (AttemptedAxiom variable)
+    Simplifier (AttemptedAxiom variable)
 evalKEq true _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
@@ -164,7 +164,7 @@ evalKEq true _ (valid :< app) =
     evalEq ::
         TermLike variable ->
         TermLike variable ->
-        MaybeT simplifier (AttemptedAxiom variable)
+        MaybeT Simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2
         | termLike1 == termLike2 =
             Builtin.appliedFunction $ Bool.asPattern sort true
@@ -177,14 +177,12 @@ evalKEq true _ (valid :< app) =
             Builtin.appliedFunction $ Bool.asPattern sort (not true)
 
 evalKIte ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     CofreeF
         (Application Symbol)
         (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte _ (_ :< app) =
     case app of
         Application{applicationChildren = [expr, t1, t2]} ->

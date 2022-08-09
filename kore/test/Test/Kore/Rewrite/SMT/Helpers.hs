@@ -205,11 +205,9 @@ assertSmtTestCase name expected actions prelude =
 
 testsForModule ::
     String ->
-    ( forall m.
-      SMT.MonadSMT m =>
-      SmtMetadataTools Attribute.Symbol ->
+    ( SmtMetadataTools Attribute.Symbol ->
       VerifiedModule Attribute.Symbol ->
-      m ()
+      SMT ()
     ) ->
     VerifiedModule Attribute.Symbol ->
     [SmtMetadataTools Attribute.Symbol -> SmtPrelude -> TestTree] ->

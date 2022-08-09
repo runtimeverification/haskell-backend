@@ -139,6 +139,7 @@ import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.API (
     MonadSimplify,
+    liftSimplifier,
  )
 import Kore.Simplify.Exists qualified as Exists
 import Kore.Simplify.Not qualified as Not
@@ -578,7 +579,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         stuck <-
             Logic.scatter configs'
                 >>= Pattern.simplify
-                >>= SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr
                 >>= Logic.scatter
         examine anyUnified stuck
         & elseImplied
@@ -683,7 +684,7 @@ simplify' lensClaimPattern claim = do
             configs <-
                 simplifyTopConfigurationDefined
                     config
-                    >>= SMT.Evaluator.filterMultiOr
+                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr
                     & lift
             asum (pure <$> toList configs)
 
@@ -698,7 +699,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
         OrPattern.observeAllT $
             Logic.scatter dest
                 >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
-                >>= SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr
                 >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
