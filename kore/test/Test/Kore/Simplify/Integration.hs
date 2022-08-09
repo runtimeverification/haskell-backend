@@ -8,9 +8,6 @@ module Test.Kore.Simplify.Integration (
 ) where
 
 import Control.Lens qualified as Lens
-import Kore.Rewrite.SMT.Declaration (
-    declareSortsSymbols,
- )
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.Map.Strict qualified as Map
@@ -42,6 +39,7 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
     simplifierWithFallback,
  )
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
@@ -51,7 +49,11 @@ import Kore.Rewrite.Axiom.Registry (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
+    mkEquationVariable,
     mkRuleVariable,
+ )
+import Kore.Rewrite.SMT.Declaration (
+    declareSortsSymbols,
  )
 import Kore.Simplify.Pattern qualified as Pattern (
     makeEvaluate,
@@ -75,14 +77,9 @@ import Test.Kore.Internal.Substitution as Substitution hiding (
  )
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
+import Test.SMT qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
-import Test.SMT qualified as Test
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
-    mkEquationVariable,
- )
 
 type SideCondition' = SideCondition RewritingVariableName
 
@@ -1153,12 +1150,12 @@ test_simplifySideCondition =
                         ,
                             [ functionAxiomUnification
                                 Mock.fSymbol
-                                 [Mock.a]
-                                  Mock.b
-                                  ( makeEqualsPredicate
-                                      (Mock.g Mock.a)
-                                      (Mock.g Mock.b)
-                                  )
+                                [Mock.a]
+                                Mock.b
+                                ( makeEqualsPredicate
+                                    (Mock.g Mock.a)
+                                    (Mock.g Mock.b)
+                                )
                             ]
                         )
                     ]
@@ -1195,11 +1192,11 @@ evaluateConditionalWithAxioms axioms sideCondition patt =
         processedEquations <- Equation.simplifyExtractedEquations axioms
         let simplifierAxioms :: BuiltinAndAxiomSimplifierMap
             simplifierAxioms =
-                    Map.unionWith
-                        simplifierWithFallback
-                        builtinAxioms
-                        (mkEvaluatorRegistry processedEquations)
-        return Mock.env { simplifierAxioms }
+                Map.unionWith
+                    simplifierWithFallback
+                    builtinAxioms
+                    (mkEvaluatorRegistry processedEquations)
+        return Mock.env{simplifierAxioms}
 
 -- | A selection of builtin axioms used in the tests above.
 builtinAxioms :: BuiltinAndAxiomSimplifierMap
