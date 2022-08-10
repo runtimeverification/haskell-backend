@@ -23,7 +23,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
   "id": 1,
   "method": "execute",
   "params": {
-    "max-depth": 1,
+    "max-depth": 4,
     "cut-point-rules": ["rule1"],
     "terminal-rules": ["ruleFoo"],
     "state": {
@@ -87,37 +87,61 @@ If the verification of the `state` pattern fails, the following error is returne
 
 ### Correct Response:
 
+All correct responses have a result containing a `reason`, with one of the following values:
+* `"reason: "branching"`
+* `"reason: "stuck"`
+* `"reason: "depth-bound"`
+* `"reason: "cut-point-rule"`
+* `"reason: "terminal-rule"`
+
+A field `state` contains the state reached, a field `depth` indicates the execution depth.
+
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "states": [
-      {
-        "state": {"format":"KORE", "version":1, "term":{}},
-        "depth": 1
-      }
-    ],
-    "reason": "final-state"
+    "state": {"format":"KORE", "version":1, "term":{}},
+    "depth": 1
+    "reason": "stuck"
   }
 }
 ```
 
 The above will be also be the same for:
-  * `"reason": "stuck"`
   * `"reason": "depth-bound"`
-  * `"reason": "cut-point-rule"`
-  * `"reason": "terminal-rule"`
+
+
+If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "states": [
+    "state": {"format":"KORE", "version":1, "term":{}},
+    "depth": 1,
+    "reason": "terminal-rule",
+    "rule": "ruleFoo"
+  }
+}
+```
+
+
+If `"reason": "cut-point-rule"` or `"reason": "branching"`, an additional `next-states` field contains a list of next states and conditions.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "state": {"format": "KORE", "version": 1, "term": {}},
+    "depth": 2,
+    "reason": "cut-point-rule",
+    "rule": "rule1",
+    "next-states": [
       {
         "state": {"format": "KORE", "version": 1, "term": {}},
-        "depth": 5,
         "condition": {
           "substitution": {"format": "KORE", "version": 1, "term": {}},
           "predicate": {"format": "KORE", "version": 1, "term": {}}
@@ -125,17 +149,18 @@ The above will be also be the same for:
       },
       {
         "state": {"format": "KORE", "version": 1, "term": {}},
-        "depth": 5,
         "condition": {
           "substitution": {"format": "KORE", "version": 1, "term": {}},
           "predicate": {"format": "KORE", "version": 1, "term": {}}
         }
       }
-    ],
-    "reason": "branching"
+    ]
   }
 }
 ```
+
+For `"reason": "cut-point-rule"`, the response contains a `rule` field to indicate which rule led to stopping, similar to the `terminal-rule` reason.
+This field is not present for `"reason": "branching"`.
 
 ## Implies
 
