@@ -7,6 +7,10 @@ License     : BSD-3-Clause
 Please refer to <http://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md kore-syntax.md>.
 -}
 module Kore.Syntax.Id (
+    -- * InternedIdentifier
+    InternedIdentifier (..),
+    Intern.Description (..),
+
     -- * Identifiers
     Id (Id, getId, idLocation),
     getIdForError,
@@ -44,12 +48,38 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
+{- | 'InternedIdentifier' is a version of 'InternedText' with 'cacheWidth' equal to 1.
+
+This ensures that the 'Array' of 'HashMap's, created with 'mkCache',
+is going to be of length 1.
+-}
+newtype InternedIdentifier = InternedIdentifier
+    { getInternedText :: InternedText
+    }
+    deriving newtype (Eq, Ord, Show, IsString, Hashable, Intern.Uninternable)
+    deriving newtype (Debug, Diff)
+
+instance Intern.Interned InternedIdentifier where
+    type Uninterned InternedIdentifier = Text
+    newtype Description InternedIdentifier = DII Text deriving stock (Eq)
+    describe = DII
+    identify iden txt = InternedIdentifier $ InternedText iden txt
+    cacheWidth _ = 1
+    cache = itCache
+
+instance Hashable (Intern.Description InternedIdentifier) where
+    hashWithSalt s (DII h) = hashWithSalt s h
+
+itCache :: Intern.Cache InternedIdentifier
+itCache = Intern.mkCache
+{-# NOINLINE itCache #-}
+
 {- | 'Id' is a Kore identifier.
 
 'Id' corresponds to the @identifier@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
 data Id = InternedId
-    { getInternedId :: !InternedText
+    { getInternedId :: !InternedIdentifier
     , internedIdLocation :: !AstLocation
     }
     deriving stock (GHC.Generic)
@@ -60,6 +90,11 @@ deriving stock instance GHC.Generic InternedText
 deriving anyclass instance SOP.Generic InternedText
 deriving anyclass instance SOP.HasDatatypeInfo InternedText
 deriving anyclass instance NFData InternedText
+
+deriving stock instance GHC.Generic InternedIdentifier
+deriving anyclass instance SOP.Generic InternedIdentifier
+deriving anyclass instance SOP.HasDatatypeInfo InternedIdentifier
+deriving anyclass instance NFData InternedIdentifier
 
 -- | Custom 'Show' instance matches the old uninterned Id interface.
 instance Show Id where

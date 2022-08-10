@@ -47,6 +47,7 @@ import Control.Lens (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
+import Data.Array (elems)
 import Data.Binary qualified as Binary
 import Data.ByteString.Lazy qualified as ByteString
 import Data.Compact (
@@ -58,6 +59,18 @@ import Data.Compact.Serialize (
 import Data.Generics.Product (
     field,
  )
+import Data.HashMap.Strict as HashMap (
+    HashMap,
+    empty,
+    map,
+    mapKeys,
+ )
+import Data.IORef (readIORef)
+import Data.Interned (mkCache)
+import Data.Interned.Internal (CacheState (..), getCache)
+import Data.Interned.Internal.Text (
+    InternedText (internedTextId),
+ )
 import Data.List (
     intercalate,
     nub,
@@ -66,6 +79,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Maybe (listToMaybe)
 import Data.Text (
     Text,
     pack,
@@ -574,6 +588,7 @@ data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
     , lemmas :: [SentenceAxiom (TermLike VariableName)]
     , locations :: KFileLocations
+    , idCache :: HashMap Text Int
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -644,14 +659,26 @@ makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
         execute solverOptions metadataTools lemmas $
             makeSerializedModule mainModule
     let locations = kFileLocations definition
+    idCache <- lift getMap
     let serializedDefinition =
             SerializedDefinition
                 { serializedModule
                 , lemmas
                 , locations
+                , idCache
                 }
     serializedDefinition `deepseq` pure ()
     return serializedDefinition
+  where
+    getMap :: IO (HashMap Text Int)
+    getMap =
+        let statesRef = elems . getCache $ mkCache @InternedIdentifier
+         in case listToMaybe statesRef of
+                Nothing -> return HashMap.empty
+                Just ref -> do
+                    (CacheState _ hashmap) <- readIORef ref
+                    let hashmap' = mapKeys (\(DII t) -> t) hashmap
+                    return $ HashMap.map (internedTextId . getInternedText) hashmap'
 
 type LoadedModule = VerifiedModule Attribute.Symbol
 type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol
