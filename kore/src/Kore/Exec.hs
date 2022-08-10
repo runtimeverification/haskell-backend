@@ -10,6 +10,7 @@ Expose concrete execution as a library
 -}
 module Kore.Exec (
     exec,
+    rpcExec,
     search,
     prove,
     proveWithRepl,
@@ -343,6 +344,95 @@ exec
                 )
                 toTransitionResult
 
+        toTransitionResult ::
+            (ExecDepth, ProgramState p) ->
+            [(ExecDepth, ProgramState p)] ->
+            ( GraphTraversal.TransitionResult
+                (ExecDepth, ProgramState p)
+            )
+        toTransitionResult prior [] =
+            case snd prior of
+                Start _ -> GraphTraversal.Stop prior []
+                Rewritten _ -> GraphTraversal.Stop prior []
+                Remaining _ -> GraphTraversal.Stuck prior
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+        toTransitionResult _prior [next] =
+            case snd next of
+                Start _ -> GraphTraversal.Continuing next
+                Rewritten _ -> GraphTraversal.Continuing next
+                Remaining _ -> GraphTraversal.Stuck next
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+        toTransitionResult prior (s : ss) =
+            GraphTraversal.Branch prior (s :| ss)
+
+{- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
+  execute across branches, supports a depth limit, returns the raw
+  traversal result for the RPC server to extract response elements.
+
+  TODO modify to implement stopping on given rule IDs/labels
+-}
+rpcExec ::
+    Limit Natural ->
+    -- | The main module
+    SerializedModule ->
+    -- | The input pattern
+    TermLike VariableName ->
+    SMT
+        ( GraphTraversal.TraversalResult
+            (ExecDepth, ProgramState (Pattern RewritingVariableName))
+        )
+rpcExec
+    depthLimit
+    SerializedModule
+        { sortGraph
+        , overloadGraph
+        , metadataTools
+        , verifiedModule
+        , rewrites = Initialized{rewriteRules}
+        , equations
+        }
+    (mkRewritingTerm -> initialTerm) =
+        evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
+            do
+                GraphTraversal.graphTraversal
+                    Strategy.LeafOrBranching
+                    Strategy.DepthFirst
+                    (Limit 2) -- breadth limit 2 because we never go beyond a branch
+                    transit
+                    Limit.Unlimited
+                    execStrategy
+                    (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
+      where
+        verifiedModule' =
+            IndexedModule.mapAliasPatterns
+                (Builtin.internalize metadataTools)
+                verifiedModule
+
+        execStrategy :: [GraphTraversal.Step Prim]
+        execStrategy =
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify] :
+                repeat [Begin, Rewrite, Simplify]
+
+        transit ::
+            GraphTraversal.TState
+                Prim
+                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+            Simplifier.Simplifier
+                ( GraphTraversal.TransitionResult
+                    ( GraphTraversal.TState
+                        Prim
+                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                    )
+                )
+        transit =
+            GraphTraversal.simpleTransition
+                ( trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) All
+                )
+                toTransitionResult
+
+        -- TODO modify to implement stopping on given rule IDs/labels
         toTransitionResult ::
             (ExecDepth, ProgramState p) ->
             [(ExecDepth, ProgramState p)] ->
