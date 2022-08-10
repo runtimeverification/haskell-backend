@@ -20,12 +20,17 @@ import Control.Error (
     throwE,
  )
 import Control.Monad qualified as Monad
+import Data.Functor.Const (getConst)
+import Data.Functor.Foldable qualified as Recursive
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin (koreEvaluators)
+import Kore.Builtin.Endianness.Endianness qualified as Endianness
+import Kore.Builtin.Signedness.Signedness qualified as Signedness
+import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
@@ -231,7 +236,7 @@ lookupAxiomSimplifier termLike = do
         case axiomIdentifier of
             Axiom.Identifier.Application appId ->
                 let builtinEvaluator = do
-                        name <- Map.lookup appId hookedSymbols
+                        name <- getHookFromTermLike termLike <|> Map.lookup appId hookedSymbols
                         builtinEvaluation <$> koreEvaluators name
                  in combineEvaluatorsWithFallBack (builtinEvaluator, exact)
             Axiom.Identifier.Variable -> exact
@@ -248,6 +253,20 @@ lookupAxiomSimplifier termLike = do
                     inexact12 = Map.lookup (Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable) simplifierMap
                  in combineEvaluators [exact, inexact1, inexact2, inexact12]
   where
+    getHookFromTermLike :: TermLike RewritingVariableName -> Maybe Text
+    getHookFromTermLike = Recursive.fold $ \(_ :< termLikeF) -> getHookFromTermLikeF termLikeF
+
+    getHookFromTermLikeF :: TermLikeF RewritingVariableName a -> Maybe Text
+    getHookFromTermLikeF = \case
+        ApplySymbolF app -> getHookFromApplication app
+        InjF (Inj.toApplication -> app) -> getHookFromApplication app
+        EndiannessF (getConst -> Endianness.toApplication -> app) -> getHookFromApplication app
+        SignednessF (getConst -> Signedness.toApplication -> app) -> getHookFromApplication app
+        _ -> Nothing
+
+    getHookFromApplication :: Application Symbol child -> Maybe Text
+    getHookFromApplication = getHook . applicationSymbolOrAlias
+
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
 
