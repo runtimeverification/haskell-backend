@@ -289,9 +289,12 @@ exec
                     execStrategy
                     (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
                     >>= \case
-                        GraphTraversal.Ended results -> pure results
-                        GraphTraversal.GotStuck n results -> do
-                            when (n == 0 && any (notStuck . snd) results) $
+                        GraphTraversal.Ended results ->
+                            pure results
+                        GraphTraversal.GotStuck _ results ->
+                            pure results
+                        GraphTraversal.Stopped results nexts -> do
+                            when (null nexts) $
                                 forM_ depthLimit warnDepthLimitExceeded
                             pure results
                         GraphTraversal.Aborted _ results -> do
@@ -348,8 +351,8 @@ exec
             )
         toTransitionResult prior [] =
             case snd prior of
-                Start _ -> GraphTraversal.Stopped [prior]
-                Rewritten _ -> GraphTraversal.Stopped [prior]
+                Start _ -> GraphTraversal.Stop prior []
+                Rewritten _ -> GraphTraversal.Stop prior []
                 Remaining _ -> GraphTraversal.Stuck prior
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
         toTransitionResult _prior [next] =
@@ -360,9 +363,6 @@ exec
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior (s :| ss)
-
-        notStuck :: ProgramState a -> Bool
-        notStuck = isJust . extractProgramState
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
