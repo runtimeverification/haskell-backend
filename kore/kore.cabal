@@ -595,6 +595,7 @@ executable kore-exec
   main-is: Main.hs
   hs-source-dirs: app/exec
   build-depends: kore
+  build-depends: array
   build-depends: binary >=0.8.8.0
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
@@ -606,10 +607,12 @@ executable kore-exec
   build-depends: extra >=1.6
   build-depends: filepath >=1.4
   build-depends: generic-lens >=1.1
+  build-depends: intern ==0.9.*
   build-depends: lens >=4.17
   build-depends: optparse-applicative >=0.14
   build-depends: text >=1.2
   build-depends: time >=1.9.3
+  build-depends: unordered-containers >=0.2
   ghc-options: -eventlog
 
 executable kore-rpc

@@ -20,6 +20,11 @@ import Data.Default (
 import Data.Generics.Product (
     field,
  )
+import Data.HashMap.Strict as HashMap (HashMap, mapKeys, mapWithKey)
+import Data.IORef (IORef, atomicModifyIORef')
+import Data.Interned (cache)
+import Data.Interned.Internal (Cache (..), CacheState (..))
+import Data.Interned.Internal.Text (InternedText (..))
 import Data.Limit (
     Limit (..),
     maybeLimit,
@@ -30,6 +35,7 @@ import Data.List (
 import Data.Proxy
 import Data.Set.Internal qualified as Set
 import Data.Text (
+    Text,
     unpack,
  )
 import GHC.Fingerprint as Fingerprint
@@ -117,6 +123,7 @@ import Kore.Syntax.Definition (
     Sentence (..),
  )
 import Kore.Syntax.Definition qualified as Definition.DoNotUse
+import Kore.Syntax.Id (Description (DII), InternedIdentifier (..))
 import Kore.Unparser (
     unparse,
  )
@@ -698,11 +705,12 @@ koreRun LocalOptions{execOptions} = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
-    SerializedDefinition{serializedModule, lemmas, locations} <-
+    SerializedDefinition{serializedModule, lemmas, locations, idCache} <-
         deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
+    lift $ updateGlobalCache idCache
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern verifiedModule patternFileName
@@ -718,6 +726,19 @@ koreRun LocalOptions{execOptions} = do
     return (locations, exitCode)
   where
     KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
+
+    updateGlobalCache :: HashMap Text Int -> IO ()
+    updateGlobalCache idCache = do
+        let hashmap = HashMap.mapWithKey (\txt iden -> InternedIdentifier (InternedText iden txt)) idCache
+        let hashmap' = mapKeys DII hashmap
+        traverse_ (modifyCacheState hashmap') . getCache $ (cache :: Cache InternedIdentifier)
+
+    modifyCacheState ::
+        HashMap (Description InternedIdentifier) InternedIdentifier ->
+        IORef (CacheState InternedIdentifier) ->
+        IO ()
+    modifyCacheState hashmap' ref = atomicModifyIORef' ref $ \(CacheState i _) ->
+        (CacheState i hashmap', ())
 
 -- kore-exec --serialize calls this function in order to construct the definition to serialize
 -- and write it to the output file specified by the user. It is an error to not specify an output
