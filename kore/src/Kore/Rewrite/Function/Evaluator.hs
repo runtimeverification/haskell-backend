@@ -230,10 +230,10 @@ lookupAxiomSimplifier termLike = do
         let exact = Map.lookup axiomIdentifier simplifierMap
         case axiomIdentifier of
             Axiom.Identifier.Application appId ->
-                let builtintEvaluator = do
+                let builtinEvaluator = do
                         name <- Map.lookup appId hookedSymbols
                         koreEvaluators name
-                 in combineEvaluatorsWithFallBack (builtintEvaluator, exact)
+                 in combineEvaluatorsWithFallBack (builtinEvaluator, exact)
             Axiom.Identifier.Variable -> exact
             Axiom.Identifier.DV -> exact
             Axiom.Identifier.Ceil _ ->
