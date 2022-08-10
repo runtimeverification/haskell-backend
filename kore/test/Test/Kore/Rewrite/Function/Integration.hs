@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Rewrite.Function.Integration (
-) where
+    ) where
 
 import Control.Lens qualified as Lens
 import Data.Generics.Product
