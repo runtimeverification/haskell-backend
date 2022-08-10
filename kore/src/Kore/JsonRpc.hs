@@ -121,7 +121,6 @@ instance FromRequest (API 'Req) where
 
 data ExecuteState = ExecuteState
     { state :: !KoreJson
-    , depth :: !Depth
     , condition :: !(Maybe Condition)
     }
     deriving stock (Generic, Show, Eq)
@@ -133,7 +132,6 @@ data HaltReason
     = Branching
     | Stuck
     | DepthBound
-    | FinalState
     | CutPointRule
     | TerminalRule
     deriving stock (Generic, Show, Eq)
@@ -143,7 +141,10 @@ data HaltReason
 
 data ExecuteResult = ExecuteResult
     { reason :: HaltReason
-    , states :: [ExecuteState]
+    , depth :: !Depth
+    , state :: ExecuteState
+    , nextStates :: Maybe [ExecuteState]
+    , rule :: Maybe Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -245,10 +246,13 @@ respond
                     pure $
                         Right $
                             Execute $
-                                ExecuteResult
-                                    { states = [ExecuteState{state, depth = Depth 1, condition = Nothing}] -- dummy
-                                    -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
-                                    , reason = FinalState
+                                ExecuteResult -- dummy
+                                    { state = ExecuteState{state, condition = Nothing}
+                                    , -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
+                                      depth = Depth 0 -- dummy
+                                    , reason = DepthBound -- dummy
+                                    , rule = Nothing
+                                    , nextStates = Nothing
                                     }
           where
             context =
