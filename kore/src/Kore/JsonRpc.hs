@@ -130,7 +130,7 @@ instance FromRequest (API 'Req) where
     parseParams _ = Nothing
 
 data ExecuteState = ExecuteState
-    { state :: KoreJson
+    { term :: KoreJson
     , substitution :: Maybe KoreJson
     , predicate :: Maybe KoreJson
     }
@@ -306,10 +306,10 @@ respond
                 ExecuteState
             patternToExecState sort s =
                 ExecuteState
-                    { state =
+                    { term =
                         PatternJson.fromTermLike $ Pattern.term p
                     , substitution =
-                        Nothing -- FIXME this is not actually a term.
+                        Nothing
                     , predicate =
                         case Pattern.predicate p of
                             PredicateTrue -> Nothing

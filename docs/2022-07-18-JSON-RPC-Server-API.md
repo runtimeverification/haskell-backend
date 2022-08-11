@@ -102,7 +102,7 @@ A field `state` contains the state reached (including optional `predicate` and `
   "id": 1,
   "result": {
     "state": {
-      "state": {"format":"KORE", "version":1, "term":{}},
+      "term": {"format":"KORE", "version":1, "term":{}},
       "predicate": {"format":"KORE", "version":1, "term":{}},
       "substitution": {"format":"KORE", "version":1, "term":{}},
     },
@@ -124,7 +124,7 @@ If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of t
   "id": 1,
   "result": {
     "state": {
-      "state": {"format":"KORE", "version":1, "term":{}},
+      "term": {"format":"KORE", "version":1, "term":{}},
       "predicate": {"format":"KORE", "version":1, "term":{}},
       "substitution": {"format":"KORE", "version":1, "term":{}},
     },
@@ -143,7 +143,7 @@ If `"reason": "branching"`, an additional `next-states` field contains all follo
   "id": 1,
   "result": {
     "state": {
-      "state": {"format":"KORE", "version":1, "term":{}},
+      "term": {"format":"KORE", "version":1, "term":{}},
       "predicate": {"format":"KORE", "version":1, "term":{}},
       "substitution": {"format":"KORE", "version":1, "term":{}},
     },
@@ -151,12 +151,12 @@ If `"reason": "branching"`, an additional `next-states` field contains all follo
     "reason": "branching",
     "next-states": [
       {
-        "state": {"format": "KORE", "version": 1, "term": {}},
+        "term": {"format": "KORE", "version": 1, "term": {}},
         "predicate": {"format":"KORE", "version":1, "term":{}},
         "substitution": {"format":"KORE", "version":1, "term":{}},
       },
       {
-        "state": {"format": "KORE", "version": 1, "term": {}},
+        "term": {"format": "KORE", "version": 1, "term": {}},
         "predicate": {"format":"KORE", "version":1, "term":{}},
         "substitution": {"format":"KORE", "version":1, "term":{}},
       }
@@ -173,7 +173,7 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
   "id": 1,
   "result": {
     "state": {
-      "state": {"format":"KORE", "version":1, "term":{}},
+      "term": {"format":"KORE", "version":1, "term":{}},
       "predicate": {"format":"KORE", "version":1, "term":{}},
       "substitution": {"format":"KORE", "version":1, "term":{}},
     },
@@ -182,7 +182,7 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
     "rule": "rule1",
     "next-states": [
       {
-        "state": {"format": "KORE", "version": 1, "term": {}},
+        "term": {"format": "KORE", "version": 1, "term": {}},
         "predicate": {"format":"KORE", "version":1, "term":{}},
         "substitution": {"format":"KORE", "version":1, "term":{}},
       }
