@@ -120,8 +120,9 @@ instance FromRequest (API 'Req) where
     parseParams _ = Nothing
 
 data ExecuteState = ExecuteState
-    { state :: !KoreJson
-    , condition :: !(Maybe Condition)
+    { state :: KoreJson
+    , substitution :: Maybe KoreJson
+    , predicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -141,7 +142,7 @@ data HaltReason
 
 data ExecuteResult = ExecuteResult
     { reason :: HaltReason
-    , depth :: !Depth
+    , depth :: Depth
     , state :: ExecuteState
     , nextStates :: Maybe [ExecuteState]
     , rule :: Maybe Text
@@ -247,7 +248,7 @@ respond
                         Right $
                             Execute $
                                 ExecuteResult -- dummy
-                                    { state = ExecuteState{state, condition = Nothing}
+                                    { state = ExecuteState{state, predicate = Nothing, substitution = Nothing}
                                     , -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
                                       depth = Depth 0 -- dummy
                                     , reason = DepthBound -- dummy
