@@ -309,12 +309,11 @@ respond
                     { term =
                         PatternJson.fromTermLike $ Pattern.term p
                     , substitution =
-                        Nothing
+                        PatternJson.fromSubstitution $ Pattern.substitution p
                     , predicate =
                         case Pattern.predicate p of
                             PredicateTrue -> Nothing
                             pr -> Just $ PatternJson.fromPredicate sort pr
-                            -- The sort here is probably a hack... ^^^^
                     }
               where
                 p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
