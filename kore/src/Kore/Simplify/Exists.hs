@@ -240,8 +240,8 @@ matchesToVariableSubstitution
           , Substitution.null boundSubstitution
           , not (TermLike.hasFreeVariable (inject $ variableName variable) term) =
             do
-                matchResultFS <- matchIncremental sideCondition first second
-                matchResultSF <- matchIncremental sideCondition second first
+                matchResultFS <- liftSimplifier $ matchIncremental sideCondition first second
+                matchResultSF <- liftSimplifier $ matchIncremental sideCondition second first
                 case matchResultFS <|> matchResultSF of
                     Just (Predicate.PredicateTrue, results) ->
                         return (singleVariableSubstitution variable results)
@@ -304,11 +304,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
                         substitute boundSubstitution $
                             Conditional.predicate normalized
                     }
-        orPattern <- do
-            simplifierX <- askSimplifierXSwitch
-            case simplifierX of
-                EnabledSimplifierX -> simplifyPatternId substituted
-                DisabledSimplifierX -> simplifyPattern sideCondition substituted
+        orPattern <- simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)

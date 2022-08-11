@@ -77,6 +77,7 @@ import Kore.Rewrite.UnifyingRule
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
@@ -282,7 +283,7 @@ applyInitialConditions sideCondition initial unification = do
         -- the side condition!
         Simplifier.simplifyCondition sideCondition (initial <> unification)
             & MultiOr.gather
-    evaluated <- SMT.Evaluator.filterMultiOr applied
+    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.

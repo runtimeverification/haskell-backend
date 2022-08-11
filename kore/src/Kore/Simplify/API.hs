@@ -28,7 +28,6 @@ module Kore.Simplify.API (
     askOverloadSimplifier,
     getCache,
     putCache,
-    askSimplifierXSwitch,
     InternalVariable,
     MonadProf,
 ) where
@@ -108,14 +107,13 @@ traceProfSimplify (Pattern.toTermLike -> termLike) =
             <$> matchAxiomIdentifier termLike
 
 mkSimplifierEnv ::
-    SimplifierXSwitch ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
     SMT Env
-mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations =
+mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations =
     runSimplifier earlyEnv initialize
   where
     !earlyEnv =
@@ -129,7 +127,6 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
-            , simplifierXSwitch
             }
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
@@ -189,7 +186,6 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
                 , memo
                 , injSimplifier
                 , overloadSimplifier
-                , simplifierXSwitch
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
@@ -199,7 +195,6 @@ exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
 that may branch.
 -}
 evalSimplifier ::
-    SimplifierXSwitch ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
@@ -207,17 +202,16 @@ evalSimplifier ::
     Map AxiomIdentifier [Equation VariableName] ->
     Simplifier a ->
     SMT a
-evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations
+evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifier env simplifier
 
 evalSimplifierProofs ::
-    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Simplifier a ->
     SMT a
-evalSimplifierProofs simplifierXSwitch verifiedModule simplifier =
-    evalSimplifier simplifierXSwitch (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
+evalSimplifierProofs verifiedModule simplifier =
+    evalSimplifier (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
   where
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}

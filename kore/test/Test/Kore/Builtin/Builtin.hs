@@ -251,7 +251,6 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier
-        , simplifierXSwitch = DisabledSimplifierX
         }
 
 simplify :: TermLike RewritingVariableName -> IO [Pattern RewritingVariableName]
