@@ -54,7 +54,7 @@ import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
 import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
-import Kore.Rewrite.Axiom.EvaluationStrategy (simplifierWithFallback)
+import Kore.Rewrite.Axiom.EvaluationStrategy (simplifierWithFallback, builtinEvaluation)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -232,7 +232,7 @@ lookupAxiomSimplifier termLike = do
             Axiom.Identifier.Application appId ->
                 let builtinEvaluator = do
                         name <- Map.lookup appId hookedSymbols
-                        koreEvaluators name
+                        builtinEvaluation <$> koreEvaluators name
                  in combineEvaluatorsWithFallBack (builtinEvaluator, exact)
             Axiom.Identifier.Variable -> exact
             Axiom.Identifier.DV -> exact
