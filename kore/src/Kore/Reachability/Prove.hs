@@ -353,8 +353,8 @@ proveClaim
                 returnUnprovenClaims n rs
             GraphTraversal.Stopped rs nexts ->
                 returnUnprovenClaims (length nexts) rs
-            GraphTraversal.Aborted n rs ->
-                returnUnprovenClaims n rs
+            GraphTraversal.Aborted rs ->
+                returnUnprovenClaims (length rs) rs
             GraphTraversal.Ended results -> do
                 let depths = map fst results
                     maxProofDepth = sconcat (ProofDepth 0 :| depths)

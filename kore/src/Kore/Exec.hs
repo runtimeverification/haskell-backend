@@ -298,7 +298,7 @@ exec
                             when (null nexts) $
                                 forM_ depthLimit warnDepthLimitExceeded
                             pure results
-                        GraphTraversal.Aborted _ results -> do
+                        GraphTraversal.Aborted results -> do
                             pure results
 
             let (depths, finalConfigs) = unzip finals

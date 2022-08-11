@@ -253,8 +253,8 @@ graphTraversal
                                     pure $
                                         GotStuck (Seq.length nextQ) (mapMaybe extractState stuck)
                                 else worker nextQ
-                Abort lastState queue -> do
-                    pure $ Aborted (Seq.length queue) (extractNext lastState)
+                Abort _lastState queue -> do
+                    pure $ Aborted $ toList queue
 
         step ::
             (TState instr config) ->
@@ -312,9 +312,9 @@ data TraversalResult a
     = -- | remaining queue length and stuck results (always at most
       -- maxCounterExamples many).
       GotStuck Int [a]
-    | -- | queue length (exceeding the limit) and result(s) of the
-      -- last step that led to stopping.
-      Aborted Int [a]
+    | -- | queue (length exceeding the limit), including result(s) of
+      -- the last step that led to stopping.
+      Aborted [a]
     | -- | queue empty, results returned
       Ended [a]
     | -- | stop was signalled by the transition, return stopped
@@ -328,9 +328,9 @@ instance Pretty a => Pretty (TraversalResult a) where
             Pretty.hang 4 . Pretty.vsep $
                 ("Got stuck with queue of " <> Pretty.pretty n) :
                 map Pretty.pretty as
-        Aborted n as ->
+        Aborted as ->
             Pretty.hang 4 . Pretty.vsep $
-                ("Aborted with queue of " <> Pretty.pretty n) :
+                "Aborted with queue of " :
                 map Pretty.pretty as
         Ended as ->
             Pretty.hang 4 . Pretty.vsep $
@@ -343,7 +343,7 @@ instance Pretty a => Pretty (TraversalResult a) where
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map f rs)
-        Aborted n rs -> Aborted n (map f rs)
+        Aborted rs -> Aborted (map f rs)
         Ended rs -> Ended (map f rs)
         Stopped rs qu -> Stopped (map f rs) (map f qu)
 
