@@ -182,7 +182,6 @@ distributeApplication
         application =
             Application{applicationSymbolOrAlias, applicationChildren = []}
 
-
 {- | 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
 -}
