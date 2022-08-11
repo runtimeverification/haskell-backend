@@ -30,10 +30,10 @@ import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 
+-- import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-
--- import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike qualified as TermLike
 
 -- import Kore.Reachability.Claim qualified as Claim
@@ -311,8 +311,10 @@ respond
                     , substitution =
                         Nothing -- FIXME this is not actually a term.
                     , predicate =
-                        Just $ PatternJson.fromPredicate sort $ Pattern.predicate p
-                        -- The sort is probably a hack   ^^^^
+                        case Pattern.predicate p of
+                            PredicateTrue -> Nothing
+                            pr -> Just $ PatternJson.fromPredicate sort pr
+                            -- The sort here is probably a hack... ^^^^
                     }
               where
                 p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
