@@ -15,6 +15,8 @@ module Kore.Syntax.Json (
     decodeKoreJson,
     toParsedPattern,
     fromPattern,
+    fromTermLike,
+    fromPredicate,
 ) where
 
 import Data.Aeson as Json
@@ -22,6 +24,10 @@ import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Either.Extra hiding (Left, Right)
 import Kore.Attribute.Attributes (ParsedPattern)
+import Kore.Internal.Predicate (Predicate)
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Internal.TermLike.TermLike ()
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Json.Internal
 import Kore.Syntax.Variable (VariableName (..))
@@ -51,8 +57,9 @@ newtype JsonParseError
 -- | Write a Pattern to a json byte string.
 encodePattern :: Kore.Pattern VariableName ann -> ByteString
 encodePattern = encodeKoreJson . addHeader . fromPattern
-  where
-    addHeader = KoreJson KORE KJ1
+
+addHeader :: KorePattern -> KoreJson
+addHeader = KoreJson KORE KJ1
 
 encodeKoreJson :: KoreJson -> ByteString
 encodeKoreJson = Json.encodePretty' prettyJsonOpts
@@ -83,3 +90,15 @@ prettyJsonOpts =
                 , "value"
                 ]
         }
+
+------------------------------------------------------------
+-- convenience converters
+
+fromTermLike :: TermLike.TermLike VariableName -> KoreJson
+fromTermLike =
+    addHeader
+        . fromPattern
+        . from @_ @(Kore.Pattern _ (TermLike.TermAttributes VariableName))
+
+fromPredicate :: Kore.Sort -> Predicate VariableName -> KoreJson
+fromPredicate s = fromTermLike . Predicate.fromPredicate s

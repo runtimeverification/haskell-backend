@@ -38,6 +38,7 @@ import Control.Monad (
     (>=>),
  )
 import Control.Monad.Trans.Maybe (runMaybeT)
+import Data.Bifunctor (second)
 import Data.Coerce (
     coerce,
  )
@@ -379,7 +380,7 @@ rpcExec ::
     TermLike VariableName ->
     SMT
         ( GraphTraversal.TraversalResult
-            (ExecDepth, ProgramState (Pattern RewritingVariableName))
+            (ExecDepth, ProgramState (Pattern VariableName))
         )
 rpcExec
     depthLimit
@@ -393,8 +394,8 @@ rpcExec
         }
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
-            do
-                GraphTraversal.graphTraversal
+            fmap (second $ fmap getRewritingPattern)
+                <$> GraphTraversal.graphTraversal
                     Strategy.LeafOrBranching
                     Strategy.DepthFirst
                     (Limit 2) -- breadth limit 2 because we never go beyond a branch
@@ -441,10 +442,11 @@ rpcExec
             )
         toTransitionResult prior [] =
             case snd prior of
-                Start _ -> GraphTraversal.Stop prior []
-                Rewritten _ -> GraphTraversal.Stop prior []
                 Remaining _ -> GraphTraversal.Stuck prior
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+                -- returns `Final` to signal that no instructions were left.
+                Start _ -> GraphTraversal.Final prior
+                Rewritten _ -> GraphTraversal.Final prior
         toTransitionResult _prior [next] =
             case snd next of
                 Start _ -> GraphTraversal.Continuing next
