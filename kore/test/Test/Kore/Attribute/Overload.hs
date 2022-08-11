@@ -128,15 +128,14 @@ test_parameters =
 test_dont_ignore :: TestTree
 test_dont_ignore =
     testCase "Don't ignore overloaded production axioms" $
-        case Map.lookup (AxiomIdentifier.Application superId) evaluators of
+        case Map.lookup (AxiomIdentifier.Application superId) equations >>= mkEvaluator of
             Nothing ->
                 assertFailure "Should not ignore overloaded production axiom"
             Just _ -> return ()
   where
-    evaluators =
-        mkEvaluatorRegistry $
-            (Map.map . fmap . Equation.mapVariables $ pure mkConfigVariable) $
-                extractEquations indexedModule
+    equations =
+        (Map.map . fmap . Equation.mapVariables $ pure mkConfigVariable) $
+            extractEquations indexedModule
     verifiedModules =
         assertRight $
             verifyAndIndexDefinition Builtin.koreVerifiers testDefinition

@@ -38,7 +38,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Rewrite.Axiom.Registry
+import Kore.Rewrite.Axiom.Registry (mkEvaluator)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
@@ -439,11 +439,10 @@ testIndexedModule =
                     (error "Module not found. Should not be possible.")
                     (Map.lookup (ModuleName "test") indexedModules)
 
-testEvaluators :: BuiltinAndAxiomSimplifierMap
-testEvaluators =
-    mkEvaluatorRegistry $
-        Map.map (fmap . Equation.mapVariables $ pure mkConfigVariable) $
-            extractEquations testIndexedModule
+testEquations :: Map.Map AxiomIdentifier.AxiomIdentifier [Equation.Equation RewritingVariableName]
+testEquations =
+    Map.map (fmap . Equation.mapVariables $ pure mkConfigVariable) $
+        extractEquations testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
@@ -459,7 +458,8 @@ testEnv :: Env
 testEnv =
     Mock.env
         { metadataTools = testMetadataTools
-        , simplifierAxioms = testEvaluators
+        , simplifierAxioms = mempty
+        , equations = testEquations
         }
 
 test_functionRegistry :: [TestTree]
@@ -467,7 +467,7 @@ test_functionRegistry =
     [ testCase
         "Checking that a simplifier is found for f"
         ( let axiomId = AxiomIdentifier.Application (testId "f")
-           in ( case Map.lookup axiomId testEvaluators of
+           in ( case Map.lookup axiomId testEquations >>= mkEvaluator of
                     Just _ -> return ()
                     _ -> assertFailure "Should find a simplifier for f"
               )
@@ -475,7 +475,7 @@ test_functionRegistry =
     , testCase
         "Checking that a simplifier is found for parametric inj"
         ( let axiomId = AxiomIdentifier.Application (testId "inj")
-           in ( case Map.lookup axiomId testEvaluators of
+           in ( case Map.lookup axiomId testEquations >>= mkEvaluator of
                     Just _ -> return ()
                     _ -> assertFailure "Should find a simplifier for inj"
               )
@@ -484,17 +484,17 @@ test_functionRegistry =
         "Checking that a simplifier is found for ceil(f)"
         ( let axiomId =
                 AxiomIdentifier.Ceil (AxiomIdentifier.Application (testId "f"))
-           in ( case Map.lookup axiomId testEvaluators of
+           in ( case Map.lookup axiomId testEquations >>= mkEvaluator of
                     Just _ -> return ()
                     _ -> assertFailure "Should find a simplifier for ceil(f)"
               )
         )
     , testCase
-        "Checking that evaluator map has size 4"
+        "Checking that evaluator map has size 5"
         ( assertEqual
             ""
             5
-            (Map.size testEvaluators)
+            (Map.size (mapMaybe mkEvaluator testEquations))
         )
     , testCase
         "Checking that the indexed module contains a rewrite axiom"

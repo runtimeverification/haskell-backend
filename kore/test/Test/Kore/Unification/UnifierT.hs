@@ -27,7 +27,6 @@ import Kore.Internal.Substitution (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy qualified as EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -445,13 +444,13 @@ normalizeExcept predicated =
                 Logic.lowerLogicT $
                     Simplifier.simplifyCondition SideCondition.top predicated
   where
-    mockEnv = Mock.env{simplifierAxioms}
-    simplifierAxioms =
+    mockEnv = Mock.env{equations}
+    equations =
         -- Use Mock.functional10 as the identity function.
         Map.fromList
             [
                 ( Axiom.Identifier.Application Mock.functional10Id
-                , EvaluationStrategy.definitionEvaluation
+                ,
                     [ Equation.mkEquation
                         (Mock.functional10 (mkElemVar Mock.xConfig))
                         (mkElemVar Mock.xConfig)

@@ -244,6 +244,7 @@ testEnv =
         , simplifierPattern = Pattern.makeEvaluate
         , simplifierTerm = TermLike.simplify
         , simplifierAxioms = Map.empty
+        , equations = Map.empty
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier

@@ -22,9 +22,6 @@ import Kore.Equation.Equation
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
-import Kore.Rewrite.Axiom.Registry (
-    mkEvaluatorRegistry,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -376,20 +373,19 @@ test_applySubstitutionAndSimplify =
   where
     subst var term =
         Map.fromList [(var, term)]
-    env = Mock.env{simplifierAxioms}
-    simplifierAxioms =
-        mkEvaluatorRegistry $
-            Map.fromList
-                [
-                    ( AxiomIdentifier.Application Mock.fId
-                    ,
-                        [ functionAxiomUnification_
-                            Mock.fSymbol
-                            [mkElemVar Mock.zConfig]
-                            Mock.a
-                        ]
-                    )
-                ]
+    env = Mock.env{equations}
+    equations =
+        Map.fromList
+            [
+                ( AxiomIdentifier.Application Mock.fId
+                ,
+                    [ functionAxiomUnification_
+                        Mock.fSymbol
+                        [mkElemVar Mock.zConfig]
+                        Mock.a
+                    ]
+                )
+            ]
     someVar1 = Mock.xConfig & inject
     var1Term = mkElemVar Mock.xConfig
     var2Term = mkElemVar Mock.yConfig

@@ -22,6 +22,7 @@ import Hedgehog (
     forAll,
     (===),
  )
+import Kore.Equation (Equation)
 import Kore.Internal.From (fromIn_)
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -43,6 +44,7 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
@@ -169,13 +171,13 @@ evaluate ::
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms ::
-    BuiltinAndAxiomSimplifierMap ->
+    Map.Map AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern RewritingVariableName ->
     SMT.SMT (OrPattern RewritingVariableName)
-evaluateWithAxioms simplifierAxioms =
+evaluateWithAxioms equations =
     Simplification.runSimplifier env . Pattern.simplify
   where
-    env = Mock.env{simplifierAxioms, hookedSymbols = Mock.builtinSimplifiers}
+    env = Mock.env{equations, hookedSymbols = Mock.builtinSimplifiers}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

@@ -4,6 +4,9 @@ module Test.Kore.Equation.Common (
     symbolic,
     axiom,
     axiom_,
+    mkEquationEnsures,
+    asSimplification,
+    asDefinition,
     functionAxiomUnification,
     functionAxiomUnification_,
     sortR,
@@ -19,6 +22,7 @@ import Data.Sup (
 import GHC.Natural (
     intToNatural,
  )
+import Kore.Attribute.Axiom (Simplification (..))
 import Kore.Attribute.Axiom.Concrete (
     Concrete (..),
  )
@@ -52,6 +56,20 @@ axiom_ ::
     TermLike RewritingVariableName ->
     Equation RewritingVariableName
 axiom_ left right = axiom left right makeTruePredicate
+
+mkEquationEnsures ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Predicate RewritingVariableName ->
+    Equation RewritingVariableName
+mkEquationEnsures left right ensures =
+    Lens.set (field @"ensures") ensures $ mkEquation left right
+
+asSimplification :: Equation variable -> Equation variable
+asSimplification = Lens.set (field @"attributes" . field @"simplification") (IsSimplification Nothing)
+
+asDefinition :: Equation variable -> Equation variable
+asDefinition = Lens.set (field @"attributes" . field @"simplification") NotSimplification
 
 functionAxiomUnification ::
     Symbol ->

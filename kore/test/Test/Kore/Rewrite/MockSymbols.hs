@@ -63,6 +63,7 @@ import Kore.Builtin.List qualified as List
 import Kore.Builtin.Map.Map qualified as Map
 import Kore.Builtin.Set.Set qualified as Set
 import Kore.Builtin.String qualified as Builtin.String
+import Kore.Equation (Equation)
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
@@ -82,6 +83,7 @@ import Kore.Internal.TermLike (
     retractKey,
  )
 import Kore.Internal.TermLike qualified as Internal
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -103,7 +105,6 @@ import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
@@ -2281,8 +2282,8 @@ metadataTools =
         smtDeclarations
         sortConstructors
 
-axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
-axiomSimplifiers = Map.empty
+equations :: Map AxiomIdentifier [Equation RewritingVariableName]
+equations = Map.empty
 
 predicateSimplifier ::
     MonadSimplify simplifier => ConditionSimplifier simplifier
@@ -2312,7 +2313,8 @@ env =
         , simplifierCondition = predicateSimplifier
         , simplifierPattern = Pattern.makeEvaluate
         , simplifierTerm = TermLike.simplify
-        , simplifierAxioms = axiomSimplifiers
+        , simplifierAxioms = Map.empty
+        , equations = equations
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier

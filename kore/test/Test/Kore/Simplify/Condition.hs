@@ -5,6 +5,7 @@ module Test.Kore.Simplify.Condition (
 ) where
 
 import Data.Map.Strict qualified as Map
+import Kore.Equation (Equation, mkEquation)
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
@@ -19,7 +20,6 @@ import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -27,9 +27,6 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeFalsePredicate,
     makeTruePredicate,
- )
-import Kore.Internal.SideCondition (
-    SideCondition,
  )
 import Kore.Internal.SideCondition qualified as SideCondition (
     top,
@@ -116,9 +113,9 @@ test_simplify_local_functions =
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
     [ testCase "Identity for top and bottom" $ do
-        actualBottom <- conditionRunSimplifier Map.empty Conditional.bottomCondition
+        actualBottom <- simplify Conditional.bottomCondition
         assertEqual "" mempty actualBottom
-        actualTop <- conditionRunSimplifier Map.empty Conditional.topCondition
+        actualTop <- simplify Conditional.topCondition
         assertEqual
             ""
             (MultiOr.singleton Conditional.topCondition)
@@ -138,8 +135,7 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            conditionRunSimplifier
-                Map.empty
+            simplify
                 Conditional
                     { term = ()
                     , predicate =
@@ -168,8 +164,7 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            conditionRunSimplifier
-                Map.empty
+            simplify
                 Conditional
                     { term = ()
                     , predicate =
@@ -199,14 +194,9 @@ test_predicateSimplification =
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [
-                                    ( Mock.f Mock.functional00
-                                    , Mock.functional00
-                                    )
-                                , (Mock.f Mock.functional01, Mock.a)
-                                ]
+                        ,
+                            [ mkEquation (Mock.f Mock.functional00) Mock.functional00
+                            , mkEquation (Mock.f Mock.functional01) Mock.a
                             ]
                         )
                     ]
@@ -240,10 +230,7 @@ test_predicateSimplification =
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [(Mock.f Mock.b, Mock.constr10 Mock.a)]
-                            ]
+                        , [mkEquation (Mock.f Mock.b) (Mock.constr10 Mock.a)]
                         )
                     ]
                 )
@@ -278,11 +265,7 @@ test_predicateSimplification =
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [ (Mock.f Mock.b, Mock.constr10 Mock.a)
-                                ]
-                            ]
+                        , [mkEquation (Mock.f Mock.b) (Mock.constr10 Mock.a)]
                         )
                     ]
                 )
@@ -323,11 +306,9 @@ test_predicateSimplification =
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [ (Mock.f Mock.b, Mock.constr10 Mock.a)
-                                , (Mock.f Mock.a, Mock.g Mock.b)
-                                ]
+                        ,
+                            [ mkEquation (Mock.f Mock.b) (Mock.constr10 Mock.a)
+                            , mkEquation (Mock.f Mock.a) (Mock.g Mock.b)
                             ]
                         )
                     ]
@@ -385,48 +366,17 @@ simplify ::
 simplify condition = conditionRunSimplifier mempty condition
 
 conditionRunSimplifier ::
-    BuiltinAndAxiomSimplifierMap ->
+    Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Condition RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
-conditionRunSimplifier patternSimplifierMap predicate =
+conditionRunSimplifier equations predicate =
     fmap MultiOr.make $
         Test.testRunSimplifierBranch env $
             simplifier SideCondition.top predicate
   where
-    env = Mock.env{Test.simplifierAxioms = patternSimplifierMap}
+    env = Mock.env{equations}
     ConditionSimplifier simplifier =
         Condition.create SubstitutionSimplifier.substitutionSimplifier
-
-simplificationEvaluator ::
-    [BuiltinAndAxiomSimplifier] ->
-    BuiltinAndAxiomSimplifier
-simplificationEvaluator = firstFullEvaluation
-
-makeEvaluator ::
-    ( forall variable.
-      InternalVariable variable =>
-      [(TermLike variable, TermLike variable)]
-    ) ->
-    BuiltinAndAxiomSimplifier
-makeEvaluator mapping = BuiltinAndAxiomSimplifier $ simpleEvaluator mapping
-
-simpleEvaluator ::
-    MonadSimplify simplifier =>
-    [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
-simpleEvaluator [] _ _ = return NotApplicable
-simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
-    | fromTermLike == patt =
-        return $
-            Applied
-                AttemptedAxiomResults
-                    { results = OrPattern.fromTermLike toTermLike
-                    , remainders = OrPattern.bottom
-                    }
-    | otherwise =
-        simpleEvaluator ps patt sideCondition
 
 simplifyPredicates ::
     MultiAnd (Predicate RewritingVariableName) ->

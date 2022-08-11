@@ -34,6 +34,8 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier (..),
  )
 
+-- TODO (diogo): move somewhere else
+
 -- | Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
 mkEvaluator ::
     [Equation RewritingVariableName] ->
@@ -59,6 +61,7 @@ mkEvaluator equations =
             then Nothing
             else Just $ definitionEvaluation functionRules
 
+-- TODO (diogo): delete
 mkEvaluatorRegistry ::
     Map AxiomIdentifier [Equation RewritingVariableName] ->
     Map AxiomIdentifier BuiltinAndAxiomSimplifier

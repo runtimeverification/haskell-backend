@@ -145,7 +145,8 @@ data Env = Env
         Simplifier (OrPattern RewritingVariableName)
     , -- TODO (diogo): delete
       simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
-    , equations :: !(Map AxiomIdentifier [Equation RewritingVariableName])
+    , -- TODO (diogo): rename to `axiomEquations`
+      equations :: !(Map AxiomIdentifier [Equation RewritingVariableName])
     , memo :: !(Memo.Self Simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
@@ -259,6 +260,7 @@ simplifyTerm sideCondition termLike =
         simplifier <- asks simplifierTerm
         simplifier sideCondition termLike
 
+-- TODO (diogo): delete
 askSimplifierAxioms :: MonadSimplify m => m BuiltinAndAxiomSimplifierMap
 askSimplifierAxioms = liftSimplifier $ asks simplifierAxioms
 
@@ -455,6 +457,8 @@ newtype BuiltinAndAxiomSimplifier =
 {- |A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
 -}
+
+-- TODO (diogo): delete
 type BuiltinAndAxiomSimplifierMap =
     Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 

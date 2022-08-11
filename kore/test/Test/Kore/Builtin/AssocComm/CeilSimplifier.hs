@@ -320,7 +320,7 @@ makeEvaluate termLike = do
         testRunSimplifier mockEnv
             . Ceil.makeEvaluate SideCondition.top
             . Pattern.fromTermLike
-    mockEnv = Mock.env{simplifierAxioms = mempty}
+    mockEnv = Mock.env{equations = mempty}
     expectSingleResult =
         \case
             [actualPattern] -> return actualPattern
