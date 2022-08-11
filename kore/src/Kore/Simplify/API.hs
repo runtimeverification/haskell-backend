@@ -24,6 +24,7 @@ module Kore.Simplify.API (
     simplifyPattern,
     simplifyTerm,
     askSimplifierAxioms,
+    askEquations,
     askInjSimplifier,
     askOverloadSimplifier,
     getCache,
@@ -64,9 +65,6 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
     matchAxiomIdentifier,
- )
-import Kore.Rewrite.Axiom.Registry (
-    mkEvaluatorRegistry,
  )
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -123,6 +121,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             , simplifierPattern
             , simplifierTerm
             , simplifierAxioms = earlySimplifierAxioms
+            , equations = Map.empty
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
@@ -162,7 +161,6 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             Equation.simplifyExtractedEquations $
                 (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
                     rawEquations
-        let userEvaluators = mkEvaluatorRegistry equations :: BuiltinAndAxiomSimplifierMap
         memo <- Memo.new
         return
             Env
@@ -170,11 +168,12 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
                 , simplifierCondition
                 , simplifierPattern
                 , simplifierTerm
-                , simplifierAxioms = userEvaluators
+                , simplifierAxioms = Map.empty
                 , memo
                 , injSimplifier
                 , overloadSimplifier
                 , hookedSymbols
+                , equations
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.

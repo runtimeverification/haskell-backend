@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 -}
 module Kore.Rewrite.Axiom.Registry (
+    mkEvaluator,
     mkEvaluatorRegistry,
     extractEquations,
 ) where
@@ -33,13 +34,11 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier (..),
  )
 
-{- | Converts a collection of processed 'EqualityRule's to one of
- 'BuiltinAndAxiomSimplifier's
--}
+-- | Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
 mkEvaluator ::
-    PartitionedEquations ->
+    [Equation RewritingVariableName] ->
     Maybe BuiltinAndAxiomSimplifier
-mkEvaluator PartitionedEquations{functionRules, simplificationRules} =
+mkEvaluator equations =
     case (simplificationEvaluator, definitionEvaluator) of
         (Nothing, Nothing) -> Nothing
         (Just evaluator, Nothing) -> Just evaluator
@@ -47,6 +46,7 @@ mkEvaluator PartitionedEquations{functionRules, simplificationRules} =
         (Just sEvaluator, Just dEvaluator) ->
             Just (simplifierWithFallback dEvaluator sEvaluator)
   where
+    PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
     simplificationEvaluator =
         if null simplificationRules
             then Nothing
@@ -63,4 +63,4 @@ mkEvaluatorRegistry ::
     Map AxiomIdentifier [Equation RewritingVariableName] ->
     Map AxiomIdentifier BuiltinAndAxiomSimplifier
 mkEvaluatorRegistry =
-    mapMaybe (mkEvaluator . partitionEquations)
+    mapMaybe mkEvaluator

@@ -179,7 +179,7 @@ simplifyPattern' ::
     TermLike RewritingVariableName ->
     Simplifier (OrPattern.OrPattern RewritingVariableName)
 simplifyPattern' termLike =
-    Simplifier.localSimplifierAxioms (const mempty) $
+    Simplifier.localEquations (const mempty) $
         Simplifier.simplifyPattern
             SideCondition.top
             (Pattern.fromTermLike termLike)
