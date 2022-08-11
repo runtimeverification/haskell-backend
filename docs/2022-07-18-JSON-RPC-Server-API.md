@@ -301,7 +301,7 @@ The server uses the JSON RPC spec way of returning errors. Namely, the returned 
 
 ```json
 {
-  "jsonrpc": "2.0", 
+  "jsonrpc": "2.0",
   "id": 1,
   "error": {
     "code": -32002,
@@ -315,7 +315,7 @@ The kore-rpc specific error messages will use error codes in the range -32000 to
 
 ## -32001 Cancel request unsupported in batch mode
 
-Due tot he way that cancel is implemented, we do not allow a cancel message within batch mode. This message should never occur if batch mode is not used.
+Due to the way that cancel is implemented, we do not allow a cancel message within batch mode. This message should never occur if batch mode is not used.
 
 ## -32002 Could not verify KORE pattern
 
@@ -323,7 +323,7 @@ This error wraps the internal error thrown when validating the received pattern 
 
 ```json
 {
-  "jsonrpc": "2.0", 
+  "jsonrpc": "2.0",
   "id": 1,
   "error": {
     "code": -32002,
@@ -335,3 +335,7 @@ This error wraps the internal error thrown when validating the received pattern 
   }
 }
 ```
+
+## -32032 Internal server error
+
+This error indicates an internal problem with the server implementation. Its data is not expected to be processed by a client (other than including it in a bug report).
