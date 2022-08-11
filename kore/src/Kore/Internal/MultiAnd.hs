@@ -151,20 +151,16 @@ included in the Ord instance, items containing @\\forall@ and
 a logical sense.
 -}
 
--- | 'make' constructs a simplified/normalized 'MultiAnd'.
-make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
-make = foldAndPatterns . Set.fromList
-
-{- | 'foldAndPatterns' simplifies a set of children according to the `patternToMaybeBool`
+{- | 'make' constructs a simplified/normalized 'MultiAnd'. It simplifies a set of children according to the `patternToMaybeBool`
 function which evaluates to true/false/unknown.
 -}
-foldAndPatterns ::
-    (Ord child, TopBottom child) =>
-    Set child ->
+make ::
+    (Ord child, TopBottom child, Foldable f) =>
+    f child ->
     MultiAnd child
-foldAndPatterns patts = Set.foldr go mempty patts
+make ~patts = foldr go mempty patts
   where
-    go element mand =
+    go element ~mand =
         case patternToMaybeBool element of
             Just False -> MultiAndBottom element
             Just True -> mand

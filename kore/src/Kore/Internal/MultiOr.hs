@@ -148,13 +148,6 @@ instance
 bottom :: MultiOr term
 bottom = MultiOrBottom
 
--- | 'make' constructs a normalized 'MultiOr'.
-make ::
-    (Ord term, TopBottom term) =>
-    [term] ->
-    MultiOr term
-make = foldOrPatterns . Set.fromList
-
 -- | Construct a normalized 'MultiOr' from a single pattern.
 singleton ::
     TopBottom term =>
@@ -164,12 +157,6 @@ singleton term
     | isBottom term = MultiOrBottom
     | isTop term = MultiOrTop term
     | otherwise = MultiOr $ Set.singleton term
-
--- What are the semantics of distributeApplication?
--- from the previous implementation i presume the following:
--- x ( ..., _|_, ... ) ~ _|_
--- x ( T , a \/ b ) ~ x ( T , a ) \/ x ( T , b )
--- namely, if one of the args is a top, that doesnt automatically make the whole application top, right?
 
 distributeApplication ::
     Ord head =>
@@ -194,6 +181,7 @@ distributeApplication
         applyTo term = Lens.over (field @"applicationChildren") (term :)
         application =
             Application{applicationSymbolOrAlias, applicationChildren = []}
+
 
 {- | 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
@@ -223,16 +211,16 @@ patternToMaybeBool patt
     | isBottom patt = Just False
     | otherwise = Nothing
 
-{- | 'foldAndPatterns' simplifies a set of children according to the `patternToMaybeBool`
+{- | 'make' constructs a normalized 'MultiOr'. It simplifies a set of children according to the `patternToMaybeBool`
 function which evaluates to true/false/unknown.
 -}
-foldOrPatterns ::
-    (Ord child, TopBottom child) =>
-    Set child ->
-    MultiOr child
-foldOrPatterns patts = Set.foldr go mempty patts
+make ::
+    (Ord term, TopBottom term, Foldable f) =>
+    f term ->
+    MultiOr term
+make ~patts = foldr go mempty patts
   where
-    go element mor =
+    go element ~mor =
         case patternToMaybeBool element of
             Just True -> MultiOrTop element
             Just False -> mor
