@@ -74,7 +74,7 @@ import Network.JSONRPC (
     sendBatchResponse,
  )
 import Prelude.Kore
-import Pretty qualified as Pretty
+import Pretty qualified
 import SMT qualified
 
 newtype Depth = Depth Natural
