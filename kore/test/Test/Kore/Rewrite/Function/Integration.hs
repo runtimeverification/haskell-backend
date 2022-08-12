@@ -677,7 +677,8 @@ withApplied check comment rules term =
         actual <- evaluateWith (definitionEvaluation rules) term
         check actual
 
-applies, notApplies ::
+applies
+    , notApplies ::
         TestName ->
         [Equation RewritingVariableName] ->
         TermLike RewritingVariableName ->
